@@ -39,6 +39,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ImmutablePageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -1225,8 +1226,11 @@ public class TemplateResourceTest {
                 .theme(template.getTheme())
                 .build();
 
-        final PageContext pageContext =  new PageContext(APILocator.systemUser(),
-                htmlPageAsset.getPageUrl(), PageMode.PREVIEW_MODE, htmlPageAsset);
+        final PageContext pageContext = ImmutablePageContext.builder()
+                .user(APILocator.systemUser())
+                .pageUri(htmlPageAsset.getPageUrl())
+                .pageMode(PageMode.PREVIEW_MODE)
+                .page(htmlPageAsset).build();
 
         final String pageHtml_1 = APILocator.getHTMLPageAssetRenderedAPI()
                 .getPageHtml(pageContext, request, response);

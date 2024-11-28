@@ -81,7 +81,7 @@ public interface HTMLPageAssetAPI {
 
     HTMLPageAsset fromContentlet(Contentlet content);
 
-    IHTMLPage getPageByPath(String path, Host host, Long languageId, Boolean live) throws DotDataException, DotSecurityException;
+    IHTMLPage getPageByPath(String path, Host host, Long languageId, boolean live) throws DotDataException, DotSecurityException;
 
     List<IHTMLPage> getLiveHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 

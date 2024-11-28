@@ -29,9 +29,15 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             Logger.debug(this, ()-> "Fetching containers for page: " + page.getIdentifier());
             final String pageModeAsString = (String) context.getParam("pageMode");
             final String languageId = (String) context.getParam("languageId");
+            final String variant = (String) context.getParam("variant");
+            final String persona = (String)context.getParam("persona");
+            final String publishDate = (String)context.getParam("publishDate");
+
+            System.out.printf(" variant: %s, persona %s, publishDate: %s%n", variant, persona, publishDate);
 
             final PageMode mode = PageMode.get(pageModeAsString);
             final HttpServletRequest request = context.getHttpServletRequest();
+            System.out.println("request: " + request);
 
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);

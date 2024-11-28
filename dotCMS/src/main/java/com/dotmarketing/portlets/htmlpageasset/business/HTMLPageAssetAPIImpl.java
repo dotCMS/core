@@ -114,34 +114,34 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         if (structure.getStructureType() != Structure.STRUCTURE_TYPE_HTMLPAGE) {
             throw new DotStateException("Cannot create base htmlpage asset fields on a structure that is not of htmlpage asset type");
         }
-        
+
         Field field = new Field(TITLE_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, true, true, 1, "$velutil.mergeTemplate('/static/htmlpage_assets/title_custom_field.vtl')", "", "", true, false, true);
         field.setVelocityVarName(TITLE_FIELD);
         FieldFactory.saveField(field);
-        
+
         field = new Field(HOST_FOLDER_FIELD_NAME, Field.FieldType.HOST_OR_FOLDER, Field.DataType.TEXT, structure, true, false, true, 2, "", "", "", true, false, true);
         field.setVelocityVarName(HOST_FOLDER_FIELD);
-        FieldFactory.saveField(field);        
-        
+        FieldFactory.saveField(field);
+
         field = new Field(URL_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, true, true, true, 3, "", "", "", true, false, true);
         field.setVelocityVarName(URL_FIELD);
         FieldFactory.saveField(field);
-        
-        field = new Field(CACHE_TTL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, true, true, 4, 
+
+        field = new Field(CACHE_TTL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, true, true, 4,
                 "$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')", "", "^[0-9]+$", true, false, true);
         field.setVelocityVarName(CACHE_TTL_FIELD);
         FieldFactory.saveField(field);
-        
-        
-        field = new Field(TEMPLATE_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, false, true, 5, 
+
+
+        field = new Field(TEMPLATE_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, false, true, 5,
                 "$velutil.mergeTemplate('/static/htmlpage_assets/template_custom_field.vtl')", "", "", true, false, true);
         field.setVelocityVarName(TEMPLATE_FIELD);
         FieldFactory.saveField(field);
-        
+
         field = new Field(ADVANCED_PROPERTIES_TAB_NAME, Field.FieldType.TAB_DIVIDER, Field.DataType.SECTION_DIVIDER, structure, false, false, false, 6, "", "", "", false, false, false);
         field.setVelocityVarName(ADVANCED_PROPERTIES_TAB);
         FieldFactory.saveField(field);
-        
+
         field = new Field(SHOW_ON_MENU_FIELD_NAME, Field.FieldType.CHECKBOX, Field.DataType.TEXT, structure, false, false, true, 7, "|true", "false", "", true, false, false);
         field.setVelocityVarName(SHOW_ON_MENU_FIELD);
         FieldFactory.saveField(field);
@@ -149,28 +149,28 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field = new Field(SORT_ORDER_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.INTEGER, structure, true, false, true, 8, "", "0", "", true, false, true);
         field.setVelocityVarName(SORT_ORDER_FIELD);
         FieldFactory.saveField(field);
-        
+
         field = new Field(FRIENDLY_NAME_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, false, false, true, 9, "", "", "", true, false, true);
         field.setVelocityVarName(FRIENDLY_NAME_FIELD);
         FieldFactory.saveField(field);
-        
+
         field = new Field(REDIRECT_URL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, false, true, true, 10,
                 "$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')", "", "", true, false, true);
         field.setVelocityVarName(REDIRECT_URL_FIELD);
         FieldFactory.saveField(field);
-        
+
         field = new Field(HTTPS_REQUIRED_FIELD_NAME, Field.FieldType.CHECKBOX, Field.DataType.TEXT, structure, false, false, true, 11, "|true", "false", "", true, false, false);
         field.setVelocityVarName(HTTPS_REQUIRED_FIELD);
         FieldFactory.saveField(field);
-        
+
         field = new Field(SEO_DESCRIPTION_FIELD_NAME, Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT, structure, false, false, true, 12, "", "", "", true, false, true);
         field.setVelocityVarName(SEO_DESCRIPTION_FIELD);
         FieldFactory.saveField(field);
-        
+
         field = new Field(SEO_KEYWORDS_FIELD_NAME, Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT, structure, false, false, true, 13, "", "", "", true, false, true);
         field.setVelocityVarName(SEO_KEYWORDS_FIELD);
         FieldFactory.saveField(field);
-        
+
         field = new Field(PAGE_METADATA_FIELD_NAME, Field.FieldType.TEXT_AREA, Field.DataType.LONG_TEXT, structure, false, false, true, 14, "", "", "", true, false, true);
         field.setVelocityVarName(PAGE_METADATA_FIELD);
         FieldFactory.saveField(field);
@@ -178,7 +178,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public Template getTemplate(IHTMLPage page, boolean working) throws DotDataException, DotSecurityException {
-        if (working) 
+        if (working)
             return APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), userAPI.getSystemUser(), false);
         else
             return APILocator.getTemplateAPI().findLiveTemplate(page.getTemplateId(), userAPI.getSystemUser(), false);
@@ -192,18 +192,18 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @CloseDBIfOpened
     @Override
     public HTMLPageAsset fromContentlet(Contentlet con) {
-    	if (con != null){
-    		if(con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_HTMLPAGE) {
-    			throw new DotStateException("Contentlet : " + con.getInode() + " is not a pageAsset");
-    		}
-    	}else{
-    		throw new DotStateException("Contentlet is null");
-    	}
-    	
-    	HTMLPageAsset pa = (HTMLPageAsset) CacheLocator.getHTMLPageCache().get(con.getInode());
-    	if(pa!=null){
-    		return pa;
-    	}
+        if (con != null){
+            if(con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                throw new DotStateException("Contentlet : " + con.getInode() + " is not a pageAsset");
+            }
+        }else{
+            throw new DotStateException("Contentlet is null");
+        }
+
+        HTMLPageAsset pa = (HTMLPageAsset) CacheLocator.getHTMLPageCache().get(con.getInode());
+        if(pa!=null){
+            return pa;
+        }
         pa=new HTMLPageAsset();
         pa.setStructureInode(con.getStructureInode());
         try {
@@ -221,7 +221,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUser, false);
                 pa.setFolder(folder.getInode());
             }catch(Exception e){
-            	pa=new HTMLPageAsset();
+                pa=new HTMLPageAsset();
                 Logger.warn(this, "Unable to convert contentlet to page asset: " + con, e);
             }
         }
@@ -242,39 +242,50 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
 
         try {
-			CacheLocator.getHTMLPageCache().add(pa);
-		} catch (Exception e) {
+            CacheLocator.getHTMLPageCache().add(pa);
+        } catch (Exception e) {
 
-		}
-        
+        }
+
         return pa;
+    }
+
+    /**
+     * find the identifier by the given uri and site
+     * This we will need to find the page by the uri
+     * @param uri
+     * @param site
+     * @return
+     */
+    private Optional<Identifier> findIdentifierByURI(final String uri, final Host site) {
+        if (!UtilMethods.isSet(uri)) {
+            return Optional.empty();
+        }
+        try {
+            Identifier id = CMSUrlUtil.getInstance().isFolder(uri, site)
+                    ? getIndexPageIdentifier(uri, site)
+                    : identifierAPI.find(site, uri);
+
+            Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath Identifier: "
+                    + Optional.ofNullable(id).map(Object::toString).orElse("Not Found"));
+
+            return Optional.ofNullable(id).filter(i -> i.getId() != null);
+        } catch (Exception e) {
+            Logger.error(this, String.format("Unable to find HTML Page Identifier with URI: %s and site: %s", uri, site), e);
+            return Optional.empty();
+        }
     }
 
     @CloseDBIfOpened
     @Override
-    public IHTMLPage getPageByPath(final String uri, final Host site, final Long languageId, final Boolean live) {
+    public IHTMLPage getPageByPath(final String uri, final Host site, final Long languageId, final boolean live) {
         Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath URI: " + uri + " Site: " + site + " LanguageId: " + languageId + " Live: " + live);
-        Identifier id;
-        if(!UtilMethods.isSet(uri)){
+
+        final Optional<Identifier> optionalIdentifier = findIdentifierByURI(uri, site);
+        if (optionalIdentifier.isEmpty()) {
             return null;
         }
-        final String errorMsg = "Unable to find '%s' HTML Page with URI '%s' in language '%s' in Site '%s' [%s]: %s";
-        if (CMSUrlUtil.getInstance().isFolder(uri, site)) {
-            id = this.getIndexPageIdentifier(uri, site);
-        } else {
-            try {
-                id = this.identifierAPI.find(site, uri);
-            } catch (final Exception e) {
-                Logger.error(this, String.format(errorMsg, live ? "live" : "working",
-                        uri, languageId, site, site.getIdentifier(),
-                        ExceptionUtil.getErrorMessage(e)), e);
-                return null;
-            }
-        }
-        Logger.debug(this.getClass(), "HTMLPageAssetAPIImpl_getPageByPath Identifier: " + (id== null? "Not Found" : id.toString()));
-        if (id == null || id.getId() == null) {
-            return null;
-        }
+        final Identifier id = optionalIdentifier.get();
 
         if (Identifier.ASSET_TYPE_CONTENTLET.equals(id.getAssetType())) {
             try {
@@ -300,6 +311,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                     return fromContentlet(contentlet);
                 }
             } catch (final Exception e) {
+                final String errorMsg = "Unable to find '%s' HTML Page with URI '%s' in language '%s' in Site '%s' [%s]: %s";
                 Logger.error(this, String.format(errorMsg, live ? "live" : "working",
                         uri, languageId, site, site.getIdentifier(),
                         ExceptionUtil.getErrorMessage(e)));
@@ -307,6 +319,20 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             }
         }
         return null;
+    }
+
+
+    public Optional<IHTMLPage> findPageByPath(final String uri, final Host site, final Long languageId, final String variant, final String persona, final boolean live){
+        final Optional<Identifier> identifier = findIdentifierByURI(uri, site);
+        if (identifier.isEmpty()) {
+            return Optional.empty();
+        }
+        final Identifier id = identifier.get();
+        if (Identifier.ASSET_TYPE_CONTENTLET.equals(id.getAssetType())) {
+            //Optional<ContentletVersionInfo> versionInfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId, variant);
+
+        }
+        return Optional.empty();
     }
 
     private Identifier getIndexPageIdentifier(final String folderURI, final Host host) {
@@ -323,8 +349,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-		return getHTMLPages(parent, live, deleted, -1, 0, "", user,
-				respectFrontEndRoles);
+        return getHTMLPages(parent, live, deleted, -1, 0, "", user,
+                respectFrontEndRoles);
     }
 
 
@@ -349,59 +375,59 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     @CloseDBIfOpened
-	@Override
-	public List<IHTMLPage> getHTMLPages(Object parent, boolean live,
-			boolean deleted, int limit, int offset, String sortBy, User user,
-			boolean respectFrontEndRoles) throws DotDataException,
-			DotSecurityException {
-		List<IHTMLPage> pages = new ArrayList<>();
-		StringBuffer query = new StringBuffer();
-		String liveWorkingDeleted = (live) ? " +live:true "
-				: (deleted) ? " +working:true +deleted:true "
-						: " +working:true -deleted:true";
-		query.append(liveWorkingDeleted);
-		if (parent instanceof Folder) {
-			query.append(" +conFolder:" + ((Folder) parent).getInode());
-			query.append(" +conHost:" + ((Folder) parent).getHostId());
-		} else if (parent instanceof Host) {
-			query.append(" +conFolder:SYSTEM_FOLDER +conHost:"
-					+ ((Host) parent).getIdentifier());
-		// if not a folder or host the filtering is done by template (parent) 
-		}else if (parent instanceof String)
-			if(!((String)parent).isEmpty()){
-				// list of content types (htmlpage type)
-				List<Structure> structures = StructureFactory.getStructures("structureType="+Structure.STRUCTURE_TYPE_HTMLPAGE, "", 0, 0, "");
-				StringBuilder structuresList = new StringBuilder();
-				boolean notOR = true;
-				
-				// creates a list of content types with the template field e.g. htmlpageasset.template:## OR newpages.template:##
-				for(Structure structure: structures){
-					if(notOR){
-						notOR=!notOR;
-					}else
-						structuresList.append(" OR ");
-					structuresList.append(structure.getVelocityVarName());
-					structuresList.append(".template:");
-					structuresList.append((String)parent);					
-				}
-				if(structuresList.length()>0)
-					query.append(" +("+ structuresList.toString().trim()+")" );
-			}
-		
-		query.append(" +structureType:" + Structure.STRUCTURE_TYPE_HTMLPAGE);
-		if (!UtilMethods.isSet(sortBy)) {
-			sortBy = "modDate asc";
-		}
-		List<Contentlet> contentlets = contentletAPI.search(
-				query.toString(), limit, offset, sortBy, user,
-				respectFrontEndRoles);
-		for (Contentlet cont : contentlets) {
-			if(UtilMethods.isSet(fromContentlet(cont).getInode()))
-				pages.add(fromContentlet(cont));
-		}
-		return pages;
-	}
-    
+    @Override
+    public List<IHTMLPage> getHTMLPages(Object parent, boolean live,
+            boolean deleted, int limit, int offset, String sortBy, User user,
+            boolean respectFrontEndRoles) throws DotDataException,
+            DotSecurityException {
+        List<IHTMLPage> pages = new ArrayList<>();
+        StringBuffer query = new StringBuffer();
+        String liveWorkingDeleted = (live) ? " +live:true "
+                : (deleted) ? " +working:true +deleted:true "
+                        : " +working:true -deleted:true";
+        query.append(liveWorkingDeleted);
+        if (parent instanceof Folder) {
+            query.append(" +conFolder:" + ((Folder) parent).getInode());
+            query.append(" +conHost:" + ((Folder) parent).getHostId());
+        } else if (parent instanceof Host) {
+            query.append(" +conFolder:SYSTEM_FOLDER +conHost:"
+                    + ((Host) parent).getIdentifier());
+            // if not a folder or host the filtering is done by template (parent)
+        }else if (parent instanceof String)
+            if(!((String)parent).isEmpty()){
+                // list of content types (htmlpage type)
+                List<Structure> structures = StructureFactory.getStructures("structureType="+Structure.STRUCTURE_TYPE_HTMLPAGE, "", 0, 0, "");
+                StringBuilder structuresList = new StringBuilder();
+                boolean notOR = true;
+
+                // creates a list of content types with the template field e.g. htmlpageasset.template:## OR newpages.template:##
+                for(Structure structure: structures){
+                    if(notOR){
+                        notOR=!notOR;
+                    }else
+                        structuresList.append(" OR ");
+                    structuresList.append(structure.getVelocityVarName());
+                    structuresList.append(".template:");
+                    structuresList.append((String)parent);
+                }
+                if(structuresList.length()>0)
+                    query.append(" +("+ structuresList.toString().trim()+")" );
+            }
+
+        query.append(" +structureType:" + Structure.STRUCTURE_TYPE_HTMLPAGE);
+        if (!UtilMethods.isSet(sortBy)) {
+            sortBy = "modDate asc";
+        }
+        List<Contentlet> contentlets = contentletAPI.search(
+                query.toString(), limit, offset, sortBy, user,
+                respectFrontEndRoles);
+        for (Contentlet cont : contentlets) {
+            if(UtilMethods.isSet(fromContentlet(cont).getInode()))
+                pages.add(fromContentlet(cont));
+        }
+        return pages;
+    }
+
     @Override
     public List<IHTMLPage> getLiveHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
         return getHTMLPages(parent, true, false, user, respectFrontEndRoles);
@@ -443,7 +469,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             return APILocator.getFolderAPI().findFolderByPath(
                     ident.getParentPath(), APILocator.getHostAPI().find(
                             ident.getHostId(), userAPI.getSystemUser(), false),
-                            userAPI.getSystemUser(), false);
+                    userAPI.getSystemUser(), false);
         }
     }
 
@@ -462,7 +488,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return null;
 
     }
-    
+
     @Override
     public String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException {
         return getHostDefaultPageType(APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false));
@@ -493,8 +519,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         Host host = APILocator.getHostAPI().find( sourceIdent.getHostId(), user, false );
         Identifier targetIdent = identifierAPI.find( host, sourceIdent.getParentPath() + newName );
         if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())
-          || sourceIdent.getId().equals(targetIdent.getId())) // we can rename the page itself
-         {
+                || sourceIdent.getId().equals(targetIdent.getId())) // we can rename the page itself
+        {
             Contentlet cont = contentletAPI.checkout( page.getInode(), user, false );
             cont.setStringProperty( URL_FIELD, newName );
             cont = contentletAPI.checkin( cont, user, false );
@@ -562,16 +588,16 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             throws DotDataException, DotSecurityException {
 
         return permissionAPI.filterCollection(
-                    contentletAPI.search("+catchall:" + template.getIdentifier() + " +baseType:"
-                                    + BaseContentType.HTMLPAGE.getType(), limit, 0, null, user,
-                            respectFrontendRoles),
-                    PermissionAPI.PERMISSION_READ,
-                    respectFrontendRoles,
-                    user);
+                contentletAPI.search("+catchall:" + template.getIdentifier() + " +baseType:"
+                                + BaseContentType.HTMLPAGE.getType(), limit, 0, null, user,
+                        respectFrontendRoles),
+                PermissionAPI.PERMISSION_READ,
+                respectFrontendRoles,
+                user);
     }
-    
+
     /**
-     * Returns the ids for Pages whose Templates, Containers, or Content 
+     * Returns the ids for Pages whose Templates, Containers, or Content
      * have been modified between 2 dates even if the page hasn't been modified
      * @param host Must be set
      * @param pattern url pattern e.g., /some/path/*
@@ -585,9 +611,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate) {
 
         Set<String> ret = new HashSet<>();
-        
+
         String likepattern=RegEX.replaceAll(pattern, "%", "\\*");
-        
+
         String concat;
         if(DbConnectionFactory.isMySql()){
             concat=" concat(ii.parent_path, ii.asset_name) ";
@@ -596,22 +622,22 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }else {
             concat=" (ii.parent_path || ii.asset_name) ";
         }
-        
+
         Structure st=CacheLocator.getContentTypeCache().getStructureByInode(DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         Field tf=st.getFieldVar(TEMPLATE_FIELD);
-        
+
         // htmlpage with modified template
         StringBuilder bob = new StringBuilder();
         DotConnect dc = new DotConnect();
         bob.append("SELECT ii.id as pident ")
-        .append("from identifier ii ")
-        .append("join contentlet cc on (cc.identifier = ii.id) ")
-        .append("join structure st on (cc.structure_inode=st.inode) ")
-        .append("join template_version_info tvi on (cc.").append(tf.getFieldContentlet()).append(" = tvi.identifier) ")
-        .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
-        .append(" and tvi.version_ts >= ? and tvi.version_ts <= ? ")
-        .append(" and ii.host_inode=? ")
-        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+                .append("from identifier ii ")
+                .append("join contentlet cc on (cc.identifier = ii.id) ")
+                .append("join structure st on (cc.structure_inode=st.inode) ")
+                .append("join template_version_info tvi on (cc.").append(tf.getFieldContentlet()).append(" = tvi.identifier) ")
+                .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
+                .append(" and tvi.version_ts >= ? and tvi.version_ts <= ? ")
+                .append(" and ii.host_inode=? ")
+                .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
         dc.setSQL(bob.toString());
         dc.addParam(startDate);
         dc.addParam(endDate);
@@ -623,19 +649,19 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         } catch (DotDataException e) {
             Logger.error(this,"can't get pages asset with modified template. sql:"+bob,e);
         }
-        
+
         // htmlpage with modified containers
         bob = new StringBuilder();
         bob.append("SELECT ii.id as pident ")
-        .append("from identifier ii " )
-        .append("join contentlet cc on (ii.id=cc.identifier) ")
-        .append("join structure st on (cc.structure_inode=st.inode) ")
-        .append("join template_containers tc on (cc.").append(tf.getFieldContentlet()).append(" = tc.template_id) ")
-        .append("join container_version_info cvi on (tc.container_id = cvi.identifier) ")
-        .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
-        .append(" and cvi.version_ts >= ? and cvi.version_ts <= ? ")
-        .append(" and ii.host_inode=? ")
-        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+                .append("from identifier ii " )
+                .append("join contentlet cc on (ii.id=cc.identifier) ")
+                .append("join structure st on (cc.structure_inode=st.inode) ")
+                .append("join template_containers tc on (cc.").append(tf.getFieldContentlet()).append(" = tc.template_id) ")
+                .append("join container_version_info cvi on (tc.container_id = cvi.identifier) ")
+                .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
+                .append(" and cvi.version_ts >= ? and cvi.version_ts <= ? ")
+                .append(" and ii.host_inode=? ")
+                .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
         dc.setSQL(bob.toString());
         dc.addParam(startDate);
         dc.addParam(endDate);
@@ -647,114 +673,114 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         } catch (DotDataException e) {
             Logger.error(this,"can't get modified containers under page asset sql:"+bob,e);
         }
-        
+
         // htmlpages with modified content
         bob = new StringBuilder();
         bob.append("SELECT ii.id as pident ")
-        .append("from contentlet_version_info hvi join identifier ii on (hvi.identifier=ii.id) " )
-        .append("join contentlet cc on (ii.id=cc.identifier) ")
-        .append("join structure st on (cc.structure_inode=st.inode) ")
-        .append("join multi_tree mt on (hvi.identifier = mt.parent1) ")
-        .append("join contentlet_version_info cvi on (mt.child = cvi.identifier) ")
-        .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
-        .append(" and cvi.version_ts >= ? and cvi.version_ts <= ? ")
-        .append(" and ii.host_inode=? ")
-        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+                .append("from contentlet_version_info hvi join identifier ii on (hvi.identifier=ii.id) " )
+                .append("join contentlet cc on (ii.id=cc.identifier) ")
+                .append("join structure st on (cc.structure_inode=st.inode) ")
+                .append("join multi_tree mt on (hvi.identifier = mt.parent1) ")
+                .append("join contentlet_version_info cvi on (mt.child = cvi.identifier) ")
+                .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
+                .append(" and cvi.version_ts >= ? and cvi.version_ts <= ? ")
+                .append(" and ii.host_inode=? ")
+                .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
         dc.setSQL(bob.toString());
         dc.addParam(startDate);
         dc.addParam(endDate);
         dc.addParam(host.getIdentifier());
         dc.addParam(likepattern);
-        
+
         try {
             for (Map<String,Object> row : dc.loadObjectResults())
                 ret.add((String)row.get("pident"));
         } catch (DotDataException e) {
             Logger.error(this,"can't get mdified content under page asset sql:"+bob,e);
         }
-        
+
         // htmlpage modified itself
         bob = new StringBuilder();
         bob.append("SELECT ii.id as pident from contentlet cc ")
-        .append("join identifier ii on (ii.id=cc.identifier) ")
-        .append("join contentlet_version_info vi on (vi.identifier=ii.id) ")
-        .append("join structure st on (cc.structure_inode=st.inode) ")
-        .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
-        .append(" and vi.version_ts >= ? and vi.version_ts <= ? ")
-        .append(" and ii.host_inode=? ")
-        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+                .append("join identifier ii on (ii.id=cc.identifier) ")
+                .append("join contentlet_version_info vi on (vi.identifier=ii.id) ")
+                .append("join structure st on (cc.structure_inode=st.inode) ")
+                .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
+                .append(" and vi.version_ts >= ? and vi.version_ts <= ? ")
+                .append(" and ii.host_inode=? ")
+                .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
         dc.setSQL(bob.toString());
         dc.addParam(startDate);
         dc.addParam(endDate);
         dc.addParam(host.getIdentifier());
         dc.addParam(likepattern);
-        
+
         try {
             for (Map<String,Object> row : dc.loadObjectResults())
                 ret.add((String)row.get("pident"));
         } catch (DotDataException e) {
             Logger.error(this,"can't get modified page assets sql:"+bob,e);
         }
-        
+
         return new ArrayList<>(ret);
     }
-    
+
     @Override
     public String getHTML(IHTMLPage htmlPage, String userAgent)
-			throws DotStateException, DotDataException, DotSecurityException {
-		return getHTML(htmlPage, true, null, userAgent);
-	}
+            throws DotStateException, DotDataException, DotSecurityException {
+        return getHTML(htmlPage, true, null, userAgent);
+    }
 
     @Override
-	public String getHTML(IHTMLPage htmlPage, boolean liveMode, String userAgent)
-			throws DotStateException, DotDataException, DotSecurityException {
-		return getHTML(htmlPage, liveMode, null, userAgent);
-	}
-
-	@Override
-	public String getHTML(IHTMLPage htmlPage, boolean liveMode,
-			String contentId, String userAgent) throws DotStateException,
-			DotDataException, DotSecurityException {
-		return getHTML(htmlPage, liveMode, contentId, null, userAgent);
-	}
-	
-	@Override
-	public String getHTML(IHTMLPage htmlPage, boolean liveMode,
-			String contentId, User user, String userAgent)
-			throws DotStateException, DotDataException, DotSecurityException {
-		String uri = htmlPage.getURI();
-		Host host = getParentHost(htmlPage);
-		return getHTML(uri, host, liveMode, contentId, user, userAgent);
-	}
+    public String getHTML(IHTMLPage htmlPage, boolean liveMode, String userAgent)
+            throws DotStateException, DotDataException, DotSecurityException {
+        return getHTML(htmlPage, liveMode, null, userAgent);
+    }
 
     @Override
     public String getHTML(IHTMLPage htmlPage, boolean liveMode,
-                          String contentId, User user, long langId, String userAgent)
+            String contentId, String userAgent) throws DotStateException,
+            DotDataException, DotSecurityException {
+        return getHTML(htmlPage, liveMode, contentId, null, userAgent);
+    }
+
+    @Override
+    public String getHTML(IHTMLPage htmlPage, boolean liveMode,
+            String contentId, User user, String userAgent)
+            throws DotStateException, DotDataException, DotSecurityException {
+        String uri = htmlPage.getURI();
+        Host host = getParentHost(htmlPage);
+        return getHTML(uri, host, liveMode, contentId, user, userAgent);
+    }
+
+    @Override
+    public String getHTML(IHTMLPage htmlPage, boolean liveMode,
+            String contentId, User user, long langId, String userAgent)
             throws DotStateException, DotDataException, DotSecurityException {
         String uri = htmlPage.getURI();
         Host host = getParentHost(htmlPage);
         return getHTML(uri, host, liveMode, contentId, user, langId, userAgent);
     }
 
-	@Override
-	public String getHTML(String uri, Host host, boolean liveMode,
-			String contentId, User user, String userAgent)
-			throws DotStateException, DotDataException, DotSecurityException {
-		return getHTML(uri, host, liveMode, contentId, user, languageAPI.getDefaultLanguage().getId(), userAgent);
-	}
+    @Override
+    public String getHTML(String uri, Host host, boolean liveMode,
+            String contentId, User user, String userAgent)
+            throws DotStateException, DotDataException, DotSecurityException {
+        return getHTML(uri, host, liveMode, contentId, user, languageAPI.getDefaultLanguage().getId(), userAgent);
+    }
 
 
     @CloseDBIfOpened
-	@Override
+    @Override
     public String getHTML(final String uri, final Host host, final boolean liveMode, final String contentId, final User user, final long viewingLang,
             String userAgent) throws DotStateException, DotDataException, DotSecurityException {
 
         HttpServletRequest requestProxy =
-            new MockAttributeRequest(
-                new MockSessionRequest(
-                    new FakeHttpRequest(host.getHostname(), uri).request()
-                ).request()
-            ).request();
+                new MockAttributeRequest(
+                        new MockSessionRequest(
+                                new FakeHttpRequest(host.getHostname(), uri).request()
+                        ).request()
+                ).request();
         HttpServletResponse responseProxy = new BaseResponse().response();
 
 
@@ -763,13 +789,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }
 
-        
+
 
         Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), viewingLang );
         if((cinfo.isEmpty() || cinfo.get().getLiveInode() == null)
                 && viewingLang!=languageAPI.getDefaultLanguage().getId()
                 && languageAPI.canDefaultPageToDefaultLanguage()){
-          cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
+            cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
         }
         // if we still have nothing.
         if (!InodeUtils.isSet(ident.getId()) || cinfo.isEmpty()
@@ -793,8 +819,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 
         PageMode mode =  (liveMode) ?PageMode.setPageMode(requestProxy, PageMode.LIVE) : PageMode.setPageMode(requestProxy, PageMode.PREVIEW_MODE);
-            
-        
+
+
         boolean signedIn = (user != null);
 
 
@@ -851,7 +877,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             }
 
 
- 
+
 
             LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
@@ -863,13 +889,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         } catch (Exception e1) {
             Logger.error(this, e1.getMessage(), e1);
             return null;
-        } 
+        }
 
     }
-	
+
     /**
      * This returns the proper ihtml page based on id, state and language
-     * 
+     *
      * @param identifier
      * @param tryLang
      * @param live
@@ -877,17 +903,17 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-	@Override
+    @Override
     public IHTMLPage findByIdLanguageFallback(final Identifier identifier, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException {
 
 
-	    return findByIdLanguageFallback(identifier.getId(), tryLang, live, user, respectFrontEndPermissions);
+        return findByIdLanguageFallback(identifier.getId(), tryLang, live, user, respectFrontEndPermissions);
 
     }
 
     @CloseDBIfOpened
-	@Override
+    @Override
     public IHTMLPage findByIdLanguageFallback(final String identifier, final long tryLang, final boolean live, final User user, final boolean respectFrontEndPermissions)
             throws DotDataException, DotSecurityException {
 
@@ -909,7 +935,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     private IHTMLPage findPageInDefaultLanguageDifferentThanProvided(String identifier, long providedLang, boolean live,
-                                                                     User user, boolean respectFrontEndPermissions,
+            User user, boolean respectFrontEndPermissions,
             DotStateException dse)
             throws DotDataException, DotSecurityException {
         Contentlet contentlet;
@@ -919,7 +945,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 && providedLang != languageAPI.getDefaultLanguage().getId()) {
             try {
                 contentlet = APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
-                    languageAPI.getDefaultLanguage().getId(), user, respectFrontEndPermissions);
+                        languageAPI.getDefaultLanguage().getId(), user, respectFrontEndPermissions);
                 htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
             } catch(DotStateException e) {
                 throw new DoesNotExistException(
@@ -935,9 +961,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public IHTMLPage findByIdLanguageVariantFallback(@NotNull final String identifier, final long tryLang,
-                                                     @NotNull final String tryVariant, final boolean live,
-                                                     @NotNull final User user,
-                                                     final boolean respectFrontEndPermissions) throws DotSecurityException {
+            @NotNull final String tryVariant, final boolean live,
+            @NotNull final User user,
+            final boolean respectFrontEndPermissions) throws DotSecurityException {
         final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final boolean fallbackLang = tryLang != defaultLang && DEFAULT_PAGE_TO_DEFAULT_LANGUAGE.get();
 

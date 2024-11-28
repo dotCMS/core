@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+import java.util.Date;
 
 /**
  * This class provides some background information on the context in which an HTML Page is being accessed, usually via
@@ -20,13 +21,8 @@ import com.liferay.portal.model.User;
  */
 public class PageContextBuilder {
 
-    private User user;
-    private String pageUri;
-    private PageMode pageMode;
-    private HTMLPageAsset page;
-    private boolean graphQL;
-    private boolean parseJSON;
-    private VanityURLView vanityUrl;
+    //I'm turning this into a proxy class to access the immutable Builder class
+    final ImmutablePageContext.Builder builder = ImmutablePageContext.builder();
 
     private PageContextBuilder() {}
 
@@ -40,32 +36,47 @@ public class PageContextBuilder {
     }
 
     public PageContextBuilder setUser(final User user) {
-        this.user = user;
+        builder.user(user);
         return this;
     }
 
     public PageContextBuilder setPageUri(final String pageUri) {
-        this.pageUri = pageUri;
+        builder.pageUri(pageUri);
         return this;
     }
 
     public PageContextBuilder setPageMode(final PageMode pageMode) {
-        this.pageMode = pageMode;
+        builder.pageMode(pageMode);
         return this;
     }
 
     public PageContextBuilder setPage(final HTMLPageAsset page) {
-        this.page = page;
+        builder.page(page);
         return this;
     }
 
     public PageContextBuilder setGraphQL(final boolean graphQL) {
-        this.graphQL = graphQL;
+        builder.isGraphQL(graphQL);
         return this;
     }
 
     public PageContextBuilder setParseJSON(final boolean parseJSON) {
-        this.parseJSON = parseJSON;
+        builder.isParseJSON(parseJSON);
+        return this;
+    }
+
+    public PageContextBuilder setPersona(final String persona) {
+        builder.persona(persona);
+        return this;
+    }
+
+    public PageContextBuilder setVariant(final String variant) {
+        builder.variant(variant);
+        return this;
+    }
+
+    public PageContextBuilder setPublishDate(final Date publishDate) {
+        builder.publishDate(publishDate);
         return this;
     }
 
@@ -77,12 +88,12 @@ public class PageContextBuilder {
      * @return The {@link PageContextBuilder} object.
      */
     public PageContextBuilder setVanityUrl(final VanityURLView vanityUrl) {
-        this.vanityUrl = vanityUrl;
+        builder.vanityUrl(vanityUrl);
         return this;
     }
 
     public PageContext build() {
-        return new PageContext(user, pageUri, pageMode, page, graphQL, parseJSON, vanityUrl);
+        return builder.build();
     }
 
 }

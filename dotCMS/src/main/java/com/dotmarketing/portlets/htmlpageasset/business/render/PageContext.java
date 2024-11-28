@@ -4,7 +4,10 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 
+import java.util.Date;
 import java.util.Objects;
+import javax.annotation.Nullable;
+import org.immutables.value.Value;
 
 /**
  * Provides the data context for rendering an {@link HTMLPageAsset}.
@@ -12,53 +15,40 @@ import java.util.Objects;
  * @author Freddy Rodriguez
  * @since Feb 22nd, 2019
  */
-public class PageContext {
+@Value.Immutable
+public abstract class PageContext {
 
-    private final User user;
-    private final String pageUri;
-    private final PageMode pageMode;
-    private final HTMLPageAsset page;
-    private final boolean graphQL;
-    private final boolean parseJSON;
-    private final VanityURLView vanityUrl;
+    public abstract User getUser();
 
-    public PageContext(
-            final User user,
-            final String pageUri,
-            final PageMode pageMode,
-            final HTMLPageAsset page) {
+    public abstract PageMode getPageMode();
 
-        this(user, pageUri, pageMode, page, false);
+    @Nullable
+    public abstract String getPageUri();
+
+    @Nullable
+    public abstract HTMLPageAsset getPage();
+
+    @Value.Default
+    public boolean isGraphQL() {
+        return false;
     }
 
-    public PageContext(
-            final User user,
-            final String pageUri,
-            final PageMode pageMode,
-            final HTMLPageAsset page,
-            final boolean graphQL) {
-
-        this(user, pageUri, pageMode, page, graphQL, false, null);
+    @Value.Default
+    public boolean isParseJSON() {
+        return false;
     }
 
-    public PageContext(
-            final User user,
-            final String pageUri,
-            final PageMode pageMode,
-            final HTMLPageAsset page,
-            final boolean graphQL,
-            final boolean parseJSON,
-            final VanityURLView vanityUrl) {
+    @Nullable
+    public abstract VanityURLView getVanityUrl();
 
-        this.user = user;
-        this.pageUri = pageUri;
-        this.pageMode = pageMode;
-        this.page = page;
-        this.graphQL = graphQL;
-        this.parseJSON = parseJSON;
-        this.vanityUrl = vanityUrl;
-    }
+    @Nullable
+    public abstract String getPersona();
 
+    @Nullable
+    public abstract String getVariant();
+
+    @Nullable
+    public abstract Date getPublishDate();
 
     @Override
     public boolean equals(final Object another) {
@@ -69,59 +59,14 @@ public class PageContext {
             return false;
         }
         PageContext that = (PageContext) another;
-        return Objects.equals(user, that.user) && Objects.equals(pageUri,
-                that.pageUri) && pageMode == that.pageMode;
+        return Objects.equals(getUser(), that.getUser())
+                && Objects.equals(getPageUri(), that.getPageUri())
+                && getPageMode() == that.getPageMode();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(user, pageUri, pageMode);
+        return Objects.hash(getUser(), getPageUri(), getPageMode());
     }
 
-    public HTMLPageAsset getPage() {
-        return page;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public String getPageUri() {
-        return pageUri;
-    }
-
-    public PageMode getPageMode() {
-        return pageMode;
-    }
-
-    public boolean isGraphQL() {
-        return graphQL;
-    }
-
-    public boolean isParseJSON() {
-        return parseJSON;
-    }
-
-    /**
-     * If the page URL matches a Vanity URL, this method returns the associated Vanity URL
-     * object.
-     *
-     * @return The {@link VanityURLView} object representing the Vanity URL.
-     */
-    public VanityURLView getVanityUrl() {
-        return vanityUrl;
-    }
-
-    //Create a toString method
-    @Override
-    public String toString() {
-        return "PageContext{" +
-                "user=" + user +
-                ", pageUri='" + pageUri + '\'' +
-                ", pageMode=" + pageMode +
-                ", page=" + page +
-                ", graphQL=" + graphQL +
-                ", parseJSON=" + parseJSON +
-                '}';
-    }
 }
