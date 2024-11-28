@@ -46,24 +46,24 @@
         </ng-template>
         <ng-template pTemplate="header" styleClass="relative">
             <tr>
-                <th style="width: 4rem"><p-tableHeaderCheckbox /></th>
-                <th pSortableColumn="title">
+                <th scope="col" style="width: 4rem"><p-tableHeaderCheckbox /></th>
+                <th scope="col" pSortableColumn="title">
                     Title
                     <p-sortIcon field="title" />
                 </th>
-                <th pSortableColumn="step">
+                <th scope="col" pSortableColumn="step">
                     Step
                     <p-sortIcon field="step" />
                 </th>
-                <th pSortableColumn="description">
+                <th scope="col" pSortableColumn="description">
                     Description
                     <p-sortIcon field="description" />
                 </th>
-                <th pSortableColumn="lastUpdate">
+                <th scope="col" pSortableColumn="lastUpdate">
                     Last Update
                     <p-sortIcon field="lastUpdate" />
                 </th>
-                <th>Menu</th>
+                <th scope="col">Menu</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
