@@ -294,9 +294,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         }
 
         // transform and save TargetingConditions into conditions
-        experiment.targetingConditions().get().forEach(targetingCondition ->
-            createAndSaveCondition(user, experimentRule, targetingCondition));
-
+        experiment.targetingConditions()
+                .ifPresent(targetingConditions ->
+                        targetingConditions.forEach(targetingCondition ->
+                                createAndSaveCondition(user, experimentRule, targetingCondition)));
     }
 
     private void createAndSaveCondition(User user, Rule experimentRule,
@@ -519,8 +520,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
 
             validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.PUBLISH,
-                    String.format("User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: %s",
-                            user.getUserId(), persistedExperiment.id().get()));
+                    String.format("User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: [%s]",
+                            user.getUserId(), persistedExperiment.id().orElse("")));
 
             validatePublishTemplateLayoutPermissions(user, persistedExperiment);
 
