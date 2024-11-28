@@ -359,7 +359,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                     user,
                     experiment.get(),
                     String.format(
-                            "You don't have permission to get the Experiment. Experiment Id: [%s]",
+                            "You don't have permission to get the Experiment. Experiment Id: %s",
                             experiment.get().id().orElse("")));
 
             experiment = Optional.of(addTargetingConditions(experiment.get(), user));
@@ -409,7 +409,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 user,
                 persistedExperiment.orElse(null),
                 String.format(
-                        "You don't have permission to archive the Experiment. Experiment Id: [%s]",
+                        "You don't have permission to archive the Experiment. Experiment Id: %s",
                         persistedExperiment.flatMap(Experiment::id).orElse(StringPool.BLANK)));
 
         if(persistedExperiment.get().status()==ARCHIVED) {
@@ -525,7 +525,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
 
             validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.PUBLISH,
-                    String.format("User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: [%s]",
+                    String.format("User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: %s",
                             user.getUserId(), persistedExperiment.id().orElse("")));
 
             validatePublishTemplateLayoutPermissions(user, persistedExperiment);
