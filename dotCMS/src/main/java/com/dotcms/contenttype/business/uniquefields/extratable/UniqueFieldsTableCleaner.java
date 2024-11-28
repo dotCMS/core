@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
 /**
@@ -31,7 +32,7 @@ import javax.inject.Inject;
  *
  * @see DBUniqueFieldValidationStrategy
  */
-@ApplicationScoped
+@Dependent
 public class UniqueFieldsTableCleaner {
 
     final UniqueFieldValidationStrategyResolver uniqueFieldValidationStrategyResolver;

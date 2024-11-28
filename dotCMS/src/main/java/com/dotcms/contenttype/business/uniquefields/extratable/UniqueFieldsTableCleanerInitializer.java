@@ -12,7 +12,7 @@ import javax.inject.Inject;
  * Subscribe the {@link UniqueFieldsTableCleaner} to listen by events when the unique_fields extra table need to be
  * cleaning up
  */
-@ApplicationScoped
+@Dependent
 public class UniqueFieldsTableCleanerInitializer implements DotInitializer {
 
     private final UniqueFieldsTableCleaner cleaner;
