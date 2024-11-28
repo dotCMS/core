@@ -356,25 +356,30 @@ public class PageRenderUtil implements Serializable {
             return Optional.empty();
         }
 
+        Optional<String> millis = Optional.empty();
         final HttpSession session = request.getSession(false);
-        if (session == null) {
-            return Optional.empty();
+        if (session != null) {
+            millis = Optional.ofNullable ((String)session.getAttribute(PageResource.TM_DATE));
         }
 
-        final String millisAsString = (String) session.getAttribute(PageResource.TM_DATE);
-        if (!UtilMethods.isSet(millisAsString)) {
+        if (millis.isEmpty()) {
+            millis = Optional.ofNullable((String)request.getAttribute(PageResource.TM_DATE));
+        }
+
+        if (millis.isEmpty()) {
             return Optional.empty();
         }
 
         try {
-            long milliseconds = Long.parseLong(millisAsString);
+            final long milliseconds = Long.parseLong(millis.get());
             return milliseconds > 0
                     ? Optional.of(Date.from(Instant.ofEpochMilli(milliseconds)))
                     : Optional.empty();
         } catch (NumberFormatException e) {
-            Logger.error(this, "Invalid timestamp format: " + millisAsString, e);
+            Logger.error(this, "Invalid timestamp format: " + millis.get(), e);
             return Optional.empty();
         }
+
     }
 
     /**
