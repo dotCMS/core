@@ -29,7 +29,7 @@ var tinyMCEProps = {
 	verify_css_classes : false,
 	<%
 		//Get the default CSS file if doesn't exist load the /css/base.css
-		String cssPath = Config.getStringProperty("WYSIWYG_CSS");
+		String cssPath = Config.getStringProperty("WYSIWYG_CSS", "/html/css/tiny_mce.css");
 		if(InodeUtils.isSet(cssPath)){%>
 	<%="content_css : \"" + cssPath + "\","%>
 	<%}%>
