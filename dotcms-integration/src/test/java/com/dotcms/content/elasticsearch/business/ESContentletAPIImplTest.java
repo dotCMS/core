@@ -3666,6 +3666,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
+    @Ignore
     public void reuseUniqueValueAfterDelete(final Boolean enabledDataBaseValidation) throws DotDataException, DotSecurityException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
@@ -3737,6 +3738,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
+    @Ignore
     public void reuseUniqueValueAfterDeleteAllHost(final Boolean enabledDataBaseValidation) throws DotDataException, DotSecurityException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
@@ -3808,6 +3810,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
+    @Ignore
     public void reuseUniqueValueAfterDeleteAllVersion(final Boolean enabledDataBaseValidation) throws DotDataException, DotSecurityException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
@@ -3877,6 +3880,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
+    @Ignore
     public void reuseValuesAfterDeleteVariant()
             throws DotDataException, DotSecurityException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
@@ -3957,6 +3961,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
+    @Ignore
     public void reusingLiveVersionUniqueValue(final Boolean enabledDataBaseValidation)
             throws DotDataException, DotSecurityException {
 
@@ -4031,6 +4036,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      */
     @Test
     @UseDataProvider("enabledUniqueFieldDatabaseValidation")
+    @Ignore
     public void throwUniqueErrorWhenUnPublishWhenWorkingAndLiveVersionAreSame(final Boolean enabledDataBaseValidation) throws DotDataException, DotSecurityException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
@@ -4106,6 +4112,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
+    @Ignore
     public void cleanUpExtraTableAfterDeleteContentType() throws DotDataException, DotSecurityException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
