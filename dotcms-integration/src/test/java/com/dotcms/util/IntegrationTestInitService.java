@@ -16,6 +16,8 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.awaitility.Awaitility;
+import org.jboss.weld.environment.se.Weld;
+import org.jboss.weld.environment.se.WeldContainer;
 import org.mockito.Mockito;
 
 /**
@@ -31,6 +33,15 @@ public class IntegrationTestInitService {
     static {
         SystemProperties.getProperties();
     }
+
+    public static final Weld WELD;
+    public static final WeldContainer CONTAINER;
+
+    static {
+        WELD = new Weld("IntegrationTestInitService");
+        CONTAINER = WELD.initialize();
+    }
+
 
     private IntegrationTestInitService() {
     }
