@@ -1,6 +1,6 @@
 import { DotCMSWorkflow, DotCMSWorkflowAction, WorkflowStep } from '@dotcms/dotcms-models';
 
-import { ContentState } from '../feature/edit-content/store/features/content.feature';
+import { CurrentContentActionsWithScheme } from '../feature/edit-content/store/features/workflow.feature';
 
 /**
  * Parses an array of workflow data and returns a new object with key-value pairs.
@@ -36,119 +36,145 @@ export const parseWorkflows = (
     }, {});
 };
 
+// /**
+//  * Determines if workflow action buttons should be shown based on content and scheme state
+//  * Shows workflow buttons when:
+//  * - Content type has only one workflow scheme OR
+//  * - Content is existing AND has a selected workflow scheme OR
+//  * - Content is new and has selected a workflow scheme
+//  *
+//  * @param schemes - Available workflow schemes object
+//  * @param contentlet - Current contentlet (if exists)
+//  * @param currentSchemeId - Selected workflow scheme ID
+//  * @returns boolean indicating if workflow actions should be shown
+//  */
+// export const shouldShowWorkflowActions = ({
+//     schemes,
+//     contentlet,
+//     currentSchemeId,
+//     step
+// }: {
+//     schemes: ContentState['schemes'];
+//     contentlet: ContentState['contentlet'];
+//     currentSchemeId: string | null;
+//     step: WorkflowStep | null;
+// }): boolean => {
+//     // No step means no workflow actions
+//     if (!step) {
+//         return false;
+//     }
+
+//     const hasOneScheme = Object.keys(schemes).length === 1;
+//     const isExisting = !!contentlet;
+//     const hasSelectedScheme = !!currentSchemeId;
+
+//     if (hasOneScheme) {
+//         return true;
+//     }
+
+//     if (isExisting && hasSelectedScheme) {
+//         return true;
+//     }
+
+//     if (!isExisting && hasSelectedScheme) {
+//         return true;
+//     }
+
+//     return false;
+// };
+
+// /**
+//  * Determines if workflow selection warning should be shown
+//  * Shows warning when:
+//  * - Content is new (no contentlet exists) AND
+//  * - Content type has multiple workflow schemes AND
+//  * - No workflow scheme has been selected
+//  *
+//  * @param schemes - Available workflow schemes object
+//  * @param contentlet - Current contentlet (if exists)
+//  * @param currentSchemeId - Selected workflow scheme ID
+//  * @returns boolean indicating if workflow selection warning should be shown
+//  */
+// export const shouldShowWorkflowWarning = ({
+//     schemes,
+//     contentlet,
+//     currentSchemeId
+// }: {
+//     schemes: ContentState['schemes'];
+//     contentlet: ContentState['contentlet'];
+//     currentSchemeId: string | null;
+// }): boolean => {
+//     const isNew = !contentlet;
+//     const hasNoSchemeSelected = !currentSchemeId;
+//     const hasMultipleSchemas = Object.keys(schemes).length > 1;
+
+//     return isNew && hasMultipleSchemas && hasNoSchemeSelected;
+// };
+
+// /**
+//  * Gets the appropriate workflow actions based on content state
+//  * Returns:
+//  * - Empty array if no scheme is selected
+//  * - Current content actions for existing content
+//  * - Sorted scheme actions for new content (with 'Save' action first)
+//  *
+//  * @param schemes - Available workflow schemes object
+//  * @param contentlet - Current contentlet (if exists)
+//  * @param currentSchemeId - Selected workflow scheme ID
+//  * @param currentContentActions - Current content specific actions
+//  * @returns Array of workflow actions
+//  */
+// export const getWorkflowActions = ({
+//     schemes,
+//     contentlet,
+//     currentSchemeId,
+//     currentContentActions
+// }: {
+//     schemes: ContentState['schemes'];
+//     contentlet: ContentState['contentlet'];
+//     currentSchemeId: string | null;
+//     currentContentActions: DotCMSWorkflowAction[];
+// }): DotCMSWorkflowAction[] => {
+//     const isNew = !contentlet;
+
+//     if (!currentSchemeId || !schemes[currentSchemeId]) {
+//         return [];
+//     }
+
+//     if (!isNew && currentContentActions.length) {
+//         return currentContentActions;
+//     }
+
+//     return Object.values(schemes[currentSchemeId].actions).sort((a, b) => {
+//         if (a.name === 'Save') return -1;
+//         if (b.name === 'Save') return 1;
+
+//         return a.name.localeCompare(b.name);
+//     });
+// };
+
 /**
- * Determines if workflow action buttons should be shown based on content and scheme state
- * Shows workflow buttons when:
- * - Content type has only one workflow scheme OR
- * - Content is existing AND has a selected workflow scheme OR
- * - Content is new and has selected a workflow scheme
+ * Parses current workflow actions into a map of scheme ID to actions
  *
- * @param schemes - Available workflow schemes object
- * @param contentlet - Current contentlet (if exists)
- * @param currentSchemeId - Selected workflow scheme ID
- * @returns boolean indicating if workflow actions should be shown
+ * @param actions Array of workflow actions
+ * @returns CurrentContentActionsWithScheme - Record of scheme IDs mapped to their corresponding actions
  */
-export const shouldShowWorkflowActions = ({
-    schemes,
-    contentlet,
-    currentSchemeId,
-    step
-}: {
-    schemes: ContentState['schemes'];
-    contentlet: ContentState['contentlet'];
-    currentSchemeId: string | null;
-    step: WorkflowStep | null;
-}): boolean => {
-    // No step means no workflow actions
-    if (!step) {
-        return false;
+export const parseCurrentActions = (
+    actions: DotCMSWorkflowAction[]
+): CurrentContentActionsWithScheme => {
+    if (!Array.isArray(actions)) {
+        return {};
     }
 
-    const hasOneScheme = Object.keys(schemes).length === 1;
-    const isExisting = !!contentlet;
-    const hasSelectedScheme = !!currentSchemeId;
+    return actions.reduce((acc, action) => {
+        const { schemeId } = action;
 
-    if (hasOneScheme) {
-        return true;
-    }
+        if (!acc[schemeId]) {
+            acc[schemeId] = [];
+        }
 
-    if (isExisting && hasSelectedScheme) {
-        return true;
-    }
+        acc[schemeId].push(action);
 
-    if (!isExisting && hasSelectedScheme) {
-        return true;
-    }
-
-    return false;
-};
-
-/**
- * Determines if workflow selection warning should be shown
- * Shows warning when:
- * - Content is new (no contentlet exists) AND
- * - Content type has multiple workflow schemes AND
- * - No workflow scheme has been selected
- *
- * @param schemes - Available workflow schemes object
- * @param contentlet - Current contentlet (if exists)
- * @param currentSchemeId - Selected workflow scheme ID
- * @returns boolean indicating if workflow selection warning should be shown
- */
-export const shouldShowWorkflowWarning = ({
-    schemes,
-    contentlet,
-    currentSchemeId
-}: {
-    schemes: ContentState['schemes'];
-    contentlet: ContentState['contentlet'];
-    currentSchemeId: string | null;
-}): boolean => {
-    const isNew = !contentlet;
-    const hasNoSchemeSelected = !currentSchemeId;
-    const hasMultipleSchemas = Object.keys(schemes).length > 1;
-
-    return isNew && hasMultipleSchemas && hasNoSchemeSelected;
-};
-
-/**
- * Gets the appropriate workflow actions based on content state
- * Returns:
- * - Empty array if no scheme is selected
- * - Current content actions for existing content
- * - Sorted scheme actions for new content (with 'Save' action first)
- *
- * @param schemes - Available workflow schemes object
- * @param contentlet - Current contentlet (if exists)
- * @param currentSchemeId - Selected workflow scheme ID
- * @param currentContentActions - Current content specific actions
- * @returns Array of workflow actions
- */
-export const getWorkflowActions = ({
-    schemes,
-    contentlet,
-    currentSchemeId,
-    currentContentActions
-}: {
-    schemes: ContentState['schemes'];
-    contentlet: ContentState['contentlet'];
-    currentSchemeId: string | null;
-    currentContentActions: DotCMSWorkflowAction[];
-}): DotCMSWorkflowAction[] => {
-    const isNew = !contentlet;
-
-    if (!currentSchemeId || !schemes[currentSchemeId]) {
-        return [];
-    }
-
-    if (!isNew && currentContentActions.length) {
-        return currentContentActions;
-    }
-
-    return Object.values(schemes[currentSchemeId].actions).sort((a, b) => {
-        if (a.name === 'Save') return -1;
-        if (b.name === 'Save') return 1;
-
-        return a.name.localeCompare(b.name);
-    });
+        return acc;
+    }, {} as CurrentContentActionsWithScheme);
 };

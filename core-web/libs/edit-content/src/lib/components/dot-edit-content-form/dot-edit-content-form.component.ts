@@ -98,7 +98,7 @@ export class DotEditContentFormComponent implements OnInit {
      *
      * @memberof DotEditContentFormComponent
      */
-    changeValue = output<Record<string, string>>();
+    changeValue = output<Record<string, string | string[] | Date>>();
 
     /**
      * Computed property that retrieves the filtered fields from the store.
@@ -167,7 +167,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @param {Record<string, any>} value The raw form value
      * @memberof DotEditContentFormComponent
      */
-    onFormChange(value: Record<string, any>) {
+    onFormChange(value: Record<string, string>) {
         const processedValue = this.processFormValue(value);
         this.changeValue.emit(processedValue);
     }
@@ -188,13 +188,13 @@ export class DotEditContentFormComponent implements OnInit {
      * Processes the form value, applying specific transformations for certain field types.
      *
      * @private
-     * @param {Record<string, any>} value The raw form value
-     * @returns {Record<string, any>} The processed form value
+     * @param {Record<string, string>} value The raw form value
+     * @returns {Record<string, string>} The processed form value
      * @memberof DotEditContentFormComponent
      */
     private processFormValue(
         value: Record<string, string | string[] | Date | null | undefined>
-    ): Record<string, any> {
+    ): Record<string, string | string[] | Date> {
         return Object.fromEntries(
             Object.entries(value).map(([key, fieldValue]) => {
                 const field = this.$formFields().find((f) => f.variable === key);

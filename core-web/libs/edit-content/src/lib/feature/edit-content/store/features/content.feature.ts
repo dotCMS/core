@@ -36,7 +36,7 @@ import { WorkflowState } from './workflow.feature';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../../utils/functions.util';
-import { parseWorkflows } from '../../../../utils/workflows.utils';
+import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
 
 export interface ContentState {
@@ -45,13 +45,14 @@ export interface ContentState {
     /** Contentlet full data */
     contentlet: DotCMSContentlet | null;
     /** Schemas available for the content type */
-    schemes: {
-        [key: string]: {
+    schemes: Record<
+        string,
+        {
             scheme: DotCMSWorkflow;
             actions: DotCMSWorkflowAction[];
             firstStep: WorkflowStep;
-        };
-    };
+        }
+    >;
     initialContentletState: 'new' | 'existing' | 'reset';
 }
 
@@ -168,15 +169,19 @@ export function withContent() {
                                 tapResponse({
                                     next: ({ contentType, schemes }) => {
                                         const parsedSchemes = parseWorkflows(schemes);
+
                                         const schemeIds = Object.keys(parsedSchemes);
                                         const defaultSchemeId =
                                             schemeIds.length === 1 ? schemeIds[0] : null;
+                                        const parsedCurrentActions = parseCurrentActions(
+                                            parsedSchemes[defaultSchemeId]?.actions || []
+                                        );
 
                                         patchState(store, {
                                             contentType,
-
                                             schemes: parsedSchemes,
                                             currentSchemeId: defaultSchemeId,
+                                            currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
                                             error: null
                                         });
@@ -229,10 +234,13 @@ export function withContent() {
                                         contentlet
                                     }) => {
                                         const parsedSchemes = parseWorkflows(schemes);
+                                        const parsedCurrentActions =
+                                            parseCurrentActions(currentContentActions);
+
                                         patchState(store, {
                                             contentType,
                                             schemes: parsedSchemes,
-                                            currentContentActions,
+                                            currentContentActions: parsedCurrentActions,
                                             contentlet,
                                             state: ComponentStatus.LOADED
                                         });

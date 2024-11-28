@@ -37,15 +37,17 @@ import {
 
 import { ContentState } from './content.feature';
 
-import { getWorkflowActions, shouldShowWorkflowActions } from '../../../../utils/workflows.utils';
+import { parseCurrentActions } from '../../../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
+
+export type CurrentContentActionsWithScheme = Record<string, DotCMSWorkflowAction[]>;
 
 export interface WorkflowState {
     /** Current workflow scheme id */
     currentSchemeId: string | null;
 
     /** Actions available for the current content */
-    currentContentActions: DotCMSWorkflowAction[];
+    currentContentActions: CurrentContentActionsWithScheme;
 
     /** Current workflow step */
     currentStep: WorkflowStep | null;
@@ -62,7 +64,7 @@ export interface WorkflowState {
 
 export const workflowInitialState: WorkflowState = {
     currentSchemeId: null,
-    currentContentActions: [],
+    currentContentActions: {},
     currentStep: null,
     lastTask: null,
     workflow: {
@@ -104,17 +106,10 @@ export function withWorkflow() {
              * Computed property that determines if workflow action buttons should be shown.
              */
             showWorkflowActions: computed(() => {
-                const schemes = store.schemes();
-                const contentlet = store.contentlet();
                 const currentSchemeId = store.currentSchemeId();
-                const step = store.currentStep();
+                const currentActions = store.currentContentActions()[currentSchemeId] || [];
 
-                return shouldShowWorkflowActions({
-                    schemes,
-                    contentlet,
-                    currentSchemeId,
-                    step
-                });
+                return currentActions.length > 0;
             }),
 
             /**
@@ -142,7 +137,7 @@ export function withWorkflow() {
              * @returns {DotCMSWorkflowAction | undefined} First workflow action with reset capability shown on EDITING
              */
             getResetWorkflowAction: computed(() => {
-                const currentActions = store.currentContentActions() || [];
+                const currentActions = store.currentContentActions()[store.currentSchemeId()] || [];
 
                 return (
                     currentActions.find(
@@ -159,17 +154,10 @@ export function withWorkflow() {
              * @returns {DotCMSWorkflowAction[]} The actions for the current workflow scheme.
              */
             getActions: computed(() => {
-                const schemes = store.schemes();
-                const contentlet = store.contentlet();
                 const currentSchemeId = store.currentSchemeId();
                 const currentContentActions = store.currentContentActions();
 
-                return getWorkflowActions({
-                    schemes,
-                    contentlet,
-                    currentSchemeId,
-                    currentContentActions
-                });
+                return currentSchemeId ? currentContentActions[currentSchemeId] : [];
             }),
 
             /**
@@ -242,9 +230,7 @@ export function withWorkflow() {
                                                 status: ComponentStatus.LOADED,
                                                 error: null
                                             },
-                                            currentContentActions: scheme
-                                                ? store.currentContentActions()
-                                                : [],
+
                                             initialContentletState:
                                                 scheme && step && task ? 'existing' : 'reset'
                                         });
@@ -272,11 +258,11 @@ export function withWorkflow() {
                 setSelectedWorkflow: (currentSchemeId: string) => {
                     const schemes = store.schemes();
                     const currentScheme = schemes[currentSchemeId];
-                    const currentContentActions = currentScheme.actions || [];
+                    const parsedCurrentActions = parseCurrentActions(currentScheme.actions || []);
 
                     patchState(store, {
                         currentSchemeId,
-                        currentContentActions,
+                        currentContentActions: parsedCurrentActions,
                         currentStep: currentScheme.firstStep
                     });
                 },
@@ -342,11 +328,12 @@ export function withWorkflow() {
                                             });
                                         }
 
+                                        const parsedCurrentActions =
+                                            parseCurrentActions(currentContentActions);
+
                                         patchState(store, {
                                             contentlet,
-                                            currentContentActions: isReset
-                                                ? []
-                                                : currentContentActions,
+                                            currentContentActions: parsedCurrentActions,
                                             currentSchemeId: isReset
                                                 ? null
                                                 : store.currentSchemeId(),
@@ -362,7 +349,9 @@ export function withWorkflow() {
                                         messageService.clear();
                                         messageService.add({
                                             severity: 'success',
-                                            summary: dotMessageService.get('success'),
+                                            summary: dotMessageService.get(
+                                                'edit.content.success.workflow.title'
+                                            ),
                                             detail: dotMessageService.get(
                                                 'edit.content.success.workflow.message'
                                             )
