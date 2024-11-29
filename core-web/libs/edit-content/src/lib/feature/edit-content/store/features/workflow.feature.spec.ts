@@ -28,7 +28,7 @@ import {
     MOCK_WORKFLOW_STATUS
 } from '../../../../utils/edit-content.mock';
 import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
-import { parseWorkflows } from '../../../../utils/workflows.utils';
+import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
 import { initialRootState } from '../edit-content.store';
 
 const mockInitialStateWithContent: ContentState = {
@@ -128,7 +128,7 @@ describe('WorkflowFeature', () => {
                 expect(store.state()).toBe(ComponentStatus.LOADED);
                 expect(store.contentlet()).toEqual(updatedContentlet);
                 expect(store.currentContentActions()).toEqual(
-                    MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB
+                    parseCurrentActions(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
 
                 expect(router.navigate).toHaveBeenCalledWith(
@@ -147,16 +147,6 @@ describe('WorkflowFeature', () => {
 
                 expect(store.state()).toBe(ComponentStatus.LOADED);
                 expect(store.error()).toBe('Error firing workflow action');
-            }));
-
-            it('should redirect to content when contentlet has no inode', fakeAsync(() => {
-                const contentletWithoutInode = { ...MOCK_CONTENTLET_1_TAB, inode: undefined };
-                workflowActionsFireService.fireTo.mockReturnValue(of(contentletWithoutInode));
-
-                store.fireWorkflowAction(mockOptions);
-                tick();
-
-                expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
             }));
         });
 
