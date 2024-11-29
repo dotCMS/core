@@ -173,8 +173,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 		//Manage all the cache Task
 		if(cmd.equals("cache")){
-
+			Logger.info(this, "CMD is cache");
 			String cacheName = ccf.getCacheName();
+			Logger.info(this, "Cache Name: " + cacheName);
 			if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX))
 			{
 				Logger.info(this, "Running Contents Index Cache");
@@ -220,11 +221,17 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			} else if (cacheName.equals("flushCache"))
 			{
 				final String cacheToFlush = req.getParameter("cName");
+				Logger.info(this, "CacheToFlush: " + cacheToFlush);
 				boolean isAllCachesFlush = false;// this boolean is for the messages (logs and UI)
 				try{
 					CacheLocator.getCache(cacheToFlush);
 				}catch (NullPointerException e) {
+					Logger.info(this, "Couldn't get the cache: " + cacheToFlush + " so it's cleaning all the caches");
 					isAllCachesFlush = true;//is a NPE is returned means it's cleaning all the caches
+				}catch (Exception e){
+					Logger.error(this, "Error getting the cache: " + cacheToFlush, e);
+					Logger.info(this, "Couldn't get the cache: " + cacheToFlush + " so it's cleaning all the caches");
+					isAllCachesFlush = true;
 				}
 				final String msgLogger = isAllCachesFlush ? "Flushing All Caches" : "Flushing " + cacheToFlush +" Cache";
 				Logger.info(this, msgLogger);
@@ -352,8 +359,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	}
 
 	private void _flush(String cacheName)throws Exception{
+		Logger.info(this, "--> Calling the _flush() method with cacheName: " + cacheName);
 		try {
 			CacheLocator.getCache(cacheName).clearCache();
+			Logger.info(this, "--> Cache Cleared for: " + cacheName);
 		} catch (NullPointerException e) {
 			Logger.info(this, "--> Calling the MaintenanceUtil.flushCache() method ...");
 			MaintenanceUtil.flushCache();
