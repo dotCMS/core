@@ -220,7 +220,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
      * </ul>
      */
     @Test
-    public void testPageDetailCollector() throws DotDataException, IOException {
+    public void testPageDetailCollector() throws Exception {
         testDetailPage = null != testDetailPage ? testDetailPage : Util.createTestHTMLPage(testSite, TEST_URL_MAP_PAGE_NAME, PARENT_FOLDER_1_NAME);
 
         final String urlTitle = "mynews";
@@ -243,15 +243,24 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
         final Contentlet newsTestContent = contentletDataGen.nextPersisted();
         ContentletDataGen.publish(newsTestContent);
         final Map<String, Object> expectedDataMap = Map.of(
-                "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getHostname(),
-                "language", language.getIsoCode(),
-                "url", TEST_URL_MAP_DETAIL_PAGE_URL,
-                "object", Map.of(
-                        "id", testDetailPage.getIdentifier(),
-                        "title", testDetailPage.getTitle(),
-                        "url", TEST_URL_MAP_DETAIL_PAGE_URL,
-                        "detail_page_url", testDetailPage.getURI())
+                Collector.EVENT_TYPE, EventType.PAGE_REQUEST.getType(),
+                Collector.SITE_NAME, testSite.getHostname(),
+                Collector.LANGUAGE, language.getIsoCode(),
+                Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
+                Collector.OBJECT, Map.of(
+                        Collector.ID, testDetailPage.getIdentifier(),
+                        Collector.TITLE, testDetailPage.getTitle(),
+                        Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
+                        Collector.CONTENT_TYPE_ID, testDetailPage.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testDetailPage.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testDetailPage.getContentType().variable(),
+                        Collector.BASE_TYPE, testDetailPage.getContentType().baseType().name(),
+                        Collector.LIVE, testDetailPage.isLive(),
+                        Collector.WORKING, testDetailPage.isWorking(),
+                        Collector.DETAIL_PAGE_URL, testDetailPage.getURI()
+
+
+                )
         );
 
         final TestEventLogSubmitter submitter = new TestEventLogSubmitter();
@@ -293,17 +302,17 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
         assertTrue(resolvedVanity.isPresent(), "Test resolved vanity url must be present");
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "site", testSite.getIdentifier(),
-                "event_type", EventType.VANITY_REQUEST.getType(),
-                "language", defaultLanguage.getIsoCode(),
-                "vanity_url", TEST_PAGE_URL,
-                "language_id", (int) defaultLanguage.getId(),
-                "url", URI,
-                "object", Map.of(
-                        "forward_to", TEST_PAGE_URL,
-                        "response", "200",
-                        "id", resolvedVanity.get().vanityUrlId,
-                        "url", URI)
+                Collector.SITE_ID, testSite.getIdentifier(),
+                Collector.EVENT_TYPE, EventType.VANITY_REQUEST.getType(),
+                Collector.LANGUAGE, defaultLanguage.getIsoCode(),
+                Collector.VANITY_URL_KEY, TEST_PAGE_URL,
+                Collector.LANGUAGE_ID, (int) defaultLanguage.getId(),
+                Collector.URL, URI,
+                Collector.OBJECT, Map.of(
+                        Collector.FORWARD_TO, TEST_PAGE_URL,
+                        Collector.RESPONSE, "200",
+                        Collector.ID, resolvedVanity.get().vanityUrlId,
+                        Collector.URL, URI)
         );
 
         final TestEventLogSubmitter submitter = new TestEventLogSubmitter();
@@ -352,15 +361,22 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
         assertTrue(resolvedVanity.isPresent(), "Test resolved vanity url must be present");
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getHostname(),
-                "comeFromVanityURL", true,
-                "language", defaultLanguage.getIsoCode(),
-                "url", TEST_PAGE_URL,
-                "object", Map.of(
-                        "id", testPage.getIdentifier(),
-                        "title", TEST_PAGE_NAME,
-                        "url", TEST_PAGE_URL)
+                Collector.EVENT_TYPE, EventType.PAGE_REQUEST.getType(),
+                Collector.SITE_NAME, testSite.getHostname(),
+                Collector.COME_FROM_VANITY_URL, true,
+                Collector.LANGUAGE, defaultLanguage.getIsoCode(),
+                Collector.URL, TEST_PAGE_URL,
+                Collector.OBJECT, Map.of(
+                        Collector.ID, testPage.getIdentifier(),
+                        Collector.TITLE, TEST_PAGE_NAME,
+                        Collector.URL, TEST_PAGE_URL,
+                        Collector.CONTENT_TYPE_ID, testPage.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testPage.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testPage.getContentType().variable(),
+                        Collector.BASE_TYPE, testPage.getContentType().baseType().name(),
+                        Collector.LIVE, testPage.isLive(),
+                        Collector.WORKING, testPage.isWorking(),
+                        Collector.DETAIL_PAGE_URL, testPage.getURI())
         );
 
         final TestEventLogSubmitter submitter = new TestEventLogSubmitter();

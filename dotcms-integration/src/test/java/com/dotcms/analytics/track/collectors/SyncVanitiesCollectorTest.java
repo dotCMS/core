@@ -87,17 +87,17 @@ public class SyncVanitiesCollectorTest extends IntegrationTestBase {
         assertTrue("Resolved vanity url must be present", resolvedVanity.isPresent());
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "site", testSite.getIdentifier(),
-                "event_type", EventType.VANITY_REQUEST.getType(),
-                "language", defaultLanguage.getIsoCode(),
-                "vanity_url", TEST_PAGE_URL,
-                "language_id", defaultLanguage.getId(),
-                "url", URI,
-                "object", Map.of(
-                        "forward_to", TEST_PAGE_URL,
-                        "response", "200",
-                        "id", resolvedVanity.get().vanityUrlId,
-                        "url", URI)
+                Collector.SITE_ID, testSite.getIdentifier(),
+                Collector.EVENT_TYPE, EventType.VANITY_REQUEST.getType(),
+                Collector.LANGUAGE, defaultLanguage.getIsoCode(),
+                Collector.VANITY_URL_KEY, TEST_PAGE_URL,
+                Collector.LANGUAGE_ID, defaultLanguage.getId(),
+                Collector.URL, URI,
+                Collector.OBJECT, Map.of(
+                        Collector.FORWARD_TO, TEST_PAGE_URL,
+                        Collector.RESPONSE, "200",
+                        Collector.ID, resolvedVanity.get().vanityUrlId,
+                        Collector.URL, URI)
         );
 
         final Collector collector = new SyncVanitiesCollector();

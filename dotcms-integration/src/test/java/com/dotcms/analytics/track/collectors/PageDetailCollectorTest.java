@@ -11,6 +11,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -70,7 +71,7 @@ public class PageDetailCollectorTest extends IntegrationTestBase {
      * </ul>
      */
     @Test
-    public void testPageDetailCollector() throws DotDataException, UnknownHostException {
+    public void testPageDetailCollector() throws DotDataException, UnknownHostException, DotSecurityException {
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final String requestId = UUIDUtil.uuid();
         final HttpServletRequest request = Util.mockHttpRequestObj(response,
@@ -100,15 +101,21 @@ public class PageDetailCollectorTest extends IntegrationTestBase {
         ContentletDataGen.publish(newsTestContent);
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getHostname(),
-                "language", language.getIsoCode(),
-                "url", TEST_URL_MAP_DETAIL_PAGE_URL,
-                "object", Map.of(
-                        "id", testDetailPage.getIdentifier(),
-                        "title", testDetailPage.getTitle(),
-                        "url", TEST_URL_MAP_DETAIL_PAGE_URL,
-                        "detail_page_url", testDetailPage.getURI())
+                Collector.EVENT_TYPE, EventType.PAGE_REQUEST.getType(),
+                Collector.SITE_NAME, testSite.getHostname(),
+                Collector.LANGUAGE, language.getIsoCode(),
+                Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
+                Collector.OBJECT, Map.of(
+                        Collector.ID, testDetailPage.getIdentifier(),
+                        Collector.TITLE, testDetailPage.getTitle(),
+                        Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
+                        Collector.CONTENT_TYPE_ID, testDetailPage.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testDetailPage.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testDetailPage.getContentType().variable(),
+                        Collector.BASE_TYPE, testDetailPage.getContentType().baseType().name(),
+                        Collector.LIVE, testDetailPage.isLive(),
+                        Collector.WORKING, testDetailPage.isWorking(),
+                        Collector.DETAIL_PAGE_URL, testDetailPage.getURI())
         );
 
         final Collector collector = new PageDetailCollector();
