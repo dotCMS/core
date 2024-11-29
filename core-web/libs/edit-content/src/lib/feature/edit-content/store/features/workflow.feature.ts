@@ -24,8 +24,7 @@ import {
     DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService,
-    DotWorkflowService
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -196,7 +195,6 @@ export function withWorkflow() {
         withMethods(
             (
                 store,
-                dotWorkflowService = inject(DotWorkflowService),
                 workflowActionService = inject(DotWorkflowsActionsService),
                 workflowActionsFireService = inject(DotWorkflowActionsFireService),
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
@@ -232,64 +230,6 @@ export function withWorkflow() {
                         });
                     }
                 },
-
-                /**
-                 * Get workflow status for an existing contentlet
-                 * we use the inode to get the workflow status
-                 */
-                getWorkflowStatus: rxMethod<string>(
-                    pipe(
-                        tap(() =>
-                            patchState(store, {
-                                workflow: {
-                                    status: ComponentStatus.LOADING,
-                                    error: null
-                                }
-                            })
-                        ),
-                        switchMap((inode: string) => {
-                            return dotWorkflowService.getWorkflowStatus(inode).pipe(
-                                tapResponse({
-                                    next: ({ scheme, step, task }) => {
-                                        // Reset workflow state
-                                        if (!scheme && !step && !task) {
-                                            patchState(store, {
-                                                currentStep: null,
-                                                lastTask: null,
-                                                workflow: {
-                                                    status: ComponentStatus.LOADED,
-                                                    error: null
-                                                },
-                                                initialContentletState: 'reset'
-                                            });
-                                        } else {
-                                            // Existing content
-                                            patchState(store, {
-                                                currentSchemeId: scheme?.id || null,
-                                                currentStep: step,
-                                                lastTask: task,
-                                                workflow: {
-                                                    status: ComponentStatus.LOADED,
-                                                    error: null
-                                                },
-                                                initialContentletState: 'existing'
-                                            });
-                                        }
-                                    },
-                                    error: (error: HttpErrorResponse) => {
-                                        patchState(store, {
-                                            workflow: {
-                                                status: ComponentStatus.ERROR,
-                                                error: 'Error getting workflow status'
-                                            }
-                                        });
-                                        dotHttpErrorManagerService.handle(error);
-                                    }
-                                })
-                            );
-                        })
-                    )
-                ),
 
                 /**
                  * Fires a workflow action and updates the component state accordingly.

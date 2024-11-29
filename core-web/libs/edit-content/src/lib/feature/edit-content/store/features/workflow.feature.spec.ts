@@ -13,8 +13,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService,
-    DotWorkflowService
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -24,8 +23,7 @@ import { withWorkflow } from './workflow.feature';
 import {
     MOCK_CONTENTLET_1_TAB,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
-    MOCK_WORKFLOW_DATA,
-    MOCK_WORKFLOW_STATUS
+    MOCK_WORKFLOW_DATA
 } from '../../../../utils/edit-content.mock';
 import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
 import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
@@ -41,7 +39,6 @@ const mockInitialStateWithContent: ContentState = {
 describe('WorkflowFeature', () => {
     let spectator: SpectatorService<any>;
     let store: any;
-    let workflowService: SpyObject<DotWorkflowService>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
     let router: SpyObject<Router>;
@@ -54,7 +51,6 @@ describe('WorkflowFeature', () => {
             withWorkflow()
         ),
         mocks: [
-            DotWorkflowService,
             DotWorkflowsActionsService,
             DotWorkflowActionsFireService,
             DotHttpErrorManagerService,
@@ -67,7 +63,6 @@ describe('WorkflowFeature', () => {
     beforeEach(() => {
         spectator = createStore();
         store = spectator.service;
-        workflowService = spectator.inject(DotWorkflowService);
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         router = spectator.inject(Router);
@@ -78,36 +73,6 @@ describe('WorkflowFeature', () => {
     });
 
     describe('methods', () => {
-        describe('getWorkflowStatus', () => {
-            it('should get workflow status successfully', fakeAsync(() => {
-                workflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
-
-                store.getWorkflowStatus('123');
-                tick();
-
-                expect(store.workflow()).toEqual({
-                    status: ComponentStatus.LOADED,
-                    error: null
-                });
-                expect(store.currentSchemeId()).toBe(MOCK_WORKFLOW_STATUS.scheme.id);
-                expect(store.currentStep()).toEqual(MOCK_WORKFLOW_STATUS.step);
-                expect(store.lastTask()).toEqual(MOCK_WORKFLOW_STATUS.task);
-            }));
-
-            it('should handle error when getting workflow status', fakeAsync(() => {
-                const mockError = new HttpErrorResponse({ status: 404 });
-                workflowService.getWorkflowStatus.mockReturnValue(throwError(() => mockError));
-
-                store.getWorkflowStatus('123');
-                tick();
-
-                expect(store.workflow()).toEqual({
-                    status: ComponentStatus.ERROR,
-                    error: 'Error getting workflow status'
-                });
-            }));
-        });
-
         describe('fireWorkflowAction', () => {
             const mockOptions = {
                 inode: '123',
@@ -155,37 +120,6 @@ describe('WorkflowFeature', () => {
                 const newSchemeId = MOCK_WORKFLOW_DATA[0].scheme.id;
                 store.setSelectedWorkflow(newSchemeId);
                 expect(store.currentSchemeId()).toBe(newSchemeId);
-            });
-        });
-
-        describe('computed properties', () => {
-            beforeEach(fakeAsync(() => {
-                const mockStatus = {
-                    ...MOCK_WORKFLOW_STATUS,
-                    scheme: MOCK_WORKFLOW_DATA[0].scheme,
-                    step: MOCK_WORKFLOW_STATUS.step
-                };
-                workflowService.getWorkflowStatus.mockReturnValue(of(mockStatus));
-
-                store.getWorkflowStatus('123');
-                tick();
-            }));
-
-            it('should return correct scheme', () => {
-                expect(store.currentSchemeId()).toBe(MOCK_WORKFLOW_DATA[0].scheme.id);
-                expect(store.getScheme()).toEqual(MOCK_WORKFLOW_DATA[0].scheme);
-            });
-
-            it('should return correct workflow scheme options', () => {
-                const expected = MOCK_WORKFLOW_DATA.map((workflow) => ({
-                    value: workflow.scheme.id,
-                    label: workflow.scheme.name
-                }));
-                expect(store.workflowSchemeOptions()).toEqual(expected);
-            });
-
-            it('should return current step of workflow', () => {
-                expect(store.currentStep()).toEqual(MOCK_WORKFLOW_STATUS.step);
             });
         });
     });
