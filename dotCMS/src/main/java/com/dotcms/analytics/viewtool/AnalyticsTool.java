@@ -1,12 +1,14 @@
 package com.dotcms.analytics.viewtool;
 
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
+import com.dotcms.analytics.content.ContentAnalyticsQuery;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.query.AnalyticsQuery;
 import com.dotcms.analytics.query.AnalyticsQueryParser;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -97,6 +99,46 @@ public class AnalyticsTool  implements ViewTool {
 
         Logger.debug(this, () -> "Running report from json: " + query);
         return contentAnalyticsAPI.runReport(this.analyticsQueryParser.parseJsonToQuery(query), user);
+    }
+
+    /**
+     * Runs an analytics report based on a set of parameters
+     * example:
+     * <code>
+     * $analytics.runReport('Events.count Events.uniqueCount',
+     * 'Events.referer Events.experiment', 'Events.day day',
+     * 'Events.variant = [B] : Events.experiments = [B]', 'Events.day ASC', 100, 0)
+     * </code>
+     * @param query
+     * @return
+     */
+    public ReportResponse runReport(final String measures, final String dimensions,
+                                    final String timeDimensions, final String filters, final String order,
+                                    final int limit, final int offset) {
+
+        final ContentAnalyticsQuery.Builder builder = new ContentAnalyticsQuery.Builder()
+                .dimensions(dimensions)
+                .measures(measures)
+                .filters(filters)
+                .order(order)
+                .timeDimensions(timeDimensions);
+        if (limit > 0) {
+            builder.limit(limit);
+        }
+        if (offset >= 0) {
+            builder.offset(offset);
+        }
+
+        final ContentAnalyticsQuery contentAnalyticsQuery = builder.build();
+
+        Logger.debug(this, () -> "Running report from query: " + contentAnalyticsQuery.toString());
+
+        final String cubeJsQuery = JsonUtil.getJsonStringFromObject(contentAnalyticsQuery);
+
+        final ReportResponse reportResponse = this.contentAnalyticsAPI.runRawReport(cubeJsQuery,
+                user);
+
+        return reportResponse;
     }
 
     /**
