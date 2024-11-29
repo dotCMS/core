@@ -4,7 +4,6 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -133,7 +132,7 @@ public interface  UniqueFieldValidationStrategy {
     }
 
     /**
-     * Method call after publish a {@link Contentlet} it allow thw {@link UniqueFieldValidationStrategy} do any extra
+     * Method call after publish a {@link Contentlet} it allow the {@link UniqueFieldValidationStrategy} do any extra
      * work that it need it.
      *
      * @param inode Published {@link Contentlet}'s inode
@@ -143,12 +142,12 @@ public interface  UniqueFieldValidationStrategy {
     }
 
     /**
-     * Method call after un publish a {@link Contentlet} it allow thw {@link UniqueFieldValidationStrategy} do any extra
+     * Method call after unpublished a {@link Contentlet} it allow thw {@link UniqueFieldValidationStrategy} do any extra
      * work that it need it.
      *
      * @param versionInfo {@link Contentlet}'s {@link VersionInfo} before un publish
      */
-    default void afterUnPublish(final VersionInfo versionInfo){
+    default void afterUnpublish(final VersionInfo versionInfo){
         //Default implementation do nothing
     }
 

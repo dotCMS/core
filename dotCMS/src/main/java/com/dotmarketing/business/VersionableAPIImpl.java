@@ -11,7 +11,6 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.Debouncer;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
@@ -29,7 +28,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.lang.reflect.InvocationTargetException;
@@ -407,7 +405,7 @@ public class VersionableAPIImpl implements VersionableAPI {
             versionableFactory.saveVersionInfo(versionInfo, true);
 
             if (UtilMethods.isSet(copy)) {
-                uniqueFieldValidationStrategyResolver.get().afterUnPublish(copy);
+                uniqueFieldValidationStrategyResolver.get().afterUnpublish(copy);
             }
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -461,7 +459,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         newInfo.setPublishDate(null);
         versionableFactory.saveContentletVersionInfo( newInfo, true );
 
-        uniqueFieldValidationStrategyResolver.get().afterUnPublish(contentletVersionInfo.get());
+        uniqueFieldValidationStrategyResolver.get().afterUnpublish(contentletVersionInfo.get());
     }
 
     @WrapInTransaction

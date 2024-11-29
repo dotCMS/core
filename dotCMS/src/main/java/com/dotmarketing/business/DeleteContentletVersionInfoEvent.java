@@ -4,6 +4,9 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 import java.io.Serializable;
 
+/**
+ * Trigger when a {@link com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo} is deleted
+ */
 public class DeleteContentletVersionInfoEvent implements Serializable {
 
     private final Contentlet contentlet;

@@ -285,7 +285,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
     }
 
     @Override
-    public void afterUnPublish(final VersionInfo versionInfo){
+    public void afterUnpublish(final VersionInfo versionInfo){
         try {
             final Contentlet liveContentlet = APILocator.getContentletAPI().find(versionInfo.getLiveInode(),
                     APILocator.systemUser(), false);

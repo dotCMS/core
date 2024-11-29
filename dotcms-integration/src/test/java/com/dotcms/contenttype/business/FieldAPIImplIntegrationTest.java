@@ -14,7 +14,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
@@ -200,7 +199,7 @@ public class FieldAPIImplIntegrationTest {
      * @throws DotDataException
      */
     @Test
-    public void cleanUpUniqueFieldTableAfterDleeteField() throws DotDataException {
+    public void cleanUpUniqueFieldTableAfterDeleteField() throws DotDataException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
