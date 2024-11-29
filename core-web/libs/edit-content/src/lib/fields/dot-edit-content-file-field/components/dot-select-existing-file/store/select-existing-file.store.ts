@@ -94,7 +94,7 @@ export const SelectExisingFileStore = signalStore(
                             content: { ...store.content(), status: ComponentStatus.LOADING }
                         })
                     ),
-                    map((event) => (event ? event?.node?.data?.identifier : SYSTEM_HOST_ID)),
+                    map((event) => (event ? event?.node?.data?.id : SYSTEM_HOST_ID)),
                     filter((identifier) => {
                         const hasIdentifier = !!identifier;
 

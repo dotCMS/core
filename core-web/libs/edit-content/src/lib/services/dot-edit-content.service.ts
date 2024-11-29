@@ -88,7 +88,7 @@ export class DotEditContentService {
                     key: site.hostname,
                     label: `//${site.hostname}`,
                     data: {
-                        identifier: site.identifier,
+                        id: site.identifier,
                         hostname: `//${site.hostname}`,
                         path: '',
                         type: 'site'
@@ -133,7 +133,7 @@ export class DotEditContentService {
                         key: `${folder.hostName}${folder.path}`.replace(/[/]/g, ''),
                         label: `//${folder.hostName}${folder.path}`,
                         data: {
-                            identifier: folder.identifier,
+                            id: folder.id,
                             hostname: `//${folder.hostName}`,
                             path: folder.path,
                             type: 'folder'
@@ -204,7 +204,7 @@ export class DotEditContentService {
                 key: site.hostname,
                 label: `//${site.hostname}`,
                 data: {
-                    identifier: site.identifier,
+                    id: site.identifier,
                     hostname: `//${site.hostname}`,
                     path: '',
                     type: 'site'
