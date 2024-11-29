@@ -138,17 +138,6 @@ describe('WorkflowFeature', () => {
         });
 
         describe('fireWorkflowAction', () => {
-            const mockFireOptions = {
-                actionId: '2d1dc771-8fda-4b43-9e81-71d43a8c73e4',
-                inode: 'beed8670-9b39-4d77-a47b-6928fc50ebd6',
-                data: {
-                    contentlet: {
-                        asdasd: 'asd',
-                        asdasd1: 'asd',
-                        contentType: 'OnewfBlog'
-                    }
-                }
-            };
             const mockOptions = {
                 inode: '123',
                 actionId: MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB[0].id,

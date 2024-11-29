@@ -35,6 +35,7 @@ export const parseWorkflows = (
         return acc;
     }, {});
 };
+
 /**
  * Parses current workflow actions into a map of scheme ID to actions
  *

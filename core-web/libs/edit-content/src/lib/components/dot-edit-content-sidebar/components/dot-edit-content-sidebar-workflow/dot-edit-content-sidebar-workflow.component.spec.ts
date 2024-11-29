@@ -1,15 +1,20 @@
-import { FormsModule } from '@angular/forms';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+
+import { FormsModule } from '@angular/forms';
+
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
-
 import { DotMessagePipe } from '@dotcms/utils-testing';
-import { WORKFLOW_MOCKS, WORKFLOW_SELECTION_MOCK } from '../../../../utils/mocks';
+
 import { DotEditContentSidebarWorkflowComponent } from './dot-edit-content-sidebar-workflow.component';
+
+import { WORKFLOW_MOCKS, WORKFLOW_SELECTION_MOCK } from '../../../../utils/mocks';
 
 describe('DotEditContentSidebarWorkflowComponent', () => {
     let spectator: Spectator<DotEditContentSidebarWorkflowComponent>;
