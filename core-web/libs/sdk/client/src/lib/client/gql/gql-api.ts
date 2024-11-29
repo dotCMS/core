@@ -46,14 +46,12 @@ export class GQLClient {
             method: 'POST',
             headers: {
                 ...this.#requestOptions.headers,
-                'Content-Type': 'application/json',
-                dotcachettl: '0' // Bypasses GraphQL cache
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 query: this.#query,
                 variables: this.#variables
-            }),
-            cache: 'no-cache' // Invalidate cache for Next.js
+            })
         });
     }
 
