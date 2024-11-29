@@ -35,7 +35,7 @@ public class DataProviderWeldRunner extends DataProviderRunner {
      */
     @Override
     protected Object createTest() throws Exception {
-        return CONTAINER.instance().select(getTestClass().getJavaClass()).get();
+        return CONTAINER.select(getTestClass().getJavaClass()).get();
     }
 
 }
