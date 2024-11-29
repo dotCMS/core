@@ -11,7 +11,8 @@ import { Router } from '@angular/router';
 import {
     DotContentTypeService,
     DotHttpErrorManagerService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
@@ -20,8 +21,9 @@ import { withContent } from './content.feature';
 import { workflowInitialState } from './workflow.feature';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
+import { MOCK_WORKFLOW_STATUS } from '../../../../utils/edit-content.mock';
 import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
-import { parseWorkflows } from '../../../../utils/workflows.utils';
+import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
 import { initialRootState } from '../edit-content.store';
 
 describe('ContentFeature', () => {
@@ -31,6 +33,7 @@ describe('ContentFeature', () => {
     let contentTypeService: SpyObject<DotContentTypeService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
+    let workflowService: SpyObject<DotWorkflowService>;
     let router: SpyObject<Router>;
 
     const createStore = createServiceFactory({
@@ -43,6 +46,7 @@ describe('ContentFeature', () => {
             DotEditContentService,
             DotHttpErrorManagerService,
             DotWorkflowsActionsService,
+            DotWorkflowService,
             Router
         ]
     });
@@ -53,6 +57,7 @@ describe('ContentFeature', () => {
         contentTypeService = spectator.inject(DotContentTypeService);
         dotEditContentService = spectator.inject(DotEditContentService);
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
+        workflowService = spectator.inject(DotWorkflowService);
         router = spectator.inject(Router);
     });
 
@@ -71,6 +76,7 @@ describe('ContentFeature', () => {
             contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getByInode.mockReturnValue(of([]));
             workflowActionService.getWorkFlowActions.mockReturnValue(of([]));
+            workflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
             store.initializeExistingContent('123');
             tick();
@@ -119,13 +125,13 @@ describe('ContentFeature', () => {
                 }
             ];
 
-            // Mock all the requests that forkJoin is expecting
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
             contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionService.getByInode.mockReturnValue(of(expectedActions));
             workflowActionService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
+            workflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
             store.initializeExistingContent('123');
 
@@ -134,7 +140,7 @@ describe('ContentFeature', () => {
             // Verify all the expected values
             expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
-            expect(store.currentContentActions()).toEqual(expectedActions);
+            expect(store.currentContentActions()).toEqual(parseCurrentActions(expectedActions));
             expect(store.schemes()).toEqual(parseWorkflows(MOCK_SINGLE_WORKFLOW_ACTIONS));
         }));
     });
@@ -192,6 +198,7 @@ describe('ContentFeature', () => {
             workflowActionService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
+            workflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
         });
 
         it('should initialize existing content successfully', fakeAsync(() => {
@@ -200,7 +207,7 @@ describe('ContentFeature', () => {
 
             expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
-            expect(store.currentContentActions()).toEqual(mockActions);
+            expect(store.currentContentActions()).toEqual(parseCurrentActions(mockActions));
             expect(store.state()).toBe(ComponentStatus.LOADED);
         }));
 
