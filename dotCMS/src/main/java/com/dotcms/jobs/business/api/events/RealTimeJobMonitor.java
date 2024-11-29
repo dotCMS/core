@@ -87,18 +87,8 @@ public class RealTimeJobMonitor {
         );
 
         APILocator.getLocalSystemEventsAPI().subscribe(
-                JobRemovedFromQueueEvent.class,
-                (EventSubscriber<JobRemovedFromQueueEvent>) this::onJobRemovedFromQueueEvent
-        );
-
-        APILocator.getLocalSystemEventsAPI().subscribe(
                 JobCompletedEvent.class,
                 (EventSubscriber<JobCompletedEvent>) this::onJobCompleted
-        );
-
-        APILocator.getLocalSystemEventsAPI().subscribe(
-                JobCanceledEvent.class,
-                (EventSubscriber<JobCanceledEvent>) this::onJobCanceled
         );
 
         APILocator.getLocalSystemEventsAPI().subscribe(
@@ -157,14 +147,20 @@ public class RealTimeJobMonitor {
      * @param jobId   The ID of the job to watch
      * @param watcher The consumer to be notified of job updates
      * @param filter  Optional predicate to filter job updates (null means receive all updates)
+     * @return A JobWatcher instance representing the registered watcher
      * @throws NullPointerException if jobId or watcher is null
      * @see Predicates for common filter predicates
      * @see CopyOnWriteArrayList for more details about the thread-safety guarantees
      */
-    public void registerWatcher(String jobId, Consumer<Job> watcher, Predicate<Job> filter) {
+    public JobWatcher registerWatcher(String jobId, Consumer<Job> watcher, Predicate<Job> filter) {
 
         Objects.requireNonNull(jobId, "jobId cannot be null");
         Objects.requireNonNull(watcher, "watcher cannot be null");
+
+        final var jobWatcher = JobWatcher.builder()
+                .watcher(watcher)
+                .filter(filter != null ? filter : job -> true)
+                .build();
 
         jobWatchers.compute(jobId, (key, existingWatchers) -> {
             List<JobWatcher> watchers = Objects.requireNonNullElseGet(
@@ -172,16 +168,15 @@ public class RealTimeJobMonitor {
                     CopyOnWriteArrayList::new
             );
 
-            watchers.add(JobWatcher.builder()
-                    .watcher(watcher)
-                    .filter(filter != null ? filter : job -> true)
-                    .build());
+            watchers.add(jobWatcher);
 
             Logger.debug(this, String.format(
                     "Added watcher for job %s. Total watchers: %d", jobId, watchers.size()));
 
             return watchers;
         });
+
+        return jobWatcher;
     }
 
     /**
@@ -214,11 +209,12 @@ public class RealTimeJobMonitor {
      *
      * @param jobId   The ID of the job to watch
      * @param watcher The consumer to be notified of job updates
+     * @return A JobWatcher instance representing the registered watcher
      * @throws NullPointerException if jobId or watcher is null
      * @see CopyOnWriteArrayList for more details about the thread-safety guarantees
      */
-    public void registerWatcher(String jobId, Consumer<Job> watcher) {
-        registerWatcher(jobId, watcher, null);
+    public JobWatcher registerWatcher(String jobId, Consumer<Job> watcher) {
+        return registerWatcher(jobId, watcher, null);
     }
 
     /**
@@ -232,44 +228,17 @@ public class RealTimeJobMonitor {
     }
 
     /**
-     * Updates watchers for a list of jobs.
-     * Each job's watchers are notified according to their filter predicates.
+     * Removes all the watchers associated with the specified job ID.
      *
-     * @param updatedJobs List of jobs that have been updated
-     * @throws IllegalArgumentException if updatedJobs is null
+     * @param jobId The ID of the job whose watchers are to be removed.
      */
-    public void updateWatchers(List<Job> updatedJobs) {
-        for (Job job : updatedJobs) {
-            updateWatchers(job);
-        }
-    }
+    public void removeAllWatchers(final String jobId) {
 
-    /**
-     * Updates watchers for a single job. Removes watchers if the job has reached a final state.
-     *
-     * @param job The job that has been updated.
-     */
-    private void updateWatchers(Job job) {
-
-        List<JobWatcher> watchers = jobWatchers.get(job.id());
-        if (watchers != null) {
-            watchers.forEach(jobWatcher -> {
-                try {
-                    if (jobWatcher.filter().test(job)) {
-                        jobWatcher.watcher().accept(job);
-                    }
-                } catch (Exception e) {
-                    Logger.error(this, "Error notifying job watcher for job " + job.id(), e);
-
-                    // Direct remove is thread-safe with CopyOnWriteArrayList
-                    watchers.remove(jobWatcher);
-
-                    // If this was the last watcher, clean up the map entry
-                    if (watchers.isEmpty()) {
-                        jobWatchers.remove(job.id());
-                    }
-                }
-            });
+        List<JobWatcher> removed = jobWatchers.remove(jobId);
+        if (removed != null) {
+            Logger.info(this,
+                    String.format("Removed all watchers for job %s. Watchers removed: %d",
+                            jobId, removed.size()));
         }
     }
 
@@ -278,13 +247,16 @@ public class RealTimeJobMonitor {
      *
      * @param jobId The ID of the job whose watcher is to be removed.
      */
-    private void removeWatcher(String jobId) {
+    public void removeWatcher(final String jobId, final JobWatcher watcher) {
 
-        List<JobWatcher> removed = jobWatchers.remove(jobId);
-        if (removed != null) {
-            Logger.debug(this,
-                    String.format("Removed all watchers for job %s. Watchers removed: %d",
-                            jobId, removed.size()));
+        if (jobId == null || watcher == null) {
+            return;
+        }
+
+        // Get the list of watchers for the job
+        List<JobWatcher> watchers = jobWatchers.get(jobId);
+        if (watchers != null) {
+            removeWatcherFromList(jobId, watcher, watchers);
         }
     }
 
@@ -325,32 +297,13 @@ public class RealTimeJobMonitor {
     }
 
     /**
-     * Handles the job-canceled event.
-     *
-     * @param event The JobCanceledEvent.
-     */
-    public void onJobCanceled(JobCanceledEvent event) {
-        updateWatchers(event.getJob());
-        removeWatcher(event.getJob().id());
-    }
-
-    /**
      * Handles the job completed event.
      *
      * @param event The JobCompletedEvent.
      */
     public void onJobCompleted(JobCompletedEvent event) {
         updateWatchers(event.getJob());
-        removeWatcher(event.getJob().id());
-    }
-
-    /**
-     * Handles the job removed from queue event when failed and is not retryable.
-     *
-     * @param event The JobRemovedFromQueueEvent.
-     */
-    public void onJobRemovedFromQueueEvent(JobRemovedFromQueueEvent event) {
-        removeWatcher(event.getJob().id());
+        removeAllWatchers(event.getJob().id());
     }
 
     /**
@@ -369,6 +322,49 @@ public class RealTimeJobMonitor {
      */
     public void onJobProgressUpdated(JobProgressUpdatedEvent event) {
         updateWatchers(event.getJob());
+    }
+
+    /**
+     * Updates watchers for a single job. Removes watchers if the job has reached a final state.
+     *
+     * @param job The job that has been updated.
+     */
+    private void updateWatchers(Job job) {
+
+        List<JobWatcher> watchers = jobWatchers.get(job.id());
+        if (watchers != null) {
+            watchers.forEach(jobWatcher -> {
+                try {
+                    if (jobWatcher.filter().test(job)) {
+                        jobWatcher.watcher().accept(job);
+                    }
+                } catch (Exception e) {
+                    Logger.error(this, "Error notifying job watcher for job " + job.id(), e);
+
+                    // Direct remove is thread-safe with CopyOnWriteArrayList
+                    removeWatcherFromList(job.id(), jobWatcher, watchers);
+                }
+            });
+        }
+    }
+
+    /**
+     * Removes the watcher from the list of watchers for the specified job ID.
+     *
+     * @param jobId    The ID of the job whose watcher is to be removed.
+     * @param watcher  The watcher to remove.
+     * @param watchers The list of watchers for the job.
+     */
+    private void removeWatcherFromList(String jobId, JobWatcher watcher,
+            List<JobWatcher> watchers) {
+
+        // Remove the watcher from the list
+        watchers.remove(watcher);
+
+        // If this was the last watcher, clean up the map entry
+        if (watchers.isEmpty()) {
+            jobWatchers.remove(jobId);
+        }
     }
 
     /**
@@ -425,19 +421,44 @@ public class RealTimeJobMonitor {
          * @return A predicate for matching failed jobs
          */
         public static Predicate<Job> hasFailed() {
-            return job -> job.state() == JobState.FAILED
+            return job -> (job.state() == JobState.FAILED
+                    || job.state() == JobState.FAILED_PERMANENTLY)
                     && job.result().isPresent()
                     && job.result().get().errorDetail().isPresent();
         }
 
         /**
+         * Creates a predicate that matches successful jobs. The predicate matches any job in the
+         * SUCCESS state.
+         *
+         * @return A predicate for matching successful jobs
+         */
+        public static Predicate<Job> isCompleted() {
+            return job -> (job.state() == JobState.SUCCESS
+                    || job.state() == JobState.CANCELED
+                    || job.state() == JobState.ABANDONED_PERMANENTLY
+                    || job.state() == JobState.FAILED_PERMANENTLY);
+        }
+
+        /**
+         * Creates a predicate that matches successful jobs. The predicate matches any job in the
+         * SUCCESS state.
+         *
+         * @return A predicate for matching successful jobs
+         */
+        public static Predicate<Job> isSuccessful() {
+            return job -> job.state() == JobState.SUCCESS;
+        }
+
+        /**
          * Creates a predicate that matches completed jobs. The predicate matches any job in the
-         * COMPLETED state.
+         * ABANDONED state.
          *
          * @return A predicate for matching completed jobs
          */
-        public static Predicate<Job> isCompleted() {
-            return job -> job.state() == JobState.COMPLETED;
+        public static Predicate<Job> isAbandoned() {
+            return job -> (job.state() == JobState.ABANDONED
+                    || job.state() == JobState.ABANDONED_PERMANENTLY);
         }
 
         /**

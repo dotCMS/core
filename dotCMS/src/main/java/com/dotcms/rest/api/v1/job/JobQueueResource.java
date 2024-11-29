@@ -5,15 +5,13 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import graphql.VisibleForTesting;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.BeanParam;
@@ -29,7 +27,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.sse.EventOutput;
-import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseFeature;
 
 @Path("/v1/jobs")
@@ -37,20 +34,19 @@ public class JobQueueResource {
 
     private final WebResource webResource;
     private final JobQueueHelper helper;
-    private final SSEConnectionManager sseConnectionManager;
+    private final SSEMonitorUtil sseMonitorUtil;
 
     @Inject
-    public JobQueueResource(final JobQueueHelper helper,
-            final SSEConnectionManager sseConnectionManager) {
-        this(new WebResource(), helper, sseConnectionManager);
+    public JobQueueResource(final JobQueueHelper helper, final SSEMonitorUtil sseMonitorUtil) {
+        this(new WebResource(), helper, sseMonitorUtil);
     }
 
     @VisibleForTesting
     public JobQueueResource(WebResource webResource, JobQueueHelper helper,
-            SSEConnectionManager sseConnectionManager) {
+            final SSEMonitorUtil sseMonitorUtil) {
         this.webResource = webResource;
         this.helper = helper;
-        this.sseConnectionManager = sseConnectionManager;
+        this.sseMonitorUtil = sseMonitorUtil;
     }
 
     @POST
@@ -62,7 +58,7 @@ public class JobQueueResource {
             @PathParam("queueName") String queueName,
             @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
 
-        final var initDataObject = new WebResource.InitBuilder(webResource)
+        final var initDataObject = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -87,7 +83,7 @@ public class JobQueueResource {
             @PathParam("queueName") String queueName,
             Map<String, Object> parameters) throws DotDataException {
 
-        final var initDataObject = new WebResource.InitBuilder(webResource)
+        final var initDataObject = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -107,7 +103,7 @@ public class JobQueueResource {
     @Path("/queues")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<Set<String>> getQueues(@Context HttpServletRequest request) {
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -123,7 +119,7 @@ public class JobQueueResource {
             @PathParam("jobId") String jobId)
             throws DotDataException {
 
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -140,7 +136,7 @@ public class JobQueueResource {
     @Consumes(MediaType.WILDCARD)
     public ResponseEntityView<String> cancelJob(@Context HttpServletRequest request,
             @PathParam("jobId") String jobId) throws DotDataException {
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -157,7 +153,7 @@ public class JobQueueResource {
             @PathParam("queueName") String queueName,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -168,82 +164,11 @@ public class JobQueueResource {
     }
 
     @GET
-    @Path("/{jobId}/monitor")
-    @Produces(SseFeature.SERVER_SENT_EVENTS)
-    public EventOutput monitorJob(@Context HttpServletRequest request,
-            @PathParam("jobId") String jobId) {
-
-        new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
-                .rejectWhenNoUser(true)
-                .init();
-
-        final EventOutput eventOutput = new EventOutput();
-
-        try {
-            Job job = helper.getJobForSSE(jobId);
-
-            if (job == null) {
-                helper.sendErrorAndClose("job-not-found", "404", eventOutput);
-                return eventOutput;
-            }
-
-            if (helper.isNotWatchable(job)) {
-                helper.sendErrorAndClose(String.format("job-not-watchable [%s]",
-                        job.state()), "400", eventOutput);
-                return eventOutput;
-            }
-
-            if (!sseConnectionManager.canAcceptNewConnection(jobId)) {
-                helper.sendErrorAndClose("too-many-connections", "429", eventOutput);
-                return eventOutput;
-            }
-
-            // Callback for watching job updates and sending them to the client
-            Consumer<Job> jobWatcher = watched -> {
-                if (!eventOutput.isClosed()) {
-                    try {
-                        OutboundEvent event = new OutboundEvent.Builder()
-                                .mediaType(MediaType.APPLICATION_JSON_TYPE)
-                                .name("job-update")
-                                .data(Map.class, helper.getJobStatusInfo(watched))
-                                .build();
-                        eventOutput.write(event);
-
-                        // If job is complete/failed/cancelled, close the connection
-                        if (helper.isTerminalState(watched.state())) {
-                            sseConnectionManager.closeJobConnections(jobId);
-                        }
-
-                    } catch (IOException e) {
-                        Logger.error(this, "Error writing SSE event", e);
-                        sseConnectionManager.closeJobConnections(jobId);
-                    }
-                }
-            };
-
-            // Register the connection and watcher
-            sseConnectionManager.addConnection(jobId, eventOutput);
-
-            // Start watching the job
-            helper.watchJob(job.id(), jobWatcher);
-
-        } catch (DotDataException e) {
-            Logger.error(this, "Error setting up job monitor", e);
-            helper.closeSSEConnection(eventOutput);
-        }
-
-        return eventOutput;
-    }
-
-    @GET
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> listJobs(@Context HttpServletRequest request,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -259,7 +184,7 @@ public class JobQueueResource {
     public ResponseEntityView<JobPaginatedResult> activeJobs(@Context HttpServletRequest request,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -275,7 +200,7 @@ public class JobQueueResource {
     public ResponseEntityView<JobPaginatedResult> completedJobs(@Context HttpServletRequest request,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -286,12 +211,29 @@ public class JobQueueResource {
     }
 
     @GET
+    @Path("/successful")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<JobPaginatedResult> successfulJobs(
+            @Context HttpServletRequest request,
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+        new InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final JobPaginatedResult result = helper.getSuccessfulJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    @GET
     @Path("/canceled")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> canceledJobs(@Context HttpServletRequest request,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -307,7 +249,7 @@ public class JobQueueResource {
     public ResponseEntityView<JobPaginatedResult> failedJobs(@Context HttpServletRequest request,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new WebResource.InitBuilder(webResource)
+        new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
@@ -315,6 +257,40 @@ public class JobQueueResource {
                 .init();
         final JobPaginatedResult result = helper.getFailedJobs(page, pageSize);
         return new ResponseEntityView<>(result);
+    }
+
+    @GET
+    @Path("/abandoned")
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseEntityView<JobPaginatedResult> abandonedJobs(@Context HttpServletRequest request,
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
+        new InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+        final JobPaginatedResult result = helper.getAbandonedJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    @GET
+    @Path("/{jobId}/monitor")
+    @Produces(SseFeature.SERVER_SENT_EVENTS)
+    @SuppressWarnings("java:S1854") // jobWatcher assignment is needed for cleanup in catch blocks
+    public EventOutput monitorJob(@Context HttpServletRequest request,
+            @PathParam("jobId") String jobId) {
+
+        new InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, null)
+                .rejectWhenNoUser(true)
+                .init();
+
+        // Set up job monitoring
+        return sseMonitorUtil.monitorJob(jobId);
     }
 
 }

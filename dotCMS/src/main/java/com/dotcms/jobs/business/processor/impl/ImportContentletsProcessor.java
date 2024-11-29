@@ -24,20 +24,17 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -265,9 +262,8 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
             );
         }
 
-        try (Reader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(fileToImport),
-                        Charset.defaultCharset()))) {
+        try (Reader reader = Files.newBufferedReader(
+                fileToImport.toPath(), StandardCharsets.UTF_8)) {
 
             CsvReader csvReader = createCsvReader(reader);
 
@@ -463,8 +459,8 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
     private Long totalLines(final Job job, final File dotTempFile) {
 
         long totalCount;
-        try (BufferedReader reader = new BufferedReader(new FileReader(dotTempFile))) {
-            totalCount = reader.lines().count();
+        try {
+            totalCount = FileUtil.countFileLines(dotTempFile);
             if (totalCount == 0) {
                 Logger.info(this.getClass(),
                         "No lines in CSV import file: " + dotTempFile.getName());

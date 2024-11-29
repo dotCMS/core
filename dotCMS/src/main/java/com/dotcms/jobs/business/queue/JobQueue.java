@@ -113,6 +113,16 @@ public interface JobQueue {
     JobPaginatedResult getCompletedJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
+     * Retrieves a list of successful jobs.
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of successful jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
      * Retrieves a list of canceled jobs.
      *
      * @param page     The page number (for pagination).
@@ -131,6 +141,16 @@ public interface JobQueue {
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
     JobPaginatedResult getFailedJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of abandoned
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getAbandonedJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
      * Updates the status of a job.
@@ -189,16 +209,6 @@ public interface JobQueue {
      *                               progress
      */
     void updateJobProgress(String jobId, float progress) throws JobQueueDataException;
-
-    /**
-     * Removes a job from the queue. This method should be used for jobs that have permanently
-     * failed and cannot be retried. Implementing classes should ensure that the job is completely
-     * removed from the queue and any associated resources are cleaned up.
-     *
-     * @param jobId The ID of the job to remove.
-     * @throws JobQueueDataException if there's a data storage error while removing the job
-     */
-    void removeJobFromQueue(String jobId) throws JobQueueDataException;
 
     /**
      * Checks if a job has ever been in a specific state.

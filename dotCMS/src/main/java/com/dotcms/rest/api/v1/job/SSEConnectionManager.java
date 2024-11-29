@@ -101,7 +101,7 @@ public class SSEConnectionManager {
      * @param jobId The ID of the job for which to check connection availability
      * @return true if a new connection can be accepted, false otherwise
      */
-    public boolean canAcceptNewConnection(String jobId) {
+    public boolean canAcceptNewConnection(final String jobId) {
         if (getTotalConnections() >= MAX_SSE_TOTAL_CONNECTIONS.get()) {
             return false;
         }
@@ -116,9 +116,10 @@ public class SSEConnectionManager {
      *
      * @param jobId       The ID of the job to monitor
      * @param eventOutput The EventOutput instance representing the SSE connection
+     * @return The created SSEConnection instance
      * @throws IllegalStateException if the manager is shut down
      */
-    public void addConnection(String jobId, EventOutput eventOutput) {
+    public SSEConnection addConnection(final String jobId, final EventOutput eventOutput) {
 
         if (isShutdown) {
             throw new IllegalStateException("SSEConnectionManager is shut down");
@@ -130,28 +131,33 @@ public class SSEConnectionManager {
         // Schedule connection timeout
         timeoutExecutor.schedule(() -> {
             try {
-                removeConnection(jobId, connection);
+                closeConnection(connection);
             } catch (Exception e) {
-                Logger.error(this, "Error removing expired connection", e);
+                Logger.error(this, "Error closing expired connection", e);
             }
         }, SSE_CONNECTION_TIMEOUT_MINUTES.get(), TimeUnit.MINUTES);
+
+        return connection;
     }
 
     /**
-     * Removes a specific SSE connection for a job. If this was the last connection for the job, the
+     * Closes a specific SSE connection for a job. If this was the last connection for the job, the
      * job entry is removed from tracking.
      *
-     * @param jobId      The ID of the job
      * @param connection The connection to remove
      */
-    public void removeConnection(String jobId, SSEConnection connection) {
-        Set<SSEConnection> connections = jobConnections.get(jobId);
-        if (connections != null) {
-            connections.remove(connection);
-            connection.close();
+    public void closeConnection(final SSEConnection connection) {
 
-            if (connections.isEmpty()) {
-                jobConnections.remove(jobId);
+        if (connection != null) {
+            Set<SSEConnection> connections = jobConnections.get(connection.jobId);
+            if (connections != null) {
+                connections.remove(connection);
+                connection.close();
+
+                // If this was the last connection for the job, clean up the job entry
+                if (connections.isEmpty()) {
+                    jobConnections.remove(connection.jobId);
+                }
             }
         }
     }
@@ -182,7 +188,7 @@ public class SSEConnectionManager {
      *
      * @param jobId The ID of the job whose connections should be closed
      */
-    public void closeJobConnections(String jobId) {
+    public void closeAllJobConnections(final String jobId) {
         Set<SSEConnection> connections = jobConnections.remove(jobId);
         if (connections != null) {
             connections.forEach(SSEConnection::close);
@@ -195,7 +201,7 @@ public class SSEConnectionManager {
      * @param jobId The ID of the job
      * @return The number of active connections for the job
      */
-    public int getConnectionCount(String jobId) {
+    public int getConnectionCount(final String jobId) {
         Set<SSEConnection> connections = jobConnections.get(jobId);
         return connections != null ? connections.size() : 0;
     }
@@ -264,6 +270,15 @@ public class SSEConnectionManager {
          */
         public String getJobId() {
             return jobId;
+        }
+
+        /**
+         * Gets the EventOutput instance representing the SSE connection.
+         *
+         * @return The EventOutput instance
+         */
+        public EventOutput getEventOutput() {
+            return eventOutput;
         }
     }
 
