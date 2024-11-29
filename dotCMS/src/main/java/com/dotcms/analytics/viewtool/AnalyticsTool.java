@@ -25,6 +25,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.DIMENSIONS_ATTR;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.MEASURES_ATTR;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.TIME_DIMENSIONS_ATTR;
+import static com.dotcms.util.DotPreconditions.checkArgument;
+
 /**
  * This class is a ViewTool that can be used to access the analytics data.
  * @author jsanca
@@ -130,6 +135,12 @@ public class AnalyticsTool  implements ViewTool {
     public ReportResponse runReport(final String measures, final String dimensions,
                                     final String timeDimensions, final String filters, final String order,
                                     final int limit, final int offset) {
+
+        checkArgument(!(UtilMethods.isNotSet(measures)
+                        && UtilMethods.isNotSet(dimensions)
+                        && UtilMethods.isNotSet(timeDimensions)),
+                IllegalArgumentException.class,
+                "Query should contain either measures, dimensions or timeDimensions with granularities in order to be valid");
 
         final ContentAnalyticsQuery.Builder builder = new ContentAnalyticsQuery.Builder();
 
