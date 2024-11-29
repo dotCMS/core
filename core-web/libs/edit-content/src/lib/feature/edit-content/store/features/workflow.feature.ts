@@ -205,6 +205,35 @@ export function withWorkflow() {
                 router = inject(Router)
             ) => ({
                 /**
+                 * Sets the selected workflow scheme ID and updates related state in the store.
+                 * For new content, it sets the current scheme ID, parses and sets the workflow actions,
+                 * and sets the first step of the selected scheme.
+                 * For existing content, it only updates the current scheme ID and first step.
+                 *
+                 * @param {string} currentSchemeId - The ID of the workflow scheme to be selected
+                 */
+                setSelectedWorkflow: (currentSchemeId: string) => {
+                    const schemes = store.schemes();
+                    const currentScheme = schemes[currentSchemeId];
+                    const actions = currentScheme.actions;
+                    const isNew = !store.contentlet()?.inode;
+
+                    if (isNew) {
+                        patchState(store, {
+                            currentSchemeId,
+                            currentContentActions: parseCurrentActions(actions),
+                            currentStep: currentScheme.firstStep
+                        });
+                    } else {
+                        // Existing content
+                        patchState(store, {
+                            currentSchemeId,
+                            currentStep: currentScheme.firstStep
+                        });
+                    }
+                },
+
+                /**
                  * Get workflow status for an existing contentlet
                  * we use the inode to get the workflow status
                  */
@@ -222,18 +251,30 @@ export function withWorkflow() {
                             return dotWorkflowService.getWorkflowStatus(inode).pipe(
                                 tapResponse({
                                     next: ({ scheme, step, task }) => {
-                                        patchState(store, {
-                                            currentSchemeId: scheme?.id || null,
-                                            currentStep: step || null,
-                                            lastTask: task,
-                                            workflow: {
-                                                status: ComponentStatus.LOADED,
-                                                error: null
-                                            },
-
-                                            initialContentletState:
-                                                scheme && step && task ? 'existing' : 'reset'
-                                        });
+                                        // Reset workflow state
+                                        if (!scheme && !step && !task) {
+                                            patchState(store, {
+                                                currentStep: null,
+                                                lastTask: null,
+                                                workflow: {
+                                                    status: ComponentStatus.LOADED,
+                                                    error: null
+                                                },
+                                                initialContentletState: 'reset'
+                                            });
+                                        } else {
+                                            // Existing content
+                                            patchState(store, {
+                                                currentSchemeId: scheme?.id || null,
+                                                currentStep: step,
+                                                lastTask: task,
+                                                workflow: {
+                                                    status: ComponentStatus.LOADED,
+                                                    error: null
+                                                },
+                                                initialContentletState: 'existing'
+                                            });
+                                        }
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         patchState(store, {
@@ -251,23 +292,6 @@ export function withWorkflow() {
                 ),
 
                 /**
-                 * Sets the selected workflow scheme ID in the store.
-                 *
-                 * @param {string} schemeId - The ID of the workflow scheme to be selected.
-                 */
-                setSelectedWorkflow: (currentSchemeId: string) => {
-                    const schemes = store.schemes();
-                    const currentScheme = schemes[currentSchemeId];
-                    const parsedCurrentActions = parseCurrentActions(currentScheme.actions || []);
-
-                    patchState(store, {
-                        currentSchemeId,
-                        currentContentActions: parsedCurrentActions,
-                        currentStep: currentScheme.firstStep
-                    });
-                },
-
-                /**
                  * Fires a workflow action and updates the component state accordingly.
                  *
                  * This method triggers a sequence of events to fire a workflow action
@@ -283,6 +307,7 @@ export function withWorkflow() {
                     pipe(
                         tap(() => {
                             patchState(store, { state: ComponentStatus.SAVING });
+                            messageService.clear();
                             messageService.add({
                                 severity: 'info',
                                 icon: 'pi pi-spin pi-spinner',
@@ -331,20 +356,28 @@ export function withWorkflow() {
                                         const parsedCurrentActions =
                                             parseCurrentActions(currentContentActions);
 
-                                        patchState(store, {
-                                            contentlet,
-                                            currentContentActions: parsedCurrentActions,
-                                            currentSchemeId: isReset
-                                                ? null
-                                                : store.currentSchemeId(),
-                                            initialContentletState: isReset
-                                                ? 'reset'
-                                                : store.initialContentletState(),
-                                            state: ComponentStatus.LOADED,
-                                            currentStep: isReset ? null : store.currentStep(),
-
-                                            error: null
-                                        });
+                                        if (isReset) {
+                                            patchState(store, {
+                                                contentlet,
+                                                currentContentActions: parsedCurrentActions,
+                                                currentSchemeId:
+                                                    Object.keys(store.schemes()).length > 1
+                                                        ? null
+                                                        : store.currentSchemeId(),
+                                                initialContentletState: 'reset',
+                                                state: ComponentStatus.LOADED,
+                                                currentStep: null,
+                                                error: null
+                                            });
+                                        } else {
+                                            patchState(store, {
+                                                contentlet,
+                                                currentContentActions: parsedCurrentActions,
+                                                currentSchemeId: store.currentSchemeId(),
+                                                state: ComponentStatus.LOADED,
+                                                error: null
+                                            });
+                                        }
 
                                         messageService.clear();
                                         messageService.add({

@@ -7,7 +7,6 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { withLocales } from '@dotcms/edit-content/feature/edit-content/store/features/locales.feature';
 
 import { withContent } from './features/content.feature';
-import { withDebug } from './features/debug.feature';
 import { withForm } from './features/form.feature';
 import { withInformation } from './features/information.feature';
 import { withSidebar } from './features/sidebar.feature';
@@ -53,6 +52,5 @@ export const DotEditContentStore = signalStore(
                 }
             }
         }
-    }),
-    withDebug() // TODO: remove this
+    })
 );

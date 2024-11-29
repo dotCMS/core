@@ -62,19 +62,6 @@ export class DotEditContentSidebarComponent {
     });
 
     /**
-     * Effect that triggers the workflow status and new content status based on the contentlet and content type ID.
-     */
-    #workflowEffect = effect(() => {
-        const inode = this.store.contentlet()?.inode;
-
-        untracked(() => {
-            if (inode) {
-                this.store.getWorkflowStatus(inode);
-            }
-        });
-    });
-
-    /**
      * Effect that triggers the reference pages based on the contentlet identifier.
      */
     #informationEffect = effect(() => {

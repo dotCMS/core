@@ -41,7 +41,9 @@
     </dd>
 
     @if (!workflowSelection.noWorkflowSelectedYet) {
-        <dt class="workflow-column__title" id="step-title">{{ 'Step' | dm }}</dt>
+        <dt class="workflow-column__title" id="step-title">
+            {{ 'Step' | dm }}
+        </dt>
         <dd
             class="workflow-column__description"
             aria-labelledby="step-title"

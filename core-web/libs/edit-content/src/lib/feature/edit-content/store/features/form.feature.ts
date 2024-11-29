@@ -1,7 +1,9 @@
 import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 
+import { FormValues } from '../../../../models/dot-edit-content-form.interface';
+
 export interface FormState {
-    formValues: Record<string, string>;
+    formValues: FormValues;
 }
 
 const initialState: FormState = {
@@ -21,10 +23,10 @@ export function withForm() {
             /**
              * Handles the form change event and stores the form values.
              *
-             * @param {Record<string, string>} formValues
+             * @param {FormValues} formValues
              * @memberof withForm
              */
-            onFormChange: (formValues: Record<string, string>) => {
+            onFormChange: (formValues: FormValues) => {
                 patchState(store, { formValues });
             }
         }))

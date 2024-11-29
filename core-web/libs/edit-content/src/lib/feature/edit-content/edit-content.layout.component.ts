@@ -17,6 +17,7 @@ import { DotEditContentStore } from './store/edit-content.store';
 
 import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
+import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 /**
@@ -85,7 +86,7 @@ export class EditContentLayoutComponent {
      * @param {Record<string, string>} value
      * @memberof EditContentLayoutComponent
      */
-    onFormChange(value: Record<string, string>) {
+    onFormChange(value: FormValues) {
         this.$store.onFormChange(value);
     }
 }

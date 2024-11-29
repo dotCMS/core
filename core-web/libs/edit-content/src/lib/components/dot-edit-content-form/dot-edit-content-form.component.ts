@@ -36,6 +36,7 @@ import {
     FLATTENED_FIELD_TYPES
 } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { getFinalCastedValue, isFilteredType } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
@@ -194,7 +195,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     private processFormValue(
         value: Record<string, string | string[] | Date | null | undefined>
-    ): Record<string, string | string[] | Date> {
+    ): FormValues {
         return Object.fromEntries(
             Object.entries(value).map(([key, fieldValue]) => {
                 const field = this.$formFields().find((f) => f.variable === key);

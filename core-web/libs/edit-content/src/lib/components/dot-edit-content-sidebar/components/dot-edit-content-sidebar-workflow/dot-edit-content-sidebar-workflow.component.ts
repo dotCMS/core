@@ -15,6 +15,11 @@ interface WorkflowSelection {
     noWorkflowSelectedYet: boolean;
 }
 
+const DEFAULT_WORKFLOW_SELECTION: WorkflowSelection = {
+    schemeOptions: [],
+    noWorkflowSelectedYet: false
+} as const;
+
 interface DotWorkflowState extends DotCMSWorkflowStatus {
     contentState: string;
     resetAction?: DotCMSWorkflowAction;
@@ -43,15 +48,9 @@ interface DotWorkflowState extends DotCMSWorkflowStatus {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarWorkflowComponent {
-    $workflowSelection = input<WorkflowSelection>(
-        {
-            schemeOptions: [],
-            noWorkflowSelectedYet: false
-        },
-        {
-            alias: 'workflowSelection'
-        }
-    );
+    $workflowSelection = input<WorkflowSelection>(DEFAULT_WORKFLOW_SELECTION, {
+        alias: 'workflowSelection'
+    });
 
     /**
      * Whether the dialog should be shown.
@@ -93,7 +92,7 @@ export class DotEditContentSidebarWorkflowComponent {
      * @type {DotCMSWorkflowStatus}
      * @memberof DotEditContentSidebarWorkflowComponent
      */
-    $workflow = input<DotWorkflowState>({} as DotWorkflowState, {
+    $workflow = input<DotWorkflowState | null>(null, {
         alias: 'workflow'
     });
 
@@ -113,7 +112,7 @@ export class DotEditContentSidebarWorkflowComponent {
      * @type {boolean}
      * @memberof DotEditContentSidebarWorkflowComponent
      */
-    $resetWorkflowAction = input<DotCMSWorkflowAction | undefined>(undefined, {
+    $resetWorkflowAction = input<DotCMSWorkflowAction | null>(null, {
         alias: 'resetWorkflowAction'
     });
 
