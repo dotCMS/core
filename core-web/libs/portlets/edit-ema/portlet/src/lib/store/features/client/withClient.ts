@@ -13,6 +13,7 @@ import { UVEState } from '../../models';
 export interface ClientRequestProps {
     params?: CustomClientParams;
     query?: string;
+    variables?: string;
 }
 
 /**
@@ -30,7 +31,8 @@ const initialState: ClientConfigState = {
     isClientReady: false,
     clientRequestProps: {
         params: null,
-        query: ''
+        query: '',
+        variables: ''
     }
 };
 
@@ -53,11 +55,12 @@ export function withClient() {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setClientConfiguration: ({ query, params }: ClientRequestProps) => {
+                setClientConfiguration: ({ query, params, variables }: ClientRequestProps) => {
                     patchState(store, {
                         clientRequestProps: {
                             query,
-                            params
+                            params,
+                            variables
                         }
                     });
                 },

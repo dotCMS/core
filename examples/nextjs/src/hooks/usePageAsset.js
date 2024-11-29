@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { client } from '@/utils/dotcmsClient';
 import { CLIENT_ACTIONS, isInsideEditor, postMessageToEditor } from '@dotcms/client';
 
-export const usePageAsset = (currentPageAsset) => {
+export const usePageAsset = (currentPageAsset, queryMetadata) => {
     const [pageAsset, setPageAsset] = useState(null);
 
     useEffect(() => {
@@ -21,7 +21,13 @@ export const usePageAsset = (currentPageAsset) => {
 
         // If the page is not found, let the editor know
         if (!currentPageAsset) {
-            postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY });
+            postMessageToEditor({
+                action: CLIENT_ACTIONS.CLIENT_READY,
+                payload: {
+                    query: queryMetadata.query,
+                    variables: queryMetadata.variables
+                }
+            });
 
             return;
         }
@@ -29,7 +35,7 @@ export const usePageAsset = (currentPageAsset) => {
         return () => {
             client.editor.off('changes');
         };
-    }, [currentPageAsset]);
+    }, [currentPageAsset, queryMetadata]);
 
     return pageAsset ?? currentPageAsset;
 };

@@ -1,10 +1,10 @@
-import { ErrorPage } from "@/components/error";
+import { ErrorPage } from '@/components/error';
 
-import { handleVanityUrlRedirect } from "@/utils/vanityUrlHandler";
-import { client } from "@/utils/dotcmsClient";
-import { getPageRequestParams } from "@dotcms/client";
-import { fetchNavData, fetchPageData } from "@/utils/page.utils";
-import { MyBlogPage } from "@/components/my-blog-page";
+import { handleVanityUrlRedirect } from '@/utils/vanityUrlHandler';
+import { client } from '@/utils/dotcmsClient';
+import { getPageRequestParams } from '@dotcms/client';
+import { fetchNavData, fetchPageData } from '@/utils/page.utils';
+import { MyBlogPage } from '@/components/my-blog-page';
 
 /**
  * Generate metadata
@@ -14,10 +14,10 @@ import { MyBlogPage } from "@/components/my-blog-page";
  * @return {*}
  */
 export async function generateMetadata({ params, searchParams }) {
-    const path = params?.slug?.join("/");
+    const path = params?.slug?.join('/');
     const pageRequestParams = getPageRequestParams({
         path: `blog/post/${path}`,
-        params: searchParams,
+        params: searchParams
     });
 
     try {
@@ -26,22 +26,22 @@ export async function generateMetadata({ params, searchParams }) {
         const title = page?.friendlyName || page?.title;
 
         return {
-            title,
+            title
         };
     } catch (e) {
         return {
-            title: "not found",
+            title: 'not found'
         };
     }
 }
 
 export default async function Home({ searchParams, params }) {
     const getPageData = async () => {
-        const path = params?.slug?.join("/");
-        console.log(path)
+        const path = params?.slug?.join('/');
+        console.log(path);
         const pageParams = getPageRequestParams({
             path: `blog/post/${path}`,
-            params: searchParams,
+            params: searchParams
         });
 
         const { pageAsset, error: pageError } = await fetchPageData(pageParams);
@@ -50,7 +50,7 @@ export default async function Home({ searchParams, params }) {
         return {
             nav,
             pageAsset,
-            error: pageError || navError,
+            error: pageError || navError
         };
     };
     const { pageAsset, nav, error } = await getPageData();

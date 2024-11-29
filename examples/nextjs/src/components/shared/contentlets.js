@@ -38,7 +38,7 @@ function Contentlets({ contentlets }) {
                     <a className="relative min-w-32" href={contentlet.urlMap || contentlet.url}>
                         {contentlet.image && (
                             <Image
-                                src={contentlet.image?.idPath ?? contentlet.image}
+                                src={contentlet.image?.identifier ?? contentlet.image}
                                 alt={contentlet.urlTitle}
                                 fill={true}
                                 className="object-cover"

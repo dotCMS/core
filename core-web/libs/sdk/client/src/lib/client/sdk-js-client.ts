@@ -1,4 +1,5 @@
 import { Content } from './content/content-api';
+import { GQLClient } from './gql/gql-api';
 import { ErrorMessages } from './models';
 import { DotcmsClientListener } from './models/types';
 
@@ -388,6 +389,16 @@ export class DotCmsClient {
             return response.json();
         }
     };
+
+    gql({
+        page,
+        content = {}
+    }: {
+        page: { url: string; mode: string; language: string; pageFragment: string };
+        content: Record<string, string>;
+    }) {
+        return new GQLClient(this.#requestOptions, this.#config.dotcmsUrl, page, content);
+    }
 
     /**
      * Initializes the DotCmsClient instance with the provided configuration.

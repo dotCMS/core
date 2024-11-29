@@ -15,6 +15,7 @@ export type EditorConfig =
       }
     | {
           query: string;
+          variables: Record<string, string>;
       };
 
 /**

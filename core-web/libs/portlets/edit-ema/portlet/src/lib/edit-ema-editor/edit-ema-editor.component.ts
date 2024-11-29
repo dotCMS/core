@@ -980,7 +980,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     .subscribe(() => this.uveStore.reloadCurrentPage());
             },
             [CLIENT_ACTIONS.CLIENT_READY]: (clientConfig: ClientRequestProps) => {
-                const { query, params } = clientConfig || {};
+                const { query, params, variables } = clientConfig || {};
                 const isClientReady = this.uveStore.isClientReady();
 
                 // Frameworks Navigation triggers the client ready event, so we need to prevent it
@@ -996,7 +996,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                this.uveStore.setClientConfiguration({ query, params });
+                this.uveStore.setClientConfiguration({ query, params, variables });
                 this.uveStore.reloadCurrentPage();
             },
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {

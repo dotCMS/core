@@ -210,7 +210,7 @@ export class DotPageApiService {
      * @return {*}  {Observable<T>}
      * @memberof DotPageApiService
      */
-    getGraphQLPage(query: string): Observable<DotPageApiResponse> {
+    getGraphQLPage(query: string, variables: string): Observable<DotPageApiResponse> {
         const headers = {
             'Content-Type': 'application/json',
             dotcachettl: '0' // Bypasses GraphQL cache
@@ -219,7 +219,7 @@ export class DotPageApiService {
         return this.http
             .post<{
                 data: { page: Record<string, unknown> };
-            }>('/api/v1/graphql', { query }, { headers })
+            }>('/api/v1/graphql', { query, variables }, { headers })
             .pipe(
                 pluck('data'),
                 map((data) => graphqlToPageEntity(data) as DotPageApiResponse)
@@ -236,7 +236,7 @@ export class DotPageApiService {
         params: DotPageApiParams,
         clientProps: ClientRequestProps
     ): Observable<DotPageApiResponse> {
-        const { query, params: clientParams } = clientProps;
+        const { query, params: clientParams, variables } = clientProps;
 
         if (!query) {
             return this.get({
@@ -245,6 +245,6 @@ export class DotPageApiService {
             });
         }
 
-        return this.getGraphQLPage(query);
+        return this.getGraphQLPage(query, variables);
     }
 }
