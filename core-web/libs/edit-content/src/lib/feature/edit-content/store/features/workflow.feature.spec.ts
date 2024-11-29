@@ -15,7 +15,7 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { contentInitialState, ContentState } from './content.feature';
 import { withWorkflow } from './workflow.feature';
@@ -121,6 +121,98 @@ describe('WorkflowFeature', () => {
                 store.setSelectedWorkflow(newSchemeId);
                 expect(store.currentSchemeId()).toBe(newSchemeId);
             });
+        });
+    });
+
+    describe('computed properties', () => {
+        describe('getScheme', () => {
+            it('should return undefined when no scheme is selected', () => {
+                expect(store.getScheme()).toBeUndefined();
+            });
+
+            it('should return the correct scheme when one is selected', () => {
+                const schemeId = MOCK_WORKFLOW_DATA[0].scheme.id;
+                store.setSelectedWorkflow(schemeId);
+                expect(store.getScheme()).toEqual(MOCK_WORKFLOW_DATA[0].scheme);
+            });
+        });
+
+        describe('fireWorkflowAction', () => {
+            const mockFireOptions = {
+                actionId: '2d1dc771-8fda-4b43-9e81-71d43a8c73e4',
+                inode: 'beed8670-9b39-4d77-a47b-6928fc50ebd6',
+                data: {
+                    contentlet: {
+                        asdasd: 'asd',
+                        asdasd1: 'asd',
+                        contentType: 'OnewfBlog'
+                    }
+                }
+            };
+            const mockOptions = {
+                inode: '123',
+                actionId: MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB[0].id,
+                formData: {}
+            };
+
+            it('should handle reset action correctly', fakeAsync(() => {
+                workflowActionsFireService.fireTo.mockReturnValue(of({} as DotCMSContentlet));
+                workflowActionService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+
+                store.fireWorkflowAction(mockOptions);
+                tick();
+
+                expect(store.getCurrentStep()).toBeNull();
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'success'
+                    })
+                );
+            }));
+
+            it('should show processing message when action starts', fakeAsync(() => {
+                workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
+
+                store.fireWorkflowAction(mockOptions);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'info',
+                        icon: 'pi pi-spin pi-spinner'
+                    })
+                );
+                tick();
+            }));
+        });
+
+        describe('getCurrentStep', () => {
+            it('should return first step for new content with selected workflow', () => {
+                // Set up a new content scenario by selecting a workflow
+                const schemeId = MOCK_WORKFLOW_DATA[0].scheme.id;
+                store.setSelectedWorkflow(schemeId);
+
+                expect(store.getCurrentStep()).toEqual(MOCK_WORKFLOW_DATA[0].firstStep);
+            });
+
+            it('should return current step for existing content', fakeAsync(() => {
+                // Mock a workflow action that would update the current step
+                const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
+                workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
+                workflowActionService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+
+                store.fireWorkflowAction({
+                    inode: '123',
+                    actionId: MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB[0].id,
+                    formData: {}
+                });
+                tick();
+
+                expect(store.getCurrentStep()).toBeDefined();
+            }));
         });
     });
 });

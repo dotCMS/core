@@ -7,8 +7,10 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { SkeletonModule } from 'primeng/skeleton';
 
+import { JsonPipe } from '@angular/common';
 import { DotCMSWorkflowAction, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { DotWorkflowState } from '../../../../models/dot-edit-content.model';
 
 interface WorkflowSelection {
     schemeOptions: SelectItem[];
@@ -19,11 +21,6 @@ const DEFAULT_WORKFLOW_SELECTION: WorkflowSelection = {
     schemeOptions: [],
     noWorkflowSelectedYet: false
 } as const;
-
-interface DotWorkflowState extends DotCMSWorkflowStatus {
-    contentState: string;
-    resetAction?: DotCMSWorkflowAction;
-}
 
 /**
  * Component that displays the workflow status of a content item.
@@ -40,7 +37,8 @@ interface DotWorkflowState extends DotCMSWorkflowStatus {
         ButtonModule,
         DialogModule,
         DropdownModule,
-        FormsModule
+        FormsModule,
+        JsonPipe
     ],
 
     templateUrl: './dot-edit-content-sidebar-workflow.component.html',

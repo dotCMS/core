@@ -272,6 +272,8 @@ export function withWorkflow() {
                                             : updatedContentlet;
 
                                     const inode = contentlet.inode;
+
+                                    // A reset action will return an empty object
                                     const isReset = Object.keys(updatedContentlet).length === 0;
 
                                     return forkJoin({
