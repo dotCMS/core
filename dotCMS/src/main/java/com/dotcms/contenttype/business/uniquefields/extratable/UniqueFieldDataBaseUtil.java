@@ -51,9 +51,11 @@ public class UniqueFieldDataBaseUtil {
             "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
     private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
+            "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
             "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
-            "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ?";
+            "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ? " +
+            "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
     private final static String DELETE_UNIQUE_FIELDS_BY_CONTENTLET = "DELETE FROM unique_fields " +
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
@@ -154,13 +156,14 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException If an error occurs when interacting with the database.
      */
-    public Optional<Map<String, Object>> get(final Contentlet contentlet) throws DotDataException {
+    public Optional<Map<String, Object>> get(final Contentlet contentlet, final Field field) throws DotDataException {
         try {
             final List<Map<String, Object>> results = new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET)
                     .addParam("\"" + contentlet.getIdentifier() + "\"")
                     .addParam(contentlet.getVariantId())
                     .addParam(contentlet.getLanguageId())
                     .addParam(contentlet.isLive())
+                    .addParam(field.variable())
                     .loadObjectResults();
 
             return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));

@@ -67,7 +67,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                        final ContentType contentType) throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
 
         if (isContentletBeingUpdated(contentlet)) {
-            cleanUniqueFieldsUp(contentlet);
+            cleanUniqueFieldsUp(contentlet, field);
         }
 
         final User systemUser = APILocator.systemUser();
@@ -110,8 +110,8 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
      * @throws DotDataException An error occurred when interacting with the database.
      */
     @SuppressWarnings("unchecked")
-    private  void cleanUniqueFieldsUp(final Contentlet contentlet) throws DotDataException {
-        Optional<Map<String, Object>> uniqueFieldOptional = uniqueFieldDataBaseUtil.get(contentlet);
+    private  void cleanUniqueFieldsUp(final Contentlet contentlet, final Field field) throws DotDataException {
+        Optional<Map<String, Object>> uniqueFieldOptional = uniqueFieldDataBaseUtil.get(contentlet, field);
 
         if (uniqueFieldOptional.isPresent()) {
             cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldOptional.get());

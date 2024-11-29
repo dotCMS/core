@@ -400,12 +400,15 @@ public class VersionableAPIImpl implements VersionableAPI {
             throw new DotStateException("No version info. Call setWorking first");
 
         try {
-            ContentletVersionInfo copy = (ContentletVersionInfo) BeanUtils.cloneBean(versionInfo);
+            ContentletVersionInfo copy =  versionInfo instanceof ContentletVersionInfo  ?
+                    (ContentletVersionInfo) BeanUtils.cloneBean(versionInfo) : null;
 
             versionInfo.setLiveInode(null);
             versionableFactory.saveVersionInfo(versionInfo, true);
 
-            uniqueFieldValidationStrategyResolver.get().afterUnPublish(copy);
+            if (UtilMethods.isSet(copy)) {
+                uniqueFieldValidationStrategyResolver.get().afterUnPublish(copy);
+            }
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
