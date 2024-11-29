@@ -34,9 +34,17 @@ export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnIni
     ) {}
 
     ngOnInit(): void {
-        const { healthStatus } = this.location.getState() as {
+        const location = this.location.getState() as {
             healthStatus: HealthStatusTypes;
         };
+
+        /**
+         * With the new UVE changes, probably we enter to this component without the location state
+         * so we need to check if the location state is not present and set the default configuration
+         *
+         * Probably needs a recheck later. This is a hotfix for realease
+         */
+        const healthStatus = location?.healthStatus || HealthStatusTypes.NOT_CONFIGURED;
 
         if (healthStatus === HealthStatusTypes.NOT_CONFIGURED) {
             this.setConfiguration(
