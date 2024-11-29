@@ -537,6 +537,36 @@ export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
     hint: 'Helper label to be displayed below the field'
 };
 
+export const RELATIONSHIP_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+    contentTypeId: 'd68af52828a53805a1716e68cd902560',
+    dataType: 'SYSTEM',
+    fieldType: 'Relationship',
+    fieldTypeLabel: 'Relationships Field',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1732655273000,
+    id: '306fe444c1ae1fd063c02d8812903fc9',
+    indexed: true,
+    listed: false,
+    modDate: 1732660181000,
+    name: 'Relationship Field',
+    readOnly: false,
+    relationships: {
+        cardinality: 0,
+        isParentField: true,
+        velocityVar: 'AllTypes'
+    },
+    required: false,
+    searchable: false,
+    skipRelationshipCreation: false,
+    sortOrder: 6,
+    unique: false,
+    variable: 'relationshipField',
+    hint: 'Helper label to be displayed below the field'
+};
+
 export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
     id: '64d5c84f04df900c79a94e087c6fed05',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
@@ -734,7 +764,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     HOST_FOLDER_TEXT_MOCK,
     CATEGORY_MOCK,
     CONSTANT_FIELD_MOCK,
-    HIDDEN_FIELD_MOCK
+    HIDDEN_FIELD_MOCK,
+    RELATIONSHIP_FIELD_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;

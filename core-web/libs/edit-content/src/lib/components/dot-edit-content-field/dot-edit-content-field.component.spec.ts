@@ -34,6 +34,7 @@ import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
+import { DotEditContentRelationshipFieldComponent } from '../../fields/dot-edit-content-relationship-field/dot-edit-content-relationship-field.component';
 import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
 import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-tag-field/dot-edit-content-tag-field.component';
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
@@ -73,6 +74,9 @@ declare module '@tiptap/core' {
 const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTestBed> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
+    [FIELD_TYPES.RELATIONSHIP]: {
+        component: DotEditContentRelationshipFieldComponent
+    },
     [FIELD_TYPES.FILE]: {
         component: DotEditContentFileFieldComponent,
         providers: [
