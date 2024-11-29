@@ -14,7 +14,12 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSWorkflowAction,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { withContent } from './content.feature';
@@ -143,6 +148,92 @@ describe('ContentFeature', () => {
             expect(store.currentContentActions()).toEqual(parseCurrentActions(expectedActions));
             expect(store.schemes()).toEqual(parseWorkflows(MOCK_SINGLE_WORKFLOW_ACTIONS));
         }));
+
+        it('should return isLoaded as true when state is LOADED', fakeAsync(() => {
+            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            expect(store.isLoaded()).toBe(true);
+        }));
+
+        it('should return hasError as true when error exists', fakeAsync(() => {
+            const mockError = new HttpErrorResponse({ status: 404 });
+            workflowActionService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            contentTypeService.getContentType.mockReturnValue(throwError(() => mockError));
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            expect(store.hasError()).toBe(true);
+        }));
+
+        it('should return correct formData', fakeAsync(() => {
+            const mockContentlet = {
+                inode: '123',
+                contentType: 'testContentType'
+            } as DotCMSContentlet;
+
+            dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionService.getByInode.mockReturnValue(of([]));
+            workflowActionService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+
+            store.initializeExistingContent('123');
+            tick();
+
+            expect(store.formData()).toEqual({
+                contentlet: mockContentlet,
+                contentType: CONTENT_TYPE_MOCK
+            });
+        }));
+
+        it('should return isEnabledNewContentEditor based on content type metadata', fakeAsync(() => {
+            // Test when feature flag is false
+            const contentTypeWithoutEditor = {
+                ...CONTENT_TYPE_MOCK,
+                metadata: {
+                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                }
+            };
+
+            contentTypeService.getContentType.mockReturnValue(of(contentTypeWithoutEditor));
+            workflowActionService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            expect(store.isEnabledNewContentEditor()).toBe(false);
+
+            // Test when feature flag is true
+            const contentTypeWithEditor = {
+                ...CONTENT_TYPE_MOCK,
+                metadata: {
+                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                }
+            };
+
+            contentTypeService.getContentType.mockReturnValue(of(contentTypeWithEditor));
+            workflowActionService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            expect(store.isEnabledNewContentEditor()).toBe(true);
+        }));
     });
 
     describe('initializeNewContent', () => {
@@ -151,6 +242,11 @@ describe('ContentFeature', () => {
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
+            workflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            workflowActionService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowActionService.getByInode.mockReturnValue(of([]));
         });
 
         it('should initialize new content successfully', fakeAsync(() => {
@@ -223,6 +319,32 @@ describe('ContentFeature', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
+        }));
+
+        it('should set initialContentletState to reset when no scheme or step', fakeAsync(() => {
+            const mockContentlet = {
+                inode: '123',
+                contentType: 'testContentType'
+            } as DotCMSContentlet;
+
+            const workflowStatusWithoutScheme = {
+                ...MOCK_WORKFLOW_STATUS,
+                scheme: null,
+                step: null
+            };
+
+            dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+            contentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionService.getByInode.mockReturnValue(of([]));
+            workflowActionService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowService.getWorkflowStatus.mockReturnValue(of(workflowStatusWithoutScheme));
+
+            store.initializeExistingContent('123');
+            tick();
+
+            expect(store.initialContentletState()).toBe('reset');
         }));
     });
 });
