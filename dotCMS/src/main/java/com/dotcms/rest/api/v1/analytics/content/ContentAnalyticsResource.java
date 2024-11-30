@@ -27,7 +27,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -287,7 +286,7 @@ public class ContentAnalyticsResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ReportResponseEntityView query(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
-                                          final @PathParam("params") String params) throws JsonProcessingException {
+                                          final @PathParam("params") String params) {
         final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .params(params)
