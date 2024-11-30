@@ -3,6 +3,7 @@ package com.dotmarketing.common.reindex;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -19,8 +20,9 @@ import com.dotmarketing.util.ThreadUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
-
 import io.vavr.control.Try;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -29,9 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.elasticsearch.action.bulk.BulkProcessor;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -85,7 +84,6 @@ public class ReindexThread {
 
     private final int SLEEP = Config.getIntProperty("REINDEX_THREAD_SLEEP", 250);
     private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
-    private int failedAttemptsCount = 0;
     private long contentletsIndexed = 0;
     // bulk up to this many requests
     public static final int ELASTICSEARCH_BULK_ACTIONS = Config
@@ -147,12 +145,6 @@ public class ReindexThread {
         Logger.warn(this.getClass(), "Reindex Thread is stopping, background indexing will not take place");
         Logger.warn(this.getClass(), "------------------------");
     };
-
-    @VisibleForTesting
-    long totalESPuts() {
-        return contentletsIndexed;
-    }
-
     
     private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor) throws InterruptedException {
       if(bulkProcessor!=null) {
@@ -177,7 +169,7 @@ public class ReindexThread {
       try {
         final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
         if (!workingRecords.isEmpty()) {
-          
+
           // if this is a reindex record
           if (indexAPI.isInFullReindex()
               || Try.of(()-> workingRecords.values().stream().findFirst().get().getPriority() >= ReindexQueueFactory.Priority.STRUCTURE.dbValue()).getOrElse(false) ) {
@@ -200,7 +192,7 @@ public class ReindexThread {
 
           Thread.sleep(SLEEP);
         }
-      } catch (Exception ex) {
+      } catch (final Throwable ex) {
         Logger.error(this, "ReindexThread Exception", ex);
         ThreadUtils.sleep(SLEEP_ON_ERROR);
       } finally {
@@ -213,6 +205,7 @@ public class ReindexThread {
         }
       }
     }
+    Logger.warn(this.getClass(), "WARNING! Inside the 'runReindexLoop' method. The thread state is flagged as STOPPED");
   }
 
     private void reindexWithBulkRequest(Map<String, ReindexEntry> workingRecords)
@@ -258,6 +251,8 @@ public class ReindexThread {
      */
     public static void stopThread() {
         getInstance().state(ThreadState.STOPPED);
+        Logger.warn(ReindexThread.class, "WARNING: Some process has issued a call to stop the Reindex Thread");
+        Logger.warn(ReindexThread.class, ExceptionUtil.getCurrentStackTraceAsString());
         int i=0;
         while(getInstance().threadRunning !=null && ! getInstance().threadRunning.isDone() && ++i<10) {
             getInstance().state(ThreadState.STOPPED);
@@ -266,6 +261,7 @@ public class ReindexThread {
         while(getInstance().threadRunning !=null && ! getInstance().threadRunning.isDone()) {
             getInstance().threadRunning.cancel(true);
         }
+        Logger.warn(ReindexThread.class, "WARNING: The Reindex Thread has been stopped");
     }
 
     /**
@@ -321,5 +317,15 @@ public class ReindexThread {
                 notificationLevel, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
         systemUser.getLocale());
   }
+
+    @Override
+    public String toString() {
+        return "ReindexThread{" +
+                "SLEEP=" + SLEEP +
+                ", SLEEP_ON_ERROR=" + SLEEP_ON_ERROR +
+                ", contentletsIndexed=" + contentletsIndexed +
+                ", STATE=" + STATE +
+                '}';
+    }
 
 }
