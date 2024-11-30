@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
@@ -38,12 +39,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongConsumer;
 
@@ -198,6 +194,13 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
             // Make sure the content type exist (will throw an exception if it doesn't)
             final var contentTypeFound = findContentType(parameters);
 
+            // Make sure the workflow action exist (will throw an exception if it doesn't)
+            findWorkflowAction(parameters);
+
+            // Make sure the fields exist in the content type (will throw an exception if it doesn't)
+            validateFields(parameters, contentTypeFound);
+
+
             // Security measure to prevent invalid attempts to import a host.
             final ContentType hostContentType = APILocator.getContentTypeAPI(
                     APILocator.systemUser()).find(Host.HOST_VELOCITY_VAR_NAME);
@@ -209,6 +212,30 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
             }
         } catch (DotSecurityException | DotDataException e) {
             throw new JobProcessingException("Error validating content type", e);
+        }
+    }
+
+    /**
+     * Validates that the fields specified in the job parameters exist in the given content type.
+     *
+     * <p>This method checks each field specified in the job parameters against the fields defined
+     * in the provided content type. If any field is not found in the content type, a
+     * {@link JobValidationException} is thrown.</p>
+     *
+     * @param parameters The job parameters containing the fields to validate
+     * @param contentTypeFound The content type to validate the fields against
+     * @throws JobValidationException if any field specified in the parameters is not found in the content type
+     */
+    private void validateFields(Map<String, Object> parameters, ContentType contentTypeFound) {
+        var fields = contentTypeFound.fields();
+        for (String field : getFields(parameters)) {
+            if (fields.stream().noneMatch(f -> Objects.equals(f.variable(), field))) {
+                final var errorMessage = String.format(
+                        "Field [%s] not found in Content Type [%s].", field, contentTypeFound.variable()
+                );
+                Logger.error(this, errorMessage);
+                throw new JobValidationException(errorMessage);
+            }
         }
     }
 
@@ -616,6 +643,56 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
             Logger.error(this.getClass(), errorMessage);
             throw new JobProcessingException(errorMessage, e);
         }
+    }
+
+
+    /**
+     * Finds and returns a workflow action based on the provided parameters.
+     *
+     * <p>This method retrieves the workflow action ID from the given parameters and attempts to
+     * find the corresponding workflow action using the Workflow API.
+     *
+     *
+     * @param parameters a map containing parameters required for finding the workflow action,
+     *                   including the workflow action ID and user details.
+     *
+     * @return the {@link WorkflowAction} corresponding to the workflow action ID.
+     *
+     * @throws JobValidationException if the workflow action cannot be found.
+     * @throws JobProcessingException if an error occurs during user retrieval or
+     *                                workflow action lookup.
+     */
+    private WorkflowAction findWorkflowAction(final Map<String, Object> parameters) {
+
+            final var workflowActionId = getWorkflowActionId(parameters);
+            final User user;
+
+            try {
+                user = getUser(parameters);
+            } catch (DotDataException | DotSecurityException e) {
+                final var errorMessage = "Error retrieving user.";
+                Logger.error(this.getClass(), errorMessage);
+                throw new JobProcessingException(errorMessage, e);
+            }
+
+            try {
+                var workflowAction = APILocator.getWorkflowAPI()
+                        .findAction(workflowActionId,user);
+                if(Objects.isNull(workflowAction)){
+                    final var errorMessage = String.format(
+                            "Workflow Action [%s] not found.", workflowActionId
+                    );
+                    Logger.error(this.getClass(), errorMessage);
+                    throw new JobValidationException(errorMessage);
+                }
+                return workflowAction;
+            } catch (DotDataException | DotSecurityException e) {
+                final var errorMessage = String.format(
+                        "Error finding Workflow Action [%s].", workflowActionId
+                );
+                Logger.error(this.getClass(), errorMessage);
+                throw new JobProcessingException(errorMessage, e);
+            }
     }
 
     /**
