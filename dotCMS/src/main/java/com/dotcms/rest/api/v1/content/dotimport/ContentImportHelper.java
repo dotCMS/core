@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.jobs.business.job.Job;
 import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.business.APILocator;
@@ -93,6 +94,16 @@ public class ContentImportHelper {
         processFileUpload(params, jobParameters, request);
 
         return jobQueueManagerAPI.createJob(queueName, jobParameters);
+    }
+
+    /**
+     * gets a job
+     * @param jobId The ID of the job
+     * @return Job
+     * @throws DotDataException if there's an error fetching the job
+     */
+    Job getJob(String jobId) throws DotDataException {
+        return jobQueueManagerAPI.getJob(jobId);
     }
 
     /**

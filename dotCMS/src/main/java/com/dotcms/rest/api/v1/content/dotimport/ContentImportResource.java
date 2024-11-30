@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
 import com.dotcms.jobs.business.error.JobValidationException;
+import com.dotcms.jobs.business.job.Job;
+import com.dotcms.repackage.javax.validation.ValidationException;
+import com.dotcms.rest.ResponseEntityJobView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -10,6 +13,7 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -142,7 +146,7 @@ public class ContentImportResource {
             // Create the content import job
             final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
             return Response.ok(new ResponseEntityView<>(jobId)).build();
-        } catch (JobValidationException e) {
+        } catch (JobValidationException | ValidationException e) {
             // Handle validation exception and return appropriate error message
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
         }
@@ -230,9 +234,58 @@ public class ContentImportResource {
             // Create the content import job in preview mode
             final String jobId = importHelper.createJob(CMD_PREVIEW, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
             return Response.ok(new ResponseEntityView<>(jobId)).build();
-        } catch (JobValidationException e) {
+        } catch (JobValidationException | ValidationException e) {
             // Handle validation exception and return appropriate error message
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
         }
+    }
+
+
+
+    @GET
+    @Path("/{jobId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getJobStatus",
+            summary = "Retrieves the status of a content import job",
+            description = "Fetches the current status of a content import job based on the provided job ID.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved job status",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Job not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<Job> getJobStatus(
+            @Context HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("jobId") @Parameter(
+                required = true,
+                description = "The ID of the job whose status is to be retrieved",
+                schema = @Schema(type = "string")
+            ) final String jobId)
+            throws DotDataException {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject =  new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, ()->String.format(" user %s is retrieving status of job: %s", initDataObject.getUser().getUserId(), jobId));
+
+        Job job = importHelper.getJob(jobId);
+        return new ResponseEntityView<>(job);
     }
 }
