@@ -1,18 +1,27 @@
 <p-toolbar>
     <div class="p-toolbar-group-start">
-        <p-button icon="pi pi-eye" styleClass="p-button-text" data-testId="uve-toolbar-preview" />
+        @if ($toolbar().editor) {
+            <p-button
+                icon="pi pi-eye"
+                styleClass="p-button-text"
+                data-testId="uve-toolbar-preview"
+                (click)="togglePreviewMode(true)" />
 
-        <p-button icon="pi pi-star" styleClass="p-button-text" data-testId="uve-toolbar-bookmark" />
+            <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
 
-        <p-button
-            icon="pi pi-external-link"
-            styleClass="p-button-text"
-            data-testId="uve-toolbar-copy-url" />
+            <p-button
+                icon="pi pi-external-link"
+                styleClass="p-button-text"
+                data-testId="uve-toolbar-copy-url" />
 
-        <p-button
-            label="API"
-            styleClass="p-button-text p-button-sm"
-            data-testId="uve-toolbar-api-link" />
+            <p-button
+                label="API"
+                styleClass="p-button-text p-button-sm"
+                data-testId="uve-toolbar-api-link" />
+        } @else if ($toolbar().preview) {
+            <div>PREVIEW MODE CONTENT</div>
+            <button (click)="togglePreviewMode(false)">Back</button>
+        }
     </div>
 
     <div class="p-toolbar-group-end">
@@ -22,3 +31,7 @@
         <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
     </div>
 </p-toolbar>
+
+@if ($toolbar().showInfoDisplay) {
+    <dot-ema-info-display data-testId="info-display" />
+}
