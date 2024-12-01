@@ -381,7 +381,8 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
             txtFile = File.createTempFile("test", ".txt");
             ContentImportParams params = createContentImportParams(txtFile, form);
 
-            assertThrows(com.dotcms.repackage.javax.validation.ValidationException.class, () -> importResource.validateContentImport(request, response, params));
+            // Assert that the response status is BAD_REQUEST (400)
+            assertBadRequestResponse(importResource.validateContentImport(request, response, params));
         }finally {
             if(txtFile != null && txtFile.exists()){
                 txtFile.delete();
