@@ -11,6 +11,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { UVEStore } from '../../../store/dot-uve.store';
+
 @Component({
     selector: 'dot-ema-bookmarks',
     standalone: true,
@@ -25,6 +27,7 @@ export class DotEmaBookmarksComponent implements OnInit {
     private readonly dotFavoritePageService = inject(DotFavoritePageService);
     private readonly dialogService = inject(DialogService);
     private readonly dotMessageService = inject(DotMessageService);
+    protected readonly store = inject(UVEStore);
 
     favoritePage: DotCMSContentlet;
 
