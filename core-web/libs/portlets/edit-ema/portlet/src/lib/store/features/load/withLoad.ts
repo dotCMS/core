@@ -100,12 +100,13 @@ export function withLoad() {
                                         });
                                     }
                                 }),
-                                switchMap(({ pageAsset, isEnterprise, currentUser }) =>
-                                    forkJoin({
+                                switchMap(({ pageAsset, isEnterprise, currentUser }) => {
+                                    const experimentId =
+                                        pageParams?.experimentId ?? pageAsset?.runningExperimentId;
+
+                                    return forkJoin({
                                         experiment: dotExperimentsService.getById(
-                                            pageParams?.experimentId ??
-                                                pageAsset?.runningExperimentId ??
-                                                DEFAULT_VARIANT_ID
+                                            experimentId ?? DEFAULT_VARIANT_ID
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
                                             pageAsset.page.identifier
@@ -147,8 +148,8 @@ export function withLoad() {
                                                 });
                                             }
                                         })
-                                    )
-                                )
+                                    );
+                                })
                             );
                         })
                     )
