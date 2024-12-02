@@ -15,6 +15,11 @@ on:
         description: 'New label'
         type: string
         required: true
+      new_label_color:
+        description: 'New label color'
+        type: string
+        required: false
+        default: '#fbca04'
   workflow_dispatch:
     inputs:
       rename_label:
@@ -26,6 +31,11 @@ on:
         description: 'New label'
         type: string
         required: true
+      new_label_color:
+        description: 'New label color'
+        type: string
+        required: false
+        default: '#fbca04'
 
 jobs:
   release-labeling:
@@ -78,7 +88,8 @@ jobs:
               owner: '${{ github.repository_owner }}',
               repo: '${{ env.REPO }}',
               name: renameLabel.name,
-              new_name: '${{ inputs.new_label }}'
+              new_name: '${{ inputs.new_label }}',
+              color: '${{ inputs.new_label_color }}'
             });
             
       - name: Re-Create New Label
