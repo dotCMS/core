@@ -90,7 +90,7 @@ public class ContentImportParams extends Validated {
         }
     }
 
-    private boolean isCsvFile(String fileName) {
+    private boolean isCsvFile(final String fileName) {
         return fileName != null && fileName.toLowerCase().endsWith(".csv");
     }
 }

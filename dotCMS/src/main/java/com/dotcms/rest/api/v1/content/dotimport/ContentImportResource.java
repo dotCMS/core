@@ -266,7 +266,7 @@ public class ContentImportResource {
             }
     )
     public ResponseEntityView<Job> getJobStatus(
-            @Context HttpServletRequest request,
+            @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("jobId") @Parameter(
                 required = true,

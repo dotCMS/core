@@ -102,7 +102,7 @@ public class ContentImportHelper {
      * @return Job
      * @throws DotDataException if there's an error fetching the job
      */
-    Job getJob(String jobId) throws DotDataException {
+    Job getJob(final String jobId) throws DotDataException {
         return jobQueueManagerAPI.getJob(jobId);
     }
 
