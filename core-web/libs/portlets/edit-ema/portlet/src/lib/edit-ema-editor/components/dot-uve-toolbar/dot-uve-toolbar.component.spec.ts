@@ -4,7 +4,10 @@ import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { DebugElement, signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
+
+import { MessageService } from 'primeng/api';
 
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -34,6 +37,8 @@ import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks
 
 describe('DotUveToolbarComponent', () => {
     let spectator: Spectator<DotUveToolbarComponent>;
+    let messageService: MessageService;
+
     const createComponent = createComponentFactory({
         component: DotUveToolbarComponent,
         imports: [HttpClientTestingModule, MockComponent(DotEmaBookmarksComponent)],
@@ -62,6 +67,12 @@ describe('DotUveToolbarComponent', () => {
                 provide: LoginService,
                 useValue: {
                     getCurrentUser: () => of({})
+                }
+            },
+            {
+                provide: MessageService,
+                useValue: {
+                    add: jest.fn()
                 }
             }
         ]
@@ -116,6 +127,8 @@ describe('DotUveToolbarComponent', () => {
                     })
                 ]
             });
+
+            messageService = spectator.inject(MessageService);
         });
 
         describe('dot-ema-bookmarks', () => {
@@ -130,8 +143,35 @@ describe('DotUveToolbarComponent', () => {
             expect(spectator.query(byTestId('uve-toolbar-preview'))).toBeTruthy();
         });
 
-        it('should have copy url button', () => {
-            expect(spectator.query(byTestId('uve-toolbar-copy-url'))).toBeTruthy();
+        describe('copy-url', () => {
+            let button: DebugElement;
+
+            beforeEach(() => {
+                button = spectator.debugElement.query(
+                    By.css('[data-testId="uve-toolbar-copy-url"]')
+                );
+            });
+
+            it('should have attrs', () => {
+                expect(button.attributes).toEqual({
+                    'data-testId': 'uve-toolbar-copy-url',
+                    icon: 'pi pi-external-link',
+                    'ng-reflect-icon': 'pi pi-external-link',
+                    'ng-reflect-style-class': 'p-button-text',
+                    'ng-reflect-text': 'http://localhost:3000/test-url',
+                    styleClass: 'p-button-text'
+                });
+            });
+
+            it('should call messageService.add', () => {
+                spectator.triggerEventHandler(button, 'cdkCopyToClipboardCopied', {});
+
+                expect(messageService.add).toHaveBeenCalledWith({
+                    severity: 'success',
+                    summary: 'Copied',
+                    life: 3000
+                });
+            });
         });
 
         it('should have api link button', () => {
