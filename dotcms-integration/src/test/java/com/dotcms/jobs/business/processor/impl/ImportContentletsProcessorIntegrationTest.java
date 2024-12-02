@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +28,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
 /**
  * Integration tests for the {@link ImportContentletsProcessor} class. These tests verify the
  * functionality of content import operations in a real database environment. The tests cover both
@@ -104,7 +105,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "preview", "1", testContentType.variable(),
-                    "b9d89c80-3d88-4311-8365-187323c96436"
+                    WORKFLOW_PUBLISH_ACTION_ID
             );
 
             // Process the job in preview mode
@@ -150,7 +151,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
         // Create test job
         final var testJob = createTestJob(
                 csvFile, "preview", "1", "doesNotExist",
-                "b9d89c80-3d88-4311-8365-187323c96436"
+                WORKFLOW_PUBLISH_ACTION_ID
         );
 
         try {
@@ -195,7 +196,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "preview", "en-us", testContentType.variable(),
-                    "b9d89c80-3d88-4311-8365-187323c96436"
+                    WORKFLOW_PUBLISH_ACTION_ID
             );
 
             // Process the job in preview mode
@@ -241,7 +242,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
         // Create test job
         final var testJob = createTestJob(
                 csvFile, "preview", "12345", "doesNotExist",
-                "b9d89c80-3d88-4311-8365-187323c96436"
+                WORKFLOW_PUBLISH_ACTION_ID
         );
 
         try {
@@ -315,7 +316,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "preview", "en-us", testContentType.variable(),
-                    "b9d89c80-3d88-4311-8365-187323c96436", List.of("doesNotExist")
+                    WORKFLOW_PUBLISH_ACTION_ID, List.of("doesNotExist")
             );
 
             assertThrows(JobValidationException.class, ()-> processor.validate((testJob.parameters())));
@@ -361,7 +362,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "preview", "1", testContentType.id(),
-                    "b9d89c80-3d88-4311-8365-187323c96436"
+                    WORKFLOW_PUBLISH_ACTION_ID
             );
 
             // Process the job in preview mode
@@ -420,7 +421,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "publish", "1", testContentType.id(),
-                    "b9d89c80-3d88-4311-8365-187323c96436"
+                    WORKFLOW_PUBLISH_ACTION_ID
             );
 
             // Process the job in preview mode
