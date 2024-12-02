@@ -103,7 +103,9 @@ export function withLoad() {
                                 switchMap(({ pageAsset, isEnterprise, currentUser }) =>
                                     forkJoin({
                                         experiment: dotExperimentsService.getById(
-                                            pageParams?.experimentId || DEFAULT_VARIANT_ID
+                                            pageParams?.experimentId ??
+                                                pageAsset?.runningExperimentId ??
+                                                DEFAULT_VARIANT_ID
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
                                             pageAsset.page.identifier
