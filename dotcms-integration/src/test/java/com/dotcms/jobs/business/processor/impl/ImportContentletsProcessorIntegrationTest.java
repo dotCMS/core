@@ -1,8 +1,5 @@
 package com.dotcms.jobs.business.processor.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.jobs.business.error.JobValidationException;
@@ -28,6 +25,8 @@ import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for the {@link ImportContentletsProcessor} class. These tests verify the
@@ -255,7 +254,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
 
     /**
-     * Scenario: Test the preview mode of the content import process with an invalid language.
+     * Scenario: Test the preview mode of the content import process with an invalid workflow action.
      * <p>
      * Expected: A JobValidationException should be thrown.
      *
@@ -282,11 +281,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             );
 
             // Process the job in preview mode
-            processor.validate(testJob.parameters());
-            Assertions.fail("A JobValidationException should have been thrown here.");
-
-        } catch (Exception e) {
-            Assertions.assertInstanceOf(JobValidationException.class, e);
+            assertThrows(JobValidationException.class, ()-> processor.validate((testJob.parameters())));
         } finally {
             if (testContentType != null) {
                 // Clean up test content type
@@ -297,7 +292,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
 
     /**
-     * Scenario: Test the preview mode of the content import process with an invalid language.
+     * Scenario: Test the preview mode of the content import process with an invalid key field.
      * <p>
      * Expected: A JobValidationException should be thrown.
      *
@@ -320,16 +315,11 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "preview", "en-us", testContentType.variable(),
-                    "doesNotExist", List.of("doesNotExist")
+                    "b9d89c80-3d88-4311-8365-187323c96436", List.of("doesNotExist")
             );
 
+            assertThrows(JobValidationException.class, ()-> processor.validate((testJob.parameters())));
 
-            // Process the job in preview mode
-            processor.validate(testJob.parameters());
-            Assertions.fail("A JobValidationException should have been thrown here.");
-
-        } catch (Exception e) {
-            Assertions.assertInstanceOf(JobValidationException.class, e);
         } finally {
             if (testContentType != null) {
                 // Clean up test content type
