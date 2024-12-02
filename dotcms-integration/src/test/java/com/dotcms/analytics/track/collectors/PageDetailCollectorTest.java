@@ -109,12 +109,12 @@ public class PageDetailCollectorTest extends IntegrationTestBase {
                         Collector.ID, testDetailPage.getIdentifier(),
                         Collector.TITLE, testDetailPage.getTitle(),
                         Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
-                        Collector.CONTENT_TYPE_ID, testDetailPage.getContentType().id(),
-                        Collector.CONTENT_TYPE_NAME, testDetailPage.getContentType().name(),
-                        Collector.CONTENT_TYPE_VAR_NAME, testDetailPage.getContentType().variable(),
-                        Collector.BASE_TYPE, testDetailPage.getContentType().baseType().name(),
-                        Collector.LIVE, testDetailPage.isLive(),
-                        Collector.WORKING, testDetailPage.isWorking(),
+                        Collector.CONTENT_TYPE_ID, newsTestContent.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, newsTestContent.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, newsTestContent.getContentType().variable(),
+                        Collector.BASE_TYPE, newsTestContent.getContentType().baseType().name(),
+                        Collector.LIVE, newsTestContent.isLive(),
+                        Collector.WORKING, newsTestContent.isWorking(),
                         Collector.DETAIL_PAGE_URL, testDetailPage.getURI())
         );
 
