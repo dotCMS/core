@@ -101,11 +101,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_valid_params() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), "b9d89c80-3d88-4311-8365-187323c96436", List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of("title"));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.importContent(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), "b9d89c80-3d88-4311-8365-187323c96436", CMD_PUBLISH);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), WORKFLOW_PUBLISH_ACTION_ID, CMD_PUBLISH);
     }
 
 
