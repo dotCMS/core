@@ -14,7 +14,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.FileInputStream;
