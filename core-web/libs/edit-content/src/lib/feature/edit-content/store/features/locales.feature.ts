@@ -100,13 +100,26 @@ export function withLocales() {
                             );
                         })
                     )
-                )
+                ),
+                switchLocale: (_locale: DotLanguage) => {
+                    // TODO: Implement locale switching.
+                    // patchState(store, {
+                    //     contentlet: { ...store.contentlet(), languageId: locale.id }
+                    // });
+                    // Check if there are modifications to the contentlet and prompt the user to save them.
+                    // check if is a new language or just a switch
+                    // if is a new language, ask to load from default language or start from scratch
+                    //console.log('Switching locale to', locale);
+                    //console.log('Switching locale fields', store.contentType().fields);
+                }
             })
         ),
         withHooks({
             onInit(store) {
                 effect(() => {
                     const contentlet = store.contentlet();
+
+                    //console.log('Contentlet changed', contentlet);
 
                     untracked(() => {
                         if (contentlet) {

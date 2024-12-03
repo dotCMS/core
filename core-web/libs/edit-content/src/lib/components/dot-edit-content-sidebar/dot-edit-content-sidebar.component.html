@@ -49,6 +49,7 @@
                     [defaultLocale]="defaultLocale"
                     [contentlet]="contentlet"
                     [isLoading]="isLoadingLocales"
+                    (switchLocale)="store.switchLocale($event)"
                     data-testId="locales" />
             </dot-edit-content-sidebar-section>
 

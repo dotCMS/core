@@ -9,6 +9,7 @@
     @for (locale of locales; track locale.id) {
         <p-chip
             [label]="locale.isoCode"
+            (click)="contentlet.languageId !== locale.id ? switchLocale.emit(locale) : null"
             [styleClass]="
                 'p-chip-sm ' +
                 (locale.translated ? 'p-chip-primary' : 'p-chip-gray p-chip-dashed') +
