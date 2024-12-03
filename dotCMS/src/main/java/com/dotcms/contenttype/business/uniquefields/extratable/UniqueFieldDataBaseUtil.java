@@ -1,7 +1,10 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.util.StringPool;
 
@@ -10,14 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENT_TYPE_ID_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VARIABLE_NAME_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.LANGUAGE_ID_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.VARIANT_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
 import static com.dotcms.util.CollectionsUtils.list;
+import static org.apache.lucene.queries.function.valuesource.LiteralValueSource.hash;
 
 /**
  * Util class to handle QL statement related with the unique_fiedls table
@@ -49,11 +47,40 @@ public class UniqueFieldDataBaseUtil {
             "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
             "WHERE unique_key_val = ?";
 
-    private static final String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ?";
-
     private static final String DELETE_UNIQUE_FIELD = "DELETE FROM unique_fields WHERE unique_key_val = ? " +
             "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
+
+    private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
+            "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
+            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
+            "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ? " +
+            "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
+
+    private final static String DELETE_UNIQUE_FIELDS_BY_CONTENTLET = "DELETE FROM unique_fields " +
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
+            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
+            "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ?";
+
+    private final static String SET_LIVE_BY_CONTENTLET = "UPDATE unique_fields " +
+            "SET supporting_values = jsonb_set(supporting_values, '{" + LIVE_ATTR +  "}', ?::jsonb) " +
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
+                "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
+                "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
+                "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = false";
+
+
+    private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE = "SELECT * FROM unique_fields " +
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND (supporting_values->>'" + LANGUAGE_ID_ATTR +"')::INTEGER = ?";
+
+    private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_VARIANT= "SELECT * FROM unique_fields " +
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ?";
+
+    private final String DELETE_UNIQUE_FIELDS = "DELETE FROM unique_fields WHERE unique_key_val = ?";
+
+    private final static String DELETE_UNIQUE_FIELDS_BY_FIELD = "DELETE FROM unique_fields " +
+            "WHERE supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
+
 
     /**
      * Insert a new register into the unique_fields table, if already exists another register with the same
@@ -129,13 +156,20 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException If an error occurs when interacting with the database.
      */
-    public Optional<Map<String, Object>> get(final Contentlet contentlet) throws DotDataException {
-        final List<Map<String, Object>> results = new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET)
-                .addParam("\"" + contentlet.getIdentifier() + "\"")
-                .addParam(contentlet.getVariantId())
-                .loadObjectResults();
+    public Optional<Map<String, Object>> get(final Contentlet contentlet, final Field field) throws DotDataException {
+        try {
+            final List<Map<String, Object>> results = new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET)
+                    .addParam("\"" + contentlet.getIdentifier() + "\"")
+                    .addParam(contentlet.getVariantId())
+                    .addParam(contentlet.getLanguageId())
+                    .addParam(contentlet.isLive())
+                    .addParam(field.variable())
+                    .loadObjectResults();
 
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+            return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+        } catch (DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     /**
@@ -186,4 +220,84 @@ public class UniqueFieldDataBaseUtil {
                 uniquePerSite);
     }
 
+    public List<Map<String, Object>> get(final String contentId, final long languegeId) throws DotDataException {
+        return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE)
+                .addParam("\"" + contentId + "\"")
+                .addParam(languegeId)
+                .loadObjectResults();
+    }
+
+    /**
+     * Find Unique Field Values by {@link Contentlet} and {@link  com.dotcms.variant.model.Variant}
+     *
+     * @param contentId
+     * @param variantId
+     * @return
+     * @throws DotDataException
+     */
+    public List<Map<String, Object>> get(final String contentId, final String variantId) throws DotDataException {
+        return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_VARIANT)
+                .addParam("\"" + contentId + "\"")
+                .addParam(variantId)
+                .loadObjectResults();
+    }
+
+    /**
+     * Delete a Unique Field Value by hash
+     *
+     * @param hash
+     * @throws DotDataException
+     */
+    public void delete(final String hash) throws DotDataException {
+        new DotConnect().setSQL(DELETE_UNIQUE_FIELDS)
+                .addParam(hash)
+                .loadObjectResults();
+    }
+
+    /**
+     * Delete all the unique values for a Field
+     *
+     * @param field
+     * @throws DotDataException
+     */
+    public void delete(final Field field) throws DotDataException {
+        new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_FIELD)
+                .addParam(field.variable())
+                .loadObjectResults();
+    }
+
+    /**
+     * Set the supporting_value->live attribute to true to any register with the same Content's id, variant and language
+     *
+     * @param contentlet
+     * @param liveValue
+     * @throws DotDataException
+     */
+    public void setLive(Contentlet contentlet, final boolean liveValue) throws DotDataException {
+
+         new DotConnect().setSQL(SET_LIVE_BY_CONTENTLET)
+                 .addParam(String.valueOf(liveValue))
+                .addParam("\"" + contentlet.getIdentifier() + "\"")
+                .addParam(contentlet.getVariantId())
+                .addParam(contentlet.getLanguageId())
+                .loadObjectResults();
+
+    }
+
+    /**
+     * Remove any register with supporting_value->live set to true and the same Content's id, variant and language
+     *
+     * @param contentlet
+     *
+     * @throws DotDataException
+     */
+    public void removeLive(Contentlet contentlet) throws DotDataException {
+
+        new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_CONTENTLET)
+                .addParam("\"" + contentlet.getIdentifier() + "\"")
+                .addParam(contentlet.getVariantId())
+                .addParam(contentlet.getLanguageId())
+                .addParam(true)
+                .loadObjectResults();
+    }
 }

@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.content._import;
+package com.dotcms.rest.api.v1.content.dotimport;
 
 import com.dotcms.repackage.javax.validation.ValidationException;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -85,5 +85,12 @@ public class ContentImportParams extends Validated {
         if (contentDisposition == null || contentDisposition.getFileName() == null) {
             throw new ValidationException("The file must have a valid file name.");
         }
+        if (!isCsvFile(contentDisposition.getFileName())) {
+            throw new ValidationException("The file must be a CSV file.");
+        }
+    }
+
+    private boolean isCsvFile(final String fileName) {
+        return fileName != null && fileName.toLowerCase().endsWith(".csv");
     }
 }

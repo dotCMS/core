@@ -20,6 +20,7 @@ import {
 } from './models';
 import { withSave } from './save/withSave';
 import { withEditorToolbar } from './toolbar/withEditorToolbar';
+import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
     Container,
@@ -65,6 +66,7 @@ export function withEditor() {
             state: type<UVEState>()
         },
         withState<EditorState>(initialState),
+        withUVEToolbar(),
         withEditorToolbar(),
         withSave(),
         withClient(),
@@ -105,7 +107,7 @@ export function withEditor() {
                     const canEditPage = store.canEditPage();
                     const isEnterprise = store.isEnterprise();
                     const state = store.state();
-                    const params = store.params();
+                    const params = store.pageParams();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
                     const contentletArea = store.contentletArea();

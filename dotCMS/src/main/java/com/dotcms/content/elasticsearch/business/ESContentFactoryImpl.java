@@ -13,7 +13,6 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.system.SimpleMapAppContext;
@@ -59,7 +58,15 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -615,8 +622,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         }
                     if(verInfo.get().getWorkingInode().equals(contentlet.getInode()))
                         APILocator.getVersionableAPI()
-                                .deleteContentletVersionInfo(contentlet.getIdentifier(),
-                                        contentlet.getLanguageId());
+                                .deleteContentletVersionInfoByLanguage(contentlet);
                 }
                 delete(contentlet.getInode());
             }
@@ -830,9 +836,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
-
     @Override
     public Optional<Contentlet> findInDb(final String inode) {
+        return findInDb(inode, false);
+    }
+
+
+    /**
+     * Find in DB a {@link Contentlet}
+     *
+     * @param inode {@link Contentlet}'s inode
+     * @param ignoreStoryBlock if it is true then the StoryBlock are not hydrated
+     * @return
+     */
+    public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
                 final DotConnect dotConnect = new DotConnect();
@@ -843,7 +860,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 if (UtilMethods.isSet(result)) {
                     return Optional.ofNullable(
-                            TransformerLocator.createContentletTransformer(result).asList().get(0));
+                            TransformerLocator.createContentletTransformer(result, ignoreStoryBlock).asList().get(0));
                 }
             }
         } catch (DotDataException e) {
@@ -856,15 +873,34 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-
     @Override
     protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+        return find(inode, false);
+    }
+
+    /**
+     * Find a {@link Contentlet}, first look for the  {@link Contentlet} is cache is it is not there then
+     * hit the Database
+     *
+     * @param inode {@link Contentlet}'s inode
+     * @param ignoreStoryBlock if it is true, then if the {@link Contentlet} is loaded from cache then the StoryBlock are not refresh
+     *                         if the {@link Contentlet} is loaded from Database then the SToryBlocks are not hydrated
+     * @return
+     * @throws ElasticsearchException
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    protected Contentlet find(final String inode, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-            return processCachedContentlet(contentlet);
+
+            if (!ignoreStoryBlock) {
+                return processCachedContentlet(contentlet);
+            }
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
@@ -913,7 +949,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        if (REFRESH_BLOCK_EDITOR_REFERENCES) {
+        if (REFRESH_BLOCK_EDITOR_REFERENCES && cachedContentlet.getContentType().hasStoryBlockFields()) {
+
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {
@@ -924,7 +961,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
                 return refreshedContentlet;
             }
-
         }
         return cachedContentlet;
     }

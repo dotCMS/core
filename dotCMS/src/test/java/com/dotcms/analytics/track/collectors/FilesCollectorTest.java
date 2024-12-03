@@ -1,5 +1,6 @@
 package com.dotcms.analytics.track.collectors;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -16,7 +17,7 @@ import java.util.Optional;
  * @author jsanca
  *
  */
-public class FilesCollectorTest {
+public class FilesCollectorTest extends UnitTestBase {
 
     /**
      * Method to test: FilesCollector#collect

@@ -9,7 +9,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -78,6 +80,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 .setContentType(contentType)
                 .setValue(fieldValue)
                 .setVariantName(contentlet.getVariantId())
+                .setLive(isLive(contentlet))
                 .build();
 
         insertUniqueValue(uniqueFieldCriteria, contentlet.getIdentifier());
@@ -103,38 +106,41 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
      * is not re-generated as the Contentlet ID is not used in it.</p>
      *
      * @param contentlet The {@link Contentlet} being updated.
-     * @param field      The {@link Field} representing the Unique Field.
      *
      * @throws DotDataException An error occurred when interacting with the database.
      */
     @SuppressWarnings("unchecked")
-    private void cleanUniqueFieldsUp(final Contentlet contentlet, final Field field) throws DotDataException {
-        final Optional<Map<String, Object>> uniqueFieldOptional = uniqueFieldDataBaseUtil.get(contentlet);
+    private  void cleanUniqueFieldsUp(final Contentlet contentlet, final Field field) throws DotDataException {
+        Optional<Map<String, Object>> uniqueFieldOptional = uniqueFieldDataBaseUtil.get(contentlet, field);
 
+        if (uniqueFieldOptional.isPresent()) {
+            cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldOptional.get());
+        }
+    }
+
+    private void cleanUniqueFieldUp(final String contentId,
+                                    final Map<String, Object> uniqueFields)  {
         try {
-            if (uniqueFieldOptional.isPresent()) {
-                final Map<String, Object> uniqueFields = uniqueFieldOptional.get();
 
-                final String hash = uniqueFields.get("unique_key_val").toString();
-                final PGobject supportingValues = (PGobject) uniqueFields.get("supporting_values");
-                final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
-                final List<String> contentletIds = (List<String>) supportingValuesMap.get(CONTENTLET_IDS_ATTR);
+            final String hash = uniqueFields.get("unique_key_val").toString();
+            final PGobject supportingValues = (PGobject) uniqueFields.get("supporting_values");
+            final Map<String, Object> supportingValuesMap = JsonUtil.getJsonFromString(supportingValues.getValue());
+            final List<String> contentletIds = (List<String>) supportingValuesMap.get(CONTENTLET_IDS_ATTR);
 
-                if (contentletIds.size() == 1) {
-                    uniqueFieldDataBaseUtil.delete(hash, field.variable());
-                } else {
-                    contentletIds.remove(contentlet.getIdentifier());
-                    uniqueFieldDataBaseUtil.updateContentListWithHash(hash, contentletIds);
-                }
+            if (contentletIds.size() == 1) {
+                uniqueFieldDataBaseUtil.delete(hash);
+            } else {
+                contentletIds.remove(contentId);
+                uniqueFieldDataBaseUtil.updateContentListWithHash(hash, contentletIds);
             }
-        } catch (final IOException e){
-            throw new DotDataException(e);
+        } catch (IOException | DotDataException e){
+            throw new DotRuntimeException(e);
         }
     }
 
     @Override
     public void afterSaved(final Contentlet contentlet, final boolean isNew) throws DotDataException, DotSecurityException {
-        if (isNew) {
+        if (hasUniqueField(contentlet.getContentType()) && isNew) {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                     .find(contentlet.getContentTypeId());
 
@@ -159,10 +165,19 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                         .setField(uniqueField)
                         .setContentType(contentType)
                         .setValue(fieldValue)
+                        .setLive(isLive(contentlet))
                         .build();
 
                 uniqueFieldDataBaseUtil.updateContentList(uniqueFieldCriteria, contentlet.getIdentifier());
             }
+        }
+    }
+
+    private static boolean isLive(Contentlet contentlet)  {
+        try {
+            return contentlet.isLive();
+        } catch (DotDataException | DotSecurityException | DotStateException e) {
+            return false;
         }
     }
 
@@ -239,4 +254,56 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 "ERROR: duplicate key value violates unique constraint \"unique_fields_pkey\"");
     }
 
+    @Override
+    public void cleanUp(final Contentlet contentlet, final boolean deleteAllVariant) throws DotDataException {
+        if (deleteAllVariant) {
+            uniqueFieldDataBaseUtil.get(contentlet.getIdentifier(), contentlet.getVariantId()).stream()
+                    .forEach(uniqueFieldValue -> cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldValue));
+        } else {
+            uniqueFieldDataBaseUtil.get(contentlet.getIdentifier(), contentlet.getLanguageId()).stream()
+                    .forEach(uniqueFieldValue -> cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldValue));
+        }
+
+    }
+
+    @Override
+    public void cleanUp(final Field field) throws DotDataException {
+        uniqueFieldDataBaseUtil.delete(field);
+    }
+
+    @Override
+    public void afterPublish(final String inode) {
+        try {
+            final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+
+            if (hasUniqueField(contentlet.getContentType())) {
+                uniqueFieldDataBaseUtil.setLive(contentlet, true);
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void afterUnpublish(final VersionInfo versionInfo){
+        try {
+            final Contentlet liveContentlet = APILocator.getContentletAPI().find(versionInfo.getLiveInode(),
+                    APILocator.systemUser(), false);
+
+            if (hasUniqueField(liveContentlet.getContentType())) {
+                if (versionInfo.getWorkingInode().equals(versionInfo.getLiveInode())) {
+                    uniqueFieldDataBaseUtil.setLive(liveContentlet, false);
+                } else {
+                    uniqueFieldDataBaseUtil.removeLive(liveContentlet);
+                }
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private static boolean hasUniqueField(ContentType contentType) {
+        return contentType.fields().stream().anyMatch(field -> field.unique());
+    }
 }

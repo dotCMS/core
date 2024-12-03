@@ -383,7 +383,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-        final Contentlet contentlet = contentFactory.find(inode);
+        return find (inode, user, respectFrontendRoles, false);
+
+    }
+
+    /**
+     * Find a {@link Contentlet} first looks it in the cache if it is there then return it from there, if it is not in the cache
+     * then get it directly from Database.
+     * Also check permission.
+     *
+     * @param inode {@link Contentlet}'s inode
+     * @param user User to check Permission
+     * @param respectFrontendRoles if it true then Frontend rules are respected
+     * @param ignoreBlockEditor if it is true and the {@link Contentlet} is loaded from cache then the Story Blocks are not refresh
+     *                          if it is loaded from Database then then the Story Blocks are not hydrated
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @CloseDBIfOpened
+    @Override
+    public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles, boolean ignoreBlockEditor)
+            throws DotDataException, DotSecurityException {
+        final Contentlet contentlet = contentFactory.find(inode, ignoreBlockEditor);
         if (contentlet == null) {
             return null;
         }

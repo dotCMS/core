@@ -20,7 +20,7 @@ import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceImplTest;
 import com.dotcms.api.web.HttpServletRequestImpersonatorTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
-import com.dotcms.bayesian.BayesianAPIImplIT;
+import com.dotcms.analytics.bayesian.BayesianAPIImplIT;
 import com.dotcms.business.SystemAPITest;
 import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;

@@ -778,7 +778,7 @@ public class FieldAPIImpl implements FieldAPI {
       }
 
       CleanUpFieldReferencesJob.triggerCleanUpJob(field, user);
-      localSystemEventsAPI.notify(new FieldDeletedEvent(field.variable()));
+      localSystemEventsAPI.notify(new FieldDeletedEvent(field));
 
   }
 
