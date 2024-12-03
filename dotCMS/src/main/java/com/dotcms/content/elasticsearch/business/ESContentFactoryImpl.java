@@ -622,8 +622,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         }
                     if(verInfo.get().getWorkingInode().equals(contentlet.getInode()))
                         APILocator.getVersionableAPI()
-                                .deleteContentletVersionInfo(contentlet.getIdentifier(),
-                                        contentlet.getLanguageId());
+                                .deleteContentletVersionInfoByLanguage(contentlet);
                 }
                 delete(contentlet.getInode());
             }

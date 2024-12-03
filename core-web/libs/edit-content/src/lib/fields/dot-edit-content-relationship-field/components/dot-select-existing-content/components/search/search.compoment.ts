@@ -29,9 +29,15 @@ export class SearchComponent {
      */
     onSearch = output<string>();
 
+    /**
+     * Injects FormBuilder to create form control groups.
+     */
     readonly #formBuilder = inject(FormBuilder);
 
-    form = this.#formBuilder.group({
+    /**
+     * Initializes the form group with default values for language and site.
+     */
+    readonly form = this.#formBuilder.group({
         language: [''],
         site: ['']
     });
