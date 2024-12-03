@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, model, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -12,11 +12,13 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { SearchComponent } from './components/search/search.compoment';
-import { Content, ExistingContentStore } from './store/existing-content.store';
+import { ExistingContentStore } from './store/existing-content.store';
+
 
 @Component({
     selector: 'dot-select-existing-content',
@@ -65,7 +67,7 @@ export class DotSelectExistingContentComponent {
      * A signal that holds the selected items.
      * It is used to store the selected content items.
      */
-    $selectedItems = model<Content[]>([]);
+    $selectedItems = model<DotCMSContentlet[]>([]);
 
     /**
      * A computed signal that determines if the apply button is disabled.
@@ -89,10 +91,27 @@ export class DotSelectExistingContentComponent {
     });
 
     /**
+     * A signal that sends the selected items when the dialog is closed.
+     * It is used to notify the parent component that the user has selected content items.
+     */
+    onSelectItems = output<DotCMSContentlet[]>();
+
+
+    /**
      * A method that closes the existing content dialog.
      * It sets the visibility signal to false, hiding the dialog.
      */
     closeDialog() {
         this.$visible.set(false);
+    }
+
+    /**
+     * Closes the existing content dialog and sends the selected items to the parent component.
+     * It sets the visibility signal to false, hiding the dialog, and emits the selected items
+     * through the "selectItems" output signal.
+     */
+    closeDialogWithSelectedItems() {
+        this.$visible.set(false);
+        this.onSelectItems.emit(this.$selectedItems());
     }
 }

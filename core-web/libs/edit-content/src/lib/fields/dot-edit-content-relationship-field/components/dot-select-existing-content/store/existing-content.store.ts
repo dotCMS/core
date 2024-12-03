@@ -1,4 +1,4 @@
-import { faker } from '@faker-js/faker';
+
 import {
     patchState,
     signalStore,
@@ -10,18 +10,11 @@ import {
 
 import { computed } from '@angular/core';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
-
-export interface Content {
-    id: string;
-    title: string;
-    step: string;
-    description: string;
-    lastUpdate: string;
-}
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { URL_MAP_CONTENTLET } from '@dotcms/utils-testing';
 
 export interface ExistingContentState {
-    data: Content[];
+    data: DotCMSContentlet[];
     status: ComponentStatus;
     pagination: {
         offset: number;
@@ -52,12 +45,9 @@ export const ExistingContentStore = signalStore(
     })),
     withMethods((store) => ({
         loadContent() {
-            const mockData = Array.from({ length: 100 }, () => ({
-                id: faker.string.uuid(),
-                title: faker.lorem.sentence(),
-                step: faker.helpers.arrayElement(['Draft', 'Published', 'Archived']),
-                description: faker.lorem.paragraph(),
-                lastUpdate: faker.date.recent().toISOString()
+            const mockData = Array.from({ length: 100 }, (_, index) => ({
+                ...URL_MAP_CONTENTLET,
+                identifier: `${index}`
             }));
             patchState(store, {
                 data: mockData

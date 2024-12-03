@@ -5,6 +5,7 @@
     [header]="'dot.file.relationship.dialog.select.existing.content' | dm"
     [modal]="true"
     [(visible)]="$visible"
+    (onHide)="closeDialogWithSelectedItems()"
     dataKey="id"
     appendTo="body"
     width="90%"

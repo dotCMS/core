@@ -40,6 +40,11 @@ export const RelationshipFieldStore = signalStore(
             patchState(store, {
                 data
             });
+        },
+        addData(data: RelationshipFieldItem[]) {
+            patchState(store, {
+                data: [...store.data(), ...data]
+            });
         }
     }))
 );

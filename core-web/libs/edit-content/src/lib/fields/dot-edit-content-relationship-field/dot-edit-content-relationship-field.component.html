@@ -32,4 +32,4 @@
     </ng-template>
 </p-table>
 
-<dot-select-existing-content [(visible)]="$showExistingContentDialog" />
+<dot-select-existing-content [(visible)]="$showExistingContentDialog" (onSelectItems)="store.addData($event)" />
