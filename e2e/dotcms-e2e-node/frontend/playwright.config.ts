@@ -51,7 +51,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: parseInt(process.env.WORKERS),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  timeout: 30000,
+  timeout: parseInt(process.env.TIMEOUT),
 
   reporter,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
