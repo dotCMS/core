@@ -174,7 +174,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/core-cicd/maven-job
-      - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "Postman ${{ matrix.collection_group }}"
           maven-args: "-Pcoverage verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
