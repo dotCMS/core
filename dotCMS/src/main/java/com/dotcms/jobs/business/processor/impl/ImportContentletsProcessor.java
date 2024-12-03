@@ -229,7 +229,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
     private void validateFields(final Map<String, Object> parameters, final ContentType contentTypeFound) {
         var fields = contentTypeFound.fields();
         for (String field : getFields(parameters)) {
-            if (fields.stream().noneMatch(f -> Objects.equals(f.variable(), field))) {
+            if (fields.stream().noneMatch(f -> Objects.equals(f.id(), field))) {
                 final var errorMessage = String.format(
                         "Field [%s] not found in Content Type [%s].", field, contentTypeFound.variable()
                 );
