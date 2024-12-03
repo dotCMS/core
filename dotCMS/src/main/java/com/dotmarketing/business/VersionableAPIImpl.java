@@ -9,7 +9,9 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.Debouncer;
+import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
@@ -27,6 +29,8 @@ import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import io.vavr.control.Try;
+
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -41,8 +45,10 @@ public class VersionableAPIImpl implements VersionableAPI {
 	private final VersionableFactory versionableFactory;
 	private final PermissionAPI permissionAPI;
     final Debouncer debouncer = new Debouncer();
+    final UniqueFieldValidationStrategyResolver uniqueFieldValidationStrategyResolver;
 
 	public VersionableAPIImpl() {
+        this.uniqueFieldValidationStrategyResolver = CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
 		versionableFactory = FactoryLocator.getVersionableFactory();
 		permissionAPI = APILocator.getPermissionAPI();
 	}
@@ -391,8 +397,19 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(!UtilMethods.isSet(versionInfo.getIdentifier()))
             throw new DotStateException("No version info. Call setWorking first");
 
-        versionInfo.setLiveInode(null);
-        versionableFactory.saveVersionInfo(versionInfo, true);
+        try {
+            ContentletVersionInfo copy =  versionInfo instanceof ContentletVersionInfo  ?
+                    (ContentletVersionInfo) BeanUtils.cloneBean(versionInfo) : null;
+
+            versionInfo.setLiveInode(null);
+            versionableFactory.saveVersionInfo(versionInfo, true);
+
+            if (UtilMethods.isSet(copy)) {
+                uniqueFieldValidationStrategyResolver.get().afterUnpublish(copy);
+            }
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @WrapInTransaction
@@ -441,6 +458,8 @@ public class VersionableAPIImpl implements VersionableAPI {
         newInfo.setLiveInode( null );
         newInfo.setPublishDate(null);
         versionableFactory.saveContentletVersionInfo( newInfo, true );
+
+        uniqueFieldValidationStrategyResolver.get().afterUnpublish(contentletVersionInfo.get());
     }
 
     @WrapInTransaction
@@ -515,6 +534,8 @@ public class VersionableAPIImpl implements VersionableAPI {
             info.setLiveInode( versionable.getInode() );
             this.versionableFactory.saveVersionInfo( info, true );
         }
+
+        uniqueFieldValidationStrategyResolver.get().afterPublish(versionable.getInode());
     }
 
     /**
@@ -767,14 +788,18 @@ public class VersionableAPIImpl implements VersionableAPI {
 
 	@WrapInTransaction
     @Override
-	public void deleteContentletVersionInfo(final String identifier, final long lang) throws DotDataException {
-	    versionableFactory.deleteContentletVersionInfo(identifier, lang);
-	}
+	public void deleteContentletVersionInfoByLanguage(final Contentlet contentlet) throws DotDataException {
+	    versionableFactory.deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
+
+        APILocator.getLocalSystemEventsAPI().notify(new DeleteContentletVersionInfoEvent(contentlet));
+    }
 
     @WrapInTransaction
     @Override
-    public void deleteContentletVersionInfo(final String identifier, final String variantId) throws DotDataException {
-        versionableFactory.deleteContentletVersionInfo(identifier, variantId);
+    public void deleteContentletVersionInfoByVariant(final Contentlet contentlet) throws DotDataException {
+        versionableFactory.deleteContentletVersionInfo(contentlet.getIdentifier(), contentlet.getVariantId());
+
+        APILocator.getLocalSystemEventsAPI().notify(new DeleteContentletVersionInfoEvent(contentlet, true));
     }
 
 	@CloseDBIfOpened
