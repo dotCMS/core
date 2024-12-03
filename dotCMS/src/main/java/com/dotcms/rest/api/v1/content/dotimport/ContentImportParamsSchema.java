@@ -28,7 +28,7 @@ public class ContentImportParamsSchema {
                     "  \"contentType\": \"activity\",\n" +
                     "  \"language\": \"en-US\",\n" +
                     "  \"workflowActionId\": \"1234\",\n" +
-                    "  \"fields\": [\"title\"]\n" +
+                    "  \"fields\": [\"e1f99107-fd0e-49d4-a099-1cc10aa284d8\"]\n" +
                     "}"
     )
     private String form;
