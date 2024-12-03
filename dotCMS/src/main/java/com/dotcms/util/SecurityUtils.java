@@ -138,7 +138,7 @@ public class SecurityUtils {
         final long sleepTime = (long) Math.pow(seed, 2);
         try {
 
-          Logger.debug(SecurityUtils.class, "Sleeping " + sleepTime + " seconds");
+          Logger.info(SecurityUtils.class, "Sleeping " + sleepTime + " seconds");
           TimeUnit.SECONDS.sleep(sleepTime);
         } catch (InterruptedException e) {
           // Sleep was interrupted, just ignore it
@@ -146,7 +146,7 @@ public class SecurityUtils {
       }
     }
 
-    Logger.debug(SecurityUtils.class, "Leaving the delayRequest");
+    Logger.info(SecurityUtils.class, "Leaving the delayRequest");
   }
 
   /**

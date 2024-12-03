@@ -652,16 +652,16 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                 }
 
                 int failedLoginAttempts = user.getFailedLoginAttempts();
-                Logger.debug(this, "Current failed login attempts for: " + login + ", is: " + failedLoginAttempts);
+                Logger.info(this, "Current failed login attempts for: " + login + ", is: " + failedLoginAttempts);
 
                 if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
 
-                    Logger.debug(this, "Making a delay request for failed login attempts for: " + login + ", with: " + failedLoginAttempts);
+                    Logger.info(this, "Making a delay request for failed login attempts for: " + login + ", with: " + failedLoginAttempts);
                     delayRequest(failedLoginAttempts);
                 }
 
                 user.setFailedLoginAttempts(++failedLoginAttempts);
-                Logger.debug(this, "Increasing failed login attempts for: " + login + ", with: " + user.getFailedLoginAttempts());
+                Logger.info(this, "Increasing failed login attempts for: " + login + ", with: " + user.getFailedLoginAttempts());
 
                 UserUtil.update(user);
 
@@ -712,7 +712,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                 seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
             }
 
-            Logger.debug(this, "Doing a delay request, with seed: " + seed + ", defaultSeed: " + defaultSeed + ", strategy: " + strategy);
+            Logger.info(this, "Doing a delay request, with seed: " + seed + ", defaultSeed: " + defaultSeed + ", strategy: " + strategy);
         } catch (Exception e) {
             Logger.error(this, "The specified delay strategy is invalid. Defaults to POW strategy.", e);
             strategy = DelayStrategy.POW;
