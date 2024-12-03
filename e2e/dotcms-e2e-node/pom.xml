@@ -40,6 +40,7 @@
         <cleanup.before.tests>true</cleanup.before.tests>
         <tomcat.port>8080</tomcat.port>
         <docker.jacoco.skip>false</docker.jacoco.skip>
+        <custom.starter.url>https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/empty_20241105/starter-empty_20241105.zip</custom.starter.url>
     </properties>
 
     <build>
@@ -187,6 +188,7 @@
                                     <DOT_AI_IMAGE_API_URL>http://wm:8080/i</DOT_AI_IMAGE_API_URL>
                                     <DOT_AI_EMBEDDINGS_API_URL>http://wm:8080/e</DOT_AI_EMBEDDINGS_API_URL>
                                     <DOT_AI_MODELS_API_URL>http://wm:8080/m</DOT_AI_MODELS_API_URL>
+                                    <CUSTOM_STARTER_URL>${custom.starter.url}</CUSTOM_STARTER_URL>
                                 </env>
                                 <links combine.children="append">
                                     <link>wiremock:wm</link>
