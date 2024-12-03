@@ -190,8 +190,8 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        it('should have experiments button', () => {
-            expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeTruthy();
+        it('should have not experiments button if experiment is not running', () => {
+            expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
         });
 
         it('should have language selector', () => {
