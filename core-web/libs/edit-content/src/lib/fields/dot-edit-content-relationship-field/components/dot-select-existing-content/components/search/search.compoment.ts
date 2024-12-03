@@ -28,7 +28,7 @@ export class SearchComponent {
      * An output signal that emits when the search input is changed.
      */
     onSearch = output<string>();
-    
+
     /**
      * Injects FormBuilder to create form control groups.
      */
