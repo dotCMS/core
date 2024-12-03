@@ -107,6 +107,7 @@ describe('DotUveToolbarComponent', () => {
                                 value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
                             }
                         }),
+                        $apiURL: jest.fn(),
                         setDevice: jest.fn(),
                         setSocialMedia: jest.fn(),
                         pageParams: signal(params),
