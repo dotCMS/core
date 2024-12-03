@@ -12,6 +12,7 @@ import com.dotcms.util.filtering.Specification;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -351,6 +352,8 @@ public class FieldResource {
                 .rejectWhenNoUser(true)
                 .init();
         final User user = initDataObject.getUser();
+        Logger.debug(this, () -> String.format("Returning filtered fields from Content Type '%s' " +
+                "using the criteria: %s", typeIdOrVarName, criteria));
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
         final Specification<Field> fieldSpecification = FilteringCriteria.specificationsFrom(criteria);
         final List<Field> filteredFields = contentType.fields().stream().filter(fieldSpecification::isSatisfiedBy)
