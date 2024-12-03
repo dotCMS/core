@@ -223,15 +223,15 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      * {@link JobValidationException} is thrown.</p>
      *
      * @param parameters The job parameters containing the fields to validate
-     * @param contentTypeFound The content type to validate the fields against
+     * @param contentType The content type to validate the fields against
      * @throws JobValidationException if any field specified in the parameters is not found in the content type
      */
-    private void validateFields(final Map<String, Object> parameters, final ContentType contentTypeFound) {
-        var fields = contentTypeFound.fields();
-        for (String field : getFields(parameters)) {
-            if (fields.stream().noneMatch(f -> Objects.equals(f.id(), field))) {
+    private void validateFields(final Map<String, Object> parameters, final ContentType contentType) {
+        var contentTypeFields = contentType.fields();
+        for (String providedField : getFields(parameters)) {
+            if (contentTypeFields.stream().noneMatch(field -> Objects.equals(field.id(), providedField))) {
                 final var errorMessage = String.format(
-                        "Field [%s] not found in Content Type [%s].", field, contentTypeFound.variable()
+                        "Field [%s] not found in Content Type [%s].", providedField, contentType.variable()
                 );
                 Logger.error(this, errorMessage);
                 throw new JobValidationException(errorMessage);
