@@ -10,6 +10,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
+import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -19,6 +20,7 @@ import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info
         ToolbarModule,
         DotEmaBookmarksComponent,
         DotEmaInfoDisplayComponent,
+        DotEmaRunningExperimentComponent,
         ClipboardModule
     ],
     templateUrl: './dot-uve-toolbar.component.html',
