@@ -321,9 +321,10 @@ public class Util {
                                 " value for key: "
                                 + mapKey, expectedMap.get(mapKey).toString(), collectedMap.get(mapKey).toString());
                     }
+                } else {
+                    assertEquals("Collected value must be equal to expected value for key: " + key,
+                            expectedValue, collectedValue);
                 }
-                assertEquals("Collected value must be equal to expected value for key: " + key,
-                        expectedValue, collectedValue);
             }
         }
     }

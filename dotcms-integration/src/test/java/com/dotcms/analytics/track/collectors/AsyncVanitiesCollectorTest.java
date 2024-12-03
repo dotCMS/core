@@ -92,7 +92,13 @@ public class AsyncVanitiesCollectorTest extends IntegrationTestBase {
                 Collector.OBJECT, Map.of(
                         Collector.ID, testHTMLPage.getIdentifier(),
                         Collector.TITLE, TEST_PAGE_NAME,
-                        Collector.URL, TEST_PAGE_URL)
+                        Collector.URL, TEST_PAGE_URL,
+                        Collector.CONTENT_TYPE_ID, testHTMLPage.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testHTMLPage.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testHTMLPage.getContentType().variable(),
+                        Collector.BASE_TYPE, testHTMLPage.getContentType().baseType().name(),
+                        Collector.LIVE, testHTMLPage.isLive(),
+                        Collector.WORKING, testHTMLPage.isWorking())
         );
 
         final Collector collector = new AsyncVanitiesCollector();

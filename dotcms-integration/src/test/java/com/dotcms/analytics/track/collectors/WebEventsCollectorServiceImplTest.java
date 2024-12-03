@@ -384,8 +384,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
                         Collector.CONTENT_TYPE_VAR_NAME, testPage.getContentType().variable(),
                         Collector.BASE_TYPE, testPage.getContentType().baseType().name(),
                         Collector.LIVE, testPage.isLive(),
-                        Collector.WORKING, testPage.isWorking(),
-                        Collector.DETAIL_PAGE_URL, testPage.getURI())
+                        Collector.WORKING, testPage.isWorking())
         );
 
         final TestEventLogSubmitter submitter = new TestEventLogSubmitter();

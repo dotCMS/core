@@ -95,8 +95,7 @@ public class PagesCollectorTest extends IntegrationTestBase {
                         Collector.CONTENT_TYPE_VAR_NAME, testPage.getContentType().variable(),
                         Collector.BASE_TYPE, testPage.getContentType().baseType().name(),
                         Collector.LIVE, testPage.isLive(),
-                        Collector.WORKING, testPage.isWorking(),
-                        Collector.DETAIL_PAGE_URL, testPage.getURI())
+                        Collector.WORKING, testPage.isWorking())
         );
 
         final Collector collector = new PagesCollector();
@@ -166,10 +165,9 @@ public class PagesCollectorTest extends IntegrationTestBase {
                         Collector.CONTENT_TYPE_ID, urlMappedContentType.id(),
                         Collector.CONTENT_TYPE_NAME, urlMappedContentType.name(),
                         Collector.CONTENT_TYPE_VAR_NAME, urlMappedContentType.variable(),
-                        Collector.BASE_TYPE, testDetailPage.getContentType().baseType().name(),
+                        Collector.BASE_TYPE, urlMappedContentType.baseType().name(),
                         Collector.LIVE, newsTestContent.isLive(),
-                        Collector.WORKING, newsTestContent.isWorking(),
-                        Collector.DETAIL_PAGE_URL, testDetailPage.getURI()
+                        Collector.WORKING, newsTestContent.isWorking()
                         )
         );
 
