@@ -30,6 +30,12 @@ you can also run the above with the justfile alias `run-jmeter-tests`:
 just run-jmeter-tests
 ```
 
+### Opening test script in JMeter GUI
+
+```bash
+cd test-jmeter
+../mvnw jmeter:configure jmeter:gui -DguiTestFile=src/test/jmeter/sessions.jmx
+````
 
 ### Overriding Test Parameters
 
