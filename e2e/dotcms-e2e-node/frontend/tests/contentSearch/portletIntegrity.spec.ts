@@ -1,5 +1,5 @@
 import {expect, test} from '@playwright/test';
-import {dotCMSUtils} from '../../utils/dotCMSUtils';
+import {dotCMSUtils, waitForVisibleAndCallback} from '../../utils/dotCMSUtils';
 import {ContentUtils} from '../../utils/contentUtils';
 import {addContent, iFramesLocators, richText} from '../../locators/globalLocators';
 import {
@@ -30,6 +30,9 @@ test.beforeEach('Navigate to content portlet', async ({page}) => {
     await cmsUtils.navigate(menuLocators.EXPAND, groupsLocators.CONTENT, toolsLocators.SEARCH_ALL);
 
     // Validate the portlet title
+    const breadcrumbLocator = page.locator('p-breadcrumb');
+    await waitForVisibleAndCallback(breadcrumbLocator, () => expect(breadcrumbLocator).toContainText('Search All'));
+
     await expect(page.locator('p-breadcrumb')).toContainText('Search All');
 });
 
@@ -151,16 +154,20 @@ test("Validate the clear button in the search filter", async ({page}) => {
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
     //expand the search filter
-    await iframe.getByRole('link', {name: 'Advanced'}).click();
+    const advancedLinkLocator = iframe.getByRole('link', {name: 'Advanced'});
+    await waitForVisibleAndCallback(advancedLinkLocator, () => advancedLinkLocator.click());
 
     // Select the workflow in the search filter
     await iframe.locator('#widget_scheme_id [data-dojo-attach-point="_buttonNode"]').click();
     await iframe.getByRole('option', {name: 'System Workflow'}).click();
+    //TODO remove this
     await page.waitForTimeout(1000);
 
     // Select the step in the search filter
-    await iframe.locator('div[id=\'widget_step_id\'] div[data-dojo-attach-point=\'_buttonNode\']').click();
-    await iframe.getByRole('option', {name: 'New'}).click();
+    const widgetStepIdLocator = iframe.locator('div[id=\'widget_step_id\'] div[data-dojo-attach-point=\'_buttonNode\']');
+    await waitForVisibleAndCallback(widgetStepIdLocator, () => widgetStepIdLocator.click());
+    const newOption = iframe.getByRole('option', {name: 'New'});
+    await waitForVisibleAndCallback(newOption, () => newOption.click());
 
     // Select the Show in the search filter
     await iframe.locator('#widget_showingSelect [data-dojo-attach-point="_buttonNode"]').click();
@@ -183,7 +190,8 @@ test('Validate the hide button collapse the filter', async ({page}) => {
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
     await expect(iframe.getByRole('button', {name: 'Search'})).toBeVisible();
-    await iframe.getByRole('link', {name: 'Advanced'}).click();
+    let advancedLinkLocator = iframe.getByRole('link', {name: 'Advanced'});
+    await waitForVisibleAndCallback(advancedLinkLocator, () => advancedLinkLocator.click());
 
     await page.waitForTimeout(1000);
     await expect(iframe.getByRole('link', {name: 'Advanced'})).not.toBeVisible();
@@ -195,5 +203,3 @@ test('Validate the hide button collapse the filter', async ({page}) => {
     // Validate the filter has been collapsed
     await expect(iframe.getByRole('link', {name: 'Advanced'})).toBeVisible();
 });
-
-
