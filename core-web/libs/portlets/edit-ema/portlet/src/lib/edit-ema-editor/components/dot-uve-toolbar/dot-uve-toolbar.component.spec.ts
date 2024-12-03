@@ -14,7 +14,8 @@ import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
-    DotLicenseServiceMock
+    DotLicenseServiceMock,
+    getRunningExperimentMock
 } from '@dotcms/utils-testing';
 
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
@@ -34,6 +35,7 @@ import {
     sanitizeURL
 } from '../../../utils';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -43,7 +45,11 @@ describe('DotUveToolbarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUveToolbarComponent,
-        imports: [HttpClientTestingModule, MockComponent(DotEmaBookmarksComponent)],
+        imports: [
+            HttpClientTestingModule,
+            MockComponent(DotEmaBookmarksComponent),
+            MockComponent(DotEmaRunningExperimentComponent)
+        ],
         providers: [
             UVEStore,
             provideHttpClientTesting(),
@@ -96,39 +102,40 @@ describe('DotUveToolbarComponent', () => {
         siteId: pageAPIResponse?.site.identifier
     });
 
+    const baseUVEToolbarState = {
+        editor: {
+            bookmarksUrl,
+            copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
+            apiUrl: `${'http://localhost'}${pageAPI}`
+        },
+        preview: null,
+        currentLanguage: pageAPIResponse?.viewAs.language,
+        urlContentMap: null,
+        runningExperiment: null,
+        workflowActionsInode: pageAPIResponse?.page.inode,
+        unlockButton: null,
+        showInfoDisplay: shouldShowInfoDisplay,
+        personaSelector: {
+            pageId: pageAPIResponse?.page.identifier,
+            value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
+        }
+    };
+
+    const baseUVEState = {
+        $uveToolbar: signal(baseUVEToolbarState),
+        setDevice: jest.fn(),
+        setSocialMedia: jest.fn(),
+        pageParams: signal(params),
+        pageAPIResponse: signal(MOCK_RESPONSE_VTL),
+        $apiURL: signal($apiURL),
+        reloadCurrentPage: jest.fn(),
+        loadPageAsset: jest.fn()
+    };
+
     describe('base state', () => {
         beforeEach(() => {
             spectator = createComponent({
-                providers: [
-                    mockProvider(UVEStore, {
-                        $uveToolbar: signal({
-                            editor: {
-                                bookmarksUrl,
-                                copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
-                                apiUrl: `${'http://localhost'}${pageAPI}`
-                            },
-                            preview: null,
-
-                            currentLanguage: pageAPIResponse?.viewAs.language,
-                            urlContentMap: null,
-                            runningExperiment: null,
-                            workflowActionsInode: pageAPIResponse?.page.inode,
-                            unlockButton: null,
-                            showInfoDisplay: shouldShowInfoDisplay,
-                            personaSelector: {
-                                pageId: pageAPIResponse?.page.identifier,
-                                value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
-                            }
-                        }),
-                        $apiURL: signal($apiURL),
-                        setDevice: jest.fn(),
-                        setSocialMedia: jest.fn(),
-                        pageParams: signal(params),
-                        pageAPIResponse: signal(MOCK_RESPONSE_VTL),
-                        reloadCurrentPage: jest.fn(),
-                        loadPageAsset: jest.fn()
-                    })
-                ]
+                providers: [mockProvider(UVEStore, { ...baseUVEState })]
             });
 
             messageService = spectator.inject(MessageService);
@@ -139,6 +146,12 @@ describe('DotUveToolbarComponent', () => {
                 const bookmarks = spectator.query(DotEmaBookmarksComponent);
 
                 expect(bookmarks.url).toBe('/test-url?host_id=123-xyz-567-xxl&language_id=1');
+            });
+        });
+
+        describe('dot-ema-running-experiment', () => {
+            it('should be null', () => {
+                expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeNull();
             });
         });
 
@@ -201,6 +214,28 @@ describe('DotUveToolbarComponent', () => {
             it('should have api link button with correct href', () => {
                 const btn = spectator.query(byTestId('uve-toolbar-api-link'));
                 expect(btn.getAttribute('href')).toBe($apiURL);
+            });
+        });
+    });
+
+    describe('State changes', () => {
+        describe('Experiment is running', () => {
+            beforeEach(() => {
+                const state = {
+                    ...baseUVEState,
+                    $uveToolbar: signal({
+                        ...baseUVEToolbarState,
+                        runningExperiment: getRunningExperimentMock()
+                    })
+                };
+
+                spectator = createComponent({
+                    providers: [mockProvider(UVEStore, { ...state })]
+                });
+            });
+
+            it('should have experiment running component', () => {
+                expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeTruthy();
             });
         });
     });
