@@ -53,10 +53,10 @@ public class CustomerEventCollectorTest {
         final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBean();
         customerEventCollector.collect(collectorContextMap, collectorPayloadBean);
 
-        Assert.assertEquals("/test-path", collectorPayloadBean.get("url"));
-        Assert.assertEquals("www.dotcms.com", collectorPayloadBean.get("host"));
-        Assert.assertEquals("en", collectorPayloadBean.get("language"));
-        Assert.assertEquals("1", collectorPayloadBean.get("site"));
-        Assert.assertEquals(EventType.CUSTOM_USER_EVENT.getType(), collectorPayloadBean.get("event_type"));
+        Assert.assertEquals("/test-path", collectorPayloadBean.get(Collector.URL));
+        Assert.assertEquals("www.dotcms.com", collectorPayloadBean.get(Collector.SITE_NAME));
+        Assert.assertEquals("en", collectorPayloadBean.get(Collector.LANGUAGE));
+        Assert.assertEquals("1", collectorPayloadBean.get(Collector.SITE_ID));
+        Assert.assertEquals(EventType.CUSTOM_USER_EVENT.getType(), collectorPayloadBean.get(Collector.EVENT_TYPE));
     }
 }

@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDUtil;
+import io.vavr.control.Try;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -175,18 +176,26 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
      * </ul>
      */
     @Test
-    public void testPagesCollector() throws DotDataException, IOException {
+    public void testPagesCollector() throws DotDataException, IOException, DotSecurityException {
         testPage = null != testPage ? testPage : Util.createTestHTMLPage(testSite, TEST_PAGE_NAME);
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getHostname(),
-                "url", TEST_PAGE_URL,
-                "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
-                "object", Map.of(
-                        "id", testPage.getIdentifier(),
-                        "title", testPage.getTitle(),
-                        "url", testPage.getURI())
+                Collector.EVENT_TYPE, EventType.PAGE_REQUEST.getType(),
+                Collector.SITE_NAME, testSite.getHostname(),
+                Collector.URL, TEST_PAGE_URL,
+                Collector.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
+                Collector.OBJECT, Map.of(
+                        Collector.ID, testPage.getIdentifier(),
+                        Collector.TITLE, testPage.getTitle(),
+                        Collector.URL, testPage.getURI(),
+                        Collector.CONTENT_TYPE_ID, testPage.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testPage.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testPage.getContentType().variable(),
+                        Collector.BASE_TYPE, testPage.getContentType().baseType().name(),
+                        Collector.LIVE, testPage.isLive(),
+                        Collector.WORKING, testPage.isWorking()
+                        )
+
         );
 
         final TestEventLogSubmitter submitter = new TestEventLogSubmitter();
@@ -251,10 +260,10 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
                         Collector.ID, testDetailPage.getIdentifier(),
                         Collector.TITLE, testDetailPage.getTitle(),
                         Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
-                        Collector.CONTENT_TYPE_ID, testDetailPage.getContentType().id(),
-                        Collector.CONTENT_TYPE_NAME, testDetailPage.getContentType().name(),
-                        Collector.CONTENT_TYPE_VAR_NAME, testDetailPage.getContentType().variable(),
-                        Collector.BASE_TYPE, testDetailPage.getContentType().baseType().name(),
+                        Collector.CONTENT_TYPE_ID, urlMappedContentType.id(),
+                        Collector.CONTENT_TYPE_NAME, urlMappedContentType.name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, urlMappedContentType.variable(),
+                        Collector.BASE_TYPE, urlMappedContentType.baseType().name(),
                         Collector.LIVE, testDetailPage.isLive(),
                         Collector.WORKING, testDetailPage.isWorking(),
                         Collector.DETAIL_PAGE_URL, testDetailPage.getURI()
@@ -422,15 +431,23 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
                 ".txt","Sample content for my test file", "parent-folder-for-file", testSite);
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "host", testSite.getHostname(),
-                "site", testSite.getIdentifier(),
-                "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
-                "event_type", EventType.FILE_REQUEST.getType(),
-                "url", testFileAsset.getURI(),
-                "object", Map.of(
-                        "id", testFileAsset.getIdentifier(),
-                        "title", testFileAsset.getTitle(),
-                        "url", testFileAsset.getURI())
+                Collector.SITE_NAME, testSite.getHostname(),
+                Collector.SITE_ID, testSite.getIdentifier(),
+                Collector.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
+                Collector.EVENT_TYPE, EventType.FILE_REQUEST.getType(),
+                Collector.URL, testFileAsset.getURI(),
+                Collector.OBJECT, Map.of(
+                        Collector.ID, testFileAsset.getIdentifier(),
+                        Collector.TITLE, testFileAsset.getTitle(),
+                        Collector.URL, testFileAsset.getURI(),
+                        Collector.CONTENT_TYPE_ID, testFileAsset.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testFileAsset.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testFileAsset.getContentType().variable(),
+                        Collector.BASE_TYPE, testFileAsset.getContentType().baseType().name(),
+                        Collector.LIVE,    String.valueOf(Try.of(()->testFileAsset.isLive()).getOrElse(false)),
+                        Collector.WORKING, String.valueOf(Try.of(()->testFileAsset.isWorking()).getOrElse(false))
+                        )
+
         );
 
         final TestEventLogSubmitter submitter = new TestEventLogSubmitter();

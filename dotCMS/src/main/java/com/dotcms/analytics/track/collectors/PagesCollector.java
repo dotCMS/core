@@ -85,6 +85,13 @@ public class PagesCollector implements Collector {
                         this.pageAPI.getPageByPath(uri, site, languageId, true)).get();
                 pageObject.put(ID, page.getIdentifier());
                 pageObject.put(TITLE, page.getTitle());
+                final Contentlet pageContentlet = (Contentlet) page;
+                pageObject.put(CONTENT_TYPE_ID, pageContentlet.getContentType().id());
+                pageObject.put(CONTENT_TYPE_NAME, pageContentlet.getContentType().name());
+                pageObject.put(CONTENT_TYPE_VAR_NAME, pageContentlet.getContentType().variable());
+                pageObject.put(BASE_TYPE, pageContentlet.getContentType().baseType().name());
+                pageObject.put(LIVE,    String.valueOf(Try.of(()->page.isLive()).getOrElse(false)));
+                pageObject.put(WORKING, String.valueOf(Try.of(()->page.isWorking()).getOrElse(false)));
                 collectorPayloadBean.put(EVENT_TYPE, EventType.PAGE_REQUEST.getType());
             }
             pageObject.put(URL, uri);

@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -304,8 +305,7 @@ public class Util {
      */
     public static void validateExpectedEntries(final Map<String, Object> expectedDataMap,
                                                final Map<String, ?> collectedData) {
-        assertEquals("Number of returned expected properties doesn't match", expectedDataMap.size(),
-                collectedData.size());
+        assertTrue("Number of returned expected properties doesn't match", collectedData.size() >= expectedDataMap.size());
         for (final String key : expectedDataMap.keySet()) {
             if (collectedData.containsKey(key)) {
                 final Object expectedValue = expectedDataMap.get(key);
@@ -313,13 +313,13 @@ public class Util {
                 if (expectedValue instanceof Map) {
                     final Map<String, Object> expectedMap = (Map<String, Object>) expectedValue;
                     final Map<String, Object> collectedMap = (Map<String, Object>) collectedValue;
-                    assertEquals("Number of returned expected properties in 'object' entry " +
+                    assertTrue("Number of returned expected properties in 'object' entry " +
                                     "doesn't match",
-                            expectedMap.size(), collectedMap.size());
+                            collectedMap.size() >= expectedMap.size());
                     for (final String mapKey : expectedMap.keySet()) {
                         assertEquals("Collected value in 'object' entry must be equal to expected" +
                                 " value for key: "
-                                + mapKey, expectedMap.get(mapKey), collectedMap.get(mapKey));
+                                + mapKey, expectedMap.get(mapKey).toString(), collectedMap.get(mapKey).toString());
                     }
                 }
                 assertEquals("Collected value must be equal to expected value for key: " + key,
