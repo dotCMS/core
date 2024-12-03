@@ -1,13 +1,19 @@
 package com.dotcms.contenttype.model.field.event;
 
-public class FieldDeletedEvent {
-    private String fieldVar;
+import com.dotcms.contenttype.model.field.Field;
 
-    public FieldDeletedEvent(String fieldVar) {
-        this.fieldVar = fieldVar;
+public class FieldDeletedEvent {
+    private Field field;
+
+    public FieldDeletedEvent(Field field) {
+        this.field = field;
     }
 
     public String getFieldVar() {
-        return fieldVar;
+        return field.variable();
+    }
+
+    public Field getField(){
+        return field;
     }
 }

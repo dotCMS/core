@@ -12,6 +12,8 @@
             <p-button
                 icon="pi pi-external-link"
                 styleClass="p-button-text"
+                (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
                 data-testId="uve-toolbar-copy-url" />
 
             <a

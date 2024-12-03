@@ -398,8 +398,8 @@ public interface VersionableAPI {
 	
 	void deleteVersionInfo(String identifier) throws DotDataException;
 	
-	void deleteContentletVersionInfo(String identifier, long lang) throws DotDataException;
-	void deleteContentletVersionInfo(String identifier, final String variantId) throws DotDataException;
+	void deleteContentletVersionInfoByLanguage(final Contentlet contentlet) throws DotDataException;
+	void deleteContentletVersionInfoByVariant(final Contentlet contentlet) throws DotDataException;
 
 	boolean hasLiveVersion(Versionable identifier)  throws DotDataException, DotStateException;
 	
