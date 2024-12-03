@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.job;
 
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.TOO_MANY_REQUESTS;
+
 import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.rest.api.v1.job.SSEConnectionManager.SSEConnection;
@@ -74,64 +78,60 @@ public class SSEMonitorUtil {
         final EventOutput eventOutput = new EventOutput();
         final var connection = sseConnectionManager.addConnection(jobId, eventOutput);
 
-        try {
+        try (final var resources =
+                new MonitorResources(jobId, connection, helper, sseConnectionManager)) {
 
             Job job = helper.getJobForSSE(jobId);
             if (job == null) {
-                sendErrorAndClose("job-not-found", "404", connection);
+                sendError(SSEError.JOB_NOT_FOUND, connection);
                 return eventOutput;
             }
 
             if (helper.isNotWatchable(job)) {
-                sendErrorAndClose(String.format("job-not-watchable [%s]",
-                        job.state()), "400", connection);
+                sendError(SSEError.JOB_NOT_WATCHABLE, connection);
                 return eventOutput;
             }
 
             if (!sseConnectionManager.canAcceptNewConnection(jobId)) {
-                sendErrorAndClose("too-many-connections", "429", connection);
+                sendError(SSEError.TOO_MANY_CONNECTIONS, connection);
                 return eventOutput;
             }
 
             // Callback for watching job updates and sending them to the client
             Consumer<Job> jobWatcherConsumer = watched -> {
                 if (!eventOutput.isClosed()) {
-                    OutboundEvent event = new Builder()
-                            .mediaType(MediaType.APPLICATION_JSON_TYPE)
-                            .name("job-update")
-                            .data(Map.class, helper.getJobStatusInfo(watched))
-                            .build();
-
                     try {
+                        OutboundEvent event = new Builder()
+                                .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                                .name("job-update")
+                                .data(Map.class, helper.getJobStatusInfo(watched))
+                                .build();
                         eventOutput.write(event);
+
+                        // If job is in a completed state, close all connections as no further
+                        // updates will be available
+                        if (helper.isTerminalState(watched.state())) {
+                            sseConnectionManager.closeAllJobConnections(jobId);
+                        }
+
                     } catch (IOException e) {
                         final var errorMessage = "Error writing SSE event";
                         Logger.error(this, errorMessage, e);
-                        // Re-throw the IOException to be caught by the outer catch block
+                        // Re-throw the IOException to be caught by the outer catch block in the
+                        // RealTimeJobMonitor that will clean up the job watcher
                         throw new DotRuntimeException(errorMessage, e);
-                    }
-
-                    // If job is in a completed state, close all connections as no further
-                    // updates will be available
-                    if (helper.isTerminalState(watched.state())) {
-                        sseConnectionManager.closeAllJobConnections(jobId);
                     }
                 }
             };
 
             // Start watching the job
             jobWatcher = helper.watchJob(job.id(), jobWatcherConsumer);
+            resources.jobWatcher(jobWatcher);
 
             return eventOutput;
-        } catch (IOException e) {
-            final var errorMessage = "Error writing SSE event";
-            Logger.error(this, errorMessage, e);
-            cleanupOnError(jobId, connection, jobWatcher);
-            throw new DotRuntimeException(errorMessage, e);
         } catch (Exception e) {
             final var errorMessage = "Error setting up job monitor";
             Logger.error(this, errorMessage, e);
-            cleanupOnError(jobId, connection, jobWatcher);
             throw new DotRuntimeException(errorMessage, e);
         }
     }
@@ -139,32 +139,105 @@ public class SSEMonitorUtil {
     /**
      * Send an error event and close the connection
      *
-     * @param errorName  The name of the error event
-     * @param errorCode  The error code
+     * @param error     The error to send
      * @param connection The SSE connection to close
      * @throws IOException If there is an error writing the event
      */
-    private void sendErrorAndClose(final String errorName, final String errorCode,
-            final SSEConnection connection) throws IOException {
+    private void sendError(final SSEError error, final SSEConnection connection)
+            throws IOException {
         OutboundEvent event = new OutboundEvent.Builder()
                 .mediaType(MediaType.TEXT_HTML_TYPE)
-                .name(errorName)
-                .data(String.class, errorCode)
+                .name(error.getName())
+                .data(String.class, String.valueOf(error.getCode()))
                 .build();
         connection.getEventOutput().write(event);
-        sseConnectionManager.closeConnection(connection);
     }
 
     /**
-     * Clean up resources after an error
+     * Enumeration representing various SSE (Server-Sent Events) error states with associated error
+     * names and HTTP status codes. It is used to identify specific error conditions related to job
+     * monitoring.
      */
-    private void cleanupOnError(final String jobId, final SSEConnection connection,
-            final JobWatcher jobWatcher) {
-        if (connection != null) {
-            sseConnectionManager.closeConnection(connection);
+    private enum SSEError {
+
+        JOB_NOT_FOUND("job-not-found", NOT_FOUND.getStatusCode()),
+        JOB_NOT_WATCHABLE("job-not-watchable", BAD_REQUEST.getStatusCode()),
+        TOO_MANY_CONNECTIONS("too-many-connections", TOO_MANY_REQUESTS.getStatusCode());
+
+        private final String name;
+        private final int code;
+
+        SSEError(String name, int code) {
+            this.name = name;
+            this.code = code;
         }
-        if (jobWatcher != null) {
-            helper.removeWatcher(jobId, jobWatcher);
+
+        public String getName() {
+            return name;
+        }
+
+        public int getCode() {
+            return code;
+        }
+    }
+
+    /**
+     * A resource management class that handles cleanup of SSE monitoring resources. This class
+     * implements AutoCloseable to ensure proper cleanup of both SSE connections and job watchers
+     * through try-with-resources blocks.
+     *
+     * <p>This class manages:
+     * <ul>
+     *   <li>SSE connection lifecycle</li>
+     *   <li>Job watcher registration and cleanup</li>
+     *   <li>Automatic resource cleanup when monitoring ends or errors occur</li>
+     * </ul>
+     */
+    private static class MonitorResources implements AutoCloseable {
+
+        private final SSEConnection connection;
+        private JobWatcher jobWatcher;
+        private final String jobId;
+        private final JobQueueHelper helper;
+        private final SSEConnectionManager sseConnectionManager;
+
+        /**
+         * Creates a new MonitorResources instance to manage SSE monitoring resources.
+         *
+         * @param jobId The ID of the job being monitored
+         * @param connection The SSE connection to manage
+         * @param helper Helper for job queue operations
+         * @param sseConnectionManager Manager for SSE connections
+         */
+        MonitorResources(String jobId, SSEConnection connection, JobQueueHelper helper,
+                SSEConnectionManager sseConnectionManager) {
+            this.jobId = jobId;
+            this.connection = connection;
+            this.helper = helper;
+            this.sseConnectionManager = sseConnectionManager;
+        }
+
+        /**
+         * Sets the job watcher for this monitoring session.
+         *
+         * @param watcher The job watcher to associate with this monitoring session
+         */
+        void jobWatcher(JobWatcher watcher) {
+            this.jobWatcher = watcher;
+        }
+
+        /**
+         * Closes and cleans up all monitoring resources. This includes closing the SSE connection
+         * and removing the job watcher if one exists.
+         */
+        @Override
+        public void close() {
+            if (connection != null) {
+                sseConnectionManager.closeConnection(connection);
+            }
+            if (jobWatcher != null) {
+                helper.removeWatcher(jobId, jobWatcher);
+            }
         }
     }
 

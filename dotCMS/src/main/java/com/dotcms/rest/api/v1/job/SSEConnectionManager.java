@@ -9,9 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import org.glassfish.jersey.media.sse.EventOutput;
@@ -55,64 +52,57 @@ public class SSEConnectionManager {
     // Add status tracking
     private volatile boolean isShutdown = false;
 
+    // Add per-job connection limit, default to 5 and -1 to disable
     private static final Lazy<Integer> MAX_SSE_CONNECTIONS_PER_JOB =
             Lazy.of(() -> Config.getIntProperty("MAX_SSE_CONNECTIONS_PER_JOB", 5));
 
+    // Add total connection limit, default to 50 and -1 to disable
     private static final Lazy<Integer> MAX_SSE_TOTAL_CONNECTIONS =
             Lazy.of(() -> Config.getIntProperty("MAX_SSE_TOTAL_CONNECTIONS", 50));
 
-    private static final Lazy<Integer> SSE_CONNECTION_TIMEOUT_MINUTES =
-            Lazy.of(() -> Config.getIntProperty("SSE_CONNECTION_TIMEOUT_MINUTES", 30));
-
     private final ConcurrentMap<String, Set<SSEConnection>> jobConnections =
             new ConcurrentHashMap<>();
-    private final ScheduledExecutorService timeoutExecutor =
-            Executors.newSingleThreadScheduledExecutor();
 
     /**
      * Shuts down the SSE connection manager and cleans up all resources. This method closes all
-     * active connections and shuts down the timeout executor. After shutdown, no new connections
-     * can be added.
+     * active connections. After shutdown, no new connections can be added.
      */
     @PreDestroy
     public void shutdown() {
-
         isShutdown = true;
-
-        try {
-            closeAllConnections();
-        } finally {
-            timeoutExecutor.shutdown();
-            try {
-                if (!timeoutExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
-                    timeoutExecutor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                timeoutExecutor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
+        closeAllConnections();
     }
 
     /**
      * Checks if a new SSE connection can be accepted for the given job. This method verifies both
-     * per-job and system-wide connection limits.
+     * per-job and system-wide connection limits if enabled (not -1).
      *
      * @param jobId The ID of the job for which to check connection availability
      * @return true if a new connection can be accepted, false otherwise
      */
     public boolean canAcceptNewConnection(final String jobId) {
-        if (getTotalConnections() >= MAX_SSE_TOTAL_CONNECTIONS.get()) {
+
+        final var maxSseTotalConnections = MAX_SSE_TOTAL_CONNECTIONS.get();
+        final var maxSseConnectionsPerJob = MAX_SSE_CONNECTIONS_PER_JOB.get();
+
+        // Check total connections limit if enabled (not -1)
+        if (maxSseTotalConnections != -1 && getTotalConnections() >= maxSseTotalConnections) {
             return false;
         }
 
+        // If per-job limit is disabled (-1), allow connection
+        if (maxSseConnectionsPerJob == -1) {
+            return true;
+        }
+
+        // Check per-job limit
         Set<SSEConnection> connections = jobConnections.get(jobId);
-        return connections == null || connections.size() < MAX_SSE_CONNECTIONS_PER_JOB.get();
+        return connections == null || connections.size() < maxSseConnectionsPerJob;
     }
 
     /**
      * Adds a new SSE connection for a job. The connection will be automatically closed after the
-     * configured timeout period.
+     * configured timeout period if timeout is enabled (not -1).
      *
      * @param jobId       The ID of the job to monitor
      * @param eventOutput The EventOutput instance representing the SSE connection
@@ -127,15 +117,6 @@ public class SSEConnectionManager {
 
         SSEConnection connection = new SSEConnection(jobId, eventOutput);
         jobConnections.computeIfAbsent(jobId, k -> ConcurrentHashMap.newKeySet()).add(connection);
-
-        // Schedule connection timeout
-        timeoutExecutor.schedule(() -> {
-            try {
-                closeConnection(connection);
-            } catch (Exception e) {
-                Logger.error(this, "Error closing expired connection", e);
-            }
-        }, SSE_CONNECTION_TIMEOUT_MINUTES.get(), TimeUnit.MINUTES);
 
         return connection;
     }
@@ -251,16 +232,6 @@ public class SSEConnectionManager {
             } catch (IOException e) {
                 Logger.error(SSEConnection.class, "Error closing SSE connection", e);
             }
-        }
-
-        /**
-         * Checks if this connection has exceeded its timeout period.
-         *
-         * @return true if the connection has expired, false otherwise
-         */
-        public boolean isExpired() {
-            return LocalDateTime.now().isAfter(
-                    createdAt.plusMinutes(SSE_CONNECTION_TIMEOUT_MINUTES.get()));
         }
 
         /**
