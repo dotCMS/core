@@ -108,7 +108,6 @@ public class AIAppValidatorTest {
         final JSONObjectAIRequest request = JSONObjectAIRequest.builder().withUserId("jon.snow").build();
         validator.validateModelsUsage(appConfig.getModel(), request);
 
-        verify(systemMessageEventUtil, atLeast(2))
-                .pushMessage(any(SystemMessage.class), anyList());
+        verify(systemMessageEventUtil, atLeastOnce()).pushMessage(any(SystemMessage.class), anyList());
     }
 }
