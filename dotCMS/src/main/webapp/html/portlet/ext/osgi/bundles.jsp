@@ -140,7 +140,7 @@
         try {dijit.byId('savingOSGIDialog').show();} catch (e) {}
 
         var xhrArgs = {
-            url: "/api/osgi/getInstalledBundles/ignoreSystemBundles/true/type/json",
+            url: "/api/osgi/getInstalledBundles/ignoreSystemBundles/false/type/json",
             handleAs: "json",
             load: function (data) {
 
