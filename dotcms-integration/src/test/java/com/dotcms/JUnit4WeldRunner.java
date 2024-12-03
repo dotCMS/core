@@ -35,6 +35,6 @@ public class JUnit4WeldRunner extends BlockJUnit4ClassRunner {
      */
     @Override
     protected Object createTest() throws Exception {
-        return CONTAINER.instance().select(getTestClass().getJavaClass()).get();
+        return CONTAINER.select(getTestClass().getJavaClass()).get();
     }
 }
