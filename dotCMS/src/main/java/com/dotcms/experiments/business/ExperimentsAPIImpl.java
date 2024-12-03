@@ -87,6 +87,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.control.Try;
 import java.time.Duration;
@@ -104,6 +105,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     private static final int VARIANTS_NUMBER_MAX = 3;
     private static final List<Status> RESULTS_QUERY_VALID_STATUSES = List.of(RUNNING, ENDED);
     private static final Supplier<String> INVALID_LICENSE_MESSAGE_SUPPLIER = () -> "Valid License is required";
+    private static final String ONLY_DRAFT_EXPERIMENTS_CAN_BE_STARTED_MESSAGE = "Only DRAFT experiments can be started";
+    private static final String EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE = "Experiment with provided id not found";
+    private static final String CANNOT_START_AN_ALREADY_STARTED_EXPERIMENT_MESSAGE = "Cannot start an already started Experiment.";
+    private static final String YOU_DON_T_HAVE_PERMISSION_TO_START_THE_EXPERIMENT_EXPERIMENT_ID_MESSAGE = "You don't have permission to start the Experiment. Experiment Id: ";
+    private static final String INVALID_VARIANT_PROVIDED_MESSAGE = "Invalid Variant provided";
+    private static final String PROVIDED_VARIANT_NOT_FOUND_MESSAGE = "Provided Variant not found";
+    private static final String EXPERIMENT_ID_MUST_BE_PROVIDED_MESSAGE = "experiment Id must be provided.";
 
     final ExperimentsFactory factory;
     final ExperimentsCache experimentsCache = CacheLocator.getExperimentsCache();
@@ -132,7 +140,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     public ExperimentsAPIImpl(final ExperimentsFactory experimentsFactory) {
 
         APILocator.getLocalSystemEventsAPI().subscribe(ContentletDeletedEvent.class,
-                (EventSubscriber<ContentletDeletedEvent>) event ->
+                (EventSubscriber<ContentletDeletedEvent<?>>) event ->
                         checkAndDeleteExperiment(event.getContentlet(), event.getUser()));
         this.factory = experimentsFactory;
         APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
@@ -172,7 +180,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 && UtilMethods.isSet(htmlPageAsset.getIdentifier()),
                 DotStateException.class, ()->"htmlPageAsset Page provided");
 
-        validatePermissionToEdit(experiment, user, htmlPageAsset);
+        validatePermissionToEdit(experiment, user);
 
         Experiment.Builder builder = Experiment.builder().from(experiment);
 
@@ -222,8 +230,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final Experiment toReturn = savedExperiment.get();
 
-        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been saved by User" +
-                " ID '%s'", toReturn.name(), toReturn.id(), user.getUserId()));
+        SecurityLogger.logInfo(
+                this.getClass(),
+                () -> String.format(
+                        "Experiment '%s' [%s] has been saved by User ID '%s'",
+                        toReturn.name(),
+                        toReturn.id(),
+                        user.getUserId()));
 
         return toReturn;
     }
@@ -241,7 +254,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         }
     }
 
-    private void validatePermissionToEdit(Experiment experiment, User user, Contentlet pageAsContent)
+    private void validatePermissionToEdit(Experiment experiment, User user)
             throws DotDataException, DotSecurityException {
 
         try {
@@ -282,10 +295,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         }
 
         // transform and save TargetingConditions into conditions
-        experiment.targetingConditions().get().forEach(targetingCondition -> {
-            createAndSaveCondition(user, experimentRule, targetingCondition);
-        });
-
+        experiment.targetingConditions()
+                .ifPresent(targetingConditions ->
+                        targetingConditions.forEach(targetingCondition ->
+                                createAndSaveCondition(user, experimentRule, targetingCondition)));
     }
 
     private void createAndSaveCondition(User user, Rule experimentRule,
@@ -342,9 +355,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         Optional<Experiment> experiment =  factory.find(id);
 
         if(experiment.isPresent()) {
-            validatePageEditPermissions(user, experiment.get(),
-                    "You don't have permission to get the Experiment. "
-                            + "Experiment Id: " + experiment.get().id().get());
+            validatePageEditPermissions(
+                    user,
+                    experiment.get(),
+                    String.format(
+                            "You don't have permission to get the Experiment. Experiment Id: %s",
+                            experiment.get().id().orElse("")));
 
             experiment = Optional.of(addTargetingConditions(experiment.get(), user));
         }
@@ -363,14 +379,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final Rule experimentRule = rules.get(0);
         final List<TargetingCondition> targetingConditions = new ArrayList<>();
-        experimentRule.getGroups().get(0).getConditions().forEach((condition -> {
+        experimentRule.getGroups().get(0).getConditions().forEach(condition ->
             targetingConditions.add(TargetingCondition.builder()
                     .id(condition.getId())
                     .conditionKey(condition.getConditionletId())
                     .putAllValues(condition.getValues().stream().collect(Collectors.toMap(
                             ParameterModel::getKey, ParameterModel::getValue)))
-                    .build());
-        }));
+                    .build()));
 
         return experiment.withTargetingConditions(targetingConditions);
     }
@@ -385,12 +400,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final Optional<Experiment> persistedExperiment =  find(id, user);
 
-        DotPreconditions.isTrue(persistedExperiment.isPresent(),()-> "Experiment with provided id not found",
+        DotPreconditions.isTrue(
+                persistedExperiment.isPresent(),
+                () -> EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE,
                 DoesNotExistException.class);
 
-        validatePageEditPermissions(user, persistedExperiment.get(),
-                "You don't have permission to archive the Experiment. "
-                        + "Experiment Id: " + persistedExperiment.get().id());
+        validatePageEditPermissions(
+                user,
+                persistedExperiment.orElse(null),
+                String.format(
+                        "You don't have permission to archive the Experiment. Experiment Id: %s",
+                        persistedExperiment.flatMap(Experiment::id).orElse(StringPool.BLANK)));
 
         if(persistedExperiment.get().status()==ARCHIVED) {
             return persistedExperiment.get();
@@ -403,8 +423,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final Experiment archived = persistedExperiment.get().withStatus(ARCHIVED);
         final Experiment afterSave = save(archived, user);
 
-        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been archived by User" +
-                " ID '%s'", afterSave.name(), afterSave.id(), user.getUserId()));
+        SecurityLogger.logInfo(
+                this.getClass(),
+                () -> String.format(
+                        "Experiment '%s' [%s] has been archived by User ID '%s'",
+                        afterSave.name(),
+                        afterSave.id(),
+                        user.getUserId()));
 
         return afterSave;
     }
@@ -413,7 +438,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     @WrapInTransaction
     public void delete(final String id, final User user)
             throws DotDataException, DotSecurityException {
-        innerDelete(id, user, (experiment)-> {
+        innerDelete(id, user, experiment -> {
             if(experiment.status() != DRAFT &&
                     experiment.status() != Status.SCHEDULED) {
                 throw new DotStateException("Only DRAFT or SCHEDULED experiments can be deleted");
@@ -438,14 +463,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final Optional<Experiment> persistedExperimentOptional =  find(id, user);
 
-        DotPreconditions.isTrue(persistedExperimentOptional.isPresent(),()-> "Experiment with provided id not found",
+        DotPreconditions.isTrue(
+                persistedExperimentOptional.isPresent(),
+                ()-> EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE,
                 DoesNotExistException.class);
 
         final Experiment persistedExperiment = persistedExperimentOptional.get();
 
         validatePageEditPermissions(user, persistedExperiment,
-                "You don't have permission to delete the Experiment. "
-                        + "Experiment Id: " + persistedExperiment.id());
+                "You don't have permission to delete the Experiment. Experiment Id: " + persistedExperiment.id());
 
         if (extraValidation != null) {
             extraValidation.accept(persistedExperiment);
@@ -453,12 +479,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         persistedExperiment.trafficProportion().variants().stream()
                 .filter(variant -> !VariantAPI.DEFAULT_VARIANT.name().equals(variant.id()))
-                .forEach(variant -> deleteVariant(variant));
+                .forEach(this::deleteVariant);
 
         factory.delete(persistedExperiment);
 
-        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been deleted by User" +
-                " ID '%s'", persistedExperiment.name(), persistedExperiment.id(), user.getUserId()));
+        SecurityLogger.logInfo(
+                this.getClass(),
+                () -> String.format(
+                        "Experiment '%s' [%s] has been deleted by User ID '%s'",
+                        persistedExperiment.name(),
+                        persistedExperiment.id(),
+                        user.getUserId()));
     }
 
     private void deleteVariant(ExperimentVariant variant) {
@@ -486,35 +517,34 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         try {
             DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                     INVALID_LICENSE_MESSAGE_SUPPLIER);
-            DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+            DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), EXPERIMENT_ID_MUST_BE_PROVIDED_MESSAGE);
 
             final Experiment persistedExperiment = find(experimentId, user).orElseThrow(
-                    () -> new IllegalArgumentException("Experiment with provided id not found")
+                    () -> new IllegalArgumentException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE)
             );
 
 
             validateExperimentPagePermissions(user, persistedExperiment, PermissionLevel.PUBLISH,
                     String.format("User %s doesn't have PUBLISH permission on the Experiment Page's. Experiment Id: %s",
-                            user.getUserId(), persistedExperiment.id().get()));
+                            user.getUserId(), persistedExperiment.id().orElse("")));
 
             validatePublishTemplateLayoutPermissions(user, persistedExperiment);
 
-            DotPreconditions.isTrue(persistedExperiment.status() != Status.RUNNING ||
+            DotPreconditions.isTrue(
+                    persistedExperiment.status() != Status.RUNNING ||
                             persistedExperiment.status() != Status.SCHEDULED,
-                    () -> "Cannot start an already started Experiment.",
+                    () -> CANNOT_START_AN_ALREADY_STARTED_EXPERIMENT_MESSAGE,
                     DotStateException.class);
 
-            DotPreconditions.isTrue(persistedExperiment.status() == DRAFT
-                    , () -> "Only DRAFT experiments can be started",
+            DotPreconditions.isTrue(persistedExperiment.status() == DRAFT,
+                    () -> ONLY_DRAFT_EXPERIMENTS_CAN_BE_STARTED_MESSAGE,
                     DotStateException.class);
 
             DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment),
-                    "The Experiment needs at "
-                            + "least one Page Variant in order to be started.");
+                    "The Experiment needs at least one Page Variant in order to be started.");
 
             DotPreconditions.checkState(persistedExperiment.goals().isPresent(),
-                    "The Experiment needs to "
-                            + "have the Goal set.");
+                    "The Experiment needs to have the Goal set.");
 
             Optional<Experiment> runningExperimentOnPage = getRunningExperimentsOnPage(
                     user, persistedExperiment);
@@ -569,22 +599,23 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 INVALID_LICENSE_MESSAGE_SUPPLIER);
-        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), EXPERIMENT_ID_MUST_BE_PROVIDED_MESSAGE);
 
         final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
-                ()-> new IllegalArgumentException("Experiment with provided id not found")
+                ()-> new IllegalArgumentException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE)
         );
 
         validatePageEditPermissions(user, persistedExperiment,
-                "You don't have permission to start the Experiment. "
-                        + "Experiment Id: " + persistedExperiment.id());
+                YOU_DON_T_HAVE_PERMISSION_TO_START_THE_EXPERIMENT_EXPERIMENT_ID_MESSAGE + persistedExperiment.id());
 
-        DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
-                        persistedExperiment.status() != Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+        DotPreconditions.isTrue(
+                persistedExperiment.status() != Status.RUNNING ||
+                        persistedExperiment.status() != Status.SCHEDULED,
+                () -> CANNOT_START_AN_ALREADY_STARTED_EXPERIMENT_MESSAGE,
                 DotStateException.class);
 
-        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
-                ,()-> "Only DRAFT experiments can be started",
+        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT,
+                ()-> ONLY_DRAFT_EXPERIMENTS_CAN_BE_STARTED_MESSAGE,
                 DotStateException.class);
 
         DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment), "The Experiment needs at "
@@ -611,22 +642,23 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 INVALID_LICENSE_MESSAGE_SUPPLIER);
-        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), EXPERIMENT_ID_MUST_BE_PROVIDED_MESSAGE);
 
         final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
-                ()-> new IllegalArgumentException("Experiment with provided id not found")
+                ()-> new IllegalArgumentException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE)
         );
 
         validatePageEditPermissions(user, persistedExperiment,
-                "You don't have permission to start the Experiment. "
-                        + "Experiment Id: " + persistedExperiment.id());
+                YOU_DON_T_HAVE_PERMISSION_TO_START_THE_EXPERIMENT_EXPERIMENT_ID_MESSAGE + persistedExperiment.id());
 
-        DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
-                        persistedExperiment.status() != Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+        DotPreconditions.isTrue(
+                persistedExperiment.status() != Status.RUNNING ||
+                        persistedExperiment.status() != Status.SCHEDULED,
+                ()-> CANNOT_START_AN_ALREADY_STARTED_EXPERIMENT_MESSAGE,
                 DotStateException.class);
 
-        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
-                ,()-> "Only DRAFT experiments can be started",
+        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT,
+                ()-> ONLY_DRAFT_EXPERIMENTS_CAN_BE_STARTED_MESSAGE,
                 DotStateException.class);
 
         DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment), "The Experiment needs at "
@@ -675,9 +707,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             return;
         }
 
-        final List relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, new ArrayList(),
+        final List<?> relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, new ArrayList<>(),
                 true, user, false);
-        relatedNotPublished.stream().filter(asset -> asset instanceof Contentlet).forEach(
+        relatedNotPublished.stream().filter(Contentlet.class::isInstance).forEach(
                 asset -> Contentlet.class.cast(asset)
                         .setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE));
         //Publish the page and the related content
@@ -762,17 +794,18 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             throws DotDataException, DotSecurityException {
         DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                 INVALID_LICENSE_MESSAGE_SUPPLIER);
-        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), EXPERIMENT_ID_MUST_BE_PROVIDED_MESSAGE);
 
         final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
-                ()-> new IllegalArgumentException("Experiment with provided id not found")
+                ()-> new IllegalArgumentException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE)
         );
 
         validatePageEditPermissions(user, persistedExperiment,
-                "You don't have permission to start the Experiment. "
-                        + "Experiment Id: " + persistedExperiment.id());
+                YOU_DON_T_HAVE_PERMISSION_TO_START_THE_EXPERIMENT_EXPERIMENT_ID_MESSAGE + persistedExperiment.id());
 
-        DotPreconditions.isTrue(persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+        DotPreconditions.isTrue(
+                persistedExperiment.status() == Status.SCHEDULED,
+                () -> CANNOT_START_AN_ALREADY_STARTED_EXPERIMENT_MESSAGE,
                 DotStateException.class);
 
         final Experiment readyToStart = save(Experiment.builder().from(persistedExperiment)
@@ -794,8 +827,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
-        SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been started by User" +
-                " ID '%s'", running.name(), running.id(), user.getUserId()));
+        SecurityLogger.logInfo(
+                this.getClass(),
+                () -> String.format(
+                        "Experiment '%s' [%s] has been started by User ID '%s'",
+                        running.name(),
+                        running.id(),
+                        user.getUserId()));
 
         return running;
     }
@@ -804,7 +842,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final RunningIds runningIds = persistedExperiment.runningIds();
 
         final Optional<RunningId> currentRunningId = runningIds.getAll().stream()
-                .filter((id) -> id.endDate() == null)
+                .filter(id -> id.endDate() == null)
                 .limit(1)
                 .findFirst();
 
@@ -824,7 +862,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
                 runningExperiment.trafficProportion().variants().stream()
-                        .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                        .map(ExperimentVariant::id).filter(id -> !id.equals(DEFAULT_VARIANT.name()))
                         .toArray(String[]::new)).stream()
                         .filter((contentlet -> Try.of(contentlet::isWorking)
                                 .getOrElse(false))).collect(Collectors.toList());
@@ -839,11 +877,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         try {
             DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
                     INVALID_LICENSE_MESSAGE_SUPPLIER);
-            DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+            DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), EXPERIMENT_ID_MUST_BE_PROVIDED_MESSAGE);
 
             final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
 
-            DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
+            DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),() -> EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE,
                     DoesNotExistException.class);
 
             final Experiment experimentFromFactory = persistedExperimentOpt.get();
@@ -869,8 +907,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
             cleanRunningExperimentsCache();
 
-            SecurityLogger.logInfo(this.getClass(), () -> String.format("Experiment '%s' [%s] has been ended by User" +
-                    " ID '%s'", saved.name(), saved.id(), user.getUserId()));
+            SecurityLogger.logInfo(
+                    this.getClass(),
+                    () -> String.format(
+                            "Experiment '%s' [%s] has been ended by User ID '%s'",
+                            saved.name(),
+                            saved.id(),
+                            user.getUserId()));
 
             return saved;
         } catch (DotSecurityException e) {
@@ -896,10 +939,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             throws DotDataException, DotSecurityException {
 
         final Experiment persistedExperiment = find(experimentId, user)
-                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+                .orElseThrow(()->new DoesNotExistException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE));
 
         ExperimentVariant experimentVariant = createExperimentVariant(
-                persistedExperiment, variantDescription, user);
+                persistedExperiment, variantDescription);
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
@@ -937,7 +980,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     }
 
     private ExperimentVariant createExperimentVariant(final Experiment experiment,
-            final String variantDescription, final User user)
+            final String variantDescription)
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
@@ -945,7 +988,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             DotPreconditions.isTrue(
-                    experiment.trafficProportion().variants().stream().noneMatch((variant) ->
+                    experiment.trafficProportion().variants().stream().noneMatch(variant ->
                             variant.description().equals(ORIGINAL_VARIANT)),
                     "Original Variant already created");
             variantName = DEFAULT_VARIANT.name();
@@ -973,8 +1016,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final int nextAvailableIndex = getNextAvailableIndex(variantNameBase);
 
-        final String variantName = variantNameBase + nextAvailableIndex;
-        return variantName;
+        return variantNameBase + nextAvailableIndex;
     }
 
     @Override
@@ -986,22 +1028,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 ()->"Cannot delete Original Variant", NotAllowedException.class);
 
         final Experiment persistedExperiment = find(experimentId, user)
-                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+                .orElseThrow(()->new DoesNotExistException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE));
 
-        DotPreconditions.isTrue(variantName!= null &&
-                variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+        DotPreconditions.isTrue(
+                variantName.contains(shortyIdAPI.shortify(experimentId)), ()-> INVALID_VARIANT_PROVIDED_MESSAGE,
                 IllegalArgumentException.class);
 
         final Variant toDelete = variantAPI.get(variantName)
-                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+                .orElseThrow(()->new DoesNotExistException(PROVIDED_VARIANT_NOT_FOUND_MESSAGE));
 
-        toDelete.description()
-                .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
-                                + toDelete.name()));
+        if (toDelete.description().isEmpty()) {
+            throw new DotStateException("Variant without description. Variant name: " + toDelete.name());
+        }
 
         final TreeSet<ExperimentVariant> updatedVariants =
                 new TreeSet<>(persistedExperiment.trafficProportion()
-                .variants().stream().filter((variant)->
+                .variants().stream().filter(variant ->
                         !Objects.equals(variant.id(), toDelete.name())).collect(
                         Collectors.toSet()));
 
@@ -1035,14 +1077,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             String newDescription, final User user)
             throws DotDataException, DotSecurityException {
         final Experiment persistedExperiment = find(experimentId, user)
-                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+                .orElseThrow(()->new DoesNotExistException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE));
 
         DotPreconditions.isTrue(variantName!= null &&
-                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()-> INVALID_VARIANT_PROVIDED_MESSAGE,
                 IllegalArgumentException.class);
 
         final Variant toEdit = variantAPI.get(variantName)
-                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+                .orElseThrow(()->new DoesNotExistException(PROVIDED_VARIANT_NOT_FOUND_MESSAGE));
 
         final String currentDescription = toEdit.description()
                 .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
@@ -1053,7 +1095,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final TreeSet<ExperimentVariant> updatedVariants =
                 persistedExperiment.trafficProportion()
-                        .variants().stream().map((variant) -> {
+                        .variants().stream().map(variant -> {
                             if (variant.id().equals(variantName)) {
                                 return variant.withDescription(newDescription);
                             } else {
@@ -1077,11 +1119,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     public Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
             throws DotDataException, DotSecurityException {
         final Experiment persistedExperiment = find(experimentId, user)
-                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+                .orElseThrow(()->new DoesNotExistException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE));
 
         DotPreconditions.isTrue(persistedExperiment.id().isPresent(), "Invalid Experiment");
 
-        DotPreconditions.isTrue(UtilMethods.isSet(conditionId), ()->"Invalid Variant provided",
+        DotPreconditions.isTrue(UtilMethods.isSet(conditionId), () -> INVALID_VARIANT_PROVIDED_MESSAGE,
                 IllegalArgumentException.class);
 
         final Condition conditionToDelete = rulesAPI.getConditionById(conditionId, user, false);
@@ -1257,7 +1299,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
      * @throws DotDataException
      */
     @CloseDBIfOpened
-    private void cleanRunningExperimentsCache() throws DotDataException {
+    private void cleanRunningExperimentsCache() {
         experimentsCache.removeList(CACHED_EXPERIMENTS_KEY);
     }
 
@@ -1305,7 +1347,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 .collect(Collectors.toList());
 
         finalizedExperiments.forEach((experiment ->
-                Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow(e ->
                         new DotStateException("Unable to end Experiment. Cause:" + e))));
     }
 
@@ -1315,7 +1357,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         try {
             final Experiment persistedExperiment = find(experimentId, user)
-                    .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+                    .orElseThrow(()->new DoesNotExistException(EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE));
 
             validatePagePublishPermissions(user, persistedExperiment);
             validatePublishTemplateLayoutPermissions(user, persistedExperiment);
@@ -1326,13 +1368,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                     DotStateException.class);
 
             DotPreconditions.isTrue(variantName!= null &&
-                            variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                            variantName.contains(shortyIdAPI.shortify(experimentId)), () -> INVALID_VARIANT_PROVIDED_MESSAGE,
                     IllegalArgumentException.class);
 
             final Variant variantToPromote = variantAPI.get(variantName)
-                    .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+                    .orElseThrow(()->new DoesNotExistException(PROVIDED_VARIANT_NOT_FOUND_MESSAGE));
 
-            final Experiment withUpdatedVariants = getUpdatedVariants(user, persistedExperiment,
+            final Experiment withUpdatedVariants = getUpdatedVariants(persistedExperiment,
                     variantToPromote);
 
             Experiment savedExperiment = save(withUpdatedVariants, user);
@@ -1389,12 +1431,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final Contentlet pageAsContent = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name(), true);
 
-        final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI()
-                .fromContentlet(pageAsContent);
-        return htmlPageAsset;
+        return  APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent);
     }
 
-    private Experiment getUpdatedVariants(final User user, final Experiment persistedExperiment,
+    private Experiment getUpdatedVariants(final Experiment persistedExperiment,
             final Variant variantToPromote) {
 
         final String variantName = variantToPromote.name();
@@ -1402,7 +1442,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final TreeSet<ExperimentVariant> variantsAfterPromotion =
                 persistedExperiment.trafficProportion()
-                        .variants().stream().map((variant) -> {
+                        .variants().stream().map(variant -> {
                             if (variant.id().equals(variantName)) {
                                 Try.run(()-> variantAPI.promote(variantToPromote, systemUser))
                                         .getOrElseThrow(()-> new DotRuntimeException("Unable to promote variant. Variant name: " + variantName));
@@ -1414,18 +1454,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
                 .withVariants(variantsAfterPromotion);
-        Experiment withUpdatedVariants = persistedExperiment.withTrafficProportion(trafficProportion);
-        return withUpdatedVariants;
+        return persistedExperiment.withTrafficProportion(trafficProportion);
     }
 
     @Override
     public Experiment cancel(String experimentId, User user)
             throws DotDataException, DotSecurityException {
-        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), EXPERIMENT_ID_MUST_BE_PROVIDED_MESSAGE);
 
         final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
 
-        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
+        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> EXPERIMENT_WITH_PROVIDED_ID_NOT_FOUND_MESSAGE,
                 DoesNotExistException.class);
 
         final Experiment experimentFromFactory = persistedExperimentOpt.get();
@@ -1469,7 +1508,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 .collect(Collectors.toList());
 
         scheduledToStartExperiments.forEach((experiment ->
-                Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow(e ->
                         new DotStateException("Unable to start Experiment. Cause:" + e))));
     }
 
@@ -1480,7 +1519,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final float weightPerEach = 100f / count;
 
         Set<ExperimentVariant> weightedVariants = variants.stream()
-                .map((variant)-> variant.withWeight(weightPerEach))
+                .map(variant-> variant.withWeight(weightPerEach))
                 .collect(Collectors.toSet());
 
         return new TreeSet<>(weightedVariants);
@@ -1618,7 +1657,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         try {
 
-            if (!contentlet.isHTMLPage()) {
+            if (!contentlet.isHTMLPage().booleanValue()) {
                 return;
             }
 
