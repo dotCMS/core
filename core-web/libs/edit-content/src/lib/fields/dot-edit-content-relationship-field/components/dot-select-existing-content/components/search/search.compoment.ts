@@ -28,10 +28,16 @@ export class SearchComponent {
      * An output signal that emits when the search input is changed.
      */
     onSearch = output<string>();
-
+    
+    /**
+     * Injects FormBuilder to create form control groups.
+     */
     readonly #formBuilder = inject(FormBuilder);
 
-    form = this.#formBuilder.group({
+    /**
+     * Initializes the form group with default values for language and site.
+     */
+    readonly form = this.#formBuilder.group({
         language: [''],
         site: ['']
     });
