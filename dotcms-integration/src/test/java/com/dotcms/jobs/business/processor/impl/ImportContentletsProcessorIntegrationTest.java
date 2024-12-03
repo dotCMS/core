@@ -1,8 +1,5 @@
 package com.dotcms.jobs.business.processor.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.jobs.business.error.JobValidationException;
@@ -22,16 +19,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
 /**
  * Integration tests for the {@link ImportContentletsProcessor} class. These tests verify the
  * functionality of content import operations in a real database environment. The tests cover both
@@ -108,7 +104,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "preview", "1", testContentType.variable(),
-                    "b9d89c80-3d88-4311-8365-187323c96436"
+                    WORKFLOW_PUBLISH_ACTION_ID
             );
 
             // Process the job in preview mode
@@ -154,7 +150,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
         // Create test job
         final var testJob = createTestJob(
                 csvFile, "preview", "1", "doesNotExist",
-                "b9d89c80-3d88-4311-8365-187323c96436"
+                WORKFLOW_PUBLISH_ACTION_ID
         );
 
         try {
@@ -199,7 +195,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "preview", "en-us", testContentType.variable(),
-                    "b9d89c80-3d88-4311-8365-187323c96436"
+                    WORKFLOW_PUBLISH_ACTION_ID
             );
 
             // Process the job in preview mode
@@ -245,7 +241,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
         // Create test job
         final var testJob = createTestJob(
                 csvFile, "preview", "12345", "doesNotExist",
-                "b9d89c80-3d88-4311-8365-187323c96436"
+                WORKFLOW_PUBLISH_ACTION_ID
         );
 
         try {
@@ -253,6 +249,82 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             Assertions.fail("A JobValidationException should have been thrown here.");
         } catch (Exception e) {
             Assertions.assertInstanceOf(JobValidationException.class, e);
+        }
+    }
+
+
+    /**
+     * Scenario: Test the preview mode of the content import process with an invalid workflow action.
+     * <p>
+     * Expected: A JobValidationException should be thrown.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_invalid_workflow_action() throws Exception {
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "en-us", testContentType.variable(),
+                    "doesNotExist"
+            );
+
+            // Process the job in preview mode
+            assertThrows(JobValidationException.class, ()-> processor.validate((testJob.parameters())));
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+
+    /**
+     * Scenario: Test the preview mode of the content import process with an invalid key field.
+     * <p>
+     * Expected: A JobValidationException should be thrown.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_invalid_key_field() throws Exception {
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "en-us", testContentType.variable(),
+                    WORKFLOW_PUBLISH_ACTION_ID, List.of("doesNotExist")
+            );
+
+            assertThrows(JobValidationException.class, ()-> processor.validate((testJob.parameters())));
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
         }
     }
 
@@ -289,7 +361,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "preview", "1", testContentType.id(),
-                    "b9d89c80-3d88-4311-8365-187323c96436"
+                    WORKFLOW_PUBLISH_ACTION_ID
             );
 
             // Process the job in preview mode
@@ -348,7 +420,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Create test job
             final var testJob = createTestJob(
                     csvFile, "publish", "1", testContentType.id(),
-                    "b9d89c80-3d88-4311-8365-187323c96436"
+                    WORKFLOW_PUBLISH_ACTION_ID
             );
 
             // Process the job in preview mode
@@ -398,33 +470,91 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
      * @throws DotSecurityException if there's a security violation during job creation
      */
     private Job createTestJob(final File csvFile, final String cmd, final String language,
-            final String contentType, final String workflowActionId)
+                              final String contentType, final String workflowActionId)
+            throws IOException, DotSecurityException {
+        return createTestJob(csvFile, cmd, language, contentType, workflowActionId, null);
+    }
+
+    /**
+     * Creates a test job for the import process with optional fields.
+     *
+     * @param csvFile          The CSV file containing the content to be imported
+     * @param cmd              The command to execute ('preview' or 'publish')
+     * @param contentType      The content type for the imported content
+     * @param language         The language of the imported content
+     * @param workflowActionId The ID of the workflow action to be applied
+     * @param fields           Additional fields to include in the job parameters
+     * @return A configured {@link Job} instance ready for processing
+     * @throws IOException          if there's an error reading the CSV file
+     * @throws DotSecurityException if there's a security violation during job creation
+     */
+    private Job createTestJob(final File csvFile, final String cmd, final String language,
+                              final String contentType, final String workflowActionId, final List<String> fields)
             throws IOException, DotSecurityException {
 
-        final Map<String, Object> jobParameters = new HashMap<>();
+        final Map<String, Object> jobParameters = buildJobParameters(cmd, contentType, language, workflowActionId, fields);
+        addTempFileToJobParameters(csvFile, jobParameters);
 
-        // Setup basic job parameters
+        return buildJob(jobParameters);
+    }
+
+    /**
+     * Builds the base job parameters.
+     *
+     * @param cmd              The command to execute ('preview' or 'publish')
+     * @param contentType      The content type for the imported content
+     * @param language         The language of the imported content
+     * @param workflowActionId The ID of the workflow action to be applied
+     * @param fields           Additional fields to include in the job parameters
+     * @return A map containing the base job parameters
+     */
+    private Map<String, Object> buildJobParameters(final String cmd, final String contentType,
+                                                   final String language, final String workflowActionId,
+                                                   final List<String> fields) {
+        final Map<String, Object> jobParameters = new HashMap<>();
         jobParameters.put("cmd", cmd);
         jobParameters.put("userId", systemUser.getUserId());
         jobParameters.put("siteName", defaultSite.getHostname());
         jobParameters.put("siteIdentifier", defaultSite.getIdentifier());
         jobParameters.put("contentType", contentType);
         jobParameters.put("workflowActionId", workflowActionId);
+
         if (language != null) {
             jobParameters.put("language", language);
         }
+        if (fields != null) {
+            jobParameters.put("fields", fields);
+        }
+
+        return jobParameters;
+    }
+
+    /**
+     * Adds a temporary file to the job parameters.
+     *
+     * @param csvFile       The CSV file to be used
+     * @param jobParameters The job parameters map to update
+     * @throws IOException          if there's an error reading the CSV file
+     * @throws DotSecurityException if there's a security violation during temporary file creation
+     */
+    private void addTempFileToJobParameters(final File csvFile, final Map<String, Object> jobParameters)
+            throws IOException, DotSecurityException {
 
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
         try (final var fileInputStream = new FileInputStream(csvFile)) {
-
-            final DotTempFile tempFile = tempFileAPI.createTempFile(
-                    csvFile.getName(), request, fileInputStream
-            );
-
+            final DotTempFile tempFile = tempFileAPI.createTempFile(csvFile.getName(), request, fileInputStream);
             jobParameters.put("tempFileId", tempFile.id);
             jobParameters.put("requestFingerPrint", tempFileAPI.getRequestFingerprint(request));
         }
+    }
 
+    /**
+     * Builds the final job instance.
+     *
+     * @param jobParameters The parameters to configure the job
+     * @return A configured {@link Job} instance
+     */
+    private Job buildJob(final Map<String, Object> jobParameters) {
         return Job.builder()
                 .id("test-job-id")
                 .queueName("Test Job")
@@ -433,6 +563,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
                 .progressTracker(new DefaultProgressTracker())
                 .build();
     }
+
 
     /**
      * Creates a test CSV file with sample content. The file includes a header row and two content
