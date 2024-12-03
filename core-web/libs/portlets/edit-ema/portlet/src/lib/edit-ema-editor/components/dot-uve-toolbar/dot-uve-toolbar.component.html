@@ -12,6 +12,8 @@
             <p-button
                 icon="pi pi-external-link"
                 styleClass="p-button-text"
+                (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
                 data-testId="uve-toolbar-copy-url" />
 
             <p-button
@@ -25,7 +27,12 @@
     </div>
 
     <div class="p-toolbar-group-end">
-        <span data-testId="uve-toolbar-running-experiment">Experiments</span>
+        @if ($toolbar().runningExperiment; as runningExperiment) {
+            <dot-ema-running-experiment
+                [runningExperiment]="runningExperiment"
+                data-testId="uve-toolbar-running-experiment" />
+        }
+
         <span data-testId="uve-toolbar-language-selector">Language</span>
         <span data-testId="uve-toolbar-persona-selector">Persona</span>
         <span data-testId="uve-toolbar-workflow-actions">Workflows</span>

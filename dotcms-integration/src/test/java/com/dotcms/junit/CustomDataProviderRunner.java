@@ -1,5 +1,7 @@
 package com.dotcms.junit;
 
+import static com.dotcms.util.IntegrationTestInitService.CONTAINER;
+
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.JUnit4WeldRunner;
 import com.dotmarketing.util.Logger;
@@ -7,9 +9,8 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.internal.DataConverter;
 import com.tngtech.java.junit.dataprovider.internal.TestGenerator;
 import com.tngtech.java.junit.dataprovider.internal.TestValidator;
+import java.util.List;
 import java.util.Optional;
-import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.Ignore;
 import org.junit.rules.RunRules;
 import org.junit.runner.Description;
@@ -17,7 +18,6 @@ import org.junit.runner.RunWith;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
-import java.util.List;
 
 public class CustomDataProviderRunner extends DataProviderRunner {
 
@@ -35,14 +35,6 @@ public class CustomDataProviderRunner extends DataProviderRunner {
                 .map(runnerClass -> weldRunners.stream()
                         .anyMatch(weldRunner -> weldRunner.equals(runnerClass)))
                 .orElse(false);
-    }
-
-    private static final Weld WELD;
-    private static final WeldContainer CONTAINER;
-
-    static {
-        WELD = new Weld("CustomDataProviderRunner");
-        CONTAINER = WELD.initialize();
     }
 
     private final boolean instantiateWithWeld;
@@ -98,7 +90,7 @@ public class CustomDataProviderRunner extends DataProviderRunner {
         if (instantiateWithWeld) {
             final Class<?> javaClass = getTestClass().getJavaClass();
             Logger.debug(this, String.format("Instantiating [%s] with Weld", javaClass));
-            return CONTAINER.instance().select(javaClass).get();
+            return CONTAINER.select(javaClass).get();
         }
         return super.createTest();
     }
