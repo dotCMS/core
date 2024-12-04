@@ -2979,6 +2979,92 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(spyTranslatePage).toHaveBeenCalled();
                 });
+
+                it('should open a dialog to create the page in the new language when the user accepts the creation', () => {
+                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'translatePage', {
+                        page: {} as DotPage,
+                        newLanguage: 2
+                    });
+
+                    spectator.detectChanges();
+
+                    const dialog = spectator.component.dialog;
+
+                    expect(dialog).not.toBeNull();
+                });
+
+                it('should update the URL and language when the user create a new translation changing the URL', () => {
+                    store.loadPageAsset({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '2',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+
+                    const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    const dialog = spectator.debugElement.query(
+                        By.css('[data-testId="ema-dialog"]')
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    spectator.triggerEventHandler(
+                        EmaContentletToolsComponent,
+                        'edit',
+                        EDIT_ACTION_PAYLOAD_MOCK
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    triggerCustomEvent(dialog, 'action', {
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
+                                payload: {
+                                    htmlPageReferer:
+                                        '/new-url-here?com.dotmarketing.htmlpage.language=1'
+                                }
+                            }
+                        })
+                    });
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        url: '/new-url-here',
+                        language_id: '1'
+                    });
+                });
+
+                it('should update the language when the user create a new translation', () => {
+                    store.loadPageAsset({
+                        clientHost: 'http://localhost:3000',
+                        url: 'test-url',
+                        language_id: '1',
+                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    });
+
+                    const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    const dialog = spectator.debugElement.query(
+                        By.css('[data-testId="ema-dialog"]')
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    triggerCustomEvent(dialog, 'action', {
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
+                                payload: {
+                                    htmlPageReferer:
+                                        '/test-url?com.dotmarketing.htmlpage.language=2'
+                                }
+                            }
+                        })
+                    });
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        language_id: '2'
+                    });
+                });
             });
         });
     });

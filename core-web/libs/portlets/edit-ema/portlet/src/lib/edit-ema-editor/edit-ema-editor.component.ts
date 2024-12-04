@@ -829,16 +829,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     url.pathname,
                     this.uveStore.pageAPIResponse().urlContentMap
                 );
+                const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
 
                 if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
                     // Navigate to the new URL if it's different from the current one
-                    this.uveStore.loadPageAsset({ url: targetUrl });
+                    this.uveStore.loadPageAsset({ url: targetUrl, language_id });
 
                     return;
                 }
 
                 this.uveStore.loadPageAsset({
-                    language_id: url.searchParams.get('com.dotmarketing.htmlpage.language')
+                    language_id
                 });
             }
         })[detail.name];
