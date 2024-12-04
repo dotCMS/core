@@ -44,6 +44,7 @@ import {
 import {
     DotCMSContentlet,
     DotCMSTempFile,
+    DotLanguage,
     DotTreeNode,
     SeoMetaTags,
     SeoMetaTagsResult
@@ -163,6 +164,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
     }
+
+    readonly $translatePageEffect = effect(() => {
+        const { page, currentLanguage } = this.uveStore.$translateProps();
+
+        if (currentLanguage && !currentLanguage?.translated) {
+            this.createNewTranslation(currentLanguage, page);
+        }
+    });
 
     readonly $handleReloadContentEffect = effect(
         () => {
@@ -1405,7 +1414,39 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
     }
 
+    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            key: 'shell-confirm-dialog',
+            accept: () => {
+                this.translatePage({ page, newLanguage: language.id });
+            },
+            reject: () => {
+                // If is rejected, bring back the current language on selector
+                this.#goBackToCurrentLanguage();
+                // this.languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
+            }
+        });
+    }
+
     translatePage(event: { page: DotPage; newLanguage: number }) {
         this.dialog.translatePage(event);
+    }
+
+    /**
+     * Use the Page Language to navigate back to the current language
+     *
+     * @memberof DotEmaShellComponent
+     */
+    #goBackToCurrentLanguage(): void {
+        this.uveStore.loadPageAsset({ language_id: '1' });
     }
 }

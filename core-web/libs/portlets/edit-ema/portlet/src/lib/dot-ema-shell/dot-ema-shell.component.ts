@@ -31,7 +31,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
-import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import {
@@ -129,20 +129,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#destroy$.complete();
     }
 
-    handleNgEvent({ event, form }: DialogAction) {
-        const { isTranslation, status } = form;
-
-        const isSaved = status === FormStatus.SAVED;
-
+    handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
-            case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
-                if (!isSaved && isTranslation) {
-                    this.#goBackToCurrentLanguage();
-                }
-
-                break;
-            }
-
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.handleSavePageEvent(event);
                 break;
@@ -237,14 +225,5 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const urlTree = this.#router.createUrlTree([], { queryParams });
 
         this.#location.replaceState(urlTree.toString());
-    }
-
-    /**
-     * Use the Page Language to navigate back to the current language
-     *
-     * @memberof DotEmaShellComponent
-     */
-    #goBackToCurrentLanguage(): void {
-        this.uveStore.loadPageAsset({ language_id: '1' });
     }
 }

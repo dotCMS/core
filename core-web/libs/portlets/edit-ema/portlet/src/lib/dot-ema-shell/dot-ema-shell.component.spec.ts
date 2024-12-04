@@ -295,7 +295,6 @@ describe('DotEmaShellComponent', () => {
         activatedRoute = spectator.inject(ActivatedRoute, true);
         dotPageApiService = spectator.inject(DotPageApiService, true);
         dotLicenseService = spectator.inject(DotLicenseService, true);
-        // confirmationService = spectator.inject(ConfirmationService, true);
     });
 
     describe('with queryParams', () => {
@@ -614,63 +613,6 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(reloadSpy).toHaveBeenCalled();
             });
-            // it('should trigger a spyStoreLoadPage when url path property is changed', () => {
-            //     const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-
-            //     spectator.detectChanges();
-
-            //     spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-            //         event: new CustomEvent('ng-event', {
-            //             detail: {
-            //                 name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
-            //                 payload: {
-            //                     htmlPageReferer: '/a-new-url'
-            //                 }
-            //             }
-            //         }),
-            //         actionPayload: PAYLOAD_MOCK,
-            //         form: {
-            //             status: FormStatus.SAVED,
-            //             isTranslation: false
-            //         },
-            //         clientAction: CLIENT_ACTIONS.NOOP
-            //     });
-            //     spectator.detectChanges();
-
-            //     expect(spyStoreLoadPage).toHaveBeenCalledWith({
-            //         url: '/a-new-url'
-            //     });
-            // });
-
-            // it('should mantain the current URL as queryParam when the URL property is changed and is a URLContentMap', () => {
-            //     jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
-
-            //     const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-
-            //     spectator.detectChanges();
-
-            //     spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-            //         event: new CustomEvent('ng-event', {
-            //             detail: {
-            //                 name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
-            //                 payload: {
-            //                     htmlPageReferer: '/a-new-url'
-            //                 }
-            //             }
-            //         }),
-            //         actionPayload: PAYLOAD_MOCK,
-            //         form: {
-            //             status: FormStatus.SAVED,
-            //             isTranslation: false
-            //         },
-            //         clientAction: CLIENT_ACTIONS.NOOP
-            //     });
-            //     spectator.detectChanges();
-
-            //     expect(spyStoreLoadPage).toHaveBeenCalledWith({
-            //         url: '/test-url'
-            //     });
-            // });
         });
     });
 
