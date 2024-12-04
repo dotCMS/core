@@ -361,7 +361,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getSuccessfulJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getSuccessfulJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getSuccessfulJobs(page, pageSize);
         } catch (JobQueueDataException e) {

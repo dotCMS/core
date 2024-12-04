@@ -428,10 +428,9 @@ public class RealTimeJobMonitor {
         }
 
         /**
-         * Creates a predicate that matches successful jobs. The predicate matches any job in the
-         * SUCCESS state.
+         * Creates a predicate that matches any completed job.
          *
-         * @return A predicate for matching successful jobs
+         * @return A predicate for matching completed jobs
          */
         public static Predicate<Job> isCompleted() {
             return job -> (job.state() == JobState.SUCCESS
