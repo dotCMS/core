@@ -1,5 +1,5 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, ViewChild } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -33,7 +33,11 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveToolbarComponent {
-    personaSelector = viewChild(EditEmaPersonaSelectorComponent);
+    // I tried to use the new viewChild signal API but is not supported on MockComponent
+    // Revisit this ticket to see if it's supported already, so we can move on to signals
+    // https://github.com/help-me-mom/ng-mocks/issues/8634
+    @ViewChild('personaSelector')
+    personaSelector!: EditEmaPersonaSelectorComponent;
 
     #store = inject(UVEStore);
 
@@ -86,11 +90,11 @@ export class DotUveToolbarComponent {
                                 'com.dotmarketing.persona.id': persona.identifier
                             });
 
-                            this.personaSelector().fetchPersonas();
+                            this.personaSelector.fetchPersonas();
                         }); // This does a take 1 under the hood
                 },
                 reject: () => {
-                    this.personaSelector().resetValue();
+                    this.personaSelector.resetValue();
                 }
             });
         }
@@ -115,7 +119,7 @@ export class DotUveToolbarComponent {
                 this.#personalizeService
                     .despersonalized(persona.pageId, persona.keyTag)
                     .subscribe(() => {
-                        this.personaSelector().fetchPersonas();
+                        this.personaSelector.fetchPersonas();
 
                         if (persona.selected) {
                             this.#store.loadPageAsset({

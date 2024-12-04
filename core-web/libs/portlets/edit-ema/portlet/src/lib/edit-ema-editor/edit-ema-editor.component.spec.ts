@@ -138,7 +138,8 @@ const createRouting = () =>
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent),
-            MockComponent(EditEmaToolbarComponent)
+            MockComponent(EditEmaToolbarComponent),
+            MockComponent(DotUveToolbarComponent)
         ],
         detectChanges: false,
         componentProviders: [
