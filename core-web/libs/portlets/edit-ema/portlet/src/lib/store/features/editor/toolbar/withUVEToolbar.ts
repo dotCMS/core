@@ -112,6 +112,15 @@ export function withUVEToolbar() {
                     unlockButton: shouldShowUnlock ? unlockButton : null,
                     showInfoDisplay: shouldShowInfoDisplay
                 };
+            }),
+            $apiURL: computed<string>(() => {
+                const pageParams = store.pageParams();
+                const url = sanitizeURL(pageParams?.url);
+                const params = createPageApiUrlWithQueryParams(url, pageParams);
+                const pageType = store.isTraditionalPage() ? 'render' : 'json';
+                const pageAPI = `/api/v1/page/${pageType}/${params}`;
+
+                return pageAPI;
             })
         })),
         withMethods((store) => ({

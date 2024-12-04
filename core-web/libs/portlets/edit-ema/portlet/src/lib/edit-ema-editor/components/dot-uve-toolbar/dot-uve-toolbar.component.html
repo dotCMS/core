@@ -16,10 +16,13 @@
                 [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
                 data-testId="uve-toolbar-copy-url" />
 
-            <p-button
-                label="API"
-                styleClass="p-button-text p-button-sm"
-                data-testId="uve-toolbar-api-link" />
+            <a
+                title="Page API URL"
+                pButton
+                class="p-button-text"
+                target="_blank"
+                data-testId="uve-toolbar-api-link"
+                [href]="$apiURL()"></a>
         } @else {
             <div>PREVIEW MODE CONTENT</div>
             <button (click)="setEditMode()">Back</button>

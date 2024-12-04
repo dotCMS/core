@@ -34,6 +34,7 @@ export class DotUveToolbarComponent {
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
+    readonly $apiURL = this.#store.$apiURL;
 
     setPreviewMode() {
         this.#store.loadPageAsset({ preview: 'true' });
