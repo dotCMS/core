@@ -62,5 +62,6 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
         }
 
         return field.defaultValue ?? [];
-    }
+    },
+    [FIELD_TYPES.RELATIONSHIP]: defaultResolutionFn
 };
