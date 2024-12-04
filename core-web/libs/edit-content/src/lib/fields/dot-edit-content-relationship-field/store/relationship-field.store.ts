@@ -57,9 +57,21 @@ export const RelationshipFieldStore = signalStore(
              * @param {RelationshipFieldItem[]} data - The new data to be added.
              */
             addData(data: RelationshipFieldItem[]) {
+                const currentData = store.data();
 
+                const existingIds = new Set(currentData.map(item => item.id));
+                const uniqueNewData = data.filter(item => !existingIds.has(item.id));
                 patchState(store, {
-                    data: [...store.data(), ...data]
+                    data: [...currentData, ...uniqueNewData]
+                });
+            },
+            /**
+             * Deletes an item from the store at the specified index.
+             * @param index - The index of the item to delete.
+             */
+            deleteItem(id: string) {
+                patchState(store, {
+                    data: store.data().filter((item) => item.id !== id)
                 });
             },
             /**

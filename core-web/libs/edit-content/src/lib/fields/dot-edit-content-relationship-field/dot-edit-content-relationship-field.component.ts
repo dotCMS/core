@@ -136,4 +136,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * A callback function that is called when the field is touched.
      */
     private onTouched: (() => void) | null = null;
+
+    /**
+     * Deletes an item from the store at the specified index.
+     *
+     * @param index - The index of the item to delete.
+     */
+    deleteItem(id: string) {
+        this.store.deleteItem(id);
+    }
 }

@@ -10,7 +10,6 @@ import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-cont
     providedIn: 'root'
 })
 export class RelationshipFieldService {
-    readonly #CONTENT_TYPES = ['News', 'Blog', 'Product', 'Event'] as const;
 
     /**
      * Gets relationship content items
@@ -39,8 +38,8 @@ export class RelationshipFieldService {
         return {
             identifier: faker.string.uuid(),
             inode: faker.string.uuid(),
-            title: faker.commerce.productName(),
-            contentType: faker.helpers.arrayElement(this.#CONTENT_TYPES),
+            title: faker.lorem.words({ min: 1, max: 10 }),
+            contentType: faker.helpers.arrayElement(['News', 'Blog', 'Product', 'Event']),
             baseType: 'CONTENT',
             languageId: faker.number.int({ min: 1, max: 5 }),
             folder: faker.system.directoryPath(),
@@ -48,7 +47,7 @@ export class RelationshipFieldService {
             modUser: faker.internet.userName(),
             modDate: faker.date.recent().toISOString(),
             owner: faker.internet.userName(),
-            sortOrder: faker.datatype.number(100),
+            sortOrder: faker.number.int({ min: 1, max: 100 }),
             live: faker.datatype.boolean(),
             working: true,
             archived: false,
@@ -72,21 +71,16 @@ export class RelationshipFieldService {
         return contentlets.map((content) => ({
             id: content.identifier,
             title: content.title,
-            language: content.languageId.toString(),
+            language: faker.helpers.arrayElement(['English (en-us)', 'Spanish (es-es)', 'French (fr-fr)']),
             state: this.#getRandomState(),
-            description: faker.lorem.sentence(),
-            step: faker.helpers.arrayElement(['Step 1', 'Step 2', 'Step 3']),
+            description: faker.lorem.sentence(3),
+            step: faker.helpers.arrayElement(['Published', 'Editing', 'Archived', 'QA', 'New']),
             lastUpdate: content.modDate
         }));
     }
 
     #getRandomState(): { label: string; styleClass: string } {
-        const label = faker.helpers.arrayElement([
-            'Changed',
-            'Published',
-            'Draft',
-            'Archived'
-        ]);
+        const label = faker.helpers.arrayElement(['Changed', 'Published', 'Draft', 'Archived']);
 
         const styleClasses = {
             Changed: 'p-chip-sm p-chip-blue',

@@ -89,10 +89,7 @@ describe('DotSelectExistingContentComponent', () => {
         });
 
         it('should show plural label when multiple items are selected', () => {
-            const mockContent = [
-                mockRelationshipItem('1'),
-                mockRelationshipItem('2')
-            ];
+            const mockContent = [mockRelationshipItem('1'), mockRelationshipItem('2')];
             spectator.component.$selectedItems.set(mockContent);
 
             const label = spectator.component.$applyLabel();

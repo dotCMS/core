@@ -8,5 +8,5 @@ export interface RelationshipFieldItem {
     state: {
         label: string;
         styleClass: string;
-    }
+    };
 }
