@@ -33,9 +33,14 @@ export class DotUveToolbarComponent {
     readonly #dotMessageService = inject(DotMessageService);
 
     readonly $toolbar = this.#store.$uveToolbar;
+    readonly $isPreviewMode = this.#store.$isPreviewMode;
 
     setPreviewMode() {
         this.#store.loadPageAsset({ preview: 'true' });
+    }
+
+    setEditMode() {
+        this.#store.loadPageAsset({ preview: 'false' });
     }
 
     triggerCopyToast() {

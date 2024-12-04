@@ -1,6 +1,6 @@
-<p-toolbar>
+<p-toolbar styleClass="p-toolbar-preview">
     <div class="p-toolbar-group-start">
-        @if ($toolbar().editor) {
+        @if (!$isPreviewMode()) {
             <p-button
                 icon="pi pi-eye"
                 styleClass="p-button-text"
@@ -20,9 +20,9 @@
                 label="API"
                 styleClass="p-button-text p-button-sm"
                 data-testId="uve-toolbar-api-link" />
-        } @else if ($toolbar().preview) {
+        } @else {
             <div>PREVIEW MODE CONTENT</div>
-            <!-- <button (click)="togglePreviewMode(false)">Back</button> -->
+            <button (click)="setEditMode()">Back</button>
         }
     </div>
 

@@ -5,3 +5,9 @@
     align-items: center;
     gap: $spacing-1;
 }
+
+::ng-deep {
+    .p-toolbar-preview {
+        border: 1px solid $color-palette-primary-200;
+    }
+}

@@ -88,21 +88,17 @@ export function withUVEToolbar() {
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
                 return {
-                    editor: store.isPreviewModeActive()
-                        ? null
-                        : {
-                              bookmarksUrl,
-                              copyUrl: createFullURL(params, siteId),
-                              apiUrl: pageAPI
-                          },
-                    preview: store.isPreviewModeActive()
-                        ? {
-                              deviceSelector: {
-                                  apiLink: `${clientHost}${pageAPI}`,
-                                  hideSocialMedia: !store.isTraditionalPage()
-                              }
-                          }
-                        : null,
+                    editor: {
+                        bookmarksUrl,
+                        copyUrl: createFullURL(params, siteId),
+                        apiUrl: pageAPI
+                    },
+                    preview: {
+                        deviceSelector: {
+                            apiLink: `${clientHost}${pageAPI}`,
+                            hideSocialMedia: !store.isTraditionalPage()
+                        }
+                    },
                     currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()
                         ? (pageAPIResponse?.urlContentMap ?? null)
