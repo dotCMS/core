@@ -164,8 +164,8 @@ public class UserAjax {
 			user.setPassword(password);
 			uAPI.save(user, uWebAPI.getLoggedInUser(request), true, !uWebAPI.isLoggedToBackend(request));
 
-			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date + "; IP" + request.getRemoteAddr() + "; User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; IP" + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
 
 			if (localTransaction) {
 				HibernateUtil.closeAndCommitTransaction();
@@ -292,8 +292,8 @@ public class UserAjax {
 				throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
 			}
 
-			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; IP" + request.getRemoteAddr() + "; User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; IP" + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
 			resultMap = new HashMap<>();
 			resultMap.put("userID", userToSave.getUserId());
 			resultMap.put("reauthenticate", reauthenticationRequired);
@@ -362,8 +362,8 @@ public class UserAjax {
 			throw e;
 		}
 
-		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; IP" + request.getRemoteAddr() + "; User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; IP" + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
 
 		return true;
 	}
@@ -415,8 +415,8 @@ public class UserAjax {
 			throw e;
 		}
 
-		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; IP" + request.getRemoteAddr() + "; User:" + userId+"; Replaced entries with User:"+replacingUserId);
-		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; IP" + request.getRemoteAddr() + "; User:" + userId+"; Replaced entries with User:"+replacingUserId);
+		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + userId+"; Replaced entries with User:"+replacingUserId);
+		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + userId+"; Replaced entries with User:"+replacingUserId);
 
 		return true;
 	}
