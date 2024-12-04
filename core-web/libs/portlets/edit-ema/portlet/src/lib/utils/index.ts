@@ -3,6 +3,7 @@ import { Params } from '@angular/router';
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
     DotContainerMap,
     DotExperiment,
     DotExperimentStatus,
@@ -600,4 +601,32 @@ export function getAllowedPageParams(params: Params): DotPageApiParams {
 
             return obj;
         }, {}) as DotPageApiParams;
+}
+
+/**
+ * Determines the target URL for navigation.
+ *
+ * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
+ * Otherwise, it falls back to the URL extracted from the event.
+ *
+ * @param {string | undefined} url - The URL extracted from the event.
+ * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
+ */
+export function getTargetUrl(
+    url: string | undefined,
+    urlContentMap: DotCMSContentlet
+): string | undefined {
+    // Return URL from content map or fallback to the provided URL
+    return urlContentMap?.URL_MAP_FOR_CONTENT || url;
+}
+
+/**
+ * Determines whether navigation to a new URL is necessary.
+ *
+ * @param {string | undefined} targetUrl - The target URL for navigation.
+ * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
+ */
+export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
+    // Navigate if the target URL is defined and different from the current URL
+    return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
 }

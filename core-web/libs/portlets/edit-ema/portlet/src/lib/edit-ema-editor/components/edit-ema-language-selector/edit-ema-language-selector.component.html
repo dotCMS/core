@@ -8,6 +8,7 @@
     data-testId="language-button"></button>
 <p-overlayPanel #op styleClass="edit-ema-selector" data-testId="language-op">
     <p-listbox
+        [(ngModel)]="selectedLanguage"
         (onChange)="onChange($event); op.toggle($event)"
         [options]="languages$ | async"
         #listbox
@@ -15,3 +16,5 @@
         dataKey="id"
         data-testId="language-listbox"></p-listbox>
 </p-overlayPanel>
+
+<!-- <pre><code>{{ selectedLanguage | json }}</code></pre> -->

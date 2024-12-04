@@ -1,5 +1,5 @@
 @if ($previewMode()) {
-    <dot-uve-toolbar />
+    <dot-uve-toolbar (translatePage)="translatePage($event)" />
 } @else {
     <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
 }

@@ -81,7 +81,8 @@ import {
     InsertPayloadFromDelete,
     DialogAction,
     PostMessage,
-    ReorderMenuPayload
+    ReorderMenuPayload,
+    DotPage
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
@@ -92,7 +93,9 @@ import {
     compareUrlPaths,
     deleteContentletFromContainer,
     getDragItemData,
-    insertContentletInContainer
+    insertContentletInContainer,
+    getTargetUrl,
+    shouldNavigate
 } from '../utils';
 
 @Component({
@@ -562,18 +565,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handle the language selection
-     *
-     * @param {number} language_id
-     * @memberof DotEmaComponent
-     */
-    onLanguageSelected(language_id: string) {
-        this.uveStore.loadPageAsset({
-            language_id
-        });
-    }
-
-    /**
      * When the user drop a palette item in the dropzone
      *
      * @param {PositionPayload} positionPayload
@@ -830,6 +821,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
                 this.dialog.resetDialog();
                 this.cd.detectChanges();
+            },
+            [NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED]: () => {
+                const htmlPageReferer = event.detail.payload?.htmlPageReferer;
+                const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
+                const targetUrl = getTargetUrl(
+                    url.pathname,
+                    this.uveStore.pageAPIResponse().urlContentMap
+                );
+
+                if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+                    // Navigate to the new URL if it's different from the current one
+                    this.uveStore.loadPageAsset({ url: targetUrl });
+
+                    return;
+                }
+
+                this.uveStore.loadPageAsset({
+                    language_id: url.searchParams.get('com.dotmarketing.htmlpage.language')
+                });
             }
         })[detail.name];
     }
@@ -1392,5 +1402,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 break;
         }
+    }
+
+    translatePage(event: { page: DotPage; newLanguage: number }) {
+        this.dialog.translatePage(event);
     }
 }

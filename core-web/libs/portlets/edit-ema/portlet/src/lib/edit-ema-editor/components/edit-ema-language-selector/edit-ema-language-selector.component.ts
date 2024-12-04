@@ -10,6 +10,7 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { Listbox, ListboxChangeEvent, ListboxModule } from 'primeng/listbox';
@@ -23,7 +24,7 @@ import { DotLanguage } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-edit-ema-language-selector',
     standalone: true,
-    imports: [OverlayPanelModule, ListboxModule, ButtonModule, AsyncPipe, NgClass],
+    imports: [OverlayPanelModule, ListboxModule, ButtonModule, AsyncPipe, NgClass, FormsModule],
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

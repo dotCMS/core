@@ -850,7 +850,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.URL_IS_CHANGED,
+                            name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
                             payload: {
                                 htmlPageReferer: '/a-new-url'
                             }
@@ -880,7 +880,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
                     event: new CustomEvent('ng-event', {
                         detail: {
-                            name: NG_CUSTOM_EVENTS.URL_IS_CHANGED,
+                            name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
                             payload: {
                                 htmlPageReferer: '/a-new-url'
                             }
