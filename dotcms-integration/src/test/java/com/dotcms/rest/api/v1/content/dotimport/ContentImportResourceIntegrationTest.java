@@ -57,6 +57,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
     private static File csvFile;
     private static ContentType contentType;
+    private static String fieldId;
 
     @Inject
     ContentImportHelper contentImportHelper;
@@ -73,6 +74,8 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         contentType = TestDataUtils.getRichTextLikeContentType();
+        fieldId = contentType.fields().get(0).id();
+        assert fieldId != null;
         csvFile = createTestCsvFile();
     }
 
@@ -101,11 +104,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_valid_params() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.importContent(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), WORKFLOW_PUBLISH_ACTION_ID, CMD_PUBLISH);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of(fieldId), WORKFLOW_PUBLISH_ACTION_ID, CMD_PUBLISH);
     }
 
 
@@ -119,11 +122,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_validate_with_valid_params() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.validateContentImport(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), WORKFLOW_PUBLISH_ACTION_ID, CMD_PREVIEW);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of(fieldId), WORKFLOW_PUBLISH_ACTION_ID, CMD_PREVIEW);
     }
 
     /**
@@ -136,11 +139,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_language_iso_code() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), WORKFLOW_PUBLISH_ACTION_ID, List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.importContent(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of("title"), WORKFLOW_PUBLISH_ACTION_ID, CMD_PUBLISH);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of(fieldId), WORKFLOW_PUBLISH_ACTION_ID, CMD_PUBLISH);
     }
 
 
@@ -154,11 +157,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content__validate_with_language_iso_code() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), WORKFLOW_PUBLISH_ACTION_ID, List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.validateContentImport(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of("title"), WORKFLOW_PUBLISH_ACTION_ID, CMD_PREVIEW);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of(fieldId), WORKFLOW_PUBLISH_ACTION_ID, CMD_PREVIEW);
     }
 
     /**
