@@ -92,7 +92,7 @@ import {
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     dotPropertiesServiceMock
 } from '../shared/mocks';
-import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
+import { ActionPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
 
@@ -2965,6 +2965,19 @@ describe('EditEmaEditorComponent', () => {
                         expect(setClientConfigurationSpy).toHaveBeenCalledWith(config);
                         expect(reloadSpy).toHaveBeenCalled();
                     });
+                });
+            });
+
+            describe('language selected', () => {
+                it('should call translatePage when language is emitted from toolbar', () => {
+                    const spyTranslatePage = jest.spyOn(spectator.component, 'translatePage');
+
+                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'translatePage', {
+                        page: {} as DotPage,
+                        newLanguage: 1
+                    });
+
+                    expect(spyTranslatePage).toHaveBeenCalled();
                 });
             });
         });

@@ -1,5 +1,12 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, inject, output, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    inject,
+    Output,
+    viewChild
+} from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -40,7 +47,7 @@ export class DotUveToolbarComponent {
 
     readonly $toolbar = this.#store.$uveToolbar;
 
-    translatePage = output<{ page: DotPage; newLanguage: number }>();
+    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
 
     togglePreviewMode(preview: boolean) {
         this.#store.togglePreviewMode(preview);
@@ -88,7 +95,7 @@ export class DotUveToolbarComponent {
      *
      * @return {void}
      */
-    private createNewTranslation(language: DotLanguage, _page: DotPage): void {
+    private createNewTranslation(language: DotLanguage, page: DotPage): void {
         this.#confirmationService.confirm({
             header: this.#dotMessageService.get(
                 'editpage.language-change-missing-lang-populate.confirm.header'
@@ -102,7 +109,7 @@ export class DotUveToolbarComponent {
             key: 'shell-confirm-dialog',
             accept: () => {
                 this.translatePage.emit({
-                    page: _page,
+                    page: page,
                     newLanguage: language.id
                 });
             },

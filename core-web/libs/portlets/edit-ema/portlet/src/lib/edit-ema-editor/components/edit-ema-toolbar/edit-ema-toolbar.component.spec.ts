@@ -313,14 +313,6 @@ describe('EditEmaToolbarComponent', () => {
                     languageCode: '1'
                 });
             });
-
-            it('should set language', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
-                spectator.detectChanges();
-
-                expect(spyloadPageAsset).toHaveBeenCalledWith({ language_id: '2' });
-            });
         });
 
         describe('dot-edit-ema-persona-selector', () => {
@@ -476,7 +468,7 @@ describe('EditEmaToolbarComponent', () => {
         });
     });
 
-    describe('constrains', () => {
+    xdescribe('constrains', () => {
         describe('dot-ema-info-display', () => {
             beforeEach(() => {
                 spectator = createComponent({

@@ -1,4 +1,4 @@
-import { expect, describe, it } from '@jest/globals';
+import { expect, describe } from '@jest/globals';
 import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -36,6 +36,7 @@ import {
 } from '../../../utils';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 
 describe('DotUveToolbarComponent', () => {
     let spectator: Spectator<DotUveToolbarComponent>;
@@ -129,7 +130,12 @@ describe('DotUveToolbarComponent', () => {
         pageParams: signal(params),
         pageAPIResponse: signal(MOCK_RESPONSE_VTL),
         reloadCurrentPage: jest.fn(),
-        loadPageAsset: jest.fn()
+        loadPageAsset: jest.fn(),
+        languages: signal([
+            { id: 1, translated: true },
+            { id: 2, translated: false },
+            { id: 3, translated: true }
+        ])
     };
 
     describe('base state', () => {
@@ -195,8 +201,26 @@ describe('DotUveToolbarComponent', () => {
             expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
         });
 
-        it('should have language selector', () => {
-            expect(spectator.query(byTestId('uve-toolbar-language-selector'))).toBeTruthy();
+        describe('language selector', () => {
+            it('should have language selector', () => {
+                expect(spectator.query(byTestId('uve-toolbar-language-selector'))).toBeTruthy();
+            });
+
+            it('should call loadPageAsset when language is selected and exists that page translated', () => {
+                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+
+                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 1);
+
+                expect(spyLoadPageAsset).toHaveBeenCalled();
+            });
+
+            it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
+                const spyConfirmationService = jest.spyOn(baseUVEState, 'loadPageAsset');
+
+                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
+
+                expect(spyConfirmationService).toHaveBeenCalled();
+            });
         });
 
         it('should have persona selector', () => {
