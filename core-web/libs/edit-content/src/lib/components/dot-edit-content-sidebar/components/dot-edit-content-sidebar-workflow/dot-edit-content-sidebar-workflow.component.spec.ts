@@ -134,13 +134,14 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
                     workflow: WORKFLOW_MOCKS.NEW,
                     workflowSelection: {
                         ...WORKFLOW_SELECTION_MOCK.WITH_OPTIONS,
-                        noWorkflowSelectedYet: true
+                        isWorkflowSelected: true
                     }
                 } as any);
             });
 
             it('should show select workflow link', () => {
                 const selectLink = spectator.query(byTestId('select-workflow-link'));
+
                 expect(selectLink).toBeTruthy();
                 expect(selectLink).toHaveText('edit.content.sidebar.workflow.select.workflow');
             });

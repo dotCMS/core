@@ -1850,10 +1850,10 @@ export const WORKFLOW_SELECTION_MOCK = {
             { label: 'System Workflow', value: '1' },
             { label: 'Marketing Workflow', value: '2' }
         ],
-        noWorkflowSelectedYet: false
+        isWorkflowSelected: false
     },
     NO_WORKFLOW: {
         schemeOptions: [],
-        noWorkflowSelectedYet: true
+        isWorkflowSelected: true
     }
 };
