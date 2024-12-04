@@ -74,6 +74,7 @@
 <%@ page import="org.apache.poi.ss.usermodel.Row" %>
 <%@ page import="com.dotcms.contenttype.transform.field.FieldTransformer" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="java.util.Optional" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -442,6 +443,17 @@
                             }%>
 
                             <div class="fieldName">
+								<%
+									String hint = Optional.ofNullable(f.getHint())
+											.filter(UtilMethods::isSet)
+											.orElse(null);
+									if (hint != null) {
+								%>
+								<a href="#" id="tip-<%=f.getVelocityVarName()%>"><span class="hintIcon"></span></a>
+								<span dojoType="dijit.Tooltip" connectId="tip-<%=f.getVelocityVarName()%>" position="above" style="width:100px;">
+									<span class="contentHint"><%=hint%></span>
+									</span>
+								<%}%>
                                 <% if(f.isRequired()) {%>
                                     <label class="required">
                             		<%} else {%>
