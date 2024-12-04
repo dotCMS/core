@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     forwardRef,
     inject,
     input,
@@ -20,6 +21,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotSelectExistingContentComponent } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
 @Component({
@@ -31,7 +33,8 @@ import { RelationshipFieldStore } from './store/relationship-field.store';
         MenuModule,
         DotSelectExistingContentComponent,
         DotMessagePipe,
-        ChipModule
+        ChipModule,
+        PaginationComponent
     ],
     providers: [
         RelationshipFieldStore,
@@ -93,6 +96,16 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * @memberof DotEditContentFileFieldComponent
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+
+    /**
+     * A computed signal that holds the hint text for the relationship field.
+     * This text is displayed in the table header to provide additional information about the field.
+     */
+    $hitText = computed(() => {
+        const field = this.$field();
+
+        return field.hint || null;
+    });
 
     /**
      * Set the value of the field.

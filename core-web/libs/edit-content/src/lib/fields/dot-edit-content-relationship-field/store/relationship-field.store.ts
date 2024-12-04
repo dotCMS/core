@@ -1,9 +1,16 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
-import { inject } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -28,7 +35,7 @@ const initialState: RelationshipFieldState = {
     pagination: {
         offset: 0,
         currentPage: 1,
-        rowsPerPage: 10
+        rowsPerPage: 6
     }
 };
 
@@ -39,6 +46,9 @@ const initialState: RelationshipFieldState = {
 export const RelationshipFieldStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
+    withComputed((state) => ({
+        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage))
+    })),
     withMethods((store) => {
         const relationshipFieldService = inject(RelationshipFieldService);
 
@@ -59,8 +69,8 @@ export const RelationshipFieldStore = signalStore(
             addData(data: RelationshipFieldItem[]) {
                 const currentData = store.data();
 
-                const existingIds = new Set(currentData.map(item => item.id));
-                const uniqueNewData = data.filter(item => !existingIds.has(item.id));
+                const existingIds = new Set(currentData.map((item) => item.id));
+                const uniqueNewData = data.filter((item) => !existingIds.has(item.id));
                 patchState(store, {
                     data: [...currentData, ...uniqueNewData]
                 });
@@ -91,7 +101,31 @@ export const RelationshipFieldStore = signalStore(
                         )
                     )
                 )
-            )
+            ),
+            /**
+             * Advances the pagination to the next page and updates the state accordingly.
+             */
+            nextPage: () => {
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: store.pagination().offset + store.pagination().rowsPerPage,
+                        currentPage: store.pagination().currentPage + 1
+                    }
+                });
+            },
+            /**
+             * Moves the pagination to the previous page and updates the state accordingly.
+             */
+            previousPage: () => {
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: store.pagination().offset - store.pagination().rowsPerPage,
+                        currentPage: store.pagination().currentPage - 1
+                    }
+                });
+            }
         };
     }),
     withHooks({

@@ -10,7 +10,6 @@ import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-cont
     providedIn: 'root'
 })
 export class RelationshipFieldService {
-
     /**
      * Gets relationship content items
      * @returns Observable of RelationshipFieldItem array
@@ -71,7 +70,11 @@ export class RelationshipFieldService {
         return contentlets.map((content) => ({
             id: content.identifier,
             title: content.title,
-            language: faker.helpers.arrayElement(['English (en-us)', 'Spanish (es-es)', 'French (fr-fr)']),
+            language: faker.helpers.arrayElement([
+                'English (en-us)',
+                'Spanish (es-es)',
+                'French (fr-fr)'
+            ]),
             state: this.#getRandomState(),
             description: faker.lorem.sentence(3),
             step: faker.helpers.arrayElement(['Published', 'Editing', 'Archived', 'QA', 'New']),

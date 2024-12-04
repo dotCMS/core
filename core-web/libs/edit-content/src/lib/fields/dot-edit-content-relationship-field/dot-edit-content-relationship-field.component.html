@@ -1,6 +1,13 @@
+@let pagination = store.pagination();
+@let hitText = $hitText();
+@let showPagination = store.totalPages() > 1;
+
 <p-table
     [value]="store.data()"
     styleClass="p-datatable-sm p-datatable-relationship"
+    [paginator]="true"
+    [first]="pagination.offset"
+    [rows]="pagination.rowsPerPage"
     [reorderableColumns]="true"
     [scrollable]="true">
     <ng-template pTemplate="header" styleClass="relative">
@@ -8,13 +15,13 @@
 
         <tr class="relationship-field__table_header">
             <th scope="col" class="w-3rem"></th>
-            <th scope="col" class="max-w-12rem" style="min-width:13rem" pReorderableColumn>
+            <th scope="col" class="max-w-12rem" style="min-width: 13rem" pReorderableColumn>
                 {{ 'dot.file.relationship.field.table.title' | dm }}
             </th>
-            <th pReorderableColumn style="min-width:8rem">
+            <th pReorderableColumn style="min-width: 8rem">
                 {{ 'dot.file.relationship.field.table.language' | dm }}
             </th>
-            <th pReorderableColumn style="min-width:8rem">
+            <th pReorderableColumn style="min-width: 8rem">
                 {{ 'dot.file.relationship.field.table.state' | dm }}
             </th>
             <th scope="col" class="w-1rem" alignFrozen="right" pFrozenColumn [frozen]="true">
@@ -41,11 +48,11 @@
             <td>
                 <span class="pi pi-bars" pReorderableRowHandle></span>
             </td>
-            <td class="max-w-12rem" style="min-width:13rem">
+            <td class="max-w-12rem" style="min-width: 13rem">
                 <p class="truncate-text">{{ item.title }}</p>
             </td>
-            <td style="min-width:8rem">{{ item.language }}</td>
-            <td style="min-width:8rem">
+            <td style="min-width: 8rem">{{ item.language }}</td>
+            <td style="min-width: 8rem">
                 <p-chip [styleClass]="item.state.styleClass" [label]="item.state.label" />
             </td>
             <td pFrozenColumn alignFrozen="right" [frozen]="true">
@@ -58,6 +65,26 @@
             </td>
         </tr>
     </ng-template>
+    @if (hitText || showPagination) {
+        <ng-template pTemplate="summary">
+            <div
+                class="flex align-items-center"
+                [class.justify-content-between]="hitText"
+                [class.justify-content-center]="!hitText">
+                @if (hitText) {
+                    <small>{{ hitText }}</small>
+                }
+                @if (showPagination) {
+                    <dot-pagination
+                        [currentPageReportLayout]="'center'"
+                        (nextPage)="store.nextPage()"
+                        (previousPage)="store.previousPage()"
+                        [totalPages]="store.totalPages()"
+                        [currentPage]="pagination.currentPage" />
+                }
+            </div>
+        </ng-template>
+    }
 </p-table>
 
 <dot-select-existing-content

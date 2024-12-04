@@ -14,11 +14,11 @@ import { TableModule } from 'primeng/table';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { PaginationComponent } from './components/pagination/pagination.component';
 import { SearchComponent } from './components/search/search.compoment';
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { RelationshipFieldItem } from '../../models/relationship.models';
+import { PaginationComponent } from '../pagination/pagination.component';
 
 @Component({
     selector: 'dot-select-existing-content',
