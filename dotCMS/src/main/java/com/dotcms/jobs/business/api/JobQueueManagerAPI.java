@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.api;
 
+import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
@@ -129,6 +130,16 @@ public interface JobQueueManagerAPI {
     JobPaginatedResult getCompletedJobs(int page, int pageSize) throws DotDataException;
 
     /**
+     * Retrieves a list of successful jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of successful jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) throws DotDataException;
+
+    /**
      * Retrieves a list of canceled jobs
      *
      * @param page     The page number
@@ -149,6 +160,16 @@ public interface JobQueueManagerAPI {
     JobPaginatedResult getFailedJobs(int page, int pageSize) throws DotDataException;
 
     /**
+     * Retrieves a list of abandoned jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getAbandonedJobs(int page, int pageSize) throws DotDataException;
+
+    /**
      * Cancels a job.
      *
      * @param jobId The ID of the job to cancel
@@ -161,8 +182,24 @@ public interface JobQueueManagerAPI {
      *
      * @param jobId   The ID of the job to watch
      * @param watcher The consumer to be notified of job updates
+     * @return A JobWatcher instance representing the registered watcher
      */
-    void watchJob(String jobId, Consumer<Job> watcher);
+    JobWatcher watchJob(String jobId, Consumer<Job> watcher);
+
+    /**
+     * Removes a watcher for a specific job.
+     *
+     * @param jobId   The ID of the job to unwatch
+     * @param watcher The watcher to remove
+     */
+    void removeJobWatcher(String jobId, JobWatcher watcher);
+
+    /**
+     * Removes all watchers for a specific job.
+     *
+     * @param jobId The ID of the job
+     */
+    void removeAllJobWatchers(String jobId);
 
     /**
      * Sets a retry strategy for a specific queue.
