@@ -4,13 +4,13 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
-    Input,
-    OnChanges,
     Output,
     ViewChild,
-    inject
+    inject,
+    input,
+    computed,
+    untracked
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { Listbox, ListboxChangeEvent, ListboxModule } from 'primeng/listbox';
@@ -24,22 +24,27 @@ import { DotLanguage } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-edit-ema-language-selector',
     standalone: true,
-    imports: [OverlayPanelModule, ListboxModule, ButtonModule, AsyncPipe, NgClass, FormsModule],
+    imports: [OverlayPanelModule, ListboxModule, ButtonModule, AsyncPipe, NgClass],
     templateUrl: './edit-ema-language-selector.component.html',
     styleUrls: ['./edit-ema-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditEmaLanguageSelectorComponent implements AfterViewInit, OnChanges {
+export class EditEmaLanguageSelectorComponent implements AfterViewInit {
     @ViewChild('listbox') listbox: Listbox;
     @Output() selected: EventEmitter<number> = new EventEmitter();
-    @Input() language: DotLanguage;
 
-    get selectedLanguage() {
-        return {
-            ...this.language,
-            label: this.createLanguageLabel(this.language)
+    language = input<DotLanguage>();
+
+    selectedLanguage = computed(() => {
+        const selected = {
+            ...this.language(),
+            label: this.createLanguageLabel(this.language())
         };
-    }
+        // This method internally set a signal. We need to use untracked to avoid unnecessary updates
+        untracked(() => this.listbox?.writeValue(selected));
+
+        return selected;
+    });
 
     languages$ = inject(DotLanguagesService)
         .get()
@@ -52,15 +57,8 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit, OnChange
             )
         );
 
-    ngOnChanges(): void {
-        // To select the correct language when the page is reloaded with no queryParams
-        if (this.listbox) {
-            this.listbox.writeValue(this.selectedLanguage);
-        }
-    }
-
     ngAfterViewInit(): void {
-        this.listbox.writeValue(this.selectedLanguage);
+        this.listbox.writeValue(this.selectedLanguage());
     }
 
     /**
@@ -71,6 +69,8 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit, OnChange
      */
     onChange({ value }: ListboxChangeEvent) {
         this.selected.emit(value.id);
+
+        this.listbox.writeValue(this.selectedLanguage());
     }
 
     /**

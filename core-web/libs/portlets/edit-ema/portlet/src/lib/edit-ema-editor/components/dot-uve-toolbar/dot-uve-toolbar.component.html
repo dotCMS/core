@@ -31,15 +31,13 @@
             #languageSelector
             (selected)="onLanguageSelected($event)"
             [language]="$toolbar().currentLanguage"
-            data-testId="language-selector" />
+            data-testId="uve-toolbar-language-selector" />
 
         @if ($toolbar().runningExperiment; as runningExperiment) {
             <dot-ema-running-experiment
                 [runningExperiment]="runningExperiment"
                 data-testId="uve-toolbar-running-experiment" />
         }
-
-        <span data-testId="uve-toolbar-running-experiment">Experiments</span>
 
         <span data-testId="uve-toolbar-persona-selector">Persona</span>
         <span data-testId="uve-toolbar-workflow-actions">Workflows</span>

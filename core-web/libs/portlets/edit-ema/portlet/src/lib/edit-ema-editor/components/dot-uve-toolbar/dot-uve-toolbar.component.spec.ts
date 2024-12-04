@@ -1,5 +1,5 @@
-import { byTestId, mockProvider, Spectator } from '@ngneat/spectator';
-import { createComponentFactory } from '@ngneat/spectator/jest';
+import { expect, describe, it } from '@jest/globals';
+import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -7,7 +7,7 @@ import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/comm
 import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -51,6 +51,9 @@ describe('DotUveToolbarComponent', () => {
         providers: [
             UVEStore,
             provideHttpClientTesting(),
+            mockProvider(ConfirmationService, {
+                confirm: jest.fn()
+            }),
             {
                 provide: DotLanguagesService,
                 useValue: new DotLanguagesServiceMock()
@@ -167,6 +170,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should have attrs', () => {
                 expect(button.attributes).toEqual({
+                    class: 'ng-star-inserted',
                     'data-testId': 'uve-toolbar-copy-url',
                     icon: 'pi pi-external-link',
                     'ng-reflect-icon': 'pi pi-external-link',
