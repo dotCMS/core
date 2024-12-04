@@ -3,15 +3,12 @@ package com.dotcms.analytics.track.collectors;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Test for the {@link PagesCollector} class
@@ -29,9 +26,9 @@ public class PagesCollectorTest {
     public void test_collect_easy_path() throws IOException {
 
         final PagesCollector pagesCollector = new PagesCollector(Mockito.mock(HTMLPageAssetAPI.class), Mockito.mock(URLMapAPIImpl.class));
-        final Host host = new Host();
-        host.setIdentifier("1");
-        host.setHostname("www.dotcms.com");
+        final Host host = Mockito.mock(Host.class);
+        Mockito.when(host.getIdentifier()).thenReturn("1");
+        Mockito.when(host.getHostname()).thenReturn("www.dotcms.com");
         final CollectorContextMap collectorContextMap = new CollectorContextMap() {
             @Override
             public Object get(final String key) {
@@ -62,9 +59,9 @@ public class PagesCollectorTest {
         final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBean();
         pagesCollector.collect(collectorContextMap, collectorPayloadBean);
 
-        Assert.assertEquals("/test-path", collectorPayloadBean.get("url"));
-        Assert.assertEquals("www.dotcms.com", collectorPayloadBean.get("host"));
-        Assert.assertEquals("en", collectorPayloadBean.get("language"));
-        Assert.assertEquals(EventType.PAGE_REQUEST.getType(), collectorPayloadBean.get("event_type"));
+        Assert.assertEquals("/test-path", collectorPayloadBean.get(Collector.URL));
+        Assert.assertEquals("www.dotcms.com", collectorPayloadBean.get(Collector.SITE_NAME));
+        Assert.assertEquals("en", collectorPayloadBean.get(Collector.LANGUAGE));
+        Assert.assertEquals(EventType.PAGE_REQUEST.getType(), collectorPayloadBean.get(Collector.EVENT_TYPE));
     }
 }
