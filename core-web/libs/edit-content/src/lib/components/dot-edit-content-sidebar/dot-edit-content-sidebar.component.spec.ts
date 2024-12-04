@@ -30,11 +30,13 @@ import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.compo
 
 import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotEditContentSidebarComponent', () => {
     let spectator: Spectator<DotEditContentSidebarComponent>;
     let dotEditContentService: SpyObject<DotEditContentService>;
+    let dotWorkflowService: SpyObject<DotWorkflowService>;
 
     const createComponent = createComponentFactory({
         component: DotEditContentSidebarComponent,
@@ -73,8 +75,9 @@ describe('DotEditContentSidebarComponent', () => {
         spectator = createComponent({ detectChanges: false });
 
         dotEditContentService = spectator.inject(DotEditContentService);
-
+        dotWorkflowService = spectator.inject(DotWorkflowService);
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
+        dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
         spectator.detectChanges();
     });

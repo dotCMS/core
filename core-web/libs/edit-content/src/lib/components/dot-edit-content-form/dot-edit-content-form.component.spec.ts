@@ -40,7 +40,8 @@ import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
     MOCK_CONTENTTYPE_1_TAB,
     MOCK_CONTENTTYPE_2_TABS,
-    MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB
+    MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
+    MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
 import { MockResizeObserver } from '../../utils/mocks';
 
@@ -52,6 +53,7 @@ describe('DotFormComponent', () => {
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
+    let dotWorkflowService: SpyObject<DotWorkflowService>;
     let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
@@ -71,6 +73,7 @@ describe('DotFormComponent', () => {
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
             mockProvider(DotContentletService),
+
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -95,6 +98,7 @@ describe('DotFormComponent', () => {
         workflowActionsService = spectator.inject(DotWorkflowsActionsService);
         dotEditContentService = spectator.inject(DotEditContentService);
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+        dotWorkflowService = spectator.inject(DotWorkflowService);
         router = spectator.inject(Router);
     });
 
@@ -112,6 +116,7 @@ describe('DotFormComponent', () => {
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
             store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
 
@@ -189,6 +194,7 @@ describe('DotFormComponent', () => {
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
             store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
             spectator.detectChanges();
@@ -279,6 +285,7 @@ describe('DotFormComponent', () => {
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
             store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode);
             spectator.detectChanges();

@@ -7,8 +7,20 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotWorkflowState } from '../../../../models/dot-edit-content.model';
+
+interface WorkflowSelection {
+    schemeOptions: SelectItem[];
+    isWorkflowSelected: boolean;
+}
+
+const DEFAULT_WORKFLOW_SELECTION: WorkflowSelection = {
+    schemeOptions: [],
+    isWorkflowSelected: false
+} as const;
 
 /**
  * Component that displays the workflow status of a content item.
@@ -33,15 +45,10 @@ import { DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarWorkflowComponent {
-    /**
-     * Whether not exist content yet
-     *
-     * @type {boolean}
-     * @memberof DotEditContentSidebarWorkflowComponent
-     */
-    $isNewContent = input<boolean>(true, {
-        alias: 'isNew'
+    $workflowSelection = input<WorkflowSelection>(DEFAULT_WORKFLOW_SELECTION, {
+        alias: 'workflowSelection'
     });
+
     /**
      * Whether the dialog should be shown.
      *
@@ -61,6 +68,14 @@ export class DotEditContentSidebarWorkflowComponent {
     readonly onSelectWorkflow = output<string>();
 
     /**
+     * Output event to reset the workflow.
+     *
+     * @type {Output<DotCMSWorkflowAction>}
+     * @memberof DotEditContentSidebarWorkflowComponent
+     */
+    readonly onResetWorkflow = output<string>();
+
+    /**
      * The selected workflow.
      *
      * @type {string}
@@ -74,7 +89,7 @@ export class DotEditContentSidebarWorkflowComponent {
      * @type {DotCMSWorkflowStatus}
      * @memberof DotEditContentSidebarWorkflowComponent
      */
-    $workflow = input<DotCMSWorkflowStatus>({} as DotCMSWorkflowStatus, {
+    $workflow = input<DotWorkflowState | null>(null, {
         alias: 'workflow'
     });
 
@@ -89,36 +104,27 @@ export class DotEditContentSidebarWorkflowComponent {
     });
 
     /**
-     * Whether the select workflow warning should be shown.
+     * Whether the reset action should be shown.
      *
      * @type {boolean}
      * @memberof DotEditContentSidebarWorkflowComponent
      */
-    $noWorkflowSelectedYet = input<boolean>(false, {
-        alias: 'noWorkflowSelectedYet'
+    $resetWorkflowAction = input<DotCMSWorkflowAction | null>(null, {
+        alias: 'resetWorkflowAction'
     });
 
     /**
-     * The workflow scheme options.
-     *
-     * @type {Array<{ value: string; label: string }>}
-     * @memberof DotEditContentSidebarWorkflowComponent
+     * Whether the workflow selection dialog should be available.
      */
-    $workflowSchemeOptions = input<SelectItem[]>([], {
-        alias: 'workflowSchemeOptions'
-    });
+    $showWorkflowSelection = computed(() => {
+        const { schemeOptions } = this.$workflowSelection();
+        const workflow = this.$workflow();
 
-    /**
-     * Whether to show the workflow selection dialog icon.
-     * Shows when content is new and there are multiple workflow options available.
-     *
-     * @type {Signal<boolean>}
-     * @memberof DotEditContentSidebarWorkflowComponent
-     */
-    $showWorkflowDialogIcon = computed(() => {
-        const hasMultipleWorkflows = this.$workflowSchemeOptions().length > 1;
+        const hasMultipleWorkflows = schemeOptions.length > 1;
+        const isResetOrNew = workflow.contentState === 'reset' || workflow.contentState === 'new';
+        const hasNoResetAction = !workflow.resetAction;
 
-        return this.$isNewContent() && hasMultipleWorkflows;
+        return hasMultipleWorkflows && isResetOrNew && hasNoResetAction;
     });
 
     /**
