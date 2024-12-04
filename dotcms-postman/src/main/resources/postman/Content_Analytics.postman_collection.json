@@ -1,95 +1,236 @@
 {
 	"info": {
-		"_postman_id": "b0022550-05d2-4e69-8dec-2c9c743f6119",
+		"_postman_id": "10c05583-df4b-45e1-8794-0a1721e168f6",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
 			"name": "Data Query",
 			"item": [
 				{
-					"name": "No User Authentication",
-					"event": [
+					"name": "Using Path Parameters",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"HTTP Status code must be unauthorized\", function () {",
-									"    pm.response.to.have.status(401);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
+							"name": "No User Authentication",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be unauthorized\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/query/measures/request.count request.totalSessions/dimensions/request.host request.whatAmI request.url/timeDimensions/request.createdAt:day:This month/filters/request.totalRequest gt 0:request.whatAmI contains PAGE,FILE/order/request.count asc:request.createdAt asc/limit/5/offset/0",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"query",
+										"measures",
+										"request.count request.totalSessions",
+										"dimensions",
+										"request.host request.whatAmI request.url",
+										"timeDimensions",
+										"request.createdAt:day:This month",
+										"filters",
+										"request.totalRequest gt 0:request.whatAmI contains PAGE,FILE",
+										"order",
+										"request.count asc:request.createdAt asc",
+										"limit",
+										"5",
+										"offset",
+										"0"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Missing Required Parameters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be Bad Request\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Check that minimum required parameters are NOT present\", function () {",
+											"    pm.expect(pm.response.json().message).to.equal(\"Query should contain either measures, dimensions or timeDimensions with granularities in order to be valid\", \"This is NOT the expected error message\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/query/filters/request.totalRequest gt 0:request.whatAmI contains PAGE,FILE/order/request.count asc:request.createdAt asc/limit/5/offset/0",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"query",
+										"filters",
+										"request.totalRequest gt 0:request.whatAmI contains PAGE,FILE",
+										"order",
+										"request.count asc:request.createdAt asc",
+										"limit",
+										"5",
+										"offset",
+										"0"
+									]
+								},
+								"description": "As the error message states, the CubeJS Query should contain either measures, dimensions or timeDimensions with granularities in order to be valid."
+							},
+							"response": []
 						}
 					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/analytics/content/_query",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"analytics",
-								"content",
-								"_query"
-							]
-						}
-					},
-					"response": []
+					"description": "This test group verifies that the Endpoint that receives plain String parameters for the CubeJS query works as expected.\n\nParameter has specfic formatting and separator characters that allow Users a more dynamic interaction with the Content Analitycs service:\n\n- Measures: Values are separated by blank spaces: `/measures/request.count request.totalSessions`\n    \n- Dimensions: Values are separated by blank spaces: `/dimensions/request.host request.whatAmI request.url`\n    \n- Time Dimensions: Values are separated by colons: `/timeDimensions/request.createdAt:day:This month` . The second parameter 'day' -- the \"granularity\" parameter -- is optional.\n    \n- Filters: Values are separated by colons: `/filters/request.totalRequest gt 0:request.whatAmI contains PAGE,FILE` . In this case, you're filtering by the number of requests, and the type of object being queried: Pages and Files.\n    \n- Order: Values are separated by colon: `/order/request.count asc:request.createdAt asc`\n    \n- Limit: Value is provided as is: `/limit/50`\n    \n- Offset: Value is provided as is: `/ffset/0`"
 				},
 				{
-					"name": "No Query Form",
-					"event": [
+					"name": "Using the JSON query",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"query\": {}\n}\n",
-							"options": {
-								"raw": {
-									"language": "json"
+							"name": "No User Authentication",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be unauthorized\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
 								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/analytics/content/_query",
-							"host": [
-								"{{serverURL}}"
 							],
-							"path": [
-								"api",
-								"v1",
-								"analytics",
-								"content",
-								"_query"
-							]
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/_query",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"_query"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "No Query Form",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"query\": {}\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/_query",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"_query"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				}
 			]
 		},

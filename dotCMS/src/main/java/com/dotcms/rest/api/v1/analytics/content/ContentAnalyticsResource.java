@@ -1,10 +1,12 @@
 package com.dotcms.rest.api.v1.analytics.content;
 
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
+import com.dotcms.analytics.content.ContentAnalyticsQuery;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.analytics.track.collectors.Collector;
 import com.dotcms.analytics.track.collectors.EventSource;
+import com.dotcms.analytics.track.collectors.EventType;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
@@ -17,13 +19,15 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,25 +35,35 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import io.vavr.Lazy;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import io.vavr.Lazy;
-import org.glassfish.jersey.server.JSONP;
-import com.dotcms.analytics.track.collectors.EventType;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.DIMENSIONS_ATTR;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.FILTERS_ATTR;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.LIMIT_ATTR;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.MEASURES_ATTR;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.OFFSET_ATTR;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.ORDER_ATTR;
+import static com.dotcms.analytics.content.ContentAnalyticsQuery.TIME_DIMENSIONS_ATTR;
+import static com.dotcms.util.DotPreconditions.checkArgument;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 /**
  * Resource class that exposes endpoints to query content analytics data.
@@ -63,7 +77,7 @@ import com.dotcms.analytics.track.collectors.EventType;
 
 @Path("/v1/analytics/content")
 @Tag(name = "Content Analytics",
-        description = "Endpoints that exposes information related to how dotCMS content is accessed and interacted with by users.")
+        description = "This REST Endpoint exposes information related to how dotCMS content is accessed and interacted with by users.")
 public class ContentAnalyticsResource {
 
     private static final UserCustomDefinedRequestMatcher USER_CUSTOM_DEFINED_REQUEST_MATCHER =  new UserCustomDefinedRequestMatcher();
@@ -102,7 +116,9 @@ public class ContentAnalyticsResource {
     @Operation(
             operationId = "postContentAnalyticsQuery",
             summary = "Retrieve Content Analytics data",
-            description = "Returns information of specific dotCMS objects whose health and engagement data is tracked.",
+            description = "Returns information of specific dotCMS objects whose health and " +
+                    "engagement data is tracked. This method takes a specific less verbose JSON " +
+                    "format to query the data.",
             tags = {"Content Analytics"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Content Analytics data being queried",
@@ -151,7 +167,7 @@ public class ContentAnalyticsResource {
                 .init();
 
         final User user = initDataObject.getUser();
-        DotPreconditions.checkNotNull(queryForm, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
+        checkNotNull(queryForm, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
         Logger.debug(this, () -> "Querying content analytics data with the form: " + queryForm);
         final ReportResponse reportResponse =
                 this.contentAnalyticsAPI.runReport(queryForm.getQuery(), user);
@@ -169,10 +185,12 @@ public class ContentAnalyticsResource {
     @Operation(
             operationId = "postContentAnalyticsQuery",
             summary = "Retrieve Content Analytics data",
-            description = "Returns information of specific dotCMS objects whose health and engagement data is tracked.",
+            description = "Returns information of specific dotCMS objects whose health and " +
+                    "engagement data is tracked, using a CubeJS JSON query.",
             tags = {"Content Analytics"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Content Analytics data being queried",
+                    @ApiResponse(responseCode = "200", description = "Content Analytics data " +
+                            "being queried",
                             content = @Content(mediaType = "application/json",
                                     examples = {
                                             @ExampleObject(
@@ -187,7 +205,7 @@ public class ContentAnalyticsResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
@@ -208,11 +226,99 @@ public class ContentAnalyticsResource {
                 .init();
 
         final User user = initDataObject.getUser();
-        DotPreconditions.checkNotNull(cubeJsQueryJson, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
+        checkNotNull(cubeJsQueryJson, IllegalArgumentException.class, "The 'query' JSON data cannot be null");
         Logger.debug(this,  ()->"Querying content analytics data with the cube query json: " + cubeJsQueryJson);
         final ReportResponse reportResponse =
                 this.contentAnalyticsAPI.runRawReport(cubeJsQueryJson, user);
         return new ReportResponseEntityView(reportResponse.getResults().stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
+    }
+
+
+    /**
+     * Returns information of specific dotCMS objects whose health and engagement data is tracked,
+     * using Path Parameters instead of a CubeJS JSON query. This helps abstract the complexity of
+     * the underlying JSON format for users that need an easier way to query for specific data.
+     *
+     * @param request  The current instance of the {@link HttpServletRequest} object.
+     * @param response The current instance of the {@link HttpServletResponse} object.
+     * @param params   The query parameters provided in the URL path.
+     *
+     * @return The request information from the Content Analytics server.
+     */
+    @Operation(
+            operationId = "postContentAnalyticsQuery",
+            summary = "Retrieve Content Analytics data",
+            description = "Returns information of specific dotCMS objects whose health and " +
+                    "engagement data is tracked, using Path Parameters instead of a CubeJS JSON " +
+                    "query. This helps abstract the complexity of the underlying JSON format for " +
+                    "users that need an easier way to query for specific data.",
+            tags = {"Content Analytics"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Content Analytics data " +
+                            "being queried",
+                            content = @Content(mediaType = "application/json",
+                                    examples = {
+                                            @ExampleObject(
+                                                    value = "http://localhost:8080/api/v1" +
+                                                            "/analytics/content/query/measures" +
+                                                            "/request.count request" +
+                                                            ".totalSessions/dimensions/request" +
+                                                            ".host request.whatAmI request" +
+                                                            ".url/timeDimensions/request" +
+                                                            ".createdAt:day:This " +
+                                                            "month/filters/request.totalRequest " +
+                                                            "gt 0:request.whatAmI contains PAGE," +
+                                                            "FILE/order/request.count asc:request" +
+                                                            ".createdAt asc/limit/5/offset/0"
+                                            )
+                                    }
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    @POST
+    @Path("/query/{params:.*}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ReportResponseEntityView query(@Context final HttpServletRequest request,
+                                          @Context final HttpServletResponse response,
+                                          final @PathParam("params") String params) throws JsonProcessingException {
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .params(params)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initDataObject.getUser();
+        final Map<String, String> paramsMap = initDataObject.getParamsMap();
+        Logger.debug(this, () -> "Querying content analytics data with the following parameters: " + paramsMap);
+        checkArgument(!(UtilMethods.isNotSet(paramsMap.get(MEASURES_ATTR))
+                && UtilMethods.isNotSet(paramsMap.get(DIMENSIONS_ATTR))
+                && UtilMethods.isNotSet(paramsMap.get(TIME_DIMENSIONS_ATTR.toLowerCase()))),
+                IllegalArgumentException.class, "Query should contain either measures, dimensions or timeDimensions with granularities in order to be valid");
+        final ContentAnalyticsQuery.Builder builder = new ContentAnalyticsQuery.Builder()
+                .measures(paramsMap.get(MEASURES_ATTR))
+                .dimensions(paramsMap.get(DIMENSIONS_ATTR))
+                .timeDimensions(paramsMap.get(TIME_DIMENSIONS_ATTR.toLowerCase()))
+                .filters(paramsMap.get(FILTERS_ATTR))
+                .order(paramsMap.get(ORDER_ATTR));
+        if (paramsMap.containsKey(LIMIT_ATTR)) {
+            builder.limit(Integer.parseInt(paramsMap.get(LIMIT_ATTR)));
+        }
+        if (paramsMap.containsKey(OFFSET_ATTR)) {
+            builder.offset(Integer.parseInt(paramsMap.get(OFFSET_ATTR)));
+        }
+        final ContentAnalyticsQuery contentAnalyticsQuery = builder.build();
+        final String cubeJsQuery = JsonUtil.getJsonStringFromObject(contentAnalyticsQuery);
+        Logger.debug(this, ()-> "Generated query: " + cubeJsQuery);
+        final ReportResponse reportResponse = this.contentAnalyticsAPI.runRawReport(cubeJsQuery, user);
+        return new ReportResponseEntityView(reportResponse.getResults()
+                .stream().map(ResultSetItem::getAll).collect(Collectors.toList()));
     }
 
     /**
@@ -253,7 +359,7 @@ public class ContentAnalyticsResource {
                                                 @Context final HttpServletResponse response,
                                                 final Map<String, Serializable> userEventPayload) throws DotSecurityException {
 
-        DotPreconditions.checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
+        checkNotNull(userEventPayload, IllegalArgumentException.class, "The 'userEventPayload' JSON cannot be null");
         if (userEventPayload.containsKey(Collector.EVENT_SOURCE)) {
             throw new IllegalArgumentException("The 'event_source' field is reserved and cannot be used");
         }
