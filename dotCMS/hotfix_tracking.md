@@ -88,3 +88,4 @@ This maintenance release includes the following code fixes:
 82. https://github.com/dotCMS/core/issues/30743 : pg_dump fails when passwords are complex #30743
 83. https://github.com/dotCMS/core/issues/30724 : Task URL redirecting only to language_id=1 #30724
 84. https://github.com/dotCMS/core/issues/28511 : Rename Title Column #28511
+85. https://github.com/dotCMS/core/issues/28512 : Rename Date Updated Column #28512
