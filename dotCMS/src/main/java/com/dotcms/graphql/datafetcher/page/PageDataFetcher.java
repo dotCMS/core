@@ -2,6 +2,7 @@ package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -25,6 +26,7 @@ import com.liferay.portal.model.User;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import io.vavr.control.Try;
+import java.time.Instant;
 import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -80,6 +82,10 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 request.setAttribute(WebKeys.CMS_PERSONA_PARAMETER, persona);
             }
 
+            if (UtilMethods.isSet(variant)) {
+                request.setAttribute(VariantAPI.VARIANT_KEY, variant);
+            }
+
             if(UtilMethods.isSet(site)) {
                 request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
             }
@@ -91,6 +97,13 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                     Logger.error(this, "Invalid publish date: " + publishDate);
                     return null;
                 });
+                if(null != publishDateObj) {
+                    //We get a valid time machine date
+                    final Instant instant = publishDateObj.toInstant();
+                    final long epochMilli = instant.toEpochMilli();
+                    context.addParam(PageResource.TM_DATE, epochMilli);
+                    request.setAttribute(PageResource.TM_DATE, epochMilli);
+                }
             }
 
             Logger.debug(this, ()-> "Fetching page for URL: " + url);
