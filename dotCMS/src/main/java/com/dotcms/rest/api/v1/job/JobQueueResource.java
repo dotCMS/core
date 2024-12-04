@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -54,14 +55,14 @@ public class JobQueueResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createJob(
-            @Context HttpServletRequest request,
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("queueName") String queueName,
             @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
 
         final var initDataObject = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
 
@@ -79,14 +80,14 @@ public class JobQueueResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createJob(
-            @Context HttpServletRequest request,
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("queueName") String queueName,
             Map<String, Object> parameters) throws DotDataException {
 
         final var initDataObject = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
 
@@ -102,11 +103,12 @@ public class JobQueueResource {
     @GET
     @Path("/queues")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<Set<String>> getQueues(@Context HttpServletRequest request) {
+    public ResponseEntityView<Set<String>> getQueues(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         return new ResponseEntityView<>(helper.getQueueNames());
@@ -115,14 +117,14 @@ public class JobQueueResource {
     @GET
     @Path("/{jobId}/status")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<Job> getJobStatus(@Context HttpServletRequest request,
-            @PathParam("jobId") String jobId)
-            throws DotDataException {
+    public ResponseEntityView<Job> getJobStatus(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @PathParam("jobId") String jobId) throws DotDataException {
 
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
 
@@ -134,12 +136,13 @@ public class JobQueueResource {
     @Path("/{jobId}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
-    public ResponseEntityView<String> cancelJob(@Context HttpServletRequest request,
+    public ResponseEntityView<String> cancelJob(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("jobId") String jobId) throws DotDataException {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         helper.cancelJob(jobId);
@@ -149,14 +152,15 @@ public class JobQueueResource {
     @GET
     @Path("/{queueName}/active")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> activeJobs(@Context HttpServletRequest request,
+    public ResponseEntityView<JobPaginatedResult> activeJobs(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("queueName") String queueName,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getActiveJobs(queueName, page, pageSize);
@@ -165,13 +169,14 @@ public class JobQueueResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> listJobs(@Context HttpServletRequest request,
+    public ResponseEntityView<JobPaginatedResult> listJobs(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getJobs(page, pageSize);
@@ -181,13 +186,14 @@ public class JobQueueResource {
     @GET
     @Path("/active")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> activeJobs(@Context HttpServletRequest request,
+    public ResponseEntityView<JobPaginatedResult> activeJobs(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getActiveJobs(page, pageSize);
@@ -197,13 +203,14 @@ public class JobQueueResource {
     @GET
     @Path("/completed")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> completedJobs(@Context HttpServletRequest request,
+    public ResponseEntityView<JobPaginatedResult> completedJobs(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getCompletedJobs(page, pageSize);
@@ -214,13 +221,13 @@ public class JobQueueResource {
     @Path("/successful")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> successfulJobs(
-            @Context HttpServletRequest request,
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getSuccessfulJobs(page, pageSize);
@@ -230,13 +237,14 @@ public class JobQueueResource {
     @GET
     @Path("/canceled")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> canceledJobs(@Context HttpServletRequest request,
+    public ResponseEntityView<JobPaginatedResult> canceledJobs(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getCanceledJobs(page, pageSize);
@@ -246,13 +254,14 @@ public class JobQueueResource {
     @GET
     @Path("/failed")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> failedJobs(@Context HttpServletRequest request,
+    public ResponseEntityView<JobPaginatedResult> failedJobs(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getFailedJobs(page, pageSize);
@@ -262,13 +271,14 @@ public class JobQueueResource {
     @GET
     @Path("/abandoned")
     @Produces(MediaType.APPLICATION_JSON)
-    public ResponseEntityView<JobPaginatedResult> abandonedJobs(@Context HttpServletRequest request,
+    public ResponseEntityView<JobPaginatedResult> abandonedJobs(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
         final JobPaginatedResult result = helper.getAbandonedJobs(page, pageSize);
@@ -279,13 +289,14 @@ public class JobQueueResource {
     @Path("/{jobId}/monitor")
     @Produces(SseFeature.SERVER_SENT_EVENTS)
     @SuppressWarnings("java:S1854") // jobWatcher assignment is needed for cleanup in catch blocks
-    public EventOutput monitorJob(@Context HttpServletRequest request,
+    public EventOutput monitorJob(
+            @Context HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("jobId") String jobId) {
 
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requestAndResponse(request, null)
+                .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
 
