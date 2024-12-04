@@ -404,7 +404,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final Job job = getJob(jobId);
 
-        if (job.state() == JobState.PENDING || job.state() == JobState.RUNNING) {
+        if (isInCancelableState(job)) {
             handleJobCancelRequest(job);
         } else {
             Logger.warn(this, "Job " + job.id() + " is not in a cancellable state. "
@@ -427,9 +427,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         try {
 
             final var job = getJob(event.getJob().id());
-            if (job.state() == JobState.PENDING
-                    || job.state() == JobState.RUNNING
-                    || job.state() == JobState.CANCEL_REQUESTED) {
+            if (isInCancelableState(job) || job.state() == JobState.CANCEL_REQUESTED) {
 
                 final Optional<JobProcessor> instance = getInstance(job.id());
                 if (instance.isPresent()) {
@@ -1134,6 +1132,18 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             emptyQueueCount = maxEmptyQueueCount; // Reset to max to avoid wrap around
         }
         return emptyQueueCount;
+    }
+
+    /**
+     * Verifies if a job state is in a cancellable state.
+     *
+     * @param job The job to check.
+     * @return {@code true} if the job is in a cancellable state, {@code false} otherwise.
+     */
+    private boolean isInCancelableState(final Job job) {
+        return job.state() == JobState.PENDING || job.state() == JobState.RUNNING
+                || job.state() == JobState.FAILED || job.state() == JobState.ABANDONED
+                || job.state() == JobState.ABANDONED_PERMANENTLY;
     }
 
     /**
