@@ -1,13 +1,16 @@
-import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { tapResponse } from '@ngrx/operators';
+import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe } from 'rxjs';
+
+import { inject } from '@angular/core';
+
+import { switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-export interface RelationshipFieldItem {
-    id: string;
-    title: string;
-    language: string;
-    state: string;
-}
+import { RelationshipFieldItem } from '../models/relationship.models';
+import { RelationshipFieldService } from '../services/relationship-field.service';
 
 export interface RelationshipFieldState {
     data: RelationshipFieldItem[];
@@ -34,17 +37,54 @@ const initialState: RelationshipFieldState = {
  * This store manages the state and actions related to the relationship field.
  */
 export const RelationshipFieldStore = signalStore(
+    { providedIn: 'root' },
     withState(initialState),
-    withMethods((store) => ({
-        setData(data: RelationshipFieldItem[]) {
-            patchState(store, {
-                data
-            });
-        },
-        addData(data: RelationshipFieldItem[]) {
-            patchState(store, {
-                data: [...store.data(), ...data]
-            });
+    withMethods((store) => {
+        const relationshipFieldService = inject(RelationshipFieldService);
+
+        return {
+            /**
+             * Sets the data in the state.
+             * @param {RelationshipFieldItem[]} data - The data to be set.
+             */
+            setData(data: RelationshipFieldItem[]) {
+                patchState(store, {
+                    data
+                });
+            },
+            /**
+             * Adds new data to the existing data in the state.
+             * @param {RelationshipFieldItem[]} data - The new data to be added.
+             */
+            addData(data: RelationshipFieldItem[]) {
+
+                patchState(store, {
+                    data: [...store.data(), ...data]
+                });
+            },
+            /**
+             * Loads the data for the relationship field by fetching content from the service.
+             * It updates the state with the loaded data and sets the status to LOADED.
+             */
+            loadData: rxMethod<void>(
+                pipe(
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
+                    switchMap(() =>
+                        relationshipFieldService.getContent(2).pipe(
+                            tapResponse({
+                                next: (data) =>
+                                    patchState(store, { data, status: ComponentStatus.LOADED }),
+                                error: () => patchState(store, { status: ComponentStatus.ERROR })
+                            })
+                        )
+                    )
+                )
+            )
+        };
+    }),
+    withHooks({
+        onInit: (store) => {
+            store.loadData();
         }
-    }))
+    })
 );

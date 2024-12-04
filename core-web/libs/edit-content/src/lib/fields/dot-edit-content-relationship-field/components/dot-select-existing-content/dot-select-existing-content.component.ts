@@ -12,13 +12,13 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { SearchComponent } from './components/search/search.compoment';
 import { ExistingContentStore } from './store/existing-content.store';
 
+import { RelationshipFieldItem } from '../../models/relationship.models';
 
 @Component({
     selector: 'dot-select-existing-content',
@@ -67,7 +67,7 @@ export class DotSelectExistingContentComponent {
      * A signal that holds the selected items.
      * It is used to store the selected content items.
      */
-    $selectedItems = model<DotCMSContentlet[]>([]);
+    $selectedItems = model<RelationshipFieldItem[]>([]);
 
     /**
      * A computed signal that determines if the apply button is disabled.
@@ -94,8 +94,7 @@ export class DotSelectExistingContentComponent {
      * A signal that sends the selected items when the dialog is closed.
      * It is used to notify the parent component that the user has selected content items.
      */
-    onSelectItems = output<DotCMSContentlet[]>();
-
+    onSelectItems = output<RelationshipFieldItem[]>();
 
     /**
      * A method that closes the existing content dialog.
@@ -110,8 +109,7 @@ export class DotSelectExistingContentComponent {
      * It sets the visibility signal to false, hiding the dialog, and emits the selected items
      * through the "selectItems" output signal.
      */
-    closeDialogWithSelectedItems() {
-        this.$visible.set(false);
+    emitSelectedItems() {
         this.onSelectItems.emit(this.$selectedItems());
     }
 }

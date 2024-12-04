@@ -27,9 +27,13 @@
         <tr>
             <td>{{ item.title }}</td>
             <td>{{ item.language }}</td>
-            <td>{{ item.state }}</td>
+            <td>
+                <p-chip [styleClass]="item.state.styleClass" [label]="item.state.label" />
+            </td>
         </tr>
     </ng-template>
 </p-table>
 
-<dot-select-existing-content [(visible)]="$showExistingContentDialog" (onSelectItems)="store.addData($event)" />
+<dot-select-existing-content
+    [(visible)]="$showExistingContentDialog"
+    (onSelectItems)="store.addData($event)" />

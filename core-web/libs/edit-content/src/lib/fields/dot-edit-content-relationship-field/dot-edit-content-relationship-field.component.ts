@@ -10,6 +10,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
@@ -29,7 +30,8 @@ import { RelationshipFieldStore } from './store/relationship-field.store';
         ButtonModule,
         MenuModule,
         DotSelectExistingContentComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        ChipModule
     ],
     providers: [
         RelationshipFieldStore,

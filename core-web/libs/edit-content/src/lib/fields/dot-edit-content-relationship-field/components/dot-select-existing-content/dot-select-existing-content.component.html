@@ -5,7 +5,7 @@
     [header]="'dot.file.relationship.dialog.select.existing.content' | dm"
     [modal]="true"
     [(visible)]="$visible"
-    (onHide)="closeDialogWithSelectedItems()"
+    (onHide)="emitSelectedItems()"
     dataKey="id"
     appendTo="body"
     width="90%"
@@ -112,7 +112,10 @@
                     (onClick)="closeDialog()"
                     [text]="true"
                     severity="primary" />
-                <p-button [disabled]="$isApplyDisabled()" [label]="$applyLabel()" />
+                <p-button
+                    [disabled]="$isApplyDisabled()"
+                    (onClick)="closeDialog()"
+                    [label]="$applyLabel()" />
             </div>
         </div>
     </ng-template>

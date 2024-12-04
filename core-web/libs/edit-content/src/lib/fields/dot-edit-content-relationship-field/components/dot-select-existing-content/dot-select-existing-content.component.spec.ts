@@ -1,17 +1,28 @@
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
-
-
 import { DotMessageService } from '@dotcms/data-access';
+import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
- 
 
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
     let store: InstanceType<typeof ExistingContentStore>;
     let dotMessageService: DotMessageService;
+
+    const mockRelationshipItem = (id: string): RelationshipFieldItem => ({
+        id,
+        title: `Test Content ${id}`,
+        language: '1',
+        state: {
+            label: 'Published',
+            styleClass: 'small-chip'
+        },
+        description: 'Test description',
+        step: 'Step 1',
+        lastUpdate: new Date().toISOString()
+    });
 
     const createComponent = createComponentFactory({
         component: DotSelectExistingContentComponent,
@@ -42,7 +53,7 @@ describe('DotSelectExistingContentComponent', () => {
         expect(store).toBeTruthy();
     });
 
-    describe('Visibility', () => {
+    describe('Dialog Visibility', () => {
         it('should set visibility to false when closeDialog is called', () => {
             spectator.component.$visible.set(true);
             spectator.component.closeDialog();
@@ -50,26 +61,26 @@ describe('DotSelectExistingContentComponent', () => {
         });
     });
 
-    describe('Selected Items', () => {
+    describe('Selected Items State', () => {
         it('should disable apply button when no items are selected', () => {
             spectator.component.$selectedItems.set([]);
             expect(spectator.component.$isApplyDisabled()).toBeTruthy();
         });
 
         it('should enable apply button when items are selected', () => {
-            const mockContent = [{ id: '1', title: 'Test Content' }];
+            const mockContent = [mockRelationshipItem('1')];
             spectator.component.$selectedItems.set(mockContent);
             expect(spectator.component.$isApplyDisabled()).toBeFalsy();
         });
     });
 
-    describe('Apply Label', () => {
-        it('should return correct label for single item', () => {
-            const mockContent = [{ id: '1', title: 'Test Content' }];
+    describe('Apply Button Label', () => {
+        it('should show singular label when one item is selected', () => {
+            const mockContent = [mockRelationshipItem('1')];
             spectator.component.$selectedItems.set(mockContent);
-            
+
             const label = spectator.component.$applyLabel();
-            
+
             expect(dotMessageService.get).toHaveBeenCalledWith(
                 'dot.file.relationship.dialog.apply.one.entry',
                 '1'
@@ -77,33 +88,20 @@ describe('DotSelectExistingContentComponent', () => {
             expect(label).toBe('Apply 1 entry');
         });
 
-        it('should return correct label for multiple items', () => {
+        it('should show plural label when multiple items are selected', () => {
             const mockContent = [
-                { id: '1', title: 'Test Content 1' },
-                { id: '2', title: 'Test Content 2' }
+                mockRelationshipItem('1'),
+                mockRelationshipItem('2')
             ];
             spectator.component.$selectedItems.set(mockContent);
-            
+
             const label = spectator.component.$applyLabel();
-            
+
             expect(dotMessageService.get).toHaveBeenCalledWith(
                 'dot.file.relationship.dialog.apply.entries',
                 '2'
             );
             expect(label).toBe('Apply 2 entries');
-        });
-    });
-
-    describe('Dialog Closing', () => {
-        it('should close dialog and emit selected items', () => {
-            const mockContent = [{ id: '1', title: 'Test Content' }];
-            const selectItemsSpy = jest.spyOn(spectator.component.$selectItems, 'emit');
-            
-            spectator.component.$selectedItems.set(mockContent);
-            spectator.component.closeDialogWithSelectedItems();
-            
-            expect(spectator.component.$visible()).toBeFalse();
-            expect(selectItemsSpy).toHaveBeenCalledWith(mockContent);
         });
     });
 });
