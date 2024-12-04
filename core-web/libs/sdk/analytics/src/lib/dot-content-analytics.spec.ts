@@ -2,7 +2,7 @@
 
 import Analytics from 'analytics';
 
-import { DotAnalytics } from './analytics';
+import { DotContentAnalytics } from './dot-content-analytics';
 import { dotAnalyticsPlugin } from './plugin/dot-analytics.plugin';
 
 // Mock the analytics library
@@ -20,20 +20,20 @@ describe('DotAnalytics', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         // Reset singleton instance between tests
-        (DotAnalytics as any).instance = null;
+        (DotContentAnalytics as any).instance = null;
     });
 
     describe('getInstance', () => {
         it('should create single instance', () => {
-            const instance1 = DotAnalytics.getInstance(mockConfig);
-            const instance2 = DotAnalytics.getInstance(mockConfig);
+            const instance1 = DotContentAnalytics.getInstance(mockConfig);
+            const instance2 = DotContentAnalytics.getInstance(mockConfig);
 
             expect(instance1).toBe(instance2);
         });
 
         it('should maintain same instance even with different config', () => {
-            const instance1 = DotAnalytics.getInstance(mockConfig);
-            const instance2 = DotAnalytics.getInstance({ ...mockConfig, debug: true });
+            const instance1 = DotContentAnalytics.getInstance(mockConfig);
+            const instance2 = DotContentAnalytics.getInstance({ ...mockConfig, debug: true });
 
             expect(instance1).toBe(instance2);
         });
@@ -41,7 +41,7 @@ describe('DotAnalytics', () => {
 
     describe('ready', () => {
         it('should initialize analytics with correct config', async () => {
-            const instance = DotAnalytics.getInstance(mockConfig);
+            const instance = DotContentAnalytics.getInstance(mockConfig);
             const mockAnalytics = {};
             (Analytics as jest.Mock).mockReturnValue(mockAnalytics);
             (dotAnalyticsPlugin as jest.Mock).mockReturnValue({ name: 'mock-plugin' });
@@ -57,7 +57,7 @@ describe('DotAnalytics', () => {
         });
 
         it('should only initialize once', async () => {
-            const instance = DotAnalytics.getInstance(mockConfig);
+            const instance = DotContentAnalytics.getInstance(mockConfig);
 
             await instance.ready();
             await instance.ready();
@@ -66,7 +66,7 @@ describe('DotAnalytics', () => {
         });
 
         it('should throw error if initialization fails', async () => {
-            const instance = DotAnalytics.getInstance(mockConfig);
+            const instance = DotContentAnalytics.getInstance(mockConfig);
             const error = new Error('Init failed');
             (Analytics as jest.Mock).mockImplementation(() => {
                 throw error;

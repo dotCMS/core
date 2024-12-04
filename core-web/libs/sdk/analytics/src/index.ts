@@ -1,1 +1,1 @@
-export * from './lib/analytics';
+export * from './lib/react/components/withContentAnalytics';

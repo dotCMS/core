@@ -1,19 +1,27 @@
 {
-    "name": "analytics",
+    "name": "sdk-analytics",
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/sdk/analytics/src",
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nx/rollup:rollup",
+            "executor": "@nrwl/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/sdk/analytics",
-                "main": "libs/sdk/analytics/src/index.ts",
                 "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
                 "project": "libs/sdk/analytics/package.json",
-                "compiler": "swc",
-                "format": ["esm", "cjs"]
+                "entryFile": "libs/sdk/analytics/src/index.ts",
+                "external": ["react/jsx-runtime", "@dotcms/client", "react"],
+                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "compiler": "babel",
+                "assets": [
+                    {
+                        "glob": "libs/sdk/experiments/README.md",
+                        "input": ".",
+                        "output": "."
+                    }
+                ]
             }
         },
         "build:standalone": {

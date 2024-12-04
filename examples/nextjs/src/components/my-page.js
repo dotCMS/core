@@ -1,24 +1,25 @@
 "use client";
 
-import WebPageContent from "./content-types/webPageContent";
+import Activity from "./content-types/activity";
 import Banner from "./content-types/banner";
 import Blog from "./content-types/blog";
-import Activity from "./content-types/activity";
-import CallToAction from "./content-types/callToAction";
 import CalendarEvent from "./content-types/calendarEvent";
-import Product from "./content-types/product";
+import CallToAction from "./content-types/callToAction";
 import ImageComponent from "./content-types/image";
+import Product from "./content-types/product";
+import WebPageContent from "./content-types/webPageContent";
 
-import Header from "./layout/header/header";
-import Footer from "./layout/footer/footer";
-import Navigation from "./layout/navigation";
-import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
-import { withExperiments } from "@dotcms/experiments";
+import { usePathname, useRouter } from "next/navigation";
 import { CustomNoComponent } from "./content-types/empty";
+import Footer from "./layout/footer/footer";
+import Header from "./layout/header/header";
+import Navigation from "./layout/navigation";
 
-import { usePageAsset } from "../hooks/usePageAsset";
 import NotFound from "@/app/not-found";
+import { usePageAsset } from "../hooks/usePageAsset";
+
+import { withContentAnalytics } from "@dotcms/analytics";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -28,6 +29,13 @@ const experimentConfig = {
     apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY, // API key for experiments, should be securely stored
     server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG, // Debug mode for additional logging
+};
+
+// Example configuration for Content Analytics
+const analyticsConfig = {
+    apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY,
+    debug: process.env.NEXT_PUBLIC_ANALYTICS_DEBUG,
+    server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
 };
 
 // Mapping of components to DotCMS content types
@@ -53,9 +61,18 @@ export function MyPage({ pageAsset, nav }) {
      * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
      * - Remove DotExperimentsProvider from the return statement.
      */
-    const DotLayoutComponent = experimentConfig.apiKey
-        ? withExperiments(DotcmsLayout, {
-              ...experimentConfig,
+    // const DotLayoutComponent = DotcmsLayout;
+    // const DotLayoutComponent = experimentConfig?.apiKey
+    //     ? withExperiments(DotcmsLayout, {
+    //           ...experimentConfig,
+    //           redirectFn: replace,
+    //       })
+    //     : DotcmsLayout;
+
+    console.log("nextjs analyticsConfig", analyticsConfig);
+    const DotLayoutComponent = analyticsConfig.apiKey
+        ? withContentAnalytics(DotcmsLayout, {
+              ...analyticsConfig,
               redirectFn: replace,
           })
         : DotcmsLayout;
@@ -76,15 +93,15 @@ export function MyPage({ pageAsset, nav }) {
                 <DotLayoutComponent
                     pageContext={{
                         pageAsset,
-                        components: componentsMap
+                        components: componentsMap,
                     }}
                     config={{
                         pathname,
                         editor: {
                             params: {
-                                depth: 3
-                            }
-                        }
+                                depth: 3,
+                            },
+                        },
                     }}
                 />
             </main>

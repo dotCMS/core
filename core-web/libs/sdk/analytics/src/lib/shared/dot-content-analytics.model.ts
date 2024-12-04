@@ -1,14 +1,39 @@
-import { EXPECTED_UTM_KEYS } from './analytics.constants';
+import { EXPECTED_UTM_KEYS } from './dot-content-analytics.constants';
 
-export interface DotAnalyticsConfig {
-    // Analytics server
+/**
+ * Configuration interface for DotAnalytics SDK.
+ *
+ * @interface DotAnalyticsConfig
+ */
+export interface DotContentAnalyticsConfig {
+    /**
+     * The URL of the Analytics server endpoint.
+     */
     server: string;
-    // Analytics debug
+
+    /**
+     * Enable debug mode to get additional logging information.
+     */
     debug: boolean;
-    // Auto track page view
+
+    /**
+     * Automatically track page views when set to true.
+     */
     autoPageView: boolean;
-    // Analytics key
+
+    /**
+     * The API key for authenticating with the Analytics service.
+     */
     key: string;
+
+    /**
+     * Custom redirect function handler.
+     * When provided, this function will be called instead of the default browser redirect
+     * for handling URL redirections.
+     *
+     * @param {string} url - The URL to redirect to
+     */
+    redirectFn?: (url: string) => void;
 }
 
 /**

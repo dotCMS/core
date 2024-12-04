@@ -1,5 +1,5 @@
-import { ANALYTICS_ENDPOINT } from './analytics.constants';
-import { DotAnalyticsConfig, PageViewEvent } from './analytics.model';
+import { ANALYTICS_ENDPOINT } from './dot-content-analytics.constants';
+import { DotContentAnalyticsConfig, PageViewEvent } from './dot-content-analytics.model';
 
 /**
  * Send an analytics event to the server
@@ -9,7 +9,7 @@ import { DotAnalyticsConfig, PageViewEvent } from './analytics.model';
  */
 export const sendAnalyticsEventToServer = async (
     data: PageViewEvent,
-    options: DotAnalyticsConfig
+    options: DotContentAnalyticsConfig
 ): Promise<Response> => {
     const eventData = {
         ...data,

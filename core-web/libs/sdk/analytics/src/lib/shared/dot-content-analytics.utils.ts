@@ -1,12 +1,12 @@
-import { ANALYTICS_SOURCE_TYPE, EXPECTED_UTM_KEYS } from './analytics.constants';
-import { DotAnalyticsConfig, PageViewEvent } from './analytics.model';
+import { ANALYTICS_SOURCE_TYPE, EXPECTED_UTM_KEYS } from './dot-content-analytics.constants';
+import { DotContentAnalyticsConfig, PageViewEvent } from './dot-content-analytics.model';
 
 /**
  * Retrieves analytics attributes from a given script element.
  *
  * @return {DotAnalyticsConfig | null} - The analytics attributes or null if there are no valid attributes present.
  */
-export const getDataAnalyticsAttributes = (location: Location): DotAnalyticsConfig => {
+export const getDataAnalyticsAttributes = (location: Location): DotContentAnalyticsConfig => {
     const script = getAnalyticsScriptTag();
 
     const attributes = {
@@ -95,3 +95,11 @@ export const extractUTMParameters = (location: Location): Record<string, string>
         {} as Record<string, string>
     );
 };
+
+/**
+ * A function to redirect the user to a new URL.
+ *
+ * @param {string} href - The URL to redirect to.
+ * @returns {void}
+ */
+export const defaultRedirectFn = (href: string) => (window.location.href = href);

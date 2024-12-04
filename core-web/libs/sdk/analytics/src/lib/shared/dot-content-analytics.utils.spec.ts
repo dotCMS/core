@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { ANALYTICS_SOURCE_TYPE } from './analytics.constants';
+import { ANALYTICS_SOURCE_TYPE } from './dot-content-analytics.constants';
 import {
     createAnalyticsPageViewData,
     extractUTMParameters,
     getAnalyticsScriptTag,
     getDataAnalyticsAttributes
-} from './analytics.utils';
+} from './dot-content-analytics.utils';
 
 describe('Analytics Utils', () => {
     let mockLocation: Location;
