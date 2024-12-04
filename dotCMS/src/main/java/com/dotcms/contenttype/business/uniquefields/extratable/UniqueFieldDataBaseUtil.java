@@ -6,13 +6,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.apache.lucene.queries.function.valuesource.LiteralValueSource.hash;
@@ -81,6 +84,47 @@ public class UniqueFieldDataBaseUtil {
     private final static String DELETE_UNIQUE_FIELDS_BY_FIELD = "DELETE FROM unique_fields " +
             "WHERE supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
+
+    private final static String POPULATE_UNIQUE_FIELDS_VALUES_QUERY = "INSERT INTO unique_fields (unique_key_val, supporting_values) " +
+            "SELECT encode(sha256(CONCAT(content_type_id, field_var_name, language_id, field_value, " +
+            "                  CASE WHEN uniquePerSite = 'true' THEN host_id ELSE '' END)::bytea), 'hex') as unique_key_val, " +
+            "       json_build_object('" + CONTENT_TYPE_ID_ATTR + "', content_type_id, " +
+                                    "'" + FIELD_VARIABLE_NAME_ATTR + "', field_var_name, " +
+                                    "'" + LANGUAGE_ID_ATTR + "', language_id, " +
+                                    "'" + FIELD_VALUE_ATTR +"', field_value, " +
+                                    "'" + SITE_ID_ATTR + "', host_id, " +
+                                    "'" + VARIANT_ATTR + "', variant_id, " +
+                                    "'" + UNIQUE_PER_SITE_ATTR + "', " + "uniquePerSite, " +
+                                    "'" + LIVE_ATTR + "', live, " +
+                                    "'" + CONTENTLET_IDS_ATTR + "', contentlet_identifier) AS supporting_values " +
+            "FROM (" +
+            "        SELECT structure.inode                                       AS content_type_id," +
+            "               field.velocity_var_name                               AS field_var_name," +
+            "               contentlet.language_id                                AS language_id," +
+            "               identifier.host_inode                                 AS host_id," +
+            "               jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>" +
+            "               'value'                                               AS field_value," +
+            "               ARRAY_AGG(contentlet.identifier)                      AS contentlet_identifier," +
+            "               contentlet_version_info.variant_id as variant_id," +
+            "               contentlet_version_info.live_inode = contentlet.inode as live," +
+            "               CASE WHEN field_variable.variable_value = 'true' THEN true ELSE false END AS uniquePerSite" +
+            "        FROM contentlet" +
+            "                 INNER JOIN structure ON structure.inode = contentlet.structure_inode" +
+            "                 INNER JOIN field ON structure.inode = field.structure_inode" +
+            "                 INNER JOIN identifier ON contentlet.identifier = identifier.id" +
+            "                 INNER JOIN contentlet_version_info ON contentlet_version_info.live_inode = contentlet.inode OR" +
+            "                                                       contentlet_version_info.working_inode = contentlet.inode" +
+            "                 LEFT JOIN field_variable ON field_variable.field_id = field.inode AND field_variable.variable_key = '" + UNIQUE_PER_SITE_FIELD_VARIABLE_NAME + "'" +
+            "        WHERE jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name) IS NOT NULL" +
+            "          AND field.unique_ = true" +
+            "        GROUP BY structure.inode," +
+            "                 field.velocity_var_name," +
+            "                 contentlet.language_id," +
+            "                 identifier.host_inode," +
+            "                 jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value'," +
+            "                 contentlet_version_info.variant_id," +
+            "                 contentlet_version_info.live_inode = contentlet.inode," +
+            "                 CASE WHEN field_variable.variable_value = 'true' THEN true ELSE false END) as data_to_populate";
 
     /**
      * Insert a new register into the unique_fields table, if already exists another register with the same
@@ -299,5 +343,100 @@ public class UniqueFieldDataBaseUtil {
                 .addParam(contentlet.getLanguageId())
                 .addParam(true)
                 .loadObjectResults();
+    }
+
+    /**
+     * Create the {@code unique_fields} table for the new Unique Field Data base
+     * Validation mechanism. The new {@code unique_fields} table will be used to validate fields that must be
+     * unique, and what parameters were used to defined such a uniqueness feature.
+     *
+     * <h4>Table Definition:</h4>
+     * <pre>
+     *     {@code
+     * CREATE TABLE unique_fields (
+     *     unique_key_val VARCHAR(64) PRIMARY KEY,
+     *     supporting_values JSONB
+     * );
+     * }
+     * </pre>
+     * <h4>Columns:</h4>
+     * The {@code unique_key_val} column will store a hash created from a combination of the following:
+     * <ul>
+     *     <li>Content type ID.</li>
+     *     <li>Field variable name.</li>
+     *     <li>Field value.</li>
+     *     <li>Language.</li>
+     *     <li>Site ID (if the {@code uniquePerSite} option is enabled).</li>
+     * </ul>
+     * <p>
+     * The {@code supporting_values} column contains a JSON object with the following format:
+     * <pre>
+     *     {@code
+     * {
+     *     "contentTypeID": "",
+     *     "fieldVariableName": "",
+     *     "fieldValue": "",
+     *     "languageId": "",
+     *     "hostId": "",
+     *     "uniquePerSite": true|false,
+     *     "contentletsId": [...],
+     *     "variant": "",
+     *     "live": true|fsle
+     * }
+     * }
+     * </pre>
+     * <p>The {@code contentletsId} array holds the IDs of contentlets with the same field value that
+     * existed before the database was upgraded. After the upgrade, no more contentlets with
+     * duplicate values will be allowed.</p>
+     *
+     * <h4>Additional Details:</h4>
+     * <ul>
+     *     <li>The Host ID is included in the hash calculation only if the {@code uniquePerSite}
+     *     field variable is enabled.</li>
+     *     <li>The {@code unique_key_val} field ensures that only truly unique values can be inserted
+     *     moving forward.</li>
+     *     <li>This upgrade task also populates the {@code unique_fields} table with the existing
+     *     unique field values from the current database.</li>
+     * </ul>
+     */
+    public void createUniqueFieldsValidationTable() throws DotDataException {
+        new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
+                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
+                    "supporting_values JSONB" +
+                " )").loadObjectResults();
+    }
+
+    /**
+     * Drop the {@code unique_fields} table for the new Unique Field Data base validation mechanism.
+     *
+     * @see UniqueFieldDataBaseUtil#createUniqueFieldsValidationTable()
+     *
+     * @throws DotDataException
+     */
+    public void dropUniqueFieldsValidationTable() throws DotDataException {
+        try {
+            new DotConnect().setSQL("DROP TABLE unique_fields").loadObjectResults();
+        } catch (DotDataException e) {
+            final Throwable cause = e.getCause();
+
+            if (!SQLException.class.isInstance(cause) ||
+                    !"ERROR: table \"unique_fields\" does not exist".equals(cause.getMessage())) {
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * Populates the {@code unique_fields} table with unique field values extracted from the {@code contentlet} table.
+     *
+     * The process involves:
+     * - Identifying all {@link com.dotcms.contenttype.model.type.ContentType} objects with unique fields.
+     * - Retrieving all {@link Contentlet} entries and their corresponding values for both LIVE and Working versions.
+     * - Storing these unique field values into the {@code unique_fields} table with all this data.
+     *
+     * @throws DotDataException
+     */
+    public void populateUniqueFieldsTable() throws DotDataException {
+        new DotConnect().setSQL(POPULATE_UNIQUE_FIELDS_VALUES_QUERY).loadObjectResults();
     }
 }
