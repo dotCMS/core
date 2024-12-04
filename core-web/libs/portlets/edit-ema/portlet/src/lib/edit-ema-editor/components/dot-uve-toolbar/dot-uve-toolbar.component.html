@@ -1,6 +1,9 @@
-<p-toolbar styleClass="p-toolbar-preview">
+@let preview = $isPreviewMode();
+@let runningExperiment = $toolbar().runningExperiment;
+
+<p-toolbar [styleClass]="preview ? 'p-toolbar-preview' : ''">
     <div class="p-toolbar-group-start">
-        @if (!$isPreviewMode()) {
+        @if (!preview) {
             <p-button
                 icon="pi pi-eye"
                 styleClass="p-button-text"
@@ -25,13 +28,42 @@
                 data-testId="uve-toolbar-api-link"
                 [href]="$apiURL()"></a>
         } @else {
-            <div>PREVIEW MODE CONTENT</div>
-            <button (click)="setEditMode()">Back</button>
+            <p-button
+                icon="pi pi-times"
+                styleClass="p-button-text"
+                (click)="setEditMode()"
+                data-testId="close-preview-mode" />
+
+            <p-button
+                icon="pi pi-desktop"
+                styleClass="p-button-text"
+                data-testId="desktop-preview" />
+
+            <p-button icon="pi pi-tablet" styleClass="p-button-text" data-testId="tablet-preview" />
+
+            <p-button icon="pi pi-mobile" styleClass="p-button-text" data-testId="mobile-preview" />
+
+            <p-splitButton label="More" [model]="[]" text />
         }
     </div>
 
+    <div class="p-toolbar-group-center">
+        <div>
+            <p-button
+                icon="pi pi-chevron-left"
+                styleClass="p-button-text"
+                data-testId="arrow-left" />
+            <p-button
+                icon="pi pi-chevron-right"
+                styleClass="p-button-text"
+                data-testId="arrow-right" />
+        </div>
+        <p-calendar [(ngModel)]="date" [readonlyInput]="true" />
+        <p-chip label="Today" alt="Page Day" />
+    </div>
+
     <div class="p-toolbar-group-end">
-        @if ($toolbar().runningExperiment; as runningExperiment) {
+        @if (runningExperiment && !preview) {
             <dot-ema-running-experiment
                 [runningExperiment]="runningExperiment"
                 data-testId="uve-toolbar-running-experiment" />
@@ -39,7 +71,10 @@
 
         <span data-testId="uve-toolbar-language-selector">Language</span>
         <span data-testId="uve-toolbar-persona-selector">Persona</span>
-        <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
+
+        @if (!preview) {
+            <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
+        }
     </div>
 </p-toolbar>
 

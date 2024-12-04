@@ -6,6 +6,11 @@
     gap: $spacing-1;
 }
 
+.p-toolbar-group-center {
+    display: flex;
+    gap: $spacing-1;
+}
+
 ::ng-deep {
     .p-toolbar-preview {
         border: 1px solid $color-palette-primary-200;
