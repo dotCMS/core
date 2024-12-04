@@ -34,8 +34,8 @@ export class DotUveToolbarComponent {
 
     readonly $toolbar = this.#store.$uveToolbar;
 
-    togglePreviewMode(preview: boolean) {
-        this.#store.togglePreviewMode(preview);
+    setPreviewMode() {
+        this.#store.loadPageAsset({ preview: 'true' });
     }
 
     triggerCopyToast() {
