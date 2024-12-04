@@ -55,7 +55,7 @@ public class JobQueueResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createJob(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("queueName") String queueName,
             @BeanParam JobParams form) throws JsonProcessingException, DotDataException {
 
@@ -80,7 +80,7 @@ public class JobQueueResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createJob(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("queueName") String queueName,
             Map<String, Object> parameters) throws DotDataException {
 
@@ -104,7 +104,7 @@ public class JobQueueResource {
     @Path("/queues")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<Set<String>> getQueues(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response) {
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response) {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -118,7 +118,7 @@ public class JobQueueResource {
     @Path("/{jobId}/status")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<Job> getJobStatus(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("jobId") String jobId) throws DotDataException {
 
         new InitBuilder(webResource)
@@ -137,7 +137,7 @@ public class JobQueueResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.WILDCARD)
     public ResponseEntityView<String> cancelJob(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("jobId") String jobId) throws DotDataException {
         new InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -153,7 +153,7 @@ public class JobQueueResource {
     @Path("/{queueName}/active")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> activeJobs(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("queueName") String queueName,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
@@ -170,7 +170,7 @@ public class JobQueueResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> listJobs(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
@@ -187,7 +187,7 @@ public class JobQueueResource {
     @Path("/active")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> activeJobs(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
@@ -204,7 +204,7 @@ public class JobQueueResource {
     @Path("/completed")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> completedJobs(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
@@ -221,7 +221,7 @@ public class JobQueueResource {
     @Path("/successful")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> successfulJobs(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
@@ -238,7 +238,7 @@ public class JobQueueResource {
     @Path("/canceled")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> canceledJobs(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
@@ -255,7 +255,7 @@ public class JobQueueResource {
     @Path("/failed")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> failedJobs(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
@@ -272,7 +272,7 @@ public class JobQueueResource {
     @Path("/abandoned")
     @Produces(MediaType.APPLICATION_JSON)
     public ResponseEntityView<JobPaginatedResult> abandonedJobs(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
         new InitBuilder(webResource)
@@ -290,7 +290,7 @@ public class JobQueueResource {
     @Produces(SseFeature.SERVER_SENT_EVENTS)
     @SuppressWarnings("java:S1854") // jobWatcher assignment is needed for cleanup in catch blocks
     public EventOutput monitorJob(
-            @Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("jobId") String jobId) {
 
         new InitBuilder(webResource)
