@@ -1,0 +1,26 @@
+@let currentPage = $currentPage();
+@let totalPages = $totalPages();
+
+<div class="flex justify-content-center gap-3">
+    <span class="text-primary-500 flex align-items-center">
+        {{ currentPage }} of {{ totalPages }}
+    </span>
+    <div class="flex justify-content-center gap-1">
+        <p-button
+            type="button"
+            (onClick)="previousPage.emit()"
+            icon="pi pi-angle-left"
+            [rounded]="true"
+            [text]="true"
+            [disabled]="currentPage === 1"
+            size="small" />
+        <p-button
+            type="button"
+            (onClick)="nextPage.emit()"
+            icon="pi pi-angle-right"
+            [rounded]="true"
+            [text]="true"
+            [disabled]="currentPage === totalPages"
+            size="small" />
+    </div>
+</div>
