@@ -320,7 +320,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
+    public JobPaginatedResult getActiveJobs(final String queueName, final int page, final int pageSize)
             throws DotDataException {
         try {
             return jobQueue.getActiveJobs(queueName, page, pageSize);
@@ -341,7 +341,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getActiveJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getActiveJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getActiveJobs(page, pageSize);
         } catch (JobQueueDataException e) {
@@ -351,7 +352,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getCompletedJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getCompletedJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getCompletedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
@@ -372,7 +374,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getCanceledJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getCanceledJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getCanceledJobs(page, pageSize);
         } catch (JobQueueDataException e) {
@@ -382,7 +385,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getFailedJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getFailedJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getFailedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
@@ -392,7 +396,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getAbandonedJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getAbandonedJobs(final int page, final int pageSize) throws DotDataException {
         try {
             return jobQueue.getAbandonedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
