@@ -99,7 +99,7 @@ export class DotEditContentFormComponent implements OnInit {
      *
      * @memberof DotEditContentFormComponent
      */
-    changeValue = output<Record<string, string | string[] | Date>>();
+    changeValue = output<FormValues>();
 
     /**
      * Computed property that retrieves the filtered fields from the store.
@@ -231,11 +231,15 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     private initializeForm() {
-        this.form = this.#fb.group({});
-        this.$formFields().forEach((field) => {
-            const control = this.createFormControl(field);
-            this.form.addControl(field.variable, control);
-        });
+        const controls = this.$formFields().reduce(
+            (acc, field) => ({
+                ...acc,
+                [field.variable]: this.createFormControl(field)
+            }),
+            {}
+        );
+
+        this.form = this.#fb.group(controls);
     }
 
     /**

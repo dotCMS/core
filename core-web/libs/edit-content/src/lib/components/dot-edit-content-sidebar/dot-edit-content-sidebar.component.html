@@ -48,21 +48,12 @@
 
             <dot-edit-content-sidebar-section [title]="'Workflow' | dm">
                 <dot-edit-content-sidebar-workflow
-                    [workflowSelection]="{
-                        schemeOptions: store.workflowSchemeOptions(),
-                        noWorkflowSelectedYet: store.showSelectWorkflowWarning()
-                    }"
+                    [workflowSelection]="$workflowSelection()"
                     [(showDialog)]="$showDialog"
                     (onSelectWorkflow)="store.setSelectedWorkflow($event)"
                     [resetWorkflowAction]="store.getResetWorkflowAction()"
                     (onResetWorkflow)="fireWorkflowAction($event)"
-                    [workflow]="{
-                        scheme: store.getScheme(),
-                        step: store.getCurrentStep(),
-                        task: store.lastTask(),
-                        contentState: store.initialContentletState(),
-                        resetAction: store.getResetWorkflowAction()
-                    }"
+                    [workflow]="$workflow()"
                     [isLoading]="store.isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>

@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     effect,
     inject,
     model,
@@ -21,6 +22,7 @@ import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-co
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
+import { DotWorkflowState } from '../../models/dot-edit-content.model';
 
 /**
  * The DotEditContentSidebarComponent is a component that displays the sidebar for the DotCMS content editing application.
@@ -53,6 +55,25 @@ export class DotEditContentSidebarComponent {
     readonly $formValues = this.store.formValues;
     readonly $contentType = this.store.contentType;
     readonly $contentlet = this.store.contentlet;
+
+    /**
+     * Computed property that returns the workflow state of the content.
+     */
+    readonly $workflow = computed<DotWorkflowState | null>(() => ({
+        scheme: this.store.getScheme(),
+        step: this.store.getCurrentStep(),
+        task: this.store.lastTask(),
+        contentState: this.store.initialContentletState(),
+        resetAction: this.store.getResetWorkflowAction()
+    }));
+
+    /**
+     * Computed property that returns the workflow selection state.
+     */
+    readonly $workflowSelection = computed(() => ({
+        schemeOptions: this.store.workflowSchemeOptions(),
+        isWorkflowSelected: this.store.showSelectWorkflowWarning()
+    }));
 
     /**
      * Model for the showDialog property.

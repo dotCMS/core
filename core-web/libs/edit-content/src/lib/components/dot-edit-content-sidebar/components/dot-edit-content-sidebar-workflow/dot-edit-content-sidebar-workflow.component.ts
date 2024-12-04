@@ -14,12 +14,12 @@ import { DotWorkflowState } from '../../../../models/dot-edit-content.model';
 
 interface WorkflowSelection {
     schemeOptions: SelectItem[];
-    noWorkflowSelectedYet: boolean;
+    isWorkflowSelected: boolean;
 }
 
 const DEFAULT_WORKFLOW_SELECTION: WorkflowSelection = {
     schemeOptions: [],
-    noWorkflowSelectedYet: false
+    isWorkflowSelected: false
 } as const;
 
 /**

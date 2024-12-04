@@ -10,7 +10,7 @@
         data-testId="workflow-name">
         @if (isLoading) {
             <p-skeleton />
-        } @else if (workflowSelection.noWorkflowSelectedYet) {
+        } @else if (workflowSelection.isWorkflowSelected) {
             <a
                 href="#"
                 class="select-workflow-link"
@@ -42,7 +42,7 @@
         }
     </dd>
 
-    @if (!workflowSelection.noWorkflowSelectedYet) {
+    @if (!workflowSelection.isWorkflowSelected) {
         <dt class="workflow-column__title" id="step-title">
             {{ 'Step' | dm }}
         </dt>
