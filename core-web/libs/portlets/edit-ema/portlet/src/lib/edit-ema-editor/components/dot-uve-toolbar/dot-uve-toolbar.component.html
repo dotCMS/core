@@ -38,7 +38,14 @@
         }
 
         <span data-testId="uve-toolbar-language-selector">Language</span>
-        <span data-testId="uve-toolbar-persona-selector">Persona</span>
+        <dot-edit-ema-persona-selector
+            (selected)="onPersonaSelected($event)"
+            (despersonalize)="onDespersonalize($event)"
+            [pageId]="$personaSelector().pageId"
+            [value]="$personaSelector().value"
+            #personaSelector
+            data-testId="uve-toolbar-persona-selector" />
+
         <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
     </div>
 </p-toolbar>
