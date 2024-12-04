@@ -116,14 +116,6 @@
                             <test.duration>${jmeter.test.duration}</test.duration>
                             <thread.number>${jmeter.thread.number}</thread.number>
                         </propertiesUser>
-                        <!-- <jMeterProcessJVMSettings>
-                             <arguments>
-                                 <argument>-XX:MaxMetaspaceSize=256m</argument>
-                                 <argument>-Xmx1024m</argument>
-                                 <argument>-Xms1024m</argument>
-                             </arguments>
-                         </jMeterProcessJVMSettings>
-                         -->
                         <testFilesIncluded>
                             <jMeterTestFile>${jmeterScript}</jMeterTestFile>
                         </testFilesIncluded>

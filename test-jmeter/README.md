@@ -92,7 +92,8 @@ The tests run under the `jmeter-standalone` profile, which is active by default.
 
 ## Troubleshooting
 
-If you encounter memory issues, uncomment the JVM settings in the pom.xml:
+We have not yet validated the memory requirements.  Eventually we should probably be explicit about the JVM memory settings.  These can be added into the configuration block 
+in the pom.xml e.g.:
 ```xml
 <jMeterProcessJVMSettings>
     <arguments>
@@ -102,3 +103,6 @@ If you encounter memory issues, uncomment the JVM settings in the pom.xml:
     </arguments>
 </jMeterProcessJVMSettings>
 ```
+## High load testing
+Currently this runs as a standalone service, for high load testing we would need to run this in a distributed mode with multiple jmeter instances and jmeter should not be running on the same server as DotCMS.  This is not yet supported.
+As such performance issues in adding too many threads may be due to local server limitations of resources and not the dotCMS instance itself. 
