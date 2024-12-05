@@ -93,3 +93,4 @@ This maintenance release includes the following code fixes:
 87. https://github.com/dotCMS/core/issues/29501 : optimize sql query causing slowness on high-traffic sites #29501
 88. https://github.com/dotCMS/core/issues/30053 : Overlay Misalignment in Content Type while relating content #30053
 89. https://github.com/dotCMS/core/issues/30457 : FileAssetContainers not found when using case #30457
+90. https://github.com/dotCMS/core/issues/30619 : Run dotCMS with jemalloc #30619
