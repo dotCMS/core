@@ -63,6 +63,11 @@ describe('utils functions', () => {
                         identifier: 'test',
                         uuid: 'test',
                         contentletsId: ['test']
+                    },
+                    {
+                        identifier: 'test-2',
+                        uuid: 'test',
+                        contentletsId: ['test']
                     }
                 ],
                 contentlet: {
@@ -82,6 +87,12 @@ describe('utils functions', () => {
                         uuid: 'test',
                         contentletsId: [],
                         personaTag: 'test'
+                    },
+                    {
+                        identifier: 'test-2',
+                        uuid: 'test',
+                        contentletsId: ['test'],
+                        personaTag: 'test' // In the last version this was not being added and it lead to saving content to the default persona and messing up with the pages
                     }
                 ],
                 contentletsId: []
