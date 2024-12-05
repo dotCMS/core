@@ -1,4 +1,5 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -15,11 +16,11 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
-
 @Component({
     selector: 'dot-uve-toolbar',
     standalone: true,
     imports: [
+        NgTemplateOutlet,
         ButtonModule,
         ToolbarModule,
         DotEmaBookmarksComponent,
