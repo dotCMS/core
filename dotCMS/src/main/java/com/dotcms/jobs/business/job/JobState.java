@@ -18,7 +18,7 @@ public enum JobState {
     /**
      * The job has finished executing successfully.
      */
-    COMPLETED,
+    SUCCESS,
 
     /**
      * The job encountered an error and could not complete successfully.
@@ -26,9 +26,21 @@ public enum JobState {
     FAILED,
 
     /**
+     * The job encountered error and could not complete successfully. The error is permanent and the
+     * job will not be retried.
+     */
+    FAILED_PERMANENTLY,
+
+    /**
      * The job was abandoned before it could complete.
      */
     ABANDONED,
+
+    /**
+     * The job was abandoned before it could complete. The error is permanent and the job will not
+     * be retried.
+     */
+    ABANDONED_PERMANENTLY,
 
     /**
      * The job is waiting to be canceled.

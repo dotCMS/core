@@ -208,6 +208,7 @@
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
         <glowroot.version>0.14.2</glowroot.version>
+        <jmeter.test.skip>true</jmeter.test.skip>
     </properties>
 
     <build>
@@ -223,6 +224,11 @@
         <pluginManagement>
 
             <plugins>
+                <plugin>
+                    <groupId>com.lazerycode.jmeter</groupId>
+                    <artifactId>jmeter-maven-plugin</artifactId>
+                    <version>3.8.0</version>
+                </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>flatten-maven-plugin</artifactId>

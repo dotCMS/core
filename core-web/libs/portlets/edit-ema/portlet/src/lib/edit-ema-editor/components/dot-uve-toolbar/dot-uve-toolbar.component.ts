@@ -33,6 +33,7 @@ export class DotUveToolbarComponent {
     readonly #dotMessageService = inject(DotMessageService);
 
     readonly $toolbar = this.#store.$uveToolbar;
+    readonly $apiURL = this.#store.$apiURL;
 
     togglePreviewMode(preview: boolean) {
         this.#store.togglePreviewMode(preview);

@@ -25,21 +25,24 @@ import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.nio.file.Files;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongConsumer;
 
@@ -223,15 +226,15 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      * {@link JobValidationException} is thrown.</p>
      *
      * @param parameters The job parameters containing the fields to validate
-     * @param contentTypeFound The content type to validate the fields against
+     * @param contentType The content type to validate the fields against
      * @throws JobValidationException if any field specified in the parameters is not found in the content type
      */
-    private void validateFields(final Map<String, Object> parameters, final ContentType contentTypeFound) {
-        var fields = contentTypeFound.fields();
-        for (String field : getFields(parameters)) {
-            if (fields.stream().noneMatch(f -> Objects.equals(f.variable(), field))) {
+    private void validateFields(final Map<String, Object> parameters, final ContentType contentType) {
+        var contentTypeFields = contentType.fields();
+        for (String providedField : getFields(parameters)) {
+            if (contentTypeFields.stream().noneMatch(field -> Objects.equals(field.id(), providedField))) {
                 final var errorMessage = String.format(
-                        "Field [%s] not found in Content Type [%s].", field, contentTypeFound.variable()
+                        "Field [%s] not found in Content Type [%s].", providedField, contentType.variable()
                 );
                 Logger.error(this, errorMessage);
                 throw new JobValidationException(errorMessage);
@@ -292,9 +295,8 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
             );
         }
 
-        try (Reader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(fileToImport),
-                        Charset.defaultCharset()))) {
+        try (Reader reader = Files.newBufferedReader(
+                fileToImport.toPath(), StandardCharsets.UTF_8)) {
 
             CsvReader csvReader = createCsvReader(reader);
 
@@ -490,8 +492,8 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
     private Long totalLines(final Job job, final File dotTempFile) {
 
         long totalCount;
-        try (BufferedReader reader = new BufferedReader(new FileReader(dotTempFile))) {
-            totalCount = reader.lines().count();
+        try {
+            totalCount = FileUtil.countFileLines(dotTempFile);
             if (totalCount == 0) {
                 Logger.info(this.getClass(),
                         "No lines in CSV import file: " + dotTempFile.getName());
