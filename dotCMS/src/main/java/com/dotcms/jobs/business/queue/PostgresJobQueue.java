@@ -101,23 +101,25 @@ public class PostgresJobQueue implements JobQueue {
                     "WHERE id IN (SELECT id FROM abandoned_jobs) " +
                     "RETURNING *";
 
-    private static final String GET_ACTIVE_JOBS_QUERY_FOR_QUEUE =
+    private static final String GET_JOBS_QUERY_BY_QUEUE_AND_STATE =
             "WITH total AS (SELECT COUNT(*) AS total_count " +
-                    "    FROM job WHERE queue_name = ? AND state IN (?, ?) " +
+                    "    FROM job WHERE queue_name = ? AND state IN $??$ " +
                     "), " +
                     "paginated_data AS (SELECT * " +
-                    "    FROM job WHERE queue_name = ? AND state IN (?, ?) " +
-                    "    ORDER BY created_at LIMIT ? OFFSET ? " +
+                    "    FROM job WHERE queue_name = ? AND state IN $??$ " +
+                    "    ORDER BY $ORDER_BY$ LIMIT ? OFFSET ? " +
                     ") " +
                     "SELECT p.*, t.total_count FROM total t LEFT JOIN paginated_data p ON true";
 
-    private static final String GET_COMPLETED_JOBS_QUERY_FOR_QUEUE =
+    private static final String GET_JOBS_QUERY_BY_QUEUE_AND_STATE_IN_DATE_RANGE =
             "WITH total AS (SELECT COUNT(*) AS total_count " +
-                    "    FROM job WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
+                    "    FROM job WHERE queue_name = ? AND state IN $??$ AND $DATE_COLUMN$ BETWEEN ? AND ? "
+                    +
                     "), " +
                     "paginated_data AS (SELECT * FROM job " +
-                    "    WHERE queue_name = ? AND state = ? AND completed_at BETWEEN ? AND ? " +
-                    "    ORDER BY completed_at DESC LIMIT ? OFFSET ? " +
+                    "    WHERE queue_name = ? AND state IN $??$ AND $DATE_COLUMN$ BETWEEN ? AND ? "
+                    +
+                    "    ORDER BY $ORDER_BY$ DESC LIMIT ? OFFSET ? " +
                     ") " +
                     "SELECT p.*, t.total_count FROM total t LEFT JOIN paginated_data p ON true";
 
@@ -177,9 +179,13 @@ public class PostgresJobQueue implements JobQueue {
             + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state IN $??$)";
 
     private static final String COLUMN_TOTAL_COUNT = "total_count";
+    private static final String COLUMN_COMPLETED_AT = "completed_at";
+    private static final String COLUMN_UPDATED_AT = "updated_at";
+    private static final String COLUMN_CREATED_AT = "created_at";
 
     private static final String REPLACE_TOKEN_PARAMETERS = "$??$";
     private static final String REPLACE_TOKEN_ORDER_BY = "$ORDER_BY$";
+    private static final String REPLACE_TOKEN_DATE_COLUMN = "$DATE_COLUMN$";
 
     /**
      * Jackson mapper configuration and lazy initialized instance.
@@ -306,26 +312,15 @@ public class PostgresJobQueue implements JobQueue {
     public JobPaginatedResult getActiveJobs(final String queueName, final int page,
             final int pageSize) throws JobQueueDataException {
 
-        try {
-
-            DotConnect dc = new DotConnect();
-            dc.setSQL(GET_ACTIVE_JOBS_QUERY_FOR_QUEUE);
-            dc.addParam(queueName);
-            dc.addParam(JobState.PENDING.name());
-            dc.addParam(JobState.RUNNING.name());
-            dc.addParam(queueName);  // Repeated for paginated_data CTE
-            dc.addParam(JobState.PENDING.name());
-            dc.addParam(JobState.RUNNING.name());
-            dc.addParam(pageSize);
-            dc.addParam((page - 1) * pageSize);
-
-            return jobPaginatedResult(page, pageSize, dc);
-        } catch (DotDataException e) {
-            Logger.error(this,
-                    "Database error while fetching active jobs by queue", e);
-            throw new JobQueueDataException(
-                    "Database error while fetching active jobs by queue", e);
-        }
+        return getJobsByState(JobStateQueryParameters.builder()
+                .queueName(queueName)
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_CREATED_AT)
+                .states(JobState.PENDING, JobState.RUNNING,
+                        JobState.FAILED, JobState.ABANDONED, JobState.CANCEL_REQUESTED,
+                        JobState.CANCELLING).build()
+        );
     }
 
     @CloseDBIfOpened
@@ -335,27 +330,17 @@ public class PostgresJobQueue implements JobQueue {
             final LocalDateTime endDate, final int page, final int pageSize)
             throws JobQueueDataException {
 
-        try {
-            DotConnect dc = new DotConnect();
-            dc.setSQL(GET_COMPLETED_JOBS_QUERY_FOR_QUEUE);
-            dc.addParam(queueName);
-            dc.addParam(JobState.COMPLETED.name());
-            dc.addParam(Timestamp.valueOf(startDate));
-            dc.addParam(Timestamp.valueOf(endDate));
-            dc.addParam(queueName);  // Repeated for paginated_data CTE
-            dc.addParam(JobState.COMPLETED.name());
-            dc.addParam(Timestamp.valueOf(startDate));
-            dc.addParam(Timestamp.valueOf(endDate));
-            dc.addParam(pageSize);
-            dc.addParam((page - 1) * pageSize);
-
-            return jobPaginatedResult(page, pageSize, dc);
-        } catch (DotDataException e) {
-            Logger.error(this,
-                    "Database error while fetching completed jobs by queue", e);
-            throw new JobQueueDataException(
-                    "Database error while fetching completed jobs by queue", e);
-        }
+        return getJobsByState(JobStateQueryParameters.builder()
+                .queueName(queueName)
+                .startDate(startDate)
+                .endDate(endDate)
+                .filterDateColumn(COLUMN_COMPLETED_AT)
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_COMPLETED_AT)
+                .states(JobState.SUCCESS, JobState.CANCELED,
+                        JobState.ABANDONED_PERMANENTLY, JobState.FAILED_PERMANENTLY).build()
+        );
     }
 
     @CloseDBIfOpened
@@ -381,26 +366,14 @@ public class PostgresJobQueue implements JobQueue {
     public JobPaginatedResult getActiveJobs(final int page, final int pageSize)
             throws JobQueueDataException {
 
-        try {
-
-            var query = GET_JOBS_QUERY_BY_STATE
-                    .replace(REPLACE_TOKEN_PARAMETERS, "(?, ?)")
-                    .replace(REPLACE_TOKEN_ORDER_BY, "created_at");
-
-            DotConnect dc = new DotConnect();
-            dc.setSQL(query);
-            dc.addParam(JobState.PENDING.name());
-            dc.addParam(JobState.RUNNING.name());
-            dc.addParam(JobState.PENDING.name()); // Repeated for paginated_data CTE
-            dc.addParam(JobState.RUNNING.name());
-            dc.addParam(pageSize);
-            dc.addParam((page - 1) * pageSize);
-
-            return jobPaginatedResult(page, pageSize, dc);
-        } catch (DotDataException e) {
-            Logger.error(this, "Database error while fetching active jobs", e);
-            throw new JobQueueDataException("Database error while fetching active jobs", e);
-        }
+        return getJobsByState(JobStateQueryParameters.builder()
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_CREATED_AT)
+                .states(JobState.PENDING, JobState.RUNNING,
+                        JobState.FAILED, JobState.ABANDONED, JobState.CANCEL_REQUESTED,
+                        JobState.CANCELLING).build()
+        );
     }
 
     @CloseDBIfOpened
@@ -408,74 +381,61 @@ public class PostgresJobQueue implements JobQueue {
     public JobPaginatedResult getCompletedJobs(final int page, final int pageSize)
             throws JobQueueDataException {
 
-        try {
+        return getJobsByState(JobStateQueryParameters.builder()
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_COMPLETED_AT)
+                .states(JobState.SUCCESS, JobState.CANCELED,
+                        JobState.ABANDONED_PERMANENTLY, JobState.FAILED_PERMANENTLY).build()
+        );
+    }
 
-            var query = GET_JOBS_QUERY_BY_STATE
-                    .replace(REPLACE_TOKEN_PARAMETERS, "(?)")
-                    .replace(REPLACE_TOKEN_ORDER_BY, "completed_at");
-
-            DotConnect dc = new DotConnect();
-            dc.setSQL(query);
-            dc.addParam(JobState.COMPLETED.name());
-            dc.addParam(JobState.COMPLETED.name());  // Repeated for paginated_data CTE
-            dc.addParam(pageSize);
-            dc.addParam((page - 1) * pageSize);
-
-            return jobPaginatedResult(page, pageSize, dc);
-        } catch (DotDataException e) {
-            Logger.error(this, "Database error while fetching completed jobs", e);
-            throw new JobQueueDataException("Database error while fetching completed jobs", e);
-        }
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getSuccessfulJobs(final int page, final int pageSize)
+            throws JobQueueDataException {
+        return getJobsByState(JobStateQueryParameters.builder()
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_COMPLETED_AT)
+                .states(JobState.SUCCESS).build()
+        );
     }
 
     @CloseDBIfOpened
     @Override
     public JobPaginatedResult getCanceledJobs(final int page, final int pageSize)
             throws JobQueueDataException {
-
-        try {
-
-            var query = GET_JOBS_QUERY_BY_STATE
-                    .replace(REPLACE_TOKEN_PARAMETERS, "(?)")
-                    .replace(REPLACE_TOKEN_ORDER_BY, "completed_at");
-
-            DotConnect dc = new DotConnect();
-            dc.setSQL(query);
-            dc.addParam(JobState.CANCELED.name());
-            dc.addParam(JobState.CANCELED.name());  // Repeated for paginated_data CTE
-            dc.addParam(pageSize);
-            dc.addParam((page - 1) * pageSize);
-
-            return jobPaginatedResult(page, pageSize, dc);
-        } catch (DotDataException e) {
-            Logger.error(this, "Database error while fetching cancelled jobs", e);
-            throw new JobQueueDataException("Database error while fetching cancelled jobs", e);
-        }
+        return getJobsByState(JobStateQueryParameters.builder()
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_UPDATED_AT)
+                .states(JobState.CANCEL_REQUESTED, JobState.CANCELLING, JobState.CANCELED).build()
+        );
     }
 
     @CloseDBIfOpened
     @Override
     public JobPaginatedResult getFailedJobs(final int page, final int pageSize)
             throws JobQueueDataException {
+        return getJobsByState(JobStateQueryParameters.builder()
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_UPDATED_AT)
+                .states(JobState.FAILED, JobState.FAILED_PERMANENTLY).build()
+        );
+    }
 
-        try {
-
-            var query = GET_JOBS_QUERY_BY_STATE
-                    .replace(REPLACE_TOKEN_PARAMETERS, "(?)")
-                    .replace(REPLACE_TOKEN_ORDER_BY, "updated_at");
-
-            DotConnect dc = new DotConnect();
-            dc.setSQL(query);
-            dc.addParam(JobState.FAILED.name());
-            dc.addParam(JobState.FAILED.name());  // Repeated for paginated_data CTE
-            dc.addParam(pageSize);
-            dc.addParam((page - 1) * pageSize);
-
-            return jobPaginatedResult(page, pageSize, dc);
-        } catch (DotDataException e) {
-            Logger.error(this, "Database error while fetching failed jobs", e);
-            throw new JobQueueDataException("Database error while fetching failed jobs", e);
-        }
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getAbandonedJobs(final int page, final int pageSize)
+            throws JobQueueDataException {
+        return getJobsByState(JobStateQueryParameters.builder()
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_UPDATED_AT)
+                .states(JobState.ABANDONED, JobState.ABANDONED_PERMANENTLY).build()
+        );
     }
 
     @CloseDBIfOpened
@@ -524,11 +484,11 @@ public class PostgresJobQueue implements JobQueue {
             }).orElse(null));
             historyDc.loadResult();
 
-            // Remove from job_queue if completed, failed, abandoned or canceled
-            if (job.state() == JobState.COMPLETED
-                    || job.state() == JobState.FAILED
-                    || job.state() == JobState.ABANDONED
-                    || job.state() == JobState.CANCELED) {
+            // Remove from job_queue if the job is considered done
+            if (job.state() != JobState.PENDING
+                    && job.state() != JobState.RUNNING
+                    && job.state() != JobState.CANCEL_REQUESTED
+                    && job.state() != JobState.CANCELLING) {
                 removeJobFromQueue(job.id());
             }
 
@@ -694,9 +654,15 @@ public class PostgresJobQueue implements JobQueue {
         }
     }
 
+    /**
+     * Removes a job from the queue. This method should be used for jobs that have permanently
+     * failed and cannot be retried.
+     *
+     * @param jobId The ID of the job to remove.
+     * @throws JobQueueDataException if there's a data storage error while removing the job
+     */
     @CloseDBIfOpened
-    @Override
-    public void removeJobFromQueue(final String jobId) throws JobQueueDataException {
+    private void removeJobFromQueue(final String jobId) throws JobQueueDataException {
 
         try {
             DotConnect dc = new DotConnect();
@@ -740,6 +706,181 @@ public class PostgresJobQueue implements JobQueue {
         } catch (Exception e) {
             Logger.error(this, "Error checking job state history", e);
             throw new JobQueueDataException("Error checking job state history", e);
+        }
+    }
+
+    /**
+     * Retrieves a paginated result of jobs filtered by state, queue name, and date range.
+     *
+     * @param parameters An instance of JobStateQueryParameters containing filter and pagination
+     *                   information.
+     * @return A JobPaginatedResult containing the jobs that match the specified filters and
+     * pagination criteria.
+     * @throws JobQueueDataException if there is a data storage error while fetching the jobs.
+     */
+    @CloseDBIfOpened
+    private JobPaginatedResult getJobsByState(final JobStateQueryParameters parameters)
+            throws JobQueueDataException {
+
+        if (parameters.queueName().isPresent() && parameters.startDate().isPresent()
+                && parameters.endDate().isPresent()) {
+            return getJobsFilterByNameDateAndState(parameters);
+        } else if (parameters.queueName().isPresent()) {
+            return getJobsFilterByNameAndState(parameters);
+        }
+
+        return getJobsFilterByState(parameters);
+    }
+
+    /**
+     * Helper method to fetch jobs by state and return a paginated result.
+     *
+     * @param parameters An instance of JobStateQueryParameters containing filter and pagination.
+     *                   This includes page number, page size, job states, and order by column.
+     * @return A JobPaginatedResult instance
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    @CloseDBIfOpened
+    private JobPaginatedResult getJobsFilterByState(
+            final JobStateQueryParameters parameters) throws JobQueueDataException {
+
+        final var states = parameters.states();
+        final var page = parameters.page();
+        final var pageSize = parameters.pageSize();
+        final var orderByColumn = parameters.orderByColumn();
+
+        try {
+
+            String statesParam = String.join(", ", Collections.nCopies(states.length, "?"));
+
+            var query = GET_JOBS_QUERY_BY_STATE
+                    .replace(REPLACE_TOKEN_PARAMETERS, "(" + statesParam + ")")
+                    .replace(REPLACE_TOKEN_ORDER_BY, orderByColumn);
+
+            DotConnect dc = new DotConnect();
+            dc.setSQL(query);
+            for (JobState state : states) {
+                dc.addParam(state.name());
+            }
+            for (JobState state : states) {// Repeated for paginated_data CTE
+                dc.addParam(state.name());
+            }
+            dc.addParam(pageSize);
+            dc.addParam((page - 1) * pageSize);
+
+            return jobPaginatedResult(page, pageSize, dc);
+        } catch (DotDataException e) {
+            final var message = "Database error while fetching jobs by state";
+            Logger.error(this, message, e);
+            throw new JobQueueDataException(message, e);
+        }
+    }
+
+    /**
+     * Retrieves a paginated result of jobs filtered by state and queue name.
+     *
+     * @param parameters An instance of JobStateQueryParameters containing filter and pagination
+     *                   information. This includes queue name, job states, page number, page size
+     *                   and order by column.
+     * @return A JobPaginatedResult containing the jobs that match the specified filters and
+     * pagination criteria.
+     * @throws JobQueueDataException if there is a data storage error while fetching the jobs.
+     */
+    @CloseDBIfOpened
+    public JobPaginatedResult getJobsFilterByNameAndState(
+            final JobStateQueryParameters parameters) throws JobQueueDataException {
+
+        final var queueName = parameters.queueName().orElseThrow();
+        final var states = parameters.states();
+        final var page = parameters.page();
+        final var pageSize = parameters.pageSize();
+        final var orderByColumn = parameters.orderByColumn();
+
+        String statesParam = String.join(", ",
+                Collections.nCopies(parameters.states().length, "?"));
+
+        var query = GET_JOBS_QUERY_BY_QUEUE_AND_STATE
+                .replace(REPLACE_TOKEN_PARAMETERS, "(" + statesParam + ")")
+                .replace(REPLACE_TOKEN_ORDER_BY, orderByColumn);
+
+        try {
+
+            DotConnect dc = new DotConnect();
+            dc.setSQL(query);
+            dc.addParam(queueName);
+            for (JobState state : states) {
+                dc.addParam(state.name());
+            }
+            dc.addParam(queueName);  // Repeated for paginated_data CTE
+            for (JobState state : states) {
+                dc.addParam(state.name());
+            }
+            dc.addParam(pageSize);
+            dc.addParam((page - 1) * pageSize);
+
+            return jobPaginatedResult(page, pageSize, dc);
+        } catch (DotDataException e) {
+            Logger.error(this,
+                    "Database error while fetching active jobs by queue", e);
+            throw new JobQueueDataException(
+                    "Database error while fetching active jobs by queue", e);
+        }
+    }
+
+    /**
+     * Retrieves a paginated result of jobs filtered by state, queue name, and date range.
+     *
+     * @param parameters An instance of JobStateQueryParameters containing filter and pagination
+     *                   information. This includes queue name, start and end dates, job states,
+     *                   page number, page size, order by column and filter date column.
+     * @return A JobPaginatedResult containing the jobs that match the specified filters and
+     * pagination criteria.
+     * @throws JobQueueDataException if there is a data storage error while fetching the jobs.
+     */
+    @CloseDBIfOpened
+    private JobPaginatedResult getJobsFilterByNameDateAndState(
+            final JobStateQueryParameters parameters) throws JobQueueDataException {
+
+        final var queueName = parameters.queueName().orElseThrow();
+        final var startDate = parameters.startDate().orElseThrow();
+        final var endDate = parameters.endDate().orElseThrow();
+        final var states = parameters.states();
+        final var page = parameters.page();
+        final var pageSize = parameters.pageSize();
+        final var orderByColumn = parameters.orderByColumn();
+        final var filterDateColumn = parameters.filterDateColumn().orElseThrow();
+
+        String statesParam = String.join(", ",
+                Collections.nCopies(parameters.states().length, "?"));
+
+        var query = GET_JOBS_QUERY_BY_QUEUE_AND_STATE_IN_DATE_RANGE
+                .replace(REPLACE_TOKEN_PARAMETERS, "(" + statesParam + ")")
+                .replace(REPLACE_TOKEN_ORDER_BY, orderByColumn)
+                .replace(REPLACE_TOKEN_DATE_COLUMN, filterDateColumn);
+
+        try {
+            DotConnect dc = new DotConnect();
+            dc.setSQL(query);
+            dc.addParam(queueName);
+            for (JobState state : states) {
+                dc.addParam(state.name());
+            }
+            dc.addParam(Timestamp.valueOf(startDate));
+            dc.addParam(Timestamp.valueOf(endDate));
+            dc.addParam(queueName);  // Repeated for paginated_data CTE
+            for (JobState state : states) {
+                dc.addParam(state.name());
+            }
+            dc.addParam(Timestamp.valueOf(startDate));
+            dc.addParam(Timestamp.valueOf(endDate));
+            dc.addParam(pageSize);
+            dc.addParam((page - 1) * pageSize);
+
+            return jobPaginatedResult(page, pageSize, dc);
+        } catch (DotDataException e) {
+            final var message = "Database error while fetching jobs by queue and state";
+            Logger.error(this, message, e);
+            throw new JobQueueDataException(message, e);
         }
     }
 

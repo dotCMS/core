@@ -13,7 +13,13 @@ import {
 } from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {
+    LOCKED = 'LOCKED',
     LISTING = 'LISTING',
+    ARCHIVED = 'ARCHIVED',
+    UNPUBLISHED = 'UNPUBLISHED',
+    PUBLISHED = 'PUBLISHED',
+    UNLOCKED = 'UNLOCKED',
+    NEW = 'NEW',
     EDITING = 'EDITING'
 }
 
