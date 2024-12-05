@@ -334,10 +334,6 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
-            xit('should personalize - call service', () => {
-                expect(true).toBe(true);
-            });
-
             it('should despersonalize', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
                     identifier: '123',
@@ -355,10 +351,6 @@ describe('DotUveToolbarComponent', () => {
                     message: 'editpage.personalization.delete.confirm.message',
                     rejectLabel: 'dot.common.dialog.reject'
                 });
-            });
-
-            xit('should dpersonalize - call service', () => {
-                expect(true).toBe(true);
             });
         });
     });
