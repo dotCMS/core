@@ -345,8 +345,6 @@ public class TaskLocatorUtil {
 		.add(Task240111AddInodeAndIdentifierLeftIndexes.class)
 		.add(Task240131UpdateLanguageVariableContentType.class)
 		.add(Task240112AddMetadataColumnToStructureTable.class)
-		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
-		.add(Task241014AddTemplateValueOnContentletIndex.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
@@ -389,6 +387,7 @@ public class TaskLocatorUtil {
 		ret.add(Task240513UpdateContentTypesSystemField.class);
 		ret.add(Task240530AddDotAIPortletToLayout.class);
 		ret.add(Task241013RemoveFullPathLcColumnFromIdentifier.class);
+		ret.add(Task241014AddTemplateValueOnContentletIndex.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
