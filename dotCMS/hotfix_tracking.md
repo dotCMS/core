@@ -183,3 +183,4 @@ This maintenance release includes the following code fixes:
 176. https://github.com/dotCMS/core/issues/28588 : Make MultiTree Multi variant cache cluster aware #28588
 177. https://github.com/dotCMS/core/issues/30045 : Aligment not correct in A/B testing - Edit traffic split #30045
 178. https://github.com/dotCMS/core/issues/30743 : pg_dump fails when passwords are complex #30743
+179. https://github.com/dotCMS/core/issues/30724 : Task URL redirecting only to language_id=1 #30724
