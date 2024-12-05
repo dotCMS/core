@@ -148,8 +148,8 @@ public class UserAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 
-		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; IP: " + request.getRemoteAddr() + "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; IP: " + request.getRemoteAddr() + "User:" + modUser.getUserId());
 		
 
 		boolean localTransaction = false;
@@ -247,13 +247,15 @@ public class UserAjax {
 		//Validate if this logged in user has the required permissions to access the users portlet
 		validateUsersPortletPermissions(modUser);
 		validateMaximumLength(firstName,lastName,email);
-		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
 		
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		
+
+		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; IP: " + request.getRemoteAddr() + "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; IP: " + request.getRemoteAddr() + "User:" + modUser.getUserId());
+
 		try {
 	
 			UserAPI uAPI = APILocator.getUserAPI();
@@ -345,6 +347,8 @@ public class UserAjax {
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			request = ctx.getHttpServletRequest();
+			ActivityLogger.logInfo(getClass(), "Deleting user", "User IP: " + request.getRemoteAddr());
+			AdminLogger.log(getClass(), "Deleting user", "User IP: " + request.getRemoteAddr());
 			UserAPI uAPI = APILocator.getUserAPI();
 
 			User user;
@@ -396,6 +400,8 @@ public class UserAjax {
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			request = ctx.getHttpServletRequest();
+			ActivityLogger.logInfo(getClass(), "Deleting user", "User IP: " + request.getRemoteAddr());
+			AdminLogger.log(getClass(), "Deleting user", "User IP: " + request.getRemoteAddr());
 			UserAPI uAPI = APILocator.getUserAPI();
 
 			User user;
