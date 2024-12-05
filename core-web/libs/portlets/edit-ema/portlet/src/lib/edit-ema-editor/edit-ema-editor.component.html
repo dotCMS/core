@@ -12,7 +12,10 @@
         data-testId="results-seo-tool"></dot-results-seo-tool>
 }
 @if ($editorProps().showEditorContent) {
-    <div class="editor-content" data-testId="editor-content">
+    <div
+        class="editor-content"
+        [ngClass]="{ 'editor-content-preview': $isPreviewMode() }"
+        data-testId="editor-content">
         <div
             [ngClass]="{
                 'iframe-wrapper--device': $editorProps().iframe.wrapper

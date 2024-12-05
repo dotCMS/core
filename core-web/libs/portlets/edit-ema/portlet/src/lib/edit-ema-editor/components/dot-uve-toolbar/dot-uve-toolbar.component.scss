@@ -1,11 +1,14 @@
 @use "variables" as *;
 
 ::ng-deep {
-    // .p-toolbar {
-    //     max-height: 48px;
-    // }
-    .p-toolbar-preview {
+    .uve-toolbar {
+        max-height: 48px;
+    }
+
+    .uve-toolbar-preview {
         border: 1px solid $color-palette-primary-200;
+        border-width: 1px 0 1px 0;
+        padding: $spacing-1 $spacing-5;
     }
 
     // Create a chip color for this

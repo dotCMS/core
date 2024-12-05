@@ -155,7 +155,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
     readonly $editorProps = this.uveStore.$editorProps;
+    // This on is the FF
     readonly $previewMode = this.uveStore.$previewMode;
+    readonly $isPreviewMode = this.uveStore.$isPreviewMode;
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;

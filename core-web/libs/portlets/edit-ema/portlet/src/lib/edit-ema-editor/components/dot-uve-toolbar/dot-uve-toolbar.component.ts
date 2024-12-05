@@ -1,12 +1,13 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { ChipModule } from 'primeng/chip';
+import { DividerModule } from 'primeng/divider';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -29,6 +30,7 @@ import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/
         ClipboardModule,
         CalendarModule,
         SplitButtonModule,
+        DividerModule,
         FormsModule,
         ReactiveFormsModule,
         ChipModule
@@ -45,6 +47,14 @@ export class DotUveToolbarComponent {
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
+
+    readonly $styleToolbarClass = computed(() => {
+        if (!this.$isPreviewMode()) {
+            return 'uve-toolbar';
+        }
+
+        return 'uve-toolbar uve-toolbar-preview';
+    });
 
     date = new Date();
 
