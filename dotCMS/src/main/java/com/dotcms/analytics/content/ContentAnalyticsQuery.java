@@ -28,6 +28,7 @@ public class ContentAnalyticsQuery implements Serializable {
     public static final String MEASURES_ATTR = "measures";
     public static final String DIMENSIONS_ATTR = "dimensions";
     public static final String TIME_DIMENSIONS_ATTR = "timeDimensions";
+    public static final String TIME_DIMENSIONS_DIMENSION_ATTR = "dimension";
     public static final String FILTERS_ATTR = "filters";
     public static final String ORDER_ATTR = "order";
     public static final String LIMIT_ATTR = "limit";
@@ -166,7 +167,7 @@ public class ContentAnalyticsQuery implements Serializable {
             }
             final String[] timeParams = timeDimensions.split(SEPARATOR);
             final Map<String, String> timeDimensionsData = new HashMap<>();
-            timeDimensionsData.put(DIMENSIONS_ATTR, timeParams[0]);
+            timeDimensionsData.put(TIME_DIMENSIONS_DIMENSION_ATTR, timeParams[0]);
             if (timeParams.length > 2) {
                 timeDimensionsData.put(GRANULARITY_ATTR, timeParams[1]);
                 timeDimensionsData.put(DATE_RANGE_ATTR, timeParams[2]);
@@ -252,12 +253,33 @@ public class ContentAnalyticsQuery implements Serializable {
             return this;
         }
 
+
         /**
-         * This method builds the ContentAnalyticsQuery object.
+         * This method builds the ContentAnalyticsQuery object based on all the specified
+         * parameters for the query.
          *
-         * @return The ContentAnalyticsQuery object.
+         * @return The {@link ContentAnalyticsQuery} object.
          */
         public ContentAnalyticsQuery build() {
+            return new ContentAnalyticsQuery(this);
+        }
+
+        /**
+         * This method builds the ContentAnalyticsQuery object based on all the specified
+         * parameters in the provided map.
+         *
+         * @param form A {@link Map} containing the query data.
+         *
+         * @return The {@link ContentAnalyticsQuery} object.
+         */
+        public ContentAnalyticsQuery build(final Map<String, Object> form) {
+            this.measures((String) form.get(MEASURES_ATTR));
+            this.dimensions((String) form.get(DIMENSIONS_ATTR));
+            this.timeDimensions((String) form.get(TIME_DIMENSIONS_ATTR));
+            this.filters((String) form.get(FILTERS_ATTR));
+            this.order((String) form.get(ORDER_ATTR));
+            this.limit((Integer) form.get(LIMIT_ATTR));
+            this.offset((Integer) form.get(OFFSET_ATTR));
             return new ContentAnalyticsQuery(this);
         }
 

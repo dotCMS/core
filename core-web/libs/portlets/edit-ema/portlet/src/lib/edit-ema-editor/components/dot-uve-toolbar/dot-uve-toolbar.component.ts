@@ -1,18 +1,27 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, inject, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    inject,
+    Output,
+    viewChild
+} from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 @Component({
@@ -25,6 +34,7 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         DotEmaInfoDisplayComponent,
         DotEmaRunningExperimentComponent,
         EditEmaPersonaSelectorComponent,
+        EditEmaLanguageSelectorComponent,
         ClipboardModule
     ],
     providers: [DotPersonalizeService],
@@ -33,12 +43,9 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveToolbarComponent {
-    // I tried to use the new viewChild signal API but is not supported on MockComponent
-    // Revisit this ticket to see if it's supported already, so we can move on to signals
-    // https://github.com/help-me-mom/ng-mocks/issues/8634
-    @ViewChild('personaSelector')
-    personaSelector!: EditEmaPersonaSelectorComponent;
+    $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
 
+    $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
     #store = inject(UVEStore);
 
     readonly #messageService = inject(MessageService);
@@ -48,10 +55,38 @@ export class DotUveToolbarComponent {
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $apiURL = this.#store.$apiURL;
-    readonly $personaSelector = this.#store.$personaSelector;
+    readonly $personaSelectorProps = this.#store.$personaSelector;
+
+    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
 
     togglePreviewMode(preview: boolean) {
         this.#store.togglePreviewMode(preview);
+    }
+
+    /**
+     * Handle the language selection
+     *
+     * @param {number} language
+     * @memberof DotEmaComponent
+     */
+    onLanguageSelected(language: number) {
+        const language_id = language.toString();
+
+        const languages = this.#store.languages();
+        const currentLanguage = languages.find((lang) => lang.id === language);
+
+        const languageHasTranslation = languages.find(
+            (lang) => lang.id.toString() === language_id
+        )?.translated;
+
+        if (!languageHasTranslation) {
+            // Show confirmation dialog to create a new translation
+            this.createNewTranslation(currentLanguage, this.#store.pageAPIResponse()?.page);
+
+            return;
+        }
+
+        this.#store.loadPageAsset({ language_id });
     }
 
     triggerCopyToast() {
@@ -90,11 +125,11 @@ export class DotUveToolbarComponent {
                                 'com.dotmarketing.persona.id': persona.identifier
                             });
 
-                            this.personaSelector.fetchPersonas();
+                            this.$personaSelector().fetchPersonas();
                         }); // This does a take 1 under the hood
                 },
                 reject: () => {
-                    this.personaSelector.resetValue();
+                    this.$personaSelector().resetValue();
                 }
             });
         }
@@ -119,7 +154,7 @@ export class DotUveToolbarComponent {
                 this.#personalizeService
                     .despersonalized(persona.pageId, persona.keyTag)
                     .subscribe(() => {
-                        this.personaSelector.fetchPersonas();
+                        this.$personaSelector().fetchPersonas();
 
                         if (persona.selected) {
                             this.#store.loadPageAsset({
@@ -127,6 +162,39 @@ export class DotUveToolbarComponent {
                             });
                         }
                     }); // This does a take 1 under the hood
+            }
+        });
+    }
+
+    /*
+     * Asks the user for confirmation to create a new translation for a given language.
+     *
+     * @param {DotLanguage} language - The language to create a new translation for.
+     * @private
+     *
+     * @return {void}
+     */
+    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            key: 'shell-confirm-dialog',
+            accept: () => {
+                this.translatePage.emit({
+                    page: page,
+                    newLanguage: language.id
+                });
+            },
+            reject: () => {
+                // If is rejected, bring back the current language on selector
+                this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
             }
         });
     }

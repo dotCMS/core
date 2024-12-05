@@ -36,16 +36,19 @@
                 [runningExperiment]="runningExperiment"
                 data-testId="uve-toolbar-running-experiment" />
         }
+        <dot-edit-ema-language-selector
+            #languageSelector
+            (selected)="onLanguageSelected($event)"
+            [language]="$toolbar().currentLanguage"
+            data-testId="uve-toolbar-language-selector" />
 
-        <span data-testId="uve-toolbar-language-selector">Language</span>
         <dot-edit-ema-persona-selector
             (selected)="onPersonaSelected($event)"
             (despersonalize)="onDespersonalize($event)"
-            [pageId]="$personaSelector().pageId"
-            [value]="$personaSelector().value"
+            [pageId]="$personaSelectorProps().pageId"
+            [value]="$personaSelectorProps().value"
             #personaSelector
             data-testId="uve-toolbar-persona-selector" />
-
         <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
     </div>
 </p-toolbar>
