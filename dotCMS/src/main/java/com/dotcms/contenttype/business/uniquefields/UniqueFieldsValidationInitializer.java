@@ -13,6 +13,16 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import java.sql.SQLException;
 
+/**
+ * Initializer in charge of check when dotMCS start up if the Unique Fields Data Base validation was enabled
+ * to create and populate the unique_fields table.
+ *
+ * It check if the table already exists and:
+ * - If it exists and the Database validation is disabled then drop the table.
+ * - If it does not exist and the Database validation is enabled then it created and populate it.
+ * - If it exists and the Database validation is enabled do nothing.
+ * - If it does not exist  and the Database validation is disabled do nothing.
+ */
 @Dependent
 public class UniqueFieldsValidationInitializer  implements DotInitializer {
 
