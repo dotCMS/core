@@ -1,12 +1,12 @@
 package com.dotcms.util;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.net.MalformedURLException;
-import java.net.URL;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
-class DataSourceAttributesTest {
+import static org.junit.Assert.assertEquals;
+
+public class DataSourceAttributesTest {
 
 
 
@@ -16,7 +16,7 @@ class DataSourceAttributesTest {
 
 
     @Test
-    void testing_url_encoding() throws MalformedURLException {
+    public void testing_url_encoding() throws MalformedURLException {
         DataSourceAttributes dataSourceAttributes = new DataSourceAttributes(userName, badPassword, url);
         assertEquals("jdbc:postgresql://localhost:5432/dotcms", dataSourceAttributes.url);
         assertEquals("testing%3A%2F%2B%25%26user", dataSourceAttributes.username);
