@@ -345,6 +345,8 @@ public class TaskLocatorUtil {
 		.add(Task240111AddInodeAndIdentifierLeftIndexes.class)
 		.add(Task240131UpdateLanguageVariableContentType.class)
 		.add(Task240112AddMetadataColumnToStructureTable.class)
+		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
+		.add(Task241014AddTemplateValueOnContentletIndex.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
@@ -406,6 +408,16 @@ public class TaskLocatorUtil {
 		final List<Class<?>> ret = ImmutableList.<Class<?>>builder()
 				.add(Task230320FixMissingContentletAsJSON.class)
 				.build();
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
+
+	/**
+	 * List of tasks that are need to run without transaction. It can be all kind: Run-Once, Run-Always, Data, Backported, etc
+	 * @return The list of tasks
+	 */
+	public static List<Class<?>> getTaskClassesNoTransaction() {
+		final List<Class<?>> ret = new ArrayList<>();
+		ret.add(Task241014AddTemplateValueOnContentletIndex.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

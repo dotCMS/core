@@ -189,14 +189,18 @@ public class StartupTasksExecutor {
                 if (StartupTask.class.isAssignableFrom(c)) {
                     StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Startup Tasks : " + name);
                         task.executeUpgrade();
                     } else {
                         Logger.info(this, "Not Running Startup Tasks: " + name);
                     }
                 }
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
             Logger.info(this, "Finishing startup tasks.");
         } catch (Throwable e) {
@@ -250,7 +254,9 @@ public class StartupTasksExecutor {
                     }
 
                     if (!firstTimeStart && task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Upgrade Tasks: " + name);
                         task.executeUpgrade();
 
@@ -262,7 +268,9 @@ public class StartupTasksExecutor {
                         .addParam(new Date())
                         .loadResult();
                     Logger.info(this, "Database upgraded to version: " + taskId);
-                    HibernateUtil.closeAndCommitTransaction();
+                    if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                        HibernateUtil.closeAndCommitTransaction();
+                    }
                     Config.DB_VERSION = taskId;
                 }
             } catch (Exception e) {
@@ -315,7 +323,9 @@ public class StartupTasksExecutor {
                     }
 
                     if (!firstTimeStart && task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Data Upgrade Tasks: " + name);
                         task.executeUpgrade();
                     }
@@ -326,7 +336,9 @@ public class StartupTasksExecutor {
                             .addParam(new Date())
                             .loadResult();
                     Logger.info(this, "Data upgraded to version: " + taskId);
-                    HibernateUtil.closeAndCommitTransaction();
+                    if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                        HibernateUtil.closeAndCommitTransaction();
+                    }
                     Config.DATA_VERSION = taskId;
                 }
             } catch (Exception e) {
@@ -363,14 +375,18 @@ public class StartupTasksExecutor {
 		if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
                     StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Backported Tasks : " + name);
                         task.executeUpgrade();
                     } else {
                         Logger.info(this, "Not Running Backported Tasks: " + name);
                     }
                 }
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
             Logger.info(this, "Finishing Backported tasks.");
         } catch (Throwable e) {

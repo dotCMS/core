@@ -90,3 +90,4 @@ This maintenance release includes the following code fixes:
 84. https://github.com/dotCMS/core/issues/28511 : Rename Title Column #28511
 85. https://github.com/dotCMS/core/issues/28512 : Rename Date Updated Column #28512
 86. https://github.com/dotCMS/core/issues/28780 : Add Hint support for relationship fields #28780
+87. https://github.com/dotCMS/core/issues/29501 : optimize sql query causing slowness on high-traffic sites #29501
