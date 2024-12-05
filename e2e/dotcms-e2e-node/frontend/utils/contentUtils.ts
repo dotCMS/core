@@ -1,6 +1,6 @@
 import {Page, expect, FrameLocator} from '@playwright/test';
 import { iFramesLocators, richText } from '../locators/globalLocators';
-
+import { waitForVisibleAndCallback} from './dotCMSUtils';
 
 export class ContentUtils {
     page: Page;
@@ -17,7 +17,9 @@ export class ContentUtils {
      */
     async fillRichTextForm(page: Page, title: string, body: string, action: string) {
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
-        await expect.soft( page.getByRole('heading')).toContainText(richText.label);
+
+        const headingLocator = page.getByRole('heading');
+        await waitForVisibleAndCallback(headingLocator, () => expect.soft(headingLocator).toContainText(richText.label));
 
         //Fill title
         await dotIframe.locator('#title').fill(title);
@@ -29,11 +31,11 @@ export class ContentUtils {
         await dotIframe.getByText(action).click();
         //Wait for the content to be saved
 
-
         await expect(dotIframe.getByText('Content saved')).toBeVisible({ timeout: 9000 });
         await expect(dotIframe.getByText('Content saved')).toBeHidden();
         //Click on close
-        await page.getByTestId('close-button').getByRole('button').click();
+        const closeBtnLocator = page.getByTestId('close-button').getByRole('button');
+        await waitForVisibleAndCallback(closeBtnLocator, () => closeBtnLocator.click());
     }
 
     /**
@@ -44,15 +46,22 @@ export class ContentUtils {
      */
     async addNewContentAction(page: Page, typeLocator: string, typeString: string) {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
-        await expect(iframe.locator('#structure_inode')).toBeVisible();
+        const structureINodeLocator = iframe.locator('#structure_inode');
+        await waitForVisibleAndCallback(structureINodeLocator, () => expect(structureINodeLocator).toBeVisible());
+        //TODO remove this
         await page.waitForTimeout(1000);
-        await iframe.locator('#widget_structure_inode div').first().click();
+        const structureINodeDivLocator = iframe.locator('#widget_structure_inode div').first();
+        await waitForVisibleAndCallback(structureINodeDivLocator, () => structureINodeDivLocator.click());
+        //TODO remove this
         await page.waitForTimeout(1000);
-        await iframe.getByText(typeLocator).click();
+        const typeLocatorByTextLocator = iframe.getByText(typeLocator);
+        await waitForVisibleAndCallback(typeLocatorByTextLocator, () => typeLocatorByTextLocator.click());
+
         await iframe.locator('#dijit_form_DropDownButton_0').click();
         await expect(iframe.getByLabel('actionPrimaryMenu')).toBeVisible();
         await iframe.getByLabel('▼').getByText('Add New Content').click();
-        await expect(page.getByRole('heading')).toHaveText(typeString);
+        const headingLocator = page.getByRole('heading');
+        await waitForVisibleAndCallback(headingLocator, () => expect(headingLocator).toHaveText(typeString));
     };
 
     /**
@@ -74,7 +83,8 @@ export class ContentUtils {
      * @param iframe
      */
     async showQuery(iframe : FrameLocator) {
-        await iframe.getByRole('button', { name: 'createOptions' }).click();
+        const createOptionsBtnLocator = iframe.getByRole('button', { name: 'createOptions' });
+        await waitForVisibleAndCallback(createOptionsBtnLocator, () => createOptionsBtnLocator.click());
 
         //Validate the search button has a sub-menu
         await expect (iframe.getByLabel('Search ▼').getByText('Search')).toBeVisible();
