@@ -198,6 +198,9 @@ run-java-cli-native *ARGS:
     tools/dotcms-cli/cli/target/dotcms-cli-1.0.0-SNAPSHOT-runner {{ARGS}}
 
 
+run-jmeter-tests:
+    ./mvnw verify -Djmeter.test.skip=false -pl :dotcms-test-jmeter
+
 ###########################################################
 # Useful Maven Helper Commands
 ###########################################################

@@ -1,16 +1,8 @@
 @let contentlet = store.contentlet();
 @let contentType = store.contentType();
-@let isNew = store.isNew();
 <!-- Information Component -->
 @let isLoadingInformation = store.isLoadingInformation();
 @let referencePagesCount = store.information.relatedContent();
-<!-- Workflow Component -->
-@let workflowOptions = store.workflowSchemeOptions();
-@let scheme = store.getScheme();
-@let task = store.lastTask();
-@let isLoadingWorkflow = store.isLoadingWorkflow();
-@let showSelectWorkflowWarning = store.showSelectWorkflowWarning();
-@let currentStep = store.getCurrentStep();
 <!-- Locales Component -->
 @let locales = store.locales();
 @let defaultLocale = store.defaultLocale();
@@ -23,9 +15,9 @@
 
         <p-tabPanel [header]="'Info' | dm">
             <!-- Information section -->
-            <dot-edit-content-sidebar-section [title]="'General' | dm">
+            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.general.title' | dm">
                 <ng-template #sectionAction>
-                    @if (!isNew) {
+                    @if (!store.isNew()) {
                         <dot-copy-button
                             [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
@@ -56,17 +48,13 @@
 
             <dot-edit-content-sidebar-section [title]="'Workflow' | dm">
                 <dot-edit-content-sidebar-workflow
-                    [isNew]="isNew"
-                    [workflowSchemeOptions]="workflowOptions"
+                    [workflowSelection]="$workflowSelection()"
                     [(showDialog)]="$showDialog"
                     (onSelectWorkflow)="store.setSelectedWorkflow($event)"
-                    [workflow]="{
-                        scheme,
-                        step: currentStep,
-                        task
-                    }"
-                    [isLoading]="isLoadingWorkflow"
-                    [noWorkflowSelectedYet]="showSelectWorkflowWarning"
+                    [resetWorkflowAction]="store.getResetWorkflowAction()"
+                    (onResetWorkflow)="fireWorkflowAction($event)"
+                    [workflow]="$workflow()"
+                    [isLoading]="store.isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
         </p-tabPanel>

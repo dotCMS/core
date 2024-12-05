@@ -25,6 +25,7 @@ import {
     CustomTreeNode,
     TreeNodeItem
 } from '../models/dot-edit-content-host-folder-field.interface';
+import { DotWorkflowState } from '../models/dot-edit-content.model';
 
 /* FIELDS MOCK BY TYPE */
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
@@ -1676,5 +1677,183 @@ export const NEW_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
         name: 'New',
         resolved: false,
         schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
+    }
+};
+
+/**
+ * Mock for input of the sidebar workflow component
+ */
+export const WORKFLOW_MOCKS: Record<'EXISTING' | 'NEW' | 'RESET', DotWorkflowState> = {
+    EXISTING: {
+        scheme: {
+            archived: false,
+            creationDate: new Date(1732809856947),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            mandatory: false,
+            modDate: new Date(1732554197546),
+            name: 'Blogs',
+            system: false,
+            variableName: 'Blogs'
+        },
+        step: {
+            creationDate: 1732859987790,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '5865d447-5df7-4fa8-81c8-f8f183f3d1a2',
+            myOrder: 0,
+            name: 'Editing',
+            resolved: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+        },
+        task: {
+            assignedTo: 'Admin User',
+            belongsTo: null,
+            createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+            creationDate: 1732809812333,
+            description: null,
+            dueDate: null,
+            id: '9cc41c12-f72d-431a-9b22-ef9f1067e6d9',
+            inode: '9cc41c12-f72d-431a-9b22-ef9f1067e6d9',
+            languageId: 1,
+            modDate: 1732809830428,
+            new: false,
+            status: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
+            title: '6b102831-e96e-459f-aa41-b5b451f8b8e1',
+            webasset: '6b102831-e96e-459f-aa41-b5b451f8b8e1'
+        },
+        contentState: 'existing',
+        resetAction: {
+            actionInputs: [],
+            assignable: false,
+            commentable: false,
+            condition: '',
+            hasArchiveActionlet: false,
+            hasCommentActionlet: false,
+            hasDeleteActionlet: false,
+            hasDestroyActionlet: false,
+            hasMoveActionletActionlet: false,
+            hasMoveActionletHasPathActionlet: false,
+            hasOnlyBatchActionlet: false,
+            hasPublishActionlet: false,
+            hasPushPublishActionlet: false,
+            hasResetActionlet: true,
+            hasSaveActionlet: false,
+            hasUnarchiveActionlet: true,
+            hasUnpublishActionlet: false,
+            icon: 'workflowIcon',
+            id: '2d1dc771-8fda-4b43-9e81-71d43a8c73e4',
+            name: 'Reset Workflow',
+            nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+            nextStep: '5865d447-5df7-4fa8-81c8-f8f183f3d1a2',
+            nextStepCurrentStep: false,
+            order: 0,
+            owner: null,
+            roleHierarchyForAssign: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            showOn: [
+                'LOCKED',
+                'PUBLISHED',
+                'ARCHIVED',
+                'UNPUBLISHED',
+                'LISTING',
+                'UNLOCKED',
+                'EDITING',
+                'NEW'
+            ]
+        }
+    },
+    NEW: {
+        scheme: {
+            archived: false,
+            creationDate: new Date(1732809856947),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            mandatory: false,
+            modDate: new Date(1732554197546),
+            name: 'Blogs',
+            system: false,
+            variableName: 'Blogs'
+        },
+        step: {
+            creationDate: 1732859904768,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '5865d447-5df7-4fa8-81c8-f8f183f3d1a2',
+            myOrder: 0,
+            name: 'Editing',
+            resolved: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+        },
+        task: null,
+        contentState: 'new',
+        resetAction: null
+    },
+    RESET: {
+        scheme: {
+            archived: false,
+            creationDate: new Date(1732809856947),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            mandatory: false,
+            modDate: new Date(1732554197546),
+            name: 'Blogs',
+            system: false,
+            variableName: 'Blogs'
+        },
+        step: {
+            creationDate: 1732860056894,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '5865d447-5df7-4fa8-81c8-f8f183f3d1a2',
+            myOrder: 0,
+            name: 'Editing',
+            resolved: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+        },
+        task: {
+            assignedTo: 'Admin User',
+            belongsTo: null,
+            createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+            creationDate: 1732854838710,
+            description: null,
+            dueDate: null,
+            id: 'f485675d-9e34-485d-9ec8-39a6e03b0272',
+            inode: 'f485675d-9e34-485d-9ec8-39a6e03b0272',
+            languageId: 1,
+            modDate: 1732854838710,
+            new: false,
+            status: null,
+            title: '74968ffd-7692-47d5-bd3a-44eeb5fbe551',
+            webasset: '74968ffd-7692-47d5-bd3a-44eeb5fbe551'
+        },
+        contentState: 'reset',
+        resetAction: null
+    }
+};
+
+/**
+ * Mock for input of the sidebar workflow component
+ */
+export const WORKFLOW_SELECTION_MOCK = {
+    WITH_OPTIONS: {
+        schemeOptions: [
+            { label: 'System Workflow', value: '1' },
+            { label: 'Marketing Workflow', value: '2' }
+        ],
+        isWorkflowSelected: false
+    },
+    NO_WORKFLOW: {
+        schemeOptions: [],
+        isWorkflowSelected: true
     }
 };
