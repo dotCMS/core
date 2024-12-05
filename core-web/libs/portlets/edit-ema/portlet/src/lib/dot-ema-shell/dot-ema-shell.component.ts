@@ -306,8 +306,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     #updateLocation(queryParams: Params = {}): void {
         const urlTree = this.#router.createUrlTree([], { queryParams });
-
-        this.#location.replaceState(urlTree.toString());
+        this.#location.go(urlTree.toString());
     }
 
     /**
