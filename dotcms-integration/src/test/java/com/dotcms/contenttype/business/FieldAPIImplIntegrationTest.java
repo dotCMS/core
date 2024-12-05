@@ -1,31 +1,52 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.DataProviderWeldRunner;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class FieldAPIImplIntegrationTest {
 
     @BeforeClass
     public static void prepare () throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        //TODO: Remove this when the whole change is done
+        try {
+            new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
+                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
+                    "supporting_values JSONB" +
+                    " )").loadObjectResults();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -167,5 +188,60 @@ public class FieldAPIImplIntegrationTest {
             assertEquals(i, fields.get(i).sortOrder());
         }
 
+    }
+
+
+    /**
+     * Method to test: {@link FieldAPIImpl#delete(Field, User)}
+     * When: Create a COntentType with a unique fields and later remove the unique Field
+     * Should: Clean the unique_fields extra table
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void cleanUpUniqueFieldTableAfterDeleteField() throws DotDataException {
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+            final ContentType contentType = new ContentTypeDataGen()
+                    .nextPersisted();
+
+            final Language language = new LanguageDataGen().nextPersisted();
+
+            final Field uniqueTextField = new FieldDataGen()
+                    .name("unique")
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            checkExtraTableCount(contentType, 0);
+
+            new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(language.getId())
+                    .setProperty(uniqueTextField.variable(), "unique-value")
+                    .nextPersistedAndPublish();
+
+            checkExtraTableCount(contentType, 1);
+
+            APILocator.getContentTypeFieldAPI().delete(uniqueTextField);
+
+            checkExtraTableCount(contentType, 0);
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
+
+    private static void checkExtraTableCount(final ContentType contentType, final int countExpected)
+            throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeId' = ?")
+                .addParam(contentType.id())
+                .loadObjectResults();
+
+        assertEquals(countExpected, results.size());
     }
 }

@@ -12,6 +12,8 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.util.TimeZone;
+import org.jboss.weld.environment.se.Weld;
+import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.BeforeClass;
 import org.mockito.Mockito;
 
@@ -19,6 +21,15 @@ public abstract class UnitTestBase extends BaseMessageResources {
 
 	protected static final ContentTypeAPI contentTypeAPI = mock(ContentTypeAPI.class);
 	protected static final CompanyAPI companyAPI = mock(CompanyAPI.class);
+
+	public static final Weld WELD;
+	public static final WeldContainer CONTAINER;
+
+	//This should be here since these are UitTest but people instantiate classes and they have injections etc... so we need to initialize the container
+	static {
+		WELD = new Weld("UnitTestBase");
+		CONTAINER = WELD.initialize();
+	}
 
 	public static class MyAPILocator extends APILocator {
 

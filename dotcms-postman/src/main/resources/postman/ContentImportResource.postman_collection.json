@@ -1,0 +1,1943 @@
+{
+	"info": {
+		"_postman_id": "1d5dd0a7-7d6b-4d1a-9096-47ced212ac23",
+		"name": "ContentImportResource",
+		"description": "Postman collection for testing the ContentImportResource API endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "36604690"
+	},
+	"item": [
+		{
+			"name": "pre-execution-scripts",
+			"item": [
+				{
+					"name": "Create ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"fields check\", function () {",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(8);",
+									"    pm.expect(jsonData.entity[0].fields[3].variable).to.eql('title');",
+									"    pm.collectionVariables.set(\"fields\", JSON.stringify([jsonData.entity[0].fields[3].id]))",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"defaultType\":false,\n   \"name\":\"TestImportJob\",\n   \"description\":\"THE DESCRIPTION\",\n   \"host\":\"SYSTEM_HOST\",\n   \"owner\":\"dotcms.org.1\",\n   \"fixed\":false,\n   \"system\":false,\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n   \"fields\":[\n      {\n         \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n         \"dataType\":\"SYSTEM\",\n         \"fieldType\":\"Host-Folder\",\n         \"fieldTypeLabel\":\"Site or Folder\",\n         \"fixed\":false,\n         \"forceIncludeInApi\":false,\n         \"indexed\":true,\n         \"listed\":false,\n         \"name\":\"Host\",\n         \"readOnly\":false,\n         \"required\":true,\n         \"searchable\":false,\n         \"sortOrder\":2,\n         \"unique\":false,\n         \"variable\":\"contentHost\"\n      },\n      {\n         \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n         \"dataType\":\"TEXT\",\n         \"fieldType\":\"Text\",\n         \"fieldTypeLabel\":\"Text\",\n         \"fixed\":false,\n         \"forceIncludeInApi\":false,\n         \"indexed\":true,\n         \"listed\":true,\n         \"name\":\"Title\",\n         \"readOnly\":false,\n         \"required\":true,\n         \"searchable\":true,\n         \"sortOrder\":3,\n         \"unique\":false,\n         \"variable\":\"title\"\n      },\n      {\n         \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextAreaField\",\n         \"dataType\":\"LONG_TEXT\",\n         \"fieldType\":\"Textarea\",\n         \"fieldTypeLabel\":\"Textarea\",\n         \"fixed\":false,\n         \"forceIncludeInApi\":false,\n         \"indexed\":false,\n         \"listed\":false,\n         \"name\":\"Description\",\n         \"readOnly\":false,\n         \"required\":false,\n         \"searchable\":false,\n         \"sortOrder\":5,\n         \"unique\":false,\n         \"variable\":\"description\"\n      },\n      {\n         \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTagField\",\n         \"dataType\":\"SYSTEM\",\n         \"fieldType\":\"Tag\",\n         \"fieldTypeLabel\":\"Tag\",\n         \"fixed\":false,\n         \"forceIncludeInApi\":false,\n         \"indexed\":true,\n         \"listed\":false,\n         \"name\":\"Tags\",\n         \"readOnly\":false,\n         \"required\":false,\n         \"searchable\":false,\n         \"sortOrder\":6,\n         \"unique\":false,\n         \"variable\":\"tags\"\n      },\n      {\n         \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableImageField\",\n         \"dataType\":\"TEXT\",\n         \"fieldType\":\"Image\",\n         \"fieldTypeLabel\":\"Image\",\n         \"fieldVariables\":[\n            \n         ],\n         \"fixed\":false,\n         \"forceIncludeInApi\":false,\n         \"indexed\":false,\n         \"listed\":false,\n         \"name\":\"Image\",\n         \"readOnly\":false,\n         \"required\":false,\n         \"searchable\":false,\n         \"sortOrder\":8,\n         \"unique\":false,\n         \"variable\":\"image\"\n      },\n      {\n         \"clazz\":\"com.dotcms.contenttype.model.field.ImmutableTextField\",\n         \"dataType\":\"TEXT\",\n         \"fieldType\":\"Text\",\n         \"fieldTypeLabel\":\"Text\",\n         \"fieldVariables\":[\n            \n         ],\n         \"fixed\":false,\n         \"forceIncludeInApi\":false,\n         \"indexed\":false,\n         \"listed\":false,\n         \"name\":\"Alt Tag\",\n         \"readOnly\":false,\n         \"required\":false,\n         \"searchable\":false,\n         \"sortOrder\":9,\n         \"unique\":false,\n         \"variable\":\"altTag\"\n      }\n   ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Content Import Validate",
+			"item": [
+				{
+					"name": "Validate Content Import Job Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response is successful",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
+									"pm.test(\"Response body should contain a valid Job ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"    pm.collectionVariables.set(\"jobId\", responseBody.entity);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Successful  Validate Content Import Job Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 200",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
+									"let response = pm.response.json();",
+									"let entity = response.entity;",
+									"let parameters = entity?.parameters;",
+									"",
+									"// Validate the response body structure",
+									"pm.test(\"Response contains a valid entity\", function () {",
+									"    pm.expect(response).to.have.property('entity').that.is.not.empty;",
+									"    pm.expect(entity).to.be.an('object');",
+									"});",
+									"",
+									"// Validate top-level properties of the entity",
+									"pm.test(\"Entity contains expected fields\", function () {",
+									"    pm.expect(entity).to.have.property('queueName', pm.collectionVariables.get('queueName'));",
+									"    pm.expect(entity.queueName).to.be.a(\"string\").that.is.not.empty;",
+									"",
+									"    pm.expect(entity).to.have.property('state').that.is.a(\"string\").that.is.not.empty;",
+									"    pm.expect(entity.state).to.be.oneOf([\"RUNNING\", \"PENDING\", \"COMPLETED\"]);",
+									"",
+									"    pm.expect(entity).to.have.property('progress').that.is.a(\"number\").within(0, 1);",
+									"    pm.expect(entity).to.have.property('retryCount').that.is.a(\"number\").that.is.at.least(0);",
+									"",
+									"    pm.expect(entity).to.have.property('result');",
+									"    pm.expect(entity.result === null || typeof entity.result === \"object\").to.be.true;",
+									"});",
+									"",
+									"// Validate date fields in the entity",
+									"pm.test(\"Entity date fields are valid\", function () {",
+									"    const isValidDate = (val) => val === null || new Date(val).toString() !== \"Invalid Date\";",
+									"",
+									"    pm.expect(isValidDate(entity.completedAt)).to.be.true;",
+									"    pm.expect(new Date(entity.createdAt)).to.not.equal(\"Invalid Date\");",
+									"    pm.expect(isValidDate(entity.startedAt)).to.be.true;",
+									"    pm.expect(new Date(entity.updatedAt)).to.not.equal(\"Invalid Date\");",
+									"});",
+									"",
+									"// Validate UUID fields in the entity",
+									"pm.test(\"Entity UUID fields are valid\", function () {",
+									"    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;",
+									"",
+									"    pm.expect(entity.executionNode).to.match(uuidRegex);",
+									"    pm.expect(entity.id).to.match(uuidRegex);",
+									"});",
+									"",
+									"// Validate parameters in the entity",
+									"pm.test(\"Entity parameters are valid\", function () {",
+									"    pm.expect(parameters).to.be.an('object');",
+									"    pm.expect(parameters).to.have.property('cmd', 'preview');",
+									"    pm.expect(parameters).to.have.property('userId', 'dotcms.org.1');",
+									"    pm.expect(parameters).to.have.property('contentType', pm.collectionVariables.get('contentType'));",
+									"    pm.expect(parameters).to.have.property('language', pm.collectionVariables.get('language'));",
+									"    pm.expect(parameters).to.have.property('workflowActionId', pm.collectionVariables.get('workflowActionId'));",
+									"    pm.expect(parameters).to.have.property('fields').that.deep.equals(JSON.parse(pm.collectionVariables.get('fields')));",
+									"    pm.expect(parameters).to.have.property('requestFingerPrint').that.is.a(\"string\").with.lengthOf(44);",
+									"    pm.expect(parameters).to.have.property('tempFileId').that.is.a(\"string\");",
+									"});",
+									"",
+									"// Validate other top-level objects in the response",
+									"pm.test(\"Response contains expected auxiliary fields\", function () {",
+									"    pm.expect(response.errors).to.be.an(\"array\").that.is.empty;",
+									"    pm.expect(response.i18nMessagesMap).to.be.an(\"object\").that.is.empty;",
+									"    pm.expect(response.messages).to.be.an(\"array\").that.is.empty;",
+									"    pm.expect(response.pagination).to.be.null;",
+									"    pm.expect(response.permissions).to.be.an(\"array\").that.is.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/{{jobId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"{{jobId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job Without Fields Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response is successful",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response body should contain a valid Job ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\"}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job With ISO Languag Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response is successful",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
+									"pm.test(\"Response body should contain a valid Job ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"en-us\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job Without Language Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response is successful",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
+									"pm.test(\"Response body should contain a valid Job ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job Without Language and Field Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('A key identifying the different Language versions of the same content must be defined when importing multilingual files.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"workflowActionId\":\"{{workflowActionId}}\"}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job With Invalid language Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('Language [54321] not found.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"54321\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job With Invalid Field Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('Field [doesNotExist] not found in Content Type [TestImportJob].');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": [\"doesNotExist\"]}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job With Invalid File Type Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('The file must be a CSV file.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test.txt"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job With Invalid Workflow Action Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('Workflow Action [doesNotExtist] not found.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"doesNotExtist\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job With Invalid ContentType Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('Content Type [doesNotExist] not found.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"doesNotExist\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job Without File Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Validate missing file throws the correct error\", function () {",
+									"    pm.response.to.have.status(400);",
+									"    const errors = pm.response.json();",
+									"",
+									"    const fileError = errors.find(error => error.fieldName === \"fileInputStream\");",
+									"    pm.expect(fileError).to.be.an(\"object\");",
+									"    pm.expect(fileError).to.have.property(\"message\", \"The file is required.\");",
+									"    pm.expect(fileError).to.have.property(\"errorCode\", null);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import Job Without Form Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Validate missing form data throws the correct error\", function () {",
+									"    pm.response.to.have.status(400);",
+									"    const errors = pm.response.json();",
+									"",
+									"    const formError = errors.find(error => error.fieldName === \"jsonForm\");",
+									"    pm.expect(formError).to.be.an(\"object\");",
+									"    pm.expect(formError).to.have.property(\"message\", \"The form data is required.\");",
+									"    pm.expect(formError).to.have.property(\"errorCode\", null);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Content Import",
+			"item": [
+				{
+					"name": "Create Valid Import Job Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response is successful",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
+									"pm.test(\"Response body should contain a valid Job ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"    pm.collectionVariables.set(\"jobId\", responseBody.entity);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Successful Content Import Job Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 200",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
+									"let response = pm.response.json();",
+									"let entity = response.entity;",
+									"let parameters = entity?.parameters;",
+									"",
+									"// Validate the response body structure",
+									"pm.test(\"Response contains a valid entity\", function () {",
+									"    pm.expect(response).to.have.property('entity').that.is.not.empty;",
+									"    pm.expect(entity).to.be.an('object');",
+									"});",
+									"",
+									"// Validate top-level properties of the entity",
+									"pm.test(\"Entity contains expected fields\", function () {",
+									"    pm.expect(entity).to.have.property('queueName', pm.collectionVariables.get('queueName'));",
+									"    pm.expect(entity.queueName).to.be.a(\"string\").that.is.not.empty;",
+									"",
+									"    pm.expect(entity).to.have.property('state').that.is.a(\"string\").that.is.not.empty;",
+									"    pm.expect(entity.state).to.be.oneOf([\"RUNNING\", \"PENDING\", \"COMPLETED\"]);",
+									"",
+									"    pm.expect(entity).to.have.property('progress').that.is.a(\"number\").within(0, 1);",
+									"    pm.expect(entity).to.have.property('retryCount').that.is.a(\"number\").that.is.at.least(0);",
+									"",
+									"    pm.expect(entity).to.have.property('result');",
+									"    pm.expect(entity.result === null || typeof entity.result === \"object\").to.be.true;",
+									"});",
+									"",
+									"// Validate date fields in the entity",
+									"pm.test(\"Entity date fields are valid\", function () {",
+									"    const isValidDate = (val) => val === null || new Date(val).toString() !== \"Invalid Date\";",
+									"",
+									"    pm.expect(isValidDate(entity.completedAt)).to.be.true;",
+									"    pm.expect(new Date(entity.createdAt)).to.not.equal(\"Invalid Date\");",
+									"    pm.expect(isValidDate(entity.startedAt)).to.be.true;",
+									"    pm.expect(new Date(entity.updatedAt)).to.not.equal(\"Invalid Date\");",
+									"});",
+									"",
+									"// Validate UUID fields in the entity",
+									"pm.test(\"Entity UUID fields are valid\", function () {",
+									"    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;",
+									"",
+									"    pm.expect(entity.executionNode).to.match(uuidRegex);",
+									"    pm.expect(entity.id).to.match(uuidRegex);",
+									"});",
+									"",
+									"// Validate parameters in the entity",
+									"pm.test(\"Entity parameters are valid\", function () {",
+									"    pm.expect(parameters).to.be.an('object');",
+									"    pm.expect(parameters).to.have.property('cmd', 'publish');",
+									"    pm.expect(parameters).to.have.property('userId', 'dotcms.org.1');",
+									"    pm.expect(parameters).to.have.property('contentType', pm.collectionVariables.get('contentType'));",
+									"    pm.expect(parameters).to.have.property('language', pm.collectionVariables.get('language'));",
+									"    pm.expect(parameters).to.have.property('workflowActionId', pm.collectionVariables.get('workflowActionId'));",
+									"    pm.expect(parameters).to.have.property('fields').that.deep.equals(JSON.parse(pm.collectionVariables.get('fields')));",
+									"    pm.expect(parameters).to.have.property('requestFingerPrint').that.is.a(\"string\").with.lengthOf(44);",
+									"    pm.expect(parameters).to.have.property('tempFileId').that.is.a(\"string\");",
+									"});",
+									"",
+									"// Validate other top-level objects in the response",
+									"pm.test(\"Response contains expected auxiliary fields\", function () {",
+									"    pm.expect(response.errors).to.be.an(\"array\").that.is.empty;",
+									"    pm.expect(response.i18nMessagesMap).to.be.an(\"object\").that.is.empty;",
+									"    pm.expect(response.messages).to.be.an(\"array\").that.is.empty;",
+									"    pm.expect(response.pagination).to.be.null;",
+									"    pm.expect(response.permissions).to.be.an(\"array\").that.is.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/{{jobId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"{{jobId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job Without Fields Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response is successful",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response body should contain a valid Job ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\"}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job With ISO Languag Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response is successful",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
+									"pm.test(\"Response body should contain a valid Job ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"en-us\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job Without Language Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response is successful",
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Parse the response body",
+									"pm.test(\"Response body should contain a valid Job ID\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job Without Language and Field Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('A key identifying the different Language versions of the same content must be defined when importing multilingual files.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"workflowActionId\":\"{{workflowActionId}}\"}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job With Invalid language Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('Language [54321] not found.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"54321\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job With Invalid ContentType Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('Content Type [doesNotExist] not found.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"doesNotExist\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job With Invalid Field Expect Failure Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('Field [doesNotExist] not found in Content Type [TestImportJob].');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": [\"doesNotExist\"]}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								""
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job With Invalid File Type Expect Failure Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('The file must be a CSV file.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test.txt"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Job With Invalid Workflow Action Expect Failure Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 400",
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('Workflow Action [doesNotExtist] not found.');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"doesNotExtist\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Job Without File Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Validate missing file throws the correct error\", function () {",
+									"    pm.response.to.have.status(400);",
+									"    const errors = pm.response.json();",
+									"",
+									"    const fileError = errors.find(error => error.fieldName === \"fileInputStream\");",
+									"    pm.expect(fileError).to.be.an(\"object\");",
+									"    pm.expect(fileError).to.have.property(\"message\", \"The file is required.\");",
+									"    pm.expect(fileError).to.have.property(\"errorCode\", null);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Job Without Form Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Validate missing form data throws the correct error\", function () {",
+									"    pm.response.to.have.status(400);",
+									"    const errors = pm.response.json();",
+									"",
+									"    const formError = errors.find(error => error.fieldName === \"jsonForm\");",
+									"    pm.expect(formError).to.be.an(\"object\");",
+									"    pm.expect(formError).to.have.property(\"message\", \"The form data is required.\");",
+									"    pm.expect(formError).to.have.property(\"errorCode\", null);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"   ",
+					"if(!pm.collectionVariables.get('jwt')){",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL') || pm.collectionVariables.get('baseUrl'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"        const username = pm.environment.get(\"user\") || pm.collectionVariables.get('user'); ",
+					"        const password = pm.environment.get(\"password\") || pm.collectionVariables.get('password');",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.collectionVariables.set('jwt', jwt);",
+					"                console.log(\"Successfully got a jwt :\" + jwt);",
+					"            }",
+					"        });    ",
+					"}           "
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "queueName",
+			"value": "importContentlets",
+			"type": "string"
+		},
+		{
+			"key": "jobId",
+			"value": "-1",
+			"type": "string"
+		},
+		{
+			"key": "user",
+			"value": "admin@dotCMS.com",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"key": "jwt",
+			"value": ""
+		},
+		{
+			"key": "contentType",
+			"value": "TestImportJob",
+			"type": "string"
+		},
+		{
+			"key": "language",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "workflowActionId",
+			"value": "b9d89c80-3d88-4311-8365-187323c96436",
+			"type": "string"
+		},
+		{
+			"key": "fields",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

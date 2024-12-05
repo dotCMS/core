@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.util.HashMap;
@@ -50,11 +51,11 @@ public class PageDetailCollector implements Collector {
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
 
-        final String uri = (String) collectorContextMap.get("uri");
-        final Host site = (Host) collectorContextMap.get("currentHost");
-        final Long languageId = (Long) collectorContextMap.get("langId");
-        final PageMode pageMode = (PageMode) collectorContextMap.get("pageMode");
-        final String language = (String)collectorContextMap.get("lang");
+        final String uri = (String) collectorContextMap.get(CollectorContextMap.URI);
+        final Host site = (Host) collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
+        final Long languageId = (Long) collectorContextMap.get(CollectorContextMap.LANG_ID);
+        final PageMode pageMode = (PageMode) collectorContextMap.get(CollectorContextMap.PAGE_MODE);
+        final String language = (String)collectorContextMap.get(CollectorContextMap.LANG);
 
         final UrlMapContext urlMapContext = new UrlMapContext(
                 pageMode, languageId, uri, site, APILocator.systemUser());
@@ -74,29 +75,29 @@ public class PageDetailCollector implements Collector {
                     .getOrNull();
 
             final HashMap<String, String> pageObject = new HashMap<>();
-            pageObject.put("id", detailPageContent.getIdentifier());
-            pageObject.put("title", detailPageContent.getTitle());
-            pageObject.put("url", uri);
-            pageObject.put("detail_page_url", Try.of(detailPageContent::getURI).getOrElse(""));
-            collectorPayloadBean.put("object",  pageObject);
+            pageObject.put(ID, detailPageContent.getIdentifier());
+            pageObject.put(TITLE, detailPageContent.getTitle());
+            pageObject.put(URL, uri);
+            pageObject.put(DETAIL_PAGE_URL, Try.of(detailPageContent::getURI).getOrElse(StringPool.BLANK));
+            collectorPayloadBean.put(OBJECT,  pageObject);
         }
 
-        collectorPayloadBean.put("event_type", EventType.PAGE_REQUEST.getType());
-        collectorPayloadBean.put("url", uri);
-        collectorPayloadBean.put("language", language);
+        collectorPayloadBean.put(EVENT_TYPE, EventType.PAGE_REQUEST.getType());
+        collectorPayloadBean.put(URL, uri);
+        collectorPayloadBean.put(LANGUAGE, language);
 
         if (Objects.nonNull(site)) {
-            collectorPayloadBean.put("host", site.getIdentifier());
+            collectorPayloadBean.put(HOST, site.getHostname());
         }
         return collectorPayloadBean;
     }
 
     private boolean isUrlMap(final CollectorContextMap collectorContextMap){
 
-        final String uri = (String)collectorContextMap.get("uri");
-        final Long languageId = (Long)collectorContextMap.get("langId");
-        final PageMode pageMode = (PageMode)collectorContextMap.get("pageMode");
-        final Host site = (Host) collectorContextMap.get("currentHost");
+        final String uri = (String)collectorContextMap.get(CollectorContextMap.URI);
+        final Long languageId = (Long)collectorContextMap.get(CollectorContextMap.LANG_ID);
+        final PageMode pageMode = (PageMode)collectorContextMap.get(CollectorContextMap.PAGE_MODE);
+        final Host site = (Host) collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
 
         final UrlMapContext urlMapContext = new UrlMapContext(
                 pageMode, languageId, uri, site, APILocator.systemUser());

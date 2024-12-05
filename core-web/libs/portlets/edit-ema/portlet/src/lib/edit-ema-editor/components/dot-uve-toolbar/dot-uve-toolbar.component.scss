@@ -1,0 +1,7 @@
+@use "variables" as *;
+
+.p-toolbar-group-start,
+.p-toolbar-group-end {
+    align-items: center;
+    gap: $spacing-1;
+}

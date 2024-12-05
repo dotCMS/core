@@ -75,6 +75,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.velocity.context.Context;
@@ -1772,9 +1773,10 @@ public class WorkflowHelper {
      * @return List<WorkflowDefaultActionView>
      */
     @CloseDBIfOpened
-    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId, final User user) {
+    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId, final User user) throws NotFoundInDbException {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
+        final Map<String, WorkflowStep> steps = new HashMap<>();
         try {
 
             Logger.debug(this, () -> "Getting the available default workflows actions by content type: " + contentTypeId);
@@ -1782,11 +1784,17 @@ public class WorkflowHelper {
             final List<WorkflowAction> actions = this.workflowAPI.findAvailableDefaultActionsByContentType(contentTypeAPI.find(contentTypeId), user);
             for (final WorkflowAction action : actions){
                 final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
-                final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
+                steps.computeIfAbsent(scheme.getId(), k -> Try.of(()->this.workflowAPI.findFirstStep(scheme.getId()).orElse(null)).get());
+                final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action, steps.get(scheme.getId()));
                 results.add(value);
             }
 
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (NotFoundInDbException e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw e;
+        }
+        catch (DotDataException | DotSecurityException e) {
 
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
@@ -1888,9 +1896,11 @@ public class WorkflowHelper {
      */
     private List<WorkflowDefaultActionView> buildDefaultActionsViewObj(final List<WorkflowAction> actions) throws DotDataException, DotSecurityException {
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
+        final Map<String, WorkflowStep> steps = new HashMap<>();
         for (final WorkflowAction action : actions) {
             final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
-            final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
+            steps.computeIfAbsent(scheme.getId(), k -> Try.of(()->this.workflowAPI.findFirstStep(scheme.getId()).orElse(null)).get());
+            final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action, steps.get(scheme.getId()));
             results.add(value);
         }
         return results.build();

@@ -27,12 +27,14 @@ public class CacheStats {
 
     public CacheStats(){}
 
-    public void addStat(String statName, String value) {
+    public CacheStats addStat(String statName, String value) {
         stats.put(statName, value);
+        return this;
     }
 
-    public void addStat(String statName, long value) {
+    public CacheStats addStat(String statName, long value) {
       stats.put(statName, value+"");
+      return this;
     }
     
     public Set<String> getStatColumns() {

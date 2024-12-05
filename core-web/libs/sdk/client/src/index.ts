@@ -5,13 +5,20 @@ import {
     DotCMSPageEditorConfig,
     EditorConfig
 } from './lib/editor/models/editor.model';
+import {
+    InlineEditorData,
+    INLINE_EDITING_EVENT_KEY,
+    InlineEditEventData
+} from './lib/editor/models/inline-event.model';
 import { NOTIFY_CLIENT } from './lib/editor/models/listeners.model';
 import {
     destroyEditor,
     editContentlet,
+    reorderMenu,
     initEditor,
     isInsideEditor,
-    updateNavigation
+    updateNavigation,
+    initInlineEditing
 } from './lib/editor/sdk-editor';
 import { getPageRequestParams, graphqlToPageEntity } from './lib/utils';
 
@@ -20,6 +27,7 @@ export {
     getPageRequestParams,
     isInsideEditor,
     editContentlet,
+    reorderMenu,
     DotCmsClient,
     DotCMSPageEditorConfig,
     CLIENT_ACTIONS,
@@ -30,5 +38,9 @@ export {
     initEditor,
     updateNavigation,
     destroyEditor,
-    ClientConfig
+    ClientConfig,
+    initInlineEditing,
+    InlineEditEventData,
+    InlineEditorData,
+    INLINE_EDITING_EVENT_KEY
 };

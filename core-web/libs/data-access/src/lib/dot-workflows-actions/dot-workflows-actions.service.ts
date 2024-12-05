@@ -6,10 +6,20 @@ import { Injectable, inject } from '@angular/core';
 import { map, pluck } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotCMSWorkflowAction, DotCMSWorkflow } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentletWorkflowActions,
+    DotCMSWorkflow,
+    DotCMSWorkflowAction
+} from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {
+    LOCKED = 'LOCKED',
     LISTING = 'LISTING',
+    ARCHIVED = 'ARCHIVED',
+    UNPUBLISHED = 'UNPUBLISHED',
+    PUBLISHED = 'PUBLISHED',
+    UNLOCKED = 'UNLOCKED',
+    NEW = 'NEW',
     EDITING = 'EDITING'
 }
 
@@ -51,28 +61,40 @@ export class DotWorkflowsActionsService {
 
     /**
      * Returns the workflow actions of the passed contentType
-     *
      * @param {string} inode
      * @param {DotRenderMode} [renderMode]
      * @returns {Observable<DotCMSWorkflowAction[]>}
      * @memberof DotWorkflowsActionsService
      */
-    getDefaultActions(contentTypeId: string): Observable<DotCMSWorkflowAction[]> {
+    getDefaultActions(contentTypeId: string): Observable<DotCMSContentletWorkflowActions[]> {
         return this.httpClient
             .get<
-                DotCMSResponse<{ action: DotCMSWorkflowAction; scheme: DotCMSWorkflow }[]>
+                DotCMSResponse<DotCMSContentletWorkflowActions[]>
             >(`${this.BASE_URL}/initialactions/contenttype/${contentTypeId}`)
             .pipe(
                 pluck('entity'),
-                map((res = []) => {
-                    return res.map(({ action }) => {
-                        return action;
-                    });
-                })
+                map((res) => res || [])
             );
     }
 
     private getWorkFlowId(workflow: DotCMSWorkflow): string {
         return workflow && workflow.id;
+    }
+
+    /**
+     * Returns the workflow actions of the passed content type name
+     *
+     * @param {string} contentTypeName
+     * @returns {Observable<DotCMSWorkflowActions>}
+     */
+    getWorkFlowActions(contentTypeName: string): Observable<DotCMSContentletWorkflowActions[]> {
+        return this.httpClient
+            .get<
+                DotCMSResponse<DotCMSContentletWorkflowActions[]>
+            >(`${this.BASE_URL}/defaultactions/contenttype/${contentTypeName}`)
+            .pipe(
+                pluck('entity'),
+                map((res) => res || [])
+            );
     }
 }

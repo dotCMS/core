@@ -2,7 +2,7 @@
 
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
@@ -127,7 +127,7 @@ describe('DotEditPageResolver', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
         dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-        dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
+        dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
             expect(state).toEqual(mock);
         });
 
@@ -153,7 +153,7 @@ describe('DotEditPageResolver', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
         dotPageStateService.setInternalNavigationState(mock);
 
-        dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
+        dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
             expect(state).toEqual(mock);
         });
 
@@ -163,7 +163,7 @@ describe('DotEditPageResolver', () => {
     describe('Switch Site', () => {
         it('should switch site when host_id is present in queryparams', () => {
             route.queryParams.host_id = '123';
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of(null));
+            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -175,7 +175,7 @@ describe('DotEditPageResolver', () => {
 
         it('should not switch site when host_id is not present in queryparams', () => {
             route.queryParams = {};
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of(null));
+            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -187,7 +187,7 @@ describe('DotEditPageResolver', () => {
 
         it('should not switch site when host_id is equal to current site id', () => {
             route.queryParams.host_id = siteService.currentSite.identifier;
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of(null));
+            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -218,7 +218,7 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
                 expect(state).toEqual(mock);
             });
             expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
@@ -237,19 +237,15 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
                 expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-                new HttpErrorResponse(
-                    new HttpResponse({
-                        body: null,
-                        status: HttpCode.FORBIDDEN,
-                        headers: null,
-                        url: ''
-                    })
-                )
+                new HttpErrorResponse({
+                    status: HttpCode.FORBIDDEN,
+                    url: ''
+                })
             );
         });
 
@@ -268,20 +264,16 @@ describe('DotEditPageResolver', () => {
             );
             dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
                 expect(state).toBeNull();
             });
 
             expect(dotSessionStorageService.removeVariantId).toHaveBeenCalled();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-                new HttpErrorResponse(
-                    new HttpResponse({
-                        body: null,
-                        status: HttpCode.FORBIDDEN,
-                        headers: null,
-                        url: ''
-                    })
-                )
+                new HttpErrorResponse({
+                    status: HttpCode.FORBIDDEN,
+                    url: ''
+                })
             );
         });
 
@@ -290,12 +282,12 @@ describe('DotEditPageResolver', () => {
                 mockUser(),
                 new DotPageRender({
                     ...mockDotRenderedPage(),
-                    layout: null
+                    layout: undefined
                 })
             );
             dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
-            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
+            dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState | null) => {
                 expect(state).toBeNull();
             });
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();

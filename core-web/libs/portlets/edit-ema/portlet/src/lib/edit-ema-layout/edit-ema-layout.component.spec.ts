@@ -128,7 +128,7 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
-        store.init({
+        store.loadPageAsset({
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',
@@ -150,7 +150,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
             const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
-            const reloadSpy = jest.spyOn(store, 'reload');
+            const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
             templateBuilder.templateChange.emit();
             tick(5000);
@@ -178,6 +178,13 @@ describe('EditEmaLayoutComponent', () => {
             tick(6000);
 
             expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
+        }));
+
+        it('should set isClientReady false after saving', fakeAsync(() => {
+            templateBuilder.templateChange.emit();
+            tick(6000);
+
+            expect(store.isClientReady()).toBe(false);
         }));
 
         it('should save right away if we request page leave before the 5 secs', () => {

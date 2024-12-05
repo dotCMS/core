@@ -1,8 +1,7 @@
-import { tapResponse } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
     signalStoreFeature,
-    type,
     withComputed,
     withMethods,
     withState
@@ -19,9 +18,8 @@ import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { EditContentState } from '../edit-content.store';
 
-interface InformationState {
+export interface InformationState {
     information: {
         status: ComponentStatus;
         error: string | null;
@@ -43,9 +41,6 @@ const initialState: InformationState = {
  */
 export function withInformation() {
     return signalStoreFeature(
-        {
-            state: type<EditContentState>()
-        },
         withState(initialState),
         withComputed(({ information }) => ({
             isLoadingInformation: computed(() => information().status === ComponentStatus.LOADING)

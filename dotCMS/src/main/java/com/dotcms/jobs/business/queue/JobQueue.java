@@ -7,9 +7,11 @@ import com.dotcms.jobs.business.queue.error.JobLockingException;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
 import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -39,6 +41,20 @@ public interface JobQueue {
      * @throws JobQueueDataException if there's a data storage error while fetching the job
      */
     Job getJob(String jobId) throws JobNotFoundException, JobQueueDataException;
+
+    /**
+     * Retrieves the current state of a specific job.
+     * <p>
+     * If only the status is required, this method has better performance than
+     * {@link #getJob(String)} as it uses a cache that is only cleared on status changes, whereas
+     * {@link #getJob(String)} uses a cache that is cleared on any job change.
+     *
+     * @param jobId The ID of the job whose state is being queried.
+     * @return The current state of the job as a JobState enum.
+     * @throws JobNotFoundException  if the job with the given ID is not found.
+     * @throws JobQueueDataException if there's a data storage error while fetching the job state.
+     */
+    JobState getJobState(final String jobId) throws JobNotFoundException, JobQueueDataException;
 
     /**
      * Retrieves a list of active jobs for a specific queue.
@@ -97,6 +113,16 @@ public interface JobQueue {
     JobPaginatedResult getCompletedJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
+     * Retrieves a list of successful jobs.
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of successful jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
      * Retrieves a list of canceled jobs.
      *
      * @param page     The page number (for pagination).
@@ -115,6 +141,16 @@ public interface JobQueue {
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
     JobPaginatedResult getFailedJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of abandoned
+     *
+     * @param page     The page number (for pagination).
+     * @param pageSize The number of items per page.
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getAbandonedJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
      * Updates the status of a job.
@@ -153,6 +189,18 @@ public interface JobQueue {
     Job nextJob() throws JobQueueDataException, JobLockingException;
 
     /**
+     * Detects and marks jobs as abandoned if they haven't been updated within the specified
+     * threshold.
+     *
+     * @param threshold The time duration after which a job is considered abandoned
+     * @param inStates  The states to check for abandoned jobs
+     * @return The abandoned job if one was found and marked, null otherwise
+     * @throws JobQueueDataException if there's a data storage error
+     */
+    Optional<Job> detectAndMarkAbandoned(Duration threshold, JobState... inStates)
+            throws JobQueueDataException;
+
+    /**
      * Updates the progress of a job.
      *
      * @param jobId    The ID of the job to update.
@@ -163,23 +211,13 @@ public interface JobQueue {
     void updateJobProgress(String jobId, float progress) throws JobQueueDataException;
 
     /**
-     * Removes a job from the queue. This method should be used for jobs that have permanently
-     * failed and cannot be retried. Implementing classes should ensure that the job is completely
-     * removed from the queue and any associated resources are cleaned up.
-     *
-     * @param jobId The ID of the job to remove.
-     * @throws JobQueueDataException if there's a data storage error while removing the job
-     */
-    void removeJobFromQueue(String jobId) throws JobQueueDataException;
-
-    /**
      * Checks if a job has ever been in a specific state.
      *
      * @param jobId The ID of the job to check.
-     * @param state The state to check for.
+     * @param states The states to check for.
      * @return true if the job has been in the specified state, false otherwise.
      * @throws JobQueueDataException if there's an error accessing the job data.
      */
-    boolean hasJobBeenInState(String jobId, JobState state) throws JobQueueDataException;
+    boolean hasJobBeenInState(String jobId, JobState... states) throws JobQueueDataException;
 
 }

@@ -75,15 +75,20 @@ export class DotEditContentService {
      * @return {*}  {Observable<TreeNodeItem[]>}
      * @memberof DotEditContentService
      */
-    getSitesTreePath(data: { filter: string; perPage: number }): Observable<TreeNodeItem[]> {
-        const { filter, perPage } = data;
+    getSitesTreePath(data: {
+        filter: string;
+        perPage?: number;
+        page?: number;
+    }): Observable<TreeNodeItem[]> {
+        const { filter, perPage, page } = data;
 
-        return this.#siteService.getSites(filter, perPage).pipe(
+        return this.#siteService.getSites(filter, perPage, page).pipe(
             map((sites) => {
                 return sites.map((site) => ({
                     key: site.hostname,
                     label: `//${site.hostname}`,
                     data: {
+                        id: site.identifier,
                         hostname: `//${site.hostname}`,
                         path: '',
                         type: 'site'
@@ -128,6 +133,7 @@ export class DotEditContentService {
                         key: `${folder.hostName}${folder.path}`.replace(/[/]/g, ''),
                         label: `//${folder.hostName}${folder.path}`,
                         data: {
+                            id: folder.id,
                             hostname: `//${folder.hostName}`,
                             path: folder.path,
                             type: 'folder'
@@ -198,6 +204,7 @@ export class DotEditContentService {
                 key: site.hostname,
                 label: `//${site.hostname}`,
                 data: {
+                    id: site.identifier,
                     hostname: `//${site.hostname}`,
                     path: '',
                     type: 'site'
@@ -218,5 +225,29 @@ export class DotEditContentService {
         return this.#http
             .get<{ entity: { count: number } }>(`/api/v1/content/${identifier}/references/count`)
             .pipe(map((response) => response.entity.count));
+    }
+
+    /**
+     * Get content by folder
+     *
+     * @param {{ folderId: string; mimeTypes?: string[] }} { folderId, mimeTypes }
+     * @return {*}
+     * @memberof DotEditContentService
+     */
+    getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
+        const params = {
+            hostFolderId: folderId,
+            showLinks: false,
+            showDotAssets: true,
+            showPages: false,
+            showFiles: true,
+            showFolders: false,
+            showWorking: true,
+            showArchived: false,
+            sortByDesc: true,
+            mimeTypes: mimeTypes || []
+        };
+
+        return this.#siteService.getContentByFolder(params);
     }
 }

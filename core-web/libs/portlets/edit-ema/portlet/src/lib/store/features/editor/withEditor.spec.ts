@@ -1,7 +1,7 @@
 import { describe, expect } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { signalStore, withState, patchState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -54,7 +54,7 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: {
+    pageParams: {
         ...emptyParams,
         url: 'test-url',
         language_id: '1',
@@ -65,10 +65,15 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADED,
     isTraditionalPage: false,
     canEditPage: true,
-    pageIsLocked: true
+    pageIsLocked: true,
+    isClientReady: false
 };
 
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withEditor());
+export const uveStoreMock = signalStore(
+    { protectedState: false },
+    withState<UVEState>(initialState),
+    withEditor()
+);
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
@@ -520,6 +525,34 @@ describe('withEditor', () => {
         });
     });
 
+    describe('withUVEToolbar', () => {
+        describe('withComputed', () => {
+            describe('$toolbarProps', () => {
+                it('should return the base info', () => {
+                    expect(store.$uveToolbar()).toEqual({
+                        editor: {
+                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                            copyUrl:
+                                'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
+                        },
+                        preview: null,
+                        currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
+                        urlContentMap: null,
+                        runningExperiment: null,
+                        workflowActionsInode: MOCK_RESPONSE_HEADLESS.page.inode,
+                        personaSelector: {
+                            pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
+                            value: MOCK_RESPONSE_HEADLESS.viewAs.persona ?? DEFAULT_PERSONA
+                        },
+                        unlockButton: null,
+                        showInfoDisplay: false
+                    });
+                });
+            });
+        });
+    });
+
     describe('withSave', () => {
         describe('withMethods', () => {
             describe('savePage', () => {
@@ -537,7 +570,7 @@ describe('withEditor', () => {
                     const payload = {
                         pageContainers: ACTION_PAYLOAD_MOCK.pageContainers,
                         pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                        params: store.params()
+                        params: store.pageParams()
                     };
 
                     store.savePage(ACTION_PAYLOAD_MOCK.pageContainers);
@@ -545,7 +578,7 @@ describe('withEditor', () => {
                     expect(saveSpy).toHaveBeenCalledWith(payload);
 
                     expect(getClientPageSpy).toHaveBeenCalledWith(
-                        store.params(),
+                        store.pageParams(),
                         store.clientRequestProps()
                     );
 
@@ -618,6 +651,7 @@ describe('withEditor', () => {
                 expect(store.$editorProps()).toEqual({
                     showDialogs: true,
                     showEditorContent: true,
+                    showBlockEditorSidebar: true,
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',

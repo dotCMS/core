@@ -1,4 +1,5 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
@@ -102,7 +103,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         (state, { url, contentType, actionPayload }: CreateContentletAction) => {
             const completeURL = new URL(url, window.location.origin);
 
-            completeURL.searchParams.set('variantName', this.uveStore.params().variantName);
+            completeURL.searchParams.set('variantName', this.uveStore.pageParams().variantName);
 
             return {
                 ...state,
@@ -303,7 +304,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: inode,
-            variantName: this.uveStore.params().variantName
+            variantName: this.uveStore.pageParams().variantName
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
@@ -331,7 +332,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             container_id: containerId,
             add: acceptTypes,
             language_id,
-            variantName: this.uveStore.params().variantName
+            variantName: this.uveStore.pageParams().variantName
         });
 
         return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
@@ -354,7 +355,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             lang: newLanguage.toString(),
             populateaccept: 'true',
             reuseLastLang: 'true',
-            variantName: this.uveStore.params().variantName
+            variantName: this.uveStore.pageParams().variantName
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;

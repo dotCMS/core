@@ -1,4 +1,4 @@
-import { tapResponse } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, pipe } from 'rxjs';
@@ -40,13 +40,16 @@ export function withSave() {
                             const payload = {
                                 pageContainers,
                                 pageId: store.pageAPIResponse().page.identifier,
-                                params: store.params()
+                                params: store.pageParams()
                             };
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() =>
                                     dotPageApiService
-                                        .getClientPage(store.params(), store.clientRequestProps())
+                                        .getClientPage(
+                                            store.pageParams(),
+                                            store.clientRequestProps()
+                                        )
                                         .pipe(
                                             tapResponse(
                                                 (pageAPIResponse: DotPageApiResponse) => {

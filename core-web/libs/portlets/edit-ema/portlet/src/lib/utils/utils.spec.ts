@@ -1,3 +1,5 @@
+import { Params } from '@angular/router';
+
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
 
@@ -15,9 +17,12 @@ import {
     areContainersEquals,
     compareUrlPaths,
     createFullURL,
-    getDragItemData
+    getDragItemData,
+    createReorderMenuURL,
+    getAllowedPageParams
 } from '.';
 
+import { DotPageApiParams } from '../services/dot-page-api.service';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
 
@@ -707,6 +712,68 @@ describe('utils functions', () => {
             const result = getDragItemData(dataset);
 
             expect(result).toBeNull();
+        });
+    });
+
+    describe('createReorderMenuURL', () => {
+        it('should create the correct URL', () => {
+            const result = createReorderMenuURL({
+                startLevel: 1,
+                depth: 1,
+                pagePath: '123',
+                hostId: '456'
+            });
+
+            expect(result).toEqual(
+                'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
+            );
+        });
+    });
+
+    describe('getAllowedPageParams', () => {
+        it('should filter and return only allowed page params', () => {
+            const expected = {
+                url: 'some-url',
+                mode: 'edit',
+                depth: '2',
+                clientHost: 'localhost',
+                variantName: 'variant',
+                language_id: '1',
+                experimentId: 'exp123',
+                'com.dotmarketing.persona.id': 'persona123'
+            } as DotPageApiParams;
+
+            const params: Params = {
+                ...expected,
+                invalidParam: 'invalid'
+            };
+
+            const result = getAllowedPageParams(params);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should return an empty object if no allowed params are present', () => {
+            const params: Params = {
+                invalidParam1: 'invalid1',
+                invalidParam2: 'invalid2'
+            };
+
+            const expected = {} as DotPageApiParams;
+
+            const result = getAllowedPageParams(params);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should return an empty object if params is empty', () => {
+            const params: Params = {};
+
+            const expected = {} as DotPageApiParams;
+
+            const result = getAllowedPageParams(params);
+
+            expect(result).toEqual(expected);
         });
     });
 });
