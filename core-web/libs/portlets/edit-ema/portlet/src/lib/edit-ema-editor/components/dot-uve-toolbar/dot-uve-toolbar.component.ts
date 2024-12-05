@@ -56,14 +56,24 @@ export class DotUveToolbarComponent {
         return 'uve-toolbar uve-toolbar-preview';
     });
 
-    date = new Date();
+    protected readonly date = new Date();
 
-    setPreviewMode() {
+    /**
+     * Set the preview mode
+     *
+     * @memberof DotUveToolbarComponent
+     */
+    protected setPreviewMode() {
         this.#store.loadPageAsset({ preview: 'true' });
     }
 
-    setEditMode() {
-        this.#store.loadPageAsset({ preview: 'false' });
+    /**
+     * Set the edit mode
+     *
+     * @memberof DotUveToolbarComponent
+     */
+    protected setEditMode() {
+        this.#store.loadPageAsset({ preview: null });
     }
 
     triggerCopyToast() {
