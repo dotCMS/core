@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.containers.business;
 
-import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
@@ -24,9 +23,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import javax.enterprise.context.Dependent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,14 +35,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * This class will test operations related with interacting with Containers.
- *
- * @author Jorge Urdaneta
- * @since Aug 31st, 2012
- */
-@Dependent
-@RunWith(JUnit4WeldRunner.class)
+
 public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
