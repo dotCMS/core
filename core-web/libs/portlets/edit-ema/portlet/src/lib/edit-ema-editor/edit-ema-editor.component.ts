@@ -1432,7 +1432,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             reject: () => {
                 // If is rejected, bring back the current language on selector
                 this.#goBackToCurrentLanguage();
-                // this.languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
             }
         });
     }
