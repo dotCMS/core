@@ -16,14 +16,12 @@ import {
     DotExperimentsService,
     DotFavoritePageService,
     DotLanguagesService,
-    DotMessageService,
     DotPageLayoutService,
     DotPageRenderService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
 
@@ -33,10 +31,15 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
-import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DialogAction, DotPage } from '../shared/models';
+import { NG_CUSTOM_EVENTS } from '../shared/enums';
+import { DialogAction } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { checkClientHostAccess, compareUrlPaths, getAllowedPageParams } from '../utils';
+import {
+    checkClientHostAccess,
+    getAllowedPageParams,
+    getTargetUrl,
+    shouldNavigate
+} from '../utils';
 
 @Component({
     selector: 'dot-ema-shell',
@@ -84,21 +87,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #siteService = inject(SiteService);
-    readonly #dotMessageService = inject(DotMessageService);
-    readonly #confirmationService = inject(ConfirmationService);
     readonly #location = inject(Location);
 
     protected readonly $shellProps = this.uveStore.$shellProps;
 
     readonly #destroy$ = new Subject<boolean>();
-
-    readonly $translatePageEffect = effect(() => {
-        const { page, currentLanguage } = this.uveStore.$translateProps();
-
-        if (currentLanguage && !currentLanguage?.translated) {
-            this.createNewTranslation(currentLanguage, page);
-        }
-    });
 
     /**
      * Handle the update of the page params
@@ -136,25 +129,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#destroy$.complete();
     }
 
-    handleNgEvent({ event, form }: DialogAction) {
-        const { isTranslation, status } = form;
-
-        const isSaved = status === FormStatus.SAVED;
-
+    handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
-            case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
-                if (!isSaved && isTranslation) {
-                    this.#goBackToCurrentLanguage();
-                }
-
-                break;
-            }
-
-            case NG_CUSTOM_EVENTS.URL_IS_CHANGED: {
-                this.handleSavePageEvent(event);
-                break;
-            }
-
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.handleSavePageEvent(event);
                 break;
@@ -171,9 +147,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
-        const targetUrl = this.getTargetUrl(url.pathname);
+        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAPIResponse().urlContentMap);
 
-        if (this.shouldNavigate(targetUrl)) {
+        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
             // Navigate to the new URL if it's different from the current one
             this.uveStore.loadPageAsset({ url: targetUrl });
 
@@ -181,35 +157,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
 
         this.uveStore.reloadCurrentPage();
-    }
-
-    /**
-     * Determines the target URL for navigation.
-     *
-     * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
-     * Otherwise, it falls back to the URL extracted from the event.
-     *
-     * @param {string | undefined} url - The URL extracted from the event.
-     * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
-     */
-    private getTargetUrl(url: string | undefined): string | undefined {
-        const urlContentMap = this.uveStore.pageAPIResponse().urlContentMap;
-
-        // Return URL from content map or fallback to the provided URL
-        return urlContentMap?.URL_MAP_FOR_CONTENT || url;
-    }
-
-    /**
-     * Determines whether navigation to a new URL is necessary.
-     *
-     * @param {string | undefined} targetUrl - The target URL for navigation.
-     * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
-     */
-    private shouldNavigate(targetUrl: string | undefined): boolean {
-        const currentUrl = this.uveStore.pageParams().url;
-
-        // Navigate if the target URL is defined and different from the current URL
-        return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
     }
 
     /**
@@ -238,36 +185,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     reloadFromDialog() {
         this.uveStore.reloadCurrentPage();
-    }
-
-    /**
-     * Asks the user for confirmation to create a new translation for a given language.
-     *
-     * @param {DotLanguage} language - The language to create a new translation for.
-     * @private
-     *
-     * @return {void}
-     */
-    private createNewTranslation(language: DotLanguage, page: DotPage): void {
-        this.#confirmationService.confirm({
-            header: this.#dotMessageService.get(
-                'editpage.language-change-missing-lang-populate.confirm.header'
-            ),
-            message: this.#dotMessageService.get(
-                'editpage.language-change-missing-lang-populate.confirm.message',
-                language.language
-            ),
-            rejectIcon: 'hidden',
-            acceptIcon: 'hidden',
-            key: 'shell-confirm-dialog',
-            accept: () => {
-                this.dialog.translatePage({
-                    page,
-                    newLanguage: language.id
-                });
-            },
-            reject: () => this.#goBackToCurrentLanguage()
-        });
     }
 
     /**
@@ -308,14 +225,5 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const urlTree = this.#router.createUrlTree([], { queryParams });
 
         this.#location.replaceState(urlTree.toString());
-    }
-
-    /**
-     * Use the Page Language to navigate back to the current language
-     *
-     * @memberof DotEmaShellComponent
-     */
-    #goBackToCurrentLanguage(): void {
-        this.uveStore.loadPageAsset({ language_id: '1' });
     }
 }
