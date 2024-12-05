@@ -91,3 +91,4 @@ This maintenance release includes the following code fixes:
 85. https://github.com/dotCMS/core/issues/28512 : Rename Date Updated Column #28512
 86. https://github.com/dotCMS/core/issues/28780 : Add Hint support for relationship fields #28780
 87. https://github.com/dotCMS/core/issues/29501 : optimize sql query causing slowness on high-traffic sites #29501
+88. https://github.com/dotCMS/core/issues/30053 : Overlay Misalignment in Content Type while relating content #30053
