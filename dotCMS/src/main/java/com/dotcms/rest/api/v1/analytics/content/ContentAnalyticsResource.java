@@ -254,10 +254,10 @@ public class ContentAnalyticsResource {
                                                     value = "{\n" +
                                                             "    \"measures\": \"request.count request.totalSessions\",\n" +
                                                             "    \"dimensions\": \"request.host request.whatAmI request.url\",\n" +
-                                                            "    \"timeDimensions\": \"request.createdAt day This month\",\n" +
+                                                            "    \"timeDimensions\": \"request.createdAt:day:Last month\",\n" +
                                                             "    \"filters\": \"request.totalRequest gt 0:request.whatAmI contains PAGE,FILE\",\n" +
                                                             "    \"order\": \"request.count asc:request.createdAt asc\",\n" +
-                                                            "    \"limit\": 5,\n" +
+                                                            "    \"limit\": 15,\n" +
                                                             "    \"offset\": 0\n" +
                                                             "}"
                                             )
