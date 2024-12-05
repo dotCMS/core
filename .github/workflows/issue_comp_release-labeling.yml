@@ -9,7 +9,7 @@ on:
       rename_label:
         description: 'Rename label'
         type: string
-        required: false
+        required: true
         default: 'Next Release'
       new_label:
         description: 'New label'
@@ -25,7 +25,7 @@ on:
       rename_label:
         description: 'Rename label'
         type: string
-        required: false
+        required: true
         default: 'Next Release'
       new_label:
         description: 'New label'
@@ -35,7 +35,7 @@ on:
         description: 'New label color'
         type: string
         required: false
-        default: '#fbca04'
+        default: 'fbca04'
 
 jobs:
   release-labeling:
