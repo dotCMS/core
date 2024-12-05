@@ -1,14 +1,15 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -17,10 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
+
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.apache.lucene.queries.function.valuesource.LiteralValueSource.hash;
+
 
 /**
  * Util class to handle QL statement related with the unique_fiedls table
@@ -85,7 +88,6 @@ public class UniqueFieldDataBaseUtil {
 
     private final static String DELETE_UNIQUE_FIELDS_BY_FIELD = "DELETE FROM unique_fields " +
             "WHERE supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
-
 
     private final static String POPULATE_UNIQUE_FIELDS_VALUES_QUERY = "INSERT INTO unique_fields (unique_key_val, supporting_values) " +
             "SELECT encode(sha256(CONCAT(content_type_id, field_var_name, language_id, field_value, " +

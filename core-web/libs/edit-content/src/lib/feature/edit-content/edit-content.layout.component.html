@@ -61,6 +61,7 @@
 
     <dot-edit-content-form
         data-testId="edit-content-layout__body"
+        (changeValue)="onFormChange($event)"
         class="edit-content-layout__body" />
 
     @if (showSidebar) {

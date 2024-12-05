@@ -1,10 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
@@ -17,6 +18,8 @@ import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaBookmarksComponent } from './dot-ema-bookmarks.component';
 
+import { UVEStore } from '../../../store/dot-uve.store';
+
 describe('DotEmaBookmarksComponent', () => {
     let spectator: Spectator<DotEmaBookmarksComponent>;
 
@@ -26,6 +29,13 @@ describe('DotEmaBookmarksComponent', () => {
         providers: [
             DialogService,
             HttpClient,
+            // {
+            //     provide: UVEStore,
+            //     useValue: {
+            //         $previewMode: signal(false)
+            //     }
+            // },
+            mockProvider(UVEStore, { $previewMode: signal(false) }),
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
@@ -115,5 +125,17 @@ describe('DotEmaBookmarksComponent', () => {
                 data: expect.anything()
             })
         );
+    });
+
+    describe('preview mode', () => {
+        it('should render the bookmark button with new UVE toolbar style when preview mode is true', () => {
+            const store = spectator.inject(UVEStore, true);
+            jest.spyOn(store, '$previewMode').mockReturnValue(signal(true));
+
+            spectator.detectChanges();
+            const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
+
+            expect(button.componentInstance.textContent).toBe(undefined);
+        });
     });
 });

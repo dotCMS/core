@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "be9c354a-6c94-4b10-be0e-bc0c1b324c24",
+		"_postman_id": "8f0a1603-03b2-4f37-b2a3-d6c6a8f5c910",
 		"name": "JobQueueResource API Tests",
 		"description": "Postman collection for testing the JobQueueResource API endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -965,8 +965,8 @@
 							"var response = pm.response.json();",
 							"console.log(\"Current job state:\", response.entity.state);",
 							"    ",
-							"// Check if job status is \"COMPLETED\"",
-							"if (response.entity.state === \"COMPLETED\") {",
+							"// Check if job status is \"SUCCESS\"",
+							"if (response.entity.state === \"SUCCESS\") {",
 							"    // Clear environment variables once done",
 							"    pm.environment.unset(\"startTime\");",
 							"    pm.environment.unset(\"retryCount\");",
@@ -1060,8 +1060,8 @@
 							"var response = pm.response.json();",
 							"console.log(\"Current job state:\", response.entity.state);",
 							"    ",
-							"// Check if job status is \"FAILED\"",
-							"if (response.entity.state === \"FAILED\") {",
+							"// Check if job status is \"FAILED_PERMANENTLY\"",
+							"if (response.entity.state === \"FAILED_PERMANENTLY\") {",
 							"    // Clear environment variables once done",
 							"    pm.environment.unset(\"startTime\");",
 							"    pm.environment.unset(\"retryCount\");",
@@ -1365,6 +1365,76 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"// Parse the response JSON",
+							"const response = pm.response.json();",
+							"",
+							"// Validate that the response status is 200 OK",
+							"pm.test(\"Response status is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Validate that the response contains an \"entity.jobs\" array",
+							"pm.test(\"Response should contain jobs array\", function () {",
+							"    pm.expect(response.entity).to.have.property(\"jobs\");",
+							"    pm.expect(response.entity.jobs).to.be.an(\"array\");",
+							"});",
+							"",
+							"// Validate that the jobs array contains 3 jobs",
+							"pm.test(\"Jobs array should contain 3 jobs\", function () {",
+							"    pm.expect(response.entity.jobs.length).to.eql(3);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/jobs/completed?page={{page}}&pageSize={{pageSize}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"jobs",
+						"completed"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "{{page}}"
+						},
+						{
+							"key": "pageSize",
+							"value": "{{pageSize}}"
+						}
+					]
+				},
+				"description": "Lists completed jobs with pagination."
+			},
+			"response": []
+		},
+		{
+			"name": "Get all successful Jobs",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
 							"// Get the expected job ID from collection variables",
 							"const jobId = pm.environment.get('successJobId');",
 							"",
@@ -1411,7 +1481,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{baseUrl}}/api/v1/jobs/completed?page={{page}}&pageSize={{pageSize}}",
+					"raw": "{{baseUrl}}/api/v1/jobs/successful?page={{page}}&pageSize={{pageSize}}",
 					"host": [
 						"{{baseUrl}}"
 					],
@@ -1419,7 +1489,7 @@
 						"api",
 						"v1",
 						"jobs",
-						"completed"
+						"successful"
 					],
 					"query": [
 						{
@@ -1432,7 +1502,7 @@
 						}
 					]
 				},
-				"description": "Lists completed jobs with pagination."
+				"description": "Lists successful jobs with pagination."
 			},
 			"response": []
 		},
@@ -1507,7 +1577,7 @@
 			"response": []
 		},
 		{
-			"name": "List Jobs Expect Fail, Completed and Cancelled",
+			"name": "List Jobs Expect Fail, Successful and Cancelled",
 			"event": [
 				{
 					"listen": "test",
@@ -1533,12 +1603,12 @@
 							"});",
 							"",
 							"// Check if there are jobs with \"FAILED\" and \"CANCELED\" status",
-							"const hasFailed = response.entity.jobs.some(job => job.state === \"FAILED\");",
+							"const hasFailed = response.entity.jobs.some(job => job.state === \"FAILED_PERMANENTLY\");",
 							"const hasCanceled = response.entity.jobs.some(job => job.state === \"CANCELED\");",
-							"const hasCompleted = response.entity.jobs.some(job => job.state === \"COMPLETED\");",
+							"const hasSuccess = response.entity.jobs.some(job => job.state === \"SUCCESS\");",
 							"",
-							"// Postman test to validate that there are jobs with \"FAILED\"  statuses",
-							"pm.test(\"There are jobs in 'FAILED'  state\", function () {",
+							"// Postman test to validate that there are jobs with \"FAILED_PERMANENTLY\"  statuses",
+							"pm.test(\"There are jobs in 'FAILED_PERMANENTLY'  state\", function () {",
 							"    pm.expect(hasFailed).to.be.true;                ",
 							"});",
 							"",
@@ -1547,9 +1617,9 @@
 							"    pm.expect(hasCanceled).to.be.true;",
 							"});",
 							"",
-							"// Postman test to validate that there are jobs with \"COMPLETED\" statuses",
-							"pm.test(\"There are jobs in 'COMPLETED' state\", function () {                ",
-							"    pm.expect(hasCompleted).to.be.true;",
+							"// Postman test to validate that there are jobs with \"SUCCESS\" statuses",
+							"pm.test(\"There are jobs in 'SUCCESS' state\", function () {                ",
+							"    pm.expect(hasSuccess).to.be.true;",
 							"});"
 						],
 						"type": "text/javascript",
@@ -1583,7 +1653,7 @@
 						}
 					]
 				},
-				"description": "List Jobs Expect Fail and Cancelled."
+				"description": "List Jobs Expect Fail, Successful and Cancelled."
 			},
 			"response": []
 		}

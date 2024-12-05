@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.job;
 import static com.dotcms.jobs.business.util.JobUtil.roundedProgress;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
@@ -19,7 +20,6 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import java.io.IOException;
 import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -31,10 +31,7 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MediaType;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.sse.EventOutput;
-import org.glassfish.jersey.media.sse.OutboundEvent;
 
 /**
  * Helper class for interacting with the job queue system. This class provides methods for creating, cancelling, and listing jobs.
@@ -182,9 +179,28 @@ public class JobQueueHelper {
      * @param jobId The ID of the job
      * @param watcher The watcher
      */
-    void watchJob(String jobId, Consumer<Job> watcher) {
+    JobWatcher watchJob(String jobId, Consumer<Job> watcher) {
         // if it does then watch it
-        jobQueueManagerAPI.watchJob(jobId, watcher);
+        return jobQueueManagerAPI.watchJob(jobId, watcher);
+    }
+
+    /**
+     * Removes a watcher from a job
+     *
+     * @param jobId   The ID of the job
+     * @param watcher The watcher to remove
+     */
+    void removeWatcher(final String jobId, final JobWatcher watcher) {
+        jobQueueManagerAPI.removeJobWatcher(jobId, watcher);
+    }
+
+    /**
+     * Removes all watchers from a job
+     *
+     * @param jobId The ID of the job
+     */
+    void removeAllWatchers(final String jobId) {
+        jobQueueManagerAPI.removeAllJobWatchers(jobId);
     }
 
     /**
@@ -252,6 +268,22 @@ public class JobQueueHelper {
     }
 
     /**
+     * Retrieves a list of successful jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of successful jobs and pagination information.
+     */
+    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getSuccessfulJobs(page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching successful jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
      * Retrieves a list of canceled jobs
      *
      * @param page     The page number
@@ -272,13 +304,29 @@ public class JobQueueHelper {
      *
      * @param page     The page number
      * @param pageSize The number of jobs per page
-     * @return A result object containing the list of completed jobs and pagination information.
+     * @return A result object containing the list of failed jobs and pagination information.
      */
     JobPaginatedResult getFailedJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getFailedJobs(page, pageSize);
         } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching failed jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of abandoned jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     */
+    JobPaginatedResult getAbandonedJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getAbandonedJobs(page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching abandoned jobs", e);
         }
         return JobPaginatedResult.builder().build();
     }
@@ -359,51 +407,15 @@ public class JobQueueHelper {
     }
 
     /**
-     * Send an error event and close the connection
-     *
-     * @param errorName   The name of the error event
-     * @param errorCode   The error code
-     * @param eventOutput The event output
-     */
-    void sendErrorAndClose(final String errorName, final String errorCode,
-            final EventOutput eventOutput) {
-
-        try {
-            OutboundEvent event = new OutboundEvent.Builder()
-                    .mediaType(MediaType.TEXT_HTML_TYPE)
-                    .name(errorName)
-                    .data(String.class, errorCode)
-                    .build();
-            eventOutput.write(event);
-            closeSSEConnection(eventOutput);
-        } catch (IOException e) {
-            Logger.error(this, "Error sending error event", e);
-            closeSSEConnection(eventOutput);
-        }
-    }
-
-    /**
-     * Close the SSE connection
-     *
-     * @param eventOutput The event output
-     */
-    void closeSSEConnection(final EventOutput eventOutput) {
-        try {
-            eventOutput.close();
-        } catch (IOException e) {
-            Logger.error(this, "Error closing SSE connection", e);
-        }
-    }
-
-    /**
      * Check if a job is in a terminal state
      *
      * @param state The state of the job
      * @return true if the job is in a terminal state, false otherwise
      */
     boolean isTerminalState(final JobState state) {
-        return state == JobState.COMPLETED ||
-                state == JobState.FAILED ||
+        return state == JobState.SUCCESS ||
+                state == JobState.FAILED_PERMANENTLY ||
+                state == JobState.ABANDONED_PERMANENTLY ||
                 state == JobState.CANCELED;
     }
 
