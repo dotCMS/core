@@ -14,7 +14,7 @@ import javax.inject.Inject;
 import java.sql.SQLException;
 
 /**
- * Initializer in charge of check when dotMCS start up if the Unique Fields Data Base validation was enabled
+ * Initializer in charge of check when dotCMS start up if the Unique Fields Data Base validation was enabled
  * to create and populate the unique_fields table.
  *
  * It check if the table already exists and:
