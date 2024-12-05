@@ -20,7 +20,8 @@ import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotRenderMode,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -36,7 +37,7 @@ import { WorkflowState } from './workflow.feature';
 
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../../utils/functions.util';
-import { parseWorkflows } from '../../../../utils/workflows.utils';
+import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
 
 export interface ContentState {
@@ -45,19 +46,22 @@ export interface ContentState {
     /** Contentlet full data */
     contentlet: DotCMSContentlet | null;
     /** Schemas available for the content type */
-    schemes: {
-        [key: string]: {
+    schemes: Record<
+        string,
+        {
             scheme: DotCMSWorkflow;
             actions: DotCMSWorkflowAction[];
             firstStep: WorkflowStep;
-        };
-    };
+        }
+    >;
+    initialContentletState: 'new' | 'existing' | 'reset';
 }
 
 export const contentInitialState: ContentState = {
     contentType: null,
     contentlet: null,
-    schemes: {}
+    schemes: {},
+    initialContentletState: 'new'
 };
 
 export function withContent() {
@@ -71,7 +75,7 @@ export function withContent() {
              *
              * @returns {boolean} True if content is new, false otherwise
              */
-            isNew: computed(() => !store.contentlet()),
+            isNew: computed(() => store.initialContentletState() === 'new'),
 
             /**
              * Computed property that determines if the store's status is equal to ComponentStatus.LOADED.
@@ -145,14 +149,25 @@ export function withContent() {
                 dotEditContentService = inject(DotEditContentService),
                 workflowActionService = inject(DotWorkflowsActionsService),
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
-                router = inject(Router)
+                router = inject(Router),
+                dotWorkflowService = inject(DotWorkflowService)
             ) => ({
                 /**
-                 * Method to initialize new content of a given type.
-                 * New content
+                 * Initializes the state for creating new content of a specified type.
+                 * This method orchestrates the following operations:
                  *
-                 * @param {string} contentType - The type of content to initialize.
-                 * @returns {Observable} An observable that completes when the initialization is done.
+                 * 1. Sets the component state to loading
+                 * 2. Makes parallel API calls to:
+                 *    - Fetch the complete content type definition
+                 *    - Retrieve all available workflow schemes and their default actions
+                 * 3. Processes the workflow schemes:
+                 *    - Parses and organizes schemes by their IDs
+                 *    - Automatically selects default scheme if only one exists
+                 *    - Sets up initial available actions based on the default scheme
+                 *
+                 * @param {string} contentType - The identifier of the content type to initialize
+                 * @returns {Observable} An observable that completes when all initialization data is loaded and processed
+                 * @throws Will set error state and display error message if initialization fails
                  */
                 initializeNewContent: rxMethod<string>(
                     pipe(
@@ -165,17 +180,24 @@ export function withContent() {
                             }).pipe(
                                 tapResponse({
                                     next: ({ contentType, schemes }) => {
+                                        // Convert the schemes to an object with the schemeId as the key
                                         const parsedSchemes = parseWorkflows(schemes);
                                         const schemeIds = Object.keys(parsedSchemes);
+                                        // If we have only one scheme, we set it as the default one
                                         const defaultSchemeId =
                                             schemeIds.length === 1 ? schemeIds[0] : null;
+                                        // Parse the actions as an object with the schemeId as the key
+                                        const parsedCurrentActions = parseCurrentActions(
+                                            parsedSchemes[defaultSchemeId]?.actions || []
+                                        );
 
                                         patchState(store, {
                                             contentType,
-
                                             schemes: parsedSchemes,
                                             currentSchemeId: defaultSchemeId,
+                                            currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
+                                            initialContentletState: 'new',
                                             error: null
                                         });
                                     },
@@ -193,10 +215,22 @@ export function withContent() {
                 ),
 
                 /**
-                 * Initializes the existing content by loading its details and updating the state.
-                 * Content existing
+                 * Initializes and loads all necessary data for an existing content by its inode.
+                 * This method orchestrates multiple API calls to set up the complete content state:
                  *
-                 * @returns {Observable<string>} An observable that emits the content ID.
+                 * 1. Fetches the contentlet data using the inode
+                 * 2. Based on the contentlet's content type:
+                 *    - Loads the full content type definition
+                 *    - Retrieves available workflow actions for the current inode
+                 *    - Fetches all possible workflow schemes for the content type
+                 *    - Gets the current workflow status including step and task information
+                 *
+                 * All this information is then consolidated and stored in the state to manage
+                 * the content's workflow progression and available actions.
+                 *
+                 * @param {string} inode - The unique identifier for the content to be loaded
+                 * @returns {Observable<string>} An observable that emits the content's inode when initialization is complete
+                 * @throws Will redirect to /c/content and show error if initialization fails
                  */
                 initializeExistingContent: rxMethod<string>(
                     pipe(
@@ -210,13 +244,17 @@ export function withContent() {
                                     return forkJoin({
                                         contentType:
                                             dotContentTypeService.getContentType(contentType),
+                                        // Allowed actions for this inode
                                         currentContentActions: workflowActionService.getByInode(
                                             inode,
                                             DotRenderMode.EDITING
                                         ),
+                                        // Allowed actions for this content type
                                         schemes:
                                             workflowActionService.getWorkFlowActions(contentType),
-                                        contentlet: of(contentlet)
+                                        contentlet: of(contentlet),
+                                        // Workflow status for this inode
+                                        workflowStatus: dotWorkflowService.getWorkflowStatus(inode)
                                     });
                                 }),
                                 tapResponse({
@@ -224,15 +262,41 @@ export function withContent() {
                                         contentType,
                                         currentContentActions,
                                         schemes,
-                                        contentlet
+                                        contentlet,
+                                        workflowStatus
                                     }) => {
+                                        // Convert the schemes to an object with the schemeId as the key
                                         const parsedSchemes = parseWorkflows(schemes);
+                                        // Parse the actions as an object with the schemeId as the key
+                                        const parsedCurrentActions =
+                                            parseCurrentActions(currentContentActions);
+
+                                        const { step, task, scheme } = workflowStatus;
+                                        // If there's only one workflow scheme, use that scheme's ID
+                                        // Otherwise use the ID from the workflow status if available
+                                        const schemeIds = Object.keys(parsedSchemes);
+                                        const currentSchemeId =
+                                            schemeIds.length === 1
+                                                ? schemeIds[0]
+                                                : scheme?.id || null;
+
+                                        // If there's no scheme or step, content is considered in 'reset' state
+                                        const initialContentletState =
+                                            !scheme || !step ? 'reset' : 'existing';
+
+                                        // The current step is the first step of the selected scheme
+                                        const currentScheme = parsedSchemes[currentSchemeId];
+
                                         patchState(store, {
                                             contentType,
+                                            currentSchemeId,
                                             schemes: parsedSchemes,
-                                            currentContentActions,
+                                            currentContentActions: parsedCurrentActions,
                                             contentlet,
-                                            state: ComponentStatus.LOADED
+                                            state: ComponentStatus.LOADED,
+                                            currentStep: currentScheme?.firstStep,
+                                            lastTask: task,
+                                            initialContentletState
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {

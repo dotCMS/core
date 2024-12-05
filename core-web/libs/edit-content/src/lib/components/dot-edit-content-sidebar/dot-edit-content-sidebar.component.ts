@@ -1,7 +1,7 @@
-import { SlicePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     effect,
     inject,
     model,
@@ -22,6 +22,7 @@ import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-co
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
+import { DotWorkflowState } from '../../models/dot-edit-content.model';
 
 /**
  * The DotEditContentSidebarComponent is a component that displays the sidebar for the DotCMS content editing application.
@@ -41,7 +42,7 @@ import { DotEditContentStore } from '../../feature/edit-content/store/edit-conte
         TabViewInsertDirective,
         DotEditContentSidebarSectionComponent,
         DotCopyButtonComponent,
-        SlicePipe,
+
         DialogModule,
         DropdownModule,
         ButtonModule,
@@ -51,25 +52,34 @@ import { DotEditContentStore } from '../../feature/edit-content/store/edit-conte
 export class DotEditContentSidebarComponent {
     readonly store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
     readonly $identifier = this.store.getCurrentContentIdentifier;
+    readonly $formValues = this.store.formValues;
+    readonly $contentType = this.store.contentType;
+    readonly $contentlet = this.store.contentlet;
+
+    /**
+     * Computed property that returns the workflow state of the content.
+     */
+    readonly $workflow = computed<DotWorkflowState | null>(() => ({
+        scheme: this.store.getScheme(),
+        step: this.store.getCurrentStep(),
+        task: this.store.lastTask(),
+        contentState: this.store.initialContentletState(),
+        resetAction: this.store.getResetWorkflowAction()
+    }));
+
+    /**
+     * Computed property that returns the workflow selection state.
+     */
+    readonly $workflowSelection = computed(() => ({
+        schemeOptions: this.store.workflowSchemeOptions(),
+        isWorkflowSelected: this.store.showSelectWorkflowWarning()
+    }));
 
     /**
      * Model for the showDialog property.
      */
     readonly $showDialog = model<boolean>(false, {
         alias: 'showDialog'
-    });
-
-    /**
-     * Effect that triggers the workflow status and new content status based on the contentlet and content type ID.
-     */
-    #workflowEffect = effect(() => {
-        const inode = this.store.contentlet()?.inode;
-
-        untracked(() => {
-            if (inode) {
-                this.store.getWorkflowStatus(inode);
-            }
-        });
     });
 
     /**
@@ -84,4 +94,17 @@ export class DotEditContentSidebarComponent {
             }
         });
     });
+
+    fireWorkflowAction(actionId: string): void {
+        this.store.fireWorkflowAction({
+            actionId,
+            inode: this.$contentlet().inode,
+            data: {
+                contentlet: {
+                    ...this.$formValues(),
+                    contentType: this.$contentType().variable
+                }
+            }
+        });
+    }
 }

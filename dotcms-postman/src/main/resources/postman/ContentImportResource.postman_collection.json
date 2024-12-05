@@ -11,7 +11,30 @@
 			"name": "pre-execution-scripts",
 			"item": [
 				{
-					"name": "Create ContentType Copy",
+					"name": "Create ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"fields check\", function () {",
+									"    pm.expect(jsonData.entity[0].fields.length).to.eql(8);",
+									"    pm.expect(jsonData.entity[0].fields[3].variable).to.eql('title');",
+									"    pm.collectionVariables.set(\"fields\", JSON.stringify([jsonData.entity[0].fields[3].id]))",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -1913,7 +1936,7 @@
 		},
 		{
 			"key": "fields",
-			"value": "[\"title\"]",
+			"value": "",
 			"type": "string"
 		}
 	]

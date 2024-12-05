@@ -132,7 +132,7 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
         // Wait for the job to be processed
         CountDownLatch latch = new CountDownLatch(1);
         jobQueueManagerAPI.watchJob(jobId, job -> {
-            if (job.state() == JobState.COMPLETED) {
+            if (job.state() == JobState.SUCCESS) {
                 latch.countDown();
             }
         });
@@ -145,8 +145,8 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     Job job = jobQueueManagerAPI.getJob(jobId);
-                    assertEquals(JobState.COMPLETED, job.state(),
-                            "Job should be in COMPLETED state");
+                    assertEquals(JobState.SUCCESS, job.state(),
+                            "Job should be in SUCCESS state");
                 });
     }
 
@@ -183,7 +183,7 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
 
         CountDownLatch latch = new CountDownLatch(1);
         jobQueueManagerAPI.watchJob(jobId, job -> {
-            if (job.state() == JobState.COMPLETED) {
+            if (job.state() == JobState.SUCCESS) {
                 latch.countDown();
             }
         });
@@ -196,8 +196,8 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     Job job = jobQueueManagerAPI.getJob(jobId);
-                    assertEquals(JobState.COMPLETED, job.state(),
-                            "Job should be in COMPLETED state");
+                    assertEquals(JobState.SUCCESS, job.state(),
+                            "Job should be in SUCCESS state");
                     assertEquals(maxRetries + 1, processor.getAttempts(),
                             "Job should have been attempted " + maxRetries + " times");
                 });
@@ -206,16 +206,17 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
     /**
      * Method to test: Job failure handling in JobQueueManagerAPI
      * Given Scenario: A job is created that is designed to fail
-     * ExpectedResult: The job fails, is marked as FAILED, and contains the expected error details
+     * ExpectedResult: The job fails, is marked as FAILED_PERMANENTLY, and contains the expected
+     * error details
      */
     @Test
     @Order(3)
-    void test_FailingJob() throws Exception {
+    void test_Failing_Permanently_Job() throws Exception {
         jobQueueManagerAPI.registerProcessor("failingQueue", FailingJobProcessor.class);
-        RetryStrategy contentImportRetryStrategy = new ExponentialBackoffRetryStrategy(
+        RetryStrategy noRetriesStrategy = new ExponentialBackoffRetryStrategy(
                 5000, 300000, 2.0, 0
         );
-        jobQueueManagerAPI.setRetryStrategy("failingQueue", contentImportRetryStrategy);
+        jobQueueManagerAPI.setRetryStrategy("failingQueue", noRetriesStrategy);
 
         if (!jobQueueManagerAPI.isStarted()) {
             jobQueueManagerAPI.start();
@@ -240,8 +241,8 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     Job job = jobQueueManagerAPI.getJob(jobId);
-                    assertEquals(JobState.FAILED, job.state(),
-                            "Job should be in FAILED state");
+                    assertEquals(JobState.FAILED_PERMANENTLY, job.state(),
+                            "Job should be in FAILED_PERMANENTLY state");
                     assertNotNull(job.result().get().errorDetail().get(),
                             "Job should have an error detail");
                     assertEquals("Simulated failure",
@@ -306,8 +307,6 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 });
     }
 
-
-
     /**
      * Method to test: Progress tracking functionality in JobQueueManagerAPI
      * Given Scenario: A job is created that reports progress during its execution
@@ -342,12 +341,12 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .until(() -> {
                     Job job = jobQueueManagerAPI.getJob(jobId);
-                    return job.state() == JobState.COMPLETED;
+                    return job.state() == JobState.SUCCESS;
                 });
 
         // Verify final job state
         Job completedJob = jobQueueManagerAPI.getJob(jobId);
-        assertEquals(JobState.COMPLETED, completedJob.state(), "Job should be in COMPLETED state");
+        assertEquals(JobState.SUCCESS, completedJob.state(), "Job should be in SUCCESS state");
         assertEquals(1.0f, completedJob.progress(), 0.01f, "Final progress should be 1.0");
 
         // Verify progress updates
@@ -377,7 +376,6 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
      */
     @Test
     @Order(6)
-    @Ignore
     void test_CombinedScenarios() throws Exception {
         // Register processors for different scenarios
         jobQueueManagerAPI.registerProcessor("successQueue", TestJobProcessor.class);
@@ -409,12 +407,12 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
 
         // Watch jobs
         jobQueueManagerAPI.watchJob(successJob1Id, job -> {
-            if (job.state() == JobState.COMPLETED) {
+            if (job.state() == JobState.SUCCESS) {
                 successLatch.countDown();
             }
         });
         jobQueueManagerAPI.watchJob(successJob2Id, job -> {
-            if (job.state() == JobState.COMPLETED) {
+            if (job.state() == JobState.SUCCESS) {
                 successLatch.countDown();
             }
         });
@@ -441,11 +439,11 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
         assertTrue(allCompleted, "All jobs should complete within the timeout period");
 
         // Verify final states
-        assertEquals(JobState.COMPLETED, jobQueueManagerAPI.getJob(successJob1Id).state(),
-                "First success job should be completed");
-        assertEquals(JobState.COMPLETED, jobQueueManagerAPI.getJob(successJob2Id).state(),
-                "Second success job should be completed");
-        assertEquals(JobState.FAILED, jobQueueManagerAPI.getJob(failJobId).state(),
+        assertEquals(JobState.SUCCESS, jobQueueManagerAPI.getJob(successJob1Id).state(),
+                "First success job should be successful");
+        assertEquals(JobState.SUCCESS, jobQueueManagerAPI.getJob(successJob2Id).state(),
+                "Second success job should be successful");
+        assertEquals(JobState.FAILED_PERMANENTLY, jobQueueManagerAPI.getJob(failJobId).state(),
                 "Fail job should be in failed state");
         assertEquals(JobState.CANCELED, jobQueueManagerAPI.getJob(cancelJobId).state(),
                 "Cancel job should be canceled");
@@ -457,8 +455,8 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                     Job failedJob = jobQueueManagerAPI.getJob(failJobId);
                     assertEquals(2, failedJob.retryCount(),
                             "Job should have been retried " + 2 + " times");
-                    assertEquals(JobState.FAILED, failedJob.state(),
-                            "Job should be in FAILED state");
+                    assertEquals(JobState.FAILED_PERMANENTLY, failedJob.state(),
+                            "Job should be in FAILED_PERMANENTLY state");
                     assertTrue(failedJob.result().isPresent(),
                             "Failed job should have a result");
                     assertTrue(failedJob.result().get().errorDetail().isPresent(),
@@ -555,8 +553,8 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 .pollInterval(100, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     Job job = jobQueueManagerAPI.getJob(jobId);
-                    assertEquals(JobState.COMPLETED, job.state(),
-                            "Job should be in COMPLETED state");
+                    assertEquals(JobState.SUCCESS, job.state(),
+                            "Job should be in SUCCESS state");
                 });
 
         // Verify job history contains the state transitions
@@ -571,8 +569,119 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 "Second state should be ABANDONED");
         assertEquals(JobState.RUNNING.name(), history.get(2).get("state"),
                 "Third state should be RUNNING");
-        assertEquals(JobState.COMPLETED.name(), history.get(3).get("state"),
-                "Latest state should be COMPLETED");
+        assertEquals(JobState.SUCCESS.name(), history.get(3).get("state"),
+                "Latest state should be SUCCESS");
+    }
+
+    /**
+     * Tests the abandoned job detection functionality.
+     * Given Scenario: A job exists in RUNNING state with an old timestamp
+     * ExpectedResult: The job is detected as abandoned, eventually marked as ABANDONED_PERMANENTLY
+     */
+    @Test
+    @Order(8)
+    void test_Abandoned_Permanetly_Job() throws Exception {
+
+        final String jobId = UUID.randomUUID().toString();
+        final String queueName = "abandonedQueue";
+        final Map<String, Object> parameters = Collections.singletonMap("test", "value");
+        final String serverId = APILocator.getServerAPI().readServerId();
+        final LocalDateTime oldTimestamp = LocalDateTime.now().minusMinutes(5);
+
+        // Create a job directly in the database in RUNNING state to simulate an abandoned job
+        DotConnect dc = new DotConnect();
+
+        // Insert into job table
+        dc.setSQL("INSERT INTO job (id, queue_name, state, parameters, created_at, updated_at, started_at, execution_node) VALUES (?, ?, ?, ?::jsonb, ?, ?, ?, ?)")
+                .addParam(jobId)
+                .addParam(queueName)
+                .addParam(JobState.RUNNING.name())
+                .addParam(new ObjectMapper().writeValueAsString(parameters))
+                .addParam(Timestamp.valueOf(oldTimestamp))
+                .addParam(Timestamp.valueOf(oldTimestamp))
+                .addParam(Timestamp.valueOf(oldTimestamp))
+                .addParam(serverId)
+                .loadResult();
+
+        // Insert into job_queue table
+        dc.setSQL("INSERT INTO job_queue (id, queue_name, state, created_at) VALUES (?, ?, ?, ?)")
+                .addParam(jobId)
+                .addParam(queueName)
+                .addParam(JobState.RUNNING.name())
+                .addParam(Timestamp.valueOf(oldTimestamp))
+                .loadResult();
+
+        // Insert initial state into job_history
+        dc.setSQL("INSERT INTO job_history (id, job_id, state, execution_node, created_at) VALUES (?, ?, ?, ?, ?)")
+                .addParam(UUID.randomUUID().toString())
+                .addParam(jobId)
+                .addParam(JobState.RUNNING.name())
+                .addParam(serverId)
+                .addParam(Timestamp.valueOf(oldTimestamp))
+                .loadResult();
+
+        // Verify the job was created in RUNNING state
+        Job initialJob = jobQueueManagerAPI.getJob(jobId);
+        assertEquals(JobState.RUNNING, initialJob.state(),
+                "Job should be in RUNNING state initially");
+
+        // Start job queue manager if not started
+        if (!jobQueueManagerAPI.isStarted()) {
+            jobQueueManagerAPI.start();
+            jobQueueManagerAPI.awaitStart(5, TimeUnit.SECONDS);
+        }
+
+        // Register a processor for the abandoned job
+        jobQueueManagerAPI.registerProcessor(queueName, AbbandonedJobProcessor.class);
+        RetryStrategy noRetriesStrategy = new ExponentialBackoffRetryStrategy(
+                5000, 300000, 2.0, 0
+        );
+        jobQueueManagerAPI.setRetryStrategy(queueName, noRetriesStrategy);
+
+        // The job should be marked as abandoned
+        CountDownLatch latch = new CountDownLatch(1);
+        jobQueueManagerAPI.watchJob(jobId, job -> {
+            if (job.state() == JobState.ABANDONED) {
+                latch.countDown();
+            }
+        });
+
+        boolean abandoned = latch.await(3, TimeUnit.MINUTES);
+        assertTrue(abandoned, "Job should be marked as abandoned within timeout period");
+
+        // Verify the abandoned job state and error details
+        Job abandonedJob = jobQueueManagerAPI.getJob(jobId);
+        assertEquals(JobState.ABANDONED, abandonedJob.state(),
+                "Job should be in ABANDONED state");
+        assertTrue(abandonedJob.result().isPresent(),
+                "Abandoned job should have a result");
+        assertTrue(abandonedJob.result().get().errorDetail().isPresent(),
+                "Abandoned job should have error details");
+        assertTrue(abandonedJob.result().get().errorDetail().get().message()
+                        .contains("abandoned due to no updates"),
+                "Error message should indicate abandonment");
+
+        // Verify the job was put back in queue for retry and completed successfully
+        Awaitility.await().atMost(15, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    Job job = jobQueueManagerAPI.getJob(jobId);
+                    assertEquals(JobState.ABANDONED_PERMANENTLY, job.state(),
+                            "Job should be in ABANDONED_PERMANENTLY state");
+                });
+
+        // Verify job history contains the state transitions
+        dc.setSQL("SELECT state FROM job_history WHERE job_id = ? ORDER BY created_at")
+                .addParam(jobId);
+        List<Map<String, Object>> history = dc.loadObjectResults();
+
+        assertFalse(history.isEmpty(), "Job should have history records");
+        assertEquals(JobState.RUNNING.name(), history.get(0).get("state"),
+                "First state should be RUNNING");
+        assertEquals(JobState.ABANDONED.name(), history.get(1).get("state"),
+                "Second state should be ABANDONED");
+        assertEquals(JobState.ABANDONED_PERMANENTLY.name(), history.get(2).get("state"),
+                "Latest state should be ABANDONED_PERMANENTLY");
     }
 
     static class AbbandonedJobProcessor implements JobProcessor {
