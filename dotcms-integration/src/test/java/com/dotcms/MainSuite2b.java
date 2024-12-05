@@ -187,7 +187,6 @@ import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTa
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemFieldTest;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTest;
-import com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTableTest;
 import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
 import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortletTest;
@@ -207,7 +206,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        Task241007CreateUniqueFieldsTableTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,

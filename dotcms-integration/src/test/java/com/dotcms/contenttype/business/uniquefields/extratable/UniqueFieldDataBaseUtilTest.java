@@ -9,6 +9,8 @@ import com.dotcms.datagen.*;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -224,7 +226,7 @@ public class UniqueFieldDataBaseUtilTest {
      * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
      * When:
      * - Create a {@link ContentType} with a Unique {@link Field}
-     * - Craate a {@link Contentlet} with WORKING and LIVE version, each one with different value.
+     * - Create a {@link Contentlet} with WORKING and LIVE version, each one with different value.
      * - Populate the unique_fields table.
      * Should: Create a couple of register with one with the LIVE value and the other one with the WORKING value
      * and uniquePerSite equals to false.
@@ -311,6 +313,75 @@ public class UniqueFieldDataBaseUtilTest {
 
     }
 
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
+     * When:
+     * - Create a {@link ContentType} with a Unique {@link Field}
+     * - Create a {@link Contentlet} with WORKING and LIVE version both with the same value.
+     * - Populate the unique_fields table.
+     * Should: Create just one register with one with the LIVE value set to false
+     *
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    @Test
+    public void populateUniqueFieldsTableWithMultiVersionSameValue() throws SQLException, DotDataException, IOException {
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+        final Connection connection = DbConnectionFactory.getConnection();
+        final String uniqueValue =  "unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet liveContentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersistedAndPublish();
+
+        Contentlet workingContentlet = ContentletDataGen.checkout(liveContentlet);
+        workingContentlet.setProperty(uniqueTextField.variable(), uniqueValue);
+        ContentletDataGen.checkin(workingContentlet);
+
+        dotDatabaseMetaData.dropTable(connection, "unique_fields");
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+
+        uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
+
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        assertEquals(1, uniqueFieldsRegisters.size());
+
+        final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
+        final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+
+        assertEquals(false, Boolean.valueOf(supportingValues.get(LIVE_ATTR) != null ?
+                supportingValues.get(LIVE_ATTR).toString() : "false"));
+
+        final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
+        assertEquals(1, contentletIds.size());
+
+        final String contentId = contentletIds.get(0);
+        assertEquals(liveContentlet.getIdentifier(), contentId);
+
+        final String hash = calculateHash(liveContentlet, language, uniqueTextField, host, uniqueValue);
+        assertEquals(hash, uniqueFieldsRegister.get("unique_key_val") );
+
+    }
+
     private static String calculateHash(Contentlet liveContentlet, Language language, Field uniqueTextField, Host host, String liveUniqueValue) throws DotDataException {
         final UniqueFieldCriteria uniqueFieldCriteria = new Builder().setVariantName(liveContentlet.getVariantId())
                 .setLanguage(language)
@@ -331,7 +402,7 @@ public class UniqueFieldDataBaseUtilTest {
      * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
      * When:
      * - Create a {@link ContentType} with a Unique {@link Field} with the uniquePerSIte set to TRUE
-     * - Craate a {@link Contentlet} with WORKING and LIVE version, each one with different value.
+     * - Create a {@link Contentlet} with WORKING and LIVE version, each one with different value.
      * - Populate the unique_fields table.
      * Should: Create a couple of register with one with the LIVE value and the other one with the WORKING value
      * and uniquePerSite equals to TRUE.
@@ -346,7 +417,6 @@ public class UniqueFieldDataBaseUtilTest {
 
         final String liveUniqueValue = "live_unique_value";
         final String workingUniqueValue =  "working_unique_value";
-        final String anotherUniqueValue =  "another_unique_value";
 
         final ContentType contentType = new ContentTypeDataGen()
                 .nextPersisted();
@@ -365,22 +435,23 @@ public class UniqueFieldDataBaseUtilTest {
                 .field(uniqueTextField)
                 .nextPersisted();
 
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host_1 = new SiteDataGen().nextPersisted();
+        final Host host_2 = new SiteDataGen().nextPersisted();
 
-        final Contentlet liveContentlet = new ContentletDataGen(contentType)
-                .host(host)
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                .host(host_1)
                 .languageId(language.getId())
                 .setProperty(uniqueTextField.variable(), liveUniqueValue)
                 .nextPersistedAndPublish();
 
-        Contentlet workingContentlet = ContentletDataGen.checkout(liveContentlet);
+        Contentlet workingContentlet = ContentletDataGen.checkout(contentlet_1);
         workingContentlet.setProperty(uniqueTextField.variable(), workingUniqueValue);
         ContentletDataGen.checkin(workingContentlet);
 
         final Contentlet contentlet_2 = new ContentletDataGen(contentType)
-                .host(host)
+                .host(host_2)
                 .languageId(language.getId())
-                .setProperty(uniqueTextField.variable(), anotherUniqueValue)
+                .setProperty(uniqueTextField.variable(), liveUniqueValue)
                 .nextPersistedAndPublish();
 
         dotDatabaseMetaData.dropTable(connection, "unique_fields");
@@ -406,15 +477,18 @@ public class UniqueFieldDataBaseUtilTest {
 
             final String contentId = contentletIds.get(0);
 
-            if (liveContentlet.getIdentifier().equals(contentId) && live) {
-                final String hash = calculateHash(liveContentlet, language, uniqueTextField, host, liveUniqueValue);
+            if (contentlet_1.getIdentifier().equals(contentId) && live) {
+                final String hash = calculateHash(contentlet_1, language, uniqueTextField, host_1, liveUniqueValue);
                 assertEquals(hash, uniqueFieldsRegister.get("unique_key_val") );
-            } else if (liveContentlet.getIdentifier().equals(contentId) && !live) {
-                final String hash = calculateHash(workingContentlet, language, uniqueTextField, host, workingUniqueValue);
+                assertEquals(host_1.getIdentifier(), supportingValues.get("siteId") );
+            } else if (contentlet_1.getIdentifier().equals(contentId) && !live) {
+                final String hash = calculateHash(workingContentlet, language, uniqueTextField, host_1, workingUniqueValue);
                 assertEquals(hash, uniqueFieldsRegister.get("unique_key_val") );
+                assertEquals(host_1.getIdentifier(), supportingValues.get("siteId") );
             } else if (contentlet_2.getIdentifier().equals(contentId) && live) {
-                final String hash = calculateHash(contentlet_2, language, uniqueTextField, host, anotherUniqueValue);
+                final String hash = calculateHash(contentlet_2, language, uniqueTextField, host_2, liveUniqueValue);
                 assertEquals(hash, uniqueFieldsRegister.get("unique_key_val") );
+                assertEquals(host_2.getIdentifier(), supportingValues.get("siteId") );
             } else {
                 throw new AssertException("Contentlet don't expected");
             }
@@ -427,7 +501,7 @@ public class UniqueFieldDataBaseUtilTest {
      * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
      * When:
      * - Create a {@link ContentType} with a field called unique but for now it's not going to be unique
-     * - Craate a couple of {@link Contentlet} with the same value for the unique field.
+     * - Create a couple of {@link Contentlet} with the same value for the unique field.
      * - Update the unique Field and set it as unique
      * - Run the populate method
      * Should: Create a register with 2 contentlets
@@ -498,6 +572,162 @@ public class UniqueFieldDataBaseUtilTest {
         assertTrue(contentletIds.contains(contentlet_1.getIdentifier()));
         assertTrue(contentletIds.contains(contentlet_2.getIdentifier()));
     }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
+     * When:
+     * - Create a {@link ContentType} with a Unique {@link Field} with the uniquePerSite set to FALSE
+     * - Create a {@link Contentlet} with version in a specific Variant and DEFAULT Variant, each one with different value.
+     * - Populate the unique_fields table.
+     * Should: Create a couple of register with one with the DEFAULT Variant and the other one to the Specific Variant
+     * and uniquePerSite equals to TRUE.
+     *
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    @Test
+    public void populateUniqueFieldsTableWithVariantWithSameValues() throws SQLException, DotDataException, IOException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+        final Connection connection = DbConnectionFactory.getConnection();
+
+        final String uniqueValue = "unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet defaultContentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersisted();
+
+        Contentlet specificVariantContentlet = ContentletDataGen.checkout(defaultContentlet);
+        specificVariantContentlet.setProperty(uniqueTextField.variable(), uniqueValue);
+        specificVariantContentlet.setVariantId(variant.name());
+        ContentletDataGen.checkin(specificVariantContentlet);
+
+        dotDatabaseMetaData.dropTable(connection, "unique_fields");
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+
+        uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
+
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        assertEquals(1, uniqueFieldsRegisters.size());
+
+        final Map<String, Object> uniqueFieldsRegister = uniqueFieldsRegisters.get(0);
+        final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+
+        assertEquals(false, Boolean.valueOf(supportingValues.get(LIVE_ATTR) != null ?
+                supportingValues.get(LIVE_ATTR).toString() : "false"));
+
+        final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
+        assertEquals(1, contentletIds.size());
+
+        final String contentId = contentletIds.get(0);
+        assertEquals(defaultContentlet.getIdentifier(), contentId);
+
+        final String hash = calculateHash(defaultContentlet, language, uniqueTextField, host, uniqueValue);
+        assertEquals(hash, uniqueFieldsRegister.get("unique_key_val") );
+    }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#populateUniqueFieldsTable()}
+     * When:
+     * - Create a {@link ContentType} with a Unique {@link Field} with the uniquePerSite set to FALSE
+     * - Create a {@link Contentlet} with version in a specific Variant and DEFAULT Variant, each one with different value.
+     * - Populate the unique_fields table.
+     * Should: Create a couple of register with one with the LIVE value and the other one with the WORKING value
+     * and uniquePerSite equals to TRUE.
+     *
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    @Test
+    public void populateUniqueFieldsTableWithVariantWithDifferentValues() throws SQLException, DotDataException, IOException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+        final Connection connection = DbConnectionFactory.getConnection();
+
+        final String defaultUniqueValue = "default_variant_unique_value";
+        final String specificUniqueValue = "specific_variant_unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet defaultContentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), defaultUniqueValue)
+                .nextPersisted();
+
+        final Contentlet newVersion = ContentletDataGen.createNewVersion(defaultContentlet, variant, language,
+                Map.of(uniqueTextField.variable(), specificUniqueValue));
+
+        dotDatabaseMetaData.dropTable(connection, "unique_fields");
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+        assertTrue(getUniqueFieldsRegisters(contentType).isEmpty());
+
+        uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
+
+        final List<Map<String, Object>> uniqueFieldsRegisters = getUniqueFieldsRegisters(contentType);
+        assertEquals(2, uniqueFieldsRegisters.size());
+
+        for (Map<String, Object> uniqueFieldsRegister : uniqueFieldsRegisters) {
+            final Map<String, Object> supportingValues = JsonUtil.getJsonFromString(uniqueFieldsRegister.get("supporting_values").toString());
+
+            final List<String> contentletIds = (List<String>) supportingValues.get(CONTENTLET_IDS_ATTR);
+
+            assertEquals(1, contentletIds.size());
+
+            final String contentId = contentletIds.get(0);
+            assertEquals(defaultContentlet.getIdentifier(), contentId);
+            assertEquals(false, supportingValues.get("live"));
+
+            if (VariantAPI.DEFAULT_VARIANT.name().equals(supportingValues.get("variant"))) {
+                final String hash = calculateHash(defaultContentlet, language, uniqueTextField, host, defaultUniqueValue);
+                assertEquals(hash, uniqueFieldsRegister.get("unique_key_val") );
+            } else if (variant.name().equals(supportingValues.get("variant"))) {
+                final String hash = calculateHash(newVersion, language, uniqueTextField, host, specificUniqueValue);
+                assertEquals(hash, uniqueFieldsRegister.get("unique_key_val") );
+            } else {
+                throw new AssertException("Contentlet don't expected");
+            }
+
+            assertEquals(false, supportingValues.get("uniquePerSite") );
+        }
+    }
+
+
     private List<Map<String, Object>> getUniqueFieldsRegisters(ContentType contentType) throws DotDataException {
         return new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeId' = ?")
                 .addParam(contentType.id()).loadObjectResults();

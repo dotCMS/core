@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -102,12 +104,13 @@ public class UniqueFieldDataBaseUtil {
             "               field.velocity_var_name                               AS field_var_name," +
             "               contentlet.language_id                                AS language_id," +
             "               identifier.host_inode                                 AS host_id," +
-            "               jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>" +
-            "               'value'                                               AS field_value," +
-            "               ARRAY_AGG(contentlet.identifier)                      AS contentlet_identifier," +
-            "               contentlet_version_info.variant_id as variant_id," +
-            "               contentlet_version_info.live_inode = contentlet.inode as live," +
-            "               CASE WHEN field_variable.variable_value = 'true' THEN true ELSE false END AS uniquePerSite" +
+            "               jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value' AS field_value," +
+            "               ARRAY_AGG(DISTINCT contentlet.identifier)                      AS contentlet_identifier," +
+            "               (CASE WHEN COUNT(DISTINCT contentlet_version_info.variant_id) > 1 THEN 'DEFAULT' ELSE MAX(contentlet_version_info.variant_id) END) AS variant_id, " +
+            "               ((CASE WHEN COUNT(*) > 1 AND COUNT(DISTINCT contentlet_version_info.live_inode = contentlet.inode) > 1 THEN 0 " +
+            "                   ELSE MAX((CASE WHEN contentlet_version_info.live_inode = contentlet.inode THEN 1 ELSE 0 END)::int) " +
+            "                   END) = 1) AS live," +
+            "               (MAX(CASE WHEN field_variable.variable_value = 'true' THEN 1 ELSE 0 END)) = 1 AS uniquePerSite" +
             "        FROM contentlet" +
             "                 INNER JOIN structure ON structure.inode = contentlet.structure_inode" +
             "                 INNER JOIN field ON structure.inode = field.structure_inode" +
@@ -121,10 +124,7 @@ public class UniqueFieldDataBaseUtil {
             "                 field.velocity_var_name," +
             "                 contentlet.language_id," +
             "                 identifier.host_inode," +
-            "                 jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value'," +
-            "                 contentlet_version_info.variant_id," +
-            "                 contentlet_version_info.live_inode = contentlet.inode," +
-            "                 CASE WHEN field_variable.variable_value = 'true' THEN true ELSE false END) as data_to_populate";
+            "                 jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value') as data_to_populate";
 
     /**
      * Insert a new register into the unique_fields table, if already exists another register with the same
@@ -133,10 +133,12 @@ public class UniqueFieldDataBaseUtil {
      * @param key
      * @param supportingValues
      */
+    @WrapInTransaction
     public void insertWithHash(final String key, final Map<String, Object> supportingValues) throws DotDataException {
         new DotConnect().setSQL(INSERT_SQL_WIT_HASH).addParam(key).addJSONParam(supportingValues).loadObjectResults();
     }
 
+    @WrapInTransaction
     public void insert(final String key, final Map<String, Object> supportingValues) throws DotDataException {
         new DotConnect()
                 .setSQL(INSERT_SQL)
@@ -154,6 +156,7 @@ public class UniqueFieldDataBaseUtil {
      *                            representing the unique field.
      * @param contentletId        The Contentlet ID to be added to the list.
      */
+    @WrapInTransaction
     public void updateContentList(final UniqueFieldCriteria uniqueFieldCriteria, final String contentletId) throws DotDataException {
         updateContentList(uniqueFieldCriteria.criteria(), list(contentletId));
     }
@@ -167,6 +170,7 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException An error occurred when interacting with the database.
      */
+    @WrapInTransaction
     public void updateContentList(final String criteria, final List<String> contentletIds) throws DotDataException {
         new DotConnect().setSQL(UPDATE_CONTENT_LIST)
                 .addJSONParam(contentletIds)
@@ -183,6 +187,7 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException An error occurred when interacting with the database.
      */
+    @WrapInTransaction
     public void updateContentListWithHash(final String hash, final List<String> contentletIds) throws DotDataException {
         new DotConnect().setSQL(UPDATE_CONTENT_LIST_WITH_HASH)
                 .addJSONParam(contentletIds)
@@ -200,6 +205,7 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException If an error occurs when interacting with the database.
      */
+    @CloseDBIfOpened
     public Optional<Map<String, Object>> get(final Contentlet contentlet, final Field field) throws DotDataException {
         try {
             final List<Map<String, Object>> results = new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET)
@@ -224,6 +230,7 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException If an error occurs when interacting with the database.
      */
+    @WrapInTransaction
     public void delete(final String hash, final String fieldVariable) throws DotDataException {
         new DotConnect().setSQL(DELETE_UNIQUE_FIELD)
                 .addParam(hash)
@@ -242,6 +249,7 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException If an error occurs when interacting with the database.
      */
+    @WrapInTransaction
     public void recalculate(final String contentTypeId, final String fieldVarName, final boolean uniquePerSite) throws DotDataException {
         new DotConnect().setSQL(getUniqueRecalculationQuery(uniquePerSite))
                 .addParam(contentTypeId)
@@ -264,6 +272,7 @@ public class UniqueFieldDataBaseUtil {
                 uniquePerSite);
     }
 
+    @CloseDBIfOpened
     public List<Map<String, Object>> get(final String contentId, final long languegeId) throws DotDataException {
         return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE)
                 .addParam("\"" + contentId + "\"")
@@ -279,6 +288,7 @@ public class UniqueFieldDataBaseUtil {
      * @return
      * @throws DotDataException
      */
+    @CloseDBIfOpened
     public List<Map<String, Object>> get(final String contentId, final String variantId) throws DotDataException {
         return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_VARIANT)
                 .addParam("\"" + contentId + "\"")
@@ -292,6 +302,7 @@ public class UniqueFieldDataBaseUtil {
      * @param hash
      * @throws DotDataException
      */
+    @WrapInTransaction
     public void delete(final String hash) throws DotDataException {
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS)
                 .addParam(hash)
@@ -304,6 +315,7 @@ public class UniqueFieldDataBaseUtil {
      * @param field
      * @throws DotDataException
      */
+    @WrapInTransaction
     public void delete(final Field field) throws DotDataException {
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_FIELD)
                 .addParam(field.variable())
@@ -317,6 +329,7 @@ public class UniqueFieldDataBaseUtil {
      * @param liveValue
      * @throws DotDataException
      */
+    @WrapInTransaction
     public void setLive(Contentlet contentlet, final boolean liveValue) throws DotDataException {
 
          new DotConnect().setSQL(SET_LIVE_BY_CONTENTLET)
@@ -335,6 +348,7 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException
      */
+    @WrapInTransaction
     public void removeLive(Contentlet contentlet) throws DotDataException {
 
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_CONTENTLET)
@@ -399,11 +413,18 @@ public class UniqueFieldDataBaseUtil {
      *     unique field values from the current database.</li>
      * </ul>
      */
+    @WrapInTransaction
     public void createUniqueFieldsValidationTable() throws DotDataException {
         new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
                     "unique_key_val VARCHAR(64) PRIMARY KEY," +
                     "supporting_values JSONB" +
                 " )").loadObjectResults();
+    }
+
+    @WrapInTransaction
+    public void createTableAnsPopulate() throws DotDataException {
+            createUniqueFieldsValidationTable();
+            populateUniqueFieldsTable();
     }
 
     /**
@@ -413,6 +434,7 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException
      */
+    @WrapInTransaction
     public void dropUniqueFieldsValidationTable() throws DotDataException {
         try {
             new DotConnect().setSQL("DROP TABLE unique_fields").loadObjectResults();
@@ -436,6 +458,7 @@ public class UniqueFieldDataBaseUtil {
      *
      * @throws DotDataException
      */
+    @WrapInTransaction
     public void populateUniqueFieldsTable() throws DotDataException {
         new DotConnect().setSQL(POPULATE_UNIQUE_FIELDS_VALUES_QUERY).loadObjectResults();
     }

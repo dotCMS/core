@@ -9,10 +9,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import java.sql.SQLException;
 
-@ApplicationScoped
+@Dependent
 public class UniqueFieldsValidationInitializer  implements DotInitializer {
 
     private UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
@@ -31,8 +32,7 @@ public class UniqueFieldsValidationInitializer  implements DotInitializer {
 
         try {
             if (featureFlagDbUniqueFieldValidation && !uniqueFieldsTableExists) {
-                this.uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
-                this.uniqueFieldDataBaseUtil.populateUniqueFieldsTable();
+                this.uniqueFieldDataBaseUtil.createTableAnsPopulate();
             } else if (!featureFlagDbUniqueFieldValidation && uniqueFieldsTableExists) {
                 this.uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
             }
