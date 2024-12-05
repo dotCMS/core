@@ -34,6 +34,7 @@ import {
     DotPropertiesService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
+    DotSessionStorageService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
     PushPublishService
@@ -138,8 +139,7 @@ const createRouting = () =>
             MockComponent(DotEditEmaWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent),
-            MockComponent(EditEmaToolbarComponent),
-            MockComponent(DotUveToolbarComponent)
+            MockComponent(EditEmaToolbarComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -148,6 +148,7 @@ const createRouting = () =>
             UVEStore,
             DotFavoritePageService,
             DotESContentService,
+            DotSessionStorageService,
             {
                 provide: DotPropertiesService,
                 useValue: {
