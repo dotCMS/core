@@ -92,7 +92,7 @@ export const RelationshipFieldStore = signalStore(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(() =>
-                        relationshipFieldService.getContent(2).pipe(
+                        relationshipFieldService.getContent(10).pipe(
                             tapResponse({
                                 next: (data) =>
                                     patchState(store, { data, status: ComponentStatus.LOADED }),
