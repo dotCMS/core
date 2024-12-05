@@ -1,10 +1,7 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -21,8 +18,9 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.util.*;
+
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
@@ -423,6 +421,63 @@ public class ContainerAPITest extends ContentletBaseTest {
                 containerAPI.delete(container, user, false);
             }
         }
+    }
+
+    /**
+     * Method to test: {@link ContainerAPI#findContainers(User, ContainerAPI.SearchParams)}
+     * Given Scenario: Searching for Containers with a given name.
+     * Expected Result: At least one Container must be returned.
+     */
+    @Test
+    public void findFileContainerByName() throws DotDataException, DotSecurityException {
+        Host testSite = null;
+        try {
+            // Test data generation
+            testSite = new SiteDataGen().nextPersisted();
+            final String containerName = generateRandomName(10);
+            final String metadataCode = "$dotJSON.put(\"title\", \"Test "
+                    + containerName + " File Container\")\n"
+                    + "$dotJSON.put(\"max_contentlets\", 25)";
+            new ContainerAsFileDataGen()
+                    .host(testSite)
+                    .folderName("Test" + containerName + " File Container")
+                    .metadataCode(metadataCode)
+                    .nextPersisted();
+
+            // Find by name
+            final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
+                    .includeArchived(false)
+                    .includeSystemContainer(false)
+                    .siteId(testSite.getIdentifier())
+                    .filteringCriterion(Map.of("title", containerName.toLowerCase())).build();
+            final List<Container> allContainers = containerAPI.findContainers(user, searchParams);
+
+            // Assertions
+            assertFalse("There must be at least one Container with the name 'File Container'", allContainers.isEmpty());
+        } finally {
+            // Clean up
+            if (null != testSite) {
+                APILocator.getHostAPI().archive(testSite, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(testSite, APILocator.systemUser(), false);
+            }
+        }
+    }
+
+    private static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final Random RANDOM = new Random();
+
+    /**
+     * Generates a random name with the given length.
+     *
+     * @param length the length of the name to generate
+     * @return the generated name
+     */
+    private static String generateRandomName(int length) {
+        StringBuilder name = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            name.append(ALPHABET.charAt(RANDOM.nextInt(ALPHABET.length())));
+        }
+        return name.toString();
     }
 
 }
