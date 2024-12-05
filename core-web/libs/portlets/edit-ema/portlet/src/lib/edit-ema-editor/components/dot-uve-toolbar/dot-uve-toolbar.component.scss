@@ -1,5 +1,21 @@
 @use "variables" as *;
 
+::ng-deep {
+    // .p-toolbar {
+    //     max-height: 48px;
+    // }
+    .p-toolbar-preview {
+        border: 1px solid $color-palette-primary-200;
+    }
+
+    // Create a chip color for this
+    .p-chip.uve-toolbar-chips {
+        height: $field-height-sm;
+        background-color: $color-palette-primary-op-10;
+        border-color: $color-palette-primary-op-10;
+    }
+}
+
 .p-toolbar-group-start,
 .p-toolbar-group-end {
     align-items: center;
@@ -9,10 +25,4 @@
 .p-toolbar-group-center {
     display: flex;
     gap: $spacing-1;
-}
-
-::ng-deep {
-    .p-toolbar-preview {
-        border: 1px solid $color-palette-primary-200;
-    }
 }

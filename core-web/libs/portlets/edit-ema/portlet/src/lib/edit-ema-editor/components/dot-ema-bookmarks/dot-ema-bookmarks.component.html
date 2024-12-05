@@ -1,9 +1,9 @@
 @if (store.$previewMode()) {
     <p-button
         (click)="toggleBookmark()"
+        [styleClass]="'p-button-text ' + styleClass"
         [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
         [loading]="loading()"
-        styleClass="p-button-text"
         data-testId="bookmark-button" />
 } @else {
     <p-button
