@@ -541,10 +541,6 @@ describe('withEditor', () => {
                         urlContentMap: null,
                         runningExperiment: null,
                         workflowActionsInode: MOCK_RESPONSE_HEADLESS.page.inode,
-                        personaSelector: {
-                            pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                            value: MOCK_RESPONSE_HEADLESS.viewAs.persona ?? DEFAULT_PERSONA
-                        },
                         unlockButton: null,
                         showInfoDisplay: false
                     });

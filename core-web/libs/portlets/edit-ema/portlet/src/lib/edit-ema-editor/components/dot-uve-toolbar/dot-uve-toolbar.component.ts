@@ -12,15 +12,17 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
 
+import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -31,22 +33,29 @@ import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/
         DotEmaBookmarksComponent,
         DotEmaInfoDisplayComponent,
         DotEmaRunningExperimentComponent,
-        ClipboardModule,
-        EditEmaLanguageSelectorComponent
+        EditEmaPersonaSelectorComponent,
+        EditEmaLanguageSelectorComponent,
+        ClipboardModule
     ],
+    providers: [DotPersonalizeService],
     templateUrl: './dot-uve-toolbar.component.html',
     styleUrl: './dot-uve-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveToolbarComponent {
-    languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
+    $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
+
+    $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
     #store = inject(UVEStore);
+
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
+    readonly #personalizeService = inject(DotPersonalizeService);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $apiURL = this.#store.$apiURL;
+    readonly $personaSelectorProps = this.#store.$personaSelector;
 
     @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
 
@@ -89,6 +98,75 @@ export class DotUveToolbarComponent {
     }
 
     /**
+     * Handle the persona selection
+     *
+     * @param {DotPersona} persona
+     * @memberof DotEmaComponent
+     */
+    onPersonaSelected(persona: DotPersona & { pageId: string }) {
+        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
+            this.#store.loadPageAsset({
+                'com.dotmarketing.persona.id': persona.identifier
+            });
+        } else {
+            this.#confirmationService.confirm({
+                header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
+                message: this.#dotMessageService.get(
+                    'editpage.personalization.confirm.message',
+                    persona.name
+                ),
+                acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+                rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
+                accept: () => {
+                    this.#personalizeService
+                        .personalized(persona.pageId, persona.keyTag)
+                        .subscribe(() => {
+                            this.#store.loadPageAsset({
+                                'com.dotmarketing.persona.id': persona.identifier
+                            });
+
+                            this.$personaSelector().fetchPersonas();
+                        }); // This does a take 1 under the hood
+                },
+                reject: () => {
+                    this.$personaSelector().resetValue();
+                }
+            });
+        }
+    }
+
+    /**
+     * Handle the persona despersonalization
+     *
+     * @param {(DotPersona & { pageId: string })} persona
+     * @memberof EditEmaToolbarComponent
+     */
+    onDespersonalize(persona: DotPersona & { pageId: string; selected: boolean }) {
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('editpage.personalization.delete.confirm.header'),
+            message: this.#dotMessageService.get(
+                'editpage.personalization.delete.confirm.message',
+                persona.name
+            ),
+            acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
+            accept: () => {
+                this.#personalizeService
+                    .despersonalized(persona.pageId, persona.keyTag)
+                    .subscribe(() => {
+                        this.$personaSelector().fetchPersonas();
+
+                        if (persona.selected) {
+                            this.#store.loadPageAsset({
+                                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            });
+                        }
+                    }); // This does a take 1 under the hood
+            }
+        });
+    }
+
+    /*
      * Asks the user for confirmation to create a new translation for a given language.
      *
      * @param {DotLanguage} language - The language to create a new translation for.
@@ -116,7 +194,7 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
+                this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
             }
         });
     }

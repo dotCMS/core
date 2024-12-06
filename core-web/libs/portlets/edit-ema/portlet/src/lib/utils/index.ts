@@ -110,7 +110,10 @@ export function deleteContentletFromContainer(action: ActionPayload): {
             };
         }
 
-        return currentContainer;
+        return {
+            ...currentContainer,
+            personaTag
+        };
     });
 
     return {

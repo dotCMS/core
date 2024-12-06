@@ -34,6 +34,7 @@ import {
     DotPropertiesService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
+    DotSessionStorageService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
     PushPublishService
@@ -147,6 +148,7 @@ const createRouting = () =>
             UVEStore,
             DotFavoritePageService,
             DotESContentService,
+            DotSessionStorageService,
             {
                 provide: DotPropertiesService,
                 useValue: {
