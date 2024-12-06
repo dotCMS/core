@@ -18,25 +18,34 @@ import {
 import { AnalyticsQueryType, ComponentStatus, HealthStatusTypes } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
+import { AnalyticsQueryExamples, isValidJson } from '../utils';
+
 interface RouteData {
     isEnterprise: boolean;
     healthCheck: HealthStatusTypes;
 }
+
+export type AnalyticsQueryExample = {
+    title: string;
+    query: string;
+};
 
 /**
  * Type definition for the state of the DotContentAnalytics.
  */
 export type DotContentAnalyticsState = {
     isEnterprise: boolean;
-    results: JsonObject[] | null;
+    results: string;
     query: {
-        value: JsonObject[] | null;
+        value: string;
         type: AnalyticsQueryType;
+        isValidJson: boolean;
     };
     state: ComponentStatus;
     healthCheck: HealthStatusTypes;
     wallEmptyConfig: PrincipalConfiguration | null;
     emptyResultsConfig: PrincipalConfiguration | null;
+    queryExamples: AnalyticsQueryExample[];
 };
 
 /**
@@ -44,15 +53,17 @@ export type DotContentAnalyticsState = {
  */
 export const initialState: DotContentAnalyticsState = {
     isEnterprise: false,
-    results: null,
+    results: '',
     query: {
-        value: null,
-        type: AnalyticsQueryType.CUBE
+        value: '',
+        type: AnalyticsQueryType.CUBE,
+        isValidJson: false
     },
     state: ComponentStatus.INIT,
     healthCheck: HealthStatusTypes.NOT_CONFIGURED,
     wallEmptyConfig: null,
-    emptyResultsConfig: null
+    emptyResultsConfig: null,
+    queryExamples: AnalyticsQueryExamples
 };
 
 /**
@@ -66,23 +77,32 @@ export const DotAnalyticsSearchStore = signalStore(
             analyticsSearchService = inject(DotAnalyticsSearchService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
         ) => ({
+            setQuery: (query: string) => {
+                patchState(store, {
+                    query: { ...store.query(), value: query, isValidJson: !!isValidJson(query) }
+                });
+            },
+
             /**
              * Fetches the results based on the current query.
              * @param query - The query to fetch results for.
              */
-            getResults: rxMethod<JsonObject>(
+
+            getResults: rxMethod<void>(
                 pipe(
                     tap(() => {
                         patchState(store, {
                             state: ComponentStatus.LOADING
                         });
                     }),
-                    switchMap((query) => {
+                    switchMap(() => {
+                        const query = isValidJson(store.query().value) as JsonObject;
+
                         return analyticsSearchService.get(query, store.query.type()).pipe(
                             tapResponse({
                                 next: (results: JsonObject[]) => {
                                     patchState(store, {
-                                        results,
+                                        results: JSON.stringify(results, null, 2),
                                         state: ComponentStatus.LOADED
                                     });
                                 },
