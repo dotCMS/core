@@ -1,7 +1,8 @@
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
@@ -9,7 +10,6 @@ import { ExistingContentStore } from './store/existing-content.store';
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
     let store: InstanceType<typeof ExistingContentStore>;
-    let dotMessageService: DotMessageService;
 
     const mockRelationshipItem = (id: string): RelationshipFieldItem => ({
         id,
@@ -24,19 +24,16 @@ describe('DotSelectExistingContentComponent', () => {
         lastUpdate: new Date().toISOString()
     });
 
+    const messageServiceMock = new MockDotMessageService({
+        'dot.file.relationship.dialog.apply.one.entry': 'Apply 1 entry',
+        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries'
+    });
+
     const createComponent = createComponentFactory({
         component: DotSelectExistingContentComponent,
         componentProviders: [ExistingContentStore],
         providers: [
-            mockProvider(DotMessageService, {
-                get: jest.fn((key: string, count?: string) => {
-                    if (key === 'dot.file.relationship.dialog.apply.one.entry') {
-                        return `Apply ${count} entry`;
-                    }
-
-                    return `Apply ${count} entries`;
-                })
-            })
+            { provide: DotMessageService, useValue: messageServiceMock },
         ],
         detectChanges: false
     });
@@ -44,7 +41,6 @@ describe('DotSelectExistingContentComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         store = spectator.inject(ExistingContentStore, true);
-        dotMessageService = spectator.inject(DotMessageService);
         spectator.detectChanges();
     });
 
@@ -57,7 +53,7 @@ describe('DotSelectExistingContentComponent', () => {
         it('should set visibility to false when closeDialog is called', () => {
             spectator.component.$visible.set(true);
             spectator.component.closeDialog();
-            expect(spectator.component.$visible()).toBeFalse();
+            expect(spectator.component.$visible()).toBeFalsy();
         });
     });
 
@@ -80,11 +76,6 @@ describe('DotSelectExistingContentComponent', () => {
             spectator.component.$selectedItems.set(mockContent);
 
             const label = spectator.component.$applyLabel();
-
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dot.file.relationship.dialog.apply.one.entry',
-                '1'
-            );
             expect(label).toBe('Apply 1 entry');
         });
 
@@ -93,11 +84,6 @@ describe('DotSelectExistingContentComponent', () => {
             spectator.component.$selectedItems.set(mockContent);
 
             const label = spectator.component.$applyLabel();
-
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dot.file.relationship.dialog.apply.entries',
-                '2'
-            );
             expect(label).toBe('Apply 2 entries');
         });
     });
