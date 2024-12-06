@@ -21,11 +21,12 @@ import {
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotDevice, DotLanguage, DotPersona } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { compareUrlPaths } from '../../../utils';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
@@ -58,10 +59,14 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaToolbarComponent {
+    @Output() readonly translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
     @Output() readonly editUrlContentMap = new EventEmitter<DotCMSContentlet>();
 
     @ViewChild('personaSelector')
     personaSelector!: EditEmaPersonaSelectorComponent;
+
+    @ViewChild('languageSelector')
+    languageSelector!: EditEmaLanguageSelectorComponent;
 
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -114,6 +119,21 @@ export class EditEmaToolbarComponent {
      */
     onLanguageSelected(language: number) {
         const language_id = language.toString();
+
+        const languages = this.uveStore?.languages();
+        const currentLanguage = languages.find((lang) => lang.id === language);
+
+        const languageHasTranslation = languages.find(
+            (lang) => lang.id.toString() === language_id
+        )?.translated;
+
+        if (!languageHasTranslation) {
+            // Show confirmation dialog to create a new translation
+            this.createNewTranslation(currentLanguage, this.uveStore?.pageAPIResponse()?.page);
+
+            return;
+        }
+
         this.uveStore.loadPageAsset({ language_id });
     }
 
@@ -261,5 +281,38 @@ export class EditEmaToolbarComponent {
 
         // Return true if the URL paths are different or the language has changed
         return !compareUrlPaths(currentUrl, targetUrl) || newLanguageId != currentLanguageId;
+    }
+
+    /**
+     * Asks the user for confirmation to create a new translation for a given language.
+     *
+     * @param {DotLanguage} language - The language to create a new translation for.
+     * @private
+     *
+     * @return {void}
+     */
+    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            key: 'shell-confirm-dialog',
+            accept: () => {
+                this.translatePage.emit({
+                    page: page,
+                    newLanguage: language.id
+                });
+            },
+            reject: () => {
+                // If is rejected, bring back the current language on selector
+                this.languageSelector?.listbox.writeValue(this.$toolbarProps().currentLanguage);
+            }
+        });
     }
 }

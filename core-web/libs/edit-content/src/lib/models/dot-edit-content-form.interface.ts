@@ -44,3 +44,15 @@ export interface DotFormData {
     contentlet: DotCMSContentlet | null;
     tabs: Tab[];
 }
+
+/**
+ * Represents the form field value.
+ * @type FormFieldValue
+ */
+type FormFieldValue = string | string[] | Date;
+
+/**
+ * Represents the form values.
+ * @interface FormValues
+ */
+export type FormValues = Record<string, FormFieldValue>;

@@ -16,10 +16,14 @@
                 [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
                 data-testId="uve-toolbar-copy-url" />
 
-            <p-button
+            <a
+                title="Page API URL"
+                pButton
                 label="API"
-                styleClass="p-button-text p-button-sm"
-                data-testId="uve-toolbar-api-link" />
+                class="p-button-text"
+                target="_blank"
+                data-testId="uve-toolbar-api-link"
+                [href]="$apiURL()"></a>
         } @else if ($toolbar().preview) {
             <div>PREVIEW MODE CONTENT</div>
             <button (click)="togglePreviewMode(false)">Back</button>
@@ -27,13 +31,18 @@
     </div>
 
     <div class="p-toolbar-group-end">
+        <dot-edit-ema-language-selector
+            #languageSelector
+            (selected)="onLanguageSelected($event)"
+            [language]="$toolbar().currentLanguage"
+            data-testId="uve-toolbar-language-selector" />
+
         @if ($toolbar().runningExperiment; as runningExperiment) {
             <dot-ema-running-experiment
                 [runningExperiment]="runningExperiment"
                 data-testId="uve-toolbar-running-experiment" />
         }
 
-        <span data-testId="uve-toolbar-language-selector">Language</span>
         <span data-testId="uve-toolbar-persona-selector">Persona</span>
         <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
     </div>

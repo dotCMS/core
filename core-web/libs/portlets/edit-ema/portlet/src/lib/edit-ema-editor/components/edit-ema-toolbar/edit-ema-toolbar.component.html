@@ -51,6 +51,7 @@
         }
 
         <dot-edit-ema-language-selector
+            #languageSelector
             (selected)="onLanguageSelected($event)"
             [language]="$toolbarProps().currentLanguage"
             data-testId="language-selector" />

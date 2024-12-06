@@ -1,5 +1,5 @@
-import { byTestId, mockProvider, Spectator } from '@ngneat/spectator';
-import { createComponentFactory } from '@ngneat/spectator/jest';
+import { expect, describe } from '@jest/globals';
+import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -7,7 +7,7 @@ import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/comm
 import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -36,6 +36,9 @@ import {
 } from '../../../utils';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
+
+const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
 describe('DotUveToolbarComponent', () => {
     let spectator: Spectator<DotUveToolbarComponent>;
@@ -51,6 +54,9 @@ describe('DotUveToolbarComponent', () => {
         providers: [
             UVEStore,
             provideHttpClientTesting(),
+            mockProvider(ConfirmationService, {
+                confirm: jest.fn()
+            }),
             {
                 provide: DotLanguagesService,
                 useValue: new DotLanguagesServiceMock()
@@ -125,8 +131,14 @@ describe('DotUveToolbarComponent', () => {
         setSocialMedia: jest.fn(),
         pageParams: signal(params),
         pageAPIResponse: signal(MOCK_RESPONSE_VTL),
+        $apiURL: signal($apiURL),
         reloadCurrentPage: jest.fn(),
-        loadPageAsset: jest.fn()
+        loadPageAsset: jest.fn(),
+        languages: signal([
+            { id: 1, translated: true },
+            { id: 2, translated: false },
+            { id: 3, translated: true }
+        ])
     };
 
     describe('base state', () => {
@@ -167,6 +179,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should have attrs', () => {
                 expect(button.attributes).toEqual({
+                    class: 'ng-star-inserted',
                     'data-testId': 'uve-toolbar-copy-url',
                     icon: 'pi pi-external-link',
                     'ng-reflect-icon': 'pi pi-external-link',
@@ -187,12 +200,30 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        it('should have api link button', () => {
-            expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
+        it('should have not experiments button if experiment is not running', () => {
+            expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
         });
 
-        it('should have language selector', () => {
-            expect(spectator.query(byTestId('uve-toolbar-language-selector'))).toBeTruthy();
+        describe('language selector', () => {
+            it('should have language selector', () => {
+                expect(spectator.query(byTestId('uve-toolbar-language-selector'))).toBeTruthy();
+            });
+
+            it('should call loadPageAsset when language is selected and exists that page translated', () => {
+                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+
+                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 1);
+
+                expect(spyLoadPageAsset).toHaveBeenCalled();
+            });
+
+            it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
+                const spyConfirmationService = jest.spyOn(baseUVEState, 'loadPageAsset');
+
+                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
+
+                expect(spyConfirmationService).toHaveBeenCalled();
+            });
         });
 
         it('should have persona selector', () => {
@@ -201,6 +232,17 @@ describe('DotUveToolbarComponent', () => {
 
         it('should have workflows button', () => {
             expect(spectator.query(byTestId('uve-toolbar-workflow-actions'))).toBeTruthy();
+        });
+
+        describe('API URL', () => {
+            it('should have api link button', () => {
+                expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
+            });
+
+            it('should have api link button with correct href', () => {
+                const btn = spectator.query(byTestId('uve-toolbar-api-link'));
+                expect(btn.getAttribute('href')).toBe($apiURL);
+            });
         });
     });
 
