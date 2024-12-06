@@ -82,7 +82,7 @@ jobs:
     steps:
       - name: Download Build Artifact
         id: data-download
-        uses: dawidd6/action-download-artifact@v3.1.4
+        uses: dawidd6/action-download-artifact@v6
         if: ${{ inputs.reuse-previous-build == true }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
