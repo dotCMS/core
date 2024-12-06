@@ -17,7 +17,28 @@ import static com.liferay.util.StringPool.COMMA;
 /**
  * This class represents the parameters of a Content Analytics Query abstracting the complexity
  * of the underlying JSON format. The simplified REST Endpoint and the Content Analytics ViewTool
- * use this class so that parameters can be entered in a more user-friendly way.
+ * use this class so that parameters can be entered in a more user-friendly way. Here's an example
+ * of what this simple JSON data looks like:
+ * <pre>
+ *     {@code
+ *     {
+ *       "measures": "request.count,request.totalSessions",
+ *       "dimensions": "request.host,request.whatAmI,request.url",
+ *       "timeDimensions": "request.createdAt,day:Last month",
+ *       "filters": "request.totalRequest gt 0,request.whatAmI contains PAGE||FILE",
+ *       "order": "request.count asc,request.createdAt asc",
+ *       "limit": 5,
+ *       "offset": 0
+ *     }
+ *     }
+ * </pre>
+ * Notice how there are four separator characters:
+ * <ul>
+ *     <li>Blank space.</li>
+ *     <li>Comma.</li>
+ *     <li>Colon.</li>
+ *     <li>Double pipes.</li>
+ * </ul>
  *
  * @author Jose Castro
  * @since Nov 28th, 2024
@@ -54,7 +75,11 @@ public class ContentAnalyticsQuery implements Serializable {
     @JsonProperty()
     private final int offset;
 
-    private static final String SEPARATOR = COLON;
+    private static final String SEPARATOR_1 = "\\s+";
+    private static final String SEPARATOR_2 = COLON;
+    private static final String SEPARATOR_3 = COMMA;
+    private static final String SEPARATOR_4 = "\\|\\|";
+    private static final String DEFAULT_DATE_RANGE = "Last week";
 
     private ContentAnalyticsQuery(final Builder builder) {
         this.measures = builder.measures;
@@ -129,12 +154,12 @@ public class ContentAnalyticsQuery implements Serializable {
          * The measures parameter contains a set of measures and each measure is an aggregation over
          * a certain column in your ClickHouse database table.
          *
-         * @param measures A string with the measures separated by a space.
+         * @param measures A string with the measures separated by {@link #SEPARATOR_3}.
          *
          * @return The builder instance.
          */
         public Builder measures(final String measures) {
-            this.measures = Set.of(measures.split("\\s+"));
+            this.measures = Set.of(measures.split(SEPARATOR_3));
             return this;
         }
 
@@ -143,12 +168,12 @@ public class ContentAnalyticsQuery implements Serializable {
          * an attribute related to a measure, e.g. the measure user_count can have dimensions like
          * country, age, occupation, etc.
          *
-         * @param dimensions A string with the dimensions separated by a space.
+         * @param dimensions A string with the dimensions separated by {@link #SEPARATOR_3}.
          *
          * @return The builder instance.
          */
         public Builder dimensions(final String dimensions) {
-            this.dimensions = Set.of(dimensions.split("\\s+"));
+            this.dimensions = Set.of(dimensions.split(SEPARATOR_3));
             return this;
         }
 
@@ -157,7 +182,8 @@ public class ContentAnalyticsQuery implements Serializable {
          * an array of objects in timeDimension format. If no date range is provided, the default
          * value will be "Last week".
          *
-         * @param timeDimensions A string with the time dimensions separated by a colon.
+         * @param timeDimensions A string with the time dimensions separated by
+         *                       {@link #SEPARATOR_3}.
          *
          * @return The builder instance.
          */
@@ -165,16 +191,19 @@ public class ContentAnalyticsQuery implements Serializable {
             if (UtilMethods.isNotSet(timeDimensions)) {
                 return this;
             }
-            final String[] timeParams = timeDimensions.split(SEPARATOR);
+            final String[] timeParams = timeDimensions.split(SEPARATOR_3);
             final Map<String, String> timeDimensionsData = new HashMap<>();
             timeDimensionsData.put(TIME_DIMENSIONS_DIMENSION_ATTR, timeParams[0]);
-            if (timeParams.length > 2) {
-                timeDimensionsData.put(GRANULARITY_ATTR, timeParams[1]);
-                timeDimensionsData.put(DATE_RANGE_ATTR, timeParams[2]);
-            } else if (timeParams.length > 1) {
-                timeDimensionsData.put(DATE_RANGE_ATTR, timeParams[1]);
+            if (timeParams.length > 1) {
+                final String[] granularityAndRange = timeParams[1].split(SEPARATOR_2);
+                if (granularityAndRange.length > 1) {
+                    timeDimensionsData.put(GRANULARITY_ATTR, granularityAndRange[0]);
+                    timeDimensionsData.put(DATE_RANGE_ATTR, granularityAndRange[1]);
+                } else {
+                    timeDimensionsData.put(DATE_RANGE_ATTR, granularityAndRange[0]);
+                }
             } else {
-                timeDimensionsData.put(DATE_RANGE_ATTR, "Last week");
+                timeDimensionsData.put(DATE_RANGE_ATTR, DEFAULT_DATE_RANGE);
             }
             this.timeDimensions.add(timeDimensionsData);
             return this;
@@ -184,9 +213,9 @@ public class ContentAnalyticsQuery implements Serializable {
          * Filters are applied differently to dimensions and measures. When you filter on a
          * dimension, you are restricting the raw data before any calculations are made. When you
          * filter on a measure, you are restricting the results after the measure has been
-         * calculated. They are composed of: member, operator, and values.
+         * calculated. They are composed of 3 parts: member, operator, and values.
          *
-         * @param filters A string with the filters separated by a colon.
+         * @param filters A string with the filters separated by {@link #SEPARATOR_3}.
          *
          * @return The builder instance.
          */
@@ -194,13 +223,13 @@ public class ContentAnalyticsQuery implements Serializable {
             if (UtilMethods.isNotSet(filters)) {
                 return this;
             }
-            final String[] filterArr = filters.split(SEPARATOR);
+            final String[] filterArr = filters.split(SEPARATOR_3);
             for (final String filter : filterArr) {
-                final String[] filterParams = filter.split("\\s+");
+                final String[] filterParams = filter.split(SEPARATOR_1);
                 final Map<String, Object> filterDataMap = new HashMap<>();
                 filterDataMap.put(MEMBER_ATTR, filterParams[0]);
                 filterDataMap.put(OPERATOR_ATTR, filterParams[1]);
-                final String[] filterValues = filterParams[2].split(COMMA);
+                final String[] filterValues = filterParams[2].split(SEPARATOR_4);
                 filterDataMap.put(VALUES_ATTR, filterValues);
                 this.filters.add(filterDataMap);
             }
@@ -213,7 +242,7 @@ public class ContentAnalyticsQuery implements Serializable {
          * on the order of the keys in the object. If not provided, default ordering is applied. If
          * an empty object ([]) is provided, no ordering is applied.
          *
-         * @param order A string with the order separated by a colon.
+         * @param order A string with the order separated by {@link #SEPARATOR_3}.
          *
          * @return The builder instance.
          */
@@ -221,9 +250,9 @@ public class ContentAnalyticsQuery implements Serializable {
             if (UtilMethods.isNotSet(order)) {
                 return this;
             }
-            final Set<String> orderCriteria = Set.of(order.split(SEPARATOR));
+            final Set<String> orderCriteria = Set.of(order.split(SEPARATOR_3));
             for (final String orderCriterion : orderCriteria) {
-                final String[] orderParams = orderCriterion.split("\\s+");
+                final String[] orderParams = orderCriterion.split(SEPARATOR_1);
                 this.order.add(orderParams);
             }
             return this;
