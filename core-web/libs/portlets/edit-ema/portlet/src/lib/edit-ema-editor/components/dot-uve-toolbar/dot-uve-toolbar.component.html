@@ -31,19 +31,24 @@
     </div>
 
     <div class="p-toolbar-group-end">
+        @if ($toolbar().runningExperiment; as runningExperiment) {
+            <dot-ema-running-experiment
+                [runningExperiment]="runningExperiment"
+                data-testId="uve-toolbar-running-experiment" />
+        }
         <dot-edit-ema-language-selector
             #languageSelector
             (selected)="onLanguageSelected($event)"
             [language]="$toolbar().currentLanguage"
             data-testId="uve-toolbar-language-selector" />
 
-        @if ($toolbar().runningExperiment; as runningExperiment) {
-            <dot-ema-running-experiment
-                [runningExperiment]="runningExperiment"
-                data-testId="uve-toolbar-running-experiment" />
-        }
-
-        <span data-testId="uve-toolbar-persona-selector">Persona</span>
+        <dot-edit-ema-persona-selector
+            (selected)="onPersonaSelected($event)"
+            (despersonalize)="onDespersonalize($event)"
+            [pageId]="$personaSelectorProps().pageId"
+            [value]="$personaSelectorProps().value"
+            #personaSelector
+            data-testId="uve-toolbar-persona-selector" />
         <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
     </div>
 </p-toolbar>
