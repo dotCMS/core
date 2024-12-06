@@ -84,7 +84,7 @@ public class UniqueFieldsTableCleaner {
     }
 
     /**
-     * Listen when a Field is deleted and if this ia a Unique Field then delete all the register in
+     * Listen when a Field is deleted and if this is a Unique Field then delete all the register in
      * unique_fields table for this Field
      *
      * @param event
@@ -100,6 +100,14 @@ public class UniqueFieldsTableCleaner {
         }
     }
 
+    /**
+     * Listen when a {@link ContentType} is deleted and if this has at least one Unique Field then delete all the register in
+     * unique_fields table for this {@link ContentType}
+     *
+     * @param event
+     *
+     * @throws DotDataException
+     */
     @Subscriber
     public void cleanUpAfterDeleteContentType(final ContentTypeDeletedEvent contentTypeDeletedEvent) throws DotDataException {
         final ContentType contentType = contentTypeDeletedEvent.getContentType();
