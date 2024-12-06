@@ -39,8 +39,53 @@ import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
+const params = HEADLESS_BASE_QUERY_PARAMS;
+const url = sanitizeURL(params?.url);
+
+const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
+const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
+const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
+const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked || false || false;
+const bookmarksUrl = createFavoritePagesURL({
+    languageId: Number(params?.language_id),
+    pageURI: url,
+    siteId: pageAPIResponse?.site.identifier
+});
+
+const baseUVEToolbarState = {
+    editor: {
+        bookmarksUrl,
+        copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
+        apiUrl: `${'http://localhost'}${pageAPI}`
+    },
+    preview: null,
+    currentLanguage: pageAPIResponse?.viewAs.language,
+    urlContentMap: null,
+    runningExperiment: null,
+    workflowActionsInode: pageAPIResponse?.page.inode,
+    unlockButton: null,
+    showInfoDisplay: shouldShowInfoDisplay,
+    personaSelector: {
+        pageId: pageAPIResponse?.page.identifier,
+        value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
+    }
+};
+
+const baseUVEState = {
+    $uveToolbar: signal(baseUVEToolbarState),
+    setDevice: jest.fn(),
+    setSocialMedia: jest.fn(),
+    pageParams: signal(params),
+    pageAPIResponse: signal(MOCK_RESPONSE_VTL),
+    $apiURL: signal($apiURL),
+    reloadCurrentPage: jest.fn(),
+    loadPageAsset: jest.fn(),
+    $isPreviewMode: signal(false)
+};
+
 describe('DotUveToolbarComponent', () => {
     let spectator: Spectator<DotUveToolbarComponent>;
+    let store: InstanceType<typeof UVEStore>;
     let messageService: MessageService;
 
     const createComponent = createComponentFactory({
@@ -86,59 +131,14 @@ describe('DotUveToolbarComponent', () => {
         ]
     });
 
-    const params = HEADLESS_BASE_QUERY_PARAMS;
-    const url = sanitizeURL(params?.url);
-
-    const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
-    const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
-
-    const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
-
-    const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked || false || false;
-
-    const bookmarksUrl = createFavoritePagesURL({
-        languageId: Number(params?.language_id),
-        pageURI: url,
-        siteId: pageAPIResponse?.site.identifier
-    });
-
-    const baseUVEToolbarState = {
-        editor: {
-            bookmarksUrl,
-            copyUrl: createFullURL(params, pageAPIResponse?.site.identifier),
-            apiUrl: `${'http://localhost'}${pageAPI}`
-        },
-        preview: null,
-        currentLanguage: pageAPIResponse?.viewAs.language,
-        urlContentMap: null,
-        runningExperiment: null,
-        workflowActionsInode: pageAPIResponse?.page.inode,
-        unlockButton: null,
-        showInfoDisplay: shouldShowInfoDisplay,
-        personaSelector: {
-            pageId: pageAPIResponse?.page.identifier,
-            value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
-        }
-    };
-
-    const baseUVEState = {
-        $uveToolbar: signal(baseUVEToolbarState),
-        setDevice: jest.fn(),
-        setSocialMedia: jest.fn(),
-        pageParams: signal(params),
-        pageAPIResponse: signal(MOCK_RESPONSE_VTL),
-        $apiURL: signal($apiURL),
-        reloadCurrentPage: jest.fn(),
-        loadPageAsset: jest.fn()
-    };
-
     describe('base state', () => {
         beforeEach(() => {
             spectator = createComponent({
                 providers: [mockProvider(UVEStore, { ...baseUVEState })]
             });
 
-            messageService = spectator.inject(MessageService);
+            store = spectator.inject(UVEStore, true);
+            messageService = spectator.inject(MessageService, true);
         });
 
         describe('dot-ema-bookmarks', () => {
@@ -155,10 +155,6 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        it('should have preview button', () => {
-            expect(spectator.query(byTestId('uve-toolbar-preview'))).toBeTruthy();
-        });
-
         describe('copy-url', () => {
             let button: DebugElement;
 
@@ -173,9 +169,9 @@ describe('DotUveToolbarComponent', () => {
                     'data-testId': 'uve-toolbar-copy-url',
                     icon: 'pi pi-external-link',
                     'ng-reflect-icon': 'pi pi-external-link',
-                    'ng-reflect-style-class': 'p-button-text',
+                    'ng-reflect-style-class': 'p-button-text p-button-sm',
                     'ng-reflect-text': 'http://localhost:3000/test-url',
-                    styleClass: 'p-button-text'
+                    styleClass: 'p-button-text p-button-sm'
                 });
             });
 
@@ -187,6 +183,31 @@ describe('DotUveToolbarComponent', () => {
                     summary: 'Copied',
                     life: 3000
                 });
+            });
+        });
+
+        describe('API URL', () => {
+            it('should have api link button', () => {
+                expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
+            });
+
+            it('should have api link button with correct href', () => {
+                const btn = spectator.query(byTestId('uve-toolbar-api-link'));
+                expect(btn.getAttribute('href')).toBe($apiURL);
+            });
+        });
+
+        describe('Preview', () => {
+            it('should have preview button', () => {
+                expect(spectator.query(byTestId('uve-toolbar-preview'))).toBeTruthy();
+            });
+
+            it('should call store.loadPageAsset with preview true', () => {
+                const spy = jest.spyOn(store, 'loadPageAsset');
+
+                spectator.click(byTestId('uve-toolbar-preview'));
+
+                expect(spy).toHaveBeenCalledWith({ preview: 'true' });
             });
         });
 
@@ -205,35 +226,67 @@ describe('DotUveToolbarComponent', () => {
         it('should have workflows button', () => {
             expect(spectator.query(byTestId('uve-toolbar-workflow-actions'))).toBeTruthy();
         });
+    });
 
-        describe('API URL', () => {
+    describe('preview', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    mockProvider(UVEStore, { ...baseUVEState, $isPreviewMode: signal(true) })
+                ]
+            });
+
+            store = spectator.inject(UVEStore, true);
+        });
+
+        describe('Close Preview Mode', () => {
             it('should have api link button', () => {
-                expect(spectator.query(byTestId('uve-toolbar-api-link'))).toBeTruthy();
+                expect(spectator.query(byTestId('close-preview-mode'))).toBeTruthy();
             });
 
-            it('should have api link button with correct href', () => {
-                const btn = spectator.query(byTestId('uve-toolbar-api-link'));
-                expect(btn.getAttribute('href')).toBe($apiURL);
+            it('should call store.loadPageAsset with preview null', () => {
+                const spy = jest.spyOn(store, 'loadPageAsset');
+
+                spectator.click(byTestId('close-preview-mode'));
+
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith({ preview: null });
             });
+        });
+
+        it('should have desktop button', () => {
+            expect(spectator.query(byTestId('desktop-preview'))).toBeTruthy();
+        });
+
+        it('should have mobile button', () => {
+            expect(spectator.query(byTestId('mobile-preview'))).toBeTruthy();
+        });
+
+        it('should have tablet button', () => {
+            expect(spectator.query(byTestId('tablet-preview'))).toBeTruthy();
+        });
+
+        it('should have more devices button', () => {
+            expect(spectator.query(byTestId('more-devices-preview'))).toBeTruthy();
         });
     });
 
     describe('State changes', () => {
-        describe('Experiment is running', () => {
-            beforeEach(() => {
-                const state = {
-                    ...baseUVEState,
-                    $uveToolbar: signal({
-                        ...baseUVEToolbarState,
-                        runningExperiment: getRunningExperimentMock()
-                    })
-                };
+        beforeEach(() => {
+            const state = {
+                ...baseUVEState,
+                $uveToolbar: signal({
+                    ...baseUVEToolbarState,
+                    runningExperiment: getRunningExperimentMock()
+                })
+            };
 
-                spectator = createComponent({
-                    providers: [mockProvider(UVEStore, { ...state })]
-                });
+            spectator = createComponent({
+                providers: [mockProvider(UVEStore, { ...state })]
             });
+        });
 
+        describe('Experiment is running', () => {
             it('should have experiment running component', () => {
                 expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeTruthy();
             });

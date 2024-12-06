@@ -31,7 +31,7 @@
     }
 
     <div class="p-toolbar-group-end">
-        @if (runningExperiment && !preview) {
+        @if (runningExperiment) {
             <dot-ema-running-experiment
                 [runningExperiment]="runningExperiment"
                 data-testId="uve-toolbar-running-experiment" />
@@ -79,6 +79,8 @@
         (click)="setEditMode()"
         data-testId="close-preview-mode" />
 
+    <p-divider layout="vertical" />
+
     <p-button
         icon="pi pi-desktop"
         styleClass="p-button-text p-button-sm"
@@ -94,7 +96,12 @@
         styleClass="p-button-text p-button-sm"
         data-testId="mobile-preview" />
 
-    <p-splitButton styleClass="p-button-sm" label="More" [model]="[]" text />
+    <p-splitButton
+        styleClass="p-button-sm"
+        label="More"
+        [model]="[]"
+        text
+        data-testId="more-devices-preview" />
 </ng-template>
 
 @if ($toolbar().showInfoDisplay) {
