@@ -5,6 +5,7 @@
     [header]="'dot.file.relationship.dialog.select.existing.content' | dm"
     [modal]="true"
     [(visible)]="$visible"
+    (onHide)="emitSelectedItems()"
     dataKey="id"
     appendTo="body"
     width="90%"
@@ -14,9 +15,9 @@
         [value]="data"
         selectionMode="multiple"
         [(selection)]="$selectedItems"
-        [first]="pagination.offset"
         [loading]="store.isLoading()"
         [paginator]="true"
+        [first]="pagination.offset"
         [rows]="pagination.rowsPerPage"
         [globalFilterFields]="['title', 'step', 'description']"
         styleClass="p-datatable-sm p-datatable-existing-content">
@@ -35,13 +36,12 @@
                         </p>
                     </div>
                 </div>
-                <div>
-                    <dot-pagination
-                        (nextPage)="store.nextPage()"
-                        (previousPage)="store.previousPage()"
-                        [totalPages]="store.totalPages()"
-                        [currentPage]="pagination.currentPage" />
-                </div>
+                <dot-pagination
+                    [currentPageReportLayout]="'left'"
+                    (nextPage)="store.nextPage()"
+                    (previousPage)="store.previousPage()"
+                    [totalPages]="store.totalPages()"
+                    [currentPage]="pagination.currentPage" />
             </div>
         </ng-template>
         <ng-template pTemplate="header" styleClass="relative">
@@ -111,7 +111,10 @@
                     (onClick)="closeDialog()"
                     [text]="true"
                     severity="primary" />
-                <p-button [disabled]="$isApplyDisabled()" [label]="$applyLabel()" />
+                <p-button
+                    [disabled]="$isApplyDisabled()"
+                    (onClick)="closeDialog()"
+                    [label]="$applyLabel()" />
             </div>
         </div>
     </ng-template>

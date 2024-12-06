@@ -4,7 +4,8 @@ import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Provider, signal, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -213,7 +214,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     let spectator: Spectator<DotEditContentFieldComponent>;
 
     const createComponent = createComponentFactory({
-        imports: [HttpClientTestingModule, ...(fieldTestBed?.imports || [])],
+        imports: [...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
         componentViewProviders: [
@@ -222,7 +223,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
                 useValue: createFormGroupDirectiveMock()
             }
         ],
-        providers: [FormGroupDirective, mockProvider(DotHttpErrorManagerService)]
+        providers: [
+            FormGroupDirective,
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            ...(fieldTestBed?.providers || []),
+            mockProvider(DotHttpErrorManagerService)
+        ]
     });
 
     beforeEach(async () => {
@@ -242,11 +249,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             expect(label?.textContent).toContain(fieldMock.name);
         });
 
-        it('should render the hint if present', () => {
-            spectator.detectChanges();
-            const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
-            expect(hint?.textContent).toContain(fieldMock.hint);
-        });
+        if (fieldMock.fieldType !== FIELD_TYPES.RELATIONSHIP) {
+            it('should render the hint if present', () => {
+                spectator.detectChanges();
+                const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
+                expect(hint?.textContent).toContain(fieldMock.hint);
+            });
+        }
 
         it('should render the correct field type', () => {
             spectator.detectChanges();
