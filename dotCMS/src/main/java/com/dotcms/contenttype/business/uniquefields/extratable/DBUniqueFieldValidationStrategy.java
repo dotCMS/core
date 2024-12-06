@@ -33,8 +33,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
@@ -111,10 +110,40 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
      */
     @SuppressWarnings("unchecked")
     private  void cleanUniqueFieldsUp(final Contentlet contentlet, final Field field) throws DotDataException {
-        Optional<Map<String, Object>> uniqueFieldOptional = uniqueFieldDataBaseUtil.get(contentlet, field);
+        List<Map<String, Object>> uniqueFields = uniqueFieldDataBaseUtil.get(contentlet, field);
 
-        if (uniqueFieldOptional.isPresent()) {
-            cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldOptional.get());
+        if (!uniqueFields.isEmpty()) {
+            final List<Map<String, Object>> workingUniqueFields = uniqueFields.stream()
+                    .filter(uniqueValue -> Boolean.FALSE.equals(getSupportingValues(uniqueValue).get("live")))
+                    .collect(Collectors.toList());
+
+            if (!workingUniqueFields.isEmpty()) {
+                workingUniqueFields.forEach(uniqueField -> cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueField));
+            } else  {
+                uniqueFields.stream()
+                        .filter(uniqueValue -> Boolean.TRUE.equals(getSupportingValues(uniqueValue).get("live")))
+                        .limit(1)
+                        .findFirst()
+                        .ifPresent(uniqueFieldValue -> {
+                            final Map<String, Object> supportingValues = getSupportingValues(uniqueFieldValue);
+                            final String oldUniqueValue = supportingValues.get(FIELD_VALUE_ATTR).toString();
+                            final String newUniqueValue = contentlet.getStringProperty(field.variable());
+
+                            if (oldUniqueValue.equals(newUniqueValue)) {
+                                cleanUniqueFieldUp(contentlet.getIdentifier(), uniqueFieldValue);
+                            }
+                        });
+            }
+
+
+        }
+    }
+
+    private static Map<String, Object> getSupportingValues(Map<String, Object> uniqueField) {
+        try {
+            return JsonUtil.getJsonFromString(uniqueField.get("supporting_values").toString());
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
         }
     }
 
@@ -272,11 +301,17 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
     }
 
     @Override
+    public void cleanUp(final ContentType contentType) throws DotDataException {
+        uniqueFieldDataBaseUtil.delete(contentType);
+    }
+
+    @Override
     public void afterPublish(final String inode) {
         try {
             final Contentlet contentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
 
             if (hasUniqueField(contentlet.getContentType())) {
+                uniqueFieldDataBaseUtil.removeLive(contentlet);
                 uniqueFieldDataBaseUtil.setLive(contentlet, true);
             }
         } catch (DotDataException | DotSecurityException e) {

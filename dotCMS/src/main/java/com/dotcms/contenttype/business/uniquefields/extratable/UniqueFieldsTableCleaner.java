@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -68,7 +69,7 @@ public class UniqueFieldsTableCleaner {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                     .find(contentlet.getContentTypeId());
 
-            boolean hasUniqueField = contentType.fields().stream().anyMatch(Field::unique);
+            boolean hasUniqueField = hasUniqueField(contentType);
 
             if (hasUniqueField) {
                 uniqueFieldValidationStrategyResolver.get().cleanUp(contentlet, event.isDeleteAllVariant());
@@ -76,6 +77,10 @@ public class UniqueFieldsTableCleaner {
         } catch (DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    private static boolean hasUniqueField(ContentType contentType) {
+        return contentType.fields().stream().anyMatch(Field::unique);
     }
 
     /**
@@ -92,6 +97,17 @@ public class UniqueFieldsTableCleaner {
 
         if (deletedField.unique()) {
             uniqueFieldValidationStrategyResolver.get().cleanUp(deletedField);
+        }
+    }
+
+    @Subscriber
+    public void cleanUpAfterDeleteContentType(final ContentTypeDeletedEvent contentTypeDeletedEvent) throws DotDataException {
+        final ContentType contentType = contentTypeDeletedEvent.getContentType();
+
+        boolean hasUniqueField = hasUniqueField(contentType);
+
+        if (hasUniqueField) {
+            uniqueFieldValidationStrategyResolver.get().cleanUp(contentType);
         }
     }
 }
