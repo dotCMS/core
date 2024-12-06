@@ -1,7 +1,9 @@
 @if ($previewMode()) {
-    <dot-uve-toolbar />
+    <dot-uve-toolbar (translatePage)="translatePage($event)" />
 } @else {
-    <dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
+    <dot-edit-ema-toolbar
+        (translatePage)="translatePage($event)"
+        (editUrlContentMap)="editContentMap($event)" />
 }
 
 @if ($editorProps().seoResults && ogTagsResults$) {

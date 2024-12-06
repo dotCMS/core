@@ -27,9 +27,9 @@ public class CustomerEventCollector implements Collector {
         final Host site = (Host) collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
         final String language = (String)collectorContextMap.get(CollectorContextMap.LANG);
         collectorPayloadBean.put(URL, uri);
-        collectorPayloadBean.put(HOST, Objects.nonNull(site)?site.getHostname():host);
+        collectorPayloadBean.put(SITE_NAME, Objects.nonNull(site)?site.getHostname():host);
         collectorPayloadBean.put(LANGUAGE, language);
-        collectorPayloadBean.put(SITE, null != site?site.getIdentifier():StringPool.UNKNOWN);
+        collectorPayloadBean.put(SITE_ID, null != site?site.getIdentifier():StringPool.UNKNOWN);
         final String eventType = collectorContextMap.get(CollectorContextMap.EVENT_TYPE) == null?
                 EventType.CUSTOM_USER_EVENT.getType():(String)collectorContextMap.get(CollectorContextMap.EVENT_TYPE);
         collectorPayloadBean.put(EVENT_TYPE, eventType);

@@ -128,10 +128,6 @@ export interface UVEToolbarProps {
             hideSocialMedia: boolean;
         };
     };
-    personaSelector: {
-        pageId: string;
-        value: DotPersona;
-    };
     runningExperiment?: DotExperiment;
     currentLanguage: DotLanguage;
     workflowActionsInode?: string;
@@ -140,4 +136,9 @@ export interface UVEToolbarProps {
         loading: boolean;
     };
     showInfoDisplay?: boolean;
+}
+
+export interface PersonaSelectorProps {
+    pageId: string;
+    value: DotPersona;
 }

@@ -8,6 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { withUVEToolbar } from './withUVEToolbar';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
+import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../../shared/mocks';
 import { UVEState } from '../../../models';
@@ -47,7 +48,6 @@ describe('withEditor', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(Router),
-            mockProvider(ActivatedRoute),
             {
                 provide: DotPageApiService,
                 useValue: {
@@ -78,6 +78,13 @@ describe('withEditor', () => {
             const expectURL = `/api/v1/page/json/test-url?${queryParams}`;
 
             expect(store.$apiURL()).toBe(expectURL);
+        });
+
+        it('should return the personaSelector props', () => {
+            expect(store.$personaSelector()).toEqual({
+                pageId: '123',
+                value: DEFAULT_PERSONA
+            });
         });
     });
 });
