@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 				@Tag(name = "Workflow"),
 				@Tag(name = "Page"),
 				@Tag(name = "Content Type"),
+				@Tag(name = "Content Type Field"),
 				@Tag(name = "Content Delivery"),
 				@Tag(name = "Bundle"),
 				@Tag(name = "Navigation"),

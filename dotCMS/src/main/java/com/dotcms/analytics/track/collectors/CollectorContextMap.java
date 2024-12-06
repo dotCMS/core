@@ -5,6 +5,7 @@ import com.dotcms.analytics.track.matchers.RequestMatcher;
 public interface CollectorContextMap {
 
     String REQUEST_ID = "requestId";
+    String REQUEST = "request";
     String TIME = "time";
     String CLUSTER = "cluster";
     String SERVER = "server";
