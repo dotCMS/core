@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
+import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.dotcms.Junit5WeldBaseTest;
@@ -7,7 +8,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
@@ -57,12 +57,10 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
     private static File csvFile;
     private static ContentType contentType;
+    private static String fieldId;
 
     @Inject
     ContentImportHelper contentImportHelper;
-
-    @Inject
-    JobQueueManagerAPI jobQueueManagerAPI;
 
     @BeforeAll
     static void setUp() throws Exception {
@@ -76,6 +74,8 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         contentType = TestDataUtils.getRichTextLikeContentType();
+        fieldId = contentType.fields().get(0).id();
+        assert fieldId != null;
         csvFile = createTestCsvFile();
     }
 
@@ -104,11 +104,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_valid_params() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), "workflow-action-id", List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.importContent(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), "workflow-action-id", CMD_PUBLISH);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of(fieldId), WORKFLOW_PUBLISH_ACTION_ID, CMD_PUBLISH);
     }
 
 
@@ -122,11 +122,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_validate_with_valid_params() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), "workflow-action-id", List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.validateContentImport(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of("title"), "workflow-action-id", CMD_PREVIEW);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), String.valueOf(defaultLanguage.getId()), List.of(fieldId), WORKFLOW_PUBLISH_ACTION_ID, CMD_PREVIEW);
     }
 
     /**
@@ -139,11 +139,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_language_iso_code() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), "workflow-action-id", List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.importContent(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of("title"), "workflow-action-id", CMD_PUBLISH);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of(fieldId), WORKFLOW_PUBLISH_ACTION_ID, CMD_PUBLISH);
     }
 
 
@@ -157,11 +157,11 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content__validate_with_language_iso_code() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), "workflow-action-id", List.of("title"));
+        ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         Response importContentResponse = importResource.validateContentImport(request, response, params);
-        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of("title"), "workflow-action-id", CMD_PREVIEW);
+        validateSuccessfulResponse(importContentResponse, contentType.name(), defaultLanguage.getIsoCode(), List.of(fieldId), WORKFLOW_PUBLISH_ACTION_ID, CMD_PREVIEW);
     }
 
     /**
@@ -176,7 +176,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_without_language_and_field_params() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), null, "workflow-action-id-2", null);
+        ContentImportForm form = createContentImportForm(contentType.name(), null, WORKFLOW_PUBLISH_ACTION_ID, null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         // Assert that the response status is BAD_REQUEST (400)
@@ -196,7 +196,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_validate_without_language_and_field_params() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), null, "workflow-action-id-2", null);
+        ContentImportForm form = createContentImportForm(contentType.name(), null, WORKFLOW_PUBLISH_ACTION_ID, null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         // Assert that the response status is BAD_REQUEST (400)
@@ -213,7 +213,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_invalid_language() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), "12345", "workflow-action-id-2", null);
+        ContentImportForm form = createContentImportForm(contentType.name(), "12345", WORKFLOW_PUBLISH_ACTION_ID, null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         assertBadRequestResponse(importResource.importContent(request, response, params));
@@ -230,7 +230,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_validate_with_invalid_language() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm(contentType.name(), "12345", "workflow-action-id-2", null);
+        ContentImportForm form = createContentImportForm(contentType.name(), "12345", WORKFLOW_PUBLISH_ACTION_ID, null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         assertBadRequestResponse(importResource.validateContentImport(request, response, params));
@@ -246,7 +246,39 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_with_invalid_content_type() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm("doesNotExist", "12345", "workflow-action-id-2", null);
+        ContentImportForm form = createContentImportForm("doesNotExist", "12345", WORKFLOW_PUBLISH_ACTION_ID, null);
+        ContentImportParams params = createContentImportParams(csvFile, form);
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+    }
+
+    /**
+     * Scenario: Attempt to import content specifying a non-existing workflow action.
+     * <p>
+     * Expected: The import request should fail with BAD_REQUEST (400) status code since the workflow action is invalid.
+     *
+     * @throws IOException if there's an error with file operations
+     * @throws DotDataException if there's an error with dotCMS data operations
+     */
+    @Test
+    public void test_import_content_with_invalid_workflow_action() throws IOException, DotDataException {
+        ContentImportForm form = createContentImportForm(contentType.name(), "12345", "workflow-action-2", null);
+        ContentImportParams params = createContentImportParams(csvFile, form);
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+    }
+
+    /**
+     * Scenario: Attempt to import content specifying an invalid key field.
+     * <p>
+     * Expected: The import request should fail with BAD_REQUEST (400) status code since the key field is invalid.
+     *
+     * @throws IOException if there's an error with file operations
+     * @throws DotDataException if there's an error with dotCMS data operations
+     */
+    @Test
+    public void test_import_content_with_invalid_key_field() throws IOException, DotDataException {
+        ContentImportForm form = createContentImportForm(contentType.name(), "12345", "workflow-action-2", List.of("doesNotExist"));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         assertBadRequestResponse(importResource.importContent(request, response, params));
@@ -263,7 +295,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_validate_with_invalid_content_type() throws IOException, DotDataException {
-        ContentImportForm form = createContentImportForm("doesNotExist", "12345", "workflow-action-id-2", null);
+        ContentImportForm form = createContentImportForm("doesNotExist", "12345", WORKFLOW_PUBLISH_ACTION_ID, null);
         ContentImportParams params = createContentImportParams(csvFile, form);
 
         assertBadRequestResponse(importResource.validateContentImport(request, response, params));
@@ -280,7 +312,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_without_content_type_in_form() {
-        assertThrows(ValidationException.class, () -> createContentImportForm(null, null, "workflow-action-id", null));
+        assertThrows(ValidationException.class, () -> createContentImportForm(null, null, WORKFLOW_PUBLISH_ACTION_ID, null));
     }
 
     /**
@@ -307,7 +339,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_missing_file() throws JsonProcessingException {
-        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), "workflow-action-id", null);
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, null);
 
         ContentImportParams params = new ContentImportParams();
         params.setJsonForm(mapper.writeValueAsString(form));
@@ -327,12 +359,40 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     public void test_import_content_validate_missing_file() throws JsonProcessingException {
-        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), "workflow-action-id", null);
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, null);
 
         ContentImportParams params = new ContentImportParams();
         params.setJsonForm(mapper.writeValueAsString(form));
 
         assertThrows(ValidationException.class, () -> importResource.validateContentImport(request, response, params));
+    }
+
+
+    /**
+     * Scenario: Attempt to validate content import with valid form data but providing a txt file.
+     * <p>
+     * Expected: A ValidationException should be thrown since the file must be a CSV file
+     * for content import operations.
+     *
+     * @throws JsonProcessingException if there's an error during JSON serialization
+     * @throws ValidationException when attempting to import content without setting the file
+     */
+    @Test
+    public void test_import_content_validate_txt_file() throws IOException, DotDataException {
+        File txtFile = null;
+        try{
+            ContentImportForm form = createContentImportForm(contentType.name(), "12345", WORKFLOW_PUBLISH_ACTION_ID, null);
+            txtFile = File.createTempFile("test", ".txt");
+            ContentImportParams params = createContentImportParams(txtFile, form);
+
+            // Assert that the response status is BAD_REQUEST (400)
+            assertBadRequestResponse(importResource.validateContentImport(request, response, params));
+        }finally {
+            if(txtFile != null && txtFile.exists()){
+                txtFile.delete();
+            }
+        }
+
     }
 
     /**
@@ -410,7 +470,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         assertFalse(responseEntityView.getEntity().isEmpty(), "Job ID should be a non-empty string");
 
         // Retrieve and validate job exists in the queue
-        Job job = jobQueueManagerAPI.getJob(responseEntityView.getEntity());
+        Job job = contentImportHelper.getJob(responseEntityView.getEntity());
         assertNotNull(job, "Job should exist in queue");
 
         // Validate core import parameters

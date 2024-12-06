@@ -20,8 +20,7 @@
         <skip.npm.install>false</skip.npm.install>
         <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
         <playwright.add.cmd>global add playwright</playwright.add.cmd>
-        <playwright.install.cmd>playwright install</playwright.install.cmd>
-        <playwright.install.deps.cmd>playwright install-deps</playwright.install.deps.cmd>
+        <playwright.install.cmd>playwright install --with-deps</playwright.install.cmd>
         <e2e.test.skip>true</e2e.test.skip>
         <e2e.test.env>local</e2e.test.env>
         <e2e.frontend.dir>./frontend</e2e.frontend.dir>
@@ -83,18 +82,6 @@
                             <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                             <skip>${e2e.test.skip}</skip>
                             <arguments>${playwright.install.cmd}</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>install-playwright-deps</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <workingDirectory>${e2e.frontend.dir}</workingDirectory>
-                            <skip>${e2e.test.skip}</skip>
-                            <arguments>${playwright.install.deps.cmd}</arguments>
                         </configuration>
                     </execution>
                     <execution>

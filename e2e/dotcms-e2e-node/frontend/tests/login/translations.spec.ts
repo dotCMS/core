@@ -1,5 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {assert} from 'console';
+import {waitForVisibleAndCallback} from "../../utils/dotCMSUtils";
 
 const languages = [
     {language: 'español (España)', translation: '¡Bienvenido!'},
@@ -20,8 +21,11 @@ languages.forEach(list => {
         const {language, translation} = list;
 
         await page.goto('/dotAdmin');
-        await page.getByLabel('dropdown trigger').click();
-        await page.getByText(language).click();
+        const dropdownTriggerLocator = page.getByLabel('dropdown trigger');
+        await waitForVisibleAndCallback(dropdownTriggerLocator, () => dropdownTriggerLocator.click());
+
+        const pageByTextLocator = page.getByText(language);
+        await waitForVisibleAndCallback(pageByTextLocator, () => pageByTextLocator.click());
 
         // Assertion of the translation
         assert(await expect(page.getByTestId('header')).toContainText(translation));

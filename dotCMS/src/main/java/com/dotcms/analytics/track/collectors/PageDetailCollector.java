@@ -78,6 +78,12 @@ public class PageDetailCollector implements Collector {
             pageObject.put(ID, detailPageContent.getIdentifier());
             pageObject.put(TITLE, detailPageContent.getTitle());
             pageObject.put(URL, uri);
+            pageObject.put(CONTENT_TYPE_ID, urlMapContentlet.getContentType().id());
+            pageObject.put(CONTENT_TYPE_NAME, urlMapContentlet.getContentType().name());
+            pageObject.put(CONTENT_TYPE_VAR_NAME, urlMapContentlet.getContentType().variable());
+            pageObject.put(BASE_TYPE, urlMapContentlet.getContentType().baseType().name());
+            pageObject.put(LIVE,    String.valueOf(Try.of(()->urlMapContentlet.isLive()).getOrElse(false)));
+            pageObject.put(WORKING, String.valueOf(Try.of(()->urlMapContentlet.isWorking()).getOrElse(false)));
             pageObject.put(DETAIL_PAGE_URL, Try.of(detailPageContent::getURI).getOrElse(StringPool.BLANK));
             collectorPayloadBean.put(OBJECT,  pageObject);
         }
@@ -87,7 +93,7 @@ public class PageDetailCollector implements Collector {
         collectorPayloadBean.put(LANGUAGE, language);
 
         if (Objects.nonNull(site)) {
-            collectorPayloadBean.put(HOST, site.getHostname());
+            collectorPayloadBean.put(SITE_NAME, site.getHostname());
         }
         return collectorPayloadBean;
     }

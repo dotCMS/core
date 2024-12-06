@@ -130,16 +130,16 @@ public interface AbstractJob {
     }
 
     /**
-     * Creates a new Job marked as completed.
+     * Creates a new Job marked as successful.
      *
-     * @param result The result details of the completed job.
+     * @param result The result details of the successful job.
      *
-     * @return A new Job instance marked as completed.
+     * @return A new Job instance marked as successful.
      */
-    default Job markAsCompleted(final JobResult result) {
+    default Job markAsSuccessful(final JobResult result) {
 
         return Job.builder().from(this)
-                .state(JobState.COMPLETED)
+                .state(JobState.SUCCESS)
                 .completedAt(Optional.of(LocalDateTime.now()))
                 .updatedAt(LocalDateTime.now())
                 .result(result != null ? Optional.of(result) : Optional.empty())
@@ -160,6 +160,34 @@ public interface AbstractJob {
                 .completedAt(Optional.of(LocalDateTime.now()))
                 .updatedAt(LocalDateTime.now())
                 .result(result != null ? Optional.of(result) : Optional.empty())
+                .build();
+    }
+
+    /**
+     * Creates a new Job marked as failed permanently.
+     *
+     * @return A new Job instance marked as failed permanently.
+     */
+    default Job markAsFailedPermanently() {
+
+        return Job.builder().from(this)
+                .state(JobState.FAILED_PERMANENTLY)
+                .completedAt(Optional.of(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * Creates a new Job marked as abandoned permanently.
+     *
+     * @return A new Job instance marked as abandoned permanently.
+     */
+    default Job markAsAbandonedPermanently() {
+
+        return Job.builder().from(this)
+                .state(JobState.ABANDONED_PERMANENTLY)
+                .completedAt(Optional.of(LocalDateTime.now()))
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 
