@@ -32,9 +32,7 @@ describe('DotSelectExistingContentComponent', () => {
     const createComponent = createComponentFactory({
         component: DotSelectExistingContentComponent,
         componentProviders: [ExistingContentStore],
-        providers: [
-            { provide: DotMessageService, useValue: messageServiceMock },
-        ],
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
         detectChanges: false
     });
 
