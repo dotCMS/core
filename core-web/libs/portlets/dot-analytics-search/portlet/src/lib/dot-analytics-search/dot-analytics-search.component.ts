@@ -41,8 +41,16 @@ export class DotAnalyticsSearchComponent {
 
     readonly store = inject(DotAnalyticsSearchStore);
 
+    /**
+     * Boolean model to control the visibility of the dialog.
+     */
     $showDialog = model<boolean>(false);
 
+    /**
+     * Adds an example query to the store and hides the dialog.
+     *
+     * @param query - The example query to be added.
+     */
     addExampleQuery(query: string): void {
         this.store.setQuery(query);
         this.$showDialog.set(false);

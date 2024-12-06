@@ -77,6 +77,10 @@ export const DotAnalyticsSearchStore = signalStore(
             analyticsSearchService = inject(DotAnalyticsSearchService),
             dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
         ) => ({
+            /**
+             * Sets the query in the store state.
+             * @param query - The query string to be set.
+             */
             setQuery: (query: string) => {
                 patchState(store, {
                     query: { ...store.query(), value: query, isValidJson: !!isValidJson(query) }
