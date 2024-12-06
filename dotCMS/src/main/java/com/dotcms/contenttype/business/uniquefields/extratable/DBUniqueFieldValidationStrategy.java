@@ -112,7 +112,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
     private  void cleanUniqueFieldsUp(final Contentlet contentlet, final Field field) throws DotDataException {
         List<Map<String, Object>> uniqueFields = uniqueFieldDataBaseUtil.get(contentlet, field);
 
-        if (!uniqueFields.isEmpty()) {
+        if (!UtilMethods.isSet(uniqueFields.isEmpty())) {
             final List<Map<String, Object>> workingUniqueFields = uniqueFields.stream()
                     .filter(uniqueValue -> Boolean.FALSE.equals(getSupportingValues(uniqueValue).get("live")))
                     .collect(Collectors.toList());
