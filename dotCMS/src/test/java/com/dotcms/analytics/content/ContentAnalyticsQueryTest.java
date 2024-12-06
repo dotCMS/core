@@ -47,11 +47,11 @@ public class ContentAnalyticsQueryTest {
         // ║  Generating Test Data  ║
         // ╚════════════════════════╝
         final String testQueryParams = "{\n" +
-                "    \"measures\": \"request.count,request.totalSessions\",\n" +
-                "    \"dimensions\": \"request.host,request.whatAmI,request.url\",\n" +
-                "    \"timeDimensions\": \"request.createdAt,day:Last month\",\n" +
-                "    \"filters\": \"request.totalRequest gt 0,request.whatAmI contains PAGE||FILE\",\n" +
-                "    \"order\": \"request.count asc,request.createdAt asc\",\n" +
+                "    \"measures\": \"count,totalSessions\",\n" +
+                "    \"dimensions\": \"host,whatAmI,url\",\n" +
+                "    \"timeDimensions\": \"createdAt,day:Last month\",\n" +
+                "    \"filters\": \"totalRequest gt 0,whatAmI contains PAGE||FILE\",\n" +
+                "    \"order\": \"count asc,createdAt asc\",\n" +
                 "    \"limit\": 5,\n" +
                 "    \"offset\": 0\n" +
                 "}";
