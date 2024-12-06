@@ -48,7 +48,6 @@
 
         button {
             color: $color-palette-gray-500;
-            visibility: hidden;
         }
     }
 
@@ -66,5 +65,18 @@
         .editor-container {
             border-radius: $border-radius-md;
         }
+    }
+
+    pre {
+        font-size: $font-size-sm;
+        background-color: $color-palette-gray-100;
+        border-radius: $border-radius-md;
+        position: relative;
+    }
+
+    .content-analytics__insert-btn {
+        position: absolute;
+        bottom: $spacing-2;
+        right: $spacing-2;
     }
 }

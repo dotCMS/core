@@ -1,10 +1,9 @@
 {
 	"info": {
-		"_postman_id": "9f75619d-685f-4bdb-b16d-4baa2f6d62d6",
+		"_postman_id": "9aa702a3-2811-429a-a33c-480b75530b23",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-9f75619d-685f-4bdb-b16d-4baa2f6d62d6?action=share&source=collection_link&creator=5403727"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{

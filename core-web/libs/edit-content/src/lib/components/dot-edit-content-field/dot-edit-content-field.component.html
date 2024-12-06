@@ -151,6 +151,6 @@
         }
     }
 }
-@if (field.hint) {
+@if (field.hint && field.fieldType !== fieldTypes.RELATIONSHIP) {
     <small [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
 }
