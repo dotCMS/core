@@ -1,5 +1,5 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { NgTemplateOutlet } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -15,7 +15,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { ChipModule } from 'primeng/chip';
-import { DividerModule } from 'primeng/divider';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -35,6 +34,7 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     selector: 'dot-uve-toolbar',
     standalone: true,
     imports: [
+        NgClass,
         NgTemplateOutlet,
         ButtonModule,
         ToolbarModule,
@@ -44,7 +44,6 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         ClipboardModule,
         CalendarModule,
         SplitButtonModule,
-        DividerModule,
         FormsModule,
         ReactiveFormsModule,
         ChipModule,

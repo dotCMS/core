@@ -2,16 +2,15 @@
 
 ::ng-deep {
     .uve-toolbar {
-        max-height: 48px;
+        padding: 0 $spacing-4;
     }
 
     .uve-toolbar-preview {
         border: 1px solid $color-palette-primary-200;
         border-width: 1px 0 1px 0;
-        padding: $spacing-1 $spacing-5;
+        padding-inline: $spacing-5;
     }
 
-    // Create a chip color for this
     .p-chip.uve-toolbar-chips {
         height: $field-height-sm;
         background-color: $color-palette-primary-op-10;
@@ -20,12 +19,24 @@
 }
 
 .p-toolbar-group-start,
-.p-toolbar-group-end {
+.p-toolbar-group-end,
+.p-toolbar-group-center {
+    padding: $spacing-1 0;
     align-items: center;
     gap: $spacing-1;
+    align-self: stretch;
 }
 
-.p-toolbar-group-center {
-    display: flex;
-    gap: $spacing-1;
+.vertical-divider {
+    align-self: stretch;
+    position: relative;
+    &::before {
+        border-left: 1px solid $color-palette-primary-200;
+        position: absolute;
+        display: block;
+        top: 0;
+        left: 50%;
+        height: 100%;
+        content: "";
+    }
 }

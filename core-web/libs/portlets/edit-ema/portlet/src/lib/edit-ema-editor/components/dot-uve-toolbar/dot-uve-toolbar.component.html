@@ -2,7 +2,7 @@
 @let runningExperiment = $toolbar().runningExperiment;
 
 <p-toolbar [styleClass]="$styleToolbarClass()">
-    <div class="p-toolbar-group-start">
+    <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview }">
         @if (preview) {
             <ng-container [ngTemplateOutlet]="previewLeftOptionsTemplate"></ng-container>
         } @else {
@@ -49,6 +49,7 @@
             [value]="$personaSelectorProps().value"
             #personaSelector
             data-testId="uve-toolbar-persona-selector" />
+
         @if (!preview) {
             <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
         }
@@ -88,7 +89,7 @@
         (click)="setEditMode()"
         data-testId="close-preview-mode" />
 
-    <p-divider layout="vertical" />
+    <div class="vertical-divider"></div>
 
     <p-button
         icon="pi pi-desktop"
