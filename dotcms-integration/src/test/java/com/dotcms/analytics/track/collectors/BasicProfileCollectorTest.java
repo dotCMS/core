@@ -55,15 +55,14 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
         final HttpServletRequest request = Util.mockHttpRequestObj(response, "/", requestId,
                 APILocator.getUserAPI().getAnonymousUser());
         final Map<String, Object> expectedDataMap = Map.of(
-                "renderMode", "LIVE",
-                "cluster", CLUSTER_ID,
-                "server", SERVER_ID,
-                "persona", "dot:default",
-                "utc_time", "2024-10-09T00:00:00.000000Z",
-                "sessionNew", true,
-                "userAgent", Util.USER_AGENT,
-                "sessionId", "DAA3339CD687D9ABD4101CF9EDDD42DB",
-                "request_id", requestId
+                Collector.CLUSTER, CLUSTER_ID,
+                Collector.SERVER, SERVER_ID,
+                Collector.PERSONA, "dot:default",
+                Collector.UTC_TIME, "2024-10-09T00:00:00.000000Z",
+                Collector.SESSION_NEW, true,
+                Collector.USER_AGENT, Util.USER_AGENT,
+                Collector.SESSION_ID, "DAA3339CD687D9ABD4101CF9EDDD42DB",
+                Collector.REQUEST_ID, requestId
         );
         final Collector collector = new BasicProfileCollector();
         final CollectorPayloadBean collectedData = Util.getCollectorPayloadBean(request, collector, new PagesAndUrlMapsRequestMatcher(), null);
@@ -75,7 +74,7 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
             if (collectedData.toMap().containsKey(key)) {
                 final Object expectedValue = expectedDataMap.get(key);
                 final Object collectedValue = collectedData.toMap().get(key);
-                if (!"utc_time".equalsIgnoreCase(key)) {
+                if (!Collector.UTC_TIME.equalsIgnoreCase(key)) {
                     assertEquals("Collected value must be equal to expected value for key: " + key, expectedValue, collectedValue);
                 }
                 counter++;

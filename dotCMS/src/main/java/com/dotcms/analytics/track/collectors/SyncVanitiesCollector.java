@@ -17,8 +17,6 @@ import java.util.Objects;
  */
 public class SyncVanitiesCollector implements Collector {
 
-    public static final String VANITY_URL_KEY = "vanity_url";
-    public static final String FORWARD_TO = "forward_to";
 
     public SyncVanitiesCollector() {
     }
@@ -32,9 +30,9 @@ public class SyncVanitiesCollector implements Collector {
     @Override
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
-        if (null != collectorContextMap.get("request")) {
+        if (null != collectorContextMap.get(CollectorContextMap.REQUEST)) {
 
-            final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get("request");
+            final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get(CollectorContextMap.REQUEST);
             final String vanityUrl = (String)request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
             final String vanityQueryString = (String)request.getAttribute(Constants.CMS_FILTER_QUERY_STRING_OVERRIDE);
             if (request instanceof VanityUrlRequestWrapper) {
@@ -66,7 +64,7 @@ public class SyncVanitiesCollector implements Collector {
         collectorPayloadBean.put(URL, uri);
         collectorPayloadBean.put(LANGUAGE, language);
         collectorPayloadBean.put(LANGUAGE_ID, languageId);
-        collectorPayloadBean.put(SITE, site.getIdentifier());
+        collectorPayloadBean.put(SITE_ID, site.getIdentifier());
         collectorPayloadBean.put(EVENT_TYPE, EventType.VANITY_REQUEST.getType());
 
         return collectorPayloadBean;
