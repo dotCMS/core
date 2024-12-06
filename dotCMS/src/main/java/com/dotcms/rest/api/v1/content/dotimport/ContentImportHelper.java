@@ -1,11 +1,16 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -18,7 +23,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Helper class for managing content import operations in the dotCMS application.
@@ -33,6 +40,7 @@ public class ContentImportHelper {
 
     private final JobQueueManagerAPI jobQueueManagerAPI;
     private final JobQueueManagerHelper jobQueueManagerHelper;
+    private static final String IMPORT_CONTENTLETS_QUEUE_NAME = "importContentlets";
 
     /**
      * Constructor for dependency injection.
@@ -105,6 +113,130 @@ public class ContentImportHelper {
     Job getJob(final String jobId) throws DotDataException {
         return jobQueueManagerAPI.getJob(jobId);
     }
+
+    /**
+     * Retrieves a list of jobs.
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of jobs and pagination information.
+     */
+    JobPaginatedResult getJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching content import jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of active content import jobs.
+     * @param page    The page number
+     * @param pageSize The number of jobs per page
+     * @return JobPaginatedResult
+     */
+    JobPaginatedResult getActiveJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getActiveJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching active content import jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+
+    /**
+     * Retrieves a list of completed content import jobs.
+     * @param page    The page number
+     * @param pageSize The number of jobs per page
+     * @return JobPaginatedResult
+     */
+    JobPaginatedResult getCompletedJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getCompletedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching active content import jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+
+    /**
+     * Retrieves a list of completed content import jobs.
+     * @param page    The page number
+     * @param pageSize The number of jobs per page
+     * @return JobPaginatedResult
+     */
+    JobPaginatedResult getCanceledJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getCanceledJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching canceled content import jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+
+    /**
+     * Retrieves a list of failed content import jobs.
+     * @param page    The page number
+     * @param pageSize The number of jobs per page
+     * @return JobPaginatedResult
+     */
+    JobPaginatedResult getFailedJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getFailedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching failed content import jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of abandoned content import jobs.
+     * @param page    The page number
+     * @param pageSize The number of jobs per page
+     * @return JobPaginatedResult
+     */
+    JobPaginatedResult getAbandonedJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getAbandonedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching abandoned content import jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of successful content import jobs.
+     * @param page    The page number
+     * @param pageSize The number of jobs per page
+     * @return JobPaginatedResult
+     */
+    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getSuccessfulJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching abandoned content import jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * cancels a job
+     * @param jobId The ID of the job
+     * @throws DotDataException if there's an error cancelling the job
+     */
+    void cancelJob(String jobId) throws DotDataException {
+        try{
+            jobQueueManagerAPI.cancelJob(jobId);
+        } catch (JobProcessorNotFoundException e) {
+            Logger.error(this.getClass(), "Error cancelling job", e);
+            throw new DoesNotExistException(e.getMessage());
+        }
+    }
+
 
     /**
      * Constructs a map of job parameters based on the provided inputs.
