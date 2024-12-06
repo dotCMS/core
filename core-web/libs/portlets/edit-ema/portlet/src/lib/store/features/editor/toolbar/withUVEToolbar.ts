@@ -87,18 +87,23 @@ export function withUVEToolbar() {
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
+                const isPreview = params?.preview === 'true';
+                const prevewItem = isPreview
+                    ? {
+                          deviceSelector: {
+                              apiLink: `${clientHost}${pageAPI}`,
+                              hideSocialMedia: !store.isTraditionalPage()
+                          }
+                      }
+                    : null;
+
                 return {
                     editor: {
                         bookmarksUrl,
                         copyUrl: createFullURL(params, siteId),
                         apiUrl: pageAPI
                     },
-                    preview: {
-                        deviceSelector: {
-                            apiLink: `${clientHost}${pageAPI}`,
-                            hideSocialMedia: !store.isTraditionalPage()
-                        }
-                    },
+                    preview: prevewItem,
                     currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()
                         ? (pageAPIResponse?.urlContentMap ?? null)

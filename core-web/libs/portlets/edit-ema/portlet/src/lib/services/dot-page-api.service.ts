@@ -103,11 +103,11 @@ export class DotPageApiService {
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id,
+            'com.dotmarketing.persona.id': params?.['com.dotmarketing.persona.id'],
             variantName,
             experimentId,
-            mode,
             depth,
-            'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id']
+            mode
         });
 
         const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;

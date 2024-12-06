@@ -22,7 +22,6 @@ import { UVEStore } from '../../../store/dot-uve.store';
 })
 export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
-    @Input() styleClass = '';
 
     private readonly loginService = inject(LoginService);
     private readonly dotFavoritePageService = inject(DotFavoritePageService);

@@ -269,6 +269,14 @@ describe('DotUveToolbarComponent', () => {
         it('should have more devices button', () => {
             expect(spectator.query(byTestId('more-devices-preview'))).toBeTruthy();
         });
+
+        it('should not have experiments', () => {
+            expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
+        });
+
+        it('should not have workflow actions', () => {
+            expect(spectator.query(byTestId('uve-toolbar-workflow-actions'))).toBeFalsy();
+        });
     });
 
     describe('State changes', () => {
