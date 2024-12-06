@@ -69,6 +69,67 @@ public interface JobQueue {
             throws JobQueueDataException;
 
     /**
+     * Retrieves a list of completed jobs for a specific queue.
+     *
+     * @param queueName The name of the queue.
+     * @param page      The page number (for pagination).
+     * @param pageSize  The number of items per page.
+     * @return A result object containing the list of completed jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getCompletedJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of canceled jobs for a specific queue.
+     *
+     * @param queueName The name of the queue.
+     * @param page      The page number (for pagination).
+     * @param pageSize  The number of items per page.
+     * @return A result object containing the list of canceled jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getCanceledJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of failed jobs for a specific queue.
+     *
+     * @param queueName The name of the queue.
+     * @param page      The page number (for pagination).
+     * @param pageSize  The number of items per page.
+     * @return A result object containing the list of failed jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getFailedJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException;
+
+
+    /**
+     * Retrieves a list of abandoned jobs for a specific queue.
+     *
+     * @param queueName The name of the queue.
+     * @param page      The page number (for pagination).
+     * @param pageSize  The number of items per page.
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getAbandonedJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of successful jobs for a specific queue.
+     *
+     * @param queueName The name of the queue.
+     * @param page      The page number (for pagination).
+     * @param pageSize  The number of items per page.
+     * @return A result object containing the list of successful jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getSuccessfulJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException;
+
+    /**
      * Retrieves a list of completed jobs for a specific queue within a date range.
      *
      * @param queueName The name of the queue.
@@ -91,6 +152,18 @@ public interface JobQueue {
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
     JobPaginatedResult getJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves a list of all jobs for a specific queue.
+     *
+     * @param queueName The name of the queue.
+     * @param page      The page number (for pagination).
+     * @param pageSize  The number of items per page.
+     * @return A result object containing the list of jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getJobs(String queueName, int page, int pageSize)
+            throws JobQueueDataException;
 
     /**
      * Retrieves a list of active jobs, meaning jobs that are currently being processed.
