@@ -29,12 +29,6 @@ describe('DotEmaBookmarksComponent', () => {
         providers: [
             DialogService,
             HttpClient,
-            // {
-            //     provide: UVEStore,
-            //     useValue: {
-            //         $previewMode: signal(false)
-            //     }
-            // },
             mockProvider(UVEStore, { $previewMode: signal(false) }),
             {
                 provide: LoginService,

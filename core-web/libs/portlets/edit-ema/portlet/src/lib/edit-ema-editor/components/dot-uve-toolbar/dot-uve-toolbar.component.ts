@@ -1,15 +1,21 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     EventEmitter,
     inject,
     Output,
     viewChild
 } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CalendarModule } from 'primeng/calendar';
+import { ChipModule } from 'primeng/chip';
+import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
@@ -28,11 +34,19 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     selector: 'dot-uve-toolbar',
     standalone: true,
     imports: [
+        NgClass,
+        NgTemplateOutlet,
         ButtonModule,
         ToolbarModule,
         DotEmaBookmarksComponent,
         DotEmaInfoDisplayComponent,
         DotEmaRunningExperimentComponent,
+        ClipboardModule,
+        CalendarModule,
+        SplitButtonModule,
+        FormsModule,
+        ReactiveFormsModule,
+        ChipModule,
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
         ClipboardModule
@@ -44,7 +58,6 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
 })
 export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
-
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
     #store = inject(UVEStore);
 
@@ -54,13 +67,38 @@ export class DotUveToolbarComponent {
     readonly #personalizeService = inject(DotPersonalizeService);
 
     readonly $toolbar = this.#store.$uveToolbar;
+    readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
 
     @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
 
-    togglePreviewMode(preview: boolean) {
-        this.#store.togglePreviewMode(preview);
+    readonly $styleToolbarClass = computed(() => {
+        if (!this.$isPreviewMode()) {
+            return 'uve-toolbar';
+        }
+
+        return 'uve-toolbar uve-toolbar-preview';
+    });
+
+    protected readonly date = new Date();
+
+    /**
+     * Set the preview mode
+     *
+     * @memberof DotUveToolbarComponent
+     */
+    protected setPreviewMode() {
+        this.#store.loadPageAsset({ preview: 'true' });
+    }
+
+    /**
+     * Set the edit mode
+     *
+     * @memberof DotUveToolbarComponent
+     */
+    protected setEditMode() {
+        this.#store.loadPageAsset({ preview: null });
     }
 
     /**
