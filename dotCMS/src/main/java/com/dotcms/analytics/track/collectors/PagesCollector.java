@@ -75,6 +75,9 @@ public class PagesCollector implements Collector {
                     pageObject.put(CONTENT_TYPE_ID, urlMapContentType.id());
                     pageObject.put(CONTENT_TYPE_NAME, urlMapContentType.name());
                     pageObject.put(CONTENT_TYPE_VAR_NAME, urlMapContentType.variable());
+                    pageObject.put(BASE_TYPE, urlMapContentType.baseType().name());
+                    pageObject.put(LIVE,    String.valueOf(Try.of(()->urlMapContentlet.isLive()).getOrElse(false)));
+                    pageObject.put(WORKING, String.valueOf(Try.of(()->urlMapContentlet.isWorking()).getOrElse(false)));
                     collectorPayloadBean.put(EVENT_TYPE, EventType.URL_MAP.getType());
                 }
             } else {
@@ -82,6 +85,13 @@ public class PagesCollector implements Collector {
                         this.pageAPI.getPageByPath(uri, site, languageId, true)).get();
                 pageObject.put(ID, page.getIdentifier());
                 pageObject.put(TITLE, page.getTitle());
+                final Contentlet pageContentlet = (Contentlet) page;
+                pageObject.put(CONTENT_TYPE_ID, pageContentlet.getContentType().id());
+                pageObject.put(CONTENT_TYPE_NAME, pageContentlet.getContentType().name());
+                pageObject.put(CONTENT_TYPE_VAR_NAME, pageContentlet.getContentType().variable());
+                pageObject.put(BASE_TYPE, pageContentlet.getContentType().baseType().name());
+                pageObject.put(LIVE,    String.valueOf(Try.of(()->page.isLive()).getOrElse(false)));
+                pageObject.put(WORKING, String.valueOf(Try.of(()->page.isWorking()).getOrElse(false)));
                 collectorPayloadBean.put(EVENT_TYPE, EventType.PAGE_REQUEST.getType());
             }
             pageObject.put(URL, uri);
@@ -92,7 +102,7 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put(LANGUAGE, language);
 
         if (Objects.nonNull(site)) {
-            collectorPayloadBean.put(HOST,  site.getHostname());
+            collectorPayloadBean.put(SITE_NAME,  site.getHostname());
         }
 
         return collectorPayloadBean;
