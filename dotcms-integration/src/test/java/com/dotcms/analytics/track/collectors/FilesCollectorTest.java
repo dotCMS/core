@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,15 +71,22 @@ public class FilesCollectorTest extends IntegrationTestBase {
                 APILocator.getUserAPI().getAnonymousUser());
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "host", testSite.getHostname(),
-                "site", testSite.getIdentifier(),
-                "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
-                "event_type", EventType.FILE_REQUEST.getType(),
-                "url", testFileAsset.getURI(),
-                "object", Map.of(
-                        "id", testFileAsset.getIdentifier(),
-                        "title", testFileAsset.getTitle(),
-                        "url", testFileAsset.getURI())
+                Collector.SITE_NAME, testSite.getHostname(),
+                Collector.SITE_ID, testSite.getIdentifier(),
+                Collector.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
+                Collector.EVENT_TYPE, EventType.FILE_REQUEST.getType(),
+                Collector.URL, testFileAsset.getURI(),
+                Collector.OBJECT, Map.of(
+                        Collector.ID, testFileAsset.getIdentifier(),
+                        Collector.TITLE, testFileAsset.getTitle(),
+                        Collector.URL, testFileAsset.getURI(),
+                        Collector.CONTENT_TYPE_ID, testFileAsset.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testFileAsset.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testFileAsset.getContentType().variable(),
+                        Collector.BASE_TYPE, testFileAsset.getContentType().baseType().name(),
+                        Collector.LIVE,    String.valueOf(Try.of(()->testFileAsset.isLive()).getOrElse(false)),
+                        Collector.WORKING, String.valueOf(Try.of(()->testFileAsset.isWorking()).getOrElse(false))
+                )
         );
 
         final Collector collector = new FilesCollector();
