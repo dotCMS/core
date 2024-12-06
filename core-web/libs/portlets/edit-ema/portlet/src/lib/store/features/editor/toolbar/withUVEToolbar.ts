@@ -22,7 +22,7 @@ import {
     sanitizeURL
 } from '../../../../utils';
 import { UVEState } from '../../../models';
-import { EditorToolbarState, UVEToolbarProps } from '../models';
+import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
 
 /**
  * The initial state for the editor toolbar.
@@ -109,12 +109,16 @@ export function withUVEToolbar() {
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
                     workflowActionsInode: store.canEditPage() ? pageAPIResponse?.page.inode : null,
-                    personaSelector: {
-                        pageId: pageAPIResponse?.page.identifier,
-                        value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
-                    },
                     unlockButton: shouldShowUnlock ? unlockButton : null,
                     showInfoDisplay: shouldShowInfoDisplay
+                };
+            }),
+            $personaSelector: computed<PersonaSelectorProps>(() => {
+                const pageAPIResponse = store.pageAPIResponse();
+
+                return {
+                    pageId: pageAPIResponse?.page.identifier,
+                    value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
                 };
             }),
             $apiURL: computed<string>(() => {
