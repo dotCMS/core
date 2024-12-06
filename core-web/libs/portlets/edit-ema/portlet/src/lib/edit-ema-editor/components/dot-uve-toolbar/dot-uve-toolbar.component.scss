@@ -3,11 +3,13 @@
 ::ng-deep {
     .uve-toolbar {
         padding: 0 $spacing-4;
+        transition: padding 0.2s ease;
+        border-color: $color-palette-primary-200;
+        border-top: 1px solid transparent; // Avoid jump
     }
 
     .uve-toolbar-preview {
-        border: 1px solid $color-palette-primary-200;
-        border-width: 1px 0 1px 0;
+        border-top-color: $color-palette-primary-200;
         padding-inline: $spacing-5;
     }
 
