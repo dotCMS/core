@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -62,7 +63,6 @@ public class UniqueFieldDataBaseUtil {
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
             "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
             "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
-            "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ? " +
             "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
     private final static String DELETE_UNIQUE_FIELDS_BY_CONTENTLET = "DELETE FROM unique_fields " +
@@ -88,6 +88,10 @@ public class UniqueFieldDataBaseUtil {
 
     private final static String DELETE_UNIQUE_FIELDS_BY_FIELD = "DELETE FROM unique_fields " +
             "WHERE supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
+
+    private final static String DELETE_UNIQUE_FIELDS_BY_CONTENT_TYPE = "DELETE FROM unique_fields " +
+            "WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?";
+
 
     private final static String POPULATE_UNIQUE_FIELDS_VALUES_QUERY = "INSERT INTO unique_fields (unique_key_val, supporting_values) " +
             "SELECT encode(sha256(CONCAT(content_type_id, field_var_name, language_id, field_value, " +
@@ -208,20 +212,13 @@ public class UniqueFieldDataBaseUtil {
      * @throws DotDataException If an error occurs when interacting with the database.
      */
     @CloseDBIfOpened
-    public Optional<Map<String, Object>> get(final Contentlet contentlet, final Field field) throws DotDataException {
-        try {
-            final List<Map<String, Object>> results = new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET)
-                    .addParam("\"" + contentlet.getIdentifier() + "\"")
-                    .addParam(contentlet.getVariantId())
-                    .addParam(contentlet.getLanguageId())
-                    .addParam(contentlet.isLive())
-                    .addParam(field.variable())
-                    .loadObjectResults();
-
-            return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
-        } catch (DotSecurityException e) {
-            throw new DotRuntimeException(e);
-        }
+    public List<Map<String, Object>> get(final Contentlet contentlet, final Field field) throws DotDataException {
+        return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET)
+                .addParam("\"" + contentlet.getIdentifier() + "\"")
+                .addParam(contentlet.getVariantId())
+                .addParam(contentlet.getLanguageId())
+                .addParam(field.variable())
+                .loadObjectResults();
     }
 
     /**
@@ -275,10 +272,10 @@ public class UniqueFieldDataBaseUtil {
     }
 
     @CloseDBIfOpened
-    public List<Map<String, Object>> get(final String contentId, final long languegeId) throws DotDataException {
+    public List<Map<String, Object>> get(final String contentId, final long languageId) throws DotDataException {
         return new DotConnect().setSQL(GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE)
                 .addParam("\"" + contentId + "\"")
-                .addParam(languegeId)
+                .addParam(languageId)
                 .loadObjectResults();
     }
 
@@ -321,6 +318,19 @@ public class UniqueFieldDataBaseUtil {
     public void delete(final Field field) throws DotDataException {
         new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_FIELD)
                 .addParam(field.variable())
+                .loadObjectResults();
+    }
+
+    /**
+     * Delete all the unique values for a {@link ContentType}
+     *
+     * @param contentType
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    public void delete(final ContentType contentType) throws DotDataException {
+        new DotConnect().setSQL(DELETE_UNIQUE_FIELDS_BY_CONTENT_TYPE)
+                .addParam(contentType.id())
                 .loadObjectResults();
     }
 
