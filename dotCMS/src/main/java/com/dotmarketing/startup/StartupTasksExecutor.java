@@ -47,23 +47,23 @@ public class StartupTasksExecutor {
         this.firstTimeStart = (Config.DB_VERSION==0);
     }
 
-	public static synchronized StartupTasksExecutor getInstance() {
-		if (executor == null)
-			executor = new StartupTasksExecutor();
-		return executor;
-	}
+    public static synchronized StartupTasksExecutor getInstance() {
+        if (executor == null)
+            executor = new StartupTasksExecutor();
+        return executor;
+    }
 
 
-	private final String createTableSQL() {
+    private final String createTableSQL() {
 
-	       return (DbConnectionFactory.isPostgres())
-	                        ? pgCreate
-	                        : DbConnectionFactory.isMySql()
-	                            ? myCreate
-	                            : DbConnectionFactory.isOracle()
-	                                ? oraCreate
-	                                : msCreate;
-	}
+        return (DbConnectionFactory.isPostgres())
+                ? pgCreate
+                : DbConnectionFactory.isMySql()
+                ? myCreate
+                : DbConnectionFactory.isOracle()
+                ? oraCreate
+                : msCreate;
+    }
 
     /**
      * Returns the SQL to create the data_version table
@@ -73,17 +73,17 @@ public class StartupTasksExecutor {
         return (DbConnectionFactory.isPostgres())
                 ? pgCreateDataVersion
                 : DbConnectionFactory.isMySql()
-                        ? myCreateDataVersion
-                        : DbConnectionFactory.isOracle()
-                                ? oraCreateDataVersion
-                                : msCreateDataVersion;
+                ? myCreateDataVersion
+                : DbConnectionFactory.isOracle()
+                ? oraCreateDataVersion
+                : msCreateDataVersion;
     }
 
     /**
      * This will create the db version table if it does not already exist
      * @return
      */
-	private boolean insureDbVersionTable() {
+    private boolean insureDbVersionTable() {
 
         try {
             currentDbVersion();
@@ -210,7 +210,7 @@ public class StartupTasksExecutor {
             HibernateUtil.closeAndCommitTransaction();
         }
 
-        
+
     }
 
     /**
@@ -238,7 +238,7 @@ public class StartupTasksExecutor {
         Logger.info(this, "Database version: " + Config.DB_VERSION);
 
         String name = null;
-        
+
         for (Class<?> c : TaskLocatorUtil.getStartupRunOnceTaskClasses()) {
             name = c.getCanonicalName();
             name = name.substring(name.lastIndexOf(".") + 1);
@@ -261,12 +261,12 @@ public class StartupTasksExecutor {
                         task.executeUpgrade();
 
                     }
- 
+
                     new DotConnect()
-                        .setSQL(INSERT)
-                        .addParam(taskId)
-                        .addParam(new Date())
-                        .loadResult();
+                            .setSQL(INSERT)
+                            .addParam(taskId)
+                            .addParam(new Date())
+                            .loadResult();
                     Logger.info(this, "Database upgraded to version: " + taskId);
                     if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
                         HibernateUtil.closeAndCommitTransaction();
@@ -276,7 +276,9 @@ public class StartupTasksExecutor {
             } catch (Exception e) {
                 taskFailure(e);
             } finally {
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
 
         }
@@ -344,7 +346,9 @@ public class StartupTasksExecutor {
             } catch (Exception e) {
                 taskFailure(e);
             } finally {
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
 
         }
@@ -352,7 +356,7 @@ public class StartupTasksExecutor {
         Logger.info(this, "Finishing data upgrade tasks.");
     }
 
-	/**
+    /**
      * This will execute all the UT that were backported to the LTS version.
      * Will be run everytime the server gets restarted just like the Startup Tasks.
      * But these will be run after the upgradeTasks.
@@ -367,12 +371,14 @@ public class StartupTasksExecutor {
 
 
             for (Class<?> c : TaskLocatorUtil.getBackportedUpgradeTaskClasses()) {
-                HibernateUtil.startTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.startTransaction();
+                }
                 name = c.getCanonicalName();
                 name = name.substring(name.lastIndexOf(".") + 1);
-		String id = getTaskId(name);
+                String id = getTaskId(name);
                 int taskId = Integer.parseInt(id);
-		if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
+                if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
                     StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
                         if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
