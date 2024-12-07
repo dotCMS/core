@@ -409,7 +409,7 @@
 			<th style="width:250px"><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>
 			<th style="width:100px"><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
-			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Updated") %></strong></th>
+			<th style="width:40px"><strong><%= LanguageUtil.get(pageContext, "publisher_Last_Update") %></strong></th>
 		</tr>
 		<tr>
 			<td colspan="4" align="center"><%= LanguageUtil.get(pageContext, "publisher_No_Results") %></td>
