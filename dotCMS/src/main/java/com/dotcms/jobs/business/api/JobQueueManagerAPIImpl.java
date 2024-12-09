@@ -331,6 +331,73 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
+    public JobPaginatedResult getCompletedJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getCompletedJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching completed jobs", e);
+        }
+    }
+
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getCanceledJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getCanceledJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching completed jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getFailedJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getFailedJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching failed jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getAbandonedJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getAbandonedJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching abandoned jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getSuccessfulJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getSuccessfulJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching successful jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
     public JobPaginatedResult getJobs(final int page, final int pageSize) throws DotDataException {
         try {
             return jobQueue.getJobs(page, pageSize);
