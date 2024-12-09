@@ -147,7 +147,6 @@ public interface JobQueueManagerAPI {
     JobPaginatedResult getAbandonedJobs(String queueName, int page, int pageSize)
             throws DotDataException;
 
-
     /**
      * Retrieves a list of successful jobs for a specific queue.
      *

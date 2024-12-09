@@ -161,7 +161,6 @@ public class ContentImportHelper {
         return JobPaginatedResult.builder().build();
     }
 
-
     /**
      * Retrieves a list of completed content import jobs.
      * @param page    The page number
@@ -176,7 +175,6 @@ public class ContentImportHelper {
         }
         return JobPaginatedResult.builder().build();
     }
-
 
     /**
      * Retrieves a list of failed content import jobs.
@@ -236,8 +234,7 @@ public class ContentImportHelper {
             throw new DoesNotExistException(e.getMessage());
         }
     }
-
-
+    
     /**
      * Constructs a map of job parameters based on the provided inputs.
      *

@@ -99,7 +99,6 @@ public class PostgresJobQueueIntegrationTest {
         assertEquals(5, result.total());
     }
 
-
     /**
      * Method to test: getJobs in PostgresJobQueue for a specific queue
      * Given Scenario: Multiple successful jobs are created

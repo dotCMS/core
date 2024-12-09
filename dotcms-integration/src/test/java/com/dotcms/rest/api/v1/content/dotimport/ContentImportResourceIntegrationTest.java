@@ -327,7 +327,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         assertBadRequestResponse(importResource.importContent(request, response, params));
     }
 
-
     /**
      * Scenario: Attempt to validate content import specifying a non-existing language.
      * <p>
@@ -391,7 +390,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         assertBadRequestResponse(importResource.importContent(request, response, params));
     }
-
 
     /**
      * Scenario: Attempt to validate content import specifying a non-existing content-type.
@@ -539,7 +537,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         assertThrows(ValidationException.class, () -> importResource.validateContentImport(request, response, params));
     }
-
 
     private void validateJobPaginatedResult(ResponseEntityView<JobPaginatedResult> result, long expectedTotalJobs) {
         assertNotNull(result, "Response should not be null");
