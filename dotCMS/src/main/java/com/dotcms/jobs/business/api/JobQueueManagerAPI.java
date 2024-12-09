@@ -107,6 +107,78 @@ public interface JobQueueManagerAPI {
             throws DotDataException;
 
     /**
+     * Retrieves a list of completed jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of completed jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getCompletedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of canceled jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of canceled jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getCanceledJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of failed jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of failed jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getFailedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of abandoned jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getAbandonedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of successful jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of successful jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getSuccessfulJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of all jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
      * Retrieves a list of jobs.
      *
      * @param page     The page number

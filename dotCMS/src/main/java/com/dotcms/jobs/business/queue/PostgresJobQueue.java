@@ -153,6 +153,24 @@ public class PostgresJobQueue implements JobQueue {
                     "FROM total t " +
                     "LEFT JOIN paginated_data p ON true";
 
+    private static final String GET_JOBS_FOR_QUEUE_QUERY =
+            "WITH total AS (" +
+                    "    SELECT COUNT(*) AS total_count " +
+                    "    FROM job " +
+                    "    WHERE queue_name = ? " +
+                    "), " +
+                    "paginated_data AS (" +
+                    "    SELECT * " +
+                    "    FROM job " +
+                    "    WHERE queue_name = ? " +
+                    "    ORDER BY created_at DESC " +
+                    "    LIMIT ? OFFSET ? " +
+                    ") " +
+                    "SELECT p.*, t.total_count " +
+                    "FROM total t " +
+                    "LEFT JOIN paginated_data p ON true";
+
+
     private static final String GET_UPDATED_JOBS_SINCE_QUERY = "SELECT * FROM job "
             + "WHERE id = ANY(?) AND updated_at > ?";
 
@@ -309,8 +327,8 @@ public class PostgresJobQueue implements JobQueue {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getActiveJobs(final String queueName, final int page,
-            final int pageSize) throws JobQueueDataException {
+    public JobPaginatedResult getActiveJobs(final String queueName, final int page, final int pageSize)
+            throws JobQueueDataException {
 
         return getJobsByState(JobStateQueryParameters.builder()
                 .queueName(queueName)
@@ -320,6 +338,78 @@ public class PostgresJobQueue implements JobQueue {
                 .states(JobState.PENDING, JobState.RUNNING,
                         JobState.FAILED, JobState.ABANDONED, JobState.CANCEL_REQUESTED,
                         JobState.CANCELLING).build()
+        );
+    }
+
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getCompletedJobs(final String queueName, final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        return getJobsByState(JobStateQueryParameters.builder()
+                .queueName(queueName)
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_COMPLETED_AT)
+                .states(JobState.SUCCESS, JobState.CANCELED,
+                        JobState.ABANDONED_PERMANENTLY, JobState.FAILED_PERMANENTLY).build()
+        );
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getCanceledJobs(final String queueName, final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        return getJobsByState(JobStateQueryParameters.builder()
+                .queueName(queueName)
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_UPDATED_AT)
+                .states(JobState.CANCEL_REQUESTED, JobState.CANCELLING, JobState.CANCELED).build()
+        );
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getFailedJobs(final String queueName, final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        return getJobsByState(JobStateQueryParameters.builder()
+                .queueName(queueName)
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_UPDATED_AT)
+                .states(JobState.FAILED, JobState.FAILED_PERMANENTLY).build()
+        );
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getAbandonedJobs(final String queueName, final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        return getJobsByState(JobStateQueryParameters.builder()
+                .queueName(queueName)
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_UPDATED_AT)
+                .states(JobState.ABANDONED, JobState.ABANDONED_PERMANENTLY).build()
+        );
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getSuccessfulJobs(final String queueName, final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        return getJobsByState(JobStateQueryParameters.builder()
+                .queueName(queueName)
+                .page(page)
+                .pageSize(pageSize)
+                .orderByColumn(COLUMN_COMPLETED_AT)
+                .states(JobState.SUCCESS).build()
         );
     }
 
@@ -341,6 +431,26 @@ public class PostgresJobQueue implements JobQueue {
                 .states(JobState.SUCCESS, JobState.CANCELED,
                         JobState.ABANDONED_PERMANENTLY, JobState.FAILED_PERMANENTLY).build()
         );
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getJobs(final String queueName, final int page, final int pageSize)
+            throws JobQueueDataException {
+
+        try {
+            DotConnect dc = new DotConnect();
+            dc.setSQL(GET_JOBS_FOR_QUEUE_QUERY);
+            dc.addParam(queueName);
+            dc.addParam(queueName);
+            dc.addParam(pageSize);
+            dc.addParam((page - 1) * pageSize);
+
+            return jobPaginatedResult(page, pageSize, dc);
+        } catch (DotDataException e) {
+            Logger.error(this, "Database error while fetching jobs for queue: " + queueName, e);
+            throw new JobQueueDataException("Database error while fetching jobs for queue: " + queueName, e);
+        }
     }
 
     @CloseDBIfOpened
