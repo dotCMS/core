@@ -243,6 +243,15 @@ public class ContentImportResource {
         }
     }
 
+    /**
+     * Retrieves the status of a content import job based on the provided job ID.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job whose status is to be retrieved.
+     * @return A ResponseEntityView containing the job status.
+     * @throws DotDataException If there is an issue with DotData during the retrieval process.
+     */
     @GET
     @Path("/{jobId}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -290,6 +299,15 @@ public class ContentImportResource {
         return new ResponseEntityView<>(job);
     }
 
+    /**
+     * Cancels a content import job based on the provided job ID.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job to be canceled.
+     * @return A ResponseEntityView containing a message indicating the cancellation status.
+     * @throws DotDataException If there is an issue with DotData during the cancellation process.
+     */
     @POST
     @Path("/{jobId}/cancel")
     @Produces(MediaType.APPLICATION_JSON)
@@ -337,6 +355,15 @@ public class ContentImportResource {
         return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
+    /**
+     * Retrieves the status of all content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of content import jobs.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
@@ -380,6 +407,15 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of active content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of active content import jobs.
+     */
     @GET
     @Path("/active")
     @Produces(MediaType.APPLICATION_JSON)
@@ -423,6 +459,15 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of completed content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of completed content import jobs.
+     */
     @GET
     @Path("/completed")
     @Produces(MediaType.APPLICATION_JSON)
@@ -466,6 +511,15 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of canceled content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of canceled content import jobs.
+     */
     @GET
     @Path("/canceled")
     @Produces(MediaType.APPLICATION_JSON)
@@ -509,6 +563,15 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of failed content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of failed content import jobs.
+     */
     @GET
     @Path("/failed")
     @Produces(MediaType.APPLICATION_JSON)
@@ -552,6 +615,15 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of abandoned content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of abandoned content import jobs.
+     */
     @GET
     @Path("/abandoned")
     @Produces(MediaType.APPLICATION_JSON)
@@ -595,6 +667,15 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Retrieves the status of successful content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of successful content import jobs.
+     */
     @GET
     @Path("/successful")
     @Produces(MediaType.APPLICATION_JSON)
@@ -638,6 +719,14 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
+    /**
+     * Monitors the progress of a specific content import job identified by its jobId.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job whose progress is to be monitored.
+     * @return An EventOutput for real-time job progress updates.
+     */
     @GET
     @Path("/{jobId}/monitor")
     @Produces(SseFeature.SERVER_SENT_EVENTS)
