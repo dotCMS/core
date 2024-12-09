@@ -243,8 +243,6 @@ public class ContentImportResource {
         }
     }
 
-
-
     @GET
     @Path("/{jobId}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -291,7 +289,6 @@ public class ContentImportResource {
         Job job = importHelper.getJob(jobId);
         return new ResponseEntityView<>(job);
     }
-
 
     @POST
     @Path("/{jobId}/cancel")
@@ -340,9 +337,6 @@ public class ContentImportResource {
         return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
-
-
-
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
@@ -385,7 +379,6 @@ public class ContentImportResource {
 
         return new ResponseEntityView<>(result);
     }
-
 
     @GET
     @Path("/active")
@@ -430,7 +423,6 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
-
     @GET
     @Path("/completed")
     @Produces(MediaType.APPLICATION_JSON)
@@ -474,7 +466,6 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
-
     @GET
     @Path("/canceled")
     @Produces(MediaType.APPLICATION_JSON)
@@ -517,7 +508,6 @@ public class ContentImportResource {
         final JobPaginatedResult result = importHelper.getCanceledJobs(page, pageSize);
         return new ResponseEntityView<>(result);
     }
-
 
     @GET
     @Path("/failed")
@@ -605,7 +595,6 @@ public class ContentImportResource {
         return new ResponseEntityView<>(result);
     }
 
-
     @GET
     @Path("/successful")
     @Produces(MediaType.APPLICATION_JSON)
@@ -648,7 +637,6 @@ public class ContentImportResource {
         final JobPaginatedResult result = importHelper.getSuccessfulJobs(page, pageSize);
         return new ResponseEntityView<>(result);
     }
-
 
     @GET
     @Path("/{jobId}/monitor")
@@ -697,5 +685,4 @@ public class ContentImportResource {
 
         return sseMonitorUtil.monitorJob(jobId);
     }
-
 }
