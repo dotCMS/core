@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     forwardRef,
     inject,
     input,
@@ -10,6 +11,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
@@ -19,6 +21,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotSelectExistingContentComponent } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
 @Component({
@@ -29,7 +32,9 @@ import { RelationshipFieldStore } from './store/relationship-field.store';
         ButtonModule,
         MenuModule,
         DotSelectExistingContentComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        ChipModule,
+        PaginationComponent
     ],
     providers: [
         RelationshipFieldStore,
@@ -93,6 +98,16 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /**
+     * A computed signal that holds the hint text for the relationship field.
+     * This text is displayed in the table header to provide additional information about the field.
+     */
+    $hitText = computed(() => {
+        const field = this.$field();
+
+        return field.hint || null;
+    });
+
+    /**
      * Set the value of the field.
      * If the value is empty, nothing happens.
      * If the value is not empty, the store is called to get the asset data.
@@ -134,4 +149,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * A callback function that is called when the field is touched.
      */
     private onTouched: (() => void) | null = null;
+
+    /**
+     * Deletes an item from the store at the specified index.
+     *
+     * @param index - The index of the item to delete.
+     */
+    deleteItem(id: string) {
+        this.store.deleteItem(id);
+    }
 }

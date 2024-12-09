@@ -1,6 +1,8 @@
 import { JsonObject } from '@angular-devkit/core';
 import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
+import { AnalyticsQueryExample } from './store/dot-analytics-search.store';
+
 const BASE_MONACO_EDITOR_OPTIONS: MonacoEditorConstructionOptions = {
     theme: 'vs',
     minimap: {
@@ -33,3 +35,42 @@ export const isValidJson = (jsonString: string): boolean | JsonObject => {
         return false;
     }
 };
+
+export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
+    {
+        title: 'analytics.search.query.by.page',
+        query: `
+{
+  "measures": ["request.count"],
+  "order": {
+        "request.count": "desc"
+  },
+  "dimensions": ["request.pageTitle"],
+  "filters": [
+    {
+      "member": "request.whatAmI",
+      "operator": "equals",
+      "values": [
+        "PAGE"
+      ]
+    }
+  ]
+}`
+    },
+    {
+        title: 'analytics.search.query.by.daily.sessions',
+        query: `
+{
+  "order": {
+    "request.totalSessions": "desc"
+  },
+  "measures": [
+    "request.totalRequest",
+    "request.totalSessions"
+  ],
+  "dimensions": [
+    "request.host"
+  ]
+}`
+    }
+];

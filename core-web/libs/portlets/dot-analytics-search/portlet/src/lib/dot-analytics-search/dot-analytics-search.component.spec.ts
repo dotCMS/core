@@ -4,8 +4,11 @@ import { MockModule } from 'ng-mocks';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
+import { ButtonModule } from 'primeng/button';
+import { Dialog, DialogModule } from 'primeng/dialog';
 import { Splitter } from 'primeng/splitter';
 
 import {
@@ -27,7 +30,7 @@ describe('DotAnalyticsSearchComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsSearchComponent,
-        imports: [MockModule(MonacoEditorModule)],
+        imports: [MockModule(MonacoEditorModule), ButtonModule, DialogModule],
         componentProviders: [DotAnalyticsSearchStore, DotAnalyticsSearchService],
         declarations: [],
         mocks: [],
@@ -88,19 +91,19 @@ describe('DotAnalyticsSearchComponent', () => {
         it('should call getResults with valid JSON', () => {
             const getResultsSpy = jest.spyOn(store, 'getResults');
 
-            spectator.component.queryEditor = '{"measures": ["request.count"]}';
-            spectator.component.handleQueryChange('{"measures": ["request.count"]}');
+            store.setQuery('{"measures": ["request.count"]}');
+
             spectator.detectChanges();
 
             const button = spectator.query(byTestId('run-query')) as HTMLButtonElement;
             spectator.click(button);
 
-            expect(getResultsSpy).toHaveBeenCalledWith({ measures: ['request.count'] });
+            expect(getResultsSpy).toHaveBeenCalled();
         });
 
         it('should not call getResults with invalid JSON', () => {
-            spectator.component.queryEditor = 'invalid json';
-            spectator.component.handleQueryChange('invalid json');
+            store.setQuery('invalid json');
+
             spectator.detectChanges();
 
             const button = spectator.query(byTestId('run-query')) as HTMLButtonElement;
@@ -112,6 +115,48 @@ describe('DotAnalyticsSearchComponent', () => {
         it('should render the Splitter when healthCheck is "OK"', () => {
             spectator.detectChanges();
             expect(spectator.query(Splitter)).toExist();
+        });
+
+        describe('when the help dialog is displayed', () => {
+            it('should display the help dialog when the help button is clicked', fakeAsync(() => {
+                const helpButton = spectator.query(byTestId('help-button')) as HTMLButtonElement;
+                spectator.click(helpButton);
+
+                tick();
+                spectator.detectChanges();
+
+                const dialog = spectator.query(Dialog);
+
+                expect(dialog).toExist();
+                expect(dialog).toBeVisible();
+            }));
+
+            it('should display the correct number of query examples in the dialog', fakeAsync(() => {
+                const helpButton = spectator.query(byTestId('help-button')) as HTMLButtonElement;
+                spectator.click(helpButton);
+
+                tick();
+                spectator.detectChanges();
+
+                const queryExamples = store.queryExamples();
+                const exampleElements = spectator.queryAll(byTestId('query-example-container'));
+                expect(exampleElements.length).toEqual(queryExamples.length);
+            }));
+
+            it('should call addExampleQuery when a query example button is clicked', fakeAsync(() => {
+                const setQuerySpy = jest.spyOn(store, 'setQuery');
+                const queryExamples = store.queryExamples();
+                const helpButton = spectator.query(byTestId('help-button')) as HTMLButtonElement;
+                spectator.click(helpButton);
+
+                tick();
+                spectator.detectChanges();
+
+                spectator.click(byTestId('query-example-button'));
+
+                expect(spectator.component.$showDialog()).toBeFalsy();
+                expect(setQuerySpy).toHaveBeenCalledWith(queryExamples[0].query);
+            }));
         });
     });
 

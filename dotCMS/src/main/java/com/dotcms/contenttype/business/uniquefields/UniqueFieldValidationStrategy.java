@@ -162,4 +162,15 @@ public interface  UniqueFieldValidationStrategy {
         //Default implementation do nothing
     }
 
+    /**
+     * Method called after delete a {@link ContentType}, to allow the {@link UniqueFieldValidationStrategy} do any extra
+     * work that it need it.
+     *
+     * @param contentType deleted ContentType
+     * @throws DotDataException
+     */
+    default void cleanUp(final ContentType contentType) throws DotDataException {
+        //Default implementation do nothing
+    }
+
 }

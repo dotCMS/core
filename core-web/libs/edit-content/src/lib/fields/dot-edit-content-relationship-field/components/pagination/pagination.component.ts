@@ -22,6 +22,14 @@ export class PaginationComponent {
     $currentPage = input.required<number>({ alias: 'currentPage' });
 
     /**
+     * A signal that holds the current page report layout.
+     * It is used to determine the layout of the current page report in the pagination component.
+     */
+    $currentPageReportLayout = input<'center' | 'left'>('center', {
+        alias: 'currentPageReportLayout'
+    });
+
+    /**
      * An output signal that emits when the previous page button is clicked.
      */
     previousPage = output<void>();

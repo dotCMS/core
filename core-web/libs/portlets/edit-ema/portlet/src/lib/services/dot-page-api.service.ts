@@ -43,6 +43,7 @@ export interface DotPageApiParams {
     url: string;
     language_id: string;
     'com.dotmarketing.persona.id': string;
+    preview?: string;
     variantName?: string;
     experimentId?: string;
     mode?: string;
@@ -58,7 +59,8 @@ export enum DotPageApiKeys {
     VARIANT_NAME = 'variantName',
     LANGUAGE_ID = 'language_id',
     EXPERIMENT_ID = 'experimentId',
-    PERSONA_ID = 'com.dotmarketing.persona.id'
+    PERSONA_ID = 'com.dotmarketing.persona.id',
+    PREVIEW = 'preview'
 }
 
 export interface GetPersonasParams {
@@ -92,17 +94,19 @@ export class DotPageApiService {
      */
     get(params: DotPageApiParams): Observable<DotPageApiResponse> {
         // Remove trailing and leading slashes
+        const { clientHost, preview, depth = '0', language_id, variantName, experimentId } = params;
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
-        const pageType = params.clientHost ? 'json' : 'render';
-        const mode = PAGE_MODE.EDIT;
+        const isPreview = preview === 'true';
+        const pageType = clientHost ? 'json' : 'render';
+        const mode = isPreview ? PAGE_MODE.PREVIEW : PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
-            language_id: params.language_id,
-            'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
-            variantName: params.variantName,
-            experimentId: params.experimentId,
-            depth: params['depth'] || '0',
+            language_id,
+            'com.dotmarketing.persona.id': params?.['com.dotmarketing.persona.id'],
+            variantName,
+            experimentId,
+            depth,
             mode
         });
 

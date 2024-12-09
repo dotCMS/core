@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business.uniquefields.extratable;
 
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -68,7 +69,7 @@ public class UniqueFieldsTableCleaner {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                     .find(contentlet.getContentTypeId());
 
-            boolean hasUniqueField = contentType.fields().stream().anyMatch(Field::unique);
+            boolean hasUniqueField = hasUniqueField(contentType);
 
             if (hasUniqueField) {
                 uniqueFieldValidationStrategyResolver.get().cleanUp(contentlet, event.isDeleteAllVariant());
@@ -78,8 +79,12 @@ public class UniqueFieldsTableCleaner {
         }
     }
 
+    private static boolean hasUniqueField(ContentType contentType) {
+        return contentType.fields().stream().anyMatch(Field::unique);
+    }
+
     /**
-     * Listen when a Field is deleted and if this ia a Unique Field then delete all the register in
+     * Listen when a Field is deleted and if this is a Unique Field then delete all the register in
      * unique_fields table for this Field
      *
      * @param event
@@ -92,6 +97,25 @@ public class UniqueFieldsTableCleaner {
 
         if (deletedField.unique()) {
             uniqueFieldValidationStrategyResolver.get().cleanUp(deletedField);
+        }
+    }
+
+    /**
+     * Listen when a {@link ContentType} is deleted and if this has at least one Unique Field then delete all the register in
+     * unique_fields table for this {@link ContentType}
+     *
+     * @param event
+     *
+     * @throws DotDataException
+     */
+    @Subscriber
+    public void cleanUpAfterDeleteContentType(final ContentTypeDeletedEvent contentTypeDeletedEvent) throws DotDataException {
+        final ContentType contentType = contentTypeDeletedEvent.getContentType();
+
+        boolean hasUniqueField = hasUniqueField(contentType);
+
+        if (hasUniqueField) {
+            uniqueFieldValidationStrategyResolver.get().cleanUp(contentType);
         }
     }
 }

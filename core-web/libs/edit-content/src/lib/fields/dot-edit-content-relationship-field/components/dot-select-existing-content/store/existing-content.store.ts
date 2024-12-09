@@ -1,4 +1,4 @@
-import { faker } from '@faker-js/faker';
+import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
     signalStore,
@@ -7,21 +7,19 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe } from 'rxjs';
 
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
+
+import { tap, switchMap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-
-export interface Content {
-    id: string;
-    title: string;
-    step: string;
-    description: string;
-    lastUpdate: string;
-}
+import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
-    data: Content[];
+    data: RelationshipFieldItem[];
     status: ComponentStatus;
     pagination: {
         offset: number;
@@ -50,38 +48,54 @@ export const ExistingContentStore = signalStore(
         isLoading: computed(() => state.status() === ComponentStatus.LOADING),
         totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage))
     })),
-    withMethods((store) => ({
-        loadContent() {
-            const mockData = Array.from({ length: 100 }, () => ({
-                id: faker.string.uuid(),
-                title: faker.lorem.sentence(),
-                step: faker.helpers.arrayElement(['Draft', 'Published', 'Archived']),
-                description: faker.lorem.paragraph(),
-                lastUpdate: faker.date.recent().toISOString()
-            }));
-            patchState(store, {
-                data: mockData
-            });
-        },
-        nextPage() {
-            patchState(store, {
-                pagination: {
-                    ...store.pagination(),
-                    offset: store.pagination().offset + store.pagination().rowsPerPage,
-                    currentPage: store.pagination().currentPage + 1
-                }
-            });
-        },
-        previousPage() {
-            patchState(store, {
-                pagination: {
-                    ...store.pagination(),
-                    offset: store.pagination().offset - store.pagination().rowsPerPage,
-                    currentPage: store.pagination().currentPage - 1
-                }
-            });
-        }
-    })),
+    withMethods((store) => {
+        const relationshipFieldService = inject(RelationshipFieldService);
+
+        return {
+            /**
+             * Initiates the loading of content by setting the status to LOADING and fetching content from the service.
+             * @returns {Observable<void>} An observable that completes when the content has been loaded.
+             */
+            loadContent: rxMethod<void>(
+                pipe(
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
+                    switchMap(() =>
+                        relationshipFieldService.getContent().pipe(
+                            tapResponse({
+                                next: (data) =>
+                                    patchState(store, { data, status: ComponentStatus.LOADED }),
+                                error: () => patchState(store, { status: ComponentStatus.ERROR })
+                            })
+                        )
+                    )
+                )
+            ),
+            /**
+             * Advances the pagination to the next page and updates the state accordingly.
+             */
+            nextPage: () => {
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: store.pagination().offset + store.pagination().rowsPerPage,
+                        currentPage: store.pagination().currentPage + 1
+                    }
+                });
+            },
+            /**
+             * Moves the pagination to the previous page and updates the state accordingly.
+             */
+            previousPage: () => {
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: store.pagination().offset - store.pagination().rowsPerPage,
+                        currentPage: store.pagination().currentPage - 1
+                    }
+                });
+            }
+        };
+    }),
     withHooks({
         onInit: (store) => {
             store.loadContent();

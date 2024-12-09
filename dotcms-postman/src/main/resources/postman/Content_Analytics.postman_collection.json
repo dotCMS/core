@@ -38,7 +38,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"measures\": \"request.count request.totalSessions\",\n    \"dimensions\": \"request.host request.whatAmI request.url\",\n    \"timeDimensions\": \"request.createdAt:day:Last month\",\n    \"filters\": \"request.totalRequest gt 0:request.whatAmI contains PAGE,FILE\",\n    \"order\": \"request.count asc:request.createdAt asc\",\n    \"limit\": 5,\n    \"offset\": 0\n}",
+									"raw": "{\n    \"measures\": \"count,totalSessions\",\n    \"dimensions\": \"host,whatAmI,url\",\n    \"timeDimensions\": \"createdAt,day:Last month\",\n    \"filters\": \"totalRequest gt 0,whatAmI contains PAGE||FILE\",\n    \"order\": \"count asc,createdAt asc\",\n    \"limit\": 5,\n    \"offset\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -120,7 +120,7 @@
 							"response": []
 						}
 					],
-					"description": "This test group verifies that the Endpoint that receives simple String parameters for the Content Analytics query works as expected. This endpoint takes a JSON body with parameters such as the following:\n\n`{`\n\n`\"measures\": \"request.count request.totalSessions\",`\n\n`\"dimensions\": \"request.host request.whatAmI request.url\",`\n\n`\"timeDimensions\": \"request.createdAt:day:Last month\",`\n\n`\"filters\": \"request.totalRequest gt 0:request.whatAmI contains PAGE,FILE\",`\n\n`\"order\": \"request.count asc:request.createdAt asc\",`\n\n`\"limit\": 5,`\n\n`\"offset\": 0`\n\n`}`"
+					"description": "This test group verifies that the Endpoint that receives simple String parameters for the Content Analytics query works as expected. This endpoint takes a JSON body with parameters such as the following:\n\n`{`\n\n`\"measures\": \"count,totalSessions\",`\n\n`\"dimensions\": \"host,whatAmI,url\",`\n\n`\"timeDimensions\": \"createdAt,day:Last month\",`\n\n`\"filters\": \"totalRequest gt 0,whatAmI contains PAGE,FILE\",`\n\n`\"order\": \"count asc,createdAt asc\",`\n\n`\"limit\": 5,`\n\n`\"offset\": 0`\n\n`}`\n\nThe schema prefix for the appropriate terms is appended automatically by the service."
 				},
 				{
 					"name": "Using the JSON query",

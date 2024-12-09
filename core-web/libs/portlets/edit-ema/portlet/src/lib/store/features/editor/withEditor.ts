@@ -132,7 +132,8 @@ export function withEditor() {
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
 
-                    const showPalette = isEnterprise && canEditPage && isEditState;
+                    const isPreview = params?.preview === 'true';
+                    const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
