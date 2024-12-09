@@ -4,8 +4,6 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
-import com.dotcms.jobs.business.job.JobState;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -20,18 +18,14 @@ import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Helper class for managing content import operations in the dotCMS application.
  * <p>
- * This class provides methods to create and manage jobs for importing content
- * from external sources, such as CSV files, into the system. It handles the
- * validation of import parameters, processes file uploads, and constructs
- * the necessary job parameters to enqueue content import tasks in the job queue.
+ * This class provides methods to create and manage jobs for importing content from external
+ * sources, such as CSV files, into the system. It handles the validation of import parameters,
+ * processes file uploads, and constructs the necessary job parameters to enqueue content import
+ * tasks in the job queue.
  */
 @ApplicationScoped
 public class ContentImportHelper {
@@ -61,11 +55,12 @@ public class ContentImportHelper {
      *
      * @param command   The command indicating the type of operation (e.g., "preview" or "import").
      * @param queueName The name of the queue to which the job should be submitted.
-     * @param params    The content import parameters containing the details of the import operation.
+     * @param params    The content import parameters containing the details of the import
+     *                  operation.
      * @param user      The user initiating the import.
      * @param request   The HTTP request associated with the import operation.
      * @return The ID of the created job.
-     * @throws DotDataException         If there is an error creating the job.
+     * @throws DotDataException        If there is an error creating the job.
      * @throws JsonProcessingException If there is an error processing JSON data.
      */
     public String createJob(
@@ -76,7 +71,8 @@ public class ContentImportHelper {
             final HttpServletRequest request) throws DotDataException, JsonProcessingException {
 
         params.checkValid();
-        final Map<String, Object> jobParameters = createJobParameters(command, params, user, request);
+        final Map<String, Object> jobParameters = createJobParameters(command, params, user,
+                request);
         processFileUpload(params, jobParameters, request);
 
         return jobQueueManagerAPI.createJob(queueName, jobParameters);
@@ -84,6 +80,7 @@ public class ContentImportHelper {
 
     /**
      * gets a job
+     *
      * @param jobId The ID of the job
      * @return Job
      * @throws DotDataException if there's an error fetching the job
@@ -110,7 +107,8 @@ public class ContentImportHelper {
 
     /**
      * Retrieves a list of active content import jobs.
-     * @param page    The page number
+     *
+     * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return JobPaginatedResult
      */
@@ -126,13 +124,15 @@ public class ContentImportHelper {
 
     /**
      * Retrieves a list of completed content import jobs.
-     * @param page    The page number
+     *
+     * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return JobPaginatedResult
      */
     JobPaginatedResult getCompletedJobs(int page, int pageSize) {
         try {
-            return jobQueueManagerAPI.getCompletedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+            return jobQueueManagerAPI.getCompletedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page,
+                    pageSize);
         } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching active content import jobs", e);
         }
@@ -141,13 +141,15 @@ public class ContentImportHelper {
 
     /**
      * Retrieves a list of completed content import jobs.
-     * @param page    The page number
+     *
+     * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return JobPaginatedResult
      */
     JobPaginatedResult getCanceledJobs(int page, int pageSize) {
         try {
-            return jobQueueManagerAPI.getCanceledJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+            return jobQueueManagerAPI.getCanceledJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page,
+                    pageSize);
         } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching canceled content import jobs", e);
         }
@@ -156,7 +158,8 @@ public class ContentImportHelper {
 
     /**
      * Retrieves a list of failed content import jobs.
-     * @param page    The page number
+     *
+     * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return JobPaginatedResult
      */
@@ -171,13 +174,15 @@ public class ContentImportHelper {
 
     /**
      * Retrieves a list of abandoned content import jobs.
-     * @param page    The page number
+     *
+     * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return JobPaginatedResult
      */
     JobPaginatedResult getAbandonedJobs(int page, int pageSize) {
         try {
-            return jobQueueManagerAPI.getAbandonedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+            return jobQueueManagerAPI.getAbandonedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page,
+                    pageSize);
         } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching abandoned content import jobs", e);
         }
@@ -186,13 +191,15 @@ public class ContentImportHelper {
 
     /**
      * Retrieves a list of successful content import jobs.
-     * @param page    The page number
+     *
+     * @param page     The page number
      * @param pageSize The number of jobs per page
      * @return JobPaginatedResult
      */
     JobPaginatedResult getSuccessfulJobs(int page, int pageSize) {
         try {
-            return jobQueueManagerAPI.getSuccessfulJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+            return jobQueueManagerAPI.getSuccessfulJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page,
+                    pageSize);
         } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching abandoned content import jobs", e);
         }
@@ -201,11 +208,12 @@ public class ContentImportHelper {
 
     /**
      * cancels a job
+     *
      * @param jobId The ID of the job
      * @throws DotDataException if there's an error cancelling the job
      */
     void cancelJob(String jobId) throws DotDataException {
-        try{
+        try {
             jobQueueManagerAPI.cancelJob(jobId);
         } catch (JobProcessorNotFoundException e) {
             Logger.error(this.getClass(), "Error cancelling job", e);
@@ -216,10 +224,10 @@ public class ContentImportHelper {
     /**
      * Constructs a map of job parameters based on the provided inputs.
      *
-     * @param command   The command indicating the type of operation.
-     * @param params    The content import parameters.
-     * @param user      The user initiating the import.
-     * @param request   The HTTP request associated with the operation.
+     * @param command The command indicating the type of operation.
+     * @param params  The content import parameters.
+     * @param user    The user initiating the import.
+     * @param request The HTTP request associated with the operation.
      * @return A map containing the job parameters.
      * @throws JsonProcessingException If there is an error processing JSON data.
      */
@@ -275,7 +283,7 @@ public class ContentImportHelper {
      */
     private void addSiteInformation(
             final HttpServletRequest request,
-            final Map<String, Object> jobParameters){
+            final Map<String, Object> jobParameters) {
 
         final var currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         jobParameters.put("siteName", currentHost.getHostname());
@@ -302,7 +310,8 @@ public class ContentImportHelper {
                     params.getFileInputStream()
             );
             jobParameters.put("tempFileId", tempFile.id);
-            jobParameters.put("requestFingerPrint", APILocator.getTempFileAPI().getRequestFingerprint(request));
+            jobParameters.put("requestFingerPrint",
+                    APILocator.getTempFileAPI().getRequestFingerprint(request));
         } catch (DotSecurityException e) {
             Logger.error(this, "Error handling file upload", e);
             throw new DotDataException("Error processing file upload: " + e.getMessage());
