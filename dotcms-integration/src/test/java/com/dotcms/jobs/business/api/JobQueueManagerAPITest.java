@@ -253,6 +253,224 @@ public class JobQueueManagerAPITest {
         verify(mockJobQueue).getJobs(1, 10);
     }
 
+
+    /**
+     * Method to test: getJobs for a particular queue in JobQueueManagerAPI
+     * Given Scenario: Valid page and pageSize parameters are provided
+     * ExpectedResult: Correct list of jobs is retrieved from the job queue
+     */
+    @Test
+    public void test_getJobsFromQueue() throws DotDataException, JobQueueDataException {
+
+        // Prepare test data
+        Job job1 = mock(Job.class);
+        Job job2 = mock(Job.class);
+        List<Job> expectedJobs = Arrays.asList(job1, job2);
+        final var paginatedResult = JobPaginatedResult.builder()
+                .jobs(expectedJobs)
+                .total(2)
+                .page(1)
+                .pageSize(10)
+                .build();
+
+        // Mock the behavior of jobQueue.getJobs
+        when(mockJobQueue.getJobs("testQueue",1, 10)).thenReturn(paginatedResult);
+
+        // Call the method under test
+        final var actualResult = jobQueueManagerAPI.getJobs("testQueue", 1, 10);
+
+        // Verify the results
+        assertEquals(expectedJobs, actualResult.jobs());
+        verify(mockJobQueue).getJobs("testQueue", 1, 10);
+    }
+
+
+    /**
+     * Method to test: getActiveJobs for a particular queue in JobQueueManagerAPI
+     * Given Scenario: Valid page and pageSize parameters are provided
+     * ExpectedResult: Correct list of jobs is retrieved from the job queue
+     */
+    @Test
+    public void test_getActiveJobsFromQueue() throws DotDataException, JobQueueDataException {
+
+        // Prepare test data
+        Job job1 = mock(Job.class);
+        Job job2 = mock(Job.class);
+        List<Job> expectedJobs = Arrays.asList(job1, job2);
+        final var paginatedResult = JobPaginatedResult.builder()
+                .jobs(expectedJobs)
+                .total(2)
+                .page(1)
+                .pageSize(10)
+                .build();
+
+        // Mock the behavior of jobQueue.getJobs
+        when(mockJobQueue.getActiveJobs("testQueue",1, 10)).thenReturn(paginatedResult);
+
+        // Call the method under test
+        final var actualResult = jobQueueManagerAPI.getActiveJobs("testQueue", 1, 10);
+
+        // Verify the results
+        assertEquals(expectedJobs, actualResult.jobs());
+        verify(mockJobQueue).getActiveJobs("testQueue", 1, 10);
+    }
+
+
+    /**
+     * Method to test: getCompletedJobs for a particular queue in JobQueueManagerAPI
+     * Given Scenario: Valid page and pageSize parameters are provided
+     * ExpectedResult: Correct list of jobs is retrieved from the job queue
+     */
+    @Test
+    public void test_getCompletedJobsFromQueue() throws DotDataException, JobQueueDataException {
+
+        // Prepare test data
+        Job job1 = mock(Job.class);
+        Job job2 = mock(Job.class);
+        List<Job> expectedJobs = Arrays.asList(job1, job2);
+        final var paginatedResult = JobPaginatedResult.builder()
+                .jobs(expectedJobs)
+                .total(2)
+                .page(1)
+                .pageSize(10)
+                .build();
+
+        // Mock the behavior of jobQueue.getJobs
+        when(mockJobQueue.getCompletedJobs("testQueue",1, 10)).thenReturn(paginatedResult);
+
+        // Call the method under test
+        final var actualResult = jobQueueManagerAPI.getCompletedJobs("testQueue", 1, 10);
+
+        // Verify the results
+        assertEquals(expectedJobs, actualResult.jobs());
+        verify(mockJobQueue).getCompletedJobs("testQueue", 1, 10);
+    }
+
+
+    /**
+     * Method to test: getCanceledJobs for a particular queue in JobQueueManagerAPI
+     * Given Scenario: Valid page and pageSize parameters are provided
+     * ExpectedResult: Correct list of jobs is retrieved from the job queue
+     */
+    @Test
+    public void test_getCanceledJobsFromQueue() throws DotDataException, JobQueueDataException {
+
+        // Prepare test data
+        Job job1 = mock(Job.class);
+        Job job2 = mock(Job.class);
+        List<Job> expectedJobs = Arrays.asList(job1, job2);
+        final var paginatedResult = JobPaginatedResult.builder()
+                .jobs(expectedJobs)
+                .total(2)
+                .page(1)
+                .pageSize(10)
+                .build();
+
+        // Mock the behavior of jobQueue.getJobs
+        when(mockJobQueue.getCanceledJobs("testQueue",1, 10)).thenReturn(paginatedResult);
+
+        // Call the method under test
+        final var actualResult = jobQueueManagerAPI.getCanceledJobs("testQueue", 1, 10);
+
+        // Verify the results
+        assertEquals(expectedJobs, actualResult.jobs());
+        verify(mockJobQueue).getCanceledJobs("testQueue", 1, 10);
+    }
+
+
+    /**
+     * Method to test: getFailedJobs for a particular queue in JobQueueManagerAPI
+     * Given Scenario: Valid page and pageSize parameters are provided
+     * ExpectedResult: Correct list of jobs is retrieved from the job queue
+     */
+    @Test
+    public void test_getFailedJobsFromQueue() throws DotDataException, JobQueueDataException {
+
+        // Prepare test data
+        Job job1 = mock(Job.class);
+        Job job2 = mock(Job.class);
+        List<Job> expectedJobs = Arrays.asList(job1, job2);
+        final var paginatedResult = JobPaginatedResult.builder()
+                .jobs(expectedJobs)
+                .total(2)
+                .page(1)
+                .pageSize(10)
+                .build();
+
+        // Mock the behavior of jobQueue.getJobs
+        when(mockJobQueue.getFailedJobs("testQueue",1, 10)).thenReturn(paginatedResult);
+
+        // Call the method under test
+        final var actualResult = jobQueueManagerAPI.getFailedJobs("testQueue", 1, 10);
+
+        // Verify the results
+        assertEquals(expectedJobs, actualResult.jobs());
+        verify(mockJobQueue).getFailedJobs("testQueue", 1, 10);
+    }
+
+
+    /**
+     * Method to test: getAbandonedJobs for a particular queue in JobQueueManagerAPI
+     * Given Scenario: Valid page and pageSize parameters are provided
+     * ExpectedResult: Correct list of jobs is retrieved from the job queue
+     */
+    @Test
+    public void test_getAbandonedJobsFromQueue() throws DotDataException, JobQueueDataException {
+
+        // Prepare test data
+        Job job1 = mock(Job.class);
+        Job job2 = mock(Job.class);
+        List<Job> expectedJobs = Arrays.asList(job1, job2);
+        final var paginatedResult = JobPaginatedResult.builder()
+                .jobs(expectedJobs)
+                .total(2)
+                .page(1)
+                .pageSize(10)
+                .build();
+
+        // Mock the behavior of jobQueue.getJobs
+        when(mockJobQueue.getAbandonedJobs("testQueue",1, 10)).thenReturn(paginatedResult);
+
+        // Call the method under test
+        final var actualResult = jobQueueManagerAPI.getAbandonedJobs("testQueue", 1, 10);
+
+        // Verify the results
+        assertEquals(expectedJobs, actualResult.jobs());
+        verify(mockJobQueue).getAbandonedJobs("testQueue", 1, 10);
+    }
+
+
+    /**
+     * Method to test: getSuccessfulJobs for a particular queue in JobQueueManagerAPI
+     * Given Scenario: Valid page and pageSize parameters are provided
+     * ExpectedResult: Correct list of jobs is retrieved from the job queue
+     */
+    @Test
+    public void test_getSuccessfulJobsFromQueue() throws DotDataException, JobQueueDataException {
+
+        // Prepare test data
+        Job job1 = mock(Job.class);
+        Job job2 = mock(Job.class);
+        List<Job> expectedJobs = Arrays.asList(job1, job2);
+        final var paginatedResult = JobPaginatedResult.builder()
+                .jobs(expectedJobs)
+                .total(2)
+                .page(1)
+                .pageSize(10)
+                .build();
+
+        // Mock the behavior of jobQueue.getJobs
+        when(mockJobQueue.getSuccessfulJobs("testQueue",1, 10)).thenReturn(paginatedResult);
+
+        // Call the method under test
+        final var actualResult = jobQueueManagerAPI.getSuccessfulJobs("testQueue", 1, 10);
+
+        // Verify the results
+        assertEquals(expectedJobs, actualResult.jobs());
+        verify(mockJobQueue).getSuccessfulJobs("testQueue", 1, 10);
+    }
+
+
     /**
      * Method to test: start in JobQueueManagerAPI
      * Given Scenario: JobQueueManagerAPI is not started
