@@ -44,7 +44,7 @@ on:
 
 jobs:
   slack-channel-resolver:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       channel_ids: ${{ steps.resolve-channels.outputs.channel_ids }}
       mappings_json: ${{ steps.resolve-channels.outputs.mappings_json }}

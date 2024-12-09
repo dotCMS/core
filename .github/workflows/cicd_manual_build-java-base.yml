@@ -19,7 +19,7 @@ on:
 jobs:
   build_image:
     name: Build Docker Base Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout core
         uses: actions/checkout@v4

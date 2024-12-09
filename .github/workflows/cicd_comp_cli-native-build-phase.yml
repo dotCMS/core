@@ -56,7 +56,7 @@ jobs:
   # Job to determine the OS matrix for the build
   os-runners:
     name: 'Get OS matrix'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       runners: ${{ steps.set-os.outputs.runners }}
     steps:

@@ -4,7 +4,7 @@ on:
     types: [labeled]
 jobs:
   assign_one_project:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Assign to QA Project
     env:
       QA_PROJECT_ID: 6

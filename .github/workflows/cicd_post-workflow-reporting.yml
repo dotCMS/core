@@ -46,7 +46,7 @@ permissions:
 
 jobs:
   report:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       # Log GitHub context for debugging
       - name: Log GitHub context

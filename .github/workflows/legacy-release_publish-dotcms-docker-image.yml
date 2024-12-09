@@ -19,7 +19,7 @@ on:
 jobs:
   prepare-build:
     name: Prepare build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       ref: ${{ steps.set-common-vars.outputs.ref }}
       docker_platforms: ${{ steps.set-common-vars.outputs.docker_platforms }}

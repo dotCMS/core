@@ -48,7 +48,7 @@ on:
 jobs:
   build-push-image:
     name: Build/Push Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       JAVA_VERSION: 11
       JAVA_DISTRO: temurin

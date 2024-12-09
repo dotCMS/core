@@ -14,7 +14,7 @@ on:
         required: true
 jobs:
   resolve-data:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       issue_number: ${{ steps.evaluate-actions.outputs.issue_number }}
     steps:
@@ -152,7 +152,7 @@ jobs:
   frontend-notify:
     name: Notify team member ${{ matrix.member }}
     needs: [resolve-data, slack-channel-resolver]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: success() && needs.resolve-data.outputs.issue_number && needs.slack-channel-resolver.outputs.channel_ids
     strategy:
       fail-fast: false

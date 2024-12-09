@@ -50,7 +50,7 @@ jobs:
   # It provides a local Maven repo for subsequent steps.
   build-jdk11:
     name: "Initial Artifact Build"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: inputs.core-build == true
     permissions:
       contents: read

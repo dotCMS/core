@@ -19,7 +19,7 @@ on:
 
 jobs:
   qa-not-needed-update:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       QA_NOT_NEEDED_LABEL: 'QA : Not Needed'
       REPO: core
