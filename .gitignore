@@ -179,3 +179,5 @@ dotCMS/dependencies.gradle
 !/examples/nextjs/.npmrc
 
 .nx/
+.cursorrules
+.cursorignore
