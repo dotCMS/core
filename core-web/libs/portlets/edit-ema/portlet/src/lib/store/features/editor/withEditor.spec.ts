@@ -672,6 +672,13 @@ describe('withEditor', () => {
                 expect(store.$editorProps().iframe.opacity).toBe('1');
             });
 
+            it('should not have opacity or progressBar in preview mode', () => {
+                patchState(store, { pageParams: { ...emptyParams, preview: 'true' } });
+
+                expect(store.$editorProps().iframe.opacity).toBe('1');
+                expect(store.$editorProps().progressBar).toBe(false);
+            });
+
             describe('showDialogs', () => {
                 it('should have the value of false when we cannot edit the page', () => {
                     patchState(store, { canEditPage: false });
