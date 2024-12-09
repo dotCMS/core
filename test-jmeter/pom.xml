@@ -26,6 +26,7 @@
         <jmeter.startup.delay>5</jmeter.startup.delay>
         <jmeter.test.duration>60</jmeter.test.duration>
         <jmeter.thread.number>2</jmeter.thread.number>
+        <jmeter.admin.password>admin</jmeter.admin.password>
     </properties>
 
     <dependencies>
@@ -41,7 +42,10 @@
         <profile>
         <id>jmeter-standalone</id>
         <activation>
-            <activeByDefault>true</activeByDefault>
+            <property>
+                <name>jmeter.test.skip</name>
+                <value>false</value>
+            </property>
         </activation>
         <build>
             <plugins>
@@ -112,6 +116,7 @@
                             <host>${jmeter.host}</host>
                             <port>${jmeter.port}</port>
                             <rampup>${jmeter.rampup}</rampup>
+                            <admin.password>${jmeter.admin.password}</admin.password>
                             <startup.delay>${jmeter.startup.delay}</startup.delay>
                             <test.duration>${jmeter.test.duration}</test.duration>
                             <thread.number>${jmeter.thread.number}</thread.number>
@@ -128,5 +133,19 @@
             </plugins>
         </build>
         </profile>
+        <profile>
+            <id>jmeter.env.password</id>
+            <activation>
+                <property>
+                    <name>jmeter.env.password</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <jmeter.admin.password>${env.JMETER_ADMIN_PASSWORD}</jmeter.admin.password>
+            </properties>
+        </profile>
     </profiles>
+
+
 </project>
