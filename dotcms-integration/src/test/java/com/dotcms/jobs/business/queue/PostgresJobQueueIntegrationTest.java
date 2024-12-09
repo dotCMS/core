@@ -101,6 +101,44 @@ public class PostgresJobQueueIntegrationTest {
 
 
     /**
+     * Method to test: getJobs in PostgresJobQueue for a specific queue
+     * Given Scenario: Multiple successful jobs are created
+     * ExpectedResult: All successful jobs are retrieved correctly
+     */
+    @Test
+    void test_getJobsForQueue() throws JobQueueException {
+
+        String queueName = "testQueue";
+        for (int i = 0; i < 5; i++) {
+            String jobId = jobQueue.createJob(queueName, new HashMap<>());
+            Job job = jobQueue.getJob(jobId);
+            Job completedJob = job.markAsSuccessful(null);
+            jobQueue.updateJobStatus(completedJob);
+        }
+        for (int i = 0; i < 5; i++) {
+            String jobId = jobQueue.createJob(queueName, new HashMap<>());
+            Job job = jobQueue.getJob(jobId);
+            Job canceledJob = job.markAsCanceled(null);
+            jobQueue.updateJobStatus(canceledJob);
+        }
+        String queueName2 = "testQueue2";
+        for (int i = 0; i < 5; i++) {
+            String jobId = jobQueue.createJob(queueName2, new HashMap<>());
+            Job job = jobQueue.getJob(jobId);
+            Job canceledJob = job.markAsCanceled(null);
+            jobQueue.updateJobStatus(canceledJob);
+        }
+
+        JobPaginatedResult result = jobQueue.getJobs(queueName, 1, 10);
+        assertEquals(10, result.jobs().size());
+        assertEquals(10, result.total());
+
+        JobPaginatedResult result2 = jobQueue.getJobs(queueName2, 1, 10);
+        assertEquals(5, result2.jobs().size());
+        assertEquals(5, result2.total());
+    }
+
+    /**
      * Method to test: getSuccessfulJobs in PostgresJobQueue for queue
      * Given Scenario: Multiple successful jobs are created
      * ExpectedResult: All successful jobs are retrieved correctly
