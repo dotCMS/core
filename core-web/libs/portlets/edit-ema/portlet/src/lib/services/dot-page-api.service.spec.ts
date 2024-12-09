@@ -108,6 +108,24 @@ describe('DotPageApiService', () => {
         expect(requestHeaders.get('Content-Type')).toEqual('application/json');
     });
 
+    describe('preview', () => {
+        it("should request page in preview mode if 'preview' is true", () => {
+            spectator.service
+                .get({
+                    url: 'test-url',
+                    language_id: 'en',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    preview: 'true'
+                })
+                .subscribe();
+
+            spectator.expectOne(
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=PREVIEW_MODE',
+                HttpMethod.GET
+            );
+        });
+    });
+
     describe('getClientPage', () => {
         const baseParams = {
             url: '///test-url///',

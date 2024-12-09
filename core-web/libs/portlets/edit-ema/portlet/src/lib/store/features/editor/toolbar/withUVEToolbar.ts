@@ -22,7 +22,7 @@ import {
     sanitizeURL
 } from '../../../../utils';
 import { UVEState } from '../../../models';
-import { EditorToolbarState, UVEToolbarProps } from '../models';
+import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
 
 /**
  * The initial state for the editor toolbar.
@@ -87,34 +87,39 @@ export function withUVEToolbar() {
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
-                return {
-                    editor: store.isPreviewModeActive()
-                        ? null
-                        : {
-                              bookmarksUrl,
-                              copyUrl: createFullURL(params, siteId),
-                              apiUrl: pageAPI
-                          },
-                    preview: store.isPreviewModeActive()
-                        ? {
-                              deviceSelector: {
-                                  apiLink: `${clientHost}${pageAPI}`,
-                                  hideSocialMedia: !store.isTraditionalPage()
-                              }
+                const isPreview = params?.preview === 'true';
+                const prevewItem = isPreview
+                    ? {
+                          deviceSelector: {
+                              apiLink: `${clientHost}${pageAPI}`,
+                              hideSocialMedia: !store.isTraditionalPage()
                           }
-                        : null,
+                      }
+                    : null;
+
+                return {
+                    editor: {
+                        bookmarksUrl,
+                        copyUrl: createFullURL(params, siteId),
+                        apiUrl: pageAPI
+                    },
+                    preview: prevewItem,
                     currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()
                         ? (pageAPIResponse?.urlContentMap ?? null)
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
                     workflowActionsInode: store.canEditPage() ? pageAPIResponse?.page.inode : null,
-                    personaSelector: {
-                        pageId: pageAPIResponse?.page.identifier,
-                        value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
-                    },
                     unlockButton: shouldShowUnlock ? unlockButton : null,
                     showInfoDisplay: shouldShowInfoDisplay
+                };
+            }),
+            $personaSelector: computed<PersonaSelectorProps>(() => {
+                const pageAPIResponse = store.pageAPIResponse();
+
+                return {
+                    pageId: pageAPIResponse?.page.identifier,
+                    value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
                 };
             }),
             $apiURL: computed<string>(() => {

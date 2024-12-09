@@ -307,7 +307,7 @@ describe('DotEmaShellComponent', () => {
         it('should call store.loadPageAsset when the `loadPageAsset` is called', () => {
             const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
             const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-            const spyLocation = jest.spyOn(location, 'replaceState');
+            const spyLocation = jest.spyOn(location, 'go');
 
             spectator.detectChanges();
             expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
@@ -376,7 +376,7 @@ describe('DotEmaShellComponent', () => {
 
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const spyUrlTree = jest.spyOn(router, 'createUrlTree');
-                const spyLocation = jest.spyOn(location, 'replaceState');
+                const spyLocation = jest.spyOn(location, 'go');
 
                 store.loadPageAsset(newParams);
                 spectator.detectChanges();
@@ -561,7 +561,7 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload if the url is the same', () => {
                 const spyReload = jest.spyOn(store, 'reloadCurrentPage');
-                const spyLocation = jest.spyOn(location, 'replaceState');
+                const spyLocation = jest.spyOn(location, 'go');
                 spectator.detectChanges();
 
                 spectator.triggerEventHandler(
