@@ -147,6 +147,8 @@ public class JobQueueManagerAPITest {
 
     private AbandonedJobDetector abandonedJobDetector;
 
+    private JobProcessorDiscovery jobProcessorDiscovery;
+
     /**
      * Factory to create mock JobProcessor instances for testing.
      * This is how we instruct the JobQueueManagerAPI to use our mock processors.
@@ -177,10 +179,12 @@ public class JobQueueManagerAPITest {
         mockCircuitBreaker = mock(CircuitBreaker.class);
         retryPolicyProcessor = mock(RetryPolicyProcessor.class);
         abandonedJobDetector = mock(AbandonedJobDetector.class);
+        jobProcessorDiscovery = mock(JobProcessorDiscovery.class);
 
         jobQueueManagerAPI = newJobQueueManagerAPI(
                 mockJobQueue, mockCircuitBreaker, mockRetryStrategy, jobProcessorFactory,
-                retryPolicyProcessor, abandonedJobDetector, 1
+                retryPolicyProcessor, abandonedJobDetector,
+                jobProcessorDiscovery, 1
         );
 
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
@@ -803,7 +807,8 @@ public class JobQueueManagerAPITest {
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
                 mockJobQueue, circuitBreaker, mockRetryStrategy, jobProcessorFactory,
-                retryPolicyProcessor, abandonedJobDetector, 1
+                retryPolicyProcessor, abandonedJobDetector,
+                jobProcessorDiscovery, 1
         );
 
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
@@ -888,7 +893,8 @@ public class JobQueueManagerAPITest {
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
                 mockJobQueue, circuitBreaker, mockRetryStrategy, jobProcessorFactory,
-                retryPolicyProcessor, abandonedJobDetector, 1
+                retryPolicyProcessor, abandonedJobDetector,
+                jobProcessorDiscovery, 1
         );
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
@@ -951,7 +957,8 @@ public class JobQueueManagerAPITest {
         // Create JobQueueManagerAPIImpl with the real CircuitBreaker
         JobQueueManagerAPI jobQueueManagerAPI = newJobQueueManagerAPI(
                 mockJobQueue, circuitBreaker, mockRetryStrategy, jobProcessorFactory,
-                retryPolicyProcessor, abandonedJobDetector, 1
+                retryPolicyProcessor, abandonedJobDetector,
+                jobProcessorDiscovery, 1
         );
         jobQueueManagerAPI.registerProcessor("testQueue", JobProcessor.class);
 
@@ -1185,6 +1192,7 @@ public class JobQueueManagerAPITest {
             JobProcessorFactory jobProcessorFactory,
             RetryPolicyProcessor retryPolicyProcessor,
             AbandonedJobDetector abandonedJobDetector,
+            JobProcessorDiscovery jobProcessorDiscovery,
             int threadPoolSize) {
 
         final var realTimeJobMonitor = new RealTimeJobMonitor();
@@ -1192,7 +1200,8 @@ public class JobQueueManagerAPITest {
         return new JobQueueManagerAPIImpl(
                 jobQueue, new JobQueueConfig(threadPoolSize),
                 circuitBreaker, retryStrategy, realTimeJobMonitor,
-                jobProcessorFactory, retryPolicyProcessor, abandonedJobDetector
+                jobProcessorFactory, retryPolicyProcessor, abandonedJobDetector,
+                jobProcessorDiscovery
         );
     }
 

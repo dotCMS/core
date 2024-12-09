@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.content.dotimport;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
-import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -11,14 +10,11 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import java.util.HashMap;
+import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Helper class for managing content import operations in the dotCMS application.
@@ -32,18 +28,15 @@ import java.util.Map;
 public class ContentImportHelper {
 
     private final JobQueueManagerAPI jobQueueManagerAPI;
-    private final JobQueueManagerHelper jobQueueManagerHelper;
 
     /**
      * Constructor for dependency injection.
      *
      * @param jobQueueManagerAPI The API for managing job queues.
-     * @param jobQueueManagerHelper Helper for job queue management.
      */
     @Inject
-    public ContentImportHelper(final JobQueueManagerAPI jobQueueManagerAPI, final JobQueueManagerHelper jobQueueManagerHelper) {
+    public ContentImportHelper(final JobQueueManagerAPI jobQueueManagerAPI) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;
-        this.jobQueueManagerHelper = jobQueueManagerHelper;
     }
 
     /**
@@ -51,23 +44,6 @@ public class ContentImportHelper {
      */
     public ContentImportHelper() {
         this.jobQueueManagerAPI = null;
-        this.jobQueueManagerHelper = null;
-    }
-
-    /**
-     * Initializes the helper by registering job processors during application startup.
-     */
-    @PostConstruct
-    public void onInit() {
-        jobQueueManagerHelper.registerProcessors();
-    }
-
-    /**
-     * Cleans up resources and shuts down the helper during application shutdown.
-     */
-    @PreDestroy
-    public void onDestroy() {
-        jobQueueManagerHelper.shutdown();
     }
 
     /**
