@@ -51,6 +51,13 @@ export const DotEmaRoutes: Route[] = [
                     )
             },
             {
+                path: 'preview',
+                loadComponent: () =>
+                    import('./edit-ema-editor/edit-ema-editor.component').then(
+                        (mod) => mod.EditEmaEditorComponent
+                    )
+            },
+            {
                 path: 'layout',
                 loadComponent: () =>
                     import('./edit-ema-layout/edit-ema-layout.component').then(

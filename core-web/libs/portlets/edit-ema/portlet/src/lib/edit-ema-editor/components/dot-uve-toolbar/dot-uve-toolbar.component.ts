@@ -10,6 +10,7 @@ import {
     viewChild
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -60,6 +61,7 @@ export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
     #store = inject(UVEStore);
+    private readonly router = inject(Router);
 
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -89,7 +91,8 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected setPreviewMode() {
-        this.#store.loadPageAsset({ preview: 'true' });
+        this.router.navigate(['/edit-page/preview'], { queryParamsHandling: "merge"  });
+        // this.#store.loadPageAsset({ preview: 'true' });
     }
 
     /**
@@ -98,7 +101,8 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected setEditMode() {
-        this.#store.loadPageAsset({ preview: null });
+        this.router.navigate(['/edit-page/content'], { queryParamsHandling: "merge"  });
+        // this.#store.loadPageAsset({ preview: null });
     }
 
     /**

@@ -14,9 +14,11 @@ import {
     WritableSignal,
     effect,
     inject,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -99,6 +101,7 @@ import {
     shouldNavigate
 } from '../utils';
 
+
 @Component({
     selector: 'dot-edit-ema-editor',
     standalone: true,
@@ -151,6 +154,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
+    private readonly router = inject(Router);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
 
     readonly destroy$ = new Subject<boolean>();
@@ -166,6 +170,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
     }
+
+    // This only is executed one time when the component is initialized
+    readonly $routeEffect = effect(() => {
+        const isPreviewRoute = this.router.url.includes('/preview');
+
+        if (isPreviewRoute) {
+            // Execute preview-specific code
+            untracked(() => {
+                this.uveStore.loadPageAsset({ preview: 'true' });
+            })
+        }
+    });
 
     readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.$translateProps();
