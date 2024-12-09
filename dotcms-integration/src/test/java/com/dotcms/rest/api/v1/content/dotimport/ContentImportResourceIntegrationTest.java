@@ -11,7 +11,6 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
-import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
@@ -110,7 +109,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     @Order(1)
-    void testCancelNonExistingJob(){
+    void test_import_content_cancel_non_existing_job(){
         assertThrows(DoesNotExistException.class, () -> importResource.cancelJob(request, response, "nonExisting" ));
     }
 
@@ -120,15 +119,26 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     @Test
     @Order(2)
-    void testGetActiveJobs() {
+    void test_import_content_get_active_jobs() {
         // Call the activeJobs endpoint
         ResponseEntityView<JobPaginatedResult> result = importResource.activeJobs(request, response, 1, 20);
         validateJobPaginatedResult(result, 0);
     }
 
+    /**
+     * Scenario: Create a valid content import job and then list active jobs.
+     * <p>
+     * This test creates a content import job using valid parameters and then calls the
+     * activeJobs endpoint to verify that the job is listed as active. The expected result
+     * is that the active jobs count should be 1.
+     * </p>
+     *
+     * @throws DotDataException if there is an error with dotCMS data operations
+     * @throws IOException if there is an error with file operations
+     */
     @Test
     @Order(3)
-    void testCreateAndListActiveJobs() throws DotDataException, IOException {
+    void test_import_content_and_list_active_jobs() throws DotDataException, IOException {
         //Create valid import job
         ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
@@ -141,17 +151,36 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         validateJobPaginatedResult(result, 1);
     }
 
+    /**
+     * Scenario: Retrieve the list of canceled jobs.
+     * <p>
+     * This test calls the canceledJobs endpoint to verify that there are no canceled jobs
+     * initially. The expected result is that the count of canceled jobs should be 0.
+     * </p>
+     */
     @Test
     @Order(4)
-    void testGetCancelJobs() {
+    void test_content_import_get_cancel_jobs() {
         // Call the activeJobs endpoint
         ResponseEntityView<JobPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
         validateJobPaginatedResult(result, 0);
     }
 
+    /**
+     * Scenario: Create a valid content import job, cancel it, and then list canceled jobs.
+     * <p>
+     * This test creates a content import job using valid parameters, retrieves the job ID
+     * from the response, cancels the job, and then calls the canceledJobs endpoint to verify
+     * that the canceled job is listed. The expected result is that the count of canceled jobs
+     * should be 1.
+     * </p>
+     *
+     * @throws DotDataException if there is an error with dotCMS data operations
+     * @throws IOException if there is an error with file operations
+     */
     @Test
     @Order(5)
-    void testCreateThenCancelThenListCanceledJobs() throws DotDataException, IOException {
+    void test_import_content_then_cancel_then_list_canceled_jobs() throws DotDataException, IOException {
         //Create valid import job
         ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
