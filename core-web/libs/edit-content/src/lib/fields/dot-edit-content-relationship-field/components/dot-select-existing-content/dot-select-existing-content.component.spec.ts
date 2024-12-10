@@ -3,9 +3,12 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { DotMessageService } from '@dotcms/data-access';
 import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { Dialog } from 'primeng/dialog';
 
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
+import { fakeAsync } from '@angular/core/testing';
+import { tick } from '@angular/core/testing';
 
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
@@ -84,5 +87,62 @@ describe('DotSelectExistingContentComponent', () => {
             const label = spectator.component.$applyLabel();
             expect(label).toBe('Apply 2 entries');
         });
+    });
+
+    describe('checkIfSelected', () => {
+        it('should return true when content is in selectedContent array', () => {
+            // Arrange
+            const testContent = mockRelationshipItem('1');
+            spectator.component.$selectedItems.set([testContent]);
+
+            // Act
+            const result = spectator.component.checkIfSelected(testContent);
+
+            // Assert
+            expect(result).toBe(true);
+        });
+
+        it('should return false when content is not in selectedContent array', () => {
+            // Arrange
+            const testContent = mockRelationshipItem('123');
+            const differentContent = mockRelationshipItem('456');
+            spectator.component.$selectedItems.set([differentContent]);
+
+            // Act
+            const result = spectator.component.checkIfSelected(testContent);
+
+            // Assert
+            expect(result).toBe(false);
+        });
+
+        it('should return false when selectedContent is empty', () => {
+            // Arrange
+            const testContent = mockRelationshipItem('123');
+            spectator.component.$selectedItems.set([]);
+
+            // Act
+            const result = spectator.component.checkIfSelected(testContent);
+
+            // Assert
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('onShowDialog', () => {
+        it('should call onShowDialog when dialog is shown', fakeAsync(() => {
+            // Arrange
+            spectator.component.$visible.set(true);
+
+            spectator.detectChanges();
+
+            tick(100);
+            const spy = jest.spyOn(spectator.component, 'onShowDialog');
+
+            // Act
+            spectator.triggerEventHandler(Dialog, 'onShow', null);
+
+            // Assert
+            expect(spy).toHaveBeenCalled();
+        }));
     });
 });
