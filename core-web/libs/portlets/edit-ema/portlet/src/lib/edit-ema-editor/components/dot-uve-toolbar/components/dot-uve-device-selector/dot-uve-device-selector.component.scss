@@ -1,0 +1,9 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    padding: $spacing-1 0;
+    align-items: center;
+    gap: $spacing-1;
+    align-self: stretch;
+}

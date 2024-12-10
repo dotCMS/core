@@ -24,6 +24,7 @@ import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
@@ -50,7 +51,8 @@ import { UVEStore } from '../../../store/dot-uve.store';
         ChipModule,
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
-        ClipboardModule
+        ClipboardModule,
+        DotUveDeviceSelectorComponent
     ],
     providers: [DotPersonalizeService],
     templateUrl: './dot-uve-toolbar.component.html',
