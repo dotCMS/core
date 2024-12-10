@@ -1,42 +1,31 @@
+import configparser
+import logging
 import os
 import subprocess
-import configparser
-import time  
-import requests
-from requests.auth import HTTPBasicAuth
-import sys 
+import sys
+import time
 from configparser import ConfigParser, NoOptionError, NoSectionError
 
+import requests
+from requests.auth import HTTPBasicAuth
 
 config = configparser.ConfigParser()
 config.read('./properties/config.properties')
 
+
 # Read properties from the config file
 def get_variables(config: ConfigParser, config_section: str):
-    try:
-        docker_tag_from = config.get(config_section, 'docker_tag_from')
-    except (NoOptionError, NoSectionError):
-        docker_tag_from = None
+    def get_config_value(option):
+        try:
+            return config.get(config_section, option)
+        except (NoOptionError, NoSectionError):
+            return None
 
-    try:
-        docker_tag_to = config.get(config_section, 'docker_tag_to')
-    except (NoOptionError, NoSectionError):
-        docker_tag_to = None
-
-    try:
-        custom_starter = config.get(config_section, 'custom_starter')
-    except (NoOptionError, NoSectionError):
-        custom_starter = None
-
-    try:
-        expected_db_version = config.get(config_section, 'expected_db_version')
-    except (NoOptionError, NoSectionError):
-        expected_db_version = None
-
-    try:
-        serverURL = config.get('PLAYWRIGHT', 'BASE_URL')
-    except (NoOptionError, NoSectionError):
-        serverURL = None
+    docker_tag_from = get_config_value('docker_tag_from')
+    docker_tag_to = get_config_value('docker_tag_to')
+    custom_starter = get_config_value('custom_starter')
+    expected_db_version = get_config_value('expected_db_version')
+    serverURL = config.get('PLAYWRIGHT', 'BASE_URL')
 
     return docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL
 
@@ -44,19 +33,18 @@ def get_variables(config: ConfigParser, config_section: str):
 # Function to set environment variables for docker-compose
 def set_env_variables(docker_tag, starter):
     try:
-        os.environ['docker_tag'] = docker_tag
-        os.environ['custom_starter'] = starter
+        os.environ.update({'docker_tag': docker_tag, 'custom_starter': starter})
     except Exception as e:
         print(f"Error setting environment variables: {e}")
 
-    
+
 # Function to start dotCMS using docker-compose
 def start_dotcms_with_compose():
     print("- Starting dotCMS using docker-compose...")
     try:
         subprocess.run(["docker-compose", "up", "-d"], check=True)
     except subprocess.CalledProcessError as e:
-        print(f"An error occurred while starting dotCMS: {e}")
+        print(f"Error starting dotCMS: {e}")
         sys.exit(e.returncode)
 
 
@@ -64,14 +52,13 @@ def start_dotcms_with_compose():
 def validate_dotcms_isRunning(sleep_seconds):
     try:
         while True:
-            output = subprocess.check_output(['docker', 'ps'], text=True)         
+            output = subprocess.check_output(['docker', 'ps'], text=True)
             if 'upgrade_project-dotcms-1' in output.lower():
                 print("dotCMS is running now... Waiting to start dotCMS...")
                 time.sleep(sleep_seconds)
                 return True
-            else:
-                print("Waiting dotCMS starts...")
-                time.sleep(sleep_seconds)
+            print("Waiting dotCMS starts...")
+            time.sleep(sleep_seconds)
     except subprocess.CalledProcessError as e:
         print(f"Failed to check if dotCMS is running: {e}")
         return False
@@ -87,22 +74,16 @@ def check_system_status(server_url):
             logging.error("Username or password not found in configuration.")
             return False
 
-        # Construct the full URL
         url = f"{server_url}/api/v1/system-status?extended=true"
-        
-        # Make the request
         print("- Validating system status... Calling the monitoring API...")
         response = requests.get(url, auth=HTTPBasicAuth(username, password))
-        
+
         # Check if the status code is 200
         if response.status_code == 200:
-            print("System status check successful. Status code:",
-                  response.status_code)
+            print("System status check successful. Status code:", response.status_code)
             return True
-        else:
-            print(f"Failed to get system status. Status code: "
-                  f"{response.status_code}")
-            return False
+        print(f"Failed to get system status. Status code: "f"{response.status_code}")
+        return False
     except requests.exceptions.RequestException as error:
         print(f"Error during API call: {error}")
         return False
@@ -112,15 +93,18 @@ def check_system_status(server_url):
 def runTests(testFile, tag):
     print(f"- Running Playwright...Validating dotCMS is ready to use...")
     try:
-        # Run the subprocess
-        result = subprocess.run(['npx', 'playwright', 'test', 
-                                testFile, '--grep', rf'{tag}'],
-                                capture_output=True, text=True
-        )
-                                
-       # Show Playwright test result
+        result = subprocess.run(['npx', 'playwright', 'test', testFile, '--grep', rf'{tag}'],
+                                capture_output=True,
+                                text=True
+                                )
+
+        # Show Playwright test result
         print(result.stdout)
+        if result.returncode != 0:
+            print("- Playwright test failed.")
+            return False
         print("- Playwright test passed successfully.")
+        return True
     except subprocess.CalledProcessError as e:
         print(f"Playwright test failed: {e.stderr}")
         sys.exit(e.returncode)
@@ -131,22 +115,22 @@ def runTests(testFile, tag):
 
 # Function to get the last dotCMS database version
 def get_last_db_version(container):
-    try:        
+    try:
         # Step 1: Check if the container is running
         result = subprocess.run(
             ["docker", "ps", "--filter", f"name={container}", "--format", "{{.Status}}"],
-            capture_output=True, 
+            capture_output=True,
             text=True
         )
-        
+
         if "Up" not in result.stdout:
             raise Exception(f"Container {container} is not running")
-        
+
         # Step 2: Execute the SQL query 
         query = "SELECT * FROM db_version ORDER BY date_update DESC LIMIT 1;"
         command = (f'PGPASSWORD="password" psql -h db -U dotcmsdbuser -d '
                    f'dotcms -c "{query}"')
-        
+
         # Run the command in the Docker container
         print("- Getting the db version from the dotCMS instance...")
         result = subprocess.run(
@@ -155,14 +139,12 @@ def get_last_db_version(container):
             text=True,
             check=True
         )
-        
-        lines = result.stdout.strip().split('\n')
-        if len(lines) > 2:  # Check if we have results
-            db_version_line = lines[2]  # First data line
-            db_version = db_version_line.split('|')[0].strip()
 
-            print("dotCMS db Version:", db_version) 
-            return db_version 
+        lines = result.stdout.strip().split('\n')
+        if len(lines) > 2:
+            db_version = lines[2].split('|')[0].strip()
+            print("dotCMS db Version:", db_version)
+            return db_version
         else:
             print("No version found in the database.")
             return None
@@ -171,18 +153,17 @@ def get_last_db_version(container):
         print("Error executing SQL query:")
         print(e.stderr)
     except Exception as error:
-        print(f"Error: {error}")        
+        print(f"Error: {error}")
         return None
 
 
 # Function to compare the database version with the expected version
 def compare_versions(db_version: str, expected_version: str) -> bool:
     print("- Comparing the database version with the expected version.")
-    if db_version is None:
+    if not db_version:
         print("Cannot compare versions: no database version retrieved.")
         return False
 
-    # Compare and print result
     if db_version == expected_version:
         return True
     else:
@@ -190,7 +171,7 @@ def compare_versions(db_version: str, expected_version: str) -> bool:
         print(f"   * Retrieved Version: {db_version}")
         print(f"   * Expected Version: {expected_version}")
         return False
-        
+
 
 # Function to stop dotCMS using docker-compose
 def stop_containers():
@@ -199,11 +180,11 @@ def stop_containers():
         # Get the list of running container IDs
         result = subprocess.run(['docker', 'ps', '-q'], check=True, text=True, capture_output=True)
         container_ids = result.stdout.split()
-        
+
         # Stop each container
         for container_id in container_ids:
             subprocess.run(['docker', 'stop', container_id], check=True)
-        
+
         print("All containers stopped.")
     except subprocess.CalledProcessError as e:
         print(f"Error stopping containers: {e}")
@@ -225,14 +206,13 @@ def clean_dotcms_with_compose():
 
 
 # Function to perform the upgrade
-def upgrade_dotcms():
+def upgrade_dotcms(docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL) -> bool:
     try:
-        # Get variables from the config file
-        docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL = get_variables(config , "TEST1")
-
-        print(f"---------------------------------------------------------------------------------------------------------------")
+        print(
+            f"---------------------------------------------------------------------------------------------------------------")
         print(f"      Upgrading dotCMS from {docker_tag_from} to {docker_tag_to}...   ")
-        print(f"---------------------------------------------------------------------------------------------------------------")
+        print(
+            f"---------------------------------------------------------------------------------------------------------------")
         print(f" ")
 
         # Set environment variables for 'from' server
@@ -240,10 +220,9 @@ def upgrade_dotcms():
 
         print(f"*************** Starting {docker_tag_from} *************** ")
         print(f" ")
-        
+
         # Start the 'from' version
         start_dotcms_with_compose()
-
 
         # Validate if dotCMS is running
         print("- Is dotCMS running?")
@@ -256,7 +235,7 @@ def upgrade_dotcms():
         print("Proceeding with further steps.")
 
         # Run the Playwright test script
-        runTests("./playwrightTests/pw_e2e.spec.js", "@beforeUpgrade")
+        runTests("./playwrightTests/pw_e2e.spec.ts", "@beforeUpgrade")
 
         # Stop the 'from' version
         stop_containers()
@@ -286,26 +265,52 @@ def upgrade_dotcms():
         print("Database version is correct.")
 
         # Run the Playwright test script
-        runTests("./playwrightTests/pw_e2e.spec.js", "@afterUpgrade")
+        runTests("./playwrightTests/pw_e2e.spec.ts", "@afterUpgrade")
 
         # Stop the 'to' version
         clean_dotcms_with_compose()
 
         print(f" ")
-        print("*************** Upgrade process completed *************** ")  
+        print("*************** Upgrade process completed *************** ")
         print(f" ")
-      
+        return True
+
     except Exception as error:
         print(f"*************** ERROR during the upgrade process: {error} *************** ")
         print(f"Rolling back changes and stopping the process.")
         clean_dotcms_with_compose()  # Make sure dotCMS is stopped if an error occurs
-        sys.exit(1)  # Exit the function early if any step fails
+        return False
+
+
+
+def from_23_01_to_main():
+    docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL = get_variables(config, "23_01")
+    if upgrade_dotcms(docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL):
+        print(f"✅ Upgrade from {docker_tag_from} to {docker_tag_to} completed successfully.")
+    else:
+        print("❌ Upgrade failed.")
+
+
+def from_23_10_to_main():
+    docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL = get_variables(config, "23_10")
+    if upgrade_dotcms(docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL):
+        print(f"✅ Upgrade from {docker_tag_from} to {docker_tag_to} completed successfully.")
+    else:
+        print("❌ Upgrade failed.")
+
+
+def from_24_04_to_main():
+    docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL = get_variables(config, "24_04")
+    if upgrade_dotcms(docker_tag_from, docker_tag_to, custom_starter, expected_db_version, serverURL):
+        print(f"✅ Upgrade from {docker_tag_from} to {docker_tag_to} completed successfully.")
+    else:
+        print("❌ Upgrade failed.")
+
 
 # Main execution flow
 if __name__ == "__main__":
-    upgrade_dotcms()
+    from_23_01_to_main()
+    from_23_10_to_main()
+    from_24_04_to_main()
 
 
-
-
-    
