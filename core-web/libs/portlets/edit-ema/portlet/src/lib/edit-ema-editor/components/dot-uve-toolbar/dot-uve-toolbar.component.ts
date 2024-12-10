@@ -19,11 +19,13 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
+import { DotPersona, DotLanguage, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { compareUrlPaths, getPageURI } from '../../../utils';
+import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
@@ -41,15 +43,15 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         DotEmaBookmarksComponent,
         DotEmaInfoDisplayComponent,
         DotEmaRunningExperimentComponent,
+        DotEditEmaWorkflowActionsComponent,
         ClipboardModule,
         CalendarModule,
         SplitButtonModule,
         FormsModule,
         ReactiveFormsModule,
-        ChipModule,
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
-        ClipboardModule
+        ChipModule
     ],
     providers: [DotPersonalizeService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -59,8 +61,10 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
 export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
-    #store = inject(UVEStore);
 
+    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+
+    readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
@@ -71,14 +75,16 @@ export class DotUveToolbarComponent {
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
 
-    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
-
     readonly $styleToolbarClass = computed(() => {
         if (!this.$isPreviewMode()) {
             return 'uve-toolbar';
         }
 
         return 'uve-toolbar uve-toolbar-preview';
+    });
+
+    readonly $pageInode = computed(() => {
+        return this.#store.pageAPIResponse()?.page.inode;
     });
 
     protected readonly date = new Date();
@@ -202,6 +208,34 @@ export class DotUveToolbarComponent {
                     }); // This does a take 1 under the hood
             }
         });
+    }
+
+    /**
+     * Handle a new page event. This event is triggered when the page changes for a Workflow Action
+     * Update the query params if the url or the language id changed
+     *
+     * @param {DotCMSContentlet} page
+     * @memberof EditEmaToolbarComponent
+     */
+    protected onNewPage(pageAsset: DotCMSContentlet): void {
+        const currentParams = this.#store.pageParams();
+
+        const url = getPageURI(pageAsset);
+        const language_id = pageAsset.languageId?.toString();
+
+        const urlChanged = !compareUrlPaths(url, currentParams.url);
+        const languageChanged = language_id !== currentParams.language_id;
+
+        if (urlChanged || languageChanged) {
+            this.#store.loadPageAsset({
+                url,
+                language_id
+            });
+
+            return;
+        }
+
+        this.#store.reloadCurrentPage();
     }
 
     /*

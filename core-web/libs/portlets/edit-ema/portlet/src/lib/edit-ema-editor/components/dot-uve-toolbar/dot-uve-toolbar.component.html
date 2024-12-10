@@ -51,7 +51,7 @@
             data-testId="uve-toolbar-persona-selector" />
 
         @if (!preview) {
-            <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
+            <dot-edit-ema-workflow-actions (newPage)="onNewPage($event)" [inode]="$pageInode()" />
         }
     </div>
 </p-toolbar>
