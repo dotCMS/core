@@ -21,14 +21,15 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
 
+import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
-import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
-import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
-import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
-import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 @Component({
     selector: 'dot-uve-toolbar',

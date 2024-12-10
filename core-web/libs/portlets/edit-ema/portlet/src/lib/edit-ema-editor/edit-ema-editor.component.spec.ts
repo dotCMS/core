@@ -67,8 +67,8 @@ import {
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
-import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
-import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotEditEmaWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
