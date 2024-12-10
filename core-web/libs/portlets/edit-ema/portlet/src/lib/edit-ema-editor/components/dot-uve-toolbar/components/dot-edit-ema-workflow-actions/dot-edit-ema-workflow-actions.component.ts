@@ -23,12 +23,12 @@ import {
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSWorkflowAction, DotWorkflowPayload } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
+import { DotWorkflowActionsComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-ema-workflow-actions',
     standalone: true,
-    imports: [DotWorkflowActionsComponent, ButtonModule, DotMessagePipe],
+    imports: [DotWorkflowActionsComponent, ButtonModule],
     providers: [
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
