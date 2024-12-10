@@ -191,7 +191,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         Logger.error(ContentType.class, e.getMessage(), e);
         throw new BaseRuntimeInternationalizationException(e);
       }
-      HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
+      HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type)));
   }
 
   /**
@@ -341,7 +341,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
       HibernateUtil.addCommitListener(() -> {
         //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
-        localSystemEventsAPI.notify(new ContentTypeDeletedEvent(source.variable()));
+        localSystemEventsAPI.notify(new ContentTypeDeletedEvent(source));
           //By default, the deletion process takes placed within job
           Logger.info(this, String.format(" Content type (%s) will be deleted asynchronously using Quartz Job.", source.name()));
           if(asyncDeleteWithJob) {

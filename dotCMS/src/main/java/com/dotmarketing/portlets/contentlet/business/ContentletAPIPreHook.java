@@ -94,13 +94,27 @@ public interface ContentletAPIPreHook {
 	
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
-	 * @param identifier 
+	 * @param identifier
 	 * @param live Retrieves the live version if false retrieves the working version
 	 * @return
 	 */
 	public default boolean findContentletByIdentifier(String identifier, boolean live, long languageId, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param languageId
+	 * @param variantId
+	 * @param user
+	 * @param timeMachineDate
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	public default boolean findContentletByIdentifier(String identifier, long languageId, String variantId, User user, Date timeMachineDate, boolean respectFrontendRoles){
+		return true;
+	}
 
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
@@ -2021,6 +2035,21 @@ public interface ContentletAPIPreHook {
     public default boolean findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,   boolean respectFrontendRoles) {
         return true;
     }
+
+	/**
+	 * @param identifier
+	 * @param incomingLangId
+	 * @param timeMachine
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	default boolean findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
+			String variantId, Date timeMachine, User user,
+			boolean respectFrontendRoles) {
+		return true;
+	}
+
     public default boolean findInDb(String inode) {
         return true;
     }

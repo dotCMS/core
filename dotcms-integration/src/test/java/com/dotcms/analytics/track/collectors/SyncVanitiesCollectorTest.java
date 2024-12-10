@@ -1,13 +1,9 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
@@ -15,22 +11,18 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -44,6 +36,8 @@ import static org.mockito.Mockito.mock;
  * @author Jose Castro
  * @since Oct 21st, 2024
  */
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
 public class SyncVanitiesCollectorTest extends IntegrationTestBase {
 
     private static final String TEST_PAGE_NAME = "index";
@@ -93,17 +87,17 @@ public class SyncVanitiesCollectorTest extends IntegrationTestBase {
         assertTrue("Resolved vanity url must be present", resolvedVanity.isPresent());
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "site", testSite.getIdentifier(),
-                "event_type", EventType.VANITY_REQUEST.getType(),
-                "language", defaultLanguage.getIsoCode(),
-                "vanity_url", TEST_PAGE_URL,
-                "language_id", defaultLanguage.getId(),
-                "url", URI,
-                "object", Map.of(
-                        "forward_to", TEST_PAGE_URL,
-                        "response", "200",
-                        "id", resolvedVanity.get().vanityUrlId,
-                        "url", URI)
+                Collector.SITE_ID, testSite.getIdentifier(),
+                Collector.EVENT_TYPE, EventType.VANITY_REQUEST.getType(),
+                Collector.LANGUAGE, defaultLanguage.getIsoCode(),
+                Collector.VANITY_URL_KEY, TEST_PAGE_URL,
+                Collector.LANGUAGE_ID, defaultLanguage.getId(),
+                Collector.URL, URI,
+                Collector.OBJECT, Map.of(
+                        Collector.FORWARD_TO, TEST_PAGE_URL,
+                        Collector.RESPONSE, "200",
+                        Collector.ID, resolvedVanity.get().vanityUrlId,
+                        Collector.URL, URI)
         );
 
         final Collector collector = new SyncVanitiesCollector();

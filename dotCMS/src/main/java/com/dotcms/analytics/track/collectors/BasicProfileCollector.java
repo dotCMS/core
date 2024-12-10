@@ -6,14 +6,22 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Collects the basic profile information for a collector payload bean.
+ * @author jsanca
+ */
 public class BasicProfileCollector implements Collector {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
@@ -28,47 +36,64 @@ public class BasicProfileCollector implements Collector {
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
 
-        // todo: add the user id
-        final String requestId = (String)collectorContextMap.get("requestId");
-        final Long time = (Long)collectorContextMap.get("time");
-        final String clusterId   = (String)collectorContextMap.get("cluster");
-        final String serverId   = (String)collectorContextMap.get("server");
-        final String sessionId   = (String)collectorContextMap.get("session");
-        final Boolean sessionNew   = (Boolean)collectorContextMap.get("sessionNew");
+        final String requestId = (String)collectorContextMap.get(CollectorContextMap.REQUEST_ID);
+        final Long time = (Long)collectorContextMap.get(CollectorContextMap.TIME);
+        final String clusterId   = (String)collectorContextMap.get(CollectorContextMap.CLUSTER);
+        final String serverId   = (String)collectorContextMap.get(CollectorContextMap.SERVER);
+        final String sessionId   = (String)collectorContextMap.get(CollectorContextMap.SESSION);
+        final Boolean sessionNew   = (Boolean)collectorContextMap.get(CollectorContextMap.SESSION_NEW);
 
         final Long timestamp = FunctionUtils.getOrDefault(Objects.nonNull(time), () -> time, System::currentTimeMillis);
         final Instant instant = Instant.ofEpochMilli(timestamp);
         final ZonedDateTime zonedDateTimeUTC = instant.atZone(ZoneId.of("UTC"));
 
-        collectorPayloadBean.put("request_id", requestId);
-        collectorPayloadBean.put("utc_time", FORMATTER.format(zonedDateTimeUTC));
-        collectorPayloadBean.put("cluster",
+        collectorPayloadBean.put(REQUEST_ID, requestId);
+        collectorPayloadBean.put(UTC_TIME, FORMATTER.format(zonedDateTimeUTC));
+        collectorPayloadBean.put(CLUSTER,
                 FunctionUtils.getOrDefault(Objects.nonNull(clusterId), ()->clusterId, ClusterFactory::getClusterId));
-        collectorPayloadBean.put("server",
+        collectorPayloadBean.put(SERVER,
                 FunctionUtils.getOrDefault(Objects.nonNull(serverId), ()->serverId,()->APILocator.getServerAPI().readServerId()));
-        collectorPayloadBean.put("sessionId", sessionId);
-        collectorPayloadBean.put("sessionNew", sessionNew);
+        collectorPayloadBean.put(SESSION_ID, sessionId);
+        collectorPayloadBean.put(SESSION_NEW, sessionNew);
 
-        if (UtilMethods.isSet(collectorContextMap.get("referer"))) {
-            collectorPayloadBean.put("referer", collectorContextMap.get("referer").toString());
+        if (UtilMethods.isSet(collectorContextMap.get(CollectorContextMap.REFERER))) {
+            collectorPayloadBean.put(REFERER, collectorContextMap.get(CollectorContextMap.REFERER).toString());
         }
 
-        if (UtilMethods.isSet(collectorContextMap.get("user-agent"))) {
-            collectorPayloadBean.put("userAgent", collectorContextMap.get("user-agent").toString());
+        if (UtilMethods.isSet(collectorContextMap.get(CollectorContextMap.USER_AGENT))) {
+            collectorPayloadBean.put(USER_AGENT, collectorContextMap.get(CollectorContextMap.USER_AGENT).toString());
         }
 
         final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get("request");
 
-        collectorPayloadBean.put("persona",
+        collectorPayloadBean.put(PERSONA,
                 WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
 
-        collectorPayloadBean.put("renderMode", PageMode.get(request).toString().replace("_MODE", ""));
-
         // Include default value for other boolean fields in the Clickhouse table
-        collectorPayloadBean.put("comeFromVanityURL", false);
-        collectorPayloadBean.put("isexperimentpage", false);
-        collectorPayloadBean.put("istargetpage", false);
+        collectorPayloadBean.put(COME_FROM_VANITY_URL, false);
+        collectorPayloadBean.put(IS_EXPERIMENT_PAGE, false);
+        collectorPayloadBean.put(IS_TARGET_PAGE, false);
+
+        if (Objects.isNull(collectorPayloadBean.get(EVENT_SOURCE))) {
+            // this is the default event source
+            collectorPayloadBean.put(EVENT_SOURCE, EventSource.DOT_CMS.getName());
+        }
+
+        setUserInfo(request, collectorPayloadBean);
+
         return collectorPayloadBean;
+    }
+
+    private void setUserInfo(final HttpServletRequest request, final CollectorPayloadBean collectorPayloadBean) {
+
+        final User user = WebAPILocator.getUserWebAPI().getUser(request);
+        if (Objects.nonNull(user)) {
+
+            final HashMap<String, String> userObject = new HashMap<>();
+            userObject.put(ID, user.getUserId().toString());
+            userObject.put(EMAIL, user.getEmailAddress());
+            collectorPayloadBean.put(USER_OBJECT, userObject);
+        }
     }
 
     @Override

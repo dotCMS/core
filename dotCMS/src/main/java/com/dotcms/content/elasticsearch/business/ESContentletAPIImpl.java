@@ -1,9 +1,16 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
@@ -12,11 +19,12 @@ import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.business.field.FieldHandlerStrategyFactory;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
+import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -181,18 +189,6 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -220,12 +216,17 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -236,6 +237,8 @@ import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PER
  */
 public class ESContentletAPIImpl implements ContentletAPI {
 
+    private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
+            Config.getBooleanProperty("FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION", false));
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -277,6 +280,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
             BaseTypeToContentTypeStrategyResolver.getInstance();
 
+
+    private  final Lazy<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver;
+
     public enum QueryType {
         search, suggest, moreLike, Facets
     }
@@ -284,13 +290,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
     ;
 
     private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
-    private final ElasticReadOnlyCommand elasticReadOnlyCommand;
+
+    public static boolean getFeatureFlagDbUniqueFieldValidation() {
+        return FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION.get();
+    }
+
+    @VisibleForTesting
+    public static void setFeatureFlagDbUniqueFieldValidation(final boolean newValue) {
+        FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() -> newValue);
+    }
 
     /**
      * Default class constructor.
      */
-    @VisibleForTesting
-    public ESContentletAPIImpl(final ElasticReadOnlyCommand readOnlyCommand) {
+    public ESContentletAPIImpl() {
+        this.uniqueFieldValidationStrategyResolver = Lazy.of(ESContentletAPIImpl::getUniqueFieldValidationStrategyResolver);
         indexAPI = new ContentletIndexAPIImpl();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
@@ -303,14 +317,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi = APILocator.getTempFileAPI();
-        this.elasticReadOnlyCommand = readOnlyCommand;
         fileMetadataAPI = APILocator.getFileMetadataAPI();
     }
 
-    public ESContentletAPIImpl() {
-        this(ElasticReadOnlyCommand.getInstance());
+    private static UniqueFieldValidationStrategyResolver getUniqueFieldValidationStrategyResolver() {
+        return CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
     }
-
 
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
@@ -371,7 +383,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-        final Contentlet contentlet = contentFactory.find(inode);
+        return find (inode, user, respectFrontendRoles, false);
+
+    }
+
+    /**
+     * Find a {@link Contentlet} first looks it in the cache if it is there then return it from there, if it is not in the cache
+     * then get it directly from Database.
+     * Also check permission.
+     *
+     * @param inode {@link Contentlet}'s inode
+     * @param user User to check Permission
+     * @param respectFrontendRoles if it true then Frontend rules are respected
+     * @param ignoreBlockEditor if it is true and the {@link Contentlet} is loaded from cache then the Story Blocks are not refresh
+     *                          if it is loaded from Database then then the Story Blocks are not hydrated
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @CloseDBIfOpened
+    @Override
+    public Contentlet find(final String inode, final User user, final boolean respectFrontendRoles, boolean ignoreBlockEditor)
+            throws DotDataException, DotSecurityException {
+        final Contentlet contentlet = contentFactory.find(inode, ignoreBlockEditor);
         if (contentlet == null) {
             return null;
         }
@@ -605,7 +639,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (DotContentletStateException dcs) {
             Logger.debug(this, () -> String.format(
                     "No working contentlet found for language: %d and identifier: %s ", languageId,
-                    null != contentletId ? contentletId.getId() : "Unkown"));
+                    contentletId.getId()));
         }
         return null;
     }
@@ -640,6 +674,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletStateException(
                     "Can't find contentlet: " + identifier + " lang:" + languageId + " live:"
                             + live, e);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId,
+            final Date timeMachineDate, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException{
+        final Contentlet contentlet = contentFactory.findContentletByIdentifier(identifier, languageId, variantId, timeMachineDate);
+        if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+            return contentlet;
+        } else {
+            final String userId = (user == null) ? "Unknown" : user.getUserId();
+            throw new DotSecurityException(
+                    String.format("User '%s' does not have READ permissions on %s", userId,
+                            ContentletUtil
+                                    .toShortString(contentlet)));
         }
     }
 
@@ -705,6 +759,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:"
                             + live, e);
         }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
+            final long incomingLangId, String variantId, final Date timeMachine, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        final long defaultLanguageId = this.languageAPI.getDefaultLanguage().getId();
+        final long tryLanguage = incomingLangId <= 0 ? defaultLanguageId : incomingLangId;
+
+        Contentlet contentlet = findContentletByIdentifier(identifier, tryLanguage,
+                variantId, timeMachine, user, respectFrontendRoles);
+
+        if (contentlet == null && tryLanguage != defaultLanguageId) {
+            contentlet =  findContentletByIdentifier(identifier, defaultLanguageId,
+                variantId, timeMachine, user, respectFrontendRoles);
+        }
+        return Optional.ofNullable(contentlet);
     }
 
     @CloseDBIfOpened
@@ -5285,25 +5358,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (!isCheckInSafe(contentRelationships)) {
-
-            if (contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
-                this.elasticReadOnlyCommand.executeCheck();
-            } else {
-                DotConcurrentFactory.getInstance().getSingleSubmitter()
-                        .submit(() -> this.elasticReadOnlyCommand.executeCheck());
-            }
-
-            final String contentletIdentifier =
-                    null != contentlet && null != contentlet.getIdentifier()
-                            ? contentlet.getIdentifier() : StringPool.NULL;
-
-            throw new DotContentletStateException(
-                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode. Contentlet Id: "
-                            +
-                            contentletIdentifier);
-        }
-
         if (categories == null) {
             categories = getExistingContentCategories(contentlet);
         }
@@ -5516,6 +5570,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentlet = contentFactory.save(contentlet);
             }
 
+           if (hasUniqueField(contentType)) {
+               uniqueFieldValidationStrategyResolver.get().get().afterSaved(contentlet, isNewContent);
+           }
+
+
             contentlet.setIndexPolicy(indexPolicy);
             contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
 
@@ -5643,6 +5702,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    private static boolean hasUniqueField(ContentType contentType) {
+        return contentType.fields().stream().anyMatch(field -> field.unique());
     }
 
     private boolean shouldRemoveOldHostCache(Contentlet contentlet, String oldHostId) {
@@ -6338,31 +6401,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
             this.throwSecurityException(contentlet, user);
         }
-    }
-
-    /**
-     * Method that verifies if a check in operation can be executed. It is safe to execute a checkin
-     * if write operations can be performed on the ES cluster. Otherwise, check in will be allowed
-     * only if the contentlet to be saved does not have legacy relationships
-     *
-     * @param relationships ContentletRelationships with the records to be saved
-     * @return
-     */
-    @VisibleForTesting
-    boolean isCheckInSafe(final ContentletRelationships relationships) {
-
-        if (relationships != null && relationships.getRelationshipsRecords().size() > 0) {
-            final boolean isClusterReadOnly = ElasticsearchUtil.isClusterInReadOnlyMode();
-            final boolean isEitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
-
-            if (
-                    (isEitherLiveOrWorkingIndicesReadOnly || isClusterReadOnly)
-                            && hasLegacyRelationships(relationships)) {
-                return false;
-            }
-        }
-        return true;
-
     }
 
     /**
@@ -7632,100 +7670,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // validate unique
             if (field.isUnique()) {
-                final boolean isDataTypeNumber =
-                        field.getDataType().contains(DataTypes.INTEGER.toString())
-                                || field.getDataType().contains(DataTypes.FLOAT.toString());
                 try {
-                    final StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
-                    buffy.append(" +structureInode:" + contentlet.getContentTypeId());
-                    if (UtilMethods.isSet(contentlet.getIdentifier())) {
-                        buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
-                    }
-
-                    buffy.append(" +languageId:" + contentlet.getLanguageId());
-
-                    if (getUniquePerSiteConfig(field)) {
-                        if (!UtilMethods.isSet(contentlet.getHost())) {
-                            populateHost(contentlet);
-                        }
-
-                        buffy.append(" +conHost:" + contentlet.getHost());
-                    }
-
-                    buffy.append(" +").append(contentlet.getContentType().variable())
-                            .append(StringPool.PERIOD)
-                            .append(field.getVelocityVarName()).append(ESUtils.SHA_256)
-                            .append(StringPool.COLON)
-                            .append(ESUtils.sha256(contentlet.getContentType().variable()
-                                            + StringPool.PERIOD + field.getVelocityVarName(), fieldValue,
-                                    contentlet.getLanguageId()));
-
-                    final List<ContentletSearch> contentlets = new ArrayList<>();
-                    try {
-                        contentlets.addAll(
-                                searchIndex(buffy.toString() + " +working:true", -1, 0, "inode",
-                                        APILocator.getUserAPI().getSystemUser(), false));
-                        contentlets.addAll(
-                                searchIndex(buffy.toString() + " +live:true", -1, 0, "inode",
-                                        APILocator.getUserAPI().getSystemUser(), false));
-                    } catch (final Exception e) {
-                        final String errorMsg =
-                                "Unique field [" + field.getVelocityVarName() + "] with value '" +
-                                        fieldValue + "' could not be validated: " + e.getMessage();
-                        Logger.warn(this, errorMsg, e);
-                        throw new DotContentletValidationException(errorMsg, e);
-                    }
-                    int size = contentlets.size();
-                    if (size > 0 && !hasError) {
-                        boolean unique = true;
-                        for (final ContentletSearch contentletSearch : contentlets) {
-                            final Contentlet uniqueContent = contentFactory.find(
-                                    contentletSearch.getInode());
-                            if (null == uniqueContent) {
-                                final String errorMsg = String.format(
-                                        "Unique field [%s] could not be validated, as " +
-                                                "unique content Inode '%s' was not found. ES Index might need to be reindexed.",
-                                        field.getVelocityVarName(), contentletSearch.getInode());
-                                Logger.warn(this, errorMsg);
-                                throw new DotContentletValidationException(errorMsg);
-                            }
-                            final Map<String, Object> uniqueContentMap = uniqueContent.getMap();
-                            final Object obj = uniqueContentMap.get(field.getVelocityVarName());
-                            if ((isDataTypeNumber && Objects.equals(fieldValue, obj)) ||
-                                    (!isDataTypeNumber && ((String) obj).equalsIgnoreCase(
-                                            ((String) fieldValue)))) {
-                                unique = false;
-                                break;
-                            }
-
-                        }
-                        if (!unique) {
-                            if (UtilMethods.isSet(contentlet.getIdentifier())) {
-                                Iterator<ContentletSearch> contentletsIter = contentlets.iterator();
-                                while (contentletsIter.hasNext()) {
-                                    ContentletSearch cont = contentletsIter.next();
-                                    if (!contentlet.getIdentifier()
-                                            .equalsIgnoreCase(cont.getIdentifier())) {
-                                        cve.addUniqueField(field);
-                                        hasError = true;
-                                        Logger.warn(this,
-                                                getUniqueFieldErrorMessage(field, fieldValue,
-                                                        cont));
-                                        break;
-                                    }
-                                }
-                            } else {
-                                cve.addUniqueField(field);
-                                hasError = true;
-                                Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
-                                        contentlets.get(0)));
-                                break;
-                            }
-                        }
-                    }
+                    uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
+                            LegacyFieldTransformer.from(field));
+                } catch (final UniqueFieldValueDuplicatedException e) {
+                    cve.addUniqueField(field);
+                    hasError = true;
+                    Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
+                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown"));
                 } catch (final DotDataException | DotSecurityException e) {
-                    Logger.warn(this, "Unable to get contentlets for Content Type: "
-                            + contentlet.getContentType().name(), e);
+                    Logger.warn(this, String.format("Unable to validate unique field '%s' in Content Type '%s': %s",
+                            field.getVelocityVarName(), contentlet.getContentType().name(), ExceptionUtil.getErrorMessage(e)), e);
                 }
             }
 
@@ -7799,11 +7754,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private String getUniqueFieldErrorMessage(final Field field, final Object fieldValue,
-            final ContentletSearch contentletSearch) {
+            final String contentletID) {
 
         return String.format(
                 "Value of Field [%s] must be unique. Contents having the same value (%s): %s",
-                field.getVelocityVarName(), fieldValue, contentletSearch.getIdentifier());
+                field.getVelocityVarName(), fieldValue, contentletID);
     }
 
     private boolean getUniquePerSiteConfig(final Field field) {
@@ -7812,7 +7767,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private boolean getUniquePerSiteConfig(final com.dotcms.contenttype.model.field.Field field) {
         return field.fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
-                .map(value -> Boolean.valueOf(value)).orElse(false);
+                .map(Boolean::valueOf).orElse(false);
     }
 
     private void validateBinary(final File binary, final String fieldName, final Field legacyField,

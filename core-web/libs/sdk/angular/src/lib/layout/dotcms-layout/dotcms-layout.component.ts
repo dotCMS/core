@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import {
-    CUSTOMER_ACTIONS,
+    CLIENT_ACTIONS,
     DotCmsClient,
     EditorConfig,
     initEditor,
@@ -38,7 +38,7 @@ import { RowComponent } from '../row/row.component';
     imports: [RowComponent, AsyncPipe],
     template: `
         @if (pageAsset$ | async; as page) {
-            @for (row of this.page?.layout?.body?.rows; track $index) {
+            @for (row of page?.layout?.body?.rows; track $index) {
                 <dotcms-row [row]="row" />
             }
         }
@@ -137,7 +137,7 @@ export class DotcmsLayoutComponent implements OnInit {
             this.pageContextService.setPageAsset(data as DotCMSPageAsset);
         });
 
-        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: this.editor });
+        postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY, payload: this.editor });
     }
 
     ngOnDestroy() {

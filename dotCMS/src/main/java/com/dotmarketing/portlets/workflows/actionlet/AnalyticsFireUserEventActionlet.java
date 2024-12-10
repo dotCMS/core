@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.analytics.track.collectors.Collector;
+import com.dotcms.analytics.track.collectors.EventSource;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorService;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
 import com.dotcms.analytics.track.matchers.UserCustomDefinedRequestMatcher;
@@ -12,6 +14,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,10 +38,6 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
     public static final String OBJECT_ID = "objectId";
     public static final String REQUEST_ID = "requestId";
     public static final String CONTENT = "CONTENT";
-    public static final String ID = "id";
-    public static final String OBJECT_CONTENT_TYPE_VAR_NAME = "object_content_type_var_name";
-    public static final String OBJECT = "object";
-    public static final String EVENT_TYPE1 = "event_type";
     public static final String EVENT_TYPE_DISPLAY = "Event type";
     public static final String OBJECT_TYPE_DISPLAY = "Object type";
     public static final String OBJECT_ID_DISPLAY = "Object ID";
@@ -94,13 +93,15 @@ public class AnalyticsFireUserEventActionlet extends WorkFlowActionlet {
             final HashMap<String, String> objectDetail = new HashMap<>();
             final Map<String, Serializable> userEventPayload = new HashMap<>();
 
-            userEventPayload.put(ID, Objects.nonNull(objectId) ? objectId : identifier);
+            userEventPayload.put(Collector.ID, UtilMethods.isSet(objectId) ? objectId.trim() : identifier);
 
-            objectDetail.put(ID, identifier);
-            objectDetail.put(OBJECT_CONTENT_TYPE_VAR_NAME, Objects.nonNull(objectType) ? objectType : CONTENT);
-            userEventPayload.put(OBJECT, objectDetail);
-            userEventPayload.put(EVENT_TYPE1, eventType);
-            webEventsCollectorService.fireCollectorsAndEmitEvent(request, response, USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload);
+            objectDetail.put(Collector.ID, identifier);
+            objectDetail.put(Collector.CONTENT_TYPE_VAR_NAME, UtilMethods.isSet(objectType) ? objectType.trim() : CONTENT);
+            userEventPayload.put(Collector.OBJECT, objectDetail);
+            userEventPayload.put(Collector.EVENT_SOURCE, EventSource.WORKFLOW.getName());
+            userEventPayload.put(Collector.EVENT_TYPE, UtilMethods.isSet(eventType)? eventType.trim(): eventType);
+            webEventsCollectorService.fireCollectorsAndEmitEvent(request, response,
+                    USER_CUSTOM_DEFINED_REQUEST_MATCHER, userEventPayload, Map.of());
         } else {
             Logger.warn(this, "The request or response is null, can't send the event for the contentlet: " + identifier);
             // note: here we need more info to populate what the collectors used to populate from the request

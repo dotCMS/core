@@ -20,7 +20,8 @@ dot-ema-page-dropzone {
     inset: 0;
 }
 
-dot-edit-ema-toolbar {
+dot-edit-ema-toolbar,
+dot-uve-toolbar {
     grid-column: 1 / -1;
 }
 
@@ -40,6 +41,10 @@ dot-results-seo-tool {
     align-items: center;
     gap: $spacing-1;
     overflow: auto;
+}
+
+.editor-content-preview {
+    padding: $spacing-4;
 }
 
 .iframe-wrapper {

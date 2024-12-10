@@ -122,6 +122,75 @@ public class AnalyticsToolTest {
     }
 
     /**
+     * Method to test: {@link AnalyticsTool#runReport(String, String, String, String, String, int, int)}
+     * Given Scenario: Sending good parameter
+     * ExpectedResult: Should a non null ReportResponse
+     */
+    @Test()
+    public void test_run_report_good_case() {
+
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final HttpSession session = Mockito.mock(HttpSession.class);
+        final ContentAnalyticsAPI contentAnalyticsAPI = Mockito.mock(ContentAnalyticsAPI.class);
+        final AnalyticsQueryParser analyticsQueryParser  = new AnalyticsQueryParser();
+        final UserWebAPI userWebAPI = Mockito.mock(UserWebAPI.class);
+        final ViewContext viewContext = Mockito.mock(ViewContext.class);
+        final AnalyticsTool analyticsTool = new AnalyticsTool(contentAnalyticsAPI,
+                analyticsQueryParser, userWebAPI);
+        final User user = new User();
+
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
+        Mockito.when(request.getSession(false)).thenReturn(session);
+        Mockito.when(userWebAPI.getLoggedInUser(request)).thenReturn(user);
+        Mockito.when(contentAnalyticsAPI.runRawReport(Mockito.any(String.class), Mockito.eq(user))).thenReturn(new ReportResponse(List.of()));
+
+        analyticsTool.init(viewContext);
+        final ReportResponse reportResponse = analyticsTool.runReport(
+                "Events.count Events.uniqueCount",
+                "Events.referer Events.experiment",
+                "Events.day day",
+                "Events.variant = ['B'] or Events.experiments = ['B']",
+                "Events.day ASC",
+                 100, 1);
+
+        Assert.assertNotNull(reportResponse);
+    }
+
+    /**
+     * Method to test: {@link AnalyticsTool#runReport(String, String, String, String, String, int, int)}
+     * Given Scenario: Sending bad parameters, missing measures and dimensions
+     * ExpectedResult: throws an IllegalArgumentException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_run_report_illegal_params_case() {
+
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final HttpSession session = Mockito.mock(HttpSession.class);
+        final ContentAnalyticsAPI contentAnalyticsAPI = Mockito.mock(ContentAnalyticsAPI.class);
+        final AnalyticsQueryParser analyticsQueryParser  = new AnalyticsQueryParser();
+        final UserWebAPI userWebAPI = Mockito.mock(UserWebAPI.class);
+        final ViewContext viewContext = Mockito.mock(ViewContext.class);
+        final AnalyticsTool analyticsTool = new AnalyticsTool(contentAnalyticsAPI,
+                analyticsQueryParser, userWebAPI);
+        final User user = new User();
+
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
+        Mockito.when(request.getSession(false)).thenReturn(session);
+        Mockito.when(userWebAPI.getLoggedInUser(request)).thenReturn(user);
+        Mockito.when(contentAnalyticsAPI.runRawReport(Mockito.any(String.class), Mockito.eq(user))).thenReturn(new ReportResponse(List.of()));
+
+        analyticsTool.init(viewContext);
+        final ReportResponse reportResponse = analyticsTool.runReport(
+                null,
+                null,
+                null,
+                "Events.variant = ['B'] or Events.experiments = ['B']",
+                "Events.day ASC",
+                100, 1);
+
+    }
+
+    /**
      * Method to test: {@link AnalyticsTool#runReportFromMap(Map)}
      * Given Scenario: Sending a null map
      * ExpectedResult: Should throw {@link IllegalArgumentException}

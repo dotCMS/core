@@ -16,11 +16,6 @@ public class JobQueueConfigProducer {
             "JOB_QUEUE_THREAD_POOL_SIZE", 10
     );
 
-    // The interval in milliseconds to poll for job updates.
-    static final int DEFAULT_POLL_JOB_UPDATES_INTERVAL_MILLISECONDS = Config.getIntProperty(
-            "JOB_QUEUE_POLL_JOB_UPDATES_INTERVAL_MILLISECONDS", 1000
-    );
-
     /**
      * Produces a JobQueueConfig object. This method is called by the CDI container to create a
      * JobQueueConfig instance when it is necessary for dependency injection.
@@ -30,8 +25,7 @@ public class JobQueueConfigProducer {
     @Produces
     public JobQueueConfig produceJobQueueConfig() {
         return new JobQueueConfig(
-                DEFAULT_THREAD_POOL_SIZE,
-                DEFAULT_POLL_JOB_UPDATES_INTERVAL_MILLISECONDS
+                DEFAULT_THREAD_POOL_SIZE
         );
     }
 

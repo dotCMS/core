@@ -22,6 +22,11 @@ import { filter, map } from 'rxjs/operators';
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import {
+    INPUT_TYPE,
+    INPUT_TYPES,
+    UploadedFile
+} from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import {
     DotDropZoneComponent,
     DotMessagePipe,
     DotAIImagePromptComponent,
@@ -34,7 +39,7 @@ import { DotFileFieldPreviewComponent } from './components/dot-file-field-previe
 import { DotFileFieldUiMessageComponent } from './components/dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { DotFormFileEditorComponent } from './components/dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './components/dot-form-import-url/dot-form-import-url.component';
-import { INPUT_TYPES, UploadedFile } from './models';
+import { DotSelectExistingFileComponent } from './components/dot-select-existing-file/dot-select-existing-file.component';
 import { DotFileFieldUploadService } from './services/upload-file/upload-file.service';
 import { FileFieldStore } from './store/file-field.store';
 import { getUiMessage } from './utils/messages';
@@ -46,11 +51,9 @@ import { getUiMessage } from './utils/messages';
         ButtonModule,
         DotMessagePipe,
         DotDropZoneComponent,
-        DotAIImagePromptComponent,
         DotSpinnerModule,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        DotFormImportUrlComponent,
         TooltipModule
     ],
     providers: [
@@ -161,7 +164,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPES
+            inputType: field.fieldType as INPUT_TYPE
         });
     }
 
@@ -283,7 +286,6 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent',
             modal: true,
             resizable: false,
             position: 'center',
@@ -324,7 +326,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
             width: '90%',
@@ -368,7 +370,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
             width: '90%',
@@ -386,6 +388,52 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             )
             .subscribe((file) => {
                 this.store.setPreviewFile(file);
+            });
+    }
+    /**
+     * Shows the select existing file dialog.
+     *
+     * Opens the dialog with the `DotSelectExistingFileComponent` component
+     * and passes the field type and accepted files as data to the component.
+     *
+     * When the dialog is closed, gets the uploaded file from the component
+     * and sets it as the preview file in the store.
+     *
+     * @memberof DotEditContentFileFieldComponent
+     */
+    showSelectExistingFileDialog() {
+        const fieldType = this.$field().fieldType;
+        const title =
+            fieldType === INPUT_TYPES.Image
+                ? 'dot.file.field.dialog.select.existing.image.header'
+                : 'dot.file.field.dialog.select.existing.file.header';
+        const mimeTypes = fieldType === INPUT_TYPES.Image ? ['image'] : [];
+
+        const header = this.#dotMessageService.get(title);
+
+        this.#dialogRef = this.#dialogService.open(DotSelectExistingFileComponent, {
+            header,
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-dynamic',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' },
+            data: {
+                mimeTypes
+            }
+        });
+
+        this.#dialogRef.onClose
+            .pipe(
+                filter((file) => !!file),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((file) => {
+                this.store.setPreviewFile({ source: 'contentlet', file });
             });
     }
 

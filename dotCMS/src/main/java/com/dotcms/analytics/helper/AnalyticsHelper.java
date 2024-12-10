@@ -8,14 +8,18 @@ import com.dotcms.analytics.model.AccessTokenStatus;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.exception.UnrecoverableAnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.WebResource;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -32,6 +36,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 
 /**
@@ -39,15 +45,22 @@ import java.util.function.BiPredicate;
  *
  * @author vico
  */
-public class AnalyticsHelper {
+public class AnalyticsHelper implements EventSubscriber<SystemTableUpdatedKeyEvent> {
 
-    private static final Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(AnalyticsHelper::new);
+    private static final Lazy<AnalyticsHelper> INSTANCE = Lazy.of(AnalyticsHelper::new);
 
     public static AnalyticsHelper get(){
-        return analyticsHelper.get();
+        return INSTANCE.get();
     }
 
-    private  AnalyticsHelper() {}
+    private final AtomicLong accessTokenTtl;
+    private final AtomicLong accessTokenTtlWindow;
+
+    private AnalyticsHelper() {
+        accessTokenTtl = new AtomicLong(resolveAccessTokenTtl());
+        accessTokenTtlWindow = new AtomicLong(resolveAccessTokenTtlWindow());
+        APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
+    }
 
     /**
      * Given a {@link CircuitBreakerUrl.Response<AccessToken>} instance, extracts JSON representing the token and
@@ -62,7 +75,8 @@ public class AnalyticsHelper {
     }
 
     /**
-     * Given a {@link CircuitBreakerUrl.Response<AccessToken>} instance, extracts JSON representing the token and deserializes to {@link AnalyticsKey}.
+     * Given a {@link CircuitBreakerUrl.Response<AccessToken>} instance, extracts JSON representing the token
+     * and deserializes to {@link AnalyticsKey}.
      *
      * @param response http response representation
      * @return an {@link Optional<AnalyticsKey>} instance holding the analytics key data
@@ -82,7 +96,7 @@ public class AnalyticsHelper {
         return Optional.ofNullable(accessToken.issueDate())
             .map(issuedAt -> {
                 final Instant now = Instant.now();
-                final Instant expireDate = issuedAt.plusSeconds(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL);
+                final Instant expireDate = issuedAt.plusSeconds(accessTokenTtl.get());
                 return now.isBefore(expireDate) && (filter == null || filter.test(now, expireDate));
             })
             .orElseGet(() -> {
@@ -110,7 +124,7 @@ public class AnalyticsHelper {
     public boolean isTokenInWindow(final AccessToken accessToken) {
         return filterIssueDate(
             accessToken,
-            (now, expireDate) -> now.isAfter(expireDate.minusSeconds(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW)));
+            (now, expireDate) -> now.isAfter(expireDate.minusSeconds(accessTokenTtlWindow.get())));
     }
 
     /**
@@ -174,6 +188,25 @@ public class AnalyticsHelper {
                     accessToken.clientId(),
                     tokenStatus.name()));
         }
+    }
+
+    @Override
+    public void notify(final SystemTableUpdatedKeyEvent event) {
+        if (event.getKey().contains(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_KEY)) {
+            accessTokenTtl.set(resolveAccessTokenTtl());
+        } else if (event.getKey().contains(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY)) {
+            accessTokenTtlWindow.set(resolveAccessTokenTtlWindow());
+        }
+    }
+
+    private long resolveAccessTokenTtl() {
+        return Config.getLongProperty(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_KEY, TimeUnit.HOURS.toSeconds(1));
+    }
+
+    private long resolveAccessTokenTtlWindow() {
+        return Config.getLongProperty(
+                AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY,
+                TimeUnit.MINUTES.toSeconds(1));
     }
 
     /**

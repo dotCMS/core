@@ -17,23 +17,26 @@ import com.dotcms.analytics.track.collectors.PageDetailCollectorTest;
 import com.dotcms.analytics.track.collectors.PagesCollectorTest;
 import com.dotcms.analytics.track.collectors.SyncVanitiesCollectorTest;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceImplTest;
+import com.dotcms.api.web.HttpServletRequestImpersonatorTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
-import com.dotcms.bayesian.BayesianAPIImplIT;
+import com.dotcms.analytics.bayesian.BayesianAPIImplIT;
 import com.dotcms.business.SystemAPITest;
 import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
 import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
+import com.dotcms.cdi.SimpleDataProviderWeldRunnerInjectionIT;
 import com.dotcms.cdi.SimpleInjectionIT;
+import com.dotcms.cdi.SimpleJUnit4InjectionIT;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
-import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
-import com.dotcms.contenttype.business.ContentTypeInitializerTest;
-import com.dotcms.contenttype.business.StoryBlockAPITest;
+import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
+import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
@@ -109,7 +112,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
-import com.dotmarketing.osgi.GenericBundleActivatorTest;
+import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
@@ -184,7 +187,6 @@ import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTa
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemFieldTest;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTest;
-import com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTableTest;
 import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
 import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortletTest;
@@ -204,7 +206,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        Task241007CreateUniqueFieldsTableTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
@@ -233,7 +234,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
-        GenericBundleActivatorTest.class,
+        GenericBundleActivatorIntegrationTest.class,
         SAMLHelperTest.class,
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
@@ -392,9 +393,15 @@ import org.junit.runners.Suite.SuiteClasses;
         JobQueueManagerAPITest.class,
         ConfigUtilsTest.class,
         SimpleInjectionIT.class,
+        SimpleDataProviderWeldRunnerInjectionIT.class,
+        SimpleJUnit4InjectionIT.class,
         LegacyJSONObjectRenderTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241009CreatePostgresJobQueueTablesTest.class,
+
+        UniqueFieldDataBaseUtilTest.class,
+        DBUniqueFieldValidationStrategyTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241015ReplaceLanguagesWithLocalesPortletTest.class,
         Task241016AddCustomLanguageVariablesPortletToLayoutTest.class,
@@ -404,7 +411,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PageDetailCollectorTest.class,
         FilesCollectorTest.class,
         SyncVanitiesCollectorTest.class,
-        AsyncVanitiesCollectorTest.class
+        AsyncVanitiesCollectorTest.class,
+        HttpServletRequestImpersonatorTest.class,
 })
 
 public class MainSuite2b {

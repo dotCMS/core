@@ -65,13 +65,14 @@
     #set($_hasPermission = $contents.doesUserHasPermission($CONTENT_INODE, 2, $EDIT_MODE))
     #if($EDIT_MODE && $_hasPermission)
     	#set($localContent = $dotcontent.find($!{CONTENT_INODE}))
+        #set($jsonContent = $json.generate($localContent))
         <button
             data-dot-identifier="$!{localContent.identifier}"
             data-dot-inode="$!{CONTENT_INODE}"
             data-dot-object="edit-content"
+            onclick='window.dotUVE.editContentlet($jsonContent.contentObject)'
             style="box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 24%) !important; border: none !important; border-radius: 16px !important; cursor: pointer !important; font-size: 0 !important; height: 32px !important; outline: none !important; position: relative !important; width: 32px !important; z-index: 2147483646 !important;
             background: #fff url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTMgMTcuMjVWMjFoMy43NUwxNy44MSA5Ljk0bC0zLjc1LTMuNzVMMyAxNy4yNXpNMjAuNzEgNy4wNGMuMzktLjM5LjM5LTEuMDIgMC0xLjQxbC0yLjM0LTIuMzRjLS4zOS0uMzktMS4wMi0uMzktMS40MSAwbC0xLjgzIDEuODMgMy43NSAzLjc1IDEuODMtMS44M3oiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) no-repeat center center !important;">
-            Edit
         </button>
     #end
 #end
@@ -175,9 +176,14 @@
             <i class="fa fa-arrow-up"></i>
             <i class="fa fa-arrow-down"></i>
         </a>
+
         <script>
             function openReorderDialog(event) {
                 event.preventDefault();
+                if(window.dotUVE){
+                  window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})
+                  return;
+                }
                 var reorderUrl = "${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
                 var customEvent = window.top.document.createEvent("CustomEvent");
                 customEvent.initCustomEvent("ng-event", false, false,  {
@@ -192,8 +198,9 @@
 
 #macro(sortNavigation)
     #if ($EDIT_MODE && $PUBLISH_HTMLPAGE_PERMISSION)
+      #set($menuLevel = $VTLSERVLET_URI.split('/').size() - 1)
       <button
-    onclick="openReorderDialog(event)"
+    onclick='openReorderDialog(event)'
     style="
         background-color: #426BF0;
         border-radius: 3px;
@@ -222,27 +229,22 @@
             width: 36px;
         "></span>
 </button>
-<script>
-    function openReorderDialog(event) {
-        event.preventDefault();
-        var reorderUrl =
-            '${directorURL}&startLevel=1&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}';
-
-        window.parent.postMessage(
-            {
-                action: 'reorder-menu',
-                payload: { reorderUrl }
-            },
-            '*'
-        );
-        var customEvent = window.top.document.createEvent('CustomEvent');
-        customEvent.initCustomEvent('ng-event', false, false, {
-            name: 'reorder-menu',
-            data: reorderUrl
-        });
-        window.top.document.dispatchEvent(customEvent);
-    }
-</script>
+        <script>
+            function openReorderDialog(event) {
+                event.preventDefault();
+                if(window.dotUVE){
+                  window.dotUVE.reorderMenu({startLevel: $menuLevel, depth: 2})
+                  return;
+                }
+                var reorderUrl = "${directorURL}&startLevel=${menuLevel}&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
+                var customEvent = window.top.document.createEvent("CustomEvent");
+                customEvent.initCustomEvent("ng-event", false, false,  {
+                    name: "reorder-menu",
+                    data: reorderUrl
+                });
+                window.top.document.dispatchEvent(customEvent);
+            }
+        </script>
 
     #end
 #end

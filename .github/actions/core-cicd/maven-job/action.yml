@@ -259,6 +259,8 @@ runs:
         name: "build-classes"
         path: |
           **/target/classes/**/*.class
+          **/target/generated-sources/**/*.java
+          **/target/test-classes/**/*.class
           LICENSE
 
     - id: delete-built-artifacts-from-cache
@@ -319,4 +321,4 @@ runs:
         name: "build-reports-test-${{ inputs.stage-name }}"
         path: |
           **/target/jacoco-report/*.exec
-          **/target/*-reports/TEST-*.xml
+          **/target/*-reports/*.xml

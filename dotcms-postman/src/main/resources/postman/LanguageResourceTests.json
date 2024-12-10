@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0a7ed4a9-b343-4a56-8d63-39ef0ec770e1",
+		"_postman_id": "0bd5957a-5481-401c-a2bf-47d85e8be155",
 		"name": "LanguageResource",
 		"description": "This collections is focused on the /v2/languages resource\nThis should cover Language CRUD Operations",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -495,6 +495,51 @@
 								"v2",
 								"languages",
 								"iso"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Default Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function() {",
+									"    pm.response.to.be.ok ",
+									"});",
+									"",
+									"pm.test(\"Test content must only be available in English\", function() {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity.id).to.equal(1, \"The expected default Language must be ID 1\");",
+									"    pm.expect(jsonData.entity.language).to.equal(\"English\", \"The expected default Language must be English\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/_getdefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"_getdefault"
 							]
 						}
 					},

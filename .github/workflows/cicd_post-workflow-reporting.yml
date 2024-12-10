@@ -60,7 +60,7 @@ jobs:
       # Download workflow data from previous run
       - name: Download Workflow Data
         id: data-download
-        uses: dawidd6/action-download-artifact@v3.1.4
+        uses: dawidd6/action-download-artifact@v6
         with:
           name: 'workflow-data'
           run_id: ${{ github.event.workflow_run.id || inputs.run-id }}
@@ -69,7 +69,7 @@ jobs:
       # Download build reports from previous run
       - name: Download build reports
         id: download-artifact
-        uses: dawidd6/action-download-artifact@v3.1.4
+        uses: dawidd6/action-download-artifact@v6
         with:
           name: build-reports-test-.*
           name_is_regexp: true

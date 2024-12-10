@@ -241,6 +241,9 @@ public class InitServlet extends HttpServlet {
 
         // Starting the re-indexation thread
         ReindexThread.startThread();
+
+        // Start the job queue manager
+        APILocator.getJobQueueManagerAPI().start();
         
         // Tell the world we are started up
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");

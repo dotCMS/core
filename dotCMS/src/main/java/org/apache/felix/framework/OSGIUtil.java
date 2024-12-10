@@ -23,7 +23,6 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.MathUtil;
@@ -83,17 +82,11 @@ import java.util.stream.Collectors;
  */
 public class OSGIUtil {
 
+    // by default the upload folder checker is 10 seconds
+    private static final int OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY_DEFAULT_VAL = 10;
     private static final String OSGI_EXTRA_CONFIG_FILE_PATH_KEY = "OSGI_EXTRA_CONFIG_FILE_PATH_KEY";
     private static final String OSGI_RESTART_LOCK_KEY = "osgi_restart_lock";
     private static final String OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY = "OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY";
-    // by default the upload folder checker is 10 seconds
-    private static final int OSGI_CHECK_UPLOAD_FOLDER_FREQUENCY_DEFAULT_VAL = 10;
-
-
-    //List of jar prefixes of the jars to be included in the osgi-extra.conf file
-    public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
-    public final List<String> actionletsStopped = Collections.synchronizedList(new ArrayList<>());
-    public WorkflowAPIOsgiService workflowOsgiService;
     private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
     private static final String FELIX_UPLOAD_DIR = "felix.upload.dir";
@@ -101,17 +94,32 @@ public class OSGIUtil {
     private static final String FELIX_UNDEPLOYED_DIR = "felix.undeployed.dir";
     private static final String FELIX_FRAMEWORK_STORAGE = org.osgi.framework.Constants.FRAMEWORK_STORAGE;
     private static final String AUTO_DEPLOY_DIR_PROPERTY =  AutoProcessor.AUTO_DEPLOY_DIR_PROPERTY;
+    private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
+    // PUBSUB
+    private static final String TOPIC_NAME = OsgiRestartTopic.OSGI_RESTART_TOPIC;
+    /**
+     * Felix directory list
+     */
+    private static final String[] FELIX_DIRECTORIES = new String[] {
+            FELIX_BASE_DIR,
+            FELIX_UPLOAD_DIR,
+            FELIX_FILEINSTALL_DIR,
+            FELIX_UNDEPLOYED_DIR,
+            AUTO_DEPLOY_DIR_PROPERTY,
+            FELIX_FRAMEWORK_STORAGE
+    };
 
+    private static class OSGIUtilHolder {
+        private static final OSGIUtil instance = new OSGIUtil();
+    }
+
+    public static OSGIUtil getInstance() {
+        return OSGIUtilHolder.instance;
+    }
 
     private final Debouncer debouncer = new Debouncer();
-
     // PUBSUB
-    private final static  String TOPIC_NAME = OsgiRestartTopic.OSGI_RESTART_TOPIC;
     private final DotPubSubProvider pubsub;
-    private final OsgiRestartTopic osgiRestartTopic;
-
-    private Framework felixFramework;
-
     //// When the strategy to discover jars on the upload folder is not by folder watcher (watchers do not work on docker)
     /// we have a job that runs every 10 seconds (it is configurable) and checks if there is any jars in the upload folder
     /// if they are; runs a process to reload (copy the jars to load folder and so on)
@@ -121,45 +129,36 @@ public class OSGIUtil {
     // if some of the reads to the upload folder founds a jar, the counts are reset to the initial values again and the cycle begins one more time.
     private final AtomicInteger uploadFolderReadsCount = new AtomicInteger(0);
     private final AtomicInteger currentJobRestartIterationsCount = new AtomicInteger(0);
-
     // Indicates the job were already started, so next restart of the OSGI framework won't create a new one job.
     private final AtomicBoolean isStartedOsgiRestartSchedule = new AtomicBoolean(false);
-    /**
-     * Felix directory list
-     */
-    private static final String[] FELIX_DIRECTORIES = new String[] {
-        FELIX_BASE_DIR, FELIX_UPLOAD_DIR, FELIX_FILEINSTALL_DIR, FELIX_UNDEPLOYED_DIR, AUTO_DEPLOY_DIR_PROPERTY, FELIX_FRAMEWORK_STORAGE
-    };
+    private final long delay = Config.getLongProperty("OSGI_UPLOAD_DEBOUNCE_DELAY_MILLIS", 5000);
+    private Framework felixFramework;
+    private String felixExtraPackagesFile;
+    private WorkflowAPIOsgiService workflowOsgiService;
 
-    public static final String BUNDLE_HTTP_BRIDGE_SYMBOLIC_NAME = "org.apache.felix.http.bundle";
-    private static final String PROPERTY_OSGI_PACKAGES_EXTRA = "org.osgi.framework.system.packages.extra";
-    public String FELIX_EXTRA_PACKAGES_FILE;
-
-    public static OSGIUtil getInstance() {
-        return OSGIUtilHolder.instance;
-    }
-
-    private static class OSGIUtilHolder{
-        private static OSGIUtil instance = new OSGIUtil();
-    }
+    //List of jar prefixes of the jars to be included in the osgi-extra.conf file
+    public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
+    public final List<String> actionletsStopped = Collections.synchronizedList(new ArrayList<>());
 
     private OSGIUtil() {
-
-        
-        this.pubsub                = DotPubSubProviderLocator.provider.get();
-        this.osgiRestartTopic = new OsgiRestartTopic();
+        this.pubsub = DotPubSubProviderLocator.provider.get();
+        final OsgiRestartTopic osgiRestartTopic = new OsgiRestartTopic();
         Logger.debug(this.getClass(), "Starting hook with PubSub on OSGI");
 
         this.pubsub.start();
-        this.pubsub.subscribe(this.osgiRestartTopic);
+        this.pubsub.subscribe(osgiRestartTopic);
+    }
+
+    public WorkflowAPIOsgiService getWorkflowOsgiService() {
+        return workflowOsgiService;
+    }
+
+    public void setWorkflowOsgiService(final WorkflowAPIOsgiService workflowOsgiService) {
+        this.workflowOsgiService = workflowOsgiService;
     }
 
     public List<String> getPortletIDsStopped() {
         return portletIDsStopped;
-    }
-
-    public List<String> getActionletsStopped() {
-        return actionletsStopped;
     }
 
     /**
@@ -198,18 +197,14 @@ public class OSGIUtil {
 
         // Create host activator;
         HostActivator hostActivator = HostActivator.instance();
-        felixProps.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, ImmutableList.of(hostActivator));
+        felixProps.put(FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP, List.of(hostActivator));
 
         return felixProps;
     }
 
-    
-    final long delay = Config.getLongProperty("OSGI_UPLOAD_DEBOUNCE_DELAY_MILLIS", 5000);
     /**
      * Overrides the content of the <strong>osgi-extra.conf</strong> file
      *
-     * @param request
-     * @param response
      * @throws ServletException
      * @throws IOException
      */
@@ -261,23 +256,10 @@ public class OSGIUtil {
      */
     public void testDryRun (final String osgiPackages) {
 
-        final List<ParsedHeaderClause> exportClauses =
-                invokeParserStandardHeader(osgiPackages);
+        final List<ParsedHeaderClause> exportClauses = invokeParserStandardHeader(osgiPackages);
         for (final ParsedHeaderClause clause : exportClauses) {
-
             for (final String packageName : clause.m_paths) {
-                if (packageName.equals(".")) {
-
-                    Logger.error(this, "Exporing '.' is invalid.");
-                    throw new OsgiException("Exporing '.' is invalid.");
-                }
-
-                if (packageName.length() == 0) {
-
-                    Logger.error(this, "Exported package names cannot be zero length.\nPackages: " + osgiPackages);
-                    throw new OsgiException(
-                            "Exported package names cannot be zero length.");
-                }
+                validatePackageName(osgiPackages, packageName);
             }
 
             // Check for "version" and "specification-version" attributes
@@ -310,6 +292,21 @@ public class OSGIUtil {
         }
     }
 
+    private void validatePackageName(String osgiPackages, String packageName) {
+        if (packageName.equals(".")) {
+
+            Logger.error(this, "Exporing '.' is invalid.");
+            throw new OsgiException("Exporing '.' is invalid.");
+        }
+
+        if (packageName.isEmpty()) {
+
+            Logger.error(this, "Exported package names cannot be zero length.\nPackages: " + osgiPackages);
+            throw new OsgiException(
+                    "Exported package names cannot be zero length.");
+        }
+    }
+
     private  List<ParsedHeaderClause>  invokeParserStandardHeader (final String osgiPackages) {
 
         try {
@@ -336,7 +333,7 @@ public class OSGIUtil {
         long start = System.currentTimeMillis();
 
         // load all properties and set base directory
-        Properties felixProps = loadConfig();
+        final Properties felixProps = loadConfig();
 
         // fetch the 'felix.base.dir' property and check if exists. On the props file the prop needs to
         for (final String felixDirectory : FELIX_DIRECTORIES) {
@@ -351,13 +348,13 @@ public class OSGIUtil {
             }
         }
 
-        FELIX_EXTRA_PACKAGES_FILE = this.getOsgiExtraConfigPath();
+        felixExtraPackagesFile = this.getOsgiExtraConfigPath();
 
         // Verify the bundles are in the right place
         verifyBundles(felixProps);
 
         // Set all OSGI Packages
-        String extraPackages = getExtraOSGIPackages();
+        final String extraPackages = getExtraOSGIPackages();
 
 
         // Setting the OSGI extra packages property
@@ -397,12 +394,12 @@ public class OSGIUtil {
 
             Logger.info(this, () -> "osgi felix framework started");
         } catch (Exception ex) {
-            felixFramework=null;
+            felixFramework = null;
             Logger.error(this, "Could not create framework: " + ex);
             throw new RuntimeException(ex);
         }
 
-        System.setProperty(WebKeys.OSGI_ENABLED, "true");
+        System.setProperty(WebKeys.OSGI_ENABLED, Boolean.TRUE.toString());
         System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_OSGI,
                 String.valueOf(System.currentTimeMillis() - start));
 
@@ -429,15 +426,11 @@ public class OSGIUtil {
                 initialDelay, delay, TimeUnit.SECONDS);
     }
 
-
     public void checkUploadFolder() {
         final ClusterLockManager<String> lockManager = DotConcurrentFactory.getInstance().getClusterLockManager(OSGI_RESTART_LOCK_KEY);
         checkUploadFolder(new File(OSGIUtil.getInstance().getFelixUploadPath()),lockManager);
     }
-    
-    
-    
-    
+
     public void processExports(final String jarFile) {
         if(!jarFile.equals(StringUtils.sanitizeFileName(jarFile))){
             throw new DotRuntimeException("Invalid bundle name: " + jarFile);
@@ -455,10 +448,6 @@ public class OSGIUtil {
         checkUploadFolder(new File(OSGIUtil.getInstance().getFelixUploadPath()),lockManager);
     }
     
-    
-    
-    
-
     // this method is called by the schedule to see if jars has been added to the framework
     private void checkUploadFolder(final File uploadFolderFile, final ClusterLockManager<String> lockManager) {
 
@@ -775,7 +764,7 @@ public class OSGIUtil {
     }
 
     public Boolean isInitialized() {
-        return null != felixFramework ;
+        return null != felixFramework;
     }
 
     /**
@@ -859,7 +848,7 @@ public class OSGIUtil {
      */
     public String getExtraOSGIPackages() {
 
-        final File extraPackagesFile = new File(FELIX_EXTRA_PACKAGES_FILE);
+        final File extraPackagesFile = new File(felixExtraPackagesFile);
 
         if (!extraPackagesFile.exists() || extraPackagesFile.length()<2) {
             extraPackagesFile.getParentFile().mkdirs();
@@ -889,8 +878,6 @@ public class OSGIUtil {
             throw new DotRuntimeException(e);
         }
     }
-
-
 
     private String readExtraPackagesFiles(final File extraPackagesFile) {
 

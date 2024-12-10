@@ -1406,6 +1406,17 @@
         </dependency>
 
         <dependency>
+            <groupId>org.glassfish.jersey.ext.cdi</groupId>
+            <artifactId>jersey-cdi1x</artifactId>
+        </dependency>
+
+        <!-- This is required keep one single instance of the InjectionManager across all ServletContexts -->
+        <dependency>
+            <groupId>org.glassfish.jersey.ext.cdi</groupId>
+            <artifactId>jersey-cdi1x-servlet</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.glassfish.hk2.external</groupId>
             <artifactId>bean-validator</artifactId>
             <version>2.5.0-b06</version>
@@ -1429,7 +1440,6 @@
             <artifactId>jandex</artifactId>
             <version>3.0.5</version>
         </dependency>
-      
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-catalina</artifactId>
@@ -1981,6 +1991,10 @@
                                         <configfile>
                                             <file>${tomcat9-overrides}/glowroot/local-web/admin.json</file>
                                             <todir>glowroot/local-web</todir>
+                                        </configfile>
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/glowroot/glowroot.logback.xml</file>
+                                            <todir>glowroot</todir>
                                         </configfile>
                                         <configfile>
                                             <file>${tomcat9-overrides}/bin/build.conf</file>

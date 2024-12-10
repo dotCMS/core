@@ -29,12 +29,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
-import org.jboss.weld.environment.se.Weld;
-import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -53,13 +51,13 @@ import org.junit.rules.TestName;
 public abstract class IntegrationTestBase extends BaseMessageResources {
 
     private static Boolean debugMode = Boolean.FALSE;
-    private final static PrintStream stdout = System.out;
-    private final static ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-    private static WeldContainer weld;
+    private static final PrintStream stdout = System.out;
+    private static final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
     @Rule
-    public TestName name = new TestName();
+    public TestName getTestName() {
+        return new TestName();
+    }
 
     @BeforeClass
     public static void beforeInit() throws Exception {
@@ -68,12 +66,12 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
         Config.setProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", false);
     }
 
-    protected static void setDebugMode(final boolean mode) throws UnsupportedEncodingException {
+    protected static void setDebugMode(final boolean mode) {
 
         debugMode = mode;
         if (debugMode) {
 
-            System.setOut(new PrintStream(output, true, "UTF-8"));
+            System.setOut(new PrintStream(output, true, StandardCharsets.UTF_8));
         }
     }
 
@@ -130,12 +128,12 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
         if (DbConnectionFactory.inTransaction()) {
             Logger.error(IntegrationTestBase.class,
-                    "Test " + name.getMethodName() + " has open transaction after");
+                    "Test " + getTestName().getMethodName() + " has open transaction after");
         }
 
         if (DbConnectionFactory.connectionExists()) {
             Logger.error(IntegrationTestBase.class,
-                    "Test " + name.getMethodName() + " has open connection after");
+                    "Test " + getTestName().getMethodName() + " has open connection after");
         }
 
         //Closing the session
@@ -281,15 +279,4 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
         }
     }
 
-    @BeforeClass
-    public static void initWeld() {
-        weld = new Weld().containerId("IntegrationTestBase").initialize();
-    }
-
-    @AfterClass
-    public static void cleanupWeld() {
-        if( null != weld  && weld.isRunning() ){
-            weld.shutdown();
-        }
-    }
 }
