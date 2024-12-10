@@ -24,7 +24,7 @@ on:
 
 jobs:
   check-rate-limits:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check API Rate Limit
         uses: your-repo/check-rate-limit-action@v1
