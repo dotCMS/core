@@ -36,7 +36,7 @@ import { PaginationComponent } from '../pagination/pagination.component';
         PaginationComponent,
         InputGroupModule,
         OverlayPanelModule,
-        SearchComponent
+        SearchComponent,
     ],
     templateUrl: './dot-select-existing-content.component.html',
     styleUrls: ['./dot-select-existing-content.component.scss'],
@@ -120,5 +120,13 @@ export class DotSelectExistingContentComponent {
      */
     checkIfSelected(item: RelationshipFieldItem) {
         return this.$selectedItems().some((selectedItem) => selectedItem.id === item.id);
+    }
+
+    /**
+     * Shows the existing content dialog and loads the content.
+     */
+    onShowDialog() {
+        this.store.applyInitialState();
+        this.store.loadContent();
     }
 }

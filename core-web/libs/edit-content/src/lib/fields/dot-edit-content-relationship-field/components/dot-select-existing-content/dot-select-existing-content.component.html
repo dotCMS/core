@@ -5,6 +5,7 @@
     <p-dialog
         [modal]="true"
         [(visible)]="$visible"
+        (onShow)="onShowDialog()"
         (onHide)="emitSelectedItems()"
         [draggable]="false"
         dataKey="id"
