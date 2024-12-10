@@ -36,7 +36,7 @@ import { PaginationComponent } from '../pagination/pagination.component';
         PaginationComponent,
         InputGroupModule,
         OverlayPanelModule,
-        SearchComponent,
+        SearchComponent
     ],
     templateUrl: './dot-select-existing-content.component.html',
     styleUrls: ['./dot-select-existing-content.component.scss'],
