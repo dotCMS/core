@@ -1,17 +1,20 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.model.CheckboxWorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.StringPool;
 
 /**
  * {@link WorkFlowActionlet} that unlock a {@link Contentlet}
@@ -21,7 +24,7 @@ import com.dotmarketing.util.Logger;
  */
 public class CheckinContentActionlet extends WorkFlowActionlet {
 
-
+	private static final String FORCE_UNLOCK_ALLOWED = "force-unlock";
 
 	/**
 	 * 
@@ -65,6 +68,10 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 	@Override
 	public  List<WorkflowActionletParameter> getParameters() {
 
-		return null;
+		final List<WorkflowActionletParameter> workflowActionletParameters = new ArrayList<>();
+
+		workflowActionletParameters.add(new CheckboxWorkflowActionletParameter(FORCE_UNLOCK_ALLOWED, "Force Unlock", "force-unlock", false));
+
+		return workflowActionletParameters;
 	}
 }
