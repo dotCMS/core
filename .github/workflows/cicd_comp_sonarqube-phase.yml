@@ -29,7 +29,7 @@ on:
 jobs:
   sonarqube:
     name: SonarQube Scan
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # Only run on main branch or pull requests in the main repository
     if: |
       (github.ref == 'refs/heads/main' || github.event_name == 'pull_request') && github.repository == 'dotCMS/core'

@@ -59,7 +59,7 @@ jobs:
   precheck:
     if: ${{ ( github.event_name == 'release' && !contains(github.event.release.tag_name, 'LTS')) || github.event_name == 'workflow_dispatch' }}
     name: 'Pre-check'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       HEAD: ${{ steps.version.outputs.HEAD }}
@@ -151,7 +151,7 @@ jobs:
   # Perform the release
   release:
     needs: [ precheck, build-cli ]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: 'Check out repository'
         uses: actions/checkout@v4
@@ -187,7 +187,7 @@ jobs:
     name: "Publish NPM Package"
     if: success()  # Run only if explicitly indicated and successful
     needs: [ precheck, build, build-cli, release ]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v4
@@ -332,7 +332,7 @@ jobs:
     name: "Clean Up"
     if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
     needs: [ precheck, build, build-cli, release, publish-npm-package ]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

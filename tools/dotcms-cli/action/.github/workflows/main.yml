@@ -5,7 +5,7 @@ on: [push]
 jobs:
 
   dotcli-runner:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       url: ${{ steps.dotcli-runner.outputs.url }}
     steps:
@@ -30,7 +30,7 @@ jobs:
 
   sync-with-dotcms:
     needs: dotcli-runner
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       # Global environment expected by dotCMS CLI
       # This is how we instruct the cli the target server

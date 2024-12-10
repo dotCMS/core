@@ -63,7 +63,7 @@ on:
 
 jobs:
   deployment:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # Use of Docker environments to enable per-deployment environment secrets
     # This allows for different secrets to be used based on the deployment environment
     environment: ${{ inputs.environment }}

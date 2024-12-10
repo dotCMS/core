@@ -23,7 +23,7 @@ on:
 jobs:
   buildmavenDepTree:
     name: Semgrep Dep Tree
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # Only run on main branch or pull requests in the main repository
     if: |
       (github.ref == 'refs/heads/main' || github.event_name == 'pull_request') && github.repository == 'dotCMS/core'
@@ -55,7 +55,7 @@ jobs:
   semgrep:
     needs: buildmavenDepTree
     name: Scan
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
       NO_FAIL: ${{ vars.SEMGREP_NO_FAIL || 'false' }}

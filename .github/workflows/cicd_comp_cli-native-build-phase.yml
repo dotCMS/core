@@ -56,7 +56,7 @@ jobs:
   # Job to determine the OS matrix for the build
   os-runners:
     name: 'Get OS matrix'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       runners: ${{ steps.set-os.outputs.runners }}
     steps:
@@ -64,9 +64,9 @@ jobs:
         id: set-os
         run: |
           if [[ "${{ inputs.buildNativeImage }}" == "true" ]]; then
-            RUNNERS='[{ "os": "ubuntu-22.04", "label": "Linux", "platform": "linux-x86_64" }, { "os": "macos-13", "label": "macOS-Intel", "platform": "osx-x86_64" }, { "os": "macos-14", "label": "macOS-Silicon", "platform": "osx-aarch_64" }]'
+            RUNNERS='[{ "os": "ubuntu-24.04", "label": "Linux", "platform": "linux-x86_64" }, { "os": "macos-13", "label": "macOS-Intel", "platform": "osx-x86_64" }, { "os": "macos-14", "label": "macOS-Silicon", "platform": "osx-aarch_64" }]'
           else
-            RUNNERS='[{ "os": "ubuntu-22.04", "label": "Linux", "platform": "linux-x86_64" }]'
+            RUNNERS='[{ "os": "ubuntu-24.04", "label": "Linux", "platform": "linux-x86_64" }]'
           fi
           echo "runners=$RUNNERS" >> $GITHUB_OUTPUT
 
