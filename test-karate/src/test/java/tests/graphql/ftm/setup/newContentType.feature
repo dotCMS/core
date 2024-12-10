@@ -11,7 +11,6 @@ Feature: Create a Content Type
         "baseType":"CONTENT",
         "clazz":"com.dotcms.contenttype.model.type.ImmutableSimpleContentType",
         "defaultType":false,
-        "expireDateVar":"expiresOn",
         "fields":[
           {
             "clazz":"com.dotcms.contenttype.model.field.ImmutableTextField",
@@ -97,15 +96,20 @@ Feature: Create a Content Type
         "fixed":false,
         "folder":"SYSTEM_FOLDER",
         "folderPath":"/",
-        "host":"48190c8c-42c4-46af-8d1a-0cd5db894797",
+        "host":"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
         "icon":"adjust",
         "multilingualable":false,
         "name":"#(contentTypeVariable)",
         "publishDateVar":"publishDate",
+        "expireDateVar":"expiresOn",
         "sortOrder":0,
         "system":false,
         "variable":"#(contentTypeVariable)",
-        "versionable":true
+        "versionable":true,
+        "workflows" : [ {
+          "id" : "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+          "variableName" : "SystemWorkflow"
+        } ]
       }
       """
     When method POST
