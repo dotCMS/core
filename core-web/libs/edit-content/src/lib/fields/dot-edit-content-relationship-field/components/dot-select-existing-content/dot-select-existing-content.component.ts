@@ -112,4 +112,13 @@ export class DotSelectExistingContentComponent {
     emitSelectedItems() {
         this.onSelectItems.emit(this.$selectedItems());
     }
+
+    /**
+     * Checks if an item is selected.
+     * @param item - The item to check.
+     * @returns True if the item is selected, false otherwise.
+     */
+    checkIfSelected(item: RelationshipFieldItem) {
+        return this.$selectedItems().some((selectedItem) => selectedItem.id === item.id);
+    }
 }
