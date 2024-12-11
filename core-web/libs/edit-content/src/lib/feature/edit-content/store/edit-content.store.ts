@@ -33,8 +33,8 @@ export const DotEditContentStore = signalStore(
     withSidebar(),
     withInformation(),
     withWorkflow(),
-    withLocales(),
     withForm(),
+    withLocales(),
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);

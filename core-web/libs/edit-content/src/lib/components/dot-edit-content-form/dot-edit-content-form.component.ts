@@ -327,14 +327,22 @@ export class DotEditContentFormComponent implements OnInit {
      * @param {DotCMSWorkflowAction} action
      * @memberof EditContentLayoutComponent
      */
-    fireWorkflowAction({ actionId, inode, contentType }: DotWorkflowActionParams): void {
+    fireWorkflowAction({
+        actionId,
+        inode,
+        contentType,
+        languageId,
+        identifier
+    }: DotWorkflowActionParams): void {
         this.$store.fireWorkflowAction({
             actionId,
             inode,
+            identifier,
             data: {
                 contentlet: {
                     ...this.form.value,
-                    contentType
+                    contentType,
+                    languageId
                 }
             }
         });

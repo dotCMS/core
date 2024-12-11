@@ -10,6 +10,8 @@ export interface DotWorkflowActionParams {
     actionId: string;
     inode: string;
     contentType: string;
+    languageId: string;
+    identifier: string;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -39,4 +39,9 @@ export class DotEditContentSidebarLocalesComponent {
      * Whether the data is loading.
      */
     $isLoading = input.required<boolean>({ alias: 'isLoading' });
+
+    /**
+     * Event emitted when the locale is switched.
+     */
+    switchLocale = output<DotLanguage>();
 }

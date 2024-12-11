@@ -28,11 +28,17 @@ export class DotEditContentService {
 
     /**
      * Retrieves the content by its ID.
-     * @param id - The ID of the content to retrieve.
-     * @returns An observable of the DotCMSContentType object.
+     *
+     * @param {string} id - The ID of the content to retrieve.
+     * @param {number} [languageId] - Optional language ID to filter the content.
+     * @returns {Observable<DotCMSContentlet>} An observable of the DotCMSContentlet object.
      */
-    getContentById(id: string): Observable<DotCMSContentlet> {
-        return this.#http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
+    getContentById(id: string, languageId?: number): Observable<DotCMSContentlet> {
+        const params = languageId
+            ? new HttpParams().set('language', languageId.toString())
+            : undefined;
+
+        return this.#http.get(`/api/v1/content/${id}`, { params }).pipe(pluck('entity'));
     }
 
     /**
