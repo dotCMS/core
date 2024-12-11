@@ -96,6 +96,13 @@ public class ReindexQueueFactory {
                             + " from contentlet_version_info where identifier is not null";
             dc.setSQL(sql);
             dc.loadResult();
+
+            dc = new DotConnect();
+            dc.setSQL("SELECT count(*) as count from dist_reindex_journal");
+            final List<Map<String, Object>> count = dc.loadObjectResults();
+            if (!count.isEmpty()) {
+                Logger.info(this, String.format("=======> After adding all from the contentlet_version_info table, there are %s records in the table", count.get(0).getOrDefault("count", "- NO VALUE -")));
+            }
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
@@ -341,13 +348,25 @@ public class ReindexQueueFactory {
         db.addParam(priorityLevel);
         db.addParam(lastIdIndexed);
 
-        for (Map<String, Object> map : db.loadObjectResults()) {
+        Logger.info(this, String.format("Loading %d records from the reindex journal with reindexingServers = [ %s], myIndex = [ %s ], priorityLevel = [ %s ], lastIdIndexed = [ %s ]",
+                REINDEX_RECORDS_TO_FETCH, reindexingServers, myIndex, priorityLevel, lastIdIndexed));
+        final DotConnect dc2 = new DotConnect();
+        dc2.setSQL("SELECT count(*) as count from dist_reindex_journal");
+        final List<Map<String, Object>> count = dc2.loadObjectResults();
+        if (!count.isEmpty()) {
+            Logger.info(this, String.format("=======> Total records in reindex journal: %s", count.get(0).getOrDefault("count", "- NO VALUE -")));
+        }
+
+        final List<Map<String, Object>> results = db.loadObjectResults();
+        Logger.info(this, String.format("=======> Loaded %d records from the reindex journal", results.size()));
+        for (Map<String, Object> map : results) {
             final ReindexEntry entry = mapToReindexEntry(map);
             lastIdIndexed = entry.getId();
             queue.add(entry);
         }
 
         if (queue.isEmpty()) {
+            Logger.info(this, "=======> The reindex queue is empty!");
             lastIdIndexed = 0;
         }
     }
