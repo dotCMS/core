@@ -1,14 +1,16 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { fakeAsync, tick } from '@angular/core/testing';
+
+import { Dialog } from 'primeng/dialog';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { Dialog } from 'primeng/dialog';
 
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
-import { fakeAsync } from '@angular/core/testing';
-import { tick } from '@angular/core/testing';
+
 
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
@@ -144,5 +146,5 @@ describe('DotSelectExistingContentComponent', () => {
             // Assert
             expect(spy).toHaveBeenCalled();
         }));
-    });
+    }); 
 });
