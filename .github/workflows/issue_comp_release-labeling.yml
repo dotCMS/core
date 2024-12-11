@@ -19,7 +19,7 @@ on:
         description: 'New label color'
         type: string
         required: false
-        default: '#fbca04'
+        default: 'fbca04'
   workflow_dispatch:
     inputs:
       rename_label:
