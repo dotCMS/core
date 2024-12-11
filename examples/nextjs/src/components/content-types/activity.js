@@ -1,18 +1,7 @@
-import { useAnalyticsTracker } from "@dotcms/analytics";
 import Image from "next/image";
 import Link from "next/link";
 
 function Activity({ title, description, image, urlTitle }) {
-    const { track } = useAnalyticsTracker();
-
-    const handleClick = () => {
-        track("btn-click", {
-            title,
-            buttonText: "Link to detail",
-            urlTitle,
-        });
-    };
-
     return (
         <article className="p-4 overflow-hidden bg-white rounded shadow-lg">
             {image && (
@@ -30,7 +19,6 @@ function Activity({ title, description, image, urlTitle }) {
             </div>
             <div className="px-6 pt-4 pb-2">
                 <Link
-                    onClick={handleClick}
                     href={`/activities/${urlTitle || "#"}`}
                     className="inline-block px-4 py-2 font-bold text-white bg-purple-500 rounded-full hover:bg-purple-700"
                 >
