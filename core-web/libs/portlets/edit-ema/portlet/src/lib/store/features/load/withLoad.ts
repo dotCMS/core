@@ -197,18 +197,23 @@ export function withLoad() {
                             return dotPageApiService
                                 .getClientPage(store.pageParams(), store.clientRequestProps())
                                 .pipe(
-                                    switchMap((pageAPIResponse) =>
-                                        dotLanguagesService
-                                            .getLanguagesUsedPage(pageAPIResponse.page.identifier)
-                                            .pipe(
-                                                map((languages) => ({
-                                                    pageAPIResponse,
-                                                    languages
-                                                }))
+                                    switchMap((pageAPIResponse) => {
+                                        return forkJoin({
+                                            pageAPIResponse: of(pageAPIResponse),
+                                            languages: dotLanguagesService.getLanguagesUsedPage(
+                                                pageAPIResponse.page.identifier
+                                            ),
+                                            workflowActions: dotWorkflowsActionsService.getByInode(
+                                                pageAPIResponse.page.inode
                                             )
-                                    ),
+                                        });
+                                    }),
                                     tapResponse({
-                                        next: ({ pageAPIResponse, languages }) => {
+                                        next: ({
+                                            pageAPIResponse,
+                                            languages,
+                                            workflowActions = []
+                                        }) => {
                                             const canEditPage = computeCanEditPage(
                                                 pageAPIResponse?.page,
                                                 store.currentUser(),
@@ -226,7 +231,8 @@ export function withLoad() {
                                                 canEditPage,
                                                 pageIsLocked,
                                                 status: UVE_STATUS.LOADED,
-                                                isClientReady: partialState?.isClientReady ?? true
+                                                isClientReady: partialState?.isClientReady ?? true,
+                                                workflowActions
                                             });
                                         },
                                         error: ({ status: errorStatus }: HttpErrorResponse) => {

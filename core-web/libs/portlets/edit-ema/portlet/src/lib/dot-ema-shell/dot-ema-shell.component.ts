@@ -19,7 +19,8 @@ import {
     DotPageLayoutService,
     DotPageRenderService,
     DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
+    DotSeoMetaTagsUtilService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -58,6 +59,7 @@ import {
         DotPageRenderService,
         DotSeoMetaTagsService,
         DotSeoMetaTagsUtilService,
+        DotWorkflowsActionsService,
         {
             provide: WINDOW,
             useValue: window
