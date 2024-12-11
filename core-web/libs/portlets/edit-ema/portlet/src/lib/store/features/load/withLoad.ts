@@ -147,10 +147,10 @@ export function withLoad() {
                                                     currentUser
                                                 );
 
-                                                const isTraditionalPage = !pageParams.clientHost; // If we don't send the clientHost we are using as VTL page
+                                                const isPreview = pageParams.preview === 'true';
+                                                const isTraditionalPage = !pageParams.clientHost;
                                                 const isClientReady =
-                                                    isTraditionalPage ||
-                                                    pageParams.preview === 'true'; // If is a traditional page we are ready
+                                                    isTraditionalPage || isPreview;
 
                                                 patchState(store, {
                                                     pageAPIResponse: pageAsset,

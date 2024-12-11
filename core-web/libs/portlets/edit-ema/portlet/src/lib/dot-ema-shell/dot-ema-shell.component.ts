@@ -113,6 +113,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             ...(pageParams ?? {}),
             ...(viewParams ?? {})
         };
+
         this.#updateLocation(queryParams);
     });
 
