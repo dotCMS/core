@@ -9,7 +9,12 @@ import { Router } from '@angular/router';
 
 import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotLanguagesService,
+    DotLicenseService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
@@ -38,6 +43,7 @@ export function withLoad() {
             const dotLicenseService = inject(DotLicenseService);
             const dotExperimentsService = inject(DotExperimentsService);
             const loginService = inject(LoginService);
+            const dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
 
             return {
                 /**
@@ -112,6 +118,7 @@ export function withLoad() {
                                 switchMap(({ pageAsset, isEnterprise, currentUser }) => {
                                     const experimentId =
                                         pageParams?.experimentId ?? pageAsset?.runningExperimentId;
+                                    const inode = pageAsset?.page?.inode;
 
                                     return forkJoin({
                                         experiment: dotExperimentsService.getById(
@@ -119,10 +126,16 @@ export function withLoad() {
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
                                             pageAsset.page.identifier
-                                        )
+                                        ),
+                                        workflowActions:
+                                            dotWorkflowsActionsService.getByInode(inode)
                                     }).pipe(
                                         tap({
-                                            next: ({ experiment, languages }) => {
+                                            next: ({
+                                                experiment,
+                                                languages,
+                                                workflowActions = []
+                                            }) => {
                                                 const canEditPage = computeCanEditPage(
                                                     pageAsset?.page,
                                                     currentUser,
@@ -135,6 +148,9 @@ export function withLoad() {
                                                 );
 
                                                 const isTraditionalPage = !pageParams.clientHost; // If we don't send the clientHost we are using as VTL page
+                                                const isClientReady =
+                                                    isTraditionalPage ||
+                                                    pageParams.preview === 'true'; // If is a traditional page we are ready
 
                                                 patchState(store, {
                                                     pageAPIResponse: pageAsset,
@@ -144,9 +160,10 @@ export function withLoad() {
                                                     languages,
                                                     canEditPage,
                                                     pageIsLocked,
+                                                    isClientReady,
                                                     isTraditionalPage,
-                                                    isClientReady: isTraditionalPage, // If is a traditional page we are ready
-                                                    status: UVE_STATUS.LOADED
+                                                    status: UVE_STATUS.LOADED,
+                                                    workflowActions
                                                 });
                                             },
                                             error: ({ status: errorStatus }: HttpErrorResponse) => {

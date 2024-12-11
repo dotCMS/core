@@ -87,6 +87,8 @@ export class DotUveToolbarComponent {
         return this.#store.pageAPIResponse()?.page.inode;
     });
 
+    readonly $actions = this.#store.workflowActions;
+
     protected readonly date = new Date();
 
     /**

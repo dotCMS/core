@@ -1,4 +1,4 @@
-import { Component, OnChanges, SimpleChanges, inject, input, output, signal } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -10,7 +10,6 @@ import {
     DotMessageService,
     DotWizardService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService,
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSWorkflowAction, DotWorkflowPayload } from '@dotcms/dotcms-models';
@@ -23,21 +22,18 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
     providers: [
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
-        DotWorkflowsActionsService,
         DotHttpErrorManagerService
     ],
     templateUrl: './dot-edit-ema-workflow-actions.component.html',
     styleUrl: './dot-edit-ema-workflow-actions.component.css'
 })
-export class DotEditEmaWorkflowActionsComponent implements OnChanges {
-    inode = input.required<string>();
+export class DotEditEmaWorkflowActionsComponent {
+    inode = input<string>();
+    actions = input<DotCMSWorkflowAction[]>();
     newPage = output<DotCMSContentlet>();
-
-    protected actions = signal<DotCMSWorkflowAction[]>([]);
-    protected loading = signal<boolean>(true);
+    protected loading = signal<boolean>(false);
 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    private readonly dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly httpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotWizardService = inject(DotWizardService);
@@ -57,20 +53,6 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
         detail: this.dotMessageService.get('edit.ema.page.error.executing.workflow.action'),
         life: 2000
     };
-
-    // ngOnInit() {
-    //     // this.loadWorkflowActions(contentlet.inode);
-
-    //     // Refrescar el Store y el Store da los WORKFLOW_ACTIONS
-    //     // this.subscribe()
-    // }
-
-    ngOnChanges(changes: SimpleChanges) {
-        const inodeChange = changes.inode;
-        if (inodeChange.currentValue) {
-            this.loadWorkflowActions(inodeChange.currentValue);
-        }
-    }
 
     handleActionTrigger(workflow: DotCMSWorkflowAction): void {
         const { actionInputs = [] } = workflow;
@@ -98,21 +80,6 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
             });
     }
 
-    private loadWorkflowActions(inode: string): void {
-        this.loading.set(true);
-        this.dotWorkflowsActionsService
-            .getByInode(inode)
-            .pipe(
-                map((newWorkflows: DotCMSWorkflowAction[]) => {
-                    return newWorkflows || [];
-                })
-            )
-            .subscribe((newWorkflows: DotCMSWorkflowAction[]) => {
-                this.loading.set(false);
-                this.actions.set(newWorkflows);
-            });
-    }
-
     private openWizard(workflow: DotCMSWorkflowAction): void {
         this.dotWizardService
             .open<DotWorkflowPayload>(
@@ -137,7 +104,6 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
         workflow: DotCMSWorkflowAction,
         data?: T
     ): void {
-        this.loading.set(true);
         this.messageService.add({
             ...this.successMessage,
             detail: this.dotMessageService.get('edit.ema.page.executing.workflow.action'),
@@ -161,8 +127,6 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
                 })
             )
             .subscribe((contentlet: DotCMSContentlet) => {
-                this.loading.set(false);
-
                 if (!contentlet) {
                     return;
                 }

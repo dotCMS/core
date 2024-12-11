@@ -28,7 +28,8 @@ const initialState: UVEState = {
     isTraditionalPage: true,
     canEditPage: false,
     pageIsLocked: true,
-    isClientReady: false
+    isClientReady: false,
+    workflowActions: []
 };
 
 export const UVEStore = signalStore(
