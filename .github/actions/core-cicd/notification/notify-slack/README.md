@@ -24,7 +24,7 @@ on:
 
 jobs:
   notify:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Send Slack Notification
         uses: ./
