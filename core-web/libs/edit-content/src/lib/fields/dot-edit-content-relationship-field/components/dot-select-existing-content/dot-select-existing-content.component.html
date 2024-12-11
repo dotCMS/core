@@ -12,7 +12,6 @@
             dataKey="id"
             appendTo="body"
             width="90%"
-            styleClass="dotTable"
             [style]="{ width: '90%', 'max-width': '1040px', height: '90vh' }">
             <ng-template pTemplate="header">
                 <div class="flex items-center justify-center gap-2">
@@ -32,7 +31,7 @@
                 [first]="pagination.offset"
                 [rows]="pagination.rowsPerPage"
                 [globalFilterFields]="['title', 'step', 'description']"
-                styleClass="p-datatable-sm p-datatable-existing-content">
+                styleClass="dotTable p-datatable-existing-content">
                 <ng-template pTemplate="caption">
                     <div class="flex justify-content-between align-items-center w-full">
                         <div class="flex align-items-center gap-2">
