@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "1d5dd0a7-7d6b-4d1a-9096-47ced212ac23",
+		"_postman_id": "13ba66c7-fa5d-4baf-882a-71de5536689d",
 		"name": "ContentImportResource",
 		"description": "Postman collection for testing the ContentImportResource API endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -946,6 +946,76 @@
 						"description": "Creates a new job in the specified queue."
 					},
 					"response": []
+				},
+				{
+					"name": "Validate Content Import With Unsupported Media Type Expect Failure Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
 				}
 			]
 		},
@@ -1802,6 +1872,75 @@
 									"key": "file",
 									"type": "file",
 									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Import Content Job With Unsupported Media Type Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}}",
+									"type": "text"
 								}
 							]
 						},

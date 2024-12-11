@@ -62,3 +62,15 @@ export const getPageRequestParams = ({
         ...finalParams
     };
 };
+
+/**
+ * Checks if the code is running inside an editor.
+ *
+ * @return {*}  {boolean}
+ */
+export const isPreviewMode = (): boolean => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const isPreviewMode = queryParams.get('preview');
+
+    return isPreviewMode === 'true';
+};
