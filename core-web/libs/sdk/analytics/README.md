@@ -19,7 +19,7 @@ npm install @dotcms/analytics
 Or include the script in your HTML page:
 
 ```html
-<script src="analytics.iife.js"></script>
+<script src="ca.min.js"></script>
 ```
 
 ## React Integration
@@ -33,7 +33,7 @@ Wrap your application with the `DotContentAnalyticsProvider`:
 const analyticsConfig = {
     apiKey: 'your-api-key-from-dotcms-analytics-app',
     server: 'https://your-dotcms-instance.com',
-    debug: false
+    debug: false // Not required
 };
 
 function App() {
@@ -54,14 +54,17 @@ function Activity({ title, urlTitle }) {
     const { track } = useAnalyticsTracker();
 
     const handleClick = () => {
-        track('btn-click', {
-            title,
-            buttonText: 'Link to detail',
-            urlTitle
+        // First parameter: custom event name to identify the action
+        // Second parameter: object with properties you want to track
+        track('product-detail-click', {
+            productTitle: title,
+            productUrl: urlTitle,
+            clickedElement: 'detail-button',
+            timestamp: new Date().toISOString()
         });
     };
 
-    return <button onClick={handleClick}>Link to detail →</button>;
+    return <button onClick={handleClick}>See Details →</button>;
 }
 ```
 
@@ -69,10 +72,10 @@ function Activity({ title, urlTitle }) {
 
 The script can be configured using data attributes:
 
--   **data-analytics-server**: URL of the server where events will be sent
+-   **data-analytics-server**: URL of the server where events will be sent. If not provided, the current domain will be used
 -   **data-analytics-debug**: Enables debug logging
--   **data-analytics-auto-page-view**: Enables automatic page view tracking
--   **data-analytics-key**: Required API key for authentication
+-   **data-analytics-auto-page-view**: Recommended for IIFE implementation. Enables automatic page view tracking
+-   **data-analytics-key**: **(Required)** API key for authentication
 
 ```html
 <!-- Example configuration -->
@@ -95,14 +98,7 @@ The script can be configured using data attributes:
 
 The following features are planned for future releases:
 
-1. **Manual Event Tracking**
-
-    - Manual track events support for IIFE implementation
-
 2. **Headless Support**
-
-    - React integration for event tracking
-    - Next.js integration for event tracking
     - Angular integration for event tracking
 
 ## Contributing
