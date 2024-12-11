@@ -339,6 +339,7 @@ public class ESIndexResource {
             APILocator.getContentletAPI().refresh(type);
         }
         else {
+            Logger.info(this, "=======> Refreshing ALL contents in dotCMS");
             APILocator.getContentletAPI().refreshAllContent();
         }
 

@@ -355,7 +355,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 < Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30) * 1000) {
             if (reindexTimeElapsed().isPresent()) {
                 Logger.info(this.getClass(),
-                        "Reindex has been running only " + reindexTimeElapsed().get()
+                        "Reindex has been running only " + reindexTimeElapsed().orElse("- No value present -")
                                 + ". Letting the reindex settle.");
             } else {
                 Logger.info(this.getClass(), "Reindex Time Elapsed not set.");

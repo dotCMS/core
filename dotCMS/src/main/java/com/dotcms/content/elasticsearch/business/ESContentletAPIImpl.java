@@ -3784,15 +3784,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void refreshAllContent() throws DotReindexStateException {
         try {
             if (indexAPI.isInFullReindex()) {
+                Logger.info(this, "=======> Full reindex already in progress, skipping refresh all content");
                 return;
             }
             // we prepare the new index and aliases to point both old and new
+            Logger.info(this, "=======> Preparing the new index and aliases to point both old and new");
             indexAPI.fullReindexStart();
 
             // delete failing records
+            Logger.info(this, "=======> Deleting failing records");
             reindexQueueAPI.deleteFailedRecords();
 
             // new records to index
+            Logger.info(this, "=======> Adding all records to reindex queue");
             reindexQueueAPI.addAllToReindexQueue();
 
         } catch (Exception e) {
