@@ -14,7 +14,8 @@ import {
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -87,6 +88,12 @@ describe('withLoad', () => {
         providers: [
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
             {
                 provide: DotPageApiService,
                 useValue: {

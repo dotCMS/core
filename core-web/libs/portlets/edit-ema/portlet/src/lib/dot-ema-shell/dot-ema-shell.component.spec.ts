@@ -21,6 +21,7 @@ import {
     DotMessageService,
     DotPropertiesService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -208,6 +209,12 @@ describe('DotEmaShellComponent', () => {
             DotWorkflowActionsFireService,
             Router,
             Location,
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
             {
                 provide: DotPropertiesService,
                 useValue: dotPropertiesServiceMock

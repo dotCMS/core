@@ -1,5 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
-import { SpectatorRouting, createRoutingFactory, byTestId } from '@ngneat/spectator/jest';
+import {
+    SpectatorRouting,
+    createRoutingFactory,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -25,18 +30,22 @@ import {
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotIframeService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPersonalizeService,
     DotPropertiesService,
+    DotRouterService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
     DotSessionStorageService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -149,6 +158,15 @@ const createRouting = () =>
             DotFavoritePageService,
             DotESContentService,
             DotSessionStorageService,
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotRouterService),
+            mockProvider(DotGlobalMessageService),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
             {
                 provide: DotPropertiesService,
                 useValue: {
@@ -440,6 +458,7 @@ describe('EditEmaEditorComponent', () => {
                 store.setFlags({
                     FEATURE_FLAG_UVE_PREVIEW_MODE: true
                 });
+
                 spectator.detectChanges();
 
                 const toolbar = spectator.query(DotUveToolbarComponent);

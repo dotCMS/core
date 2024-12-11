@@ -59,6 +59,7 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveToolbarComponent {
+    // `viewChild` signal is not supported by ng-mocks. Ticket: https://github.com/help-me-mom/ng-mocks/issues/8634
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
