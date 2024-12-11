@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import org.awaitility.Awaitility;
 import org.jboss.weld.junit5.EnableWeld;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -398,10 +397,13 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
         String successJob1Id = jobQueueManagerAPI.createJob("successQueue", new HashMap<>());
         String successJob2Id = jobQueueManagerAPI.createJob("successQueue", new HashMap<>());
         String failJobId = jobQueueManagerAPI.createJob("failQueue", new HashMap<>());
-        String cancelJobId = jobQueueManagerAPI.createJob("cancelQueue", new HashMap<>());
+        String cancelJob1Id = jobQueueManagerAPI.createJob("cancelQueue", new HashMap<>());
+        String cancelJob2Id = jobQueueManagerAPI.createJob("cancelQueue",
+                Map.of("wontCancel", true)
+        );
 
         // Set up latches to track job completions
-        CountDownLatch successLatch = new CountDownLatch(2);
+        CountDownLatch successLatch = new CountDownLatch(3);
         CountDownLatch failLatch = new CountDownLatch(1);
         CountDownLatch cancelLatch = new CountDownLatch(1);
 
@@ -421,15 +423,20 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 failLatch.countDown();
             }
         });
-        jobQueueManagerAPI.watchJob(cancelJobId, job -> {
+        jobQueueManagerAPI.watchJob(cancelJob1Id, job -> {
             if (job.state() == JobState.CANCELED) {
                 cancelLatch.countDown();
             }
         });
+        jobQueueManagerAPI.watchJob(cancelJob2Id, job -> {
+            if (job.state() == JobState.SUCCESS) {
+                successLatch.countDown();
+            }
+        });
 
-        // Wait a bit before cancelling the job
+        // Wait a bit before cancelling the job, just cancelJob1Id
         Awaitility.await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
-        jobQueueManagerAPI.cancelJob(cancelJobId);
+        jobQueueManagerAPI.cancelJob(cancelJob1Id);
 
         // Wait for all jobs to complete (or timeout after 30 seconds)
         boolean allCompleted = successLatch.await(30, TimeUnit.SECONDS)
@@ -445,8 +452,10 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
                 "Second success job should be successful");
         assertEquals(JobState.FAILED_PERMANENTLY, jobQueueManagerAPI.getJob(failJobId).state(),
                 "Fail job should be in failed state");
-        assertEquals(JobState.CANCELED, jobQueueManagerAPI.getJob(cancelJobId).state(),
-                "Cancel job should be canceled");
+        assertEquals(JobState.CANCELED, jobQueueManagerAPI.getJob(cancelJob1Id).state(),
+                "Cancel job 1 should be canceled");
+        assertEquals(JobState.SUCCESS, jobQueueManagerAPI.getJob(cancelJob2Id).state(),
+                "Cancel job 2 should be successful");
 
         // Wait for job processing to complete as we have retries running
         Awaitility.await().atMost(30, TimeUnit.SECONDS)
@@ -768,11 +777,16 @@ public class JobQueueManagerAPIIntegrationTest extends com.dotcms.Junit5WeldBase
         @Override
         public void process(Job job) {
 
-            Awaitility.await().atMost(10, TimeUnit.SECONDS)
-                    .until(canceled::get);
+            if (job.parameters().containsKey("wontCancel")) {
+                // Simulate some work
+                Awaitility.await().pollDelay(5, TimeUnit.SECONDS).until(() -> true);
+            } else {
+                Awaitility.await().atMost(10, TimeUnit.SECONDS)
+                        .until(canceled::get);
 
-            // Simulate some additional work after cancellation
-            Awaitility.await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
+                // Simulate some additional work after cancellation
+                Awaitility.await().pollDelay(1, TimeUnit.SECONDS).until(() -> true);
+            }
         }
 
         @Override

@@ -114,9 +114,10 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const isLoading = !isClientReady || store.status() === UVE_STATUS.LOADING;
 
-                    const isPageReady = isTraditionalPage || isClientReady;
+                    const isPreview = params?.preview === 'true';
+                    const isPageReady = isTraditionalPage || isClientReady || isPreview;
+                    const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
 
@@ -131,8 +132,6 @@ export function withEditor() {
                         !!contentletArea && canEditPage && isEditState && !isScrolling;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-
-                    const isPreview = params?.preview === 'true';
                     const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
