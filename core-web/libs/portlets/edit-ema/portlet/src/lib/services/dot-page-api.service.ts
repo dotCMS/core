@@ -99,7 +99,7 @@ export class DotPageApiService {
 
         const isPreview = preview === 'true';
         const pageType = clientHost ? 'json' : 'render';
-        const mode = isPreview ? PAGE_MODE.PREVIEW : PAGE_MODE.EDIT;
+        const mode = isPreview ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id,
