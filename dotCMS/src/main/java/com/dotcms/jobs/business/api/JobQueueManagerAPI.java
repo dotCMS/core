@@ -52,12 +52,19 @@ public interface JobQueueManagerAPI {
     void close() throws Exception;
 
     /**
+     * Registers a job processor
+     *
+     * @param processor The job processor to register
+     */
+    void registerProcessor(Class<? extends JobProcessor> processor);
+
+    /**
      * Registers a job processor for a specific queue.
      *
      * @param queueName The name of the queue
      * @param processor The job processor to register
      */
-    void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor);
+    void registerProcessor(String queueName, Class<? extends JobProcessor> processor);
 
     /**
      * Retrieves the job processors for all registered queues.
