@@ -11,7 +11,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
-
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
     let store: InstanceType<typeof ExistingContentStore>;
@@ -146,5 +145,5 @@ describe('DotSelectExistingContentComponent', () => {
             // Assert
             expect(spy).toHaveBeenCalled();
         }));
-    }); 
+    });
 });
