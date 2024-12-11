@@ -16,7 +16,7 @@ env:
 
 jobs:
   resolve-seated-prs:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     outputs:
       seated_prs: ${{ steps.fetch-seated-prs.outputs.seated_prs }}
       members: ${{ steps.fetch-seated-prs.outputs.members }}
@@ -152,7 +152,7 @@ jobs:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   notify-seated-prs:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     needs: [resolve-seated-prs, slack-channel-resolver]
     if: success()
     name: Notifying team member ${{ matrix.member }}

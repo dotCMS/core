@@ -39,7 +39,7 @@ env:
 jobs:
   prepare-release:
     name: Prepare Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     outputs:
       release_version: ${{ steps.set-common-vars.outputs.release_version }}
       release_tag: ${{ steps.set-common-vars.outputs.release_tag }}
@@ -216,7 +216,7 @@ jobs:
 
   release-process:
     name: Release Process
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     needs: prepare-release
     env:
       AWS_REGION: us-east-1
@@ -336,7 +336,7 @@ jobs:
 
   generate-sbom:
     name: Generate SBOM
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     needs: [  prepare-release, build-push-image ]
     continue-on-error: true
     steps:
@@ -385,7 +385,7 @@ jobs:
 
   finish-release:
     name: Finish Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     needs: [prepare-release, release-process, build-push-image]
     if: success()
     steps:

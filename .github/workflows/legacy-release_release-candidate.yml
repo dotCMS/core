@@ -29,7 +29,7 @@ on:
 jobs:
   release-candidate-process:
     name: Release process automation
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     outputs:
       ref: ${{ steps.set-common-vars.outputs.ref }}
     steps:
@@ -108,7 +108,7 @@ jobs:
 
   notification:
     name: Release process automation
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     needs: [release-candidate-process, build_push_image]
     steps:
       -

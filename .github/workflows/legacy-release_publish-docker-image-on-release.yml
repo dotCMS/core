@@ -9,7 +9,7 @@ on:
 jobs:
   prepare-build:
     name: Prepare build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     outputs:
       build_id: ${{ steps.process-params.outputs.build_id }}
     steps:
@@ -52,7 +52,7 @@ jobs:
   finish-build-push:
     name: Finish Build/Push
     needs: build-push-image
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     steps:
       - name: Slack Notification
         if: success()

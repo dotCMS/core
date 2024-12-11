@@ -22,7 +22,7 @@ on:
 jobs:
   label-issues:
     name: Label issues
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     steps:
       - name: Checkout core
         uses: actions/checkout@v4

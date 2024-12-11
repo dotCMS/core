@@ -95,7 +95,7 @@ jobs:
           
   deploy-artifacts:
     needs: [ get-starter ]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     environment: starter
     outputs:
       filename: ${{ steps.deploy-artifacts.outputs.filename }}
@@ -197,7 +197,7 @@ jobs:
        
   send-notification:
     needs: [ deploy-artifacts ]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     if: always() && github.event.inputs.dry-run == 'false'
     steps:
 

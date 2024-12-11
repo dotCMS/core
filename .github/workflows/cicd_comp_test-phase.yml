@@ -60,7 +60,7 @@ jobs:
   # JVM Unit Tests
   linux-jvm-tests:
     name: JVM Unit Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     if: inputs.jvm_unit_test || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -82,7 +82,7 @@ jobs:
   # CLI Tests
   linux-cli-tests:
     name: CLI Tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     if: inputs.cli || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -106,7 +106,7 @@ jobs:
   # Frontend Tests
   linux-frontend-tests:
     name: Frontend Unit Tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     if: inputs.frontend || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -128,7 +128,7 @@ jobs:
   # Integration Tests
   linux-integration-tests:
     name: JVM IT Tests ${{matrix.suites.name}}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     if: inputs.integration || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -162,7 +162,7 @@ jobs:
   # Postman Tests
   linux-postman-tests:
     name: Run Postman Tests - ${{matrix.collection_group}}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     if: inputs.postman || inputs.run-all-tests
     strategy:
       fail-fast: false
@@ -187,7 +187,7 @@ jobs:
   # Karate Tests
   karate-tests:
     name: Karate Tests - ${{ matrix.suites.name }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     if: inputs.karate || inputs.run-all-tests
     strategy:
       fail-fast: false
@@ -219,7 +219,7 @@ jobs:
   # E2E Tests
   linux-e2e-tests:
     name: E2E Tests ${{matrix.suites.name}}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     if: inputs.e2e || inputs.run-all-tests
     timeout-minutes: 240
     env:

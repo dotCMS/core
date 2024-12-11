@@ -23,7 +23,7 @@ on:
 
 jobs:
   github-member-resolver:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '22.04' }}
     outputs:
       members: ${{ steps.resolve-members.outputs.members }}
     steps:
