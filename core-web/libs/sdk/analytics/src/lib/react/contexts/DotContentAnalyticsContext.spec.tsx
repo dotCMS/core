@@ -1,5 +1,4 @@
 import { jest } from '@jest/globals';
-
 import React, { renderHook } from '@testing-library/react-hooks';
 import { ReactNode, useContext } from 'react';
 
@@ -29,7 +28,7 @@ describe('useDotContentAnalyticsContext', () => {
     });
 
     it('returns the context value DotContentAnalytics', () => {
-            const mockContextValue = {} as DotContentAnalytics;
+        const mockContextValue = {} as DotContentAnalytics;
 
         const { result } = renderHook(() => useContext(DotContentAnalyticsContext), {
             wrapper: ({ children }: { children: ReactNode }) => (

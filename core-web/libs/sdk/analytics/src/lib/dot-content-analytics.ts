@@ -1,46 +1,30 @@
 import Analytics, { AnalyticsInstance } from 'analytics';
 
-import { dotAnalyticsPlugin } from './plugin/dot-analytics.plugin';
+import { dotAnalyticsEnricherPlugin } from './plugin/dot-analytics.enricher.plugin';
+import { dotAnalytics } from './plugin/dot-analytics.plugin';
 import { DotContentAnalyticsConfig } from './shared/dot-content-analytics.model';
-import { defaultRedirectFn } from './shared/dot-content-analytics.utils';
+import { DotLogger } from './utils/DotLogger';
 
 /**
- * DotAnalytics class for sending events to Content Analytics.
+ * DotContentAnalytics class for sending events to Content Analytics.
  * This class handles tracking events and automatically collects browser information
  * like user agent, viewport size, and other relevant browser metadata to provide
  * better analytics insights.
  *
  * The class follows a singleton pattern to ensure only one analytics instance
- * is running at a time.
+ * is running at a time. It can be initialized with configuration options including
+ * server URL, debug mode, auto page view tracking, and API key.
  */
 export class DotContentAnalytics {
     private static instance: DotContentAnalytics | null = null;
+    private readonly logger: DotLogger;
     #initialized = false;
     #analytics: AnalyticsInstance | null = null;
     #config: DotContentAnalyticsConfig;
-    #currentLocation: Location = location;
-    /**
-     * Returns a custom redirect function. If a custom redirect function is not configured,
-     * the default redirect function will be used.
-     *
-     * @return {function} A function that accepts a URL string parameter and performs a redirect.
-     *                    If no parameter is provided, the function will not perform any action.
-     */
-    get customRedirectFn(): (url: string) => void {
-        return this.#config.redirectFn ?? defaultRedirectFn;
-    }
-
-    /**
-     * Retrieves the current location.
-     *
-     * @returns {Location} The current location.
-     */
-    public get location(): Location {
-        return this.#currentLocation;
-    }
 
     private constructor(config: DotContentAnalyticsConfig) {
         this.#config = config;
+        this.logger = new DotLogger(this.#config.debug, 'DotContentAnalytics');
     }
 
     /**
@@ -59,44 +43,63 @@ export class DotContentAnalytics {
      */
     async ready(): Promise<void> {
         if (this.#initialized) {
+            this.logger.log('Already initialized');
+
             return Promise.resolve();
         }
 
         try {
+            this.logger.group('Initialization');
+            this.logger.time('Init');
+
             this.#analytics = Analytics({
                 app: 'dotAnalytics',
                 debug: this.#config.debug,
-                plugins: [dotAnalyticsPlugin(this.#config)]
+                plugins: [dotAnalyticsEnricherPlugin, dotAnalytics(this.#config)]
             });
 
             this.#initialized = true;
+            this.logger.log('dotAnalytics initialized');
+            this.logger.timeEnd('Init');
+            this.logger.groupEnd();
+
+            return Promise.resolve();
         } catch (error) {
-            console.error('Failed to initialize DotAnalytics:', error);
+            this.logger.error(`Failed to initialize: ${error}`);
             throw error;
         }
     }
 
     /**
-     * Track a custom event with optional payload
+     * Sends a page view event to the analytics instance.
+     *
+     * @param {Record<string, unknown>} payload - The payload to send to the analytics instance.
+     * @returns {void}
      */
-    track(eventName: string, payload?: Record<string, unknown>): void {
+    pageView(payload: Record<string, unknown> = {}): void {
         if (!this.#analytics || !this.#initialized) {
-            console.warn('DotContentAnalytics not initialized');
+            this.logger.warn('Not initialized');
+
+            return;
+        }
+
+        this.#analytics.page(payload);
+    }
+
+    /**
+     * Sends a track event to the analytics instance.
+     *
+     * @param {string} eventName - The name of the event to send.
+     * @param {Record<string, unknown>} payload - The payload to send to the analytics instance.
+     * @returns {void}
+     */
+    track(eventName: string, payload: Record<string, unknown> = {}): void {
+        if (!this.#analytics || !this.#initialized) {
+            this.logger.warn('Not initialized');
+
             return;
         }
 
         this.#analytics.track(eventName, payload);
-    }
-
-    /**
-     * Track page view with current location
-     */
-    trackPageView(): void {
-        if (!this.#analytics || !this.#initialized) {
-            console.warn('DotContentAnalytics not initialized');
-            return;
-        }
-
-        this.track('pageview');
     }
 }

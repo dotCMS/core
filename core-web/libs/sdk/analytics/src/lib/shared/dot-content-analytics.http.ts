@@ -1,5 +1,5 @@
 import { ANALYTICS_ENDPOINT } from './dot-content-analytics.constants';
-import { DotContentAnalyticsConfig, PageViewEvent } from './dot-content-analytics.model';
+import { DotContentAnalyticsConfig, ServerEvent } from './dot-content-analytics.model';
 
 /**
  * Send an analytics event to the server
@@ -8,23 +8,24 @@ import { DotContentAnalyticsConfig, PageViewEvent } from './dot-content-analytic
  * @returns A promise that resolves to the response from the server
  */
 export const sendAnalyticsEventToServer = async (
-    data: PageViewEvent,
+    data: Record<string, unknown>,
     options: DotContentAnalyticsConfig
 ): Promise<Response> => {
-    const eventData = {
+    const serverEvent: ServerEvent = {
         ...data,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        key: options.apiKey
     };
 
     if (options.debug) {
-        console.warn('DotAnalytics: Event sent:', eventData);
+        console.warn('DotAnalytics: Event sent:', serverEvent);
     }
 
     try {
         return await fetch(`${options.server}${ANALYTICS_ENDPOINT}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(eventData)
+            body: JSON.stringify(serverEvent)
         });
     } catch (error) {
         console.error('DotAnalytics: Error sending event:', error);

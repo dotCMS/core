@@ -1,13 +1,10 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import React, { ReactNode, useCallback } from 'react';
 
 import { DotcmsPageProps } from '@dotcms/react';
 
-import { DotContentAnalyticsConfig } from '../../shared/dot-content-analytics.model';
-import { useMemoizedObject } from '../../utils/memoize';
 import { DotContentAnalyticsProvider } from './DotContentAnalyticsProvider';
 
-
+import { DotContentAnalyticsConfig } from '../../shared/dot-content-analytics.model';
 
 export interface PageProviderProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,34 +13,27 @@ export interface PageProviderProps {
 }
 
 /**
- * Wraps a given component with experiment handling capabilities using the 'useExperimentVariant' hook.
- * This HOC checks if the entity's assigned experiment variant differs from the currently displayed variant.
- * If they differ, the content is hidden until the correct variant is displayed. Once the assigned variant
- * matches the displayed variant, the content of the WrappedComponent is shown.
+ * Wraps a given component with content analytics capabilities.
+ * This HOC adds analytics tracking functionality to the wrapped component,
+ * allowing it to automatically track page views and other analytics events.
  *
- * @param {React.ComponentType<DotcmsPageProps>} WrappedComponent - The component to be enhanced.
- * @param {DotExperimentConfig} config - Configuration for experiment handling, including any necessary
- *        redirection functions or other settings.
+ * @param {React.ComponentType<DotcmsPageProps>} WrappedComponent - The component to be enhanced with analytics.
+ * @param {DotContentAnalyticsConfig} config - Configuration for analytics, including API key, server URL and debug settings.
  * @returns {React.FunctionComponent<DotcmsPageProps>} A component that wraps the original component,
- *          adding experiment handling based on the specified configuration.
+ *          adding analytics tracking based on the specified configuration.
  */
 export const withContentAnalytics = (
     WrappedComponent: React.ComponentType<DotcmsPageProps>,
     config: DotContentAnalyticsConfig
 ) => {
-    // We need to use a custom memoization hook
-    // because the useMemo or React.memo lose the reference of the object
-    // in each render, causing the experiment handling to be reinitialized.
-    const memoizedConfig = useMemoizedObject(config);
-    
     return useCallback(
         (props: DotcmsPageProps) => {
             return (
-                <DotContentAnalyticsProvider config={memoizedConfig}>
+                <DotContentAnalyticsProvider config={config}>
                     <WrappedComponent {...props} />
                 </DotContentAnalyticsProvider>
             );
         },
-        [WrappedComponent, memoizedConfig]
+        [WrappedComponent]
     );
 };

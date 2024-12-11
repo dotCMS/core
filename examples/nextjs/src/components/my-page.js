@@ -19,7 +19,7 @@ import Navigation from "./layout/navigation";
 import NotFound from "@/app/not-found";
 import { usePageAsset } from "../hooks/usePageAsset";
 
-import { withContentAnalytics } from "@dotcms/analytics";
+import { DotContentAnalyticsProvider } from "@dotcms/analytics";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -33,9 +33,9 @@ const experimentConfig = {
 
 // Example configuration for Content Analytics
 const analyticsConfig = {
-    apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY,
-    debug: process.env.NEXT_PUBLIC_ANALYTICS_DEBUG,
-    server: process.env.NEXT_PUBLIC_DOTCMS_HOST,
+    apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY, // API key for Content Analytics, is the same of Experiments, should be securely stored
+    server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
+    debug: process.env.NEXT_PUBLIC_ANALYTICS_DEBUG, // Debug mode for additional logging
 };
 
 // Mapping of components to DotCMS content types
@@ -61,18 +61,10 @@ export function MyPage({ pageAsset, nav }) {
      * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
      * - Remove DotExperimentsProvider from the return statement.
      */
-    // const DotLayoutComponent = DotcmsLayout;
-    // const DotLayoutComponent = experimentConfig?.apiKey
-    //     ? withExperiments(DotcmsLayout, {
-    //           ...experimentConfig,
-    //           redirectFn: replace,
-    //       })
-    //     : DotcmsLayout;
 
-    console.log("nextjs analyticsConfig", analyticsConfig);
-    const DotLayoutComponent = analyticsConfig.apiKey
-        ? withContentAnalytics(DotcmsLayout, {
-              ...analyticsConfig,
+    const DotLayoutComponent = experimentConfig?.apiKey
+        ? withExperiments(DotcmsLayout, {
+              ...experimentConfig,
               redirectFn: replace,
           })
         : DotcmsLayout;
@@ -84,29 +76,31 @@ export function MyPage({ pageAsset, nav }) {
     }
 
     return (
-        <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
-            {pageAsset?.layout.header && (
-                <Header>{!!nav && <Navigation items={nav} />}</Header>
-            )}
+        <DotContentAnalyticsProvider config={analyticsConfig}>
+            <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
+                {pageAsset?.layout.header && (
+                    <Header>{!!nav && <Navigation items={nav} />}</Header>
+                )}
 
-            <main className="flex flex-col gap-8 m-auto">
-                <DotLayoutComponent
-                    pageContext={{
-                        pageAsset,
-                        components: componentsMap,
-                    }}
-                    config={{
-                        pathname,
-                        editor: {
-                            params: {
-                                depth: 3,
+                <main className="flex flex-col gap-8 m-auto">
+                    <DotLayoutComponent
+                        pageContext={{
+                            pageAsset,
+                            components: componentsMap,
+                        }}
+                        config={{
+                            pathname,
+                            editor: {
+                                params: {
+                                    depth: 3,
+                                },
                             },
-                        },
-                    }}
-                />
-            </main>
+                        }}
+                    />
+                </main>
 
-            {pageAsset?.layout.footer && <Footer />}
-        </div>
+                {pageAsset?.layout.footer && <Footer />}
+            </div>
+        </DotContentAnalyticsProvider>
     );
 }

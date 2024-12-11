@@ -1,5 +1,5 @@
-import { ANALYTICS_SOURCE_TYPE, EXPECTED_UTM_KEYS } from './dot-content-analytics.constants';
-import { DotContentAnalyticsConfig, PageViewEvent } from './dot-content-analytics.model';
+import { EXPECTED_UTM_KEYS } from './dot-content-analytics.constants';
+import { BrowserEventData, DotContentAnalyticsConfig } from './dot-content-analytics.model';
 
 /**
  * Retrieves analytics attributes from a given script element.
@@ -10,10 +10,10 @@ export const getDataAnalyticsAttributes = (location: Location): DotContentAnalyt
     const script = getAnalyticsScriptTag();
 
     const attributes = {
-        server: script.getAttribute('data-analytics-server') || location.href,
+        server: script.getAttribute('data-analytics-server') || location.origin,
         debug: script.hasAttribute('data-analytics-debug'),
         autoPageView: script.hasAttribute('data-analytics-auto-page-view'),
-        key: script.getAttribute('data-analytics-key') || ''
+        apiKey: script.getAttribute('data-analytics-key') || ''
     };
 
     return attributes;
@@ -25,7 +25,7 @@ export const getDataAnalyticsAttributes = (location: Location): DotContentAnalyt
  * @returns {HTMLScriptElement} - The analytics script tag.
  */
 export const getAnalyticsScriptTag = (): HTMLScriptElement => {
-    const scripts = document.querySelector('script[data-analytics-server]');
+    const scripts = document.querySelector('script[data-analytics-key]');
 
     if (!scripts) {
         throw new Error('Dot Analytics: Script not found');
@@ -35,44 +35,28 @@ export const getAnalyticsScriptTag = (): HTMLScriptElement => {
 };
 
 /**
- * Creates the data for a page view event.
+ * Retrieves the browser event data.
  *
- * @param {string} event_type - The type of event.
  * @param {Location} location - The location object.
- * @returns {PageViewEvent} - The data for the page view event.
+ * @returns {BrowserEventData} - The browser event data.
  */
-export const createAnalyticsPageViewData = (
-    event_type: string,
-    location: Location
-): Omit<PageViewEvent, 'type' | 'key'> => {
-    const utmParams = extractUTMParameters(location);
-
-    const vpWidth = window.innerWidth;
-    const vpHeight = window.innerHeight;
-
-    const userLanguage = navigator.language;
-    const docEncoding = document.characterSet;
-
-    return {
-        event_type,
-        utc_time: new Date().toISOString(),
-        local_tz_offset: new Date().getTimezoneOffset(),
-        referer: document.referrer,
-        page_title: document.title,
-        doc_path: location.pathname,
-        doc_host: location.hostname,
-        doc_protocol: location.protocol,
-        doc_hash: location.hash,
-        doc_search: location.search,
-        screen_resolution: `${window.screen.width}x${window.screen.height}`,
-        vp_size: `${vpWidth}x${vpHeight}`,
-        user_agent: navigator.userAgent,
-        user_language: userLanguage,
-        doc_encoding: docEncoding,
-        utm: utmParams,
-        src: ANALYTICS_SOURCE_TYPE
-    };
-};
+export const getBrowserEventData = (location: Location): BrowserEventData => ({
+    utc_time: new Date().toISOString(),
+    local_tz_offset: new Date().getTimezoneOffset(),
+    screen_resolution: `${window.screen.width}x${window.screen.height}`,
+    vp_size: `${window.innerWidth}x${window.innerHeight}`,
+    userAgent: navigator.userAgent,
+    user_language: navigator.language,
+    doc_encoding: document.characterSet,
+    doc_path: location.pathname,
+    doc_host: location.hostname,
+    doc_protocol: location.protocol,
+    doc_hash: location.hash,
+    doc_search: location.search,
+    referrer: document.referrer,
+    page_title: document.title,
+    utm: extractUTMParameters(window.location)
+});
 
 /**
  * Extracts UTM parameters from a given URL location.
@@ -103,3 +87,16 @@ export const extractUTMParameters = (location: Location): Record<string, string>
  * @returns {void}
  */
 export const defaultRedirectFn = (href: string) => (window.location.href = href);
+
+/**
+ * Checks if the current environment is inside the dotCMS editor.
+ *
+ * @returns {boolean} - True if inside the editor, false otherwise.
+ */
+export const isInsideEditor = (): boolean => {
+    if (typeof window === 'undefined') {
+        return false;
+    }
+
+    return window.parent !== window;
+};

@@ -21,7 +21,8 @@
     "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/analytics/README.md",
     "dependencies": {
         "analytics": "^0.8.14",
-        "@dotcms/client": "^0.0.1-alpha.54"
+    "react": "^18.2.0",
+    "@dotcms/react": "0.0.1-alpha.38"
     },
     "peerDependencies": {
         "vite": "^5.0.0"

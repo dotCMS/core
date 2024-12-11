@@ -1,39 +1,81 @@
 # @dotcms/analytics
 
-`@dotcms/analytics` is the official dotCMS JavaScript library for Content Analytics that helps track events and analytics in your webapps. Currently available as an IIFE (Immediately Invoked Function Expression) module for direct browser usage.
+`@dotcms/analytics` is the official dotCMS JavaScript library for Content Analytics that helps track events and analytics in your webapps. Available for both browser and React applications.
 
 ## Features
 
 -   **Simple Browser Integration**: Easy to implement via script tags using IIFE implementation
+-   **React Support**: Built-in React components and hooks for seamless integration
 -   **Event Tracking**: Simple API to track custom events with additional properties
 -   **Automatic PageView**: Option to automatically track page views
 -   **Debug Mode**: Optional debug logging for development
 
 ## Installation
 
-Include the script in your HTML page:
+```bash
+npm install @dotcms/analytics
+```
+
+Or include the script in your HTML page:
 
 ```html
 <script src="analytics.iife.js"></script>
 ```
 
-## Configuration
+## React Integration
+
+### Provider Setup
+
+Wrap your application with the `DotContentAnalyticsProvider`:
+
+```tsx
+// Example configuration
+const analyticsConfig = {
+    apiKey: 'your-api-key-from-dotcms-analytics-app',
+    server: 'https://your-dotcms-instance.com',
+    debug: false
+};
+
+function App() {
+    return (
+        <DotContentAnalyticsProvider config={analyticsConfig}>
+            <YourApp />
+        </DotContentAnalyticsProvider>
+    );
+}
+```
+
+### Tracking Custom Events
+
+Use the `useAnalyticsTracker` hook to track custom events:
+
+```tsx
+function Activity({ title, urlTitle }) {
+    const { track } = useAnalyticsTracker();
+
+    const handleClick = () => {
+        track('btn-click', {
+            title,
+            buttonText: 'Link to detail',
+            urlTitle
+        });
+    };
+
+    return <button onClick={handleClick}>Link to detail →</button>;
+}
+```
+
+## Browser Configuration
 
 The script can be configured using data attributes:
 
--   **data-analytics-server**: URL of the server where events will be sent. If not provided, it defaults to the current location (window.location.href).
--   **data-analytics-debug**: Presence of this attribute enables debug logging (no value needed)
--   **data-analytics-auto-page-view**: Presence of this attribute enables automatic page view tracking (no value needed)
--   **data-analytics-key**: Required. API key for authentication with the analytics server. This key is provided by the DotCMS Analytics app.
-
-## Usage
-
-### Automatic PageView Tracking
-
-When `data-analytics-auto-page-view` is enabled, the library will automatically send a page view event to dotCMS when the page loads. If this attribute is not present, you'll need to manually track page views and other events using the tracking API.
+-   **data-analytics-server**: URL of the server where events will be sent
+-   **data-analytics-debug**: Enables debug logging
+-   **data-analytics-auto-page-view**: Enables automatic page view tracking
+-   **data-analytics-key**: Required API key for authentication
 
 ```html
-<!-- Automatic page view tracking enabled & debug logging enabled -->
+<!-- Example configuration -->
 <script
     src="ca.min.js"
     data-analytics-server="http://localhost:8080"

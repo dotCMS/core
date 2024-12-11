@@ -1,41 +1,44 @@
-import { ANALYTICS_PAGEVIEW_EVENT } from '../shared/dot-content-analytics.constants';
 import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
 import {
-    DotContentAnalyticsConfig,
-    EventType,
-    PageViewEvent
+    DotAnalyticsPayload,
+    DotContentAnalyticsConfig
 } from '../shared/dot-content-analytics.model';
-import { createAnalyticsPageViewData } from '../shared/dot-content-analytics.utils';
 
 /**
- * The dotAnalytics plugin.
+ * Analytics plugin for tracking page views and custom events in DotCMS applications.
+ * This plugin handles sending analytics data to the DotCMS server, managing initialization,
+ * and processing both automatic and manual tracking events.
  *
- * @param {DotAnalyticsConfig} config - The analytics configuration.
- * @returns {Object} - The dotAnalytics plugin.
+ * @param {DotAnalyticsConfig} config - Configuration object containing API key, server URL,
+ *                                     debug mode and auto page view settings
+ * @returns {Object} Plugin object with methods for initialization and event tracking
  */
-export const dotAnalyticsPlugin = (config: DotContentAnalyticsConfig) => {
+export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
     let isInitialized = false;
 
     return {
         name: 'dot-analytics',
         config,
 
-        initialize: ({ config }: { config: DotContentAnalyticsConfig }) => {
-            if (!config.server) {
-                throw new Error('DotAnalytics: Server URL is required');
-            }
-
+        /**
+         * Initialize the plugin
+         */
+        initialize: (params: {
+            config: DotContentAnalyticsConfig;
+            payload: DotAnalyticsPayload;
+        }) => {
+            const { config, payload } = params;
             if (config.debug) {
                 console.warn('DotAnalytics: Initialized with config', config);
             }
 
             isInitialized = true;
 
+            // If autoPageView is enabled, send a page view event, used in IIFE
             if (config.autoPageView) {
-                const body: PageViewEvent = {
-                    ...createAnalyticsPageViewData(ANALYTICS_PAGEVIEW_EVENT, window.location),
-                    type: EventType.Track,
-                    key: config.key
+                const body = {
+                    ...payload.properties,
+                    key: config.apiKey
                 };
 
                 return sendAnalyticsEventToServer(body, config);
@@ -44,6 +47,45 @@ export const dotAnalyticsPlugin = (config: DotContentAnalyticsConfig) => {
             return Promise.resolve();
         },
 
+        /**
+         * Track a page view event
+         */
+        page: (params: { config: DotContentAnalyticsConfig; payload: DotAnalyticsPayload }) => {
+            const { config, payload } = params;
+
+            if (!isInitialized) {
+                throw new Error('DotAnalytics: Plugin not initialized');
+            }
+
+            const body = {
+                ...payload.properties,
+                key: config.apiKey
+            };
+
+            return sendAnalyticsEventToServer(body, config);
+        },
+
+        /**
+         * Track a custom event
+         */
+        track: (params: { config: DotContentAnalyticsConfig; payload: DotAnalyticsPayload }) => {
+            const { config, payload } = params;
+
+            if (!isInitialized) {
+                throw new Error('DotAnalytics: Plugin not initialized');
+            }
+
+            const body = {
+                ...payload.properties,
+                key: config.apiKey
+            };
+
+            return sendAnalyticsEventToServer(body, config);
+        },
+
+        /**
+         * Check if the plugin is loaded
+         */
         loaded: () => isInitialized
     };
 };
