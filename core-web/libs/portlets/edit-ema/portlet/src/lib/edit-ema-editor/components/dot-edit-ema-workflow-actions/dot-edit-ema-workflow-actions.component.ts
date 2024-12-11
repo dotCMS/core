@@ -1,13 +1,4 @@
-import {
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    Output,
-    SimpleChanges,
-    inject,
-    signal
-} from '@angular/core';
+import { Component, OnChanges, SimpleChanges, inject, input, output, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -39,8 +30,8 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
     styleUrl: './dot-edit-ema-workflow-actions.component.css'
 })
 export class DotEditEmaWorkflowActionsComponent implements OnChanges {
-    @Input({ required: true }) inode: string;
-    @Output() newPage: EventEmitter<DotCMSContentlet> = new EventEmitter();
+    inode = input.required<string>();
+    newPage = output<DotCMSContentlet>();
 
     protected actions = signal<DotCMSWorkflowAction[]>([]);
     protected loading = signal<boolean>(true);
@@ -67,9 +58,17 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
         life: 2000
     };
 
+    // ngOnInit() {
+    //     // this.loadWorkflowActions(contentlet.inode);
+
+    //     // Refrescar el Store y el Store da los WORKFLOW_ACTIONS
+    //     // this.subscribe()
+    // }
+
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.inode) {
-            this.loadWorkflowActions(this.inode);
+        const inodeChange = changes.inode;
+        if (inodeChange.currentValue) {
+            this.loadWorkflowActions(inodeChange.currentValue);
         }
     }
 
@@ -147,7 +146,7 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
 
         this.dotWorkflowActionsFireService
             .fireTo({
-                inode: this.inode,
+                inode: this.inode(),
                 actionId: workflow.id,
                 data
             })
@@ -168,10 +167,7 @@ export class DotEditEmaWorkflowActionsComponent implements OnChanges {
                     return;
                 }
 
-                const { inode } = contentlet;
                 this.newPage.emit(contentlet);
-                this.inode = inode;
-                this.loadWorkflowActions(inode);
                 this.messageService.add(this.successMessage);
             });
     }
