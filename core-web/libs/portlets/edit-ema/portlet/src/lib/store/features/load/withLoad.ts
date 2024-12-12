@@ -245,6 +245,29 @@ export function withLoad() {
                                 );
                         })
                     )
+                ),
+                reloadWorkflowActions: rxMethod<void>(
+                    pipe(
+                        switchMap(() => {
+                            const inode = store.pageAPIResponse()?.page.inode;
+
+                            return dotWorkflowsActionsService.getByInode(inode).pipe(
+                                tapResponse({
+                                    next: (workflowActions = []) => {
+                                        patchState(store, {
+                                            workflowActions
+                                        });
+                                    },
+                                    error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                        patchState(store, {
+                                            errorCode: errorStatus,
+                                            status: UVE_STATUS.ERROR
+                                        });
+                                    }
+                                })
+                            );
+                        })
+                    )
                 )
             };
         })

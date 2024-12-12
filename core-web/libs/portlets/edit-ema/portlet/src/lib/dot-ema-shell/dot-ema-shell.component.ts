@@ -134,6 +134,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
+            case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
+                this.uveStore.reloadWorkflowActions();
+                break;
+            }
+
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.handleSavePageEvent(event);
                 break;

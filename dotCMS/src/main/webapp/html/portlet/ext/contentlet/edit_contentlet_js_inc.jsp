@@ -26,6 +26,14 @@
     let variantNameParam = "<%=variantNameParam%>";
     let contentletVariantId = "<%=contentlet.getVariantId()%>";
 
+    /*
+    * Ajax Methods don't wait until the reindex in completed.
+    * We need to wait for the reindex when we edit in order to reload the page
+    * Maybe we can avoid this after this is merged: https://github.com/dotCMS/core/pull/30110
+    * More info: https://github.com/dotCMS/core/issues/30218
+    */
+    const AjaxWFReindexDelay = 500;
+
     // If the contentlet variantName is not default, it doesn't matter if we are in a variant or not,
     // we use the contentlet variantName to keep the consistency in the actions (false && short-circuit)
 
@@ -65,12 +73,6 @@
         }
     }
 
-
-
-
-
-
-
     var myForm = document.getElementById('fm');
     var copyAsset = false;
 
@@ -106,9 +108,6 @@
                 }
             };
             dojo.xhrGet(xhrArgs);
-
-
-
         }
     }
     function selectVersion(objId) {
@@ -168,9 +167,6 @@
             dijit.byId('assignTaskDiv').hide();
         }
     }
-
-
-
 
     //Structure change
     function structureSelected()
@@ -233,13 +229,9 @@
         return loc;
     }
 
-
-
     function addTab(tabid){
         tabsArray.push(tabid);
     }
-
-
 
     function submitParent(param) {
         if (copyAsset) {
@@ -270,14 +262,11 @@
         }
     }
 
-
-
     <% if(Config.getIntProperty("CONTENT_AUTOSAVE_INTERVAL",0) > 0){%>
     // http://jira.dotmarketing.net/browse/DOTCMS-2273
     var autoSaveInterval = <%= Config.getIntProperty("CONTENT_AUTOSAVE_INTERVAL",0) %>;
     setInterval("saveContent(true)",autoSaveInterval);
     <%}%>
-
 
     function getFormData(formId,nameValueSeparator){ // Returns form data as name value pairs with nameValueSeparator.
 
@@ -349,9 +338,7 @@
         }
 
         // Categories selected in the Category Dialog
-
         var catCount = <%=UtilMethods.isSet(catCount)?Integer.parseInt(catCount):0 %>;
-
 
         for(var i=1; i<catCount+1; i++) {
 
@@ -375,8 +362,6 @@
 
     }
 
-
-
     function publishContent(){
         persistContent(isAutoSave, true);
 
@@ -386,7 +371,6 @@
 
         persistContent(isAutoSave, false);
     }
-
 
     async function persistContent(isAutoSave, publish){
 
@@ -476,12 +460,6 @@
         ContentletAjax.saveContent(fmData, isAutoSave, isCheckin, publish, newSaveContentCallBack);
     }
 
-
-
-
-
-
-
     function createLockedWarningDiv(){
 
         //handle if the node is locked &&  editable and node is locked &! editable
@@ -530,9 +508,6 @@
             });
         }
     }
-
-
-
 
     dojo.ready(
         function(){
@@ -589,7 +564,6 @@
             dojo.disconnect(_bodyMouseDown);
         }
     }
-
 
     function saveContentCallback(data){
         isContentAutoSaving = false;
@@ -784,8 +758,6 @@
         }).placeAt(myDiv);
     }
 
-
-
     function refreshVersionCp(){
         var x = dijit.byId("versions");
         var y =Math.floor(Math.random()*1123213213);
@@ -805,8 +777,6 @@
             href: "/html/portlet/ext/contentlet/contentlet_versions_inc.jsp?variantName=" +  variantName + "&contentletId=" +contentAdmin.contentletIdentifier + "&r=" + y
         }).placeAt("contentletVersionsDiv");
     }
-
-
 
     function refreshRulesCp(){
 
@@ -833,9 +803,6 @@
 
     }
 
-
-
-
     //*************************************
     //
     //
@@ -861,6 +828,9 @@
 
         executeWfAction: function(wfId, popupable, showpush){
             this.wfActionId = wfId;
+            const eventData = { name: 'update-workflow-action'};
+            dispatchCustomEvent(eventData)
+
             if(popupable){
                 var inode = (currentContentletInode != undefined && currentContentletInode.length > 0)
                     ? currentContentletInode
@@ -940,16 +910,22 @@
         // END: PUSH PUBLISHING ACTIONLET
 
         saveContent(false);
-
     }
 
     var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin('<%= contentlet.getIdentifier() %>','<%= contentlet.getInode() %>','<%= contentlet.getLanguageId() %>');
 
-    function makeEditable(contentletInode){
+    function dispatchCustomEvent(detail) {
+        setTimeout(() => {
+            var customEvent = document.createEvent('CustomEvent');
+            customEvent.initCustomEvent('ng-event', false, false, detail);
+            document.dispatchEvent(customEvent);
+        }, AjaxWFReindexDelay);
+    }
+
+    function makeEditable(contentletInode){        
         ContentletAjax.lockContent(contentletInode, checkoutContentletCallback);
         dojo.empty("contentletActionsHanger");
         dojo.byId("contentletActionsHanger").innerHTML="<div style='text-align:center;padding-top:20px;'><span class='dijitContentPaneLoading'></span></div>";
-
     }
 
     function checkoutContentletCallback(data){
@@ -959,12 +935,15 @@
         }
 
 
+        const eventData = {
+            name: 'update-workflow-action'
+        };
+        dispatchCustomEvent(eventData)
         refreshActionPanel(data["lockedIdent"]);
-
     }
 
 
-    function stealLock(contentletInode){
+    function stealLock(contentletInode){        
         ContentletAjax.unlockContent(contentletInode, stealLockContentCallback);
     }
 
@@ -975,23 +954,24 @@
             return;
         }
 
+        const eventData = {
+            name: 'update-workflow-action'
+        };
 
+        dispatchCustomEvent(eventData)
         refreshActionPanel(data["lockedIdent"]);
-
     }
 
 
-
-
     function unlockContent(contentletInode){
-
         window.onbeforeunload=true;
 
+        const eventData = {
+            name: 'update-workflow-action'
+        };
 
+        dispatchCustomEvent(eventData)
         ContentletAjax.unlockContent(contentletInode, unlockContentCallback);
-        //dojo.empty("contentletActionsHanger");
-        //dojo.byId("contentletActionsHanger").innerHTML="<div style='text-align:center;padding-top:20px;'><span class='dijitContentPaneLoading'></span></div>";
-
     }
 
 
@@ -1003,8 +983,6 @@
         }
 
         refreshActionPanel(data["lockedIdent"]);
-
-
     }
 
 
@@ -1064,7 +1042,5 @@
             }
         }
     }
-
-
 
 </script>
