@@ -4530,6 +4530,15 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * When: try to save a {@link Contentlet} that don't have the Host set already
+     * Should: populate the Host for the {@link Contentlet} (in this case using the {@link ContentType}'s Host)
+     * and save the siteId in the supporting_values Json field in the unique_fields table
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void aaa() throws DotDataException, DotSecurityException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
