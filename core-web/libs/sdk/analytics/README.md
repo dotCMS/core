@@ -26,6 +26,12 @@ Or include the script in your HTML page:
 
 ### Provider Setup
 
+First, import the provider:
+
+```tsx
+import { DotContentAnalyticsProvider } from '@dotcms/analytics';
+```
+
 Wrap your application with the `DotContentAnalyticsProvider`:
 
 ```tsx

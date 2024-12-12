@@ -1,9 +1,9 @@
-import { ReactElement, ReactNode, useEffect, useState } from 'react';
+import { ReactElement, ReactNode, useEffect, useMemo } from 'react';
 
-import { DotContentAnalytics } from '../../dot-content-analytics';
-import { DotContentAnalyticsConfig } from '../../shared/dot-content-analytics.model';
+import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
+import { DotContentAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
-import { useContentAnalytics } from '../hook/useContentAnalytics';
+import { useRouteTracker } from '../hook/useRouterTracker';
 
 interface DotContentAnalyticsProviderProps {
     children?: ReactNode;
@@ -25,17 +25,15 @@ export const DotContentAnalyticsProvider = ({
     children,
     config
 }: DotContentAnalyticsProviderProps): ReactElement => {
-    const [instance, setInstance] = useState<DotContentAnalytics | null>(null);
-
-    useContentAnalytics(instance);
+    const instance = useMemo(() => DotContentAnalytics.getInstance(config), [config]);
 
     useEffect(() => {
-        const dotContentAnalyticsInstance = DotContentAnalytics.getInstance(config);
-
-        dotContentAnalyticsInstance.ready().then(() => {
-            setInstance(dotContentAnalyticsInstance);
+        instance.ready().catch((err) => {
+            console.error('Error initializing analytics:', err);
         });
-    }, []);
+    }, [instance]);
+
+    useRouteTracker(instance);
 
     return (
         <DotContentAnalyticsContext.Provider value={instance}>

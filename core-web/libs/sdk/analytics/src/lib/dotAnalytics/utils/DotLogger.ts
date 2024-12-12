@@ -2,6 +2,7 @@
  * Logger for the dotCMS SDK
  */
 export class DotLogger {
+    // TODO: Create a logger that can be used in the SDK
     private readonly isDebug: boolean;
     private readonly packageName: string;
 

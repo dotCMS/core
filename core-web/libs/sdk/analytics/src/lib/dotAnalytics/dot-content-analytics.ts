@@ -24,13 +24,29 @@ export class DotContentAnalytics {
 
     private constructor(config: DotContentAnalyticsConfig) {
         this.#config = config;
-        this.logger = new DotLogger(this.#config.debug, 'DotContentAnalytics');
+        this.logger = new DotLogger(config.debug, 'DotContentAnalytics');
+
+        if (!config.apiKey) {
+            this.#initialized = false;
+        }
     }
 
     /**
      * Returns the singleton instance of DotContentAnalytics
      */
     static getInstance(config: DotContentAnalyticsConfig): DotContentAnalytics {
+        if (!config.apiKey) {
+            console.error(
+                `DotContentAnalytics: Missing "apiKey" in configuration - Events will not be sent to Content Analytics`
+            );
+        }
+
+        if (!config.server) {
+            console.error(
+                `DotContentAnalytics: Missing "server" in configuration - Events will not be sent to Content Analytics`
+            );
+        }
+
         if (!DotContentAnalytics.instance) {
             DotContentAnalytics.instance = new DotContentAnalytics(config);
         }
@@ -52,10 +68,12 @@ export class DotContentAnalytics {
             this.logger.group('Initialization');
             this.logger.time('Init');
 
+            const plugins = this.#getPlugins();
+
             this.#analytics = Analytics({
                 app: 'dotAnalytics',
                 debug: this.#config.debug,
-                plugins: [dotAnalyticsEnricherPlugin, dotAnalytics(this.#config)]
+                plugins
             });
 
             this.#initialized = true;
@@ -68,6 +86,19 @@ export class DotContentAnalytics {
             this.logger.error(`Failed to initialize: ${error}`);
             throw error;
         }
+    }
+
+    /**
+     * Returns the plugins to be used in the analytics instance
+     */
+    #getPlugins() {
+        const hasRequiredConfig = this.#config.apiKey && this.#config.server;
+
+        if (!hasRequiredConfig) {
+            return [];
+        }
+
+        return [dotAnalyticsEnricherPlugin, dotAnalytics(this.#config)];
     }
 
     /**

@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-import { DotContentAnalytics } from '../../dot-content-analytics';
+import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
 
 /**
  * `DotContentAnalyticsContext` is a React context that is designed to provide an instance of

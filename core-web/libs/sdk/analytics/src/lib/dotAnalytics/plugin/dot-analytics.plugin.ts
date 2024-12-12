@@ -1,6 +1,6 @@
 import { sendAnalyticsEventToServer } from '../shared/dot-content-analytics.http';
 import {
-    DotAnalyticsPayload,
+    DotAnalyticsParams,
     DotContentAnalyticsConfig
 } from '../shared/dot-content-analytics.model';
 
@@ -23,10 +23,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
         /**
          * Initialize the plugin
          */
-        initialize: (params: {
-            config: DotContentAnalyticsConfig;
-            payload: DotAnalyticsPayload;
-        }) => {
+        initialize: (params: DotAnalyticsParams) => {
             const { config, payload } = params;
             if (config.debug) {
                 console.warn('DotAnalytics: Initialized with config', config);
@@ -50,7 +47,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
         /**
          * Track a page view event
          */
-        page: (params: { config: DotContentAnalyticsConfig; payload: DotAnalyticsPayload }) => {
+        page: (params: DotAnalyticsParams) => {
             const { config, payload } = params;
 
             if (!isInitialized) {
@@ -68,7 +65,7 @@ export const dotAnalytics = (config: DotContentAnalyticsConfig) => {
         /**
          * Track a custom event
          */
-        track: (params: { config: DotContentAnalyticsConfig; payload: DotAnalyticsPayload }) => {
+        track: (params: DotAnalyticsParams) => {
             const { config, payload } = params;
 
             if (!isInitialized) {

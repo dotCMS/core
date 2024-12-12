@@ -1,10 +1,10 @@
 import { jest } from '@jest/globals';
-import React, { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react-hooks';
 import { ReactNode, useContext } from 'react';
 
 import DotContentAnalyticsContext from './DotContentAnalyticsContext';
 
-import { DotContentAnalytics } from '../../dot-content-analytics';
+import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
 
 jest.mock('../dot-content-analytics', () => {
     return jest.fn().mockImplementation(() => {

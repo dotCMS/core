@@ -150,6 +150,14 @@ export interface ServerEvent extends Record<string, unknown> {
 /**
  * Interface for the AnalyticsTracker.
  */
-export interface AnalyticsTracker {
+export interface DotContentAnalyticsCustomHook {
     track: (eventName: string, payload?: Record<string, unknown>) => void;
+}
+
+/**
+ * Params for the DotAnalytics plugin
+ */
+export interface DotAnalyticsParams {
+    config: DotContentAnalyticsConfig;
+    payload: DotAnalyticsPayload;
 }

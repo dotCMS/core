@@ -22,11 +22,17 @@ export const sendAnalyticsEventToServer = async (
     }
 
     try {
-        return await fetch(`${options.server}${ANALYTICS_ENDPOINT}`, {
+        const response = await fetch(`${options.server}${ANALYTICS_ENDPOINT}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(serverEvent)
         });
+
+        if (response.ok) {
+            return response;
+        } else {
+            throw new Error(`${response.status}`);
+        }
     } catch (error) {
         console.error('DotAnalytics: Error sending event:', error);
         throw error;

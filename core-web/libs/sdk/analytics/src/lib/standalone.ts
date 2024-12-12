@@ -1,6 +1,6 @@
-import { DotContentAnalytics } from './dot-content-analytics';
-import { ANALYTICS_WINDOWS_KEY } from './shared/dot-content-analytics.constants';
-import { getDataAnalyticsAttributes } from './shared/dot-content-analytics.utils';
+import { DotContentAnalytics } from './dotAnalytics/dot-content-analytics';
+import { ANALYTICS_WINDOWS_KEY } from './dotAnalytics/shared/dot-content-analytics.constants';
+import { getDataAnalyticsAttributes } from './dotAnalytics/shared/dot-content-analytics.utils';
 
 /**
  * Initialize the analytics library in standalone mode.
