@@ -61,5 +61,5 @@ Feature: Create a new Template for later use during Time Machine testing
 
 
     Examples:
-      | name           | description          |
-      | newTemplate | THE DESCRIPTION 1    |
+      | scenario                                                                | expected result                         |
+      | We create a Template to hold the containers/contents served by the page | We should succeed creating the template |
