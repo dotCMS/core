@@ -39,7 +39,12 @@ export interface TranslateProps {
 
 export interface DotUveViewParams {
     preview: boolean;
-    orientation: string;
+    orientation: Orientation;
     device: string;
     seo: string;
+}
+
+export enum Orientation {
+    LANDSCAPE = 'landscape',
+    PORTRAIT = 'portrait'
 }

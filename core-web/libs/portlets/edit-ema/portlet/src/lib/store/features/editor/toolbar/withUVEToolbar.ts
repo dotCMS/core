@@ -9,10 +9,11 @@ import {
 
 import { computed } from '@angular/core';
 
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
+import { InfoOptions } from '../../../../shared/models';
 import {
     computePageIsLocked,
     createFavoritePagesURL,
@@ -21,7 +22,7 @@ import {
     getIsDefaultVariant,
     sanitizeURL
 } from '../../../../utils';
-import { UVEState } from '../../../models';
+import { Orientation, UVEState } from '../../../models';
 import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
 
 /**
@@ -37,7 +38,8 @@ const initialState: EditorToolbarState = {
     device: null,
     socialMedia: null,
     isEditState: true,
-    isPreviewModeActive: false
+    isPreviewModeActive: false,
+    orientation: Orientation.LANDSCAPE
 };
 
 export function withUVEToolbar() {
@@ -130,14 +132,98 @@ export function withUVEToolbar() {
                 const pageAPI = `/api/v1/page/${pageType}/${params}`;
 
                 return pageAPI;
+            }),
+            $infoDisplayOptions: computed<InfoOptions>(() => {
+                const pageAPIResponse = store.pageAPIResponse();
+                const canEditPage = store.canEditPage();
+                const device = store.device();
+                const socialMedia = store.socialMedia();
+
+                if (device) {
+                    return {
+                        icon: device.icon,
+                        info: {
+                            message: `${device.name} ${device.cssWidth} x ${device.cssHeight}`,
+                            args: []
+                        },
+                        id: 'device',
+                        actionIcon: 'pi pi-times'
+                    };
+                } else if (socialMedia) {
+                    return {
+                        icon: `pi pi-${socialMedia.toLowerCase()}`,
+                        id: 'socialMedia',
+                        info: {
+                            message: `Viewing <b>${socialMedia}</b> social media preview`,
+                            args: []
+                        },
+                        actionIcon: 'pi pi-times'
+                    };
+                } else if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
+                    const variantId = pageAPIResponse.viewAs.variantId;
+
+                    const currentExperiment = store.experiment?.();
+
+                    const name =
+                        currentExperiment?.trafficProportion.variants.find(
+                            (variant) => variant.id === variantId
+                        )?.name ?? 'Unknown Variant';
+
+                    return {
+                        info: {
+                            message: canEditPage
+                                ? 'editpage.editing.variant'
+                                : 'editpage.viewing.variant',
+                            args: [name]
+                        },
+                        icon: 'pi pi-file-edit',
+                        id: 'variant',
+                        actionIcon: 'pi pi-arrow-left'
+                    };
+                }
+
+                if (pageAPIResponse?.page.locked) {
+                    let message = 'editpage.locked-by';
+
+                    if (!pageAPIResponse.page.canLock) {
+                        message = 'editpage.locked-contact-with';
+                    }
+
+                    return {
+                        icon: 'pi pi-lock',
+                        id: 'locked',
+                        info: {
+                            message,
+                            args: [pageAPIResponse.page.lockedByName]
+                        }
+                    };
+                }
+
+                if (!canEditPage) {
+                    return {
+                        icon: 'pi pi-exclamation-circle warning',
+                        id: 'no-permission',
+                        info: { message: 'editema.dont.have.edit.permission', args: [] }
+                    };
+                }
+
+                return null;
             })
         })),
         withMethods((store) => ({
             // Fake method to toggle preview mode
             // This method should be implemented in the real application
-            togglePreviewMode: (preview) => {
+            // Isn't this exactly what we need?
+            togglePreviewMode: (preview: boolean) => {
                 patchState(store, {
                     isPreviewModeActive: preview
+                });
+            },
+            setDevice: (device: DotDevice) => {
+                patchState(store, {
+                    device,
+                    socialMedia: null,
+                    isEditState: false
                 });
             }
         }))

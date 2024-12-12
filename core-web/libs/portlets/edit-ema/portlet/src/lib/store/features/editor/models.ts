@@ -14,6 +14,7 @@ import {
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
 import { DotDeviceWithIcon } from '../../../shared/models';
+import { Orientation } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
@@ -28,6 +29,7 @@ export interface EditorToolbarState {
     socialMedia?: string;
     isEditState: boolean;
     isPreviewModeActive?: boolean;
+    orientation?: Orientation;
 }
 
 export interface PageDataContainer {
