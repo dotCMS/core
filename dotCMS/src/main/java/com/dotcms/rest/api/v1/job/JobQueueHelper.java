@@ -8,8 +8,6 @@ import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
-import com.dotcms.jobs.business.processor.JobProcessor;
-import com.dotcms.rest.api.v1.JobQueueManagerHelper;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -18,7 +16,6 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
@@ -26,8 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -40,36 +35,14 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 public class JobQueueHelper {
 
     private JobQueueManagerAPI jobQueueManagerAPI;
-    private JobQueueManagerHelper jobQueueManagerHelper;
 
     public JobQueueHelper() {
         //default constructor Mandatory for CDI
     }
 
     @Inject
-    public JobQueueHelper(JobQueueManagerAPI jobQueueManagerAPI, JobQueueManagerHelper jobQueueManagerHelper) {
+    public JobQueueHelper(JobQueueManagerAPI jobQueueManagerAPI) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;
-        this.jobQueueManagerHelper = jobQueueManagerHelper;
-    }
-
-    /**
-     * Registers a processor
-     * @param queueName The name of the queue
-     * @param processor Class of the processor
-     */
-    @VisibleForTesting
-    void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor){
-        jobQueueManagerAPI.registerProcessor(queueName, processor);
-    }
-
-    @PostConstruct
-    public void onInit() {
-        jobQueueManagerHelper.registerProcessors();
-    }
-
-    @PreDestroy
-    public void onDestroy() {
-        jobQueueManagerHelper.shutdown();
     }
 
     /**

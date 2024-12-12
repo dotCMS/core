@@ -90,6 +90,15 @@ The tests run under the `jmeter-standalone` profile, which is active by default.
 - Results validation
 - Report generation
 
+
+# env password
+When connecting to an external instance, to prevent the need to add the password to the command line, the password can be added to the environment variable JMETER_ADMIN_PASSWORD.  
+To prevent unexpected use of this you must add the property -Djmeter.env.password=true  or set the profile -Pjmeter.env.password
+```bash
+export JMETER_ADMIN_PASSWORD=mysecretpassword
+./mvnw verify -Djmeter.test.skip=false -pl :dotcms-test-jmeter -Djmeter.host=myhost -Djmeter.env.password=true
+```
+
 ## Troubleshooting
 
 We have not yet validated the memory requirements.  Eventually we should probably be explicit about the JVM memory settings.  These can be added into the configuration block 

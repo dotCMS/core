@@ -229,14 +229,14 @@ public class ContentAnalyticsQuery implements Serializable {
             }
             final String[] timeParams = timeDimensions.split(COMMA);
             final Map<String, String> timeDimensionsData = new HashMap<>();
-            timeDimensionsData.put(TIME_DIMENSIONS_DIMENSION_ATTR, addScheme(timeParams[0]));
+            timeDimensionsData.put(TIME_DIMENSIONS_DIMENSION_ATTR, addScheme(timeParams[0].trim()));
             if (timeParams.length > 1) {
                 final String[] granularityAndRange = timeParams[1].split(COLON);
                 if (granularityAndRange.length > 1) {
-                    timeDimensionsData.put(GRANULARITY_ATTR, granularityAndRange[0]);
-                    timeDimensionsData.put(DATE_RANGE_ATTR, granularityAndRange[1]);
+                    timeDimensionsData.put(GRANULARITY_ATTR, granularityAndRange[0].trim());
+                    timeDimensionsData.put(DATE_RANGE_ATTR, granularityAndRange[1].trim());
                 } else {
-                    timeDimensionsData.put(DATE_RANGE_ATTR, granularityAndRange[0]);
+                    timeDimensionsData.put(DATE_RANGE_ATTR, granularityAndRange[0].trim());
                 }
             } else {
                 timeDimensionsData.put(DATE_RANGE_ATTR, DEFAULT_DATE_RANGE);
@@ -262,11 +262,11 @@ public class ContentAnalyticsQuery implements Serializable {
             }
             final String[] filterArr = filters.split(COMMA);
             for (final String filter : filterArr) {
-                final String[] filterParams = filter.split(SPACE);
+                final String[] filterParams = filter.trim().split(SPACE);
                 final Map<String, Object> filterDataMap = new HashMap<>();
-                filterDataMap.put(MEMBER_ATTR, addScheme(filterParams[0]));
-                filterDataMap.put(OPERATOR_ATTR, filterParams[1]);
-                final String[] filterValues = filterParams[2].split(DOUBLE_PIPE);
+                filterDataMap.put(MEMBER_ATTR, addScheme(filterParams[0].trim()));
+                filterDataMap.put(OPERATOR_ATTR, filterParams[1].trim());
+                final String[] filterValues = filterParams[2].trim().split(DOUBLE_PIPE);
                 filterDataMap.put(VALUES_ATTR, filterValues);
                 this.filters.add(filterDataMap);
             }
@@ -290,9 +290,9 @@ public class ContentAnalyticsQuery implements Serializable {
             }
             final Set<String> orderCriteria = Set.of(order.split(COMMA));
             for (final String orderCriterion : orderCriteria) {
-                final String[] orderParams = orderCriterion.split(SPACE);
+                final String[] orderParams = orderCriterion.trim().split(SPACE);
                 if (orderParams.length > 1) {
-                    this.order.add(new String[]{addScheme(orderParams[0]), orderParams[1]});
+                    this.order.add(new String[]{ addScheme(orderParams[0]), orderParams[1].trim() });
                 } else {
                     this.order.add(orderParams);
                 }
@@ -375,7 +375,7 @@ public class ContentAnalyticsQuery implements Serializable {
          * @return The term with the default scheme added if it doesn't contain it.
          */
         private String addScheme(final String term) {
-            return term.contains(PERIOD) ? term : scheme + PERIOD + term;
+            return UtilMethods.isSet(term) && term.contains(PERIOD) ? term.trim() : scheme + PERIOD + term.trim();
         }
 
     }
