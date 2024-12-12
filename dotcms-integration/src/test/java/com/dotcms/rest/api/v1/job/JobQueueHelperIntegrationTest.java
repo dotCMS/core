@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -36,6 +37,9 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
     @Inject
     JobQueueHelper jobQueueHelper;
 
+    @Inject
+    JobQueueManagerAPI jobQueueManagerAPI;
+
     /**
      * Test with no parameters in the JobParams creating a job
      * Given scenario: create a job with no parameters and valid queue name
@@ -46,7 +50,7 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
     @Test
     void testEmptyParams() throws DotDataException, JsonProcessingException {
 
-        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
+        jobQueueManagerAPI.registerProcessor("demoQueue", DemoJobProcessor.class);
 
         final var jobParams = new JobParams();
         final var user = mock(User.class);
@@ -74,7 +78,7 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
     @Test
     void testCreateJobWithNoParameters() throws DotDataException {
 
-        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
+        jobQueueManagerAPI.registerProcessor("demoQueue", DemoJobProcessor.class);
 
         final var user = mock(User.class);
         when(user.getUserId()).thenReturn("dotcms.org.1");
@@ -130,7 +134,7 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
      */
     @Test
     void testWithValidParamsAndQueueName() throws DotDataException, JsonProcessingException {
-        jobQueueHelper.registerProcessor("demoQueue", DemoJobProcessor.class);
+        jobQueueManagerAPI.registerProcessor("demoQueue", DemoJobProcessor.class);
 
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
@@ -157,7 +161,7 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
      */
     @Test
     void testIsWatchable() throws DotDataException, JsonProcessingException {
-        jobQueueHelper.registerProcessor("testQueue", DemoJobProcessor.class);
+        jobQueueManagerAPI.registerProcessor("testQueue", DemoJobProcessor.class);
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
 
@@ -181,7 +185,7 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
      */
     @Test
     void testGetStatusInfo() throws DotDataException, JsonProcessingException {
-        jobQueueHelper.registerProcessor("testQueue", DemoJobProcessor.class);
+        jobQueueManagerAPI.registerProcessor("testQueue", DemoJobProcessor.class);
         final JobParams jobParams = new JobParams();
         jobParams.setJsonParams("{}");
 
