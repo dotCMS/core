@@ -54,7 +54,7 @@ export interface ContentState {
             firstStep: WorkflowStep;
         }
     >;
-    initialContentletState: 'new' | 'existing' | 'reset';
+    initialContentletState: 'new' | 'existing' | 'reset' | 'copy' | 'copyEmpty';
 }
 
 export const contentInitialState: ContentState = {

@@ -215,6 +215,7 @@ export function withLocales() {
                                 //TODO: find the correct way to extract the field values from the contentlet
                                 // to create a new one but in the new locale as placeholder.
 
+                                //remove endpoint call.
                                 return workflowActionService
                                     .getDefaultActions(store.contentType().name)
                                     .pipe(
@@ -234,7 +235,7 @@ export function withLocales() {
                                                 patchState(store, {
                                                     currentLocale: locale,
                                                     schemes: parsedSchemes,
-                                                    currentSchemeId: defaultSchemeId,
+                                                    // currentSchemeId: defaultSchemeId,
                                                     currentContentActions: parsedCurrentActions,
                                                     state: ComponentStatus.LOADED,
                                                     currentIdentifier:
@@ -294,3 +295,31 @@ export function withLocales() {
         })
     );
 }
+
+// /**
+//  * Extracts field values from the given contentlet and creates a new contentlet in the specified locale.
+//  *
+//  * @param {DotCMSContentlet} contentlet - The original contentlet.
+//  * @param {DotLanguage} newLocale - The new locale for the contentlet.
+//  * @returns {DotCMSContentlet} The new contentlet with the extracted field values and new locale.
+//  */
+// function createContentletInNewLocale(
+//     contentlet: DotCMSContentlet,
+//     newLocale: DotLanguage
+// ): DotCMSContentlet {
+//     const newContentlet: DotCMSContentlet = { ...contentlet };
+//
+//     // Update the locale and reset necessary fields
+//     newContentlet.languageId = newLocale.id;
+//     //newContentlet.identifier = null; // Reset identifier for new contentlet
+//     newContentlet.inode = null; // Reset inode for new contentlet
+//
+//     // Extract and set field values
+//     Object.keys(contentlet).forEach((field) => {
+//         if (field !== 'languageId' && field !== 'identifier' && field !== 'inode') {
+//             newContentlet[field] = contentlet[field];
+//         }
+//     });
+//
+//     return newContentlet;
+// }
