@@ -31,6 +31,12 @@ export class DotUveDeviceSelectorComponent {
 
         // console.log(this.#store);
 
-        this.#store.setDevice(device);
+        const currentDevice = this.$currentDevice();
+
+        if (currentDevice && currentDevice.inode === device.inode) {
+            this.#store.setDevice(null);
+        } else {
+            this.#store.setDevice(device);
+        }
     }
 }

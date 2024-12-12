@@ -73,6 +73,7 @@ export class DotUveToolbarComponent {
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
+    readonly $infoDisplayProps = this.#store.$infoDisplayProps;
 
     @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
 

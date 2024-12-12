@@ -79,13 +79,6 @@ export function withUVEToolbar() {
                     loading: store.status() === UVE_STATUS.LOADING
                 };
 
-                const shouldShowInfoDisplay =
-                    !getIsDefaultVariant(pageAPIResponse?.viewAs.variantId) ||
-                    !store.canEditPage() ||
-                    isPageLocked ||
-                    !!store.device() ||
-                    !!store.socialMedia();
-
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
@@ -112,8 +105,7 @@ export function withUVEToolbar() {
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
                     workflowActionsInode: store.canEditPage() ? pageAPIResponse?.page.inode : null,
-                    unlockButton: shouldShowUnlock ? unlockButton : null,
-                    showInfoDisplay: shouldShowInfoDisplay
+                    unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
@@ -133,23 +125,12 @@ export function withUVEToolbar() {
 
                 return pageAPI;
             }),
-            $infoDisplayOptions: computed<InfoOptions>(() => {
+            $infoDisplayProps: computed<InfoOptions>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
                 const canEditPage = store.canEditPage();
-                const device = store.device();
                 const socialMedia = store.socialMedia();
 
-                if (device) {
-                    return {
-                        icon: device.icon,
-                        info: {
-                            message: `${device.name} ${device.cssWidth} x ${device.cssHeight}`,
-                            args: []
-                        },
-                        id: 'device',
-                        actionIcon: 'pi pi-times'
-                    };
-                } else if (socialMedia) {
+                if (socialMedia) {
                     return {
                         icon: `pi pi-${socialMedia.toLowerCase()}`,
                         id: 'socialMedia',
@@ -213,7 +194,6 @@ export function withUVEToolbar() {
         withMethods((store) => ({
             // Fake method to toggle preview mode
             // This method should be implemented in the real application
-            // Isn't this exactly what we need?
             togglePreviewMode: (preview: boolean) => {
                 patchState(store, {
                     isPreviewModeActive: preview

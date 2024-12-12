@@ -3,8 +3,8 @@
         [icon]="device.icon"
         [pTooltip]="device.name | dm"
         tooltipPosition="bottom"
-        styleClass="p-button-text p-button-sm"
-        [ngClass]="{ 'p-button-success': device.inode === $currentDevice()?.inode }"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
         (click)="onDeviceSelect(device)"
         [attr.data-testId]="device.inode" />
 }

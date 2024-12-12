@@ -7,3 +7,12 @@
     gap: $spacing-1;
     align-self: stretch;
 }
+
+.p-element.active {
+    outline: none;
+    ::ng-deep {
+        .p-button {
+            background-color: $color-palette-primary-op-20;
+        }
+    }
+}
