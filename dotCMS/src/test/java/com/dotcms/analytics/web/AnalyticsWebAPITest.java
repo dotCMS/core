@@ -137,6 +137,6 @@ public class AnalyticsWebAPITest {
 
         final Optional<String> codeOpt = analyticsWebAPI.getCode(host, request);
         Assert.assertTrue(codeOpt.isPresent());
-        Assert.assertEquals("<script src=\"/s/ca-lib.js\" data-analytics-key=\"12345678\"  data-analytics-server=\"https://localhost:8090\" data-analytics-debug data-analytics-auto-page-view></script>", codeOpt.get().trim());
+        Assert.assertEquals("<script src=\"/s/ca-lib.js\" data-analytics-key=\"12345678\"  data-analytics-debug data-analytics-auto-page-view></script>", codeOpt.get().trim());
     }
 }
