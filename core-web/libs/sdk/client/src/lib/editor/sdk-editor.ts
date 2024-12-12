@@ -156,7 +156,6 @@ export function initDotUVE() {
  * ```
  */
 export function initEditor(config: DotCMSPageEditorConfig): void {
-    // console.log('initEditor');
     initDotUVE();
     fetchPageDataFromInsideUVE(config.pathname);
     listenEditorMessages();
