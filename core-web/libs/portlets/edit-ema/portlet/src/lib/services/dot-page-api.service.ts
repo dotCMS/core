@@ -49,6 +49,7 @@ export interface DotPageApiParams {
     mode?: string;
     clientHost?: string;
     depth?: string;
+    publishDate?: string;
 }
 
 export enum DotPageApiKeys {
@@ -60,7 +61,8 @@ export enum DotPageApiKeys {
     LANGUAGE_ID = 'language_id',
     EXPERIMENT_ID = 'experimentId',
     PERSONA_ID = 'com.dotmarketing.persona.id',
-    PREVIEW = 'preview'
+    PREVIEW = 'preview',
+    PUBLISH_DATE = 'publishDate'
 }
 
 export interface GetPersonasParams {
@@ -94,7 +96,15 @@ export class DotPageApiService {
      */
     get(params: DotPageApiParams): Observable<DotPageApiResponse> {
         // Remove trailing and leading slashes
-        const { clientHost, preview, depth = '0', language_id, variantName, experimentId } = params;
+        const {
+            clientHost,
+            preview,
+            depth = '0',
+            language_id,
+            variantName,
+            experimentId,
+            publishDate
+        } = params;
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
         const isPreview = preview === 'true';
@@ -107,7 +117,8 @@ export class DotPageApiService {
             variantName,
             experimentId,
             depth,
-            mode
+            mode,
+            publishDate: publishDate ? publishDate : undefined
         });
 
         const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;

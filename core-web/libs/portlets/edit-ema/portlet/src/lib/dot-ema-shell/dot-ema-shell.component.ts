@@ -210,6 +210,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             params.clientHost = uveConfig.url;
         }
 
+        if (params.preview && !params.publishDate) {
+            params.publishDate = new Date().toISOString();
+        }
+
         return params;
     }
 

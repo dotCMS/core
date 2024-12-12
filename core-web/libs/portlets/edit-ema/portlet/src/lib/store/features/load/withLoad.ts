@@ -182,7 +182,7 @@ export function withLoad() {
                                 .pipe(
                                     switchMap((pageAPIResponse) =>
                                         dotLanguagesService
-                                            .getLanguagesUsedPage(pageAPIResponse.page.identifier)
+                                            .getLanguagesUsedPage(pageAPIResponse?.page.identifier)
                                             .pipe(
                                                 map((languages) => ({
                                                     pageAPIResponse,
@@ -212,9 +212,11 @@ export function withLoad() {
                                                 isClientReady: partialState?.isClientReady ?? true
                                             });
                                         },
-                                        error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                        error: (err: HttpErrorResponse) => {
+                                            console.error('error', err);
+
                                             patchState(store, {
-                                                errorCode: errorStatus,
+                                                errorCode: err.status,
                                                 status: UVE_STATUS.ERROR
                                             });
                                         }

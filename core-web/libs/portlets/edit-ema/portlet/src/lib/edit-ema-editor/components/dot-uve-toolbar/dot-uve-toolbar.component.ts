@@ -6,8 +6,11 @@ import {
     computed,
     EventEmitter,
     inject,
+    model,
     Output,
-    viewChild
+    effect,
+    viewChild,
+    untracked
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -20,6 +23,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
@@ -49,7 +53,8 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         ChipModule,
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
-        ClipboardModule
+        ClipboardModule,
+        DotMessagePipe
     ],
     providers: [DotPersonalizeService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -71,6 +76,8 @@ export class DotUveToolbarComponent {
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
 
+    protected readonly CURRENT_DATE = new Date();
+
     @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
 
     readonly $styleToolbarClass = computed(() => {
@@ -81,15 +88,41 @@ export class DotUveToolbarComponent {
         return 'uve-toolbar uve-toolbar-preview';
     });
 
-    protected readonly date = new Date();
+    protected readonly publishDateParam = this.#store.pageParams().publishDate;
+    protected readonly $previewDate = model<Date>(
+        this.publishDateParam ? new Date(this.publishDateParam) : null
+    );
+
+    readonly $previewDateEffect = effect(
+        () => {
+            const previewDate = this.$previewDate();
+
+            if (!previewDate) {
+                return;
+            }
+
+            // If previewDate is minor that the CURRENT DATE, set previewDate to CURRENT DATE
+            if (previewDate < this.CURRENT_DATE) {
+                this.$previewDate.set(this.CURRENT_DATE);
+            }
+
+            untracked(() => {
+                this.#store.loadPageAsset({
+                    preview: 'true',
+                    publishDate: previewDate?.toISOString()
+                });
+            });
+        },
+        { allowSignalWrites: true }
+    );
 
     /**
      * Set the preview mode
      *
      * @memberof DotUveToolbarComponent
      */
-    protected setPreviewMode() {
-        this.#store.loadPageAsset({ preview: 'true' });
+    protected setPreviewMode(publishDate = new Date()) {
+        this.$previewDate.set(publishDate);
     }
 
     /**
@@ -98,7 +131,7 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected setEditMode() {
-        this.#store.loadPageAsset({ preview: null });
+        this.#store.loadPageAsset({ preview: null, publishDate: null });
     }
 
     /**

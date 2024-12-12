@@ -129,7 +129,11 @@ export function withEditor() {
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
                     const canUserHaveContentletTools =
-                        !!contentletArea && canEditPage && isEditState && !isScrolling;
+                        !!contentletArea &&
+                        canEditPage &&
+                        isEditState &&
+                        !isScrolling &&
+                        !isPreview;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
                     const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;

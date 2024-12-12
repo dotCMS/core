@@ -165,7 +165,7 @@ describe('DotCMSPageEditor', () => {
         });
     });
 
-    it('should isInsideEditor return false when is preview mode', () => {
+    it('should isInsideEditor return false when is preview moden and is marked to check preview', () => {
         Object.defineProperty(window, 'location', {
             value: {
                 search: '?preview=true'
@@ -173,6 +173,17 @@ describe('DotCMSPageEditor', () => {
             writable: true
         });
 
-        expect(isInsideEditor()).toBe(false);
+        expect(isInsideEditor({ checkPreview: true })).toBe(false);
+    });
+
+    it('should isInsideEditor return true when is preview mode and is not marked to check preview', () => {
+        Object.defineProperty(window, 'location', {
+            value: {
+                search: '?preview=true'
+            },
+            writable: true
+        });
+
+        expect(isInsideEditor()).toBe(true);
     });
 });

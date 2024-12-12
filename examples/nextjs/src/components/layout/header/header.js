@@ -9,7 +9,7 @@ function Header({ children }) {
     
 
     useEffect(() => {
-        setInsideEditor(isInsideEditor());
+        setInsideEditor(isInsideEditor({ checkPreview: true }));
     }, [])
 
     return (

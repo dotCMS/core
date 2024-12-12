@@ -10,7 +10,7 @@ const dateFormatOptions = {
 };
 
 function Contentlets({ contentlets }) {
-    const insideEditor = useMemo(isInsideEditor, []);
+    const insideEditor = useMemo(() => isInsideEditor({ checkPreview: true }), []);
 
     return (
         <ul className="flex flex-col gap-7">

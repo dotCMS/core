@@ -6,7 +6,11 @@ import {
     subscriptions
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
-import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model';
+import {
+    DotCMSPageEditorConfig,
+    InsideEditorOptions,
+    ReorderMenuConfig
+} from './models/editor.model';
 import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
@@ -93,26 +97,44 @@ export function reorderMenu(config?: ReorderMenuConfig): void {
 }
 
 /**
- * Checks if the code is running inside an editor.
+ * Checks if the code is running inside the DotCMS editor.
  *
- * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
+ * @param {InsideEditorOptions} [options] - Optional configuration options
+ * @param {boolean} [options.checkPreview=false] - If true, checks if running in preview mode and returns false if so
+ * @returns {boolean} Returns true if running inside the editor, false otherwise
+ *
+ * @description
+ * This function determines if the code is executing within the DotCMS editor by performing these checks:
+ * 1. Verifies if window exists (returns false if server-side rendering)
+ * 2. If checkPreview is true, checks if in preview mode and returns false if so
+ * 3. Checks if running inside an iframe by comparing window.parent to window
+ *
+ * The main use case is to conditionally execute code only when running inside the DotCMS editor.
+ * By default it will return true even in preview mode, but you can pass checkPreview: true to
+ * exclude preview mode.
+ *
  * @example
  * ```ts
+ * // Basic check if running in editor (including preview mode)
  * if (isInsideEditor()) {
- *     console.log('Running inside the editor');
- * } else {
- *     console.log('Running outside the editor');
+ *     // Code will run in both edit and preview modes
+ * }
+ *
+ * // Check if in editor but NOT in preview mode
+ * if (isInsideEditor({ checkPreview: true })) {
+ *     // Code will only run in edit mode
  * }
  * ```
  */
-export function isInsideEditor(): boolean {
+export function isInsideEditor(
+    { checkPreview }: InsideEditorOptions = { checkPreview: false }
+): boolean {
+    // Check if we are in the server side
     if (typeof window === 'undefined') {
         return false;
     }
 
-    const preview = isPreviewMode();
-
-    if (preview) {
+    if (checkPreview && isPreviewMode()) {
         return false;
     }
 
@@ -134,6 +156,7 @@ export function initDotUVE() {
  * ```
  */
 export function initEditor(config: DotCMSPageEditorConfig): void {
+    // console.log('initEditor');
     initDotUVE();
     fetchPageDataFromInsideUVE(config.pathname);
     listenEditorMessages();
