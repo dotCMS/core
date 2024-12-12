@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, input, Output } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -15,6 +15,9 @@ import {
 import { DotCMSContentlet, DotCMSWorkflowAction, DotWorkflowPayload } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 
+import { UVEStore } from '../../../store/dot-uve.store';
+import { compareUrlPaths, getPageURI } from '../../../utils';
+
 @Component({
     selector: 'dot-edit-ema-workflow-actions',
     standalone: true,
@@ -28,18 +31,17 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
     styleUrl: './dot-edit-ema-workflow-actions.component.css'
 })
 export class DotEditEmaWorkflowActionsComponent {
-    inode = input.required<string>();
-    actions = input<DotCMSWorkflowAction[]>([]);
-    loading = input<boolean>(false);
-
-    @Output() newPage = new EventEmitter<DotCMSContentlet>();
-
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly httpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotWizardService = inject(DotWizardService);
     private readonly dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     private readonly messageService = inject(MessageService);
+    readonly #uveStore = inject(UVEStore);
+
+    inode = computed(() => this.#uveStore.pageAPIResponse()?.page.inode);
+    actions = this.#uveStore.workflowActions;
+    loading = this.#uveStore.workflowLoading;
 
     private readonly successMessage = {
         severity: 'info',
@@ -105,6 +107,7 @@ export class DotEditEmaWorkflowActionsComponent {
         workflow: DotCMSWorkflowAction,
         data?: T
     ): void {
+        this.#uveStore.setWorflowActionLoading(true);
         this.messageService.add({
             ...this.successMessage,
             detail: this.dotMessageService.get('edit.ema.page.executing.workflow.action'),
@@ -132,8 +135,37 @@ export class DotEditEmaWorkflowActionsComponent {
                     return;
                 }
 
-                this.newPage.emit(contentlet);
+                this.handleNewContent(contentlet);
+                this.#uveStore.setWorflowActionLoading(false);
                 this.messageService.add(this.successMessage);
             });
+    }
+
+    /**
+     * Handle a new page event. This event is triggered when the page changes for a Workflow Action
+     * Update the query params if the url or the language id changed
+     *
+     * @param {DotCMSContentlet} page
+     * @memberof EditEmaToolbarComponent
+     */
+    protected handleNewContent(pageAsset: DotCMSContentlet): void {
+        const currentParams = this.#uveStore.pageParams();
+
+        const url = getPageURI(pageAsset);
+        const language_id = pageAsset.languageId?.toString();
+
+        const urlChanged = !compareUrlPaths(url, currentParams.url);
+        const languageChanged = language_id !== currentParams.language_id;
+
+        if (urlChanged || languageChanged) {
+            this.#uveStore.loadPageAsset({
+                url,
+                language_id
+            });
+
+            return;
+        }
+
+        this.#uveStore.reloadCurrentPage();
     }
 }

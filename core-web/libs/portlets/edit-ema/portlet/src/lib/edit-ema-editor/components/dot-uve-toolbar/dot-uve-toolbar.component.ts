@@ -19,12 +19,11 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotPersona, DotLanguage, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { compareUrlPaths, getPageURI } from '../../../utils';
 import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
@@ -88,7 +87,7 @@ export class DotUveToolbarComponent {
         return this.#store.pageAPIResponse()?.page.inode;
     });
 
-    readonly $actions = this.#store.workflowActions;
+    readonly $actions = this.#store.$isWorkflowLoading;
     readonly $workflowLoding = this.#store.workflowLoading;
 
     protected readonly date = new Date();
@@ -212,34 +211,6 @@ export class DotUveToolbarComponent {
                     }); // This does a take 1 under the hood
             }
         });
-    }
-
-    /**
-     * Handle a new page event. This event is triggered when the page changes for a Workflow Action
-     * Update the query params if the url or the language id changed
-     *
-     * @param {DotCMSContentlet} page
-     * @memberof EditEmaToolbarComponent
-     */
-    protected onNewPage(pageAsset: DotCMSContentlet): void {
-        const currentParams = this.#store.pageParams();
-
-        const url = getPageURI(pageAsset);
-        const language_id = pageAsset.languageId?.toString();
-
-        const urlChanged = !compareUrlPaths(url, currentParams.url);
-        const languageChanged = language_id !== currentParams.language_id;
-
-        if (urlChanged || languageChanged) {
-            this.#store.loadPageAsset({
-                url,
-                language_id
-            });
-
-            return;
-        }
-
-        this.#store.reloadCurrentPage();
     }
 
     /*

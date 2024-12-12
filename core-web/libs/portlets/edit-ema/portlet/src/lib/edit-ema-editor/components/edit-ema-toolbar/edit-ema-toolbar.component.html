@@ -65,11 +65,7 @@
             data-testId="persona-selector" />
 
         @if ($toolbarProps().workflowActionsInode; as inode) {
-            <dot-edit-ema-workflow-actions
-                (newPage)="handleNewPage($event)"
-                [inode]="inode"
-                [actions]="$actions()"
-                [loading]="$workflowLoding()" />
+            <dot-edit-ema-workflow-actions />
         }
         @if ($toolbarProps().unlockButton; as unlockButton) {
             <p-button

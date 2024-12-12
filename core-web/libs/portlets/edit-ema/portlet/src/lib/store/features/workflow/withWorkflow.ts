@@ -69,7 +69,12 @@ export function withWorkflow() {
                             );
                         })
                     )
-                )
+                ),
+                setWorflowActionLoading: (loading: boolean) => {
+                    patchState(store, {
+                        workflowLoading: loading
+                    });
+                }
             };
         })
     );

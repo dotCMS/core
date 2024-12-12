@@ -6,7 +6,6 @@ import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
-import { withWorkflow } from './features/workflow/withWorkflow';
 import { ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
@@ -29,8 +28,7 @@ const initialState: UVEState = {
     isTraditionalPage: true,
     canEditPage: false,
     pageIsLocked: true,
-    isClientReady: false,
-    workflowActions: []
+    isClientReady: false
 };
 
 export const UVEStore = signalStore(
@@ -150,6 +148,5 @@ export const UVEStore = signalStore(
     withLoad(),
     withLayout(),
     withEditor(),
-    withWorkflow(),
     withFlags(UVE_FEATURE_FLAGS)
 );
