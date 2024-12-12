@@ -73,7 +73,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "JVM Tests"
-          maven-args: "-Pcoverage -Dprod test -pl :dotcms-core"
+          maven-args: " -Dprod test -pl :dotcms-core"
           cleanup-runner: true
           generates-test-results: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -151,7 +151,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "IT Tests ${{ matrix.suites.name }}"
-          maven-args: "-Dit.test.forkcount=1 -Pcoverage verify -pl :dotcms-integration -Dcoreit.test.skip=false ${{ matrix.suites.maven_args}}"
+          maven-args: "-Dit.test.forkcount=1  verify -pl :dotcms-integration -Dcoreit.test.skip=false ${{ matrix.suites.maven_args}}"
           generates-test-results: true
           cleanup-runner: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
@@ -176,7 +176,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "Postman ${{ matrix.collection_group }}"
-          maven-args: "-Pcoverage verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
+          maven-args: " verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
           generates-test-results: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
           requires-node: true
@@ -216,7 +216,7 @@ jobs:
         with:
           name: karate-reports
           path: dotCMS/target/karate-reports
-  # E2E Tests
+  # E2E Testsgit 
   linux-e2e-tests:
     name: E2E Tests ${{matrix.suites.name}}
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
@@ -238,7 +238,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "E2E ${{ matrix.suites.name }}"
-          maven-args: "verify -Pcoverage -De2e.test.skip=false ${{ matrix.suites.maven_args}}"
+          maven-args: "verify  -De2e.test.skip=false ${{ matrix.suites.maven_args}}"
           generates-test-results: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
           requires-node: true
