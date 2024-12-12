@@ -160,6 +160,11 @@ export class DotUveToolbarComponent {
         this.#store.loadPageAsset({ language_id });
     }
 
+    /**
+     * Trigger the copy toasts
+     *
+     * @memberof DotUveToolbarComponent
+     */
     triggerCopyToast() {
         this.#messageService.add({
             severity: 'success',

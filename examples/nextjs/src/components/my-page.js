@@ -30,10 +30,6 @@ const experimentConfig = {
     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG, // Debug mode for additional logging
 };
 
-const TestDateComponent = ({title}) => {
-    return <div>{title}</div>;
-};
-
 // Mapping of components to DotCMS content types
 const componentsMap = {
     Blog: Blog,
@@ -45,9 +41,6 @@ const componentsMap = {
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
     CustomNoComponent: CustomNoComponent,
-    ContentWithDate: TestDateComponent,
-    ContentSimple: TestDateComponent,
-
 };
 
 export function MyPage({ pageAsset, nav }) {

@@ -182,7 +182,7 @@ export function withLoad() {
                                 .pipe(
                                     switchMap((pageAPIResponse) =>
                                         dotLanguagesService
-                                            .getLanguagesUsedPage(pageAPIResponse?.page.identifier)
+                                            .getLanguagesUsedPage(pageAPIResponse.page.identifier)
                                             .pipe(
                                                 map((languages) => ({
                                                     pageAPIResponse,

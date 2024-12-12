@@ -101,6 +101,9 @@ describe('DotUveToolbarComponent', () => {
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
 
+    const fixedDate = new Date('2024-01-01');
+    jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
+
     const createComponent = createComponentFactory({
         component: DotUveToolbarComponent,
         imports: [
@@ -236,7 +239,10 @@ describe('DotUveToolbarComponent', () => {
 
                 spectator.click(byTestId('uve-toolbar-preview'));
 
-                expect(spy).toHaveBeenCalledWith({ preview: 'true' });
+                expect(spy).toHaveBeenCalledWith({
+                    preview: 'true',
+                    publishDate: fixedDate.toISOString()
+                });
             });
         });
 
@@ -369,7 +375,10 @@ describe('DotUveToolbarComponent', () => {
         beforeEach(() => {
             spectator = createComponent({
                 providers: [
-                    mockProvider(UVEStore, { ...baseUVEState, $isPreviewMode: signal(true) })
+                    mockProvider(UVEStore, {
+                        ...baseUVEState,
+                        $isPreviewMode: signal(true)
+                    })
                 ]
             });
 
@@ -387,31 +396,61 @@ describe('DotUveToolbarComponent', () => {
                 spectator.click(byTestId('close-preview-mode'));
 
                 spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith({ preview: null });
+                expect(spy).toHaveBeenCalledWith({ preview: null, publishDate: null });
+            });
+
+            it('should call store.loadPageAsset when datePreview model is updated', () => {
+                const spy = jest.spyOn(store, 'loadPageAsset');
+
+                spectator.debugElement.componentInstance.$previewDate.set(new Date('2024-02-01'));
+                spectator.detectChanges();
+
+                expect(spy).toHaveBeenCalledWith({
+                    preview: 'true',
+                    publishDate: new Date('2024-02-01').toISOString()
+                });
+            });
+
+            it('should call store.loadPageAsset with currentDate when datePreview model is updated with a past date', () => {
+                const spy = jest.spyOn(store, 'loadPageAsset');
+
+                spectator.debugElement.componentInstance.$previewDate.set(new Date('2023-02-01'));
+                spectator.detectChanges();
+
+                expect(spy).toHaveBeenCalledWith({
+                    preview: 'true',
+                    publishDate: fixedDate.toISOString()
+                });
             });
         });
 
         it('should have desktop button', () => {
+            spectator.detectChanges();
             expect(spectator.query(byTestId('desktop-preview'))).toBeTruthy();
         });
 
         it('should have mobile button', () => {
+            spectator.detectChanges();
             expect(spectator.query(byTestId('mobile-preview'))).toBeTruthy();
         });
 
         it('should have tablet button', () => {
+            spectator.detectChanges();
             expect(spectator.query(byTestId('tablet-preview'))).toBeTruthy();
         });
 
         it('should have more devices button', () => {
+            spectator.detectChanges();
             expect(spectator.query(byTestId('more-devices-preview'))).toBeTruthy();
         });
 
         it('should not have experiments', () => {
+            spectator.detectChanges();
             expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
         });
 
         it('should not have workflow actions', () => {
+            spectator.detectChanges();
             expect(spectator.query(byTestId('uve-toolbar-workflow-actions'))).toBeFalsy();
         });
     });

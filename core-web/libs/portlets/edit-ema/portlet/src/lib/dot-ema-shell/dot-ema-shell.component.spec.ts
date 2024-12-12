@@ -523,6 +523,30 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
+        describe('Preview', () => {
+            it('should add the current date if preview param is true and publishDate is not present', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    preview: true
+                };
+
+                // override the new Date() to return a fixed date
+                const fixedDate = new Date('2024-01-01');
+                jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
+
+                const data = UVE_CONFIG_MOCK(BASIC_OPTIONS);
+
+                overrideRouteSnashot(activatedRoute, SNAPSHOT_MOCK({ queryParams: params, data }));
+
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    ...params,
+                    publishDate: fixedDate.toISOString()
+                });
+            });
+        });
+
         describe('Site Changes', () => {
             it('should trigger a navigate to /pages when site changes', async () => {
                 const navigate = jest.spyOn(router, 'navigate');

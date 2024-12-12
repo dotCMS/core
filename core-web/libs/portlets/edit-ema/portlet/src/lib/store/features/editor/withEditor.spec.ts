@@ -832,6 +832,20 @@ describe('withEditor', () => {
 
                     expect(store.$editorProps().contentletTools).toBe(null);
                 });
+
+                it('should have contentletTools when the page can be edited and is in preview mode', () => {
+                    patchState(store, {
+                        isEditState: true,
+                        canEditPage: true,
+                        pageParams: {
+                            ...emptyParams,
+                            preview: 'true'
+                        },
+                        state: EDITOR_STATE.IDLE
+                    });
+
+                    expect(store.$editorProps().contentletTools).toEqual(null);
+                });
             });
             describe('dropzone', () => {
                 const bounds = getBoundsMock(ACTION_MOCK);
