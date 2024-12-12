@@ -9,7 +9,6 @@
 }
 
 .p-element.active {
-    outline: none;
     ::ng-deep {
         .p-button {
             background-color: $color-palette-primary-op-20;
