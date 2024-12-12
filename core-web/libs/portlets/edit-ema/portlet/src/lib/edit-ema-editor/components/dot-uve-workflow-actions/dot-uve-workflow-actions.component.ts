@@ -19,7 +19,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import { compareUrlPaths, getPageURI } from '../../../utils';
 
 @Component({
-    selector: 'dot-edit-ema-workflow-actions',
+    selector: 'dot-uve-workflow-actions',
     standalone: true,
     imports: [DotWorkflowActionsComponent, ButtonModule],
     providers: [
@@ -27,10 +27,10 @@ import { compareUrlPaths, getPageURI } from '../../../utils';
         DotWorkflowEventHandlerService,
         DotHttpErrorManagerService
     ],
-    templateUrl: './dot-edit-ema-workflow-actions.component.html',
-    styleUrl: './dot-edit-ema-workflow-actions.component.css'
+    templateUrl: './dot-uve-workflow-actions.component.html',
+    styleUrl: './dot-uve-workflow-actions.component.css'
 })
-export class DotEditEmaWorkflowActionsComponent {
+export class DotUveWorkflowActionsComponent {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly httpErrorManagerService = inject(DotHttpErrorManagerService);
@@ -136,7 +136,6 @@ export class DotEditEmaWorkflowActionsComponent {
                 }
 
                 this.handleNewContent(contentlet);
-                this.#uveStore.setWorflowActionLoading(false);
                 this.messageService.add(this.successMessage);
             });
     }
