@@ -4540,7 +4540,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void aaa() throws DotDataException, DotSecurityException {
+    public void saveSiteIDRightInSupportingValues() throws DotDataException, DotSecurityException {
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
         try {
