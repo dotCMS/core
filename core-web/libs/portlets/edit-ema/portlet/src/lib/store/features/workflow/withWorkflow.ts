@@ -45,7 +45,7 @@ export function withWorkflow() {
                     pipe(
                         tap(() => {
                             patchState(store, {
-                                workflowLoading: false
+                                workflowLoading: true
                             });
                         }),
                         switchMap((inode) => {
@@ -56,7 +56,7 @@ export function withWorkflow() {
                                     next: (workflowActions = []) => {
                                         patchState(store, {
                                             workflowActions,
-                                            workflowLoading: true
+                                            workflowLoading: false
                                         });
                                     },
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {

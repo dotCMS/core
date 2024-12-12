@@ -89,6 +89,7 @@ export class DotUveToolbarComponent {
     });
 
     readonly $actions = this.#store.workflowActions;
+    readonly $workflowLoding = this.#store.workflowLoading;
 
     protected readonly date = new Date();
 

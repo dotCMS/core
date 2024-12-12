@@ -68,7 +68,8 @@
             <dot-edit-ema-workflow-actions
                 (newPage)="handleNewPage($event)"
                 [inode]="inode"
-                [actions]="$actions()" />
+                [actions]="$actions()"
+                [loading]="$workflowLoding()" />
         }
         @if ($toolbarProps().unlockButton; as unlockButton) {
             <p-button

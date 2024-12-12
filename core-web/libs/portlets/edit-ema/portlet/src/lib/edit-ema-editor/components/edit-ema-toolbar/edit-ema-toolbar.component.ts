@@ -78,6 +78,7 @@ export class EditEmaToolbarComponent {
 
     protected readonly $toolbarProps = this.uveStore.$toolbarProps;
     protected readonly $actions = this.uveStore.workflowActions;
+    protected readonly $workflowLoding = this.uveStore.workflowLoading;
 
     /**
      * Update the current device

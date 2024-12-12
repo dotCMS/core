@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, inject, input, Output } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -30,10 +30,9 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
 export class DotEditEmaWorkflowActionsComponent {
     inode = input.required<string>();
     actions = input<DotCMSWorkflowAction[]>([]);
+    loading = input<boolean>(false);
 
     @Output() newPage = new EventEmitter<DotCMSContentlet>();
-
-    protected loading = signal<boolean>(false);
 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly dotMessageService = inject(DotMessageService);
