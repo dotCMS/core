@@ -9,19 +9,12 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/sdk/analytics",
+                "main": "libs/sdk/analytics/src/index.ts",
                 "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
                 "project": "libs/sdk/analytics/package.json",
-                "entryFile": "libs/sdk/analytics/src/index.ts",
-                "external": ["react/jsx-runtime", "@dotcms/client", "react"],
                 "rollupConfig": "@nx/react/plugins/bundle-rollup",
-                "compiler": "babel",
-                "assets": [
-                    {
-                        "glob": "libs/sdk/experiments/README.md",
-                        "input": ".",
-                        "output": "."
-                    }
-                ]
+                "compiler": "swc",
+                "format": ["esm", "cjs"]
             }
         },
         "build:standalone": {
