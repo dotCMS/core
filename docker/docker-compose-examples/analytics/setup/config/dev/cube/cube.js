@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+
 
 // cube.js configuration file
 module.exports = {
@@ -12,7 +12,6 @@ module.exports = {
 
     queryRewrite: (query, { securityContext }) => {
 
-        console.log('HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', securityContext);
         if (!securityContext) {
             throw new Error('No valid token');
         }
