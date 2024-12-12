@@ -94,6 +94,7 @@ import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.control.Try;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -4524,6 +4525,49 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                     .loadObjectResults();
 
             assertTrue(results.isEmpty());
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
+
+    @Test
+    public void aaa() throws DotDataException, DotSecurityException {
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .nextPersisted();
+
+            final Language language = new LanguageDataGen().nextPersisted();
+
+            final Field uniqueTextField = new FieldDataGen()
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Contentlet contentlet = new Contentlet();
+            contentlet.setLanguageId(language.getId());
+            contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentlet.setContentTypeId(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find(contentType.id()).id()).getOrNull());
+            contentlet.setProperty(uniqueTextField.variable(), "unique-value");
+
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            contentletAPI.checkin(contentlet, user, false);
+
+            final List<Map<String, Object>> results = new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?")
+                    .addParam(contentType.id())
+                    .loadObjectResults();
+            assertEquals(1, results.size());
+
+            final Map<String, Object> supportingValue = getSupportingValue(results.get(0));
+            assertEquals(host.getIdentifier(), supportingValue.get(SITE_ID_ATTR));
         } finally {
             ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }

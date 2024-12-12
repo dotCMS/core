@@ -7671,6 +7671,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // validate unique
             if (field.isUnique()) {
                 try {
+                    if (!UtilMethods.isSet(contentlet.getHost())) {
+                        populateHost(contentlet);
+                    }
+
                     uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
                             LegacyFieldTransformer.from(field));
                 } catch (final UniqueFieldValueDuplicatedException e) {
