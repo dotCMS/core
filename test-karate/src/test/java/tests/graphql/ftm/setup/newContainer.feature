@@ -2,7 +2,7 @@ Feature: Create a Content Type
   Background:
     * def containerNameVariable = 'MyContainer' + Math.floor(Math.random() * 100000)
 
-  Scenario Outline: Create a content type and expect 200 OK
+  Scenario: Create a content type and expect 200 OK
     Given url baseUrl + '/api/v1/containers'
     And headers commonHeaders
     And request
@@ -22,7 +22,3 @@ Feature: Create a Content Type
       """
     When method POST
     Then status 200
-
-    Examples:
-      | scenario                                       | expected result                      |
-      | We create a new Container using a random name  | The container gets created just fine  |

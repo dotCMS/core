@@ -2,7 +2,7 @@ Feature: Create a Content Type
   Background:
     * def contentTypeVariable = 'MyContentType' + Math.floor(Math.random() * 100000)
 
-  Scenario Outline: Create a content type and expect 200 OK
+  Scenario: Create a content type and expect 200 OK
     Given url baseUrl + '/api/v1/contenttype'
     And headers commonHeaders
     And request
@@ -116,6 +116,3 @@ Feature: Create a Content Type
     Then status 200
     And match response.entity[0].id != null
     And match response.entity[0].variable == contentTypeVariable
-    Examples:
-      | scenario                                       | expected result                      |
-      | We create a new Container using a random name  | The container gets created just fine  |

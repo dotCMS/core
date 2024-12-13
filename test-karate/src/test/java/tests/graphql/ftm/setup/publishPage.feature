@@ -17,7 +17,7 @@ Feature: Add pieces of content then Publish the Page
    * def content2_id = __arg.content2_id
    * def container_id = __arg.container_id
 
-  Scenario Outline: Create a new version of a piece of content
+  Scenario: Create a new version of a piece of content
     Given url baseUrl + '/api/v1/page/'+page_id+'/content'
     And headers commonHeaders
     And request
@@ -34,6 +34,3 @@ Feature: Add pieces of content then Publish the Page
     Then status 200
     * def errors = call validateNoErrors response
     * match errors == []
-    Examples:
-      | name           | description          |
-      | new            | THE DESCRIPTION 1    |

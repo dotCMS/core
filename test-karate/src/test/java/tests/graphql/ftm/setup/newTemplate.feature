@@ -1,7 +1,7 @@
 Feature: Create a new Template for later use during Time Machine testing
   Background:
     * def templateName = 'MyTemplate' + Math.floor(Math.random() * 1000)
-  Scenario Outline: Create a new Template
+  Scenario: Create a new Template
     Given url baseUrl + '/api/v1/templates'
     And headers commonHeaders
     And request
@@ -58,8 +58,3 @@ Feature: Create a new Template for later use during Time Machine testing
       """
     When method post
     Then status 200
-
-
-    Examples:
-      | scenario                                                                | expected result                         |
-      | We create a Template to hold the containers/contents served by the page | We should succeed creating the template |

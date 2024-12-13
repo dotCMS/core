@@ -1,10 +1,7 @@
-Feature: Create a Page
- Background:
-  Scenario Outline: Create a new version of a piece of content
+ Feature: Create a Page
+ Scenario: Create a new version of a piece of content
     Given url baseUrl + '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR'
     And headers commonHeaders
-    * def pageUrl = (__arg.pageUrl ? __arg.pageUrl : 'ftm-test-page' + Math.floor(Math.random() * 10000))
-    * def templateId = (__arg.templateId ? __arg.templateId : 'SYSTEM_TEMPLATE')
     And request
       """
       {
@@ -25,6 +22,3 @@ Feature: Create a Page
     Then status 200
     * def errors = call extractErrors response
     * match errors == []
-    Examples:
-      | scenario                                                                          | expected result                     |
-      | We simply create a Page to hold the template/container and therefore the contents | We should succeed creating the page |

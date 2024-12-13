@@ -84,3 +84,37 @@ Feature: Reusable Functions and Helpers
         return null; // Return null if not found
       }
       """
+
+    ## Builds a payload for creating a new GraphQL request
+    * def buildGraphQLRequestPayload =
+      """
+      function(pageUri, publishDate) {
+        if (!pageUri.startsWith('/')) {
+          pageUri = '/' + pageUri;
+        }
+        var query = 'query Page { page(url: "' + pageUri + '"';
+        if (publishDate) {
+          query += ' publishDate: "' + publishDate + '"';
+        }
+        query += ') { containers { containerContentlets { contentlets { title } } } } }';
+        return { query: query };
+      }
+      """
+
+    ## Extracts all contentlet titles from a GraphQL response
+    * def contentletsFromGraphQlResponse =
+    """
+    function(response) {
+      var containers = response.data.page.containers;
+      var allTitles = [];
+      containers.forEach(container => {
+        container.containerContentlets.forEach(cc => {
+          cc.contentlets.forEach(contentlet => {
+            allTitles.push(contentlet.title);
+          });
+        });
+      });
+      return allTitles;
+    }
+    """
+    ##

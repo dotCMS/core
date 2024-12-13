@@ -1,7 +1,5 @@
 Feature: Create a new version of a piece of content
-Background:
-
-  Scenario Outline: Create a new version of a piece of content
+  Scenario: Create a new version of a piece of content
 
     # Params are expected as arguments to the feature file
     * def identifier = __arg.identifier
@@ -18,6 +16,3 @@ Background:
     Then status 200
     * def errors = call extractErrors response
     * match errors == []
-    Examples:
-      | name           | description          |
-      | new | THE DESCRIPTION 1    |
