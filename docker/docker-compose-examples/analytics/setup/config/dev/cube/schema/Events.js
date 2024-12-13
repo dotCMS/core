@@ -179,6 +179,8 @@ cube('request', {
                MAX(CASE WHEN event_type = 'URL_MAP' THEN object_content_type_var_name ELSE NULL END) as url_map_content_type_var_name,
                MAX(object_detail_page_url) as url_map_detail_page_url,
                MAX(url) AS url,
+               MAX(cluster_id) AS cluster_id,
+               MAX(customer_id) AS customer_id,
                CASE
                  WHEN MAX(CASE WHEN event_type = 'FILE_REQUEST' THEN 1 ELSE 0 END) = 1 THEN 'FILE'
                  WHEN MAX(CASE WHEN event_type = 'PAGE_REQUEST' THEN 1 ELSE 0 END) = 1 THEN 'PAGE'
@@ -189,6 +191,8 @@ cube('request', {
         GROUP BY request_id`,
   dimensions: {
     requestId: { sql: 'request_id', type: `string` },
+    clusterId: { sql: 'cluster_id', type: `string` },
+    customerId: { sql: 'customer_id', type: `string` },
     sessionId: { sql: 'sessionid', type: `string` },
     isSessionNew: { sql: 'isSessionNew', type: `boolean` },
     createdAt: { sql: 'createdAt', type: `time`, },
