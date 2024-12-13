@@ -123,6 +123,9 @@ export const UVEStore = signalStore(
                 }),
                 $languageId: computed<number>(() => {
                     return pageAPIResponse()?.viewAs.language?.id || 1;
+                }),
+                $isPreviewMode: computed<boolean>(() => {
+                    return pageParams()?.preview === 'true';
                 })
             };
         }

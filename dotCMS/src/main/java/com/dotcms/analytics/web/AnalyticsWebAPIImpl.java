@@ -119,8 +119,7 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
 
             final StringBuilder builder = new StringBuilder(this.jsCode.get());
 
-            Map.of("${jitsu_key}", this.analyticsKeyFunction.apply(currentHost),
-                    "${site}", request.getScheme() + "://" + request.getLocalName() + ":" + request.getLocalPort())
+            Map.of("${jitsu_key}", this.analyticsKeyFunction.apply(currentHost))
                     .forEach((key, value) -> {
 
                 int start;

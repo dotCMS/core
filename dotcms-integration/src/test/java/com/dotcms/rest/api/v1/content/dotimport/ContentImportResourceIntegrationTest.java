@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
 import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.dotcms.Junit5WeldBaseTest;
@@ -9,13 +10,16 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Constants;
@@ -41,6 +45,7 @@ import java.util.List;
  * Tests the ContentImportResource API endpoints for various scenarios.
  */
 @EnableWeld
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
     private static User adminUser;
@@ -62,6 +67,9 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     @Inject
     ContentImportHelper contentImportHelper;
 
+    @Inject
+    SSEMonitorUtil sseMonitorUtil;
+
     @BeforeAll
     static void setUp() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -81,7 +89,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
     @BeforeEach
     void prepare() {
-        importResource = new ContentImportResource(contentImportHelper);
+        importResource = new ContentImportResource(contentImportHelper, sseMonitorUtil);
     }
 
     @AfterAll
@@ -92,6 +100,106 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         }
         // Clean up the test content type
         ContentTypeDataGen.remove(contentType);
+    }
+
+
+    /**
+     * Given scenario: call cancel Job with an invalid job id
+     * Expected result: we should get a DoesNotExistException
+     */
+    @Test
+    @Order(1)
+    void test_import_content_cancel_non_existing_job(){
+        assertThrows(DoesNotExistException.class, () -> importResource.cancelJob(request, response, "nonExisting" ));
+    }
+
+    /**
+     * Given scenario: call get Active Job
+     * Expected result: A JobPaginatedResult is returned
+     */
+    @Test
+    @Order(2)
+    void test_import_content_get_active_jobs() {
+        // Call the activeJobs endpoint
+        ResponseEntityView<JobPaginatedResult> result = importResource.activeJobs(request, response, 1, 20);
+        validateJobPaginatedResult(result, 0);
+    }
+
+    /**
+     * Scenario: Create a valid content import job and then list active jobs.
+     * <p>
+     * This test creates a content import job using valid parameters and then calls the
+     * activeJobs endpoint to verify that the job is listed as active. The expected result
+     * is that the active jobs count should be 1.
+     * </p>
+     *
+     * @throws DotDataException if there is an error with dotCMS data operations
+     * @throws IOException if there is an error with file operations
+     */
+    @Test
+    @Order(3)
+    void test_import_content_and_list_active_jobs() throws DotDataException, IOException {
+        //Create valid import job
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
+        ContentImportParams params = createContentImportParams(csvFile, form);
+        Response importContentResponse = importResource.importContent(request, response, params);
+
+        // Call the activeJobs endpoint
+        ResponseEntityView<JobPaginatedResult> result = importResource.activeJobs(request, response, 1, 20);
+
+        // Validate result
+        validateJobPaginatedResult(result, 1);
+    }
+
+    /**
+     * Scenario: Retrieve the list of canceled jobs.
+     * <p>
+     * This test calls the canceledJobs endpoint to verify that there are no canceled jobs
+     * initially. The expected result is that the count of canceled jobs should be 0.
+     * </p>
+     */
+    @Test
+    @Order(4)
+    void test_content_import_get_cancel_jobs() {
+        // Call the activeJobs endpoint
+        ResponseEntityView<JobPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
+        validateJobPaginatedResult(result, 0);
+    }
+
+    /**
+     * Scenario: Create a valid content import job, cancel it, and then list canceled jobs.
+     * <p>
+     * This test creates a content import job using valid parameters, retrieves the job ID
+     * from the response, cancels the job, and then calls the canceledJobs endpoint to verify
+     * that the canceled job is listed. The expected result is that the count of canceled jobs
+     * should be 1.
+     * </p>
+     *
+     * @throws DotDataException if there is an error with dotCMS data operations
+     * @throws IOException if there is an error with file operations
+     */
+    @Test
+    @Order(5)
+    void test_import_content_then_cancel_then_list_canceled_jobs() throws DotDataException, IOException {
+        //Create valid import job
+        ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
+        ContentImportParams params = createContentImportParams(csvFile, form);
+        Response importContentResponse = importResource.importContent(request, response, params);
+
+        // Retrieve the job ID from the response entity
+        Object importContentResponseEntity = importContentResponse.getEntity();
+        assertNotNull(importContentResponseEntity, "Response entity should not be null");
+        assertInstanceOf(ResponseEntityView.class, importContentResponseEntity, "Entity should be of type ResponseEntityView<String>");
+        @SuppressWarnings("unchecked")
+        ResponseEntityView<String> responseEntityView = (ResponseEntityView<String>) importContentResponseEntity;
+
+        // Cancel the job
+        importResource.cancelJob(request, response, responseEntityView.getEntity());
+
+        // Call the canceledJobs endpoint
+        ResponseEntityView<JobPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
+        // Validate result
+        validateJobPaginatedResult(result, 1);
     }
 
     /**
@@ -219,7 +327,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         assertBadRequestResponse(importResource.importContent(request, response, params));
     }
 
-
     /**
      * Scenario: Attempt to validate content import specifying a non-existing language.
      * <p>
@@ -283,7 +390,6 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         assertBadRequestResponse(importResource.importContent(request, response, params));
     }
-
 
     /**
      * Scenario: Attempt to validate content import specifying a non-existing content-type.
@@ -430,6 +536,26 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         params.setContentDisposition(createContentDisposition(csvFile.getName()));
 
         assertThrows(ValidationException.class, () -> importResource.validateContentImport(request, response, params));
+    }
+
+    private void validateJobPaginatedResult(ResponseEntityView<JobPaginatedResult> result, long expectedTotalJobs) {
+        assertNotNull(result, "Response should not be null");
+
+        JobPaginatedResult entity = result.getEntity();
+        assertNotNull(entity, "JobPaginatedResult should not be null");
+
+        // Validate the properties of JobPaginatedResult
+        assertEquals(1, entity.page(), "Current page should be 1");
+        assertEquals(20, entity.pageSize(), "Page size should be 20");
+
+        // Check that the total number of jobs is as expected (this can be adjusted based on your test setup)
+        //assertTrue(expectedTotalJobs <= entity.jobs().size(), "Total number of jobs should match expected value");
+        assertEquals(expectedTotalJobs, entity.jobs().size(), "Total number of jobs should match expected value");
+
+        // Check that the jobs list is not null and has the expected number of jobs
+        var jobs = entity.jobs();
+        assertNotNull(jobs, "Jobs list should not be null");
+        assertTrue(jobs.size() <= entity.pageSize(), "Number of jobs should not exceed page size");
     }
 
     /**

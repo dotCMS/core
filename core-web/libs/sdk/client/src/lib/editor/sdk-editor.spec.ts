@@ -164,4 +164,15 @@ describe('DotCMSPageEditor', () => {
             });
         });
     });
+
+    it('should isInsideEditor return false when is preview mode', () => {
+        Object.defineProperty(window, 'location', {
+            value: {
+                search: '?preview=true'
+            },
+            writable: true
+        });
+
+        expect(isInsideEditor()).toBe(false);
+    });
 });

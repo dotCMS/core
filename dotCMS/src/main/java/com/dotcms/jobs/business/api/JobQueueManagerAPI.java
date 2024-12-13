@@ -52,12 +52,19 @@ public interface JobQueueManagerAPI {
     void close() throws Exception;
 
     /**
+     * Registers a job processor
+     *
+     * @param processor The job processor to register
+     */
+    void registerProcessor(Class<? extends JobProcessor> processor);
+
+    /**
      * Registers a job processor for a specific queue.
      *
      * @param queueName The name of the queue
      * @param processor The job processor to register
      */
-    void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor);
+    void registerProcessor(String queueName, Class<? extends JobProcessor> processor);
 
     /**
      * Retrieves the job processors for all registered queues.
@@ -97,6 +104,78 @@ public interface JobQueueManagerAPI {
      * @throws DotDataException if there's an error fetching the jobs
      */
     JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of completed jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of completed jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getCompletedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of canceled jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of canceled jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getCanceledJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of failed jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of failed jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getFailedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of abandoned jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getAbandonedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of successful jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of successful jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getSuccessfulJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of all jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getJobs(String queueName, int page, int pageSize)
             throws DotDataException;
 
     /**

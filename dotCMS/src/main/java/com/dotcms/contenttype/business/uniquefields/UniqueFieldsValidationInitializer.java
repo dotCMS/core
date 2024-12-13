@@ -26,8 +26,8 @@ import java.sql.SQLException;
 @Dependent
 public class UniqueFieldsValidationInitializer  implements DotInitializer {
 
-    private UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
-    private DotDatabaseMetaData dotDatabaseMetaData;
+    private final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil;
+    private final DotDatabaseMetaData dotDatabaseMetaData;
 
     @Inject
     public UniqueFieldsValidationInitializer(final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil){

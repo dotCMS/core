@@ -87,22 +87,23 @@ export function withUVEToolbar() {
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
-                return {
-                    editor: store.isPreviewModeActive()
-                        ? null
-                        : {
-                              bookmarksUrl,
-                              copyUrl: createFullURL(params, siteId),
-                              apiUrl: pageAPI
-                          },
-                    preview: store.isPreviewModeActive()
-                        ? {
-                              deviceSelector: {
-                                  apiLink: `${clientHost}${pageAPI}`,
-                                  hideSocialMedia: !store.isTraditionalPage()
-                              }
+                const isPreview = params?.preview === 'true';
+                const prevewItem = isPreview
+                    ? {
+                          deviceSelector: {
+                              apiLink: `${clientHost}${pageAPI}`,
+                              hideSocialMedia: !store.isTraditionalPage()
                           }
-                        : null,
+                      }
+                    : null;
+
+                return {
+                    editor: {
+                        bookmarksUrl,
+                        copyUrl: createFullURL(params, siteId),
+                        apiUrl: pageAPI
+                    },
+                    preview: prevewItem,
                     currentLanguage: pageAPIResponse?.viewAs.language,
                     urlContentMap: store.isEditState()
                         ? (pageAPIResponse?.urlContentMap ?? null)

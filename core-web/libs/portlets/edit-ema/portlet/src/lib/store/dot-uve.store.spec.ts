@@ -352,6 +352,20 @@ describe('UVEStore', () => {
                 });
             });
         });
+
+        describe('$isPreviewMode', () => {
+            it("should return true when the preview is 'true'", () => {
+                store.loadPageAsset({ preview: 'true' });
+
+                expect(store.$isPreviewMode()).toBe(true);
+            });
+
+            it("should return false when the preview is not 'true'", () => {
+                store.loadPageAsset({ preview: null });
+
+                expect(store.$isPreviewMode()).toBe(false);
+            });
+        });
     });
 
     describe('withMethods', () => {
