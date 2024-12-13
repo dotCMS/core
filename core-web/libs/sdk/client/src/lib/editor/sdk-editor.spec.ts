@@ -5,8 +5,10 @@ import {
     scrollHandler
 } from './listeners/listeners';
 import { postMessageToEditor, CLIENT_ACTIONS } from './models/client.model';
+import { EDITOR_MODE } from './models/editor.model';
 import {
     addClassToEmptyContentlets,
+    detectUVEContext,
     initEditor,
     initInlineEditing,
     isInsideEditor,
@@ -165,25 +167,28 @@ describe('DotCMSPageEditor', () => {
         });
     });
 
-    it('should isInsideEditor return false when is preview moden and is marked to check preview', () => {
-        Object.defineProperty(window, 'location', {
-            value: {
-                search: '?preview=true'
-            },
-            writable: true
+    describe('detectUVEContext', () => {
+        it('should detectUVEContext return { mode: EDITOR_MODE.EDITOR } when is editor mode', () => {
+            expect(detectUVEContext()).toEqual({ mode: EDITOR_MODE.EDITOR });
         });
 
-        expect(isInsideEditor({ checkPreview: true })).toBe(false);
-    });
+        it('should detectUVEContext return { mode: EDITOR_MODE.PREVIEW } when is preview mode', () => {
+            Object.defineProperty(window, 'location', {
+                value: {
+                    search: '?preview=true'
+                },
+                writable: true
+            });
 
-    it('should isInsideEditor return true when is preview mode and is not marked to check preview', () => {
-        Object.defineProperty(window, 'location', {
-            value: {
-                search: '?preview=true'
-            },
-            writable: true
+            expect(detectUVEContext()).toEqual({ mode: EDITOR_MODE.PREVIEW });
         });
 
-        expect(isInsideEditor()).toBe(true);
+        it('should detectUVEContext return null when is not inside editor', () => {
+            Object.defineProperty(window, 'parent', {
+                value: window,
+                writable: true
+            });
+            expect(detectUVEContext()).toBe(null);
+        });
     });
 });

@@ -67,12 +67,7 @@ export interface ReorderMenuConfig {
     depth: number;
 }
 
-/**
- * Options for determining if the code is running inside the DotCMS editor.
- *
- * @export
- * @interface InsideEditorOptions
- */
-export interface InsideEditorOptions {
-    checkPreview?: boolean;
+export enum EDITOR_MODE {
+    EDITOR = 'EDITOR',
+    PREVIEW = 'PREVIEW'
 }
