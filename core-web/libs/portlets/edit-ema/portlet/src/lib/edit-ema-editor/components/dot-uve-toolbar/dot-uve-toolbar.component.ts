@@ -104,6 +104,8 @@ export class DotUveToolbarComponent {
             // If previewDate is minor that the CURRENT DATE, set previewDate to CURRENT DATE
             if (previewDate < this.CURRENT_DATE) {
                 this.$previewDate.set(this.CURRENT_DATE);
+
+                return;
             }
 
             untracked(() => {
