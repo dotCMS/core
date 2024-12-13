@@ -1,6 +1,8 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
+
 
 import { Dialog } from 'primeng/dialog';
 
@@ -10,6 +12,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
+
+import { RelationshipFieldService } from '../../services/relationship-field.service';
 
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
@@ -36,7 +40,12 @@ describe('DotSelectExistingContentComponent', () => {
     const createComponent = createComponentFactory({
         component: DotSelectExistingContentComponent,
         componentProviders: [ExistingContentStore],
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        providers: [
+            mockProvider(RelationshipFieldService, {
+                getContent: jest.fn(() => of([]))
+            }),
+            { provide: DotMessageService, useValue: messageServiceMock }
+        ],
         detectChanges: false
     });
 

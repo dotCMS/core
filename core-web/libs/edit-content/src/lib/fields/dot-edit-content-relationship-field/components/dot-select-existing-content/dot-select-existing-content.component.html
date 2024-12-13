@@ -1,4 +1,5 @@
 @let data = store.data();
+@let columns = store.columns();
 @let pagination = store.pagination();
 
 @if ($visible()) {
@@ -23,6 +24,7 @@
             </ng-template>
             <p-table
                 #datatable
+                [columns]="columns"
                 [value]="data"
                 selectionMode="multiple"
                 [(selection)]="$selectedItems"
@@ -56,25 +58,15 @@
                             [currentPage]="pagination.currentPage" />
                     </div>
                 </ng-template>
-                <ng-template pTemplate="header" styleClass="relative">
+                <ng-template pTemplate="header" styleClass="relative" let-columns>
                     <tr>
                         <th scope="col" style="width: 4rem"><p-tableHeaderCheckbox /></th>
-                        <th scope="col" pSortableColumn="title">
-                            Title
-                            <p-sortIcon field="title" />
-                        </th>
-                        <th scope="col" pSortableColumn="step">
-                            Step
-                            <p-sortIcon field="step" />
-                        </th>
-                        <th scope="col" pSortableColumn="description">
-                            Description
-                            <p-sortIcon field="description" />
-                        </th>
-                        <th scope="col" pSortableColumn="lastUpdate">
-                            Last Update
-                            <p-sortIcon field="lastUpdate" />
-                        </th>
+                        @for (column of columns; track $index) {
+                            <th scope="col" [pSortableColumn]="column.field">
+                                {{ column.header }}
+                                <p-sortIcon [field]="column.field" />
+                            </th>
+                        }
                         <th scope="col">Menu</th>
                     </tr>
                 </ng-template>

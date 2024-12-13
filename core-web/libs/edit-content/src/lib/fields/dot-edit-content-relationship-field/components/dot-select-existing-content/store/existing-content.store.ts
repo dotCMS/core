@@ -15,12 +15,14 @@ import { computed, inject } from '@angular/core';
 import { tap, switchMap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
 import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
     data: RelationshipFieldItem[];
     status: ComponentStatus;
+    columns: Column[];
     pagination: {
         offset: number;
         currentPage: number;
@@ -30,6 +32,7 @@ export interface ExistingContentState {
 
 const initialState: ExistingContentState = {
     data: [],
+    columns: [],
     status: ComponentStatus.INIT,
     pagination: {
         offset: 0,
@@ -60,10 +63,10 @@ export const ExistingContentStore = signalStore(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(() =>
-                        relationshipFieldService.getContent().pipe(
+                        relationshipFieldService.getColumnsAndContent('Region').pipe(
                             tapResponse({
-                                next: (data) =>
-                                    patchState(store, { data, status: ComponentStatus.LOADED }),
+                                next: ([columns, data]) =>
+                                    patchState(store, { columns, data, status: ComponentStatus.LOADED }),
                                 error: () => patchState(store, { status: ComponentStatus.ERROR })
                             })
                         )

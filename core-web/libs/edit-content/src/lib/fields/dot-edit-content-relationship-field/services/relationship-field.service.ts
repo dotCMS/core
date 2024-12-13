@@ -1,15 +1,22 @@
 import { faker } from '@faker-js/faker';
-import { Observable, of } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
+import { map, tap } from 'rxjs/operators';
+
+import { DotFieldService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 
+import { MANDATORY_FIRST_COLUMNS, MANDATORY_LAST_COLUMNS } from '../dot-edit-content-relationship-field.constants';
+import { Column } from '../models/column.model';
 @Injectable({
     providedIn: 'root'
 })
 export class RelationshipFieldService {
+    readonly #fieldService = inject(DotFieldService);
+
     /**
      * Gets relationship content items
      * @returns Observable of RelationshipFieldItem array
@@ -19,6 +26,34 @@ export class RelationshipFieldService {
         const relationshipContent = this.#mapContentletsToRelationshipItems(contentlets);
 
         return of(relationshipContent);
+    }
+
+    getColumnsAndContent(contentTypeId: string): Observable<[Column[], RelationshipFieldItem[]]> {
+        console.log('getColumnsAndContent', contentTypeId);
+        
+        return forkJoin([this.getColumns(contentTypeId), this.getContent()]).pipe(
+            tap(([columns, content]) => console.log(columns, content))
+        );
+    }
+
+    /**
+     * Gets the columns for the relationship field
+     * @param contentTypeId The content type ID
+     * @returns Observable of Column array
+     */
+    getColumns(contentTypeId: string): Observable<Column[]> {
+        return this.#fieldService
+            .getFields(contentTypeId, 'SHOW_IN_LIST')
+            .pipe(
+                map((fields) =>
+                    fields.map((field) => ({ field: field.variable, header: field.name }))
+                ),
+                map((columns) => [
+                    ...MANDATORY_FIRST_COLUMNS.map((field) => ({ field, header: field })),
+                    ...columns,
+                    ...MANDATORY_LAST_COLUMNS.map((field) => ({ field, header: field }))
+                ])
+            );
     }
 
     /**
