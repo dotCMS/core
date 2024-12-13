@@ -84,7 +84,7 @@ describe('withLoad', () => {
         });
 
         it('should set workflowLoading to true', () => {
-            store.setWorflowActionLoading(true);
+            store.setWorkflowActionLoading(true);
             expect(store.workflowLoading()).toBe(true);
         });
     });

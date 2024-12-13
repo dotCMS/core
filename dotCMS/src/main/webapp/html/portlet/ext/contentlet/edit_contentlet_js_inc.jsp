@@ -943,7 +943,7 @@
     }
 
 
-    function stealLock(contentletInode){        
+    function stealLock(contentletInode){
         ContentletAjax.unlockContent(contentletInode, stealLockContentCallback);
     }
 

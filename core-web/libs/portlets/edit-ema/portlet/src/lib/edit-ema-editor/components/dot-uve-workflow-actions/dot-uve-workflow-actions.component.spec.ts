@@ -3,6 +3,7 @@ import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectat
 import { Subject, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -19,7 +20,6 @@ import {
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
@@ -33,6 +33,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotUveWorkflowActionsComponent } from './dot-uve-workflow-actions.component';
+
+import { MOCK_RESPONSE_VTL } from '../../../shared/mocks';
+import { UVEStore } from '../../../store/dot-uve.store';
 
 const DOT_WORKFLOW_PAYLOAD_MOCK: DotWorkflowPayload = {
     assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
@@ -68,6 +71,8 @@ const workflowActionMock = {
     ]
 };
 
+const expectedInode = MOCK_RESPONSE_VTL.page.inode;
+
 const messageServiceMock = new MockDotMessageService({
     'Workflow-Action': 'Workflow Action',
     'edit.content.fire.action.success': 'Success',
@@ -76,23 +81,49 @@ const messageServiceMock = new MockDotMessageService({
     Loading: 'loading'
 });
 
+// const baseUVEState = {
+//     $uveToolbar: signal(baseUVEToolbarState),
+//     setDevice: jest.fn(),
+//     setSocialMedia: jest.fn(),
+//     pageParams: signal(params),
+//     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
+//     workflowActions: signal([])
+// };
+
+const pageParams = {
+    url: 'test-url',
+    language_id: '1'
+};
+
+const uveStoreMock = {
+    pageAPIResponse: signal(MOCK_RESPONSE_VTL),
+    workflowActions: signal([]),
+    workflowLoading: signal(false),
+    canEditPage: signal(true),
+    pageParams: signal(pageParams),
+    loadPageAsset: jest.fn(),
+    reloadCurrentPage: jest.fn(),
+    setWorkflowActionLoading: jest.fn()
+};
+
 describe('DotUveWorkflowActionsComponent', () => {
     let spectator: Spectator<DotUveWorkflowActionsComponent>;
     let dotWizardService: DotWizardService;
-    let dotWorkflowsActionsService: DotWorkflowsActionsService;
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let messageService: MessageService;
+
+    let store: InstanceType<typeof UVEStore>;
 
     const createComponent = createComponentFactory({
         component: DotUveWorkflowActionsComponent,
         imports: [HttpClientTestingModule],
         componentProviders: [
             DotWizardService,
-            DotWorkflowsActionsService,
             DotWorkflowEventHandlerService,
             DotWorkflowActionsFireService,
             MessageService,
+            mockProvider(UVEStore, uveStoreMock),
             mockProvider(DotAlertConfirmService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotHttpErrorManagerService),
@@ -116,53 +147,56 @@ describe('DotUveWorkflowActionsComponent', () => {
             detectChanges: false
         });
 
+        store = spectator.inject(UVEStore, true);
         dotWizardService = spectator.inject(DotWizardService, true);
-        dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
         dotWorkflowEventHandlerService = spectator.inject(DotWorkflowEventHandlerService, true);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
         messageService = spectator.inject(MessageService, true);
     });
 
     describe('Without Workflow Actions', () => {
-        beforeEach(() => {
-            spectator.setInput('inode', '123');
-            spectator.detectChanges();
-        });
-
         it('should set action as an empty array and loading to true', () => {
+            uveStoreMock.workflowLoading.set(true);
+            spectator.detectChanges();
+
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             expect(dotWorkflowActionsComponent.actions()).toEqual([]);
             expect(dotWorkflowActionsComponent.loading()).toBeTruthy();
             expect(dotWorkflowActionsComponent.size()).toBe('small');
         });
+
+        it("should be disabled if user can't edit", () => {
+            uveStoreMock.canEditPage.set(false);
+            spectator.detectChanges();
+
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            expect(dotWorkflowActionsComponent.disabled()).toBeTruthy();
+        });
     });
 
     describe('With Workflow Actions', () => {
         beforeEach(() => {
-            jest.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(
-                of(mockWorkflowsActions)
-            );
-
-            spectator.setInput('inode', '123');
+            uveStoreMock.workflowLoading.set(false);
+            uveStoreMock.canEditPage.set(true);
+            uveStoreMock.workflowActions.set(mockWorkflowsActions);
             spectator.detectChanges();
         });
 
         it('should load workflow actions', () => {
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 
-            expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledWith('123');
             expect(dotWorkflowActionsComponent.actions()).toEqual(mockWorkflowsActions);
+            expect(dotWorkflowActionsComponent.loading()).toBeFalsy();
+            expect(dotWorkflowActionsComponent.disabled()).toBeFalsy();
         });
 
-        it('should fire workflow actions when it does not have inputs', () => {
-            jest.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(
-                false
-            );
+        it('should fire workflow actions and loadPageAssets', () => {
+            const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
+            const spyLoadPageAsset = jest.spyOn(store, 'loadPageAsset');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
-            // const spyNewPage = jest.spyOn(spectator.component.newPage, 'emit');
             const spyMessage = jest.spyOn(messageService, 'add');
 
             dotWorkflowActionsComponent.actionFired.emit({
@@ -171,16 +205,16 @@ describe('DotUveWorkflowActionsComponent', () => {
             });
 
             expect(spy).toHaveBeenCalledWith({
-                inode: '123',
+                inode: expectedInode,
                 actionId: mockWorkflowsActions[0].id,
                 data: undefined
             });
 
-            // expect(spyNewPage).toHaveBeenCalledWith(dotcmsContentletMock);
-            expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledWith(
-                dotcmsContentletMock.inode
-            );
-
+            expect(spySetWorkflowActionLoading).toHaveBeenCalledWith(true);
+            expect(spyLoadPageAsset).toHaveBeenCalledWith({
+                language_id: dotcmsContentletMock.languageId.toString(),
+                url: dotcmsContentletMock.url
+            });
             expect(spyMessage).toHaveBeenCalledTimes(2);
 
             // Check the first message
@@ -199,6 +233,29 @@ describe('DotUveWorkflowActionsComponent', () => {
             });
         });
 
+        it('should fire workflow actions and reloadPage', () => {
+            const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
+            const spyReloadCurrentPage = jest.spyOn(store, 'reloadCurrentPage');
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const spy = jest
+                .spyOn(dotWorkflowActionsFireService, 'fireTo')
+                .mockReturnValue(of({ ...dotcmsContentletMock, ...pageParams }));
+
+            dotWorkflowActionsComponent.actionFired.emit({
+                ...mockWorkflowsActions[0],
+                actionInputs: []
+            });
+
+            expect(spy).toHaveBeenCalledWith({
+                inode: expectedInode,
+                actionId: mockWorkflowsActions[0].id,
+                data: undefined
+            });
+
+            expect(spySetWorkflowActionLoading).toHaveBeenCalledWith(true);
+            expect(spyReloadCurrentPage).toHaveBeenCalledWith();
+        });
+
         it('should open Wizard if it has inputs ', () => {
             const output$ = new Subject<DotWorkflowPayload>();
 
@@ -207,9 +264,6 @@ describe('DotUveWorkflowActionsComponent', () => {
                 title: 'title'
             };
 
-            jest.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(
-                false
-            );
             jest.spyOn(dotWorkflowEventHandlerService, 'setWizardInput').mockReturnValue(
                 wizardInputMock
             );
@@ -236,7 +290,7 @@ describe('DotUveWorkflowActionsComponent', () => {
                 workflowActionMock.actionInputs
             );
             expect(spyFireTo).toHaveBeenCalledWith({
-                inode: '123',
+                inode: expectedInode,
                 actionId: workflowActionMock.id,
                 data: DOT_PROCESSED_WORKFLOW_PAYLOAD_MOCK
             });
@@ -272,44 +326,4 @@ describe('DotUveWorkflowActionsComponent', () => {
             expect(spyWizard).not.toHaveBeenCalled();
         });
     });
-
-    // describe('dot-uve-workflow-actions', () => {
-    //     it('should have attr', () => {
-    //         const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
-
-    //         expect(workflowActions.inode).toBe('123-i');
-    //     });
-
-    //     it('should update page', () => {
-    //         const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-    //         spectator.triggerEventHandler(DotUveWorkflowActionsComponent, 'newPage', {
-    //             pageURI: '/path-and-stuff',
-    //             url: 'path',
-    //             languageId: 1
-    //             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //         } as any);
-
-    //         spectator.detectChanges();
-
-    //         expect(spyloadPageAsset).toHaveBeenCalledWith({
-    //             url: '/path-and-stuff',
-    //             language_id: '1'
-    //         });
-    //     });
-
-    //     // it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
-    //     //     jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
-
-    //     //     spectator.triggerEventHandler(DotUveWorkflowActionsComponent, 'newPage', {
-    //     //         pageURI: '/test-url',
-    //     //         url: '/test-url',
-    //     //         languageId: 1
-    //     //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    //     //     } as any);
-
-    //     //     spectator.detectChanges();
-    //     //     expect(store.reloadCurrentPage).toHaveBeenCalled();
-    //     //     expect(router.navigate).not.toHaveBeenCalled();
-    //     // });
-    // });
 });

@@ -94,8 +94,7 @@ const baseUVEState = {
         { id: 1, translated: true },
         { id: 2, translated: false },
         { id: 3, translated: true }
-    ]),
-    workflowActions: signal([])
+    ])
 };
 
 describe('DotUveToolbarComponent', () => {

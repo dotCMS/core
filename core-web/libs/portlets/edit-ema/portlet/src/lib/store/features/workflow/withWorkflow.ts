@@ -70,7 +70,7 @@ export function withWorkflow() {
                         })
                     )
                 ),
-                setWorflowActionLoading: (loading: boolean) => {
+                setWorkflowActionLoading: (loading: boolean) => {
                     patchState(store, {
                         workflowLoading: loading
                     });

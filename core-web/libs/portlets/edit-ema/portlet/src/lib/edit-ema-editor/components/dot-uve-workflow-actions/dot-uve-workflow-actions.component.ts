@@ -108,7 +108,7 @@ export class DotUveWorkflowActionsComponent {
         workflow: DotCMSWorkflowAction,
         data?: T
     ): void {
-        this.#uveStore.setWorflowActionLoading(true);
+        this.#uveStore.setWorkflowActionLoading(true);
         this.messageService.add({
             ...this.successMessage,
             detail: this.dotMessageService.get('edit.ema.page.executing.workflow.action'),
