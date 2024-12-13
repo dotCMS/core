@@ -19,7 +19,7 @@ import Navigation from "./layout/navigation";
 import NotFound from "@/app/not-found";
 import { usePageAsset } from "../hooks/usePageAsset";
 
-import { DotContentAnalyticsProvider } from "@dotcms/analytics";
+// import { DotContentAnalyticsProvider } from "@dotcms/analytics/react";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -76,31 +76,31 @@ export function MyPage({ pageAsset, nav }) {
     }
 
     return (
-        <DotContentAnalyticsProvider config={analyticsConfig}>
-            <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
-                {pageAsset?.layout.header && (
-                    <Header>{!!nav && <Navigation items={nav} />}</Header>
-                )}
+        // <DotContentAnalyticsProvider config={analyticsConfig}>
+        <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
+            {pageAsset?.layout.header && (
+                <Header>{!!nav && <Navigation items={nav} />}</Header>
+            )}
 
-                <main className="flex flex-col gap-8 m-auto">
-                    <DotLayoutComponent
-                        pageContext={{
-                            pageAsset,
-                            components: componentsMap,
-                        }}
-                        config={{
-                            pathname,
-                            editor: {
-                                params: {
-                                    depth: 3,
-                                },
+            <main className="flex flex-col gap-8 m-auto">
+                <DotLayoutComponent
+                    pageContext={{
+                        pageAsset,
+                        components: componentsMap,
+                    }}
+                    config={{
+                        pathname,
+                        editor: {
+                            params: {
+                                depth: 3,
                             },
-                        }}
-                    />
-                </main>
+                        },
+                    }}
+                />
+            </main>
 
-                {pageAsset?.layout.footer && <Footer />}
-            </div>
-        </DotContentAnalyticsProvider>
+            {pageAsset?.layout.footer && <Footer />}
+        </div>
+        // </DotContentAnalyticsProvider>
     );
 }
