@@ -32,7 +32,7 @@ export function withWorkflow() {
         },
         withState<WithWorkflowState>({
             workflowActions: [],
-            workflowLoading: false
+            workflowLoading: true
         }),
         withMethods((store) => {
             const dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
