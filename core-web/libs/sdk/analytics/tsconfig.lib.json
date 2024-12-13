@@ -4,7 +4,7 @@
         "module": "ES2015",
         "target": "es2015",
         "declaration": true,
-        "outDir": "../../../dist/out-tsc",
+        "outDir": "../../../dist/libs/sdk/analytics",
         "types": ["node", "jest"],
         "moduleResolution": "node",
         "esModuleInterop": true,

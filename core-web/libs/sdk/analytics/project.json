@@ -10,11 +10,25 @@
             "options": {
                 "outputPath": "dist/libs/sdk/analytics",
                 "main": "libs/sdk/analytics/src/index.ts",
-                "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
                 "project": "libs/sdk/analytics/package.json",
-                "rollupConfig": "@nx/react/plugins/bundle-rollup",
+                "additionalEntryPoints": ["libs/sdk/analytics/src/lib/react/index.ts"],
+                "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
+                "format": ["esm"],
+                "external": ["react"],
+                "preserveModules": true,
+                "preserveModulesRoot": "libs/sdk/analytics/src",
+                "rollupConfig": "libs/sdk/analytics/rollup.config.js",
                 "compiler": "swc",
-                "format": ["esm", "cjs"]
+                "assets": [
+                    {
+                        "glob": "README.md",
+                        "input": "libs/sdk/analytics",
+                        "output": "."
+                    }
+                ],
+                "sourceMap": true,
+                "skipTypeCheck": false,
+                "deleteOutputPath": true
             }
         },
         "build:standalone": {
