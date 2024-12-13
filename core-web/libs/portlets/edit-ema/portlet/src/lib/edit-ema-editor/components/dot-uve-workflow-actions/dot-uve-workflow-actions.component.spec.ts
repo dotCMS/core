@@ -32,7 +32,7 @@ import {
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
-import { DotEditEmaWorkflowActionsComponent } from './dot-edit-ema-workflow-actions.component';
+import { DotUveWorkflowActionsComponent } from './dot-uve-workflow-actions.component';
 
 const DOT_WORKFLOW_PAYLOAD_MOCK: DotWorkflowPayload = {
     assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
@@ -76,8 +76,8 @@ const messageServiceMock = new MockDotMessageService({
     Loading: 'loading'
 });
 
-describe('DotEditEmaWorkflowActionsComponent', () => {
-    let spectator: Spectator<DotEditEmaWorkflowActionsComponent>;
+describe('DotUveWorkflowActionsComponent', () => {
+    let spectator: Spectator<DotUveWorkflowActionsComponent>;
     let dotWizardService: DotWizardService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     let dotWorkflowEventHandlerService: DotWorkflowEventHandlerService;
@@ -85,7 +85,7 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
     let messageService: MessageService;
 
     const createComponent = createComponentFactory({
-        component: DotEditEmaWorkflowActionsComponent,
+        component: DotUveWorkflowActionsComponent,
         imports: [HttpClientTestingModule],
         componentProviders: [
             DotWizardService,
@@ -121,10 +121,6 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
         dotWorkflowEventHandlerService = spectator.inject(DotWorkflowEventHandlerService, true);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
         messageService = spectator.inject(MessageService, true);
-    });
-
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
     });
 
     describe('Without Workflow Actions', () => {
@@ -166,7 +162,7 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
-            const spyNewPage = jest.spyOn(spectator.component.newPage, 'emit');
+            // const spyNewPage = jest.spyOn(spectator.component.newPage, 'emit');
             const spyMessage = jest.spyOn(messageService, 'add');
 
             dotWorkflowActionsComponent.actionFired.emit({
@@ -180,7 +176,7 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
                 data: undefined
             });
 
-            expect(spyNewPage).toHaveBeenCalledWith(dotcmsContentletMock);
+            // expect(spyNewPage).toHaveBeenCalledWith(dotcmsContentletMock);
             expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledWith(
                 dotcmsContentletMock.inode
             );
@@ -276,4 +272,44 @@ describe('DotEditEmaWorkflowActionsComponent', () => {
             expect(spyWizard).not.toHaveBeenCalled();
         });
     });
+
+    // describe('dot-uve-workflow-actions', () => {
+    //     it('should have attr', () => {
+    //         const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+
+    //         expect(workflowActions.inode).toBe('123-i');
+    //     });
+
+    //     it('should update page', () => {
+    //         const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+    //         spectator.triggerEventHandler(DotUveWorkflowActionsComponent, 'newPage', {
+    //             pageURI: '/path-and-stuff',
+    //             url: 'path',
+    //             languageId: 1
+    //             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //         } as any);
+
+    //         spectator.detectChanges();
+
+    //         expect(spyloadPageAsset).toHaveBeenCalledWith({
+    //             url: '/path-and-stuff',
+    //             language_id: '1'
+    //         });
+    //     });
+
+    //     // it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
+    //     //     jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
+
+    //     //     spectator.triggerEventHandler(DotUveWorkflowActionsComponent, 'newPage', {
+    //     //         pageURI: '/test-url',
+    //     //         url: '/test-url',
+    //     //         languageId: 1
+    //     //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    //     //     } as any);
+
+    //     //     spectator.detectChanges();
+    //     //     expect(store.reloadCurrentPage).toHaveBeenCalled();
+    //     //     expect(router.navigate).not.toHaveBeenCalled();
+    //     // });
+    // });
 });

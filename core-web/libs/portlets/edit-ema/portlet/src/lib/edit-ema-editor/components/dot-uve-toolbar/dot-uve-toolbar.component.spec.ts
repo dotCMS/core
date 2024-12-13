@@ -189,6 +189,12 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
+        it('should have a dot-uve-workflow-actions component', () => {
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+
+            expect(workflowActions).toBeTruthy();
+        });
+
         describe('copy-url', () => {
             let button: DebugElement;
 
@@ -419,8 +425,10 @@ describe('DotUveToolbarComponent', () => {
             expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
         });
 
-        it('should not have workflow actions', () => {
-            expect(spectator.query(byTestId('uve-toolbar-workflow-actions'))).toBeFalsy();
+        it('should not have a dot-uve-workflow-actions component', () => {
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+
+            expect(workflowActions).toBeNull();
         });
     });
 

@@ -404,51 +404,12 @@ describe('EditEmaToolbarComponent', () => {
                     rejectLabel: 'Reject'
                 });
             });
-
-            xit('should dpersonalize - call service', () => {
-                expect(true).toBe(true);
-            });
         });
 
-        // describe('dot-uve-workflow-actions', () => {
-        //     it('should have attr', () => {
-        //         const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
-
-        //         expect(workflowActions.inode).toBe('123-i');
-        //     });
-
-        //     it('should update page', () => {
-        //         const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-        //         spectator.triggerEventHandler(DotUveWorkflowActionsComponent, 'newPage', {
-        //             pageURI: '/path-and-stuff',
-        //             url: 'path',
-        //             languageId: 1
-        //             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        //         } as any);
-
-        //         spectator.detectChanges();
-
-        //         expect(spyloadPageAsset).toHaveBeenCalledWith({
-        //             url: '/path-and-stuff',
-        //             language_id: '1'
-        //         });
-        //     });
-
-        //     // it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
-        //     //     jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
-
-        //     //     spectator.triggerEventHandler(DotUveWorkflowActionsComponent, 'newPage', {
-        //     //         pageURI: '/test-url',
-        //     //         url: '/test-url',
-        //     //         languageId: 1
-        //     //         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        //     //     } as any);
-
-        //     //     spectator.detectChanges();
-        //     //     expect(store.reloadCurrentPage).toHaveBeenCalled();
-        //     //     expect(router.navigate).not.toHaveBeenCalled();
-        //     // });
-        // });
+        it('should have a dot-uve-workflow-actions component', () => {
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+            expect(workflowActions).toBeTruthy();
+        });
 
         describe('dot-ema-info-display', () => {
             it('should be hidden', () => {

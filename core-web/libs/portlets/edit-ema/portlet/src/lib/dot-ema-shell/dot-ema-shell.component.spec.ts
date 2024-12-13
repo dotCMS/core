@@ -566,6 +566,23 @@ describe('DotEmaShellComponent', () => {
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ url: '/my-awesome-page' });
             });
 
+            it('should get the workflow action when an `UPDATE_WORKFLOW_ACTION` event is received', () => {
+                const spyGetWorkflowActions = jest.spyOn(store, 'getWorkflowActions');
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    DIALOG_ACTION_EVENT({
+                        name: NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(spyGetWorkflowActions).toHaveBeenCalled();
+            });
+
             it('should trigger a store reload if the url is the same', () => {
                 const spyReload = jest.spyOn(store, 'reloadCurrentPage');
                 const spyLocation = jest.spyOn(location, 'go');

@@ -8,12 +8,7 @@ import { Router } from '@angular/router';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import {
-    DotExperimentsService,
-    DotLanguagesService,
-    DotLicenseService,
-    DotWorkflowsActionsService
-} from '@dotcms/data-access';
+import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
@@ -44,7 +39,6 @@ export function withLoad() {
             const dotLicenseService = inject(DotLicenseService);
             const dotExperimentsService = inject(DotExperimentsService);
             const loginService = inject(LoginService);
-            const dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
 
             return {
                 /**
@@ -86,11 +80,10 @@ export function withLoad() {
                                             return of(pageAsset);
                                         }
 
+                                        const url = vanityUrl.forwardTo.replace('/', '');
                                         router.navigate([], {
                                             queryParamsHandling: 'merge',
-                                            queryParams: {
-                                                url: vanityUrl.forwardTo.replace('/', '')
-                                            }
+                                            queryParams: { url }
                                         });
 
                                         // EMPTY is a simple Observable that only emits the complete notification.
@@ -188,17 +181,14 @@ export function withLoad() {
                             return dotPageApiService
                                 .getClientPage(store.pageParams(), store.clientRequestProps())
                                 .pipe(
-                                    tap((pageAsset) =>
-                                        store.getWorkflowActions(pageAsset.page.inode)
-                                    ),
+                                    tap((pageAsset) => {
+                                        store.getWorkflowActions(pageAsset.page.inode);
+                                    }),
                                     switchMap((pageAPIResponse) => {
                                         return forkJoin({
                                             pageAPIResponse: of(pageAPIResponse),
                                             languages: dotLanguagesService.getLanguagesUsedPage(
                                                 pageAPIResponse.page.identifier
-                                            ),
-                                            workflowActions: dotWorkflowsActionsService.getByInode(
-                                                pageAPIResponse.page.inode
                                             )
                                         });
                                     }),
