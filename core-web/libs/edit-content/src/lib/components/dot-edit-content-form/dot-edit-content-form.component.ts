@@ -36,6 +36,7 @@ import {
     FLATTENED_FIELD_TYPES
 } from '../../models/dot-edit-content-field.constant';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { getFinalCastedValue, isFilteredType } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
@@ -98,7 +99,7 @@ export class DotEditContentFormComponent implements OnInit {
      *
      * @memberof DotEditContentFormComponent
      */
-    changeValue = output<Record<string, string>>();
+    changeValue = output<FormValues>();
 
     /**
      * Computed property that retrieves the filtered fields from the store.
@@ -108,6 +109,10 @@ export class DotEditContentFormComponent implements OnInit {
      */
     $filteredFields = computed(
         () => this.$store.contentType()?.fields?.filter(isFilteredType) ?? []
+    );
+
+    $formFields = computed(
+        () => this.$store.contentType()?.fields?.filter((field) => !isFilteredType(field)) ?? []
     );
 
     /**
@@ -158,72 +163,62 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
+     * Handles form value changes and emits the processed value.
+     *
+     * @param {Record<string, any>} value The raw form value
+     * @memberof DotEditContentFormComponent
+     */
+    onFormChange(value: Record<string, string>) {
+        const processedValue = this.processFormValue(value);
+        this.changeValue.emit(processedValue);
+    }
+
+    /**
      * Initializes a listener for form value changes.
-     * When the form value changes, it calls the onFormChange method with the new value.
-     * The listener is automatically unsubscribed when the component is destroyed.
      *
      * @private
      * @memberof DotEditContentFormComponent
      */
     private initializeFormListener() {
         this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((value) => {
-            const processedValue = this.processFormValue(value);
-            this.changeValue.emit(processedValue);
+            this.onFormChange(value);
         });
-    }
-
-    /**
-     * Emits the form value through the `formSubmit` event.
-     *
-     * @param {*} value
-     * @memberof DotEditContentFormComponent
-     */
-    onFormChange(value) {
-        this.$filteredFields().forEach(({ variable, fieldType }) => {
-            if (FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
-                value[variable] = value[variable]?.join(',');
-            }
-
-            if (CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)) {
-                value[variable] = value[variable]
-                    ?.toISOString()
-                    .replace(/T|\.\d{3}Z/g, (match: string) => (match === 'T' ? ' ' : '')); // To remove the T and .000Z from the date)
-            }
-        });
-
-        this.changeValue.emit(value);
     }
 
     /**
      * Processes the form value, applying specific transformations for certain field types.
      *
      * @private
-     * @param {Record<string, any>} value The raw form value
+     * @param {Record<string, string>} value The raw form value
      * @returns {Record<string, string>} The processed form value
      * @memberof DotEditContentFormComponent
      */
     private processFormValue(
         value: Record<string, string | string[] | Date | null | undefined>
-    ): Record<string, string> {
+    ): FormValues {
         return Object.fromEntries(
-            this.$filteredFields().map(({ variable, fieldType }) => {
-                let fieldValue = value[variable];
+            Object.entries(value).map(([key, fieldValue]) => {
+                const field = this.$formFields().find((f) => f.variable === key);
+
+                if (!field) {
+                    return [key, fieldValue];
+                }
 
                 if (
                     Array.isArray(fieldValue) &&
-                    FLATTENED_FIELD_TYPES.includes(fieldType as FIELD_TYPES)
+                    FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
                 ) {
                     fieldValue = fieldValue.join(',');
                 } else if (
                     fieldValue instanceof Date &&
-                    CALENDAR_FIELD_TYPES.includes(fieldType as FIELD_TYPES)
+                    CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
                 ) {
                     fieldValue = fieldValue
                         .toISOString()
                         .replace(/T|\.\d{3}Z/g, (match) => (match === 'T' ? ' ' : ''));
                 }
 
-                return [variable, fieldValue?.toString() ?? ''];
+                return [key, fieldValue ?? ''];
             })
         );
     }
@@ -236,13 +231,15 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     private initializeForm() {
-        this.form = this.#fb.group({});
-        this.$store.contentType().fields.forEach((field) => {
-            if (!isFilteredType(field)) {
-                const control = this.createFormControl(field);
-                this.form.addControl(field.variable, control);
-            }
-        });
+        const controls = this.$formFields().reduce(
+            (acc, field) => ({
+                ...acc,
+                [field.variable]: this.createFormControl(field)
+            }),
+            {}
+        );
+
+        this.form = this.#fb.group(controls);
     }
 
     /**

@@ -1,0 +1,137 @@
+@let data = store.data();
+@let pagination = store.pagination();
+
+@if ($visible()) {
+    @defer {
+        <p-dialog
+            [modal]="true"
+            [(visible)]="$visible"
+            (onShow)="onShowDialog()"
+            (onHide)="emitSelectedItems()"
+            [draggable]="false"
+            dataKey="id"
+            appendTo="body"
+            width="90%"
+            [style]="{ width: '90%', 'max-width': '1040px', height: '90vh' }">
+            <ng-template pTemplate="header">
+                <div class="flex items-center justify-center gap-2">
+                    <i class="pi pi-search"></i>
+                    <span class="p-dialog-title">
+                        {{ 'dot.file.relationship.dialog.search' | dm }}
+                    </span>
+                </div>
+            </ng-template>
+            <p-table
+                #datatable
+                [value]="data"
+                selectionMode="multiple"
+                [(selection)]="$selectedItems"
+                [loading]="store.isLoading()"
+                [paginator]="true"
+                [first]="pagination.offset"
+                [rows]="pagination.rowsPerPage"
+                [globalFilterFields]="['title', 'step', 'description']"
+                styleClass="dotTable p-datatable-existing-content">
+                <ng-template pTemplate="caption">
+                    <div class="flex justify-content-between align-items-center w-full">
+                        <div class="flex align-items-center gap-2">
+                            <div class="flex-none">
+                                <dot-search
+                                    (onSearch)="datatable.filterGlobal($event, 'contains')" />
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="text-primary-500">
+                                    {{
+                                        'dot.file.relationship.dialog.per.page'
+                                            | dm: [pagination.rowsPerPage.toString()]
+                                    }}
+                                </p>
+                            </div>
+                        </div>
+                        <dot-pagination
+                            [currentPageReportLayout]="'left'"
+                            (nextPage)="store.nextPage()"
+                            (previousPage)="store.previousPage()"
+                            [totalPages]="store.totalPages()"
+                            [currentPage]="pagination.currentPage" />
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="header" styleClass="relative">
+                    <tr>
+                        <th scope="col" style="width: 4rem"><p-tableHeaderCheckbox /></th>
+                        <th scope="col" pSortableColumn="title">
+                            Title
+                            <p-sortIcon field="title" />
+                        </th>
+                        <th scope="col" pSortableColumn="step">
+                            Step
+                            <p-sortIcon field="step" />
+                        </th>
+                        <th scope="col" pSortableColumn="description">
+                            Description
+                            <p-sortIcon field="description" />
+                        </th>
+                        <th scope="col" pSortableColumn="lastUpdate">
+                            Last Update
+                            <p-sortIcon field="lastUpdate" />
+                        </th>
+                        <th scope="col">Menu</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="6">
+                            <div class="flex p-2 gap-2 justify-content-center">
+                                <p class="text-500">
+                                    {{ 'dot.file.relationship.dialog.search.empty.content' | dm }}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-item>
+                    <tr [class.p-highlight]="checkIfSelected(item)">
+                        <td>
+                            <p-tableCheckbox [value]="item" />
+                        </td>
+                        <td class="max-w-12rem">
+                            <p class="truncate-text">{{ item.title }}</p>
+                        </td>
+                        <td>{{ item.step }}</td>
+                        <td class="max-w-12rem">
+                            <p class="truncate-text">{{ item.description }}</p>
+                        </td>
+                        <td>{{ item.lastUpdate | date }}</td>
+                        <td>
+                            <i class="pi pi-pencil"></i>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+            <ng-template pTemplate="footer">
+                <div class="flex justify-content-between">
+                    <div>
+                        <p class="text-primary-500">
+                            {{
+                                'dot.file.relationship.dialog.selected.items'
+                                    | dm: [$selectedItems().length.toString()]
+                            }}
+                        </p>
+                    </div>
+                    <div>
+                        <p-button
+                            [label]="'Cancel' | dm"
+                            [outlined]="true"
+                            (onClick)="closeDialog()"
+                            [text]="true"
+                            severity="primary" />
+                        <p-button
+                            [disabled]="$isApplyDisabled()"
+                            (onClick)="closeDialog()"
+                            [label]="$applyLabel()" />
+                    </div>
+                </div>
+            </ng-template>
+        </p-dialog>
+    }
+}

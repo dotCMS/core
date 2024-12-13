@@ -1,6 +1,9 @@
 package com.dotcms.analytics.track.collectors;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import org.junit.Assert;
@@ -16,7 +19,7 @@ import java.util.Optional;
  * @author jsanca
  *
  */
-public class FilesCollectorTest {
+public class FilesCollectorTest extends UnitTestBase {
 
     /**
      * Method to test: FilesCollector#collect
@@ -29,9 +32,24 @@ public class FilesCollectorTest {
         final FilesCollector filesCollector = new FilesCollector() {
             @Override
             protected Optional<Contentlet> getFileAsset(String uri, Host host, Long languageId) {
+
                 final Contentlet contentlet = Mockito.mock(Contentlet.class);
                 Mockito.when(contentlet.getIdentifier()).thenReturn("1");
                 Mockito.when(contentlet.getTitle()).thenReturn("Test");
+                try {
+                Mockito.when(contentlet.isLive()).thenReturn(true);
+                Mockito.when(contentlet.isWorking()).thenReturn(true);
+                } catch (Exception e) {
+
+                }
+                final ContentType contentType = Mockito.mock(ContentType.class);
+                Mockito.when(contentlet.getContentType()).thenReturn(contentType);
+                Mockito.when(contentType.id()).thenReturn("1");
+                Mockito.when(contentType.name()).thenReturn("file");
+                Mockito.when(contentType.variable()).thenReturn("file");
+                final BaseContentType baseType = Mockito.mock(BaseContentType.class);
+                Mockito.when(contentType.baseType()).thenReturn(baseType);
+                Mockito.when(baseType.name()).thenReturn("file");
                 return Optional.ofNullable(contentlet);
             }
         };
@@ -69,13 +87,12 @@ public class FilesCollectorTest {
 
         final Map<String, String> fileObject = (Map<String, String>) collectorPayloadBean.get("object");
         Assert.assertNotNull(fileObject);
-        Assert.assertEquals("1", fileObject.get("id"));
-        Assert.assertEquals("Test", fileObject.get("title"));
-        Assert.assertEquals("/test-path", fileObject.get("url"));
-        Assert.assertEquals("/test-path", collectorPayloadBean.get("url"));
-        Assert.assertEquals("www.dotcms.com", collectorPayloadBean.get("host"));
-        Assert.assertEquals("en", collectorPayloadBean.get("language"));
-        Assert.assertEquals("1", collectorPayloadBean.get("site"));
-        Assert.assertEquals(EventType.FILE_REQUEST.getType(), collectorPayloadBean.get("event_type"));
+        Assert.assertEquals("1", fileObject.get(Collector.ID));
+        Assert.assertEquals("Test", fileObject.get(Collector.TITLE));
+        Assert.assertEquals("/test-path", fileObject.get(Collector.URL));
+        Assert.assertEquals("www.dotcms.com", collectorPayloadBean.get(Collector.SITE_NAME));
+        Assert.assertEquals("en", collectorPayloadBean.get(Collector.LANGUAGE));
+        Assert.assertEquals("1", collectorPayloadBean.get(Collector.SITE_ID));
+        Assert.assertEquals(EventType.FILE_REQUEST.getType(), collectorPayloadBean.get(Collector.EVENT_TYPE));
     }
 }

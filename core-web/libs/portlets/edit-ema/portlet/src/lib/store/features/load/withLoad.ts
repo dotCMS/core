@@ -49,16 +49,25 @@ export function withLoad() {
                  */
                 loadPageAsset: rxMethod<Partial<DotPageApiParams>>(
                     pipe(
-                        tap(() => store.resetClientConfiguration()),
-                        tap(() => {
-                            patchState(store, { status: UVE_STATUS.LOADING, isClientReady: false });
-                        }),
-                        switchMap((params) => {
-                            const pageParams = {
-                                ...(store.pageParams() ?? {}),
-                                ...params
-                            } as DotPageApiParams;
+                        map((params) => {
+                            if (!store.pageParams()) {
+                                return params as DotPageApiParams;
+                            }
 
+                            return {
+                                ...store.pageParams(),
+                                ...params
+                            };
+                        }),
+                        tap((pageParams) => {
+                            store.resetClientConfiguration();
+                            patchState(store, {
+                                status: UVE_STATUS.LOADING,
+                                isClientReady: false,
+                                pageParams
+                            });
+                        }),
+                        switchMap((pageParams) => {
                             return forkJoin({
                                 pageAsset: dotPageApiService.get(pageParams).pipe(
                                     // This logic should be handled in the Shell component using an effect
@@ -100,10 +109,13 @@ export function withLoad() {
                                         });
                                     }
                                 }),
-                                switchMap(({ pageAsset, isEnterprise, currentUser }) =>
-                                    forkJoin({
+                                switchMap(({ pageAsset, isEnterprise, currentUser }) => {
+                                    const experimentId =
+                                        pageParams?.experimentId ?? pageAsset?.runningExperimentId;
+
+                                    return forkJoin({
                                         experiment: dotExperimentsService.getById(
-                                            pageParams?.experimentId || DEFAULT_VARIANT_ID
+                                            experimentId ?? DEFAULT_VARIANT_ID
                                         ),
                                         languages: dotLanguagesService.getLanguagesUsedPage(
                                             pageAsset.page.identifier
@@ -125,7 +137,6 @@ export function withLoad() {
                                                 const isTraditionalPage = !pageParams.clientHost; // If we don't send the clientHost we are using as VTL page
 
                                                 patchState(store, {
-                                                    pageParams,
                                                     pageAPIResponse: pageAsset,
                                                     isEnterprise,
                                                     currentUser,
@@ -145,8 +156,8 @@ export function withLoad() {
                                                 });
                                             }
                                         })
-                                    )
-                                )
+                                    );
+                                })
                             );
                         })
                     )

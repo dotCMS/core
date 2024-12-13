@@ -142,7 +142,15 @@
                 [field]="field" />
         }
     }
+    @case (fieldTypes.RELATIONSHIP) {
+        @defer (on immediate) {
+            <dot-edit-content-relationship-field
+                [formControlName]="field.variable"
+                [attr.data-testId]="'field-' + field.variable"
+                [field]="field" />
+        }
+    }
 }
-@if (field.hint) {
+@if (field.hint && field.fieldType !== fieldTypes.RELATIONSHIP) {
     <small [attr.data-testId]="'hint-' + field.variable">{{ field.hint }}</small>
 }

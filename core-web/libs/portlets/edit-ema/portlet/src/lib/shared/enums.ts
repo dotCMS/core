@@ -12,7 +12,7 @@ export enum NG_CUSTOM_EVENTS {
     OPEN_WIZARD = 'workflow-wizard',
     DIALOG_CLOSED = 'dialog-closed',
     EDIT_CONTENTLET_UPDATED = 'edit-contentlet-data-updated',
-    URL_IS_CHANGED = 'url-is-changed'
+    LANGUAGE_IS_CHANGED = 'language-is-changed'
 }
 
 // Status of the whole UVE

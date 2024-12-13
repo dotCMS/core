@@ -4,7 +4,7 @@ export type TreeNodeData = {
     type: 'site' | 'folder';
     path: string;
     hostname: string;
-    identifier: string;
+    id: string;
 };
 
 export type TreeNodeItem = TreeNode<TreeNodeData>;
@@ -27,7 +27,7 @@ export interface TreeNodeSelectEvent<T> {
 }
 
 export interface DotFolder {
-    identifier: string;
+    id: string;
     hostName: string;
     path: string;
     addChildrenAllowed: boolean;

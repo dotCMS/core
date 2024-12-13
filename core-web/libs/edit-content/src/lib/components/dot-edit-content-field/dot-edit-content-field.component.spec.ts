@@ -4,7 +4,8 @@ import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Provider, signal, Type } from '@angular/core';
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -34,6 +35,7 @@ import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
+import { DotEditContentRelationshipFieldComponent } from '../../fields/dot-edit-content-relationship-field/dot-edit-content-relationship-field.component';
 import { DotEditContentSelectFieldComponent } from '../../fields/dot-edit-content-select-field/dot-edit-content-select-field.component';
 import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-tag-field/dot-edit-content-tag-field.component';
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
@@ -73,6 +75,9 @@ declare module '@tiptap/core' {
 const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTestBed> = {
     // We had to use unknown because components have different types.
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
+    [FIELD_TYPES.RELATIONSHIP]: {
+        component: DotEditContentRelationshipFieldComponent
+    },
     [FIELD_TYPES.FILE]: {
         component: DotEditContentFileFieldComponent,
         providers: [
@@ -209,7 +214,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     let spectator: Spectator<DotEditContentFieldComponent>;
 
     const createComponent = createComponentFactory({
-        imports: [HttpClientTestingModule, ...(fieldTestBed?.imports || [])],
+        imports: [...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
         componentViewProviders: [
@@ -218,7 +223,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
                 useValue: createFormGroupDirectiveMock()
             }
         ],
-        providers: [FormGroupDirective, mockProvider(DotHttpErrorManagerService)]
+        providers: [
+            FormGroupDirective,
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            ...(fieldTestBed?.providers || []),
+            mockProvider(DotHttpErrorManagerService)
+        ]
     });
 
     beforeEach(async () => {
@@ -238,11 +249,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             expect(label?.textContent).toContain(fieldMock.name);
         });
 
-        it('should render the hint if present', () => {
-            spectator.detectChanges();
-            const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
-            expect(hint?.textContent).toContain(fieldMock.hint);
-        });
+        if (fieldMock.fieldType !== FIELD_TYPES.RELATIONSHIP) {
+            it('should render the hint if present', () => {
+                spectator.detectChanges();
+                const hint = spectator.query(byTestId(`hint-${fieldMock.variable}`));
+                expect(hint?.textContent).toContain(fieldMock.hint);
+            });
+        }
 
         it('should render the correct field type', () => {
             spectator.detectChanges();

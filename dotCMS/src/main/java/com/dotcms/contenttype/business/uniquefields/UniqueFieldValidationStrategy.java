@@ -4,6 +4,7 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -102,7 +103,6 @@ public interface  UniqueFieldValidationStrategy {
     default void afterSaved(final Contentlet contentlet, final boolean isNew) throws DotDataException, DotSecurityException {
         // Default implementation does nothing
     }
-
     default void recalculate(final Field field, final boolean uniquePerSite) throws UniqueFieldValueDuplicatedException {
         // Default implementation does nothing
     }
@@ -118,6 +118,59 @@ public interface  UniqueFieldValidationStrategy {
         if (!field.unique()) {
             throw new IllegalArgumentException(String.format("Field '%s' is not marked as 'unique'", field.variable()));
         }
+    }
+
+    /**
+     * Clean the Extra unique validation field table after a {@link Contentlet} have been removed.
+     * We need to remove all the unique values of this {@link Contentlet} and {@link com.dotmarketing.portlets.languagesmanager.model.Language}
+     * from the extra table.
+     *
+     * @param contentlet
+     */
+    default void cleanUp(final Contentlet contentlet, final boolean deleteAllVariant) throws DotDataException {
+        //Default implementation do nothing
+    }
+
+    /**
+     * Method call after publish a {@link Contentlet} it allow the {@link UniqueFieldValidationStrategy} do any extra
+     * work that it need it.
+     *
+     * @param inode Published {@link Contentlet}'s inode
+     */
+    default void afterPublish(final String inode) {
+        //Default implementation do nothing
+    }
+
+    /**
+     * Method call after unpublished a {@link Contentlet} it allow thw {@link UniqueFieldValidationStrategy} do any extra
+     * work that it need it.
+     *
+     * @param versionInfo {@link Contentlet}'s {@link VersionInfo} before un publish
+     */
+    default void afterUnpublish(final VersionInfo versionInfo){
+        //Default implementation do nothing
+    }
+
+    /**
+     * Method called after delete a Unique {@link Field}, to allow the {@link UniqueFieldValidationStrategy} do any extra
+     * work that it need it.
+     *
+     * @param field deleted field
+     * @throws DotDataException
+     */
+    default void cleanUp(final Field field) throws DotDataException {
+        //Default implementation do nothing
+    }
+
+    /**
+     * Method called after delete a {@link ContentType}, to allow the {@link UniqueFieldValidationStrategy} do any extra
+     * work that it need it.
+     *
+     * @param contentType deleted ContentType
+     * @throws DotDataException
+     */
+    default void cleanUp(final ContentType contentType) throws DotDataException {
+        //Default implementation do nothing
     }
 
 }

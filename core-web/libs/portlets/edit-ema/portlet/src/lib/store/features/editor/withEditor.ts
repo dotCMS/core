@@ -20,6 +20,7 @@ import {
 } from './models';
 import { withSave } from './save/withSave';
 import { withEditorToolbar } from './toolbar/withEditorToolbar';
+import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
     Container,
@@ -65,6 +66,7 @@ export function withEditor() {
             state: type<UVEState>()
         },
         withState<EditorState>(initialState),
+        withUVEToolbar(),
         withEditorToolbar(),
         withSave(),
         withClient(),
@@ -112,9 +114,10 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const isLoading = !isClientReady || store.status() === UVE_STATUS.LOADING;
 
-                    const isPageReady = isTraditionalPage || isClientReady;
+                    const isPreview = params?.preview === 'true';
+                    const isPageReady = isTraditionalPage || isClientReady || isPreview;
+                    const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
 
@@ -129,8 +132,7 @@ export function withEditor() {
                         !!contentletArea && canEditPage && isEditState && !isScrolling;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-
-                    const showPalette = isEnterprise && canEditPage && isEditState;
+                    const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 

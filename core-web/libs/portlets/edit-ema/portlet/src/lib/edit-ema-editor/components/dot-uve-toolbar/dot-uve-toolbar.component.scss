@@ -1,7 +1,44 @@
 @use "variables" as *;
 
+::ng-deep {
+    .uve-toolbar {
+        padding: 0 $spacing-4;
+        transition: padding 0.2s ease;
+        border-color: $color-palette-primary-200;
+        border-top: 1px solid transparent; // Avoid jump
+    }
+
+    .uve-toolbar-preview {
+        border-top-color: $color-palette-primary-200;
+        padding-inline: $spacing-5;
+    }
+
+    .p-chip.uve-toolbar-chips {
+        height: $field-height-sm;
+        background-color: $color-palette-primary-op-10;
+        border-color: $color-palette-primary-op-10;
+    }
+}
+
 .p-toolbar-group-start,
-.p-toolbar-group-end {
+.p-toolbar-group-end,
+.p-toolbar-group-center {
+    padding: $spacing-1 0;
     align-items: center;
     gap: $spacing-1;
+    align-self: stretch;
+}
+
+.vertical-divider {
+    align-self: stretch;
+    position: relative;
+    &::before {
+        border-left: 1px solid $color-palette-primary-200;
+        position: absolute;
+        display: block;
+        top: 0;
+        left: 50%;
+        height: 100%;
+        content: "";
+    }
 }

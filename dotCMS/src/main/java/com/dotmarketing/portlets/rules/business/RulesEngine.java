@@ -172,19 +172,7 @@ public final class RulesEngine {
         if (!UtilMethods.isSet(request)) {
         	throw new DotRuntimeException("ERROR: HttpServletRequest is null");
         }
-        
-        // do not run rules in admin mode
-        PageMode mode= PageMode.get(request);
-        if(mode.isAdmin) {
-          final boolean fireRulesFromParameter =Try.of(()->Boolean.valueOf
-				  (request.getParameter("fireRules"))).getOrElse(false);
-          final boolean fireRulesFromAttribute =Try.of(()-> Boolean.valueOf((Boolean)
-				  request.getAttribute("fireRules"))).getOrElse(false);
 
-          if(!fireRulesFromParameter && !fireRulesFromAttribute) {
-            return;
-          }
-        }
         
         final Set<String> alreadyFiredRulesFor =request.getAttribute(DOT_RULES_FIRED_ALREADY)!=null?(Set<String>)request.getAttribute(DOT_RULES_FIRED_ALREADY):new HashSet<String>();
         final String ruleRunKey = parent.getIdentifier() +"_"+ fireOn.name();

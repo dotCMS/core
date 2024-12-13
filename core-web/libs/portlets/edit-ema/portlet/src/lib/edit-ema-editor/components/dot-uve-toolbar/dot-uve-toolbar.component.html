@@ -1,24 +1,125 @@
-<p-toolbar>
-    <div class="p-toolbar-group-start">
-        <p-button icon="pi pi-eye" styleClass="p-button-text" data-testId="uve-toolbar-preview" />
+@let preview = $isPreviewMode();
+@let runningExperiment = $toolbar().runningExperiment;
 
-        <p-button icon="pi pi-star" styleClass="p-button-text" data-testId="uve-toolbar-bookmark" />
-
-        <p-button
-            icon="pi pi-external-link"
-            styleClass="p-button-text"
-            data-testId="uve-toolbar-copy-url" />
-
-        <p-button
-            label="API"
-            styleClass="p-button-text p-button-sm"
-            data-testId="uve-toolbar-api-link" />
+<p-toolbar [styleClass]="$styleToolbarClass()">
+    <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview }">
+        @if (preview) {
+            <ng-container [ngTemplateOutlet]="previewLeftOptionsTemplate"></ng-container>
+        } @else {
+            <ng-container [ngTemplateOutlet]="editLeftOptionsTemplate"></ng-container>
+        }
     </div>
+
+    @if (preview) {
+        <div class="p-toolbar-group-center">
+            <div>
+                <p-button
+                    icon="pi pi-chevron-left"
+                    styleClass="p-button-text p-button-sm"
+                    data-testId="arrow-left" />
+                <p-button
+                    icon="pi pi-chevron-right"
+                    styleClass="p-button-text p-button-sm"
+                    data-testId="arrow-right" />
+            </div>
+            <p-calendar
+                inputStyleClass="p-inputtext-sm"
+                [(ngModel)]="date"
+                [readonlyInput]="true" />
+            <p-chip styleClass="uve-toolbar-chips" label="Today" alt="Page Day" />
+        </div>
+    }
 
     <div class="p-toolbar-group-end">
-        <span data-testId="uve-toolbar-running-experiment">Experiments</span>
-        <span data-testId="uve-toolbar-language-selector">Language</span>
-        <span data-testId="uve-toolbar-persona-selector">Persona</span>
-        <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
+        @if (runningExperiment) {
+            <dot-ema-running-experiment
+                [runningExperiment]="runningExperiment"
+                data-testId="uve-toolbar-running-experiment" />
+        }
+        <dot-edit-ema-language-selector
+            #languageSelector
+            (selected)="onLanguageSelected($event)"
+            [language]="$toolbar().currentLanguage"
+            data-testId="uve-toolbar-language-selector" />
+
+        <dot-edit-ema-persona-selector
+            (selected)="onPersonaSelected($event)"
+            (despersonalize)="onDespersonalize($event)"
+            [pageId]="$personaSelectorProps().pageId"
+            [value]="$personaSelectorProps().value"
+            #personaSelector
+            data-testId="uve-toolbar-persona-selector" />
+
+        @if (!preview) {
+            <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
+        }
     </div>
 </p-toolbar>
+
+<ng-template #editLeftOptionsTemplate>
+    <p-button
+        pTooltip="Preview Mode"
+        icon="pi pi-eye"
+        styleClass="p-button-text p-button-sm"
+        data-testId="uve-toolbar-preview"
+        (click)="setPreviewMode()" />
+
+    <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
+
+    <p-button
+        pTooltip="Copy URL"
+        icon="pi pi-external-link"
+        styleClass="p-button-text p-button-sm"
+        (cdkCopyToClipboardCopied)="triggerCopyToast()"
+        [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
+        data-testId="uve-toolbar-copy-url" />
+
+    <a
+        title="Page API URL"
+        pTooltip="Page API URL"
+        pButton
+        label="API"
+        class="p-button-text p-button-sm"
+        target="_blank"
+        data-testId="uve-toolbar-api-link"
+        [href]="$apiURL()"></a>
+</ng-template>
+
+<ng-template #previewLeftOptionsTemplate>
+    <p-button
+        icon="pi pi-times"
+        styleClass="p-button-text p-button-sm"
+        (click)="setEditMode()"
+        data-testId="close-preview-mode" />
+
+    <div class="vertical-divider"></div>
+
+    <p-button
+        icon="pi pi-desktop"
+        pTooltip="Desktop Preview"
+        styleClass="p-button-text p-button-sm"
+        data-testId="desktop-preview" />
+
+    <p-button
+        icon="pi pi-tablet"
+        pTooltip="Tablet Preview"
+        styleClass="p-button-text p-button-sm"
+        data-testId="tablet-preview" />
+
+    <p-button
+        icon="pi pi-mobile"
+        pTooltip="Mobile Preview"
+        styleClass="p-button-text p-button-sm"
+        data-testId="mobile-preview" />
+
+    <p-splitButton
+        styleClass="p-button-sm"
+        label="More"
+        [model]="[]"
+        text
+        data-testId="more-devices-preview" />
+</ng-template>
+
+@if ($toolbar().showInfoDisplay) {
+    <dot-ema-info-display data-testId="info-display" />
+}

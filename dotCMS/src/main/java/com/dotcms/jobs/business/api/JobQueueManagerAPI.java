@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.api;
 
+import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.error.CircuitBreaker;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.RetryStrategy;
@@ -51,12 +52,19 @@ public interface JobQueueManagerAPI {
     void close() throws Exception;
 
     /**
+     * Registers a job processor
+     *
+     * @param processor The job processor to register
+     */
+    void registerProcessor(Class<? extends JobProcessor> processor);
+
+    /**
      * Registers a job processor for a specific queue.
      *
      * @param queueName The name of the queue
      * @param processor The job processor to register
      */
-    void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor);
+    void registerProcessor(String queueName, Class<? extends JobProcessor> processor);
 
     /**
      * Retrieves the job processors for all registered queues.
@@ -99,6 +107,78 @@ public interface JobQueueManagerAPI {
             throws DotDataException;
 
     /**
+     * Retrieves a list of completed jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of completed jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getCompletedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of canceled jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of canceled jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getCanceledJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of failed jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of failed jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getFailedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of abandoned jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getAbandonedJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of successful jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of successful jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getSuccessfulJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
+     * Retrieves a list of all jobs for a specific queue.
+     *
+     * @param queueName The name of the queue
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return A result object containing the list of jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getJobs(String queueName, int page, int pageSize)
+            throws DotDataException;
+
+    /**
      * Retrieves a list of jobs.
      *
      * @param page     The page number
@@ -129,6 +209,16 @@ public interface JobQueueManagerAPI {
     JobPaginatedResult getCompletedJobs(int page, int pageSize) throws DotDataException;
 
     /**
+     * Retrieves a list of successful jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of successful jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) throws DotDataException;
+
+    /**
      * Retrieves a list of canceled jobs
      *
      * @param page     The page number
@@ -149,6 +239,16 @@ public interface JobQueueManagerAPI {
     JobPaginatedResult getFailedJobs(int page, int pageSize) throws DotDataException;
 
     /**
+     * Retrieves a list of abandoned jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     * @throws DotDataException if there's an error fetching the jobs
+     */
+    JobPaginatedResult getAbandonedJobs(int page, int pageSize) throws DotDataException;
+
+    /**
      * Cancels a job.
      *
      * @param jobId The ID of the job to cancel
@@ -161,8 +261,24 @@ public interface JobQueueManagerAPI {
      *
      * @param jobId   The ID of the job to watch
      * @param watcher The consumer to be notified of job updates
+     * @return A JobWatcher instance representing the registered watcher
      */
-    void watchJob(String jobId, Consumer<Job> watcher);
+    JobWatcher watchJob(String jobId, Consumer<Job> watcher);
+
+    /**
+     * Removes a watcher for a specific job.
+     *
+     * @param jobId   The ID of the job to unwatch
+     * @param watcher The watcher to remove
+     */
+    void removeJobWatcher(String jobId, JobWatcher watcher);
+
+    /**
+     * Removes all watchers for a specific job.
+     *
+     * @param jobId The ID of the job
+     */
+    void removeAllJobWatchers(String jobId);
 
     /**
      * Sets a retry strategy for a specific queue.

@@ -525,6 +525,30 @@ describe('withEditor', () => {
         });
     });
 
+    describe('withUVEToolbar', () => {
+        describe('withComputed', () => {
+            describe('$toolbarProps', () => {
+                it('should return the base info', () => {
+                    expect(store.$uveToolbar()).toEqual({
+                        editor: {
+                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
+                            copyUrl:
+                                'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
+                        },
+                        preview: null,
+                        currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
+                        urlContentMap: null,
+                        runningExperiment: null,
+                        workflowActionsInode: MOCK_RESPONSE_HEADLESS.page.inode,
+                        unlockButton: null,
+                        showInfoDisplay: false
+                    });
+                });
+            });
+        });
+    });
+
     describe('withSave', () => {
         describe('withMethods', () => {
             describe('savePage', () => {
@@ -646,6 +670,13 @@ describe('withEditor', () => {
                 store.setIsClientReady(true);
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
+            });
+
+            it('should not have opacity or progressBar in preview mode', () => {
+                patchState(store, { pageParams: { ...emptyParams, preview: 'true' } });
+
+                expect(store.$editorProps().iframe.opacity).toBe('1');
+                expect(store.$editorProps().progressBar).toBe(false);
             });
 
             describe('showDialogs', () => {

@@ -1,0 +1,142 @@
+# action.yml
+name: 'Label-based Conditional Labeling'
+on:
+  workflow_call:
+    inputs:
+      issue_number:
+        description: 'Issue number'
+        type: number
+        required: true
+      evaluating_labels:
+        description: 'Comma delimited list of labels to evaluate against'
+        type: string
+        required: true
+      evaluated_labels:
+        description: 'Comma delimited list of labels to be evaluated'
+        type: string
+        required: true
+      ignore_issue_labels:
+        description: 'Comma delimited list of issue labels to ignore'
+        type: string
+        required: false
+        default: ''
+      new_labels:
+        description: 'Comma delimited list of new labels to be added to issue'
+        type: string
+        required: true
+    secrets:
+      CI_MACHINE_TOKEN:
+        description: 'CI machine token'
+        required: true
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number'
+        type: number
+        required: true
+        default: 1
+      evaluating_labels:
+        description: 'Comma delimited list of labels to evaluate against'
+        type: string
+        required: true
+      evaluated_labels:
+        description: 'Comma delimited list of labels to be evaluated'
+        type: string
+        required: true
+      ignore_issue_labels:
+        description: 'Comma delimited list of issue labels to ignore'
+        type: string
+        required: false
+        default: ''
+      new_labels:
+        description: 'Comma delimited list of new labels to be added to issue'
+        type: string
+        required: true
+
+jobs:
+  conditional-labeling:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    env:
+      REPO: core
+    steps:
+      - run: echo 'GitHub context'
+        env:
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
+      - name: Resolve Labels
+        id: resolve-labels
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            const evaluatingLabels = '${{ inputs.evaluating_labels }}'.split(',').map(lbl => lbl.trim());
+            
+            let issueNumber;
+            const issue = context.payload.issue;
+            if (!issue && '${{ inputs.issue_number }}'.trim() === '') {
+              core.warning('Issue number is not provided');
+              process.exit(0);
+            }
+            
+            if ('${{ inputs.evaluated_labels }}'.trim() === '') {
+              core.warning('New labels are missing, exiting');
+              process.exit(0);
+            }
+            
+            const evaluatedLabels = '${{ inputs.evaluated_labels }}'.split(',').map(lbl => lbl.trim());
+            console.log(`Received these labels to be evaluated: [${evaluatedLabels.join(', ')}]`);
+            
+            const filteredLabels = evaluatedLabels.filter(lbl => evaluatingLabels.includes(lbl));
+            if (filteredLabels.length === 0) {
+              core.warning(`Evaluated labels are not in [${evaluatingLabels.join(', ')}] label group, exiting`);
+              process.exit(0);
+            }
+            
+            core.setOutput('labels', JSON.stringify(filteredLabels));
+      - name: Add Labels
+        uses: actions/github-script@v7
+        if: success() && steps.resolve-labels.outputs.labels != ''
+        with:
+          result-encoding: string
+          retries: 3
+          retry-exempt-status-codes: 400,401
+          script: |
+            const ignoreIssueLabels = '${{ inputs.ignore_issue_labels }}'.split(',').map(lbl => lbl.trim());
+            
+            async function getIssue(issueNumber) {
+              const response = await github.rest.issues.get({
+                issue_number: issueNumber,
+                owner: '${{ github.repository_owner }}',
+                repo: '${{ env.REPO }}'
+              });
+              return response.data;
+            }
+            
+            if ('${{ inputs.issue_number }}'.trim() === '') {
+              core.warning('Issue number is missing, exiting');
+              process.exit(0);
+            }
+            
+            const issue = await getIssue(${{ inputs.issue_number }});
+            if (!issue) {
+              core.warning('Issue [${{ inputs.issue_number }}] not found');
+              process.exit(0);
+            }
+            
+            console.log(`Issue: ${JSON.stringify(issue, null, 2)}`);
+            const issueNumber = issue.number;
+            const foundLabel = ignoreIssueLabels.find(lbl => issue.labels.includes(lbl));
+            if (foundLabel) {
+              core.warning(`Issue does have label in [${ignoreIssueLabels.join(', ')}] ignore labels group, aborting...`);
+              process.exit(0);
+            }
+
+            const newLabels = '${{ inputs.new_labels }}'.split(',').map(lbl => lbl.trim());
+            await github.rest.issues.addLabels({
+              issue_number: issueNumber,
+              owner: '${{ github.repository_owner }}',
+              repo: '${{ env.REPO }}',
+              labels: newLabels
+            });
+
+            const updated = await getIssue(issueNumber);
+            console.log(`Issue [${issueNumber}] now got labels: ${JSON.stringify(updated.labels, null, 2)}`);

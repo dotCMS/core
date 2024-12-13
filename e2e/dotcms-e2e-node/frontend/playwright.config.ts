@@ -1,6 +1,7 @@
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import * as path from "node:path";
 import { defineConfig, devices } from '@playwright/test';
+import {ReporterDescription} from "playwright/types/test";
 
 const resolveEnvs = () => {
   const envFiles = ['.env'];
@@ -9,6 +10,8 @@ const resolveEnvs = () => {
     envFiles.push('.env.local');
   } else if (process.env.CURRENT_ENV === 'ci') {
     envFiles.push('.env.ci');
+  } else if (process.env.CURRENT_ENV === 'dev') {
+    envFiles.push('.env.dev');
   }
 
   envFiles.forEach((file) => {
@@ -19,7 +22,20 @@ const resolveEnvs = () => {
   });
 };
 
+const resolveReporter = () => {
+  const reporter: ReporterDescription[] = [
+    ['junit'],
+    ['github']
+  ];
+  if (!!process.env.INCLUDE_HTML) {
+    reporter.push(['html'])
+  }
+
+  return reporter;
+}
+
 resolveEnvs();
+const reporter = resolveReporter();
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -31,20 +47,19 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  retries: parseInt(process.env.RETRIES),
   /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  workers: parseInt(process.env.WORKERS),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: [
-    ['junit'],
-    ['github']
-  ],
+  timeout: parseInt(process.env.TIMEOUT),
+
+  reporter,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL: process.env.BASE_URL,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    headless: process.env.CI === 'true',
+    headless: !!process.env.HEADLESS,
   },
   /* Configure projects for major browsers */
   projects: [
@@ -53,7 +68,7 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
+    /*{
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
     },
@@ -61,12 +76,12 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-    },
+    },*/
   ],
   webServer: {
     command: 'nx serve dotcms-ui',
     cwd: '../../../core-web',
     url: process.env.BASE_URL + '/dotAdmin',
-    reuseExistingServer: !!process.env.CI,
+    reuseExistingServer: !!process.env.REUSE_SERVER
   }
 });

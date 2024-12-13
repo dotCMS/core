@@ -1,7 +1,16 @@
-<p-button
-    (onClick)="toggleBookmark()"
-    [loading]="loading()"
-    [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
-    [label]="'editpage.toolbar.bookmark' | dm"
-    styleClass="p-button-text p-button-sm"
-    data-testId="bookmark-button" />
+@if (store.$previewMode()) {
+    <p-button
+        (click)="toggleBookmark()"
+        [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
+        [loading]="loading()"
+        styleClass="p-button-text p-button-sm"
+        data-testId="bookmark-button" />
+} @else {
+    <p-button
+        (onClick)="toggleBookmark()"
+        [loading]="loading()"
+        [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
+        [label]="'editpage.toolbar.bookmark' | dm"
+        styleClass="p-button-text p-button-sm"
+        data-testId="bookmark-button" />
+}

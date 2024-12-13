@@ -1,3 +1,5 @@
+
+
 // cube.js configuration file
 module.exports = {
     /*
@@ -7,8 +9,8 @@ module.exports = {
         `pre_aggregations_${securityContext.customerId}`,
 */
 
-    queryRewrite: (query, { securityContext }) => {
 
+    queryRewrite: (query, { securityContext }) => {
 
         if (!securityContext) {
             throw new Error('No valid token');
@@ -16,11 +18,21 @@ module.exports = {
 
         const tokenData = securityContext["https://dotcms.com/analytics"];
 
+        const isRequestQuery = (query.measures + query.dimensions).includes("request.");
+
+        if (isRequestQuery) {
             query.filters.push({
-                member: 'Events.clusterId',
+                member: 'request.clusterId',
                 operator: 'equals',
                 values: [tokenData.clusterId],
             });
+
+            query.filters.push({
+                member: 'request.customerId',
+                operator: 'equals',
+                values: [tokenData.customerId],
+            });
+        }
 
 
         return query;

@@ -724,7 +724,7 @@
                         }
                     };
 
-                    notifyUVEWhenURLisChanged(data);
+                    notifyUVEWhenLanguageIsChanged(data);
                 }
             }
         } else {
@@ -752,10 +752,10 @@
 
     }
 
-    function notifyUVEWhenURLisChanged(data) {
+    function notifyUVEWhenLanguageIsChanged(data) {
         var customEvent = document.createEvent('CustomEvent');
         customEvent.initCustomEvent('ng-event', false, false, {
-            name: 'url-is-changed',
+            name: 'language-is-changed',
             payload: data
         });
         document.dispatchEvent(customEvent);

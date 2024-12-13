@@ -3,14 +3,13 @@ package com.dotcms.jobs.business.api;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.jobs.business.api.events.JobCancelRequestEvent;
-import com.dotcms.jobs.business.api.events.JobCanceledEvent;
 import com.dotcms.jobs.business.api.events.JobCancellingEvent;
 import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.jobs.business.api.events.JobCreatedEvent;
 import com.dotcms.jobs.business.api.events.JobFailedEvent;
 import com.dotcms.jobs.business.api.events.JobProgressUpdatedEvent;
-import com.dotcms.jobs.business.api.events.JobRemovedFromQueueEvent;
 import com.dotcms.jobs.business.api.events.JobStartedEvent;
+import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.api.events.RealTimeJobMonitor;
 import com.dotcms.jobs.business.detector.AbandonedJobDetector;
 import com.dotcms.jobs.business.error.CircuitBreaker;
@@ -29,6 +28,7 @@ import com.dotcms.jobs.business.processor.DefaultProgressTracker;
 import com.dotcms.jobs.business.processor.DefaultRetryStrategy;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
+import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.jobs.business.processor.Validator;
 import com.dotcms.jobs.business.queue.JobQueue;
 import com.dotcms.jobs.business.queue.error.JobNotFoundException;
@@ -36,6 +36,7 @@ import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.jobs.business.queue.error.JobQueueException;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -46,6 +47,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -128,17 +130,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private static final int EMPTY_QUEUE_RESET_THRESHOLD = Integer.MAX_VALUE - 1000;
 
     /**
-     * Constructs a new JobQueueManagerAPIImpl.
-     * This constructor initializes the job queue manager with all necessary dependencies and configurations.
+     * Constructs a new JobQueueManagerAPIImpl. This constructor initializes the job queue manager
+     * with all necessary dependencies and configurations.
      *
      * @param jobQueue             The JobQueue implementation to use for managing jobs.
-     * @param jobQueueConfig       The JobQueueConfig implementation providing configuration settings.
+     * @param jobQueueConfig       The JobQueueConfig implementation providing configuration
+     *                             settings.
      * @param circuitBreaker       The CircuitBreaker implementation for fault tolerance.
      * @param defaultRetryStrategy The default retry strategy to use for failed jobs.
      * @param realTimeJobMonitor   The RealTimeJobMonitor for handling real-time job updates.
      * @param jobProcessorFactory  The JobProcessorFactory for creating job processors instances.
      * @param retryPolicyProcessor The RetryPolicyProcessor for processing retry policies.
      * @param abandonedJobDetector The AbandonedJobDetector for detecting abandoned jobs.
+     * @param discovery            The JobProcessorDiscovery for discovering job processors.
      */
     @Inject
     public JobQueueManagerAPIImpl(@Named("queueProducer") JobQueue jobQueue,
@@ -148,7 +152,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             RealTimeJobMonitor realTimeJobMonitor,
             JobProcessorFactory jobProcessorFactory,
             RetryPolicyProcessor retryPolicyProcessor,
-            AbandonedJobDetector abandonedJobDetector) {
+            AbandonedJobDetector abandonedJobDetector,
+            JobProcessorDiscovery discovery) {
 
         this.jobQueue = jobQueue;
         this.threadPoolSize = jobQueueConfig.getThreadPoolSize();
@@ -161,6 +166,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.retryPolicyProcessor = retryPolicyProcessor;
         this.abandonedJobDetector = abandonedJobDetector;
         this.realTimeJobMonitor = realTimeJobMonitor;
+
+        // Register discovered processors by CDI
+        discovery.discoverJobProcessors().forEach(this::registerProcessor);
 
         APILocator.getLocalSystemEventsAPI().subscribe(
                 JobCancelRequestEvent.class,
@@ -244,7 +252,18 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     @Override
+    public void registerProcessor(final Class<? extends JobProcessor> processor) {
+
+        Queue queue = AnnotationUtils.getBeanAnnotation(processor, Queue.class);
+        String queueName = Objects.nonNull(queue) ? queue.value() : processor.getName();
+        registerProcessor(queueName, processor);
+    }
+
+    @Override
     public void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor) {
+
+        Logger.info(this, "Registering JobProcessor: " + processor.getName());
+
         final Class<? extends JobProcessor> jobProcessor = processors.get(queueName);
         if (null != jobProcessor) {
             Logger.warn(this, String.format(
@@ -321,12 +340,79 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize)
+    public JobPaginatedResult getActiveJobs(final String queueName, final int page, final int pageSize)
             throws DotDataException {
         try {
             return jobQueue.getActiveJobs(queueName, page, pageSize);
         } catch (JobQueueDataException e) {
             throw new DotDataException("Error fetching active jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getCompletedJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getCompletedJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching completed jobs", e);
+        }
+    }
+
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getCanceledJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getCanceledJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching completed jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getFailedJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getFailedJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching failed jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getAbandonedJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getAbandonedJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching abandoned jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getSuccessfulJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getSuccessfulJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching successful jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getJobs(final String queueName, final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getJobs(queueName, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching jobs", e);
         }
     }
 
@@ -342,7 +428,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getActiveJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getActiveJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getActiveJobs(page, pageSize);
         } catch (JobQueueDataException e) {
@@ -352,7 +439,8 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getCompletedJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getCompletedJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getCompletedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
@@ -362,7 +450,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getCanceledJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getSuccessfulJobs(final int page, final int pageSize)
+            throws DotDataException {
+        try {
+            return jobQueue.getSuccessfulJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching successful jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getCanceledJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getCanceledJobs(page, pageSize);
         } catch (JobQueueDataException e) {
@@ -372,11 +472,22 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
-    public JobPaginatedResult getFailedJobs(int page, int pageSize) throws DotDataException {
+    public JobPaginatedResult getFailedJobs(final int page, final int pageSize)
+            throws DotDataException {
         try {
             return jobQueue.getFailedJobs(page, pageSize);
         } catch (JobQueueDataException e) {
             throw new DotDataException("Error fetching failed jobs", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getAbandonedJobs(final int page, final int pageSize) throws DotDataException {
+        try {
+            return jobQueue.getAbandonedJobs(page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching abandoned jobs", e);
         }
     }
 
@@ -385,7 +496,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         final Job job = getJob(jobId);
 
-        if (job.state() == JobState.PENDING || job.state() == JobState.RUNNING) {
+        if (isInCancelableState(job)) {
             handleJobCancelRequest(job);
         } else {
             Logger.warn(this, "Job " + job.id() + " is not in a cancellable state. "
@@ -408,9 +519,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         try {
 
             final var job = getJob(event.getJob().id());
-            if (job.state() == JobState.PENDING
-                    || job.state() == JobState.RUNNING
-                    || job.state() == JobState.CANCEL_REQUESTED) {
+            if (isInCancelableState(job) || job.state() == JobState.CANCEL_REQUESTED) {
 
                 final Optional<JobProcessor> instance = getInstance(job.id());
                 if (instance.isPresent()) {
@@ -439,8 +548,18 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     }
 
     @Override
-    public void watchJob(final String jobId, final Consumer<Job> watcher) {
-        realTimeJobMonitor.registerWatcher(jobId, watcher);
+    public JobWatcher watchJob(final String jobId, final Consumer<Job> watcher) {
+        return realTimeJobMonitor.registerWatcher(jobId, watcher);
+    }
+
+    @Override
+    public void removeJobWatcher(final String jobId, final JobWatcher watcher) {
+        realTimeJobMonitor.removeWatcher(jobId, watcher);
+    }
+
+    @Override
+    public void removeAllJobWatchers(final String jobId) {
+        realTimeJobMonitor.removeAllWatchers(jobId);
     }
 
     @Override
@@ -689,7 +808,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     /**
      * Handles a failed job that cannot be retried. This method logs a warning about the
-     * non-retryable job and removes it from the active queue.
+     * non-retryable job, removes it from the active queue, and marks it as failed permanently.
      *
      * @param job The failed job that cannot be retried.
      */
@@ -697,13 +816,16 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
         Logger.warn(this, "Job " + job.id() + " has failed and cannot be retried.");
 
-        try {
-            jobQueue.removeJobFromQueue(job.id());
-            // Send the job removed from queue events
-            JobUtil.sendEvents(job, JobRemovedFromQueueEvent::new);
-        } catch (JobQueueDataException e) {
-            throw new DotDataException("Error removing failed job", e);
+        Job finishedJob = job.markAsFailedPermanently();
+        if (job.state() == JobState.ABANDONED) {
+            finishedJob = job.markAsAbandonedPermanently();
         }
+
+        // Giving the job a final state
+        updateJobStatus(finishedJob);
+
+        // Send the job completion events
+        JobUtil.sendEvents(finishedJob, JobCompletedEvent::new);
     }
 
     /**
@@ -825,7 +947,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param job       The job that completed.
      * @param processor The processor that handled the job.
      */
-    @WrapInTransaction
     private void handleJobCompletion(final Job job, final JobProcessor processor)
             throws DotDataException {
 
@@ -839,17 +960,17 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         final float progress = getJobProgress(job);
 
         try {
+
+            Job completedJob = job.markAsSuccessful(jobResult).withProgress(progress);
+
             if (jobQueue.hasJobBeenInState(job.id(), JobState.CANCEL_REQUESTED, JobState.CANCELLING)) {
-                Job canceledJob = job.markAsCanceled(jobResult).withProgress(progress);
-                updateJobStatus(canceledJob);
-                // Send the job canceled events
-                JobUtil.sendEvents(canceledJob, JobCanceledEvent::new);
-            } else {
-                final Job completedJob = job.markAsCompleted(jobResult).withProgress(progress);
-                updateJobStatus(completedJob);
-                // Send the job completed events
-                JobUtil.sendEvents(completedJob, JobCompletedEvent::new);
+                completedJob = job.markAsCanceled(jobResult).withProgress(progress);
             }
+
+            updateJobStatus(completedJob);
+            // Send the job completed events
+            JobUtil.sendEvents(completedJob, JobCompletedEvent::new);
+
         } catch (JobQueueDataException e) {
             final var errorMessage = "Error updating job status";
             Logger.error(this, errorMessage, e);
@@ -902,7 +1023,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param exception       The exception that caused the failure.
      * @param processingStage The stage of processing where the failure occurred.
      */
-    @WrapInTransaction
     private void handleJobFailure(final Job job, final JobProcessor processor,
             final Exception exception, final String processingStage) throws DotDataException {
 
@@ -926,7 +1046,6 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
      * @param errorMessage    The error message to include in the job result.
      * @param processingStage The stage of processing where the failure occurred.
      */
-    @WrapInTransaction
     private void handleJobFailure(final Job job, final JobProcessor processor,
             final Exception exception, final String errorMessage, final String processingStage)
             throws DotDataException {
@@ -1102,6 +1221,18 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             emptyQueueCount = maxEmptyQueueCount; // Reset to max to avoid wrap around
         }
         return emptyQueueCount;
+    }
+
+    /**
+     * Verifies if a job state is in a cancellable state.
+     *
+     * @param job The job to check.
+     * @return {@code true} if the job is in a cancellable state, {@code false} otherwise.
+     */
+    private boolean isInCancelableState(final Job job) {
+        return job.state() == JobState.PENDING || job.state() == JobState.RUNNING
+                || job.state() == JobState.FAILED || job.state() == JobState.ABANDONED
+                || job.state() == JobState.ABANDONED_PERMANENTLY;
     }
 
     /**
