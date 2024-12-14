@@ -47,6 +47,7 @@ public class DynamicTTLCache<K, V>  {
                     return currentDuration;
                 }
             })
+            .recordStats()
             .maximumSize(maxCapacity)
             .build();
     }
