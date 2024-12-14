@@ -9,27 +9,30 @@ import {
     withState
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { forkJoin, pipe } from 'rxjs';
+import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { switchMap, take } from 'rxjs/operators';
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentletService,
     DotHttpErrorManagerService,
     DotLanguagesService,
-    DotWorkflowsActionsService
+    DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import { DotEditContentSidebarUntranslatedLocaleComponent } from '@dotcms/edit-content/components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
 import { EditContentRootState } from '@dotcms/edit-content/feature/edit-content/store/edit-content.store';
 import { ContentState } from '@dotcms/edit-content/feature/edit-content/store/features/content.feature';
 import { FormState } from '@dotcms/edit-content/feature/edit-content/store/features/form.feature';
 import { WorkflowState } from '@dotcms/edit-content/feature/edit-content/store/features/workflow.feature';
 import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
-import { parseCurrentActions, parseWorkflows } from '@dotcms/edit-content/utils/workflows.utils';
+import { parseCurrentActions } from '@dotcms/edit-content/utils/workflows.utils';
 
 export interface LocalesState {
     locales: DotLanguage[] | null;
@@ -75,7 +78,8 @@ export function withLocales() {
                 dotEditContentService = inject(DotEditContentService),
                 dotLanguagesService = inject(DotLanguagesService),
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
-                workflowActionService = inject(DotWorkflowsActionsService),
+                dotMessageService = inject(DotMessageService),
+                dialogService = inject(DialogService),
                 router = inject(Router)
             ) => ({
                 /**
@@ -177,9 +181,9 @@ export function withLocales() {
                 switchLocale: rxMethod<DotLanguage>(
                     pipe(
                         switchMap((locale: DotLanguage) => {
-                            patchState(store, {
-                                state: ComponentStatus.LOADING
-                            });
+                            // patchState(store, {
+                            //     state: ComponentStatus.LOADING
+                            // });
 
                             /**
                              * Checks if the locale is translated. If it is, retrieves the content
@@ -208,62 +212,73 @@ export function withLocales() {
                                         })
                                     );
                             } else {
-                                //TODO ask in a popup how to load the locale, if when the content already
-                                // in the state or from scratch, this will be done using a dinamic dialog
-                                // from prime NG..
+                                const ref = dialogService.open(
+                                    DotEditContentSidebarUntranslatedLocaleComponent,
+                                    {
+                                        header: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.locale'
+                                        ),
+                                        width: '40rem',
+                                        data: {
+                                            systemDefaultLocale: store.systemDefaultLocale()
+                                        },
+                                        modal: true
+                                    }
+                                );
 
-                                //TODO: find the correct way to extract the field values from the contentlet
-                                // to create a new one but in the new locale as placeholder.
-
-                                //remove endpoint call.
-                                return workflowActionService
-                                    .getDefaultActions(store.contentType().name)
+                                ref.onClose
                                     .pipe(
-                                        tapResponse({
-                                            next: (schemes) => {
-                                                // Convert the schemes to an object with the schemeId as the key
-                                                const parsedSchemes = parseWorkflows(schemes);
-                                                const schemeIds = Object.keys(parsedSchemes);
-                                                // If we have only one scheme, we set it as the default one
-                                                const defaultSchemeId =
-                                                    schemeIds.length === 1 ? schemeIds[0] : null;
-                                                // Parse the actions as an object with the schemeId as the key
-                                                const parsedCurrentActions = parseCurrentActions(
-                                                    parsedSchemes[defaultSchemeId]?.actions || []
-                                                );
+                                        take(1),
+                                        filter((value) => value)
+                                    )
+                                    .subscribe((value) => {
+                                        const schemes = store.schemes();
+                                        const schemeIds = Object.keys(schemes);
+                                        // If we have only one scheme, we set it as the default one
+                                        const defaultSchemeId =
+                                            schemeIds.length === 1 ? schemeIds[0] : null;
+                                        // Parse the actions as an object with the schemeId as the key
+                                        const parsedCurrentActions = parseCurrentActions(
+                                            schemes[defaultSchemeId]?.actions || []
+                                        );
 
-                                                patchState(store, {
-                                                    currentLocale: locale,
-                                                    schemes: parsedSchemes,
-                                                    // currentSchemeId: defaultSchemeId,
-                                                    currentContentActions: parsedCurrentActions,
-                                                    state: ComponentStatus.LOADED,
-                                                    currentIdentifier:
-                                                        store.contentlet()?.identifier,
-                                                    initialContentletState: 'new',
-                                                    error: null,
-                                                    formValues: null,
-                                                    contentlet: {
-                                                        ...store.formValues()
-                                                    } as DotCMSContentlet
-                                                });
+                                        // const contentlet = null;
 
-                                                // formValues: {
-                                                // ...store.formValues(),
-                                                //         identifier: store.contentlet()?.identifier
-                                                // }
-                                            },
-                                            error: (error: HttpErrorResponse) => {
-                                                dotHttpErrorManagerService.handle(error);
-                                                patchState(store, {
-                                                    localesStatus: {
-                                                        status: ComponentStatus.ERROR,
-                                                        error: error.message
-                                                    }
-                                                });
-                                            }
-                                        })
-                                    );
+                                        if (value === 'populate') {
+                                            //TODO: find the correct way to extract the field values from the contentlet
+                                            // to create a new one but in the new locale as placeholder.
+                                        } else {
+                                            //TODO: Do the actions to create a new contentlet in the new locale
+                                        }
+
+                                        // patchState(store, {
+                                        //     currentLocale: locale,
+                                        //     currentSchemeId: defaultSchemeId,
+                                        //     currentContentActions: parsedCurrentActions,
+                                        //     state: ComponentStatus.LOADED,
+                                        //     currentIdentifier: store.contentlet()?.identifier,
+                                        //     initialContentletState: 'copy',
+                                        //     error: null,
+                                        //     formValues: null,
+                                        //     contentlet: {
+                                        //         ...store.formValues()
+                                        //     } as DotCMSContentlet
+                                        // });
+
+                                        patchState(store, {
+                                            currentLocale: locale,
+                                            currentSchemeId: defaultSchemeId,
+                                            currentContentActions: parsedCurrentActions,
+                                            state: ComponentStatus.LOADED,
+                                            currentIdentifier: store.contentlet()?.identifier,
+                                            initialContentletState: 'copy',
+                                            error: null,
+                                            formValues: null,
+                                            contentlet: null
+                                        });
+                                    });
+
+                                return of(null); // Add a return statement
                             }
                         })
                     )
@@ -284,10 +299,12 @@ export function withLocales() {
                     const contentType = store.contentType();
 
                     untracked(() => {
-                        if (contentlet) {
-                            store.loadContentLocales(contentlet);
-                        } else if (contentType) {
-                            store.loadSystemLocales();
+                        if (store.initialContentletState() !== 'copy') {
+                            if (contentlet) {
+                                store.loadContentLocales(contentlet);
+                            } else if (contentType) {
+                                store.loadSystemLocales();
+                            }
                         }
                     });
                 });
