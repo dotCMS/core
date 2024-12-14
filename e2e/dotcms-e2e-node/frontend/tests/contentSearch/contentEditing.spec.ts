@@ -1,4 +1,4 @@
-import {expect, test} from '@playwright/test';
+import {expect, Page, test} from '@playwright/test';
 import {dotCMSUtils, waitForVisibleAndCallback} from '../../utils/dotCMSUtils';
 import {
     GroupEntriesLocators,
@@ -6,8 +6,8 @@ import {
     ToolEntriesLocators
 } from '../../locators/navigation/menuLocators';
 import {ContentUtils} from "../../utils/contentUtils";
-import {iFramesLocators, contentGeneric} from "../../locators/globalLocators";
-import {genericContent1, contentProperties} from "./contentData";
+import {iFramesLocators, contentGeneric, fileAsset} from "../../locators/globalLocators";
+import {genericContent1, contentProperties, fileAssetContent} from "./contentData";
 import {assert} from "console";
 
 const cmsUtils = new dotCMSUtils();
@@ -35,7 +35,9 @@ test.beforeEach('Navigate to content portlet', async ({page}) => {
     await waitForVisibleAndCallback(breadcrumbLocator, () => expect(breadcrumbLocator).toContainText('Search All'));
 });
 
-
+/**
+ * test to add a new piece of content (generic content)
+ */
 test('Add a new pice of content', async ({page}) => {
     const contentUtils = new ContentUtils(page);
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
@@ -43,6 +45,8 @@ test('Add a new pice of content', async ({page}) => {
     // Adding new rich text content
     await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
     await contentUtils.fillRichTextForm(page, genericContent1.title, genericContent1.body, contentProperties.publishWfAction);
+    await contentUtils.workflowExecutionValidation(page);
+
     await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr').first(), async () => {});
 
     await contentUtils.validateContentExist(page, genericContent1.title).then(assert);
@@ -73,5 +77,42 @@ test('Delete a piece of content', async ({ page }) => {
     }
 );
 
+/**
+ * Test to make sure we are validating the required of text fields on the content creation
+ * */
+test('Validate required on text fields', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const iframe = page.frameLocator(iFramesLocators.main_iframe).first();
 
+    await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
+    await contentUtils.fillRichTextForm(page, '', genericContent1.body, contentProperties.publishWfAction);
+    await expect(iframe.getByText('Error x')).toBeVisible();
+    await expect(iframe.getByText('The field Title is required.')).toBeVisible();
+});
 
+/**
+ * Test to make sure we are validating the required of blockEditor fields on the content creation
+ */
+test('Validate required on blockContent fields', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const iframe = page.frameLocator(iFramesLocators.main_iframe).first();
+
+    await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
+    await contentUtils.fillRichTextForm(page, genericContent1.title, '', contentProperties.publishWfAction);
+    await expect(iframe.getByText('Error x')).toBeVisible();
+    await expect(iframe.getByText('The field Title is required.')).toBeVisible();
+});
+
+/**
+ * Test to validate you are able to add file assets importing from url
+ */
+test('Validate you are able to add file assets importing from url', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+
+    await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
+    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, contentProperties.publishWfAction, null, fileAssetContent.fromURL );
+    //fileName?: string, fromURL?: string, newFileName?: string, newFileText?: string) {
+    await contentUtils.workflowExecutionValidation(page);
+    await contentUtils.validateContentExist(page, fileAssetContent.title).then(assert);
+});

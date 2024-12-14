@@ -20,4 +20,12 @@ export const contentProperties = {
     deleteWfAction: "Delete"
 }
 
+export const fileAssetContent = {
+    title: "File Asset title",
+    body: "This is a sample file asset content",
+    fromURL:"https://upload.wikimedia.org/wikipedia/commons/0/03/DotCMS-logo.svg",
+    newFileName:"New file asset",
+    newFileText:"This is a new file asset content",
+    host:"default"
+}
 
