@@ -1,9 +1,11 @@
 /**
  * Content to add a Rich Text content
  */
-export const richTextContent = {
+export const genericContent1 = {
     title: "Automation Test",
-    body: "This is a sample content"
+    body: "This is a sample content",
+    newTitle : "Automation Test edited",
+    newBody : "This is a sample content edited"
 }
 
 /**
@@ -11,7 +13,11 @@ export const richTextContent = {
  */
 export const contentProperties = {
     language: "English (US)",
-    publishWfAction: "Publish"
+    publishWfAction: "Publish",
+    unpublishWfAction: "Unpublish",
+    unlockWfAction: "Unlock",
+    archiveWfAction: "Archive",
+    deleteWfAction: "Delete"
 }
 
 
