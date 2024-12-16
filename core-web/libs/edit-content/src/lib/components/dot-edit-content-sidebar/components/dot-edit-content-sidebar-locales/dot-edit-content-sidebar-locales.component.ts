@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import { DotLanguage } from '@dotcms/dotcms-models';
 
 /**
  * Component representing the locales section in the edit content sidebar.
@@ -31,9 +31,9 @@ export class DotEditContentSidebarLocalesComponent {
     $defaultLocale = input.required<DotLanguage>({ alias: 'defaultLocale' });
 
     /**
-     * Current contentlet.
+     * The current locale.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $currentLocale = input.required<DotLanguage>({ alias: 'currentLocale' });
 
     /**
      * Whether the data is loading.

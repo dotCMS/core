@@ -35,7 +35,7 @@
                 <dot-edit-content-sidebar-locales
                     [locales]="store.locales()"
                     [defaultLocale]="store.systemDefaultLocale()"
-                    [contentlet]="contentlet"
+                    [currentLocale]="store.currentLocale()"
                     [isLoading]="store.isLoadingLocales()"
                     (switchLocale)="store.switchLocale($event)"
                     data-testId="locales" />

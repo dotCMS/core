@@ -69,7 +69,9 @@ export function withLocales() {
              */
             isLoadingLocales: computed(
                 () => store.localesStatus().status === ComponentStatus.LOADING
-            )
+            ),
+
+            isCopyingLocale: computed(() => store.initialContentletState() === 'copy')
         })),
         withMethods(
             (
@@ -181,17 +183,13 @@ export function withLocales() {
                 switchLocale: rxMethod<DotLanguage>(
                     pipe(
                         switchMap((locale: DotLanguage) => {
-                            // patchState(store, {
-                            //     state: ComponentStatus.LOADING
-                            // });
-
                             /**
                              * Checks if the locale is translated. If it is, retrieves the content
-                             * by its inode and navigates to the content page.
+                             * by its identifier and locale id and navigates to the content page by inode.
                              */
                             if (locale.translated) {
                                 return dotEditContentService
-                                    .getContentById(store.contentlet().identifier, locale.id)
+                                    .getContentById(store.currentIdentifier(), locale.id)
                                     .pipe(
                                         tapResponse({
                                             next: (contentlet) => {
@@ -218,9 +216,9 @@ export function withLocales() {
                                         header: dotMessageService.get(
                                             'edit.content.sidebar.locales.untranslated.locale'
                                         ),
-                                        width: '40rem',
+                                        width: '35rem',
                                         data: {
-                                            systemDefaultLocale: store.systemDefaultLocale()
+                                            currentLocale: store.currentLocale()
                                         },
                                         modal: true
                                     }
@@ -231,7 +229,7 @@ export function withLocales() {
                                         take(1),
                                         filter((value) => value)
                                     )
-                                    .subscribe((value) => {
+                                    .subscribe((copyType) => {
                                         const schemes = store.schemes();
                                         const schemeIds = Object.keys(schemes);
                                         // If we have only one scheme, we set it as the default one
@@ -242,29 +240,6 @@ export function withLocales() {
                                             schemes[defaultSchemeId]?.actions || []
                                         );
 
-                                        // const contentlet = null;
-
-                                        if (value === 'populate') {
-                                            //TODO: find the correct way to extract the field values from the contentlet
-                                            // to create a new one but in the new locale as placeholder.
-                                        } else {
-                                            //TODO: Do the actions to create a new contentlet in the new locale
-                                        }
-
-                                        // patchState(store, {
-                                        //     currentLocale: locale,
-                                        //     currentSchemeId: defaultSchemeId,
-                                        //     currentContentActions: parsedCurrentActions,
-                                        //     state: ComponentStatus.LOADED,
-                                        //     currentIdentifier: store.contentlet()?.identifier,
-                                        //     initialContentletState: 'copy',
-                                        //     error: null,
-                                        //     formValues: null,
-                                        //     contentlet: {
-                                        //         ...store.formValues()
-                                        //     } as DotCMSContentlet
-                                        // });
-
                                         patchState(store, {
                                             currentLocale: locale,
                                             currentSchemeId: defaultSchemeId,
@@ -274,11 +249,12 @@ export function withLocales() {
                                             initialContentletState: 'copy',
                                             error: null,
                                             formValues: null,
-                                            contentlet: null
+                                            contentlet:
+                                                copyType === 'populate' ? store.contentlet() : null
                                         });
                                     });
 
-                                return of(null); // Add a return statement
+                                return of(null);
                             }
                         })
                     )
@@ -312,31 +288,3 @@ export function withLocales() {
         })
     );
 }
-
-// /**
-//  * Extracts field values from the given contentlet and creates a new contentlet in the specified locale.
-//  *
-//  * @param {DotCMSContentlet} contentlet - The original contentlet.
-//  * @param {DotLanguage} newLocale - The new locale for the contentlet.
-//  * @returns {DotCMSContentlet} The new contentlet with the extracted field values and new locale.
-//  */
-// function createContentletInNewLocale(
-//     contentlet: DotCMSContentlet,
-//     newLocale: DotLanguage
-// ): DotCMSContentlet {
-//     const newContentlet: DotCMSContentlet = { ...contentlet };
-//
-//     // Update the locale and reset necessary fields
-//     newContentlet.languageId = newLocale.id;
-//     //newContentlet.identifier = null; // Reset identifier for new contentlet
-//     newContentlet.inode = null; // Reset inode for new contentlet
-//
-//     // Extract and set field values
-//     Object.keys(contentlet).forEach((field) => {
-//         if (field !== 'languageId' && field !== 'identifier' && field !== 'inode') {
-//             newContentlet[field] = contentlet[field];
-//         }
-//     });
-//
-//     return newContentlet;
-// }

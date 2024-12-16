@@ -54,7 +54,6 @@ export class DotWorkflowActionsFireService {
     ): Observable<DotCMSContentlet> {
         const { actionId, inode, data } = options;
         const queryInode = inode ? `inode=${inode}&` : '';
-        //const queryIdentifier = identifier ? `identifier=${identifier}&` : '';
 
         return this.httpClient
             .put(

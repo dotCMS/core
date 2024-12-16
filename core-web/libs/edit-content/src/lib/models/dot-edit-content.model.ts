@@ -20,7 +20,7 @@ export interface DotWorkflowActionParams {
  * @export
  * @type {DotContentletState}
  */
-export type DotContentletState = 'new' | 'existing' | 'reset' | 'copy' | 'copyEmpty';
+export type DotContentletState = 'new' | 'existing' | 'reset' | 'copy';
 
 export interface DotWorkflowState extends DotCMSWorkflowStatus {
     contentState: DotContentletState;

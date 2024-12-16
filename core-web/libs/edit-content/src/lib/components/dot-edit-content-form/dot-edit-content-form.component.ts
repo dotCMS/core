@@ -152,12 +152,30 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     constructor() {
+        /**
+         * Effect that enables or disables the form based on the loading state.
+         */
         effect(() => {
             const isLoading = this.$store.isLoading();
             if (isLoading) {
                 this.form.disable();
             } else {
                 this.form.enable();
+            }
+        });
+
+        /**
+         * Effect that initializes the form and form listener when copying locale.
+         *
+         * This effect listens for changes in the `isCopyingLocale` state from the store.
+         * If `isCopyingLocale` is true, it initializes the form and sets up the form listener.
+         */
+        effect(() => {
+            const isCopyingLocale = this.$store.isCopyingLocale();
+
+            if (isCopyingLocale) {
+                this.initializeForm();
+                this.initializeFormListener();
             }
         });
     }

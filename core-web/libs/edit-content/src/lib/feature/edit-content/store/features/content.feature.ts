@@ -54,7 +54,7 @@ export interface ContentState {
             firstStep: WorkflowStep;
         }
     >;
-    initialContentletState: 'new' | 'existing' | 'reset' | 'copy' | 'copyEmpty';
+    initialContentletState: 'new' | 'existing' | 'reset' | 'copy';
 }
 
 export const contentInitialState: ContentState = {
@@ -75,7 +75,11 @@ export function withContent() {
              *
              * @returns {boolean} True if content is new, false otherwise
              */
-            isNew: computed(() => store.initialContentletState() === 'new'),
+            isNew: computed(
+                () =>
+                    store.initialContentletState() === 'new' ||
+                    store.initialContentletState() === 'copy'
+            ),
 
             /**
              * Computed property that determines if the store's status is equal to ComponentStatus.LOADED.

@@ -1,6 +1,6 @@
 @let locales = $locales();
 @let defaultLocale = $defaultLocale();
-@let contentlet = $contentlet();
+@let currentLocale = $currentLocale();
 @let isLoading = $isLoading();
 
 @if (isLoading) {
@@ -9,11 +9,14 @@
     @for (locale of locales; track locale.id) {
         <p-chip
             [label]="locale.isoCode"
-            (click)="contentlet?.languageId !== locale.id ? switchLocale.emit(locale) : null"
+            (click)="currentLocale?.id !== locale.id ? switchLocale.emit(locale) : null"
             [styleClass]="
                 'p-chip-sm ' +
-                (locale?.translated ? 'p-chip-primary' : 'p-chip-gray p-chip-dashed') +
-                (contentlet?.languageId === locale.id ? ' p-chip-filled' : '') +
+                (currentLocale?.id === locale.id
+                    ? ' p-chip-filled'
+                    : locale?.translated
+                      ? 'p-chip-primary'
+                      : 'p-chip-gray p-chip-dashed') +
                 (defaultLocale.id === locale.id ? ' default' : '')
             " />
     }
