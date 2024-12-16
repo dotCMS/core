@@ -91,6 +91,7 @@ export class DotUveToolbarComponent {
 
     defaultDevices = DEFAULT_DEVICES;
 
+    // IF YOU DONT SEE ANY COMMENTS EXPLAINING THE CODE, PLEASE LEAVE ME A COMMENT, BECAUSE WE NEED DOCS OF THIS
     handleViewParamsEffect = effect(
         () => {
             const { device: deviceInode, orientation } = this.#store.viewParams();
