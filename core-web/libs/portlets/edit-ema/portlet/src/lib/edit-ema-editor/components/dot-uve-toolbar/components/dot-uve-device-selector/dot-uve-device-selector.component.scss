@@ -8,6 +8,35 @@
     align-self: stretch;
 }
 
+.p-element {
+    &.p-disabled {
+        ::ng-deep {
+            .p-button {
+                use {
+                    color: inherit;
+                }
+            }
+        }
+    }
+
+    ::ng-deep {
+        .p-button {
+            use {
+                color: $color-palette-primary;
+            }
+
+            svg {
+                transform: rotate(0deg);
+                transition: all 0.3s ease-in-out;
+
+                &.landscape {
+                    transform: rotate(90deg);
+                }
+            }
+        }
+    }
+}
+
 .p-element.active {
     ::ng-deep {
         .p-button {

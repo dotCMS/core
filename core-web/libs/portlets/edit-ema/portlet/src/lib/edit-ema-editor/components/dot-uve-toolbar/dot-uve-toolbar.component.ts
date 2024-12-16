@@ -4,6 +4,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    effect,
     EventEmitter,
     inject,
     Output,
@@ -24,6 +25,7 @@ import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DEFAULT_DEVICES } from './components/dot-uve-device-selector/const';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -87,6 +89,32 @@ export class DotUveToolbarComponent {
 
     protected readonly date = new Date();
 
+    defaultDevices = DEFAULT_DEVICES;
+
+    handleViewParamsEffect = effect(
+        () => {
+            const { device: deviceInode, orientation } = this.#store.viewParams();
+
+            // So we dont open the editor in a device
+            if (!this.#store.$isPreviewMode() && (deviceInode || orientation)) {
+                this.#store.patchViewParams({ device: null, orientation: null });
+
+                return;
+            }
+
+            const device = this.defaultDevices.find((d) => d.inode === deviceInode);
+
+            if (device) {
+                this.#store.setDevice(device, orientation);
+            } else {
+                this.#store.clearDeviceAndSocialMedia();
+            }
+        },
+        {
+            allowSignalWrites: true
+        }
+    );
+
     /**
      * Set the preview mode
      *
@@ -102,6 +130,7 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected setEditMode() {
+        this.#store.patchViewParams({ device: null, seo: null });
         this.#store.loadPageAsset({ preview: null });
     }
 

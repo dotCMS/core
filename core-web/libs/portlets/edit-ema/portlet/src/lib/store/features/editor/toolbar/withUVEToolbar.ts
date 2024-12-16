@@ -192,18 +192,29 @@ export function withUVEToolbar() {
             })
         })),
         withMethods((store) => ({
-            // Fake method to toggle preview mode
-            // This method should be implemented in the real application
-            togglePreviewMode: (preview: boolean) => {
-                patchState(store, {
-                    isPreviewModeActive: preview
-                });
-            },
-            setDevice: (device: DotDevice) => {
+            setDevice: (device: DotDevice, orientation?: Orientation) => {
                 patchState(store, {
                     device,
                     socialMedia: null,
-                    isEditState: false
+                    isEditState: false,
+                    orientation:
+                        orientation ??
+                        (device?.cssHeight > device?.cssWidth
+                            ? Orientation.PORTRAIT
+                            : Orientation.LANDSCAPE)
+                });
+            },
+            setOrientation: (orientation: Orientation) => {
+                patchState(store, {
+                    orientation
+                });
+            },
+            clearDeviceAndSocialMedia: () => {
+                patchState(store, {
+                    device: null,
+                    socialMedia: null,
+                    isEditState: true,
+                    orientation: null
                 });
             }
         }))

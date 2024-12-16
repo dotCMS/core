@@ -38,7 +38,6 @@ export interface TranslateProps {
 }
 
 export interface DotUveViewParams {
-    preview: boolean;
     orientation: Orientation;
     device: string;
     seo: string;

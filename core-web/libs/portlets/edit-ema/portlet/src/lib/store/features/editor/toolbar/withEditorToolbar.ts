@@ -190,9 +190,6 @@ export function withEditorToolbar() {
                         device: null,
                         isEditState: false
                     });
-                },
-                clearDeviceAndSocialMedia: () => {
-                    patchState(store, initialState);
                 }
             };
         })

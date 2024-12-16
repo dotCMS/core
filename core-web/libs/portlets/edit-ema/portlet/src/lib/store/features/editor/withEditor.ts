@@ -43,7 +43,7 @@ import {
     areContainersEquals,
     getEditorStates
 } from '../../../utils';
-import { UVEState } from '../../models';
+import { Orientation, UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 
 const initialState: EditorState = {
@@ -140,6 +140,17 @@ export function withEditor() {
                     const origin = params.clientHost || window.location.origin;
                     const iframeURL = new URL(pageAPIQueryParams, origin);
 
+                    const wrapper =
+                        store.orientation() === Orientation.LANDSCAPE
+                            ? {
+                                  width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${BASE_IFRAME_MEASURE_UNIT}`,
+                                  height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${BASE_IFRAME_MEASURE_UNIT}`
+                              }
+                            : {
+                                  width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${BASE_IFRAME_MEASURE_UNIT}`,
+                                  height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${BASE_IFRAME_MEASURE_UNIT}`
+                              };
+
                     return {
                         showDialogs,
                         showBlockEditorSidebar,
@@ -148,12 +159,7 @@ export function withEditor() {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
                             src: !isTraditionalPage ? iframeURL.href : '',
-                            wrapper: device
-                                ? {
-                                      width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
-                                      height: `${device.cssHeight}${BASE_IFRAME_MEASURE_UNIT}`
-                                  }
-                                : null
+                            wrapper: device ? wrapper : null
                         },
                         progressBar: isLoading,
                         contentletTools: canUserHaveContentletTools

@@ -34,6 +34,7 @@ import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
     getAllowedPageParams,
@@ -116,6 +117,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         const params = this.#getPageParams();
+
+        const viewParams = this.#getViewParams();
+
+        this.uveStore.patchViewParams(viewParams);
+
         this.uveStore.loadPageAsset(params);
 
         // We need to skip one because it's the initial value
@@ -211,6 +217,18 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
 
         return params;
+    }
+
+    #getViewParams(): DotUveViewParams {
+        const { queryParams } = this.#activatedRoute.snapshot;
+
+        const viewParams: DotUveViewParams = {
+            device: queryParams.device,
+            orientation: queryParams.orientation,
+            seo: queryParams.seo
+        };
+
+        return viewParams;
     }
 
     /**

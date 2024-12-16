@@ -8,3 +8,21 @@
         (click)="onDeviceSelect(device)"
         [attr.data-testId]="device.inode" />
 }
+
+<p-button
+    styleClass="p-button-text p-button-sm p-button-rounded orientation"
+    [disabled]="!$currentDevice()"
+    (click)="onOrientationChange()">
+    <svg
+        [ngClass]="$currentOrientation()"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+        width="24px"
+        height="24px">
+        <use
+            data-testId="orientation"
+            href="./assets/edit-ema/orientation.svg#orientation"
+            width="24px"
+            height="24px"></use>
+    </svg>
+</p-button>
