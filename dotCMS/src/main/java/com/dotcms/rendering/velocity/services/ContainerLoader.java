@@ -269,6 +269,7 @@ public class ContainerLoader implements DotLoader {
               velocityCodeBuilder.append("#set($_show_working_=false)");
 
             //Time-machine block begin
+             /*
               velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
 
                   velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
@@ -290,9 +291,9 @@ public class ContainerLoader implements DotLoader {
                   velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
                     .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
                   .append("#end");
-
-            //end of time-machine block
+              //end of time-machine block
               velocityCodeBuilder.append("#end");
+             */
 
                 velocityCodeBuilder.append("#set($CONTENT_INODE = '')");
                 velocityCodeBuilder.append("#set($CONTENT_BASE_TYPE = '')");
@@ -408,8 +409,9 @@ public class ContainerLoader implements DotLoader {
         }
 
 
-
-        return writeOutVelocity(filePath, velocityCodeBuilder.toString());
+        final String containerCode = velocityCodeBuilder.toString();
+        Logger.debug(this, "DotResourceLoader:\tWriting out container code = " + containerCode);
+        return writeOutVelocity(filePath, containerCode);
     }
 
 
