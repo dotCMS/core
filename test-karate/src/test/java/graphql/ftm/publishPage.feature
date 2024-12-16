@@ -1,17 +1,6 @@
 Feature: Add pieces of content then Publish the Page
   Background:
 
-    * def validateNoErrors =
-      """
-      function (response) {
-        const errors = response.errors;
-        if (errors) {
-          return errors;
-        }
-        return [];
-      }
-      """
-
    * def page_id = __arg.page_id
    * def content1_id = __arg.content1_id
    * def content2_id = __arg.content2_id

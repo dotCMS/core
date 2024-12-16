@@ -2,11 +2,23 @@ Feature: Reusable Functions and Helpers
 
   Scenario: Define reusable functions
 
+    ## General error free validation
+    * def validateNoErrors =
+      """
+      function (response) {
+        const errors = response.errors;
+        if (errors) {
+          return errors;
+        }
+        return [];
+      }
+      """
+
     ## Builds a payload for creating a new content version
     * def buildContentRequestPayload =
       """
       function(contentType, title, publishDate, expiresOn, identifier) {
-        var payload = {
+        let payload = {
           "contentlets": [
             {
               "contentType": contentType,
@@ -25,13 +37,13 @@ Feature: Reusable Functions and Helpers
     * def extractErrors =
       """
       function(response) {
-        var errors = [];
-        var results = response.entity.results;
+        let errors = [];
+        let results = response.entity.results;
         if (results && results.length > 0) {
-          for (var i = 0; i < results.length; i++) {
-            var result = results[i];
+          for (let i = 0; i < results.length; i++) {
+            let result = results[i];
             // Handle both nested error messages and direct error messages
-            for (var key in result) {
+            for (let key in result) {
               if (result[key] && result[key].errorMessage) {
                 errors.push(result[key].errorMessage);
               }
@@ -46,11 +58,11 @@ Feature: Reusable Functions and Helpers
     * def extractContentlets =
       """
       function(response) {
-        var containers = response.entity.containers;
-        var allContentlets = [];
-        for (var key in containers) {
+        let containers = response.entity.containers;
+        let allContentlets = [];
+        for (let key in containers) {
           if (containers[key].contentlets) {
-            for (var contentletKey in containers[key].contentlets) {
+            for (let contentletKey in containers[key].contentlets) {
               allContentlets = allContentlets.concat(containers[key].contentlets[contentletKey]);
             }
           }
@@ -64,7 +76,7 @@ Feature: Reusable Functions and Helpers
       """
       function() {
         if (!karate.get('testSuffix')) {
-          var prefix = '__' + Math.floor(Math.random() * 100000);
+          let prefix = '__' + Math.floor(Math.random() * 100000);
           karate.set('testSuffix', prefix);
         }
         return karate.get('testSuffix');
@@ -75,8 +87,8 @@ Feature: Reusable Functions and Helpers
     * def getContentletByUUID =
       """
       function(jsonArray, uuid) {
-        for (var i = 0; i < jsonArray.length; i++) {
-          var keys = Object.keys(jsonArray[i]);
+        for (let i = 0; i < jsonArray.length; i++) {
+          let keys = Object.keys(jsonArray[i]);
           if (keys.includes(uuid)) {
             return jsonArray[i][uuid];
           }
@@ -105,8 +117,8 @@ Feature: Reusable Functions and Helpers
     * def contentletsFromGraphQlResponse =
     """
     function(response) {
-      var containers = response.data.page.containers;
-      var allTitles = [];
+      let containers = response.data.page.containers;
+      let allTitles = [];
       containers.forEach(container => {
         container.containerContentlets.forEach(cc => {
           cc.contentlets.forEach(contentlet => {

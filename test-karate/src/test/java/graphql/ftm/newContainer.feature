@@ -1,4 +1,4 @@
-Feature: Create a Content Type
+Feature: Create a Container
   Background:
     * def containerNameVariable = 'MyContainer' + Math.floor(Math.random() * 100000)
 
