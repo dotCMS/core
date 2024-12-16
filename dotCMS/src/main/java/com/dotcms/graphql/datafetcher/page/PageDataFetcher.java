@@ -59,7 +59,6 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final boolean fireRules = environment.getArgument("fireRules");
             final String persona = environment.getArgument("persona");
             final String site = environment.getArgument("site");
-            final String variant = environment.getArgument("variant");
             final String publishDate = environment.getArgument("publishDate");
 
             context.addParam("url", url);
@@ -80,10 +79,6 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
 
             if(UtilMethods.isSet(persona)) {
                 request.setAttribute(WebKeys.CMS_PERSONA_PARAMETER, persona);
-            }
-
-            if (UtilMethods.isSet(variant)) {
-                request.setAttribute(VariantAPI.VARIANT_KEY, variant);
             }
 
             if(UtilMethods.isSet(site)) {
