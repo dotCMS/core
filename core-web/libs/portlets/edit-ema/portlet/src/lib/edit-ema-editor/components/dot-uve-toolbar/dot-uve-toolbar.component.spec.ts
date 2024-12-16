@@ -372,10 +372,6 @@ describe('DotUveToolbarComponent', () => {
         it('should have persona selector', () => {
             expect(spectator.query(byTestId('uve-toolbar-persona-selector'))).toBeTruthy();
         });
-
-        // xit('should have workflows button', () => {
-        //     expect(spectator.query(byTestId('uve-toolbar-workflow-actions'))).toBeTruthy();
-        // });
     });
 
     describe('preview', () => {

@@ -81,15 +81,6 @@ const messageServiceMock = new MockDotMessageService({
     Loading: 'loading'
 });
 
-// const baseUVEState = {
-//     $uveToolbar: signal(baseUVEToolbarState),
-//     setDevice: jest.fn(),
-//     setSocialMedia: jest.fn(),
-//     pageParams: signal(params),
-//     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
-//     workflowActions: signal([])
-// };
-
 const pageParams = {
     url: 'test-url',
     language_id: '1'
