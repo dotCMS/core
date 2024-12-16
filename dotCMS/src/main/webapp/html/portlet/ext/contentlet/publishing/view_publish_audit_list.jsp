@@ -15,6 +15,11 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
+<%@ page import="com.dotcms.publisher.bundle.bean.Bundle" %>
+<%@ page import="com.dotmarketing.exception.DotDataException" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
+<%@ page import="com.liferay.util.StringPool" %>
+<%@ page import="com.dotcms.publishing.FilterDescriptor" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
 	final int MAX_ASSETS_TO_SHOW = 3;
@@ -288,6 +293,7 @@
 
 
 			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Identifier") %></strong></th>
+			<th  nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "Filter") %></strong></th>
 			<th style="width:100%" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Contents") %></strong></th>
 			<th style="width:100px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Status") %></strong></th>
 			<th style="width:40px" nowrap="nowrap" ><strong><%= LanguageUtil.get(pageContext, "publisher_Date_Entered") %></strong></th>
@@ -322,6 +328,18 @@
 					}
 					shortBundleId.append("-").append(bundleIdParts[i]);
 				}
+
+				String filterName = "";
+				try {
+					final Bundle bundle = APILocator.getBundleAPI().getBundleById(c.getBundleId());
+					if ( UtilMethods.isSet(bundle) && UtilMethods.isSet(bundle.getFilterKey()) ) {
+						final FilterDescriptor filterDescriptor =
+								APILocator.getPublisherAPI().getFilterDescriptorByKey(bundle.getFilterKey());
+						filterName = filterDescriptor != null ? filterDescriptor.getTitle() : "";
+					}
+				} catch (DotDataException e) {
+					Logger.error(this, "Error getting bundle id: " + c.getBundleId(), e);
+				}
 		%>
 			<tr <%=errorclass%>>
 				<td style="width:30px;text-align:center;" valign="top">
@@ -336,7 +354,11 @@
 				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
 					<%=shortBundleId.toString()%>
 				</td>
-				<%--BundleTitle--%>
+				<%--BundleFilter--%>
+				<td valign="top" nowrap="nowrap" style="cursor: pointer" onclick="javascript: showDetail('<%=c.getBundleId()%>')">
+					<%= filterName %>
+				</td>
+				<%--BundleContents--%>
 				<%try{ %>
 					<% if(bundleAssets.keySet().size()>0){ %>
 						<td valign="top" style="cursor: pointer" onclick="showDetail('<%=c.getBundleId()%>', event)">
