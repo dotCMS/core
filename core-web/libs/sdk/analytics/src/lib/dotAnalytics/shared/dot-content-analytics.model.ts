@@ -23,7 +23,7 @@ export interface DotContentAnalyticsConfig {
     /**
      * Automatically track page views when set to true.
      */
-    autoPageView: boolean;
+    autoPageView?: boolean;
 
     /**
      * The API key for authenticating with the Analytics service.

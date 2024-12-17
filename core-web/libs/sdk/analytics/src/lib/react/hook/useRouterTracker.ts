@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
+import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
 
 /**
  * Internal custom hook that handles analytics page view tracking.
@@ -9,17 +10,30 @@ import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
  * @returns {void}
  *
  */
-export function useRouteTracker(analytics: DotContentAnalytics | null) {
+export function useRouterTracker(analytics: DotContentAnalytics | null) {
     const lastPathRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!analytics) return;
 
-        const currentPath = window.location.pathname;
-
-        if (currentPath !== lastPathRef.current) {
-            lastPathRef.current = currentPath;
-            analytics.pageView();
+        function handleRouteChange() {
+            const currentPath = window.location.pathname;
+            if (currentPath !== lastPathRef.current && !isInsideEditor()) {
+                lastPathRef.current = currentPath;
+                analytics!.pageView();
+            }
         }
+
+        // Track initial page view
+        handleRouteChange();
+
+        // Listen for navigation events
+        window.addEventListener('popstate', handleRouteChange);
+        window.addEventListener('beforeunload', handleRouteChange);
+
+        return () => {
+            window.removeEventListener('popstate', handleRouteChange);
+            window.removeEventListener('beforeunload', handleRouteChange);
+        };
     }, [analytics]);
 }

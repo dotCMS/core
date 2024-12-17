@@ -14,15 +14,16 @@ if (swcJestConfig.swcrc === undefined) {
 // Uncomment if using global setup/teardown files being transformed via swc
 // https://nx.dev/nx-api/jest/documents/overview#global-setupteardown-with-nx-libraries
 // jest needs EsModule Interop to find the default exported setup/teardown functions
-// swcJestConfig.module.noInterop = false;
+swcJestConfig.module.noInterop = false;
 
 export default {
     displayName: 'analytics',
     preset: '../../../jest.preset.js',
     transform: {
-        '^.+\\.[tj]s$': ['@swc/jest', swcJestConfig]
+        '^.+\\.[tj]sx?$': ['@swc/jest', swcJestConfig]
     },
-    moduleFileExtensions: ['ts', 'js', 'html'],
+    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
     testEnvironment: 'jsdom',
-    coverageDirectory: '../../../coverage/libs/sdk/analytics'
+    coverageDirectory: '../../../coverage/libs/sdk/analytics',
+    setupFilesAfterEnv: ['<rootDir>/test-setup.ts']
 };

@@ -10,7 +10,7 @@ import { DotContentAnalyticsConfig, ServerEvent } from './dot-content-analytics.
 export const sendAnalyticsEventToServer = async (
     data: Record<string, unknown>,
     options: DotContentAnalyticsConfig
-): Promise<Response> => {
+): Promise<void> => {
     const serverEvent: ServerEvent = {
         ...data,
         timestamp: new Date().toISOString(),
@@ -28,13 +28,10 @@ export const sendAnalyticsEventToServer = async (
             body: JSON.stringify(serverEvent)
         });
 
-        if (response.ok) {
-            return response;
-        } else {
-            throw new Error(`${response.status}`);
+        if (!response.ok) {
+            console.error(`DotAnalytics: Server responded with status ${response.status}`);
         }
     } catch (error) {
         console.error('DotAnalytics: Error sending event:', error);
-        throw error;
     }
 };

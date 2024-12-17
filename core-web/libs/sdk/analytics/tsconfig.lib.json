@@ -1,16 +1,19 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "module": "ES2015",
-        "target": "es2015",
-        "declaration": true,
         "outDir": "../../../dist/libs/sdk/analytics",
-        "types": ["node", "jest"],
-        "moduleResolution": "node",
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true
+        "types": ["node", "@nx/react/typings/cssmodule.d.ts", "@nx/react/typings/image.d.ts"]
     },
     "include": ["src/**/*.ts", "src/**/*.tsx"],
-    "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+    "exclude": [
+        "jest.config.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.test.ts",
+        "src/**/*.spec.tsx",
+        "src/**/*.test.tsx",
+        "src/**/*.spec.js",
+        "src/**/*.test.js",
+        "src/**/*.spec.jsx",
+        "src/**/*.test.jsx"
+    ]
 }

@@ -1,14 +1,11 @@
 {
     "extends": "../../../tsconfig.base.json",
     "compilerOptions": {
-        "module": "commonjs",
         "jsx": "react-jsx",
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true
+        "allowJs": false,
+        "esModuleInterop": false,
+        "allowSyntheticDefaultImports": true,
+        "strict": true
     },
     "files": [],
     "include": [],

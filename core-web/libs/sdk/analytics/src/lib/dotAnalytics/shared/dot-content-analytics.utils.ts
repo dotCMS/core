@@ -94,9 +94,13 @@ export const defaultRedirectFn = (href: string) => (window.location.href = href)
  * @returns {boolean} - True if inside the editor, false otherwise.
  */
 export const isInsideEditor = (): boolean => {
-    if (typeof window === 'undefined') {
+    try {
+        if (typeof window === 'undefined') return false;
+
+        if (!window.parent) return false;
+
+        return window.parent !== window;
+    } catch (e) {
         return false;
     }
-
-    return window.parent !== window;
 };

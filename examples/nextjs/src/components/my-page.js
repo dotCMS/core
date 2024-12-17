@@ -19,8 +19,6 @@ import Navigation from "./layout/navigation";
 import NotFound from "@/app/not-found";
 import { usePageAsset } from "../hooks/usePageAsset";
 
-// import { DotContentAnalyticsProvider } from "@dotcms/analytics/react";
-
 /**
  * Configure experiment settings below. If you are not using experiments,
  * you can ignore or remove the experiment-related code and imports.
@@ -29,13 +27,6 @@ const experimentConfig = {
     apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY, // API key for experiments, should be securely stored
     server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
     debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG, // Debug mode for additional logging
-};
-
-// Example configuration for Content Analytics
-const analyticsConfig = {
-    apiKey: process.env.NEXT_PUBLIC_ANALYTICS_API_KEY, // API key for Content Analytics, is the same of Experiments, should be securely stored
-    server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
-    debug: process.env.NEXT_PUBLIC_ANALYTICS_DEBUG, // Debug mode for additional logging
 };
 
 // Mapping of components to DotCMS content types
@@ -76,7 +67,6 @@ export function MyPage({ pageAsset, nav }) {
     }
 
     return (
-        // <DotContentAnalyticsProvider config={analyticsConfig}>
         <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
             {pageAsset?.layout.header && (
                 <Header>{!!nav && <Navigation items={nav} />}</Header>
@@ -101,6 +91,5 @@ export function MyPage({ pageAsset, nav }) {
 
             {pageAsset?.layout.footer && <Footer />}
         </div>
-        // </DotContentAnalyticsProvider>
     );
 }

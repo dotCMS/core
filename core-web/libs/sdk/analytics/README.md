@@ -29,7 +29,7 @@ Or include the script in your HTML page:
 First, import the provider:
 
 ```tsx
-import { DotContentAnalyticsProvider } from '@dotcms/analytics';
+import { DotContentAnalyticsProvider } from '@dotcms/analytics/react';
 ```
 
 Wrap your application with the `DotContentAnalyticsProvider`:
@@ -56,21 +56,15 @@ function App() {
 Use the `useAnalyticsTracker` hook to track custom events:
 
 ```tsx
+import { useAnalyticsTracker } from '@dotcms/analytics/react';
+
 function Activity({ title, urlTitle }) {
     const { track } = useAnalyticsTracker();
 
-    const handleClick = () => {
-        // First parameter: custom event name to identify the action
-        // Second parameter: object with properties you want to track
-        track('product-detail-click', {
-            productTitle: title,
-            productUrl: urlTitle,
-            clickedElement: 'detail-button',
-            timestamp: new Date().toISOString()
-        });
-    };
+    // First parameter: custom event name to identify the action
+    // Second parameter: object with properties you want to track
 
-    return <button onClick={handleClick}>See Details →</button>;
+    return <button onClick={() => track('btn-click', { title, urlTitle })}>See Details →</button>;
 }
 ```
 

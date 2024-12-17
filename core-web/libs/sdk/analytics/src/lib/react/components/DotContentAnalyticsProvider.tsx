@@ -3,7 +3,7 @@ import { ReactElement, ReactNode, useEffect, useMemo } from 'react';
 import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
 import { DotContentAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
-import { useRouteTracker } from '../hook/useRouterTracker';
+import { useRouterTracker } from '../hook/useRouterTracker';
 
 interface DotContentAnalyticsProviderProps {
     children?: ReactNode;
@@ -33,7 +33,7 @@ export const DotContentAnalyticsProvider = ({
         });
     }, [instance]);
 
-    useRouteTracker(instance);
+    useRouterTracker(instance);
 
     return (
         <DotContentAnalyticsContext.Provider value={instance}>

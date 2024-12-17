@@ -12,7 +12,6 @@ import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
  */
 export const useContentAnalytics = (): DotContentAnalyticsCustomHook => {
     const instance = useContext(DotContentAnalyticsContext);
-    const insideEditor = isInsideEditor();
 
     return {
         /**
@@ -22,7 +21,7 @@ export const useContentAnalytics = (): DotContentAnalyticsCustomHook => {
          * @param {object} payload - Additional data to include with the event
          */
         track: (eventName: string, payload: Record<string, unknown> = {}) => {
-            if (instance?.track && !insideEditor) {
+            if (instance?.track && !isInsideEditor()) {
                 instance.track(eventName, {
                     ...payload,
                     timestamp: new Date().toISOString()

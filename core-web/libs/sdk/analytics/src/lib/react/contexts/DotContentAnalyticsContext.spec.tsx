@@ -1,16 +1,23 @@
 import { jest } from '@jest/globals';
+import '@testing-library/jest-dom';
 import { renderHook } from '@testing-library/react-hooks';
+import * as React from 'react';
 import { ReactNode, useContext } from 'react';
 
 import DotContentAnalyticsContext from './DotContentAnalyticsContext';
 
 import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
 
-jest.mock('../dot-content-analytics', () => {
-    return jest.fn().mockImplementation(() => {
-        return {};
-    });
-});
+jest.mock('../../dotAnalytics/dot-content-analytics', () => ({
+    DotContentAnalytics: {
+        getInstance: jest.fn().mockImplementation(() => ({
+            track: jest.fn(),
+            ready: jest.fn(),
+            logger: console,
+            initialized: false
+        }))
+    }
+}));
 
 describe('useDotContentAnalyticsContext', () => {
     it('returns the context value null', () => {
