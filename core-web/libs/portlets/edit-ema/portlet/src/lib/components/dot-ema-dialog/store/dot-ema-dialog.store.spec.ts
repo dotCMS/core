@@ -123,7 +123,7 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: 'edit-page',
+            angularCurrentPortlet: null,
             variantName: TEST_VARIANT
         });
 
