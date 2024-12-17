@@ -367,7 +367,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             throws DotDataException, DotSecurityException {
         Logger.debug(this, "--HTMLPageAssetRenderedAPIImpl_getHtmlPageAsset--");
 
-        Optional<HTMLPageUrl> htmlPageUrlOptional = findPageByContext(host, context);
+        Optional<HTMLPageUrl> htmlPageUrlOptional = findPageByContext(host, context, request);
 
         if (htmlPageUrlOptional.isEmpty()) {
             Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getHtmlPageAsset htmlPageUrlOptional is Empty trying to find by URL Map");
@@ -428,17 +428,18 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
      * @throws DotSecurityException The User accessing the APIs does not have the required permissions to perform
      *                              this action.
      */
-    private Optional<HTMLPageUrl> findPageByContext(final Host host, final PageContext context)
+    private Optional<HTMLPageUrl> findPageByContext(final Host host, final PageContext context, final HttpServletRequest request)
             throws DotDataException, DotSecurityException {
 
         final User user = context.getUser();
-        final String uri = context.getPageUri();
         final PageMode mode = context.getPageMode();
-        final String pageUri = (UUIDUtil.isUUID(uri) ||( uri.length()>0 && '/' == uri.charAt(0))) ? uri : ("/" + uri);
-        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_findPageByContext user: " + user + " uri: " + uri + " mode: " + mode + " host: " + host + " pageUri: " + pageUri);
-        final HTMLPageAsset htmlPageAsset = (HTMLPageAsset) (UUIDUtil.isUUID(pageUri) ?
-                this.htmlPageAssetAPI.findPage(pageUri, user, mode.respectAnonPerms) :
-                getPageByUri(mode, host, pageUri));
+        String uri = context.getPageUri();
+        uri = uri == null ? StringPool.BLANK : uri;
+        final String pageUriOrInode = (UUIDUtil.isUUID(uri) ||(!uri.isEmpty() && '/' == uri.charAt(0))) ? uri : ("/" + uri);
+        Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_findPageByContext user: " + user + " uri: " + uri + " mode: " + mode + " host: " + host + " pageUriOrInode: " + pageUriOrInode);
+        final HTMLPageAsset htmlPageAsset = (HTMLPageAsset) (UUIDUtil.isUUID(pageUriOrInode) ?
+                this.htmlPageAssetAPI.findPage(pageUriOrInode, user, mode.respectAnonPerms) :
+                getPageByUri(mode, host, pageUriOrInode, request));
 
         Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_findPageByContext htmlPageAsset: " + (htmlPageAsset == null ? "Not Found" : htmlPageAsset.toString()));
         return Optional.ofNullable(htmlPageAsset == null ? null : new HTMLPageUrl(htmlPageAsset));
@@ -494,10 +495,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
     }
 
-    private IHTMLPage getPageByUri(final PageMode mode, final Host host, final String pageUri)
+    private IHTMLPage getPageByUri(final PageMode mode, final Host host, final String pageUri, final HttpServletRequest request)
             throws DotDataException, DotSecurityException {
 
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Language defaultLanguage = this.languageAPI.getDefaultLanguage();
         final Language language = this.getCurrentLanguage(request);
         Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageByUri pageUri: " + pageUri + " host: " + host + " language: " + language + " mode: " + mode);
