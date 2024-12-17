@@ -356,7 +356,8 @@ describe('DotEmaShellComponent', () => {
                     contentType: undefined,
                     identifier: '123',
                     inode: '123',
-                    title: 'hello world'
+                    title: 'hello world',
+                    angularCurrentPortlet: 'edit-page'
                 });
             });
         });
