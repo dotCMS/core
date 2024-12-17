@@ -125,21 +125,8 @@ public class ContentUtils {
 
                 // time-machine
                 if (tmDate != null) {
-                    // timemachine future dates
+                    // This should take care of the rendering bits for the time machine
                     final Date ffdate = new Date(Long.parseLong(tmDate));
-                    //final Identifier ident = APILocator.getIdentifierAPI().find(inodeOrIdentifier);
-                    //if (ident == null || !UtilMethods.isSet(ident.getId())) {
-                    //    return null;
-                    //}
-
-                    // timemachine content has expired. return nothing
-                    //if (UtilMethods.isSet(ident.getSysExpireDate()) && ffdate.after(ident.getSysExpireDate())) {
-                    //    return null;
-                    //}
-                    
-                    // timemachine content to be published in the future, return the working version
-                    //if (UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate())) {
-                        //return conAPI.findContentletByIdentifierOrFallback(inodeOrIdentifier, false, sessionLang, user, true).orElse(null);
 					final PageMode pageMode = PageMode.get();
 					final Optional<Contentlet> futureContent = conAPI.findContentletByIdentifierOrFallback(
 								inodeOrIdentifier, sessionLang, VariantAPI.DEFAULT_VARIANT.name(),
@@ -147,7 +134,8 @@ public class ContentUtils {
 						if (futureContent.isPresent()) {
 							return futureContent.get();
 						}
-					//}
+						// If the content is not found or has expired
+					    // No need to return null we continue to the next step to try to find the content in the live or working version
                 }
 
 				final ContentletVersionInfo contentletVersionInfoByFallback = WebAPILocator.getVariantWebAPI()
