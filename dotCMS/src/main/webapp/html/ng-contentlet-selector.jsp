@@ -258,6 +258,7 @@
      languageId="<%=language_id%>"
      onContentSelected="contentSelected"
      selectButtonLabel='<%= LanguageUtil.get(pageContext, "content.search.select") %>'
+     variantName='<%=variantName%>'
      dojoType="dotcms.dijit.form.ContentSelector">
 
 </div>

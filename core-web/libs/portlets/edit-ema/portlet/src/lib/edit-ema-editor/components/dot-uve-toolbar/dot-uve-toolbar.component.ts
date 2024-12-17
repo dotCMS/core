@@ -33,6 +33,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -50,11 +51,12 @@ import { UVEStore } from '../../../store/dot-uve.store';
         SplitButtonModule,
         FormsModule,
         ReactiveFormsModule,
-        ChipModule,
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
         ClipboardModule,
-        DotUveDeviceSelectorComponent
+        DotUveDeviceSelectorComponent,
+        DotUveWorkflowActionsComponent,
+        ChipModule
     ],
     providers: [DotPersonalizeService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -64,8 +66,10 @@ import { UVEStore } from '../../../store/dot-uve.store';
 export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
-    #store = inject(UVEStore);
 
+    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+
+    readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
@@ -77,8 +81,6 @@ export class DotUveToolbarComponent {
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
 
-    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
-
     readonly $styleToolbarClass = computed(() => {
         if (!this.$isPreviewMode()) {
             return 'uve-toolbar';
@@ -86,6 +88,13 @@ export class DotUveToolbarComponent {
 
         return 'uve-toolbar uve-toolbar-preview';
     });
+
+    readonly $pageInode = computed(() => {
+        return this.#store.pageAPIResponse()?.page.inode;
+    });
+
+    readonly $actions = this.#store.workflowLoading;
+    readonly $workflowLoding = this.#store.workflowLoading;
 
     protected readonly date = new Date();
 

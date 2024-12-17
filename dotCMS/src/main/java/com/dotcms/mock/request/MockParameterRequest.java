@@ -1,17 +1,18 @@
 package com.dotcms.mock.request;
 
-import java.nio.charset.Charset;
+import com.google.common.collect.ImmutableMap;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 
 /**
  * Mock Request Parameter using a Request Wrapper. Part of the work to be
@@ -27,8 +28,7 @@ public class MockParameterRequest extends HttpServletRequestWrapper implements M
     public MockParameterRequest(HttpServletRequest request, Map<String, String> setMe) {
         super(request);
         HashMap<String, String> mutable = new HashMap<>();
-        
-        List<NameValuePair> additional = URLEncodedUtils.parse(request.getQueryString(), Charset.forName("UTF-8"));
+        List<NameValuePair> additional = URLEncodedUtils.parse(request.getQueryString(), StandardCharsets.UTF_8);
         for(NameValuePair nvp : additional) {
             mutable.put(nvp.getName(),nvp.getValue());
         }
@@ -40,7 +40,7 @@ public class MockParameterRequest extends HttpServletRequestWrapper implements M
             mutable.put(key, request.getParameter(key));
         }
         mutable.putAll(setMe);
-
+        mutable.values().removeIf(Objects::isNull);
         params = ImmutableMap.copyOf(mutable);
     }
 

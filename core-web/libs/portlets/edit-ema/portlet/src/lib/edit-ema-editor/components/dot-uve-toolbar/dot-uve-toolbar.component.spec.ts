@@ -13,7 +13,8 @@ import {
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
-    DotPersonalizeService
+    DotPersonalizeService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -43,6 +44,7 @@ import {
     createPageApiUrlWithQueryParams,
     sanitizeURL
 } from '../../../utils';
+import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -107,13 +109,18 @@ describe('DotUveToolbarComponent', () => {
             HttpClientTestingModule,
             MockComponent(DotEmaBookmarksComponent),
             MockComponent(DotEmaRunningExperimentComponent),
-            MockComponent(EditEmaPersonaSelectorComponent)
+            MockComponent(EditEmaPersonaSelectorComponent),
+            MockComponent(DotUveWorkflowActionsComponent)
         ],
         providers: [
             UVEStore,
             provideHttpClientTesting(),
             mockProvider(ConfirmationService, {
                 confirm: jest.fn()
+            }),
+
+            mockProvider(DotWorkflowsActionsService, {
+                getByInode: () => of([])
             }),
             {
                 provide: DotLanguagesService,
@@ -179,6 +186,12 @@ describe('DotUveToolbarComponent', () => {
             it('should be null', () => {
                 expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeNull();
             });
+        });
+
+        it('should have a dot-uve-workflow-actions component', () => {
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+
+            expect(workflowActions).toBeTruthy();
         });
 
         describe('copy-url', () => {
@@ -359,10 +372,6 @@ describe('DotUveToolbarComponent', () => {
         it('should have persona selector', () => {
             expect(spectator.query(byTestId('uve-toolbar-persona-selector'))).toBeTruthy();
         });
-
-        it('should have workflows button', () => {
-            expect(spectator.query(byTestId('uve-toolbar-workflow-actions'))).toBeTruthy();
-        });
     });
 
     describe('preview', () => {
@@ -411,8 +420,10 @@ describe('DotUveToolbarComponent', () => {
             expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
         });
 
-        it('should not have workflow actions', () => {
-            expect(spectator.query(byTestId('uve-toolbar-workflow-actions'))).toBeFalsy();
+        it('should not have a dot-uve-workflow-actions component', () => {
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+
+            expect(workflowActions).toBeNull();
         });
     });
 
