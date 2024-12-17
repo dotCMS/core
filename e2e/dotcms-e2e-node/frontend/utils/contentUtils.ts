@@ -66,19 +66,18 @@ export class ContentUtils {
     }
 
     /**
-     * Validate the workflow execution
+     * Validate the workflow execution and close the modal
      * @param page
      */
-    async workflowExecutionValidation(page: Page) {
+    async workflowExecutionValidationAndClose(page: Page, message: string) {
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-        await expect(dotIframe.getByText('Content saved')).toBeVisible({timeout: 9000});
-        await expect(dotIframe.getByText('Content saved')).toBeHidden();
+        await expect(dotIframe.getByText(message)).toBeVisible({timeout: 9000});
+        await expect(dotIframe.getByText(message)).toBeHidden();
         //Click on close
         const closeBtnLocator = page.getByTestId('close-button').getByRole('button');
         await waitForVisibleAndCallback(closeBtnLocator, () => closeBtnLocator.click());
     }
-
 
     /**
      * Add new content action on the content portlet
@@ -186,7 +185,7 @@ export class ContentUtils {
             return;
         }
         await this.fillRichTextForm(page, newTitle, newBody, action);
-        await this.workflowExecutionValidation(page);
+        await this.workflowExecutionValidationAndClose(page, 'Content saved');
     }
 
     /**
@@ -208,7 +207,6 @@ export class ContentUtils {
                 await iframe.locator('#widget_showingSelect div').first().click();
                 const dropDownMenu = iframe.getByRole('option', { name: 'Archived' });
                 await waitForVisibleAndCallback(dropDownMenu, () => dropDownMenu.click());
-                await page.waitForTimeout(1000)
             } else if (contentState === 'archived') {
                 await this.performWorkflowAction(page, title, contentProperties.deleteWfAction);
                 return;

@@ -45,7 +45,7 @@ test('Add a new pice of content', async ({page}) => {
     // Adding new rich text content
     await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
     await contentUtils.fillRichTextForm(page, genericContent1.title, genericContent1.body, contentProperties.publishWfAction);
-    await contentUtils.workflowExecutionValidation(page);
+    await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
 
     await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr').first(), async () => {});
 
@@ -113,6 +113,6 @@ test('Validate you are able to add file assets importing from url', async ({page
     await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
     await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, contentProperties.publishWfAction, null, fileAssetContent.fromURL );
     //fileName?: string, fromURL?: string, newFileName?: string, newFileText?: string) {
-    await contentUtils.workflowExecutionValidation(page);
+    await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
     await contentUtils.validateContentExist(page, fileAssetContent.title).then(assert);
 });
