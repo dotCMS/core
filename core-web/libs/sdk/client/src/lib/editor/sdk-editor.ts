@@ -125,7 +125,7 @@ export function isInsideEditor(): boolean {
  *
  * @example
  * ```ts
- * const context = detectUVEContext();
+ * const context = getUVEContext();
  * if (context) {
  *   console.log(`Running in ${context.mode} mode`);
  * } else {
@@ -133,7 +133,7 @@ export function isInsideEditor(): boolean {
  * }
  * ```
  */
-export function detectUVEContext() {
+export function getUVEContext() {
     if (!isInsideEditor()) {
         return null;
     }

@@ -8,7 +8,7 @@ import { postMessageToEditor, CLIENT_ACTIONS } from './models/client.model';
 import { EDITOR_MODE } from './models/editor.model';
 import {
     addClassToEmptyContentlets,
-    detectUVEContext,
+    getUVEContext,
     initEditor,
     initInlineEditing,
     isInsideEditor,
@@ -167,12 +167,12 @@ describe('DotCMSPageEditor', () => {
         });
     });
 
-    describe('detectUVEContext', () => {
-        it('should detectUVEContext return { mode: EDITOR_MODE.EDITOR } when is editor mode', () => {
-            expect(detectUVEContext()).toEqual({ mode: EDITOR_MODE.EDIT });
+    describe('getUVEContext', () => {
+        it('should getUVEContext return { mode: EDITOR_MODE.EDITOR } when is editor mode', () => {
+            expect(getUVEContext()).toEqual({ mode: EDITOR_MODE.EDIT });
         });
 
-        it('should detectUVEContext return { mode: EDITOR_MODE.PREVIEW } when is preview mode', () => {
+        it('should getUVEContext return { mode: EDITOR_MODE.PREVIEW } when is preview mode', () => {
             Object.defineProperty(window, 'location', {
                 value: {
                     search: '?editorMode=preview'
@@ -180,15 +180,15 @@ describe('DotCMSPageEditor', () => {
                 writable: true
             });
 
-            expect(detectUVEContext()).toEqual({ mode: EDITOR_MODE.PREVIEW });
+            expect(getUVEContext()).toEqual({ mode: EDITOR_MODE.PREVIEW });
         });
 
-        it('should detectUVEContext return null when is not inside editor', () => {
+        it('should getUVEContext return null when is not inside editor', () => {
             Object.defineProperty(window, 'parent', {
                 value: window,
                 writable: true
             });
-            expect(detectUVEContext()).toBe(null);
+            expect(getUVEContext()).toBe(null);
         });
     });
 });
