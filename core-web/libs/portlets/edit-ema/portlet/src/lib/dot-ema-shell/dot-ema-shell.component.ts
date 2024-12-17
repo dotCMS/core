@@ -176,7 +176,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 title: page.title,
                 identifier: page.identifier,
                 contentType: page.contentType,
-                angularCurrentPortlet: "edit-page"
+                angularCurrentPortlet: 'edit-page'
             });
         }
     }

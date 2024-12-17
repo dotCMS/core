@@ -140,7 +140,15 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaDialogStore
      */
     readonly editContentlet = this.updater(
-        (state, { inode, title, clientAction = CLIENT_ACTIONS.NOOP, angularCurrentPortlet }: EditContentletPayload) => {
+        (
+            state,
+            {
+                inode,
+                title,
+                clientAction = CLIENT_ACTIONS.NOOP,
+                angularCurrentPortlet
+            }: EditContentletPayload
+        ) => {
             return {
                 ...state,
                 clientAction, //In case it is undefined we set it to "noop"
