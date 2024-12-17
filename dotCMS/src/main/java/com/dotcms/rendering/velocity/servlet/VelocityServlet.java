@@ -73,7 +73,7 @@ public class VelocityServlet extends HttpServlet {
                     :  PageMode.setPageMode(request, PageMode.LIVE);
         }
 
-        if ( LoginMode.FE == loginMode || user.isAdmin()) {
+        if ( LoginMode.FE == loginMode || user.isBackendUser()) {
             return PageMode.setPageMode(request, PageMode.LIVE);
         }
 
