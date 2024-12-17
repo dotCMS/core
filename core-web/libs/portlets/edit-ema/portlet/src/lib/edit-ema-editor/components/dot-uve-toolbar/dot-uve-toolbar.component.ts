@@ -27,6 +27,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
@@ -46,10 +47,10 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         SplitButtonModule,
         FormsModule,
         ReactiveFormsModule,
-        ChipModule,
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
-        ClipboardModule
+        DotUveWorkflowActionsComponent,
+        ChipModule
     ],
     providers: [DotPersonalizeService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -59,8 +60,10 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
 export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
-    #store = inject(UVEStore);
 
+    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+
+    readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
@@ -71,8 +74,6 @@ export class DotUveToolbarComponent {
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
 
-    @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
-
     readonly $styleToolbarClass = computed(() => {
         if (!this.$isPreviewMode()) {
             return 'uve-toolbar';
@@ -80,6 +81,13 @@ export class DotUveToolbarComponent {
 
         return 'uve-toolbar uve-toolbar-preview';
     });
+
+    readonly $pageInode = computed(() => {
+        return this.#store.pageAPIResponse()?.page.inode;
+    });
+
+    readonly $actions = this.#store.workflowLoading;
+    readonly $workflowLoding = this.#store.workflowLoading;
 
     protected readonly date = new Date();
 
