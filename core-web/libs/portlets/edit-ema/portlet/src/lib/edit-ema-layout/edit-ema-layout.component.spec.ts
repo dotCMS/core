@@ -19,7 +19,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPageLayoutService,
-    DotRouterService
+    DotRouterService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent, TemplateBuilderModule } from '@dotcms/template-builder';
@@ -92,6 +93,9 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(DotPageApiService, {
                 get: jest.fn(() => of(PAGE_RESPONSE)),
                 getClientPage: jest.fn(() => of(PAGE_RESPONSE))
+            }),
+            mockProvider(DotWorkflowsActionsService, {
+                getByInode: jest.fn(() => of([]))
             }),
             MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
             MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),

@@ -29,10 +29,10 @@ import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { compareUrlPaths } from '../../../utils';
-import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
@@ -50,7 +50,7 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
         DotEmaInfoDisplayComponent,
-        DotEditEmaWorkflowActionsComponent,
+        DotUveWorkflowActionsComponent,
         ClipboardModule
     ],
     providers: [DotPersonalizeService],
