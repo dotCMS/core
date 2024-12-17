@@ -140,14 +140,14 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @memberof DotEmaDialogStore
      */
     readonly editContentlet = this.updater(
-        (state, { inode, title, clientAction = CLIENT_ACTIONS.NOOP }: EditContentletPayload) => {
+        (state, { inode, title, clientAction = CLIENT_ACTIONS.NOOP, angularCurrentPortlet }: EditContentletPayload) => {
             return {
                 ...state,
                 clientAction, //In case it is undefined we set it to "noop"
                 header: title,
                 status: DialogStatus.LOADING,
                 type: 'content',
-                url: this.createEditContentletUrl(inode)
+                url: this.createEditContentletUrl(inode, angularCurrentPortlet)
             };
         }
     );
@@ -159,7 +159,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      */
     readonly editUrlContentMapContentlet = this.updater(
         (state, { inode, title }: EditContentletPayload) => {
-            const url = this.createEditContentletUrl(inode) + '&isURLMap=true';
+            const url = this.createEditContentletUrl(inode, null) + '&isURLMap=true';
 
             return {
                 ...state,
@@ -292,10 +292,11 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      *
      * @private
      * @param {string} inode
+     * @param angularCurrentPortlet
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private createEditContentletUrl(inode: string): string {
+    private createEditContentletUrl(inode: string, angularCurrentPortlet: string): string {
         const queryParams = new URLSearchParams({
             p_p_id: 'content',
             p_p_action: '1',
@@ -304,6 +305,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: inode,
+            angularCurrentPortlet: angularCurrentPortlet,
             variantName: this.uveStore.pageParams().variantName
         });
 
