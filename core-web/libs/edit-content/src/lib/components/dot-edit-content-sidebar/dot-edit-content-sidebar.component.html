@@ -13,7 +13,7 @@
             <!-- Information section -->
             <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.general.title' | dm">
                 <ng-template #sectionAction>
-                    @if (!store.isNew()) {
+                    @if (!store.isNew() || !store.isCopyingLocale()) {
                         <dot-copy-button
                             [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"

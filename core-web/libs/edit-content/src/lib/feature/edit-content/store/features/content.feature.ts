@@ -32,6 +32,7 @@ import {
     FeaturedFlags,
     WorkflowStep
 } from '@dotcms/dotcms-models';
+import { DotContentletState } from '@dotcms/edit-content/models/dot-edit-content.model';
 
 import { WorkflowState } from './workflow.feature';
 
@@ -54,7 +55,7 @@ export interface ContentState {
             firstStep: WorkflowStep;
         }
     >;
-    initialContentletState: 'new' | 'existing' | 'reset' | 'copy';
+    initialContentletState: DotContentletState;
 }
 
 export const contentInitialState: ContentState = {
@@ -75,11 +76,7 @@ export function withContent() {
              *
              * @returns {boolean} True if content is new, false otherwise
              */
-            isNew: computed(
-                () =>
-                    store.initialContentletState() === 'new' ||
-                    store.initialContentletState() === 'copy'
-            ),
+            isNew: computed(() => store.initialContentletState() === 'new'),
 
             /**
              * Computed property that determines if the store's status is equal to ComponentStatus.LOADED.
