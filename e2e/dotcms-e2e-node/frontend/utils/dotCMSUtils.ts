@@ -1,19 +1,6 @@
 import { Page, expect, Locator } from '@playwright/test';
 import { loginLocators } from '../locators/globalLocators';
 
-export const waitFor = async (locator: Locator, state: "attached" | "detached" | "visible" | "hidden"): Promise<void> => {
-    await locator.waitFor({state: state});
-}
-
-export const waitForAndCallback = async (locator: Locator, state: "attached" | "detached" | "visible" | "hidden", callback: () => Promise<void>): Promise<void> => {
-    await waitFor(locator, state);
-    await callback();
-};
-
-export const waitForVisibleAndCallback = async (locator: Locator, callback: () => Promise<void>): Promise<void> => {
-    await waitForAndCallback(locator, 'visible', callback);
-};
-
 export class dotCMSUtils {
     page: Page;
 
@@ -45,4 +32,18 @@ export class dotCMSUtils {
         await group.click();
         await tool.click();
     }
+};
+
+
+export const waitFor = async (locator: Locator, state: "attached" | "detached" | "visible" | "hidden"): Promise<void> => {
+    await locator.waitFor({state: state});
+}
+
+export const waitForAndCallback = async (locator: Locator, state: "attached" | "detached" | "visible" | "hidden", callback: () => Promise<void>): Promise<void> => {
+    await waitFor(locator, state);
+    await callback();
+};
+
+export const waitForVisibleAndCallback = async (locator: Locator, callback: () => Promise<void>): Promise<void> => {
+    await waitForAndCallback(locator, 'visible', callback);
 };

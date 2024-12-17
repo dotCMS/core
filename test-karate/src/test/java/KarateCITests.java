@@ -9,7 +9,10 @@ public class KarateCITests {
 
     @Test
     void defaults() {
-        Results results = Runner.path("classpath:tests/defaults").tags("~@ignore")
+        Results results = Runner.path(
+                "classpath:tests/defaults",
+                        "classpath:tests/graphql/ftm"
+                ).tags("~@ignore")
                 .outputHtmlReport(true)
                 .outputJunitXml(true)
                 .outputCucumberJson(true)
