@@ -13,7 +13,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { EDITOR_MODE, UVE_STATUS } from '../../../shared/enums';
+import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams } from '../../../shared/models';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
@@ -141,10 +141,7 @@ export function withLoad() {
                                                 currentUser
                                             );
 
-                                            const isPreview =
-                                                pageParams.editorMode === EDITOR_MODE.PREVIEW;
                                             const isTraditionalPage = !pageParams.clientHost;
-                                            const isClientReady = isTraditionalPage || isPreview;
 
                                             patchState(store, {
                                                 pageAPIResponse: pageAsset,
@@ -154,7 +151,7 @@ export function withLoad() {
                                                 languages,
                                                 canEditPage,
                                                 pageIsLocked,
-                                                isClientReady,
+                                                isClientReady: isTraditionalPage,
                                                 isTraditionalPage,
                                                 status: UVE_STATUS.LOADED
                                             });
