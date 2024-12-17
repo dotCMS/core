@@ -18,9 +18,9 @@ export function useRouterTracker(analytics: DotContentAnalytics | null) {
 
         function handleRouteChange() {
             const currentPath = window.location.pathname;
-            if (currentPath !== lastPathRef.current && !isInsideEditor()) {
+            if (currentPath !== lastPathRef.current && !isInsideEditor() && analytics) {
                 lastPathRef.current = currentPath;
-                analytics!.pageView();
+                analytics.pageView();
             }
         }
 
