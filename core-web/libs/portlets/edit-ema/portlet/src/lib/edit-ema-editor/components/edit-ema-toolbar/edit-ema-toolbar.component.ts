@@ -32,9 +32,9 @@ import { compareUrlPaths } from '../../../utils';
 import { DotEmaBookmarksComponent } from '../dot-uve-toolbar/components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-uve-toolbar/components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveWorkflowActionsComponent } from '../dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from '../dot-uve-toolbar/components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../dot-uve-toolbar/components/edit-ema-persona-selector/edit-ema-persona-selector.component';
-import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
 @Component({
     selector: 'dot-edit-ema-toolbar',

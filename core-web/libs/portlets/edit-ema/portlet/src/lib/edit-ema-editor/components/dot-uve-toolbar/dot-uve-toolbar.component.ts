@@ -27,13 +27,13 @@ import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/do
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DEFAULT_DEVICES } from './components/dot-uve-device-selector/const';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
 @Component({
     selector: 'dot-uve-toolbar',

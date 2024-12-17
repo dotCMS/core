@@ -34,8 +34,8 @@ import {
 
 import { DotUveWorkflowActionsComponent } from './dot-uve-workflow-actions.component';
 
-import { MOCK_RESPONSE_VTL } from '../../../shared/mocks';
-import { UVEStore } from '../../../store/dot-uve.store';
+import { MOCK_RESPONSE_VTL } from '../../../../../shared/mocks';
+import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const DOT_WORKFLOW_PAYLOAD_MOCK: DotWorkflowPayload = {
     assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',

@@ -26,6 +26,7 @@ import {
 
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
@@ -44,7 +45,6 @@ import {
     createPageApiUrlWithQueryParams,
     sanitizeURL
 } from '../../../utils';
-import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
