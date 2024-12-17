@@ -7,8 +7,11 @@ import {
     effect,
     EventEmitter,
     inject,
+    OnInit,
     Output,
-    viewChild
+    signal,
+    viewChild,
+    WritableSignal
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -19,8 +22,10 @@ import { ChipModule } from 'primeng/chip';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
+import { take } from 'rxjs/operators';
+
+import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import { DotPersona, DotLanguage, DotDevice } from '@dotcms/dotcms-models';
 
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
@@ -58,12 +63,12 @@ import { UVEStore } from '../../../store/dot-uve.store';
         DotUveWorkflowActionsComponent,
         ChipModule
     ],
-    providers: [DotPersonalizeService],
+    providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
     styleUrl: './dot-uve-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUveToolbarComponent {
+export class DotUveToolbarComponent implements OnInit {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
@@ -74,12 +79,14 @@ export class DotUveToolbarComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
+    readonly #deviceService = inject(DotDevicesService);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
+    readonly $devices: WritableSignal<DotDevice[]> = signal([]);
 
     readonly $styleToolbarClass = computed(() => {
         if (!this.$isPreviewMode()) {
@@ -124,6 +131,15 @@ export class DotUveToolbarComponent {
             allowSignalWrites: true
         }
     );
+
+    ngOnInit(): void {
+        this.#deviceService
+            .get()
+            .pipe(take(1))
+            .subscribe((devices: DotDevice[]) => {
+                this.$devices.set(devices);
+            });
+    }
 
     /**
      * Set the preview mode

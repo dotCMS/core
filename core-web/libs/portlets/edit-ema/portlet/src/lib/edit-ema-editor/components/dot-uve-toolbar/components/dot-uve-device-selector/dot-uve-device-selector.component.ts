@@ -1,10 +1,10 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotDevice } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEFAULT_DEVICES } from './const';
@@ -24,6 +24,10 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     defaultDevices = DEFAULT_DEVICES;
 
     #store = inject(UVEStore);
+
+    $devices = input<DotDevice[]>([], {
+        alias: 'devices'
+    });
 
     readonly $currentDevice = this.#store.device;
 
@@ -47,8 +51,10 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         }
     }
 
-    onDeviceSelect(device: DotDeviceListItem): void {
+    onDeviceSelect(device: DotDevice): void {
         const currentDevice = this.$currentDevice();
+
+        // console.log(this.$devices());
 
         if (currentDevice && currentDevice.inode === device.inode) {
             this.#store.patchViewParams({

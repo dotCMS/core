@@ -93,7 +93,7 @@
         data-testId="close-preview-mode" />
 
     <div class="vertical-divider"></div>
-    <dot-uve-device-selector />
+    <dot-uve-device-selector [devices]="$devices()" />
 </ng-template>
 
 @if ($infoDisplayProps()) {
