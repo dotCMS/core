@@ -23,7 +23,7 @@
                 styleClass="uve-toolbar-chips"
                 [label]="'Today' | dm"
                 alt="Page Day"
-                (click)="setPreviewMode()" />
+                (click)="triggerPreviewMode()" />
         </div>
     }
 
@@ -59,7 +59,7 @@
         icon="pi pi-eye"
         styleClass="p-button-text p-button-sm"
         data-testId="uve-toolbar-preview"
-        (click)="setPreviewMode()" />
+        (click)="triggerPreviewMode()" />
 
     <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
 
@@ -86,7 +86,7 @@
     <p-button
         icon="pi pi-times"
         styleClass="p-button-text p-button-sm"
-        (click)="setEditMode()"
+        (click)="triggerEditMode()"
         data-testId="close-preview-mode" />
 
     <div class="vertical-divider"></div>

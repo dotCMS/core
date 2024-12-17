@@ -28,7 +28,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -115,7 +115,7 @@ export function withEditor() {
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
 
-                    const isPreview = params?.preview === 'true';
+                    const isPreview = params?.editorMode === EDITOR_MODE.PREVIEW;
                     const isPageReady = isTraditionalPage || isClientReady || isPreview;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 

@@ -169,13 +169,13 @@ describe('DotCMSPageEditor', () => {
 
     describe('detectUVEContext', () => {
         it('should detectUVEContext return { mode: EDITOR_MODE.EDITOR } when is editor mode', () => {
-            expect(detectUVEContext()).toEqual({ mode: EDITOR_MODE.EDITOR });
+            expect(detectUVEContext()).toEqual({ mode: EDITOR_MODE.EDIT });
         });
 
         it('should detectUVEContext return { mode: EDITOR_MODE.PREVIEW } when is preview mode', () => {
             Object.defineProperty(window, 'location', {
                 value: {
-                    search: '?preview=true'
+                    search: '?editorMode=preview'
                 },
                 writable: true
             });

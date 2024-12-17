@@ -46,7 +46,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
-import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { EDITOR_MODE, FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
     MOCK_RESPONSE_HEADLESS,
@@ -528,7 +528,7 @@ describe('DotEmaShellComponent', () => {
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
-                    preview: true
+                    editorMode: EDITOR_MODE.PREVIEW
                 };
 
                 // override the new Date() to return a fixed date

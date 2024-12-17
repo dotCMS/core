@@ -14,7 +14,7 @@ import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { BASE_IFRAME_MEASURE_UNIT, DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_MODE, EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -673,7 +673,9 @@ describe('withEditor', () => {
             });
 
             it('should not have opacity or progressBar in preview mode', () => {
-                patchState(store, { pageParams: { ...emptyParams, preview: 'true' } });
+                patchState(store, {
+                    pageParams: { ...emptyParams, editorMode: EDITOR_MODE.PREVIEW }
+                });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
                 expect(store.$editorProps().progressBar).toBe(false);
@@ -839,7 +841,7 @@ describe('withEditor', () => {
                         canEditPage: true,
                         pageParams: {
                             ...emptyParams,
-                            preview: 'true'
+                            editorMode: EDITOR_MODE.PREVIEW
                         },
                         state: EDITOR_STATE.IDLE
                     });

@@ -15,6 +15,7 @@ import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
+import { DotPageAssetParams } from '../../../shared/models';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
@@ -47,7 +48,7 @@ export function withLoad() {
                  * @param {DotPageApiParams} pageParams - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                loadPageAsset: rxMethod<Partial<DotPageApiParams>>(
+                loadPageAsset: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
                             if (!store.pageParams()) {

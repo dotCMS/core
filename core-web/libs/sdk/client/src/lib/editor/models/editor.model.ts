@@ -68,6 +68,6 @@ export interface ReorderMenuConfig {
 }
 
 export enum EDITOR_MODE {
-    EDITOR = 'EDITOR',
-    PREVIEW = 'PREVIEW'
+    EDIT = 'edit',
+    PREVIEW = 'preview'
 }

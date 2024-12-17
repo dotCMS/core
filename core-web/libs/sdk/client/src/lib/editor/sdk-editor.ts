@@ -142,7 +142,7 @@ export function detectUVEContext() {
         return { mode: EDITOR_MODE.PREVIEW };
     }
 
-    return { mode: EDITOR_MODE.EDITOR };
+    return { mode: EDITOR_MODE.EDIT };
 }
 
 export function initDotUVE() {

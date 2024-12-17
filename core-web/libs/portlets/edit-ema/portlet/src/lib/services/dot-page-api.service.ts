@@ -18,8 +18,8 @@ import {
     VanityUrl
 } from '@dotcms/dotcms-models';
 
-import { PAGE_MODE } from '../shared/enums';
-import { DotPage, SavePagePayload } from '../shared/models';
+import { EDITOR_MODE, PAGE_MODE } from '../shared/enums';
+import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import { createPageApiUrlWithQueryParams } from '../utils';
 
@@ -43,7 +43,6 @@ export interface DotPageApiParams {
     url: string;
     language_id: string;
     'com.dotmarketing.persona.id': string;
-    preview?: string;
     variantName?: string;
     experimentId?: string;
     mode?: string;
@@ -52,7 +51,7 @@ export interface DotPageApiParams {
     publishDate?: string;
 }
 
-export enum DotPageApiKeys {
+export enum DotPageAssetKeys {
     URL = 'url',
     MODE = 'mode',
     DEPTH = 'depth',
@@ -62,7 +61,8 @@ export enum DotPageApiKeys {
     EXPERIMENT_ID = 'experimentId',
     PERSONA_ID = 'com.dotmarketing.persona.id',
     PREVIEW = 'preview',
-    PUBLISH_DATE = 'publishDate'
+    PUBLISH_DATE = 'publishDate',
+    EDITOR_MODE = 'editorMode'
 }
 
 export interface GetPersonasParams {
@@ -94,11 +94,11 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get(params: DotPageApiParams): Observable<DotPageApiResponse> {
+    get(params: DotPageAssetParams): Observable<DotPageApiResponse> {
         // Remove trailing and leading slashes
         const {
             clientHost,
-            preview,
+            editorMode,
             depth = '0',
             language_id,
             variantName,
@@ -107,7 +107,7 @@ export class DotPageApiService {
         } = params;
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
-        const isPreview = preview === 'true';
+        const isPreview = editorMode === EDITOR_MODE.PREVIEW;
         const pageType = clientHost ? 'json' : 'render';
         const mode = isPreview ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
 

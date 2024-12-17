@@ -1,7 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import Image from 'next/image';
-import { editContentlet, detectUVEContext, isInsideEditor } from '@dotcms/client';
+import { editContentlet, detectUVEContext, isInsideEditor, EDITOR_MODE } from '@dotcms/client';
 
 const dateFormatOptions = {
     year: 'numeric',
@@ -12,7 +12,7 @@ const dateFormatOptions = {
 function Contentlets({ contentlets }) {
     const insideEditor = useMemo(() => {
         const uveContext = detectUVEContext();
-        return isInsideEditor() && uveContext?.mode === 'EDITOR';
+        return isInsideEditor() && uveContext?.mode === EDITOR_MODE.EDIT;
     }, []);
 
     return (

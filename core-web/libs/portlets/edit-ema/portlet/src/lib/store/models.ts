@@ -2,15 +2,15 @@ import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
-import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
+import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
-import { DotPage, NavigationBarItem } from '../shared/models';
+import { DotPage, DotPageAssetParams, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
     languages: DotLanguage[];
     isEnterprise: boolean;
     pageAPIResponse?: DotPageApiResponse;
-    pageParams?: DotPageApiParams;
+    pageParams?: DotPageAssetParams;
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     errorCode?: number;

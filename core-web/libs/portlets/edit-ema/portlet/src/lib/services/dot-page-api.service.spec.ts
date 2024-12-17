@@ -2,6 +2,8 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator'
 
 import { DotPageApiService } from './dot-page-api.service';
 
+import { EDITOR_MODE } from '../shared/enums';
+
 describe('DotPageApiService', () => {
     let spectator: SpectatorHttp<DotPageApiService>;
     const createHttp = createHttpFactory(DotPageApiService);
@@ -109,13 +111,13 @@ describe('DotPageApiService', () => {
     });
 
     describe('preview', () => {
-        it("should request page in preview mode if 'preview' is true", () => {
+        it("should request page in preview mode if 'editorMode' is 'preview'", () => {
             spectator.service
                 .get({
                     url: 'test-url',
                     language_id: 'en',
                     'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                    preview: 'true'
+                    editorMode: EDITOR_MODE.PREVIEW
                 })
                 .subscribe();
 

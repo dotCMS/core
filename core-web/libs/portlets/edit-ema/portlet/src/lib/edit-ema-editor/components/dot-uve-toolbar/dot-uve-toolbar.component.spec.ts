@@ -27,6 +27,7 @@ import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { EDITOR_MODE } from '../../../shared/enums';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
@@ -240,7 +241,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.click(byTestId('uve-toolbar-preview'));
 
                 expect(spy).toHaveBeenCalledWith({
-                    preview: 'true',
+                    editorMode: EDITOR_MODE.PREVIEW,
                     publishDate: fixedDate.toISOString()
                 });
             });
@@ -396,7 +397,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.click(byTestId('close-preview-mode'));
 
                 spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith({ preview: null, publishDate: null });
+                expect(spy).toHaveBeenCalledWith({ editorMode: null, publishDate: null });
             });
 
             it('should call store.loadPageAsset when datePreview model is updated', () => {
@@ -406,7 +407,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spy).toHaveBeenCalledWith({
-                    preview: 'true',
+                    editorMode: EDITOR_MODE.PREVIEW,
                     publishDate: new Date('2024-02-01').toISOString()
                 });
             });
@@ -418,7 +419,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spy).toHaveBeenCalledWith({
-                    preview: 'true',
+                    editorMode: EDITOR_MODE.PREVIEW,
                     publishDate: fixedDate.toISOString()
                 });
             });

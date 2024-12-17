@@ -10,7 +10,7 @@ import { ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
-import { UVE_STATUS } from '../shared/enums';
+import { EDITOR_MODE, UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
 // Some properties can be computed
@@ -125,7 +125,7 @@ export const UVEStore = signalStore(
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
                 $isPreviewMode: computed<boolean>(() => {
-                    return pageParams()?.preview === 'true';
+                    return pageParams()?.editorMode === EDITOR_MODE.PREVIEW;
                 })
             };
         }

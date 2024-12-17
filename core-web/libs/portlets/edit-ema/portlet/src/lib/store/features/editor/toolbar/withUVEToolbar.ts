@@ -12,7 +12,7 @@ import { computed } from '@angular/core';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
-import { UVE_STATUS } from '../../../../shared/enums';
+import { EDITOR_MODE, UVE_STATUS } from '../../../../shared/enums';
 import {
     computePageIsLocked,
     createFavoritePagesURL,
@@ -87,7 +87,7 @@ export function withUVEToolbar() {
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
-                const isPreview = params?.preview === 'true';
+                const isPreview = params?.editorMode === EDITOR_MODE.PREVIEW;
                 const prevewItem = isPreview
                     ? {
                           deviceSelector: {

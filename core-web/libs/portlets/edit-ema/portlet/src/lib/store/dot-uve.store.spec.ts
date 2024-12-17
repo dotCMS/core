@@ -34,7 +34,7 @@ import { UVEStore } from './dot-uve.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { COMMON_ERRORS } from '../shared/consts';
-import { UVE_STATUS } from '../shared/enums';
+import { EDITOR_MODE, UVE_STATUS } from '../shared/enums';
 import {
     BASE_SHELL_ITEMS,
     BASE_SHELL_PROPS_RESPONSE,
@@ -355,13 +355,13 @@ describe('UVEStore', () => {
 
         describe('$isPreviewMode', () => {
             it("should return true when the preview is 'true'", () => {
-                store.loadPageAsset({ preview: 'true' });
+                store.loadPageAsset({ editorMode: EDITOR_MODE.PREVIEW });
 
                 expect(store.$isPreviewMode()).toBe(true);
             });
 
             it("should return false when the preview is not 'true'", () => {
-                store.loadPageAsset({ preview: null });
+                store.loadPageAsset({ editorMode: null });
 
                 expect(store.$isPreviewMode()).toBe(false);
             });

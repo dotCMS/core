@@ -29,10 +29,10 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DialogAction } from '../shared/models';
+import { EDITOR_MODE, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import {
     checkClientHostAccess,
@@ -193,7 +193,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @return {*}  {DotPageApiParams}
      * @memberof DotEmaShellComponent
      */
-    #getPageParams(): DotPageApiParams {
+    #getPageParams(): DotPageAssetParams {
         const { queryParams, data } = this.#activatedRoute.snapshot;
         const uveConfig = data?.uveConfig;
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
@@ -210,7 +210,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             params.clientHost = uveConfig.url;
         }
 
-        if (params.preview && !params.publishDate) {
+        if (params.editorMode !== EDITOR_MODE.EDIT && params.editorMode !== EDITOR_MODE.PREVIEW) {
+            delete params.editorMode;
+        }
+
+        if (params.editorMode === EDITOR_MODE.PREVIEW && !params.publishDate) {
             params.publishDate = new Date().toISOString();
         }
 
