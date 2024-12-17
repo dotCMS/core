@@ -21,6 +21,7 @@ import {
     DotMessageService,
     DotPropertiesService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -208,6 +209,12 @@ describe('DotEmaShellComponent', () => {
             DotWorkflowActionsFireService,
             Router,
             Location,
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
             {
                 provide: DotPropertiesService,
                 useValue: dotPropertiesServiceMock
@@ -581,6 +588,23 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ url: '/my-awesome-page' });
+            });
+
+            it('should get the workflow action when an `UPDATE_WORKFLOW_ACTION` event is received', () => {
+                const spyGetWorkflowActions = jest.spyOn(store, 'getWorkflowActions');
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    DIALOG_ACTION_EVENT({
+                        name: NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(spyGetWorkflowActions).toHaveBeenCalled();
             });
 
             it('should trigger a store reload if the url is the same', () => {

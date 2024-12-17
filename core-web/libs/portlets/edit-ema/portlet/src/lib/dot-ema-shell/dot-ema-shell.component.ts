@@ -19,7 +19,8 @@ import {
     DotPageLayoutService,
     DotPageRenderService,
     DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
+    DotSeoMetaTagsUtilService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -58,6 +59,7 @@ import {
         DotPageRenderService,
         DotSeoMetaTagsService,
         DotSeoMetaTagsUtilService,
+        DotWorkflowsActionsService,
         {
             provide: WINDOW,
             useValue: window
@@ -111,6 +113,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             ...(pageParams ?? {}),
             ...(viewParams ?? {})
         };
+
         this.#updateLocation(queryParams);
     });
 
@@ -131,6 +134,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
+            case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
+                this.uveStore.getWorkflowActions();
+                break;
+            }
+
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.handleSavePageEvent(event);
                 break;

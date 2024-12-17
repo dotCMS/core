@@ -17,7 +17,8 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -67,6 +68,12 @@ describe('UVEStore', () => {
             MessageService,
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of({})
+                }
+            },
             {
                 provide: DotPropertiesService,
                 useValue: dotPropertiesServiceMock

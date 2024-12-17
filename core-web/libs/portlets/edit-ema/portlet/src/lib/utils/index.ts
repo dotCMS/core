@@ -634,3 +634,19 @@ export function shouldNavigate(targetUrl: string | undefined, currentUrl: string
     // Navigate if the target URL is defined and different from the current URL
     return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
 }
+
+/**
+ * Get the page URI from the contentlet
+ *
+ * If the URL_MAP_FOR_CONTENT is present, it will be used as the page URI.
+ *
+ * @param {DotCMSContentlet} { urlContentMap, pageURI, url}
+ * @return {*}  {string}
+ */
+export const getPageURI = ({ urlContentMap, pageURI, url }: DotCMSContentlet): string => {
+    const contentMapUrl = urlContentMap?.URL_MAP_FOR_CONTENT;
+    const pageURIUrl = pageURI ?? url;
+    const newUrl = contentMapUrl ?? pageURIUrl;
+
+    return sanitizeURL(newUrl);
+};

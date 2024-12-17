@@ -1,5 +1,10 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import {
+    DotCMSWorkflowAction,
+    DotExperiment,
+    DotLanguage,
+    DotPageToolUrlParams
+} from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
@@ -20,6 +25,7 @@ export interface UVEState {
     canEditPage: boolean;
     pageIsLocked: boolean;
     isClientReady: boolean;
+    workflowActions?: DotCMSWorkflowAction[];
 }
 
 export interface ShellProps {

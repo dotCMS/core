@@ -53,7 +53,7 @@ on:
 
 jobs:
   deploy-javadoc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Deploy Artifact Javadoc
         uses: ./.github/actions/deploy-artifact-javadoc

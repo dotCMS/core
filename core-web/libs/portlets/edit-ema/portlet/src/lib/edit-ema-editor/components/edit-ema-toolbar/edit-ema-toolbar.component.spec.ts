@@ -41,7 +41,6 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL,
     PAGE_RESPONSE_BY_LANGUAGE_ID,
-    PAGE_RESPONSE_URL_CONTENT_MAP,
     URL_CONTENT_MAP_MOCK
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
@@ -51,10 +50,10 @@ import {
     createFavoritePagesURL,
     createFullURL
 } from '../../../utils';
-import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
@@ -62,14 +61,13 @@ describe('EditEmaToolbarComponent', () => {
     let spectator: Spectator<EditEmaToolbarComponent>;
     let store: SpyObject<InstanceType<typeof UVEStore>>;
     let messageService: MessageService;
-    let router: Router;
     let confirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
         component: EditEmaToolbarComponent,
         imports: [
             MockComponent(DotDeviceSelectorSeoComponent),
-            MockComponent(DotEditEmaWorkflowActionsComponent),
+            MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotEmaBookmarksComponent),
             MockComponent(DotEmaInfoDisplayComponent),
             MockComponent(DotEmaRunningExperimentComponent),
@@ -191,7 +189,6 @@ describe('EditEmaToolbarComponent', () => {
 
             store = spectator.inject(UVEStore);
             messageService = spectator.inject(MessageService);
-            router = spectator.inject(Router);
             confirmationService = spectator.inject(ConfirmationService);
         });
 
@@ -407,50 +404,11 @@ describe('EditEmaToolbarComponent', () => {
                     rejectLabel: 'Reject'
                 });
             });
-
-            xit('should dpersonalize - call service', () => {
-                expect(true).toBe(true);
-            });
         });
 
-        describe('dot-edit-ema-workflow-actions', () => {
-            it('should have attr', () => {
-                const workflowActions = spectator.query(DotEditEmaWorkflowActionsComponent);
-
-                expect(workflowActions.inode).toBe('123-i');
-            });
-
-            it('should update page', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-                spectator.triggerEventHandler(DotEditEmaWorkflowActionsComponent, 'newPage', {
-                    pageURI: '/path-and-stuff',
-                    url: 'path',
-                    languageId: 1
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
-
-                spectator.detectChanges();
-
-                expect(spyloadPageAsset).toHaveBeenCalledWith({
-                    url: '/path-and-stuff',
-                    language_id: '1'
-                });
-            });
-
-            it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
-                jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
-
-                spectator.triggerEventHandler(DotEditEmaWorkflowActionsComponent, 'newPage', {
-                    pageURI: '/test-url',
-                    url: '/test-url',
-                    languageId: 1
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
-
-                spectator.detectChanges();
-                expect(store.reloadCurrentPage).toHaveBeenCalled();
-                expect(router.navigate).not.toHaveBeenCalled();
-            });
+        it('should have a dot-uve-workflow-actions component', () => {
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+            expect(workflowActions).toBeTruthy();
         });
 
         describe('dot-ema-info-display', () => {
@@ -501,7 +459,6 @@ describe('EditEmaToolbarComponent', () => {
                 });
                 store = spectator.inject(UVEStore);
                 messageService = spectator.inject(MessageService);
-                router = spectator.inject(Router);
                 confirmationService = spectator.inject(ConfirmationService);
             });
             it('should show when showInfoDisplay is true in the store', () => {

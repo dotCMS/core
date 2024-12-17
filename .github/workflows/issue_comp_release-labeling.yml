@@ -19,7 +19,7 @@ on:
         description: 'New label color'
         type: string
         required: false
-        default: '#fbca04'
+        default: 'fbca04'
   workflow_dispatch:
     inputs:
       rename_label:
@@ -39,7 +39,7 @@ on:
 
 jobs:
   release-labeling:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     env:
       REPO: core
     steps:

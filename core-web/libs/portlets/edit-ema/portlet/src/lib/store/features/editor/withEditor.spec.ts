@@ -540,7 +540,6 @@ describe('withEditor', () => {
                         currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
                         urlContentMap: null,
                         runningExperiment: null,
-                        workflowActionsInode: MOCK_RESPONSE_HEADLESS.page.inode,
                         unlockButton: null,
                         showInfoDisplay: false
                     });
