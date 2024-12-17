@@ -1,5 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
-import { SpectatorRouting, createRoutingFactory, byTestId } from '@ngneat/spectator/jest';
+import {
+    SpectatorRouting,
+    createRoutingFactory,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -25,18 +30,22 @@ import {
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotIframeService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPersonalizeService,
     DotPropertiesService,
+    DotRouterService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
     DotSessionStorageService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -67,9 +76,9 @@ import {
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
-import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
+import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
@@ -136,7 +145,7 @@ const createRouting = () =>
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
-            MockComponent(DotEditEmaWorkflowActionsComponent),
+            MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaToolbarComponent)
@@ -149,6 +158,15 @@ const createRouting = () =>
             DotFavoritePageService,
             DotESContentService,
             DotSessionStorageService,
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotRouterService),
+            mockProvider(DotGlobalMessageService),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
             {
                 provide: DotPropertiesService,
                 useValue: {
@@ -440,6 +458,7 @@ describe('EditEmaEditorComponent', () => {
                 store.setFlags({
                     FEATURE_FLAG_UVE_PREVIEW_MODE: true
                 });
+
                 spectator.detectChanges();
 
                 const toolbar = spectator.query(DotUveToolbarComponent);
