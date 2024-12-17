@@ -1,38 +1,61 @@
 import { faker } from '@faker-js/faker';
-import { forkJoin, Observable, of } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 
+import { formatDate } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
 
-import { map, tap } from 'rxjs/operators';
+import { map, pluck } from 'rxjs/operators';
 
-import { DotFieldService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotContentSearchService, DotFieldService, DotLanguagesService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 
-import { MANDATORY_FIRST_COLUMNS, MANDATORY_LAST_COLUMNS } from '../dot-edit-content-relationship-field.constants';
+import {
+    MANDATORY_FIRST_COLUMNS,
+    MANDATORY_LAST_COLUMNS
+} from '../dot-edit-content-relationship-field.constants';
 import { Column } from '../models/column.model';
+
+type LanguagesMap = Record<number, string>;
+
 @Injectable({
     providedIn: 'root'
 })
 export class RelationshipFieldService {
     readonly #fieldService = inject(DotFieldService);
+    readonly #contentSearchService = inject(DotContentSearchService);
+    readonly #dotLanguagesService = inject(DotLanguagesService);
 
     /**
      * Gets relationship content items
      * @returns Observable of RelationshipFieldItem array
      */
-    getContent(count = 100): Observable<RelationshipFieldItem[]> {
-        const contentlets = this.#generateMockContentlets(count);
-        const relationshipContent = this.#mapContentletsToRelationshipItems(contentlets);
+    getContent(contentTypeId: string): Observable<DotCMSContentlet[]> {
+        const query = `+contentType:${contentTypeId} +deleted:false +working:true`;
 
-        return of(relationshipContent);
+        return this.#contentSearchService
+            .get({
+                query,
+                limit: 100
+            })
+            .pipe(pluck('jsonObjectView', 'contentlets'));
     }
 
+    /**
+     * Gets the columns and content for the relationship field
+     * @param contentTypeId The content type ID
+     * @returns Observable of [Column[], RelationshipFieldItem[]]
+     */
     getColumnsAndContent(contentTypeId: string): Observable<[Column[], RelationshipFieldItem[]]> {
-        console.log('getColumnsAndContent', contentTypeId);
-        
-        return forkJoin([this.getColumns(contentTypeId), this.getContent()]).pipe(
-            tap(([columns, content]) => console.log(columns, content))
+        return forkJoin([
+            this.getColumns(contentTypeId),
+            this.getContent(contentTypeId),
+            this.#getLanguages()
+        ]).pipe(
+            map(([columns, content, languages]) => [
+                columns,
+                this.#matchColumnsWithContent(columns, content, languages)
+            ])
         );
     }
 
@@ -44,77 +67,93 @@ export class RelationshipFieldService {
     getColumns(contentTypeId: string): Observable<Column[]> {
         return this.#fieldService
             .getFields(contentTypeId, 'SHOW_IN_LIST')
-            .pipe(
-                map((fields) =>
-                    fields.map((field) => ({ field: field.variable, header: field.name }))
-                ),
-                map((columns) => [
-                    ...MANDATORY_FIRST_COLUMNS.map((field) => ({ field, header: field })),
-                    ...columns,
-                    ...MANDATORY_LAST_COLUMNS.map((field) => ({ field, header: field }))
+            .pipe(map((fields) => this.#buildColumns(fields)));
+    }
+
+    /**
+     * Gets the languages for the relationship field
+     * @returns Observable of Record<number, DotLanguageWithLabel>
+     */
+    #getLanguages(): Observable<LanguagesMap> {
+        return this.#dotLanguagesService.get().pipe(
+            map((languages) =>
+                languages.reduce((acc, lang) => {
+                    const code = lang.isoCode || lang.languageCode;
+                    acc[lang.id] = `${lang.language} (${code})`;
+
+                    return acc;
+                }, {})
+            )
+        );
+    }
+
+    /**
+     * Builds the columns for the relationship field
+     * @param columns The columns to build
+     * @returns Array of Column
+     */
+    #buildColumns(columns: DotCMSContentTypeField[]): Column[] {
+        const firstColumnsMap = new Map(
+            MANDATORY_FIRST_COLUMNS.map((field) => [field, { field, header: field }])
+        );
+
+        const lastColumnsMap = new Map(
+            MANDATORY_LAST_COLUMNS.map((field) => [field, { field, header: field }])
+        );
+
+        const contentColumnsMap = new Map(
+            columns
+                .filter((column) => column.variable && column.name)
+                .map((column) => [
+                    column.variable,
+                    {
+                        field: column.variable,
+                        header: column.name
+                    }
                 ])
-            );
-    }
+        );
 
-    /**
-     * Generates mock contentlets for testing purposes
-     * @returns Array of DotCMSContentlet
-     */
-    #generateMockContentlets(count: number): DotCMSContentlet[] {
-        return faker.helpers.multiple(() => this.#createMockContentlet(), { count });
-    }
+        // Merge maps while preserving order and removing duplicates
+        const uniqueColumns = new Map([
+            ...firstColumnsMap,
+            ...contentColumnsMap,
+            ...lastColumnsMap
+        ]);
 
-    /**
-     * Creates a single mock contentlet
-     * @returns DotCMSContentlet
-     */
-    #createMockContentlet(): DotCMSContentlet {
-        return {
-            identifier: faker.string.uuid(),
-            inode: faker.string.uuid(),
-            title: faker.lorem.words({ min: 1, max: 10 }),
-            contentType: faker.helpers.arrayElement(['News', 'Blog', 'Product', 'Event']),
-            baseType: 'CONTENT',
-            languageId: faker.number.int({ min: 1, max: 5 }),
-            folder: faker.system.directoryPath(),
-            hostName: faker.internet.domainName(),
-            modUser: faker.internet.userName(),
-            modDate: faker.date.recent().toISOString(),
-            owner: faker.internet.userName(),
-            sortOrder: faker.number.int({ min: 1, max: 100 }),
-            live: faker.datatype.boolean(),
-            working: true,
-            archived: false,
-            locked: faker.datatype.boolean(),
-            hasLiveVersion: faker.datatype.boolean(),
-            hasTitleImage: faker.datatype.boolean(),
-            url: faker.internet.url(),
-            titleImage: faker.image.url(),
-            stInode: faker.string.uuid(),
-            host: faker.internet.domainName(),
-            modUserName: faker.internet.userName()
-        };
+        return Array.from(uniqueColumns.values());
     }
 
     /**
      * Maps contentlets to relationship field items
-     * @param contentlets Array of DotCMSContentlet to be mapped
+     * @param columns The columns to map
+     * @param content The contentlets to map
      * @returns Array of RelationshipFieldItem
      */
-    #mapContentletsToRelationshipItems(contentlets: DotCMSContentlet[]): RelationshipFieldItem[] {
-        return contentlets.map((content) => ({
-            id: content.identifier,
-            title: content.title,
-            language: faker.helpers.arrayElement([
-                'English (en-us)',
-                'Spanish (es-es)',
-                'French (fr-fr)'
-            ]),
-            state: this.#getRandomState(),
-            description: faker.lorem.sentence(3),
-            step: faker.helpers.arrayElement(['Published', 'Editing', 'Archived', 'QA', 'New']),
-            lastUpdate: content.modDate
-        }));
+    #matchColumnsWithContent(
+        columns: Column[],
+        content: DotCMSContentlet[],
+        languages: LanguagesMap
+    ): RelationshipFieldItem[] {
+        return content.map((item) => {
+            const dynamicColumns = columns.reduce((acc, column) => {
+                const key = column.field;
+                const value = item[key];
+
+                acc[key] = value ?? '';
+
+                return acc;
+            }, {});
+
+            const relationshipItem: RelationshipFieldItem = {
+                ...dynamicColumns,
+                id: item.identifier,
+                title: item.title || item.identifier,
+                language: languages[item.languageId] || '',
+                modDate: formatDate(item.modDate, 'short', 'en-US')
+            };
+
+            return relationshipItem;
+        });
     }
 
     #getRandomState(): { label: string; styleClass: string } {

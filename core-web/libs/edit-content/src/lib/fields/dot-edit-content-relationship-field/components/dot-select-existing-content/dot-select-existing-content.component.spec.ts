@@ -3,7 +3,6 @@ import { of } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
-
 import { Dialog } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -23,13 +22,9 @@ describe('DotSelectExistingContentComponent', () => {
         id,
         title: `Test Content ${id}`,
         language: '1',
-        state: {
-            label: 'Published',
-            styleClass: 'small-chip'
-        },
         description: 'Test description',
         step: 'Step 1',
-        lastUpdate: new Date().toISOString()
+        modDate: new Date().toISOString()
     });
 
     const messageServiceMock = new MockDotMessageService({

@@ -1,11 +1,12 @@
 @let pagination = store.pagination();
 @let hitText = $hitText();
 @let showPagination = store.totalPages() > 1;
+@let data = store.data();
 
 <p-table
-    [value]="store.data()"
+    [value]="data"
     styleClass="dotTable p-datatable-relationship"
-    [paginator]="true"
+    [paginator]="data.length > pagination.rowsPerPage"
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
     [reorderableColumns]="true"
@@ -35,7 +36,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
         <tr>
-            <td colspan="4">
+            <td colspan="5">
                 <div class="flex p-2 gap-2 justify-content-center">
                     <i class="pi pi-folder-open"></i>
                     <p class="text-500">{{ 'dot.file.relationship.field.empty.message' | dm }}</p>
@@ -88,5 +89,6 @@
 </p-table>
 
 <dot-select-existing-content
+    [contentId]="$contentId()"
     [(visible)]="$showExistingContentDialog"
     (onSelectItems)="store.addData($event)" />

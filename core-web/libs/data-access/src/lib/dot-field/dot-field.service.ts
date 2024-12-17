@@ -29,12 +29,10 @@ export class DotFieldService {
     getFields(contentType: string, filter?: DotFieldFilter): Observable<DotCMSContentTypeField[]> {
         const params = filter ? new HttpParams().set('filter', filter) : new HttpParams();
 
-        return this.#http.get<DotCMSContentTypeField[]>(
-            `/api/v3/contenttype/${contentType}/fields/allfields`,
-            { params }
-        )
-        .pipe(
-            pluck('entity')
-        );
+        return this.#http
+            .get<
+                DotCMSContentTypeField[]
+            >(`/api/v3/contenttype/${contentType}/fields/allfields`, { params })
+            .pipe(pluck('entity'));
     }
 }

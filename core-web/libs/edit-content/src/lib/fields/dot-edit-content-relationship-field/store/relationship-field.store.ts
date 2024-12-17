@@ -1,4 +1,3 @@
-import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
     signalStore,
@@ -12,7 +11,7 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -89,18 +88,7 @@ export const RelationshipFieldStore = signalStore(
              * It updates the state with the loaded data and sets the status to LOADED.
              */
             loadData: rxMethod<void>(
-                pipe(
-                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                    switchMap(() =>
-                        relationshipFieldService.getContent(10).pipe(
-                            tapResponse({
-                                next: (data) =>
-                                    patchState(store, { data, status: ComponentStatus.LOADED }),
-                                error: () => patchState(store, { status: ComponentStatus.ERROR })
-                            })
-                        )
-                    )
-                )
+                pipe(tap(() => patchState(store, { status: ComponentStatus.LOADING })))
             ),
             /**
              * Advances the pagination to the next page and updates the state accordingly.
