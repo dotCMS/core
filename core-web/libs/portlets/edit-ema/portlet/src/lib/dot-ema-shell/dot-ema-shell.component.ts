@@ -219,7 +219,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
 
         if (params.editorMode !== EDITOR_MODE.EDIT && params.editorMode !== EDITOR_MODE.PREVIEW) {
-            delete params.editorMode;
+            params.editorMode = EDITOR_MODE.EDIT;
         }
 
         if (params.editorMode === EDITOR_MODE.PREVIEW && !params.publishDate) {

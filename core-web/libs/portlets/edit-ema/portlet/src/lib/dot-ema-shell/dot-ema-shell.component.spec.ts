@@ -115,7 +115,8 @@ const INITIAL_PAGE_PARAMS = {
     language_id: 1,
     url: 'index',
     variantName: 'DEFAULT',
-    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+    editorMode: EDITOR_MODE.EDIT
 };
 
 const BASIC_OPTIONS = {
@@ -320,7 +321,7 @@ describe('DotEmaShellComponent', () => {
             expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyLocation).toHaveBeenCalledWith(
-                '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona'
+                '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
             );
         });
 
@@ -376,7 +377,8 @@ describe('DotEmaShellComponent', () => {
                     language_id: 2,
                     url: 'my-awesome-page',
                     variantName: 'DEFAULT',
-                    'com.dotmarketing.persona.id': 'SomeCoolDude'
+                    'com.dotmarketing.persona.id': 'SomeCoolDude',
+                    editorMode: EDITOR_MODE.EDIT
                 };
 
                 const url = router.createUrlTree([], { queryParams: newParams });
@@ -530,7 +532,24 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
-        describe('Preview', () => {
+        describe('Editor Mode', () => {
+            it('should set editorMode to EDIT when wrong editorMode is passed', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: 'WRONG'
+                };
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: EDITOR_MODE.EDIT
+                });
+            });
+
             it('should add the current date if preview param is true and publishDate is not present', () => {
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const params = {
