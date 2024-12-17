@@ -109,7 +109,6 @@ export function withUVEToolbar() {
                         ? (pageAPIResponse?.urlContentMap ?? null)
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
-                    workflowActionsInode: store.canEditPage() ? pageAPIResponse?.page.inode : null,
                     unlockButton: shouldShowUnlock ? unlockButton : null,
                     showInfoDisplay: shouldShowInfoDisplay
                 };

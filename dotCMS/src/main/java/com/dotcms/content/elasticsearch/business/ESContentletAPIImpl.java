@@ -686,6 +686,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Date timeMachineDate, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException{
         final Contentlet contentlet = contentFactory.findContentletByIdentifier(identifier, languageId, variantId, timeMachineDate);
+        if (contentlet == null) {
+            Logger.debug(this, "Contentlet not found for identifier: " + identifier + " lang:" + languageId + " variant:" + variantId + " date:" + timeMachineDate);
+            return null;
+        }
         if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
             return contentlet;
         } else {
@@ -7671,6 +7675,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // validate unique
             if (field.isUnique()) {
                 try {
+                    if (!UtilMethods.isSet(contentlet.getHost())) {
+                        populateHost(contentlet);
+                    }
+
                     uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
                             LegacyFieldTransformer.from(field));
                 } catch (final UniqueFieldValueDuplicatedException e) {

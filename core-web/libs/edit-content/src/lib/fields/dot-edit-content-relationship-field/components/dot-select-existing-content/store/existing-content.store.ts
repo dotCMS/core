@@ -71,6 +71,12 @@ export const ExistingContentStore = signalStore(
                 )
             ),
             /**
+             * Applies the initial state for the existing content.
+             */
+            applyInitialState: () => {
+                patchState(store, initialState);
+            },
+            /**
              * Advances the pagination to the next page and updates the state accordingly.
              */
             nextPage: () => {

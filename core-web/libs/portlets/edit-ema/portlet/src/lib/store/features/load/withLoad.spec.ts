@@ -14,7 +14,8 @@ import {
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -80,6 +81,7 @@ describe('withLoad', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
     let dotPageApiService: SpyObject<DotPageApiService>;
+    let dotWorkflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     let router: Router;
 
     const createService = createServiceFactory({
@@ -88,14 +90,20 @@ describe('withLoad', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
+            {
                 provide: DotPageApiService,
                 useValue: {
                     get() {
                         return of({});
                     },
-                    getClientPage() {
-                        return of({});
-                    },
+                    getClientPage: jest
+                        .fn()
+                        .mockImplementation(buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)),
                     save: jest.fn()
                 }
             },
@@ -143,6 +151,7 @@ describe('withLoad', () => {
 
         router = spectator.inject(Router);
         dotPageApiService = spectator.inject(DotPageApiService);
+        dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
         jest.spyOn(dotPageApiService, 'get').mockImplementation(
             buildPageAPIResponseFromMock(MOCK_RESPONSE_HEADLESS)
         );
@@ -183,6 +192,14 @@ describe('withLoad', () => {
                 expect(store.isClientReady()).toBe(true);
             });
 
+            it('should call workflow action service on loadPageAsset', () => {
+                const getWorkflowActionsSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+                store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS);
+                expect(getWorkflowActionsSpy).toHaveBeenCalledWith(
+                    MOCK_RESPONSE_HEADLESS.page.inode
+                );
+            });
+
             it('should update the pageParams with the vanity URL on permanent redirect', () => {
                 const permanentRedirect = getVanityUrl(
                     VTL_BASE_QUERY_PARAMS.url,
@@ -198,10 +215,7 @@ describe('withLoad', () => {
                 store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        ...VTL_BASE_QUERY_PARAMS,
-                        url: forwardTo
-                    },
+                    queryParams: { url: forwardTo },
                     queryParamsHandling: 'merge'
                 });
             });
@@ -221,10 +235,7 @@ describe('withLoad', () => {
                 store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
-                    queryParams: {
-                        ...VTL_BASE_QUERY_PARAMS,
-                        url: forwardTo
-                    },
+                    queryParams: { url: forwardTo },
                     queryParamsHandling: 'merge'
                 });
             });
@@ -237,12 +248,20 @@ describe('withLoad', () => {
 
                 expect(getPageSpy).toHaveBeenCalledWith(pageParams, { params: null, query: '' });
             });
-        });
 
-        it('should reload the store with a specific property value', () => {
-            store.reloadCurrentPage({ isClientReady: false });
+            it('should reload the store with a specific property value', () => {
+                store.reloadCurrentPage({ isClientReady: false });
 
-            expect(store.isClientReady()).toBe(false);
+                expect(store.isClientReady()).toBe(false);
+            });
+
+            it('should call workflow action service on reloadCurrentPage', () => {
+                const getWorkflowActionsSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+                store.reloadCurrentPage();
+                expect(getWorkflowActionsSpy).toHaveBeenCalledWith(
+                    MOCK_RESPONSE_HEADLESS.page.inode
+                );
+            });
         });
     });
 

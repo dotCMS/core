@@ -28,7 +28,7 @@ export const addContent = {
 /**
  * Locators for the Rich Text functionality.
  */
-export const richText = {
+export const contentGeneric = {
     locator: "articleContent (Generic)",
     label: "Content (Generic)"
 }
