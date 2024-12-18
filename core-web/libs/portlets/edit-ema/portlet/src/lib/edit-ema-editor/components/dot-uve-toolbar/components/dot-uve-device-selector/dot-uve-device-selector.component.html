@@ -11,7 +11,7 @@
 
 <p-button
     styleClass="p-button-text p-button-sm p-button-rounded orientation p-button-icon-only"
-    [disabled]="!$currentDevice()"
+    [disabled]="$disableOrientation()"
     (click)="onOrientationChange()">
     <svg
         [ngClass]="$currentOrientation()"

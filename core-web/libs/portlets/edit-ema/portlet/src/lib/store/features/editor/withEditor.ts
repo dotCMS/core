@@ -140,15 +140,17 @@ export function withEditor() {
                     const origin = params.clientHost || window.location.origin;
                     const iframeURL = new URL(pageAPIQueryParams, origin);
 
+                    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
+
                     const wrapper =
                         store.orientation() === Orientation.LANDSCAPE
                             ? {
-                                  width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${BASE_IFRAME_MEASURE_UNIT}`,
-                                  height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${BASE_IFRAME_MEASURE_UNIT}`
+                                  width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+                                  height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
                               }
                             : {
-                                  width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${BASE_IFRAME_MEASURE_UNIT}`,
-                                  height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${BASE_IFRAME_MEASURE_UNIT}`
+                                  width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+                                  height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
                               };
 
                     return {

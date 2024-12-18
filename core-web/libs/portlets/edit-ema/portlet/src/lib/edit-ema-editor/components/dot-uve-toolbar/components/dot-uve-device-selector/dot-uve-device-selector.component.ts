@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -7,8 +7,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotDevice } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEFAULT_DEVICES } from './const';
-
+import { DEFAULT_DEVICES } from '../../../../../shared/consts';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { Orientation } from '../../../../../store/models';
 
@@ -31,6 +30,8 @@ export class DotUveDeviceSelectorComponent implements OnInit {
 
     readonly $currentDevice = this.#store.device;
 
+    readonly $disableOrientation = computed(() => this.#store.viewParams().device === 'default');
+
     readonly $currentOrientation = this.#store.orientation;
 
     ngOnInit() {
@@ -45,7 +46,7 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         } else {
             // If the device is not from the devices list, we need to reset the device
             this.#store.patchViewParams({
-                device: null,
+                device: 'default',
                 orientation: null
             });
         }
@@ -58,7 +59,7 @@ export class DotUveDeviceSelectorComponent implements OnInit {
 
         if (currentDevice && currentDevice.inode === device.inode) {
             this.#store.patchViewParams({
-                device: null
+                device: 'default'
             });
         } else {
             this.#store.patchViewParams({

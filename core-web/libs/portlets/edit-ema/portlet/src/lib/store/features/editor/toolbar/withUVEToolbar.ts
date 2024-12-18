@@ -11,7 +11,7 @@ import { computed } from '@angular/core';
 
 import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PERSONA } from '../../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions } from '../../../../shared/models';
 import {
@@ -35,7 +35,7 @@ import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../mo
  * @property {boolean} initialState.isPreviewModeActive - Flag indicating whether the preview mode is active.
  */
 const initialState: EditorToolbarState = {
-    device: null,
+    device: DEFAULT_DEVICES.find((device) => device.inode === 'default'),
     socialMedia: null,
     isEditState: true,
     isPreviewModeActive: false,
