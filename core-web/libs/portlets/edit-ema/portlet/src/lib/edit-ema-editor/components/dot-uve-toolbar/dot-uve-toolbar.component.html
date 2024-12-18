@@ -60,7 +60,7 @@
     <p-button
         pTooltip="Preview Mode"
         icon="pi pi-eye"
-        styleClass="p-button-text p-button-sm"
+        styleClass="p-button-text p-button-sm p-button-rounded"
         data-testId="uve-toolbar-preview"
         (click)="setPreviewMode()" />
 
@@ -69,7 +69,7 @@
     <p-button
         pTooltip="Copy URL"
         icon="pi pi-external-link"
-        styleClass="p-button-text p-button-sm"
+        styleClass="p-button-text p-button-sm p-button-rounded"
         (cdkCopyToClipboardCopied)="triggerCopyToast()"
         [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
         data-testId="uve-toolbar-copy-url" />
@@ -79,7 +79,7 @@
         pTooltip="Page API URL"
         pButton
         label="API"
-        class="p-button-text p-button-sm"
+        class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
         target="_blank"
         data-testId="uve-toolbar-api-link"
         [href]="$apiURL()"></a>
@@ -88,7 +88,7 @@
 <ng-template #previewLeftOptionsTemplate>
     <p-button
         icon="pi pi-times"
-        styleClass="p-button-text p-button-sm"
+        styleClass="p-button-text p-button-sm p-button-rounded"
         (click)="setEditMode()"
         data-testId="close-preview-mode" />
 
