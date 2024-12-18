@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { getUVEContext, UVE_MODE } from '@dotcms/client';
+import { isInsideEditor } from '@dotcms/client';
 import { useEffect, useState } from 'react';
 import ReorderButton from './components/reorderMenu';
 
@@ -9,8 +9,8 @@ function Header({ children }) {
     
 
     useEffect(() => {
-        const uveContext = getUVEContext()
-        setInsideEditor(uveContext?.mode === UVE_MODE.EDIT);
+        console.log("isInsideEditor => ", isInsideEditor());
+        setInsideEditor(isInsideEditor());
     }, [])
 
     return (

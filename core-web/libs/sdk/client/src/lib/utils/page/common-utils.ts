@@ -58,6 +58,10 @@ export const getPageRequestParams = ({
         finalParams['personaId'] = copiedParams['personaId'] || dotMarketingPersonaId;
     }
 
+    if (copiedParams['publishDate']) {
+        finalParams['publishDate'] = copiedParams['publishDate'];
+    }
+
     return {
         path,
         ...finalParams

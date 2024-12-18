@@ -143,7 +143,7 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected triggerEditMode() {
-        this.#store.loadPageAsset({ editorMode: null, publishDate: null });
+        this.#store.loadPageAsset({ editorMode: undefined, publishDate: undefined });
     }
 
     /**

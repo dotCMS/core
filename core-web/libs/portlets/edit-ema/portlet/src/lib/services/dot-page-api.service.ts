@@ -106,8 +106,8 @@ export class DotPageApiService {
         } = params;
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
-        const isPreview = editorMode === UVE_MODE.PREVIEW;
         const pageType = clientHost ? 'json' : 'render';
+        const isPreview = editorMode === UVE_MODE.PREVIEW;
         const mode = isPreview ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {

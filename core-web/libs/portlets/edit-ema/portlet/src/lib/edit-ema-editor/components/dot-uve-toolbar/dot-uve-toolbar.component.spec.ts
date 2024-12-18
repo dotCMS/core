@@ -400,13 +400,13 @@ describe('DotUveToolbarComponent', () => {
                 expect(spectator.query(byTestId('close-preview-mode'))).toBeTruthy();
             });
 
-            it('should call store.loadPageAsset with preview null', () => {
+            it('should call store.loadPageAsset without editorMode and publishDate', () => {
                 const spy = jest.spyOn(store, 'loadPageAsset');
 
                 spectator.click(byTestId('close-preview-mode'));
 
                 spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith({ editorMode: null, publishDate: null });
+                expect(spy).toHaveBeenCalledWith({ editorMode: undefined, publishDate: undefined });
             });
 
             it('should call store.loadPageAsset when datePreview model is updated', () => {

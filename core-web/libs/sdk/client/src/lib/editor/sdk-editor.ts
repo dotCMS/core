@@ -6,7 +6,7 @@ import {
     subscriptions
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
-import { DotCMSPageEditorConfig, UVE_MODE, ReorderMenuConfig } from './models/editor.model';
+import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model';
 import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
@@ -93,15 +93,21 @@ export function reorderMenu(config?: ReorderMenuConfig): void {
 }
 
 /**
- * Checks if the code is running inside an editor.
+ * Checks if the code is running inside the DotCMS Universal Visual Editor (UVE).
  *
- * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
+ * The function checks three conditions:
+ * 1. If window is defined (for SSR environments)
+ * 2. If the page is not in preview mode
+ * 3. If the current window is embedded in a parent frame
+ *
+ * @returns {boolean} Returns true if running inside the UVE editor, false if running standalone or in preview mode
  * @example
  * ```ts
+ * // Check if code is running in editor before initializing editor-specific features
  * if (isInsideEditor()) {
- *     console.log('Running inside the editor');
+ *     initEditor(config);
  * } else {
- *     console.log('Running outside the editor');
+ *     initStandaloneMode();
  * }
  * ```
  */
@@ -110,39 +116,11 @@ export function isInsideEditor(): boolean {
         return false;
     }
 
-    return window.parent !== window;
-}
-
-/**
- * Detects the current DotCMS Universal View Editor (UVE) context.
- *
- * This function determines whether the code is running inside the DotCMS editor
- * and in which mode (Preview or Editor).
- *
- * @returns {Object|null} Returns an object with the detected mode if inside editor,
- * or null if outside editor
- * @returns {UVE_MODE} returns.mode - The current editor mode (PREVIEW or EDITOR)
- *
- * @example
- * ```ts
- * const context = getUVEContext();
- * if (context) {
- *   console.log(`Running in ${context.mode} mode`);
- * } else {
- *   console.log('Not running in editor');
- * }
- * ```
- */
-export function getUVEContext() {
-    if (!isInsideEditor()) {
-        return null;
-    }
-
     if (isPreviewMode()) {
-        return { mode: UVE_MODE.PREVIEW };
+        return false;
     }
 
-    return { mode: UVE_MODE.EDIT };
+    return window.parent !== window;
 }
 
 export function initDotUVE() {

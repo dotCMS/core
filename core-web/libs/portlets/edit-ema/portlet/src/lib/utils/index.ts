@@ -1,5 +1,6 @@
 import { Params } from '@angular/router';
 
+import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -14,7 +15,7 @@ import {
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
-import { EDITOR_STATE } from '../shared/enums';
+import { EDITOR_STATE, PAGE_MODE } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -219,12 +220,12 @@ export const getPersonalization = (persona: Record<string, string>) => {
  *
  * @export
  * @param {string} url
- * @param {Partial<DotPageApiParams>} params
+ * @param {Partial<DotPageAssetParams>} params
  * @return {*}  {string}
  */
 export function createPageApiUrlWithQueryParams(
     url: string,
-    params: Partial<DotPageApiParams>
+    params: Partial<DotPageAssetParams>
 ): string {
     // Set default values
     const completedParams = {
@@ -232,7 +233,8 @@ export function createPageApiUrlWithQueryParams(
         language_id: params?.language_id ?? '1',
         'com.dotmarketing.persona.id':
             params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-        variantName: params?.variantName ?? DEFAULT_VARIANT_ID
+        variantName: params?.variantName ?? DEFAULT_VARIANT_ID,
+        mode: params?.editorMode === UVE_MODE.PREVIEW ? PAGE_MODE.LIVE : params.mode
     };
 
     // Filter out undefined values and url

@@ -19,8 +19,7 @@ import {
     initEditor,
     isInsideEditor,
     updateNavigation,
-    initInlineEditing,
-    getUVEContext
+    initInlineEditing
 } from './lib/editor/sdk-editor';
 import { getPageRequestParams, graphqlToPageEntity } from './lib/utils';
 
@@ -28,7 +27,6 @@ export {
     graphqlToPageEntity,
     getPageRequestParams,
     isInsideEditor,
-    getUVEContext,
     editContentlet,
     reorderMenu,
     DotCmsClient,
