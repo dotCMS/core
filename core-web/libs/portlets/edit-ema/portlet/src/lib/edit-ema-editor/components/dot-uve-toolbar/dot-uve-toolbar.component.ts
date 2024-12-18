@@ -21,6 +21,7 @@ import { ChipModule } from 'primeng/chip';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { UVE_MODE } from '@dotcms/client';
 import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -34,7 +35,6 @@ import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/
 import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
-import { UVE_MODE } from '@dotcms/client';
 
 @Component({
     selector: 'dot-uve-toolbar',

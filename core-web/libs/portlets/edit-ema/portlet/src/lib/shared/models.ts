@@ -1,6 +1,4 @@
-import { UVE_MODE } from 'libs/sdk/client/src/lib/editor/models/editor.model';
-
-import { CLIENT_ACTIONS } from '@dotcms/client';
+import { UVE_MODE, CLIENT_ACTIONS } from '@dotcms/client';
 import { DotCMSContentlet, DotDevice } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
