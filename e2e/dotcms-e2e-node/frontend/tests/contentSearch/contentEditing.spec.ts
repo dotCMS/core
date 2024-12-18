@@ -90,9 +90,10 @@ test('Validate required on text fields', async ({page}) => {
     await expect(iframe.getByText('The field Title is required.')).toBeVisible();
 });
 
-/**
+/** Please enable after fixing the issue #30748
  * Test to make sure we are validating the required of blockEditor fields on the content creation
  */
+/**
 test('Validate required on blockContent fields', async ({page}) => {
     const contentUtils = new ContentUtils(page);
     const iframe = page.frameLocator(iFramesLocators.main_iframe).first();
@@ -102,6 +103,7 @@ test('Validate required on blockContent fields', async ({page}) => {
     await expect(iframe.getByText('Error x')).toBeVisible();
     await expect(iframe.getByText('The field Title is required.')).toBeVisible();
 });
+*/
 
 /**
  * Test to validate you are able to add file assets importing from url

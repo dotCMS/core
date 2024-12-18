@@ -232,8 +232,9 @@ export class ContentUtils {
         }
         const actionBtnLocator = iframe.getByRole('menuitem', { name: action });
         await waitForVisibleAndCallback(actionBtnLocator, () => actionBtnLocator.getByText(action).click());
-        await expect.soft(iframe.getByText('Workflow executed')).toBeVisible();
-        await expect.soft(iframe.getByText('Workflow executed')).toBeHidden();
+        const executionConfirmation = iframe.getByText('Workflow executed');
+        await waitForVisibleAndCallback(executionConfirmation, () => expect(executionConfirmation).toBeVisible());
+        await waitForVisibleAndCallback(executionConfirmation, () => expect(executionConfirmation).toBeHidden());
     }
 
     /**
