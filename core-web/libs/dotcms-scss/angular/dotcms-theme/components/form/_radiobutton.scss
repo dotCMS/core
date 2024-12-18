@@ -1,6 +1,7 @@
 @use "variables" as *;
 @import "common";
 
+p-tableradiobutton.p-element,
 p-radiobutton.p-element {
     gap: $spacing-1;
 

@@ -68,6 +68,7 @@ export class DotSelectExistingContentComponent {
      * It is used to store the selected content items.
      */
     $selectedItems = model<RelationshipFieldItem[]>([]);
+    $selectedItem = model<RelationshipFieldItem | null>(null);
 
     /**
      * A computed signal that determines if the apply button is disabled.
