@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpSession;
@@ -64,6 +65,10 @@ public class VelocityServlet extends HttpServlet {
         final LoginMode loginMode = LoginMode.get(request);
         Logger.debug(VelocityServlet.class, "VelocityServlet_processPageMode LoginMode: " + loginMode.toString());
 
+        if (null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)){
+            return PageMode.get(request);
+        }
+
         if (LoginMode.UNKNOWN == loginMode) {
 
             return user.isFrontendUser()
@@ -73,7 +78,7 @@ public class VelocityServlet extends HttpServlet {
                     :  PageMode.setPageMode(request, PageMode.LIVE);
         }
 
-        if ( LoginMode.FE == loginMode || user.isBackendUser()) {
+        if ( LoginMode.FE == loginMode) {
             return PageMode.setPageMode(request, PageMode.LIVE);
         }
 
