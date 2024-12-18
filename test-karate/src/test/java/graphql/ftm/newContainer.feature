@@ -15,7 +15,7 @@ Feature: Create a Container
         "containerStructures":[
           {
             "structureId":"#(contentTypeId)",
-            "code":"$!{dotContentMap.title}"
+            "code":"<div class=\"contentlet-title\">$!{dotContentMap.title}</div>"
           }
         ]
       }
