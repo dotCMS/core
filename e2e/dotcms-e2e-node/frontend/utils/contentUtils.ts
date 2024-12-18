@@ -27,6 +27,8 @@ export class ContentUtils {
         await dotIframe.locator('#title').fill(title);
         //Fill body
         await dotIframe.locator('#block-editor-body div').nth(1).fill(body);
+
+        //await dotIframe.locator(iFramesLocators.wysiwygFrame).contentFrame().locator('#tinymce').fill(body);
         //Click on action
         await dotIframe.getByText(action).first().click();
     }
@@ -297,6 +299,7 @@ export class ContentUtils {
         console.log('Content not found');
         return null;
     }
+
 
 }
 

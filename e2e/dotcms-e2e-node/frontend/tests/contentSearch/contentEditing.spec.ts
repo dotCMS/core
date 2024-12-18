@@ -191,7 +191,7 @@ test('Validate the title field is not chaging in the file asset auto complete', 
     await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
     await detailsFrame.locator('#title').fill('test');
     await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
-    
+
     await expect(detailsFrame.locator('#title')).toHaveValue('test');
 });
 */
