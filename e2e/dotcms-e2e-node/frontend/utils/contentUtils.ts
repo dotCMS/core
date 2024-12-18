@@ -42,27 +42,31 @@ export class ContentUtils {
      * @param newFileName
      * @param newFileText
      */
-    async fillFileAssetForm(page: Page, host: string, title: string, action:string, fileName?: string, fromURL?: string, newFileName?: string, newFileText?: string) {
+    async fillFileAssetForm(page: Page, host: string, title: string, action?: string, fileName?: string, fromURL?: string, newFileName?: string, newFileText?: string) {
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
         const headingLocator = page.getByRole('heading');
-        await waitForVisibleAndCallback(headingLocator, () => expect.soft(headingLocator).toContainText( fileAsset.label ));
+        await waitForVisibleAndCallback(headingLocator, () => expect.soft(headingLocator).toContainText(fileAsset.label));
 
         await dotIframe.locator('#HostSelector-hostFolderSelect').fill(host);
         if (newFileName && newFileText) {
+            await dotIframe.getByRole('button', {name: ' Create New File'}).click();
             await dotIframe.getByTestId('editor-file-name').fill(newFileName);
             await dotIframe.getByLabel('Editor content;Press Alt+F1').fill(newFileText);
-            await dotIframe.getByRole('button', { name: 'Save' }).click();
+            await dotIframe.getByRole('button', {name: 'Save'}).click();
         } else {
             if (fromURL) {
                 await dotIframe.getByRole('button', {name: ' Import from URL'}).click();
                 await dotIframe.getByTestId('url-input').fill(fromURL);
-                await dotIframe.getByRole('button', { name: ' Import' }).click();
+                await dotIframe.getByRole('button', {name: ' Import'}).click();
             }
         }
         const titleField = dotIframe.locator('#title');
         await waitForVisibleAndCallback(headingLocator, () => titleField.fill(title));
-        await dotIframe.getByText(action).first().click();
+        if (action) {
+            await dotIframe.getByText(action).first().click();
+        }
+
     }
 
     /**
@@ -138,12 +142,38 @@ export class ContentUtils {
     async validateContentExist(page: Page, title: string) {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
-        await iframe.locator('#results_table tbody tr').first().waitFor({ state: 'visible' });
+        await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr:nth-of-type(2) td:nth-of-type(2)'), async () => {
+        });
+        await page.waitForTimeout(1000)
         const secondCell = iframe.locator('#results_table tbody tr:nth-of-type(2) td:nth-of-type(2)');
         const hasAutomationLink = await secondCell.locator(`a:has-text("${title}")`).count() > 0;
 
         console.log(`The content with the title ${title} ${hasAutomationLink ? 'exists' : 'does not exist'}`);
         return hasAutomationLink;
+    }
+
+    async validateContentExist1(page: Page, text: string) {
+        const iframe = page.frameLocator(iFramesLocators.main_iframe);
+
+        await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr:nth-of-type(2)'), async () => {
+        });
+        await page.waitForTimeout(1000);
+
+        const cells = iframe.locator('#results_table tbody tr:nth-of-type(2) td');
+        const cellCount = await cells.count();
+
+        for (let j = 0; j < cellCount; j++) {
+            const cell = cells.nth(j);
+            const cellText = await cell.textContent();
+
+            if (cellText && cellText.includes(text)) {
+                console.log(`The text "${text}" exists in the second row of the table.`);
+                return true;
+            }
+        }
+
+        console.log(`The text "${text}" does not exist in the second row of the table.`);
+        return false;
     }
 
     /**
@@ -154,18 +184,22 @@ export class ContentUtils {
     async getContentElement(page: Page, title: string): Promise<Locator | null> {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
-        await iframe.locator('#results_table tbody tr').first().waitFor({ state: 'visible' });
-        const secondCell = iframe.locator('#results_table tbody tr:nth-of-type(2) td:nth-of-type(2)');
-        const element = secondCell.locator(`a:has-text("${title}")`);
+        await iframe.locator('#results_table tbody tr').first().waitFor({state: 'visible'});
+        const rows = iframe.locator('#results_table tbody tr');
+        const rowCount = await rows.count();
 
-        const elementCount = await element.count();
-        if (elementCount > 0) {
-            return element.first();
-        } else {
-            console.log(`The content with the title ${title} does not exist`);
-            return null;
+        for (let i = 0; i < rowCount; i++) {
+            const secondCell = rows.nth(i).locator('td:nth-of-type(2)');
+            const element = secondCell.locator(`a:text("${title}")`);
+
+            if (await element.count() > 0) {
+                return element.first();
+            }
         }
+        console.log(`The content with the title ${title} does not exist`);
+        return null;
     }
+
 
     /**
      * Edit content on the content portlet
@@ -180,7 +214,7 @@ export class ContentUtils {
         const contentElement = await this.getContentElement(page, title);
         if (contentElement) {
             await contentElement.click();
-        }else {
+        } else {
             console.log('Content not found');
             return;
         }
@@ -203,10 +237,11 @@ export class ContentUtils {
                 await this.performWorkflowAction(page, title, contentProperties.unpublishWfAction);
             } else if (contentState === 'draft') {
                 await this.performWorkflowAction(page, title, contentProperties.archiveWfAction);
-                await iframe.getByRole('link', { name: 'Advanced' }).click();
+                await iframe.getByRole('link', {name: 'Advanced'}).click();
                 await iframe.locator('#widget_showingSelect div').first().click();
-                const dropDownMenu = iframe.getByRole('option', { name: 'Archived' });
+                const dropDownMenu = iframe.getByRole('option', {name: 'Archived'});
                 await waitForVisibleAndCallback(dropDownMenu, () => dropDownMenu.click());
+                await page.waitForTimeout(1000);
             } else if (contentState === 'archived') {
                 await this.performWorkflowAction(page, title, contentProperties.deleteWfAction);
                 return;
@@ -230,7 +265,7 @@ export class ContentUtils {
                 button: 'right'
             });
         }
-        const actionBtnLocator = iframe.getByRole('menuitem', { name: action });
+        const actionBtnLocator = iframe.getByRole('menuitem', {name: action});
         await waitForVisibleAndCallback(actionBtnLocator, () => actionBtnLocator.getByText(action).click());
         const executionConfirmation = iframe.getByText('Workflow executed');
         await waitForVisibleAndCallback(executionConfirmation, () => expect(executionConfirmation).toBeVisible());
@@ -240,24 +275,28 @@ export class ContentUtils {
     /**
      * Get the content state from the results table on the content portle
      * @param page
-      */
+     */
     async getContentState(page: Page, title: string): Promise<string | null> {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
-        await iframe.locator('#results_table tbody tr').first().waitFor({ state: 'visible' });
 
-        const titleCell = iframe.locator('#results_table tbody tr:nth-of-type(2) td:nth-of-type(2)');
-        const element = titleCell.locator(`a:has-text("${title}")`);
-        const elementCount = await element.count();
-        if (elementCount > 0) {
-            const stateColumn = iframe.locator('#results_table tbody tr:nth-of-type(2) td:nth-of-type(3)');
-            const targetDiv = stateColumn.locator('div#icon');
-            return await targetDiv.getAttribute('class');
-        } else {
-            console.log('Content not found');
-            return null;
+        await iframe.locator('#results_table tbody tr').first().waitFor({state: 'visible'});
+        const rows = iframe.locator('#results_table tbody tr');
+        const rowCount = await rows.count();
+
+        for (let i = 0; i < rowCount; i++) {
+            const secondCell = rows.nth(i).locator('td:nth-of-type(2)');
+            const element = secondCell.locator(`a:text("${title}")`);
+
+            if (await element.count() > 0) {
+                const stateColumn = rows.nth(i).locator('td:nth-of-type(3)');
+                const targetDiv = stateColumn.locator('div#icon');
+                return await targetDiv.getAttribute('class');
+            }
         }
-    }
 
+        console.log('Content not found');
+        return null;
+    }
 
 }
 

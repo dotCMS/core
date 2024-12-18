@@ -38,7 +38,7 @@ test.beforeEach('Navigate to content portlet', async ({page}) => {
 /**
  * test to add a new piece of content (generic content)
  */
-test('Add a new pice of content', async ({page}) => {
+test('Add a new Generic content', async ({page}) => {
     const contentUtils = new ContentUtils(page);
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
@@ -55,14 +55,14 @@ test('Add a new pice of content', async ({page}) => {
 /**
  * Test to edit an existing piece of content
  */
-test('Edit a piece of content', async ({page}) => {
+test('Edit a generic content', async ({page}) => {
     const contentUtils = new ContentUtils(page);
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
     // Edit the content
+    await contentUtils.selectTypeOnFilter(page, contentGeneric.locator);
     await contentUtils.editContent(page, genericContent1.title, genericContent1.newTitle, genericContent1.newBody, contentProperties.publishWfAction);
     await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr').first(), async () => {});
-
     await contentUtils.validateContentExist(page, genericContent1.newTitle).then(assert);
 });
 
@@ -70,7 +70,7 @@ test('Edit a piece of content', async ({page}) => {
 /**
  * Test to delete an existing piece of content
  */
-test('Delete a piece of content', async ({ page }) => {
+test('Delete a generic of content', async ({ page }) => {
         const contentUtils = new ContentUtils(page);
         // Delete the content
         await contentUtils.deleteContent(page, genericContent1.newTitle);
@@ -118,3 +118,91 @@ test('Validate you are able to add file assets importing from url', async ({page
     await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
     await contentUtils.validateContentExist(page, fileAssetContent.title).then(assert);
 });
+
+/**
+ * Test to validate you are able to add file assets creating a new file
+ */
+test('Validate you are able to add file assets creating a new file', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+
+    await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
+    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, contentProperties.publishWfAction, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
+    await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
+    await contentUtils.validateContentExist(page, fileAssetContent.newFileName).then(assert);
+});
+
+/**
+ * Test to validate the required on file asset fields
+ */
+test('Validate the required on file asset fields', async ({page}) => {
+    const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
+    const contentUtils = new ContentUtils(page);
+
+    await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
+    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, contentProperties.publishWfAction, null, null, null, null);
+    await waitForVisibleAndCallback(detailsFrame.getByText('Error x'), async () => {});
+    let errorMessage = detailsFrame.getByText('The field File Asset is');
+    await waitForVisibleAndCallback(errorMessage, () => expect(errorMessage).toBeVisible());
+});
+
+/**
+ * Test to validate the auto complete on FileName field accepting the name change
+ */
+test('Validate the auto complete on FileName field accepting change', async ({page}) => {
+    const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
+    const contentUtils = new ContentUtils(page);
+
+    await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
+    await detailsFrame.locator('#fileName').fill('test');
+    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
+
+    const replaceText = detailsFrame.getByText('Do you want to replace the');
+    await waitForVisibleAndCallback(replaceText, () => expect(replaceText).toBeVisible());
+    await detailsFrame.getByLabel('Yes').click();
+    await expect(detailsFrame.locator('#fileName')).toHaveValue(fileAssetContent.newFileName);
+});
+
+/**
+ * Test to validate the auto complete on FileName field rejecting file name change
+ */
+test('Validate the auto complete on FileName field rejecting change', async ({page}) => {
+    const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
+    const contentUtils = new ContentUtils(page);
+
+    await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
+    await detailsFrame.locator('#fileName').fill('test');
+    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
+
+    const replaceText = detailsFrame.getByText('Do you want to replace the');
+    await waitForVisibleAndCallback(replaceText, async () => expect(replaceText).toBeVisible());
+    await detailsFrame.getByLabel('No').click();
+    await expect(detailsFrame.locator('#fileName')).toHaveValue('test');
+});
+
+/**
+ * Test to validate the title is not changing in the auto complete on FileName
+ */
+/** ENABLE AS SOON WE FIXED THE ISSUE #30945
+test('Validate the title field is not chaging in the file asset auto complete', async ({page}) => {
+    const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
+    const contentUtils = new ContentUtils(page);
+
+    await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
+    await detailsFrame.locator('#title').fill('test');
+    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
+    
+    await expect(detailsFrame.locator('#title')).toHaveValue('test');
+});
+*/
+
+/**
+ * Test to validate you are able to delete a file asset content
+ */
+test('Delete a file asset content', async ({ page }) => {
+    const contentUtils = new ContentUtils(page);
+    // Delete the content
+    await contentUtils.deleteContent(page, fileAssetContent.title);
+});
+
+
