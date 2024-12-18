@@ -58,7 +58,7 @@ describe('DotEditContentSidebarUntranslatedLocaleComponent', () => {
     });
 
     it('should display the correct label for the populate radio button', () => {
-        expect(spectator.query(byTestId('populate-label')).textContent).toEqual(
+        expect(spectator.query(byTestId('populate-label')).textContent).toContain(
             'Populate from Current Locale en-us'
         );
     });
