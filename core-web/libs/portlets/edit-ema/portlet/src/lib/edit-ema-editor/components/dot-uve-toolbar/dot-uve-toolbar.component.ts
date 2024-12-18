@@ -26,7 +26,6 @@ import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_MODE } from '../../../shared/enums';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -35,6 +34,7 @@ import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/
 import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
+import { UVE_MODE } from '@dotcms/client';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -113,7 +113,7 @@ export class DotUveToolbarComponent {
 
             untracked(() => {
                 this.#store.loadPageAsset({
-                    editorMode: EDITOR_MODE.PREVIEW,
+                    editorMode: UVE_MODE.PREVIEW,
                     publishDate: previewDate?.toISOString()
                 });
             });

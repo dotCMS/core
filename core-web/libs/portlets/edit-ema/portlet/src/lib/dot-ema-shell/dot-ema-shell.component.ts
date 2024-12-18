@@ -11,6 +11,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { skip } from 'rxjs/operators';
 
+import { UVE_MODE } from '@dotcms/client';
 import {
     DotESContentService,
     DotExperimentsService,
@@ -32,7 +33,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
-import { EDITOR_MODE, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import {
@@ -218,11 +219,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             params.clientHost = uveConfig.url;
         }
 
-        if (params.editorMode !== EDITOR_MODE.EDIT && params.editorMode !== EDITOR_MODE.PREVIEW) {
-            params.editorMode = EDITOR_MODE.EDIT;
+        if (params.editorMode !== UVE_MODE.EDIT && params.editorMode !== UVE_MODE.PREVIEW) {
+            params.editorMode = UVE_MODE.EDIT;
         }
 
-        if (params.editorMode === EDITOR_MODE.PREVIEW && !params.publishDate) {
+        if (params.editorMode === UVE_MODE.PREVIEW && !params.publishDate) {
             params.publishDate = new Date().toISOString();
         }
 

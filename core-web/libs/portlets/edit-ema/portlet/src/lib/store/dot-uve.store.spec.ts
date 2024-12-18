@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
+import { UVE_MODE } from '@dotcms/client';
 import {
     DotExperimentsService,
     DotLanguagesService,
@@ -35,7 +36,7 @@ import { UVEStore } from './dot-uve.store';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { COMMON_ERRORS } from '../shared/consts';
-import { EDITOR_MODE, UVE_STATUS } from '../shared/enums';
+import { UVE_STATUS } from '../shared/enums';
 import {
     BASE_SHELL_ITEMS,
     BASE_SHELL_PROPS_RESPONSE,
@@ -362,7 +363,7 @@ describe('UVEStore', () => {
 
         describe('$isPreviewMode', () => {
             it("should return true when the preview is 'true'", () => {
-                store.loadPageAsset({ editorMode: EDITOR_MODE.PREVIEW });
+                store.loadPageAsset({ editorMode: UVE_MODE.PREVIEW });
 
                 expect(store.$isPreviewMode()).toBe(true);
             });

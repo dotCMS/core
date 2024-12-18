@@ -6,7 +6,7 @@ import {
     subscriptions
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
-import { DotCMSPageEditorConfig, EDITOR_MODE, ReorderMenuConfig } from './models/editor.model';
+import { DotCMSPageEditorConfig, UVE_MODE, ReorderMenuConfig } from './models/editor.model';
 import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
@@ -121,7 +121,7 @@ export function isInsideEditor(): boolean {
  *
  * @returns {Object|null} Returns an object with the detected mode if inside editor,
  * or null if outside editor
- * @returns {EDITOR_MODE} returns.mode - The current editor mode (PREVIEW or EDITOR)
+ * @returns {UVE_MODE} returns.mode - The current editor mode (PREVIEW or EDITOR)
  *
  * @example
  * ```ts
@@ -139,10 +139,10 @@ export function getUVEContext() {
     }
 
     if (isPreviewMode()) {
-        return { mode: EDITOR_MODE.PREVIEW };
+        return { mode: UVE_MODE.PREVIEW };
     }
 
-    return { mode: EDITOR_MODE.EDIT };
+    return { mode: UVE_MODE.EDIT };
 }
 
 export function initDotUVE() {

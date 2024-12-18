@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { graphqlToPageEntity } from '@dotcms/client';
+import { graphqlToPageEntity, UVE_MODE } from '@dotcms/client';
 import { Site } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -18,7 +18,7 @@ import {
     VanityUrl
 } from '@dotcms/dotcms-models';
 
-import { EDITOR_MODE, PAGE_MODE } from '../shared/enums';
+import { PAGE_MODE } from '../shared/enums';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import { createPageApiUrlWithQueryParams } from '../utils';
@@ -60,7 +60,6 @@ export enum DotPageAssetKeys {
     LANGUAGE_ID = 'language_id',
     EXPERIMENT_ID = 'experimentId',
     PERSONA_ID = 'com.dotmarketing.persona.id',
-    PREVIEW = 'preview',
     PUBLISH_DATE = 'publishDate',
     EDITOR_MODE = 'editorMode'
 }
@@ -107,7 +106,7 @@ export class DotPageApiService {
         } = params;
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
-        const isPreview = editorMode === EDITOR_MODE.PREVIEW;
+        const isPreview = editorMode === UVE_MODE.PREVIEW;
         const pageType = clientHost ? 'json' : 'render';
         const mode = isPreview ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
 
@@ -118,7 +117,7 @@ export class DotPageApiService {
             experimentId,
             depth,
             mode,
-            publishDate: publishDate ? publishDate : undefined
+            publishDate: publishDate ?? undefined
         });
 
         const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;

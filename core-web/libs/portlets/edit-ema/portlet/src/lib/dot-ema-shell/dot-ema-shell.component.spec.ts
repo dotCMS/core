@@ -12,7 +12,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
+import { CLIENT_ACTIONS, UVE_MODE } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotExperimentsService,
@@ -47,7 +47,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
-import { EDITOR_MODE, FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
     MOCK_RESPONSE_HEADLESS,
@@ -116,7 +116,7 @@ const INITIAL_PAGE_PARAMS = {
     url: 'index',
     variantName: 'DEFAULT',
     'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-    editorMode: EDITOR_MODE.EDIT
+    editorMode: UVE_MODE.EDIT
 };
 
 const BASIC_OPTIONS = {
@@ -378,7 +378,7 @@ describe('DotEmaShellComponent', () => {
                     url: 'my-awesome-page',
                     variantName: 'DEFAULT',
                     'com.dotmarketing.persona.id': 'SomeCoolDude',
-                    editorMode: EDITOR_MODE.EDIT
+                    editorMode: UVE_MODE.EDIT
                 };
 
                 const url = router.createUrlTree([], { queryParams: newParams });
@@ -546,7 +546,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyStoreLoadPage).toHaveBeenCalledWith({
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: EDITOR_MODE.EDIT
+                    editorMode: UVE_MODE.EDIT
                 });
             });
 
@@ -554,7 +554,7 @@ describe('DotEmaShellComponent', () => {
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: EDITOR_MODE.PREVIEW
+                    editorMode: UVE_MODE.PREVIEW
                 };
 
                 // override the new Date() to return a fixed date

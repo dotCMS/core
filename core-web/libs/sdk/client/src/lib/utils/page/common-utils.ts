@@ -1,5 +1,5 @@
 import { PageApiOptions } from '../../client/sdk-js-client';
-import { EDITOR_MODE } from '../../editor/models/editor.model';
+import { UVE_MODE } from '../../editor/models/editor.model';
 
 /**
  * Interface representing the properties for page request parameters.
@@ -73,5 +73,5 @@ export const isPreviewMode = (): boolean => {
     const queryParams = new URLSearchParams(window.location.search);
     const editorMode = queryParams.get('editorMode');
 
-    return editorMode === EDITOR_MODE.PREVIEW;
+    return editorMode === UVE_MODE.PREVIEW;
 };

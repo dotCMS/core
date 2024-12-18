@@ -1,8 +1,8 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
-import { DotPageApiService } from './dot-page-api.service';
+import { UVE_MODE } from '@dotcms/client';
 
-import { EDITOR_MODE } from '../shared/enums';
+import { DotPageApiService } from './dot-page-api.service';
 
 describe('DotPageApiService', () => {
     let spectator: SpectatorHttp<DotPageApiService>;
@@ -117,7 +117,7 @@ describe('DotPageApiService', () => {
                     url: 'test-url',
                     language_id: 'en',
                     'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                    editorMode: EDITOR_MODE.PREVIEW
+                    editorMode: UVE_MODE.PREVIEW
                 })
                 .subscribe();
 

@@ -67,7 +67,7 @@ export interface ReorderMenuConfig {
     depth: number;
 }
 
-export enum EDITOR_MODE {
+export enum UVE_MODE {
     EDIT = 'edit',
     PREVIEW = 'preview'
 }

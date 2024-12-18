@@ -2,6 +2,8 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed, untracked } from '@angular/core';
 
+import { UVE_MODE } from '@dotcms/client';
+
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
@@ -10,7 +12,7 @@ import { ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
-import { EDITOR_MODE, UVE_STATUS } from '../shared/enums';
+import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
 // Some properties can be computed
@@ -125,7 +127,7 @@ export const UVEStore = signalStore(
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
                 $isPreviewMode: computed<boolean>(() => {
-                    return pageParams()?.editorMode === EDITOR_MODE.PREVIEW;
+                    return pageParams()?.editorMode === UVE_MODE.PREVIEW;
                 })
             };
         }

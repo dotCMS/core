@@ -9,6 +9,7 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { UVE_MODE } from '@dotcms/client';
 import {
     DotExperimentsService,
     DotLanguagesService,
@@ -28,7 +29,6 @@ import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_MODE } from '../../../shared/enums';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
@@ -254,7 +254,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.click(byTestId('uve-toolbar-preview'));
 
                 expect(spy).toHaveBeenCalledWith({
-                    editorMode: EDITOR_MODE.PREVIEW,
+                    editorMode: UVE_MODE.PREVIEW,
                     publishDate: fixedDate.toISOString()
                 });
             });
@@ -416,7 +416,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spy).toHaveBeenCalledWith({
-                    editorMode: EDITOR_MODE.PREVIEW,
+                    editorMode: UVE_MODE.PREVIEW,
                     publishDate: new Date('2024-02-01').toISOString()
                 });
             });
@@ -428,7 +428,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spy).toHaveBeenCalledWith({
-                    editorMode: EDITOR_MODE.PREVIEW,
+                    editorMode: UVE_MODE.PREVIEW,
                     publishDate: fixedDate.toISOString()
                 });
             });

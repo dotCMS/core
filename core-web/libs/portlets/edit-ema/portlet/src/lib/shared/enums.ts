@@ -54,8 +54,3 @@ export enum FormStatus {
     SAVED = 'SAVED',
     PRISTINE = 'PRISTINE'
 }
-
-export enum EDITOR_MODE {
-    PREVIEW = 'preview',
-    EDIT = 'edit'
-}

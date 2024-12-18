@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
@@ -14,7 +15,7 @@ import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { BASE_IFRAME_MEASURE_UNIT, DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_MODE, EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -673,7 +674,7 @@ describe('withEditor', () => {
 
             it('should not have opacity or progressBar in preview mode', () => {
                 patchState(store, {
-                    pageParams: { ...emptyParams, editorMode: EDITOR_MODE.PREVIEW }
+                    pageParams: { ...emptyParams, editorMode: UVE_MODE.PREVIEW }
                 });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
@@ -840,7 +841,7 @@ describe('withEditor', () => {
                         canEditPage: true,
                         pageParams: {
                             ...emptyParams,
-                            editorMode: EDITOR_MODE.PREVIEW
+                            editorMode: UVE_MODE.PREVIEW
                         },
                         state: EDITOR_STATE.IDLE
                     });
