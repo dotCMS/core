@@ -236,7 +236,7 @@ $success: $color-accessible-text-green;
     --primary-800: var(--color-palette-primary-800);
     --primary-900: var(--color-palette-primary-900);
 
-    --color-palette-primary-op-10: var(--color-palette-primary-op-10);
+    --color-palette-primary-op-10: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.1);
     --color-palette-primary-op-20: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.2);
     --color-palette-primary-op-30: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.3);
     --color-palette-primary-op-40: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.4);
