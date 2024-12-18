@@ -108,7 +108,7 @@
         "htmldiff-js": "^1.0.5",
         "jstat": "^1.9.6",
         "md5": "^2.3.0",
-        "next": "^14.0.4",
+        "next": "^14.2.15",
         "ng-packagr": "17.3.0",
         "ng2-dragula": "5.0.1",
         "ngx-markdown": "17.1.1",
