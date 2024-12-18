@@ -1,16 +1,24 @@
 import { jest } from '@jest/globals';
 import { renderHook } from '@testing-library/react-hooks';
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 import { useContentAnalytics } from './useContentAnalytics';
 
+import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
+jest.mock('../../dotAnalytics/shared/dot-content-analytics.utils', () => {
+    return {
+        isInsideEditor: jest.fn()
+    };
+});
+
+const mockIsInsideEditor = jest.mocked(isInsideEditor);
+
+const mockTrack = jest.fn();
 
 interface WrapperProps {
     children: ReactNode;
 }
-
-const mockTrack = jest.fn();
 
 const wrapper = ({ children }: WrapperProps) => (
     <DotContentAnalyticsContext.Provider
@@ -20,12 +28,6 @@ const wrapper = ({ children }: WrapperProps) => (
         {children}
     </DotContentAnalyticsContext.Provider>
 );
-
-const mockIsInsideEditor = jest.fn();
-
-jest.mock('../../dotAnalytics/shared/dot-content-analytics.utils', () => ({
-    isInsideEditor: mockIsInsideEditor
-}));
 
 describe('useContentAnalytics', () => {
     beforeEach(() => {
@@ -42,7 +44,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('should track with timestamp when outside editor', () => {
-        mockIsInsideEditor.mockImplementation(() => false);
+        mockIsInsideEditor.mockReturnValue(false);
 
         const mockDate = '2024-01-01T00:00:00.000Z';
         jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);
@@ -57,7 +59,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('should handle undefined payload', () => {
-        mockIsInsideEditor.mockImplementation(() => false);
+        mockIsInsideEditor.mockReturnValue(false);
 
         const mockDate = '2024-01-01T00:00:00.000Z';
         jest.spyOn(Date.prototype, 'toISOString').mockReturnValue(mockDate);

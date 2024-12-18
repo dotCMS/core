@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
+import '@testing-library/jest-dom';
 import { render, waitFor } from '@testing-library/react';
-import React from 'react';
 
 import { DotContentAnalyticsProvider } from './DotContentAnalyticsProvider';
 

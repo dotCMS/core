@@ -3,44 +3,8 @@
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/sdk/analytics/src",
     "projectType": "library",
+    "tags": ["type:lib", "scope:sdk", "feature:analytics"],
     "targets": {
-        "build": {
-            "executor": "@nx/rollup:rollup",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "outputPath": "dist/libs/sdk/analytics",
-                "main": "libs/sdk/analytics/src/index.ts",
-                "project": "libs/sdk/analytics/package.json",
-                "additionalEntryPoints": ["libs/sdk/analytics/src/lib/react/index.ts"],
-                "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
-                "format": ["esm"],
-                "external": ["react"],
-                "preserveModules": true,
-                "preserveModulesRoot": "libs/sdk/analytics/src",
-                "rollupConfig": "libs/sdk/analytics/rollup.config.js",
-                "compiler": "swc",
-                "assets": [
-                    {
-                        "glob": "README.md",
-                        "input": "libs/sdk/analytics",
-                        "output": "."
-                    }
-                ],
-                "sourceMap": true,
-                "skipTypeCheck": false,
-                "deleteOutputPath": true
-            }
-        },
-        "build:standalone": {
-            "executor": "@nx/vite:build",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "outputPath": "../../core/dotCMS/src/main/resources/ca/html",
-                "main": "libs/sdk/analytics/src/lib/standalone.ts",
-                "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
-                "project": "libs/sdk/analytics/package.json"
-            }
-        },
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
@@ -48,6 +12,5 @@
                 "jestConfig": "libs/sdk/analytics/jest.config.ts"
             }
         }
-    },
-    "tags": ["type:lib", "scope:sdk", "feature:analytics"]
+    }
 }
