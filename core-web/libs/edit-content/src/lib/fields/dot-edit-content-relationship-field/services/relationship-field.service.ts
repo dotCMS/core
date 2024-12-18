@@ -6,8 +6,12 @@ import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-
-import { DotContentSearchService, DotFieldService, DotHttpErrorManagerService, DotLanguagesService } from '@dotcms/data-access';
+import {
+    DotContentSearchService,
+    DotFieldService,
+    DotHttpErrorManagerService,
+    DotLanguagesService
+} from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 
@@ -16,7 +20,6 @@ import {
     MANDATORY_LAST_COLUMNS
 } from '../dot-edit-content-relationship-field.constants';
 import { Column } from '../models/column.model';
-
 
 type LanguagesMap = Record<number, string>;
 
@@ -49,7 +52,9 @@ export class RelationshipFieldService {
      * @param contentTypeId The content type ID
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
-    getColumnsAndContent(contentTypeId: string): Observable<[Column[], RelationshipFieldItem[]] | null> {
+    getColumnsAndContent(
+        contentTypeId: string
+    ): Observable<[Column[], RelationshipFieldItem[]] | null> {
         return forkJoin([
             this.getColumns(contentTypeId),
             this.getContent(contentTypeId),
@@ -60,9 +65,7 @@ export class RelationshipFieldService {
                 this.#matchColumnsWithContent(columns, content, languages)
             ]),
             catchError((error: HttpErrorResponse) => {
-                return this.#httpErrorManagerService.handle(error).pipe(
-                    map(() => null)
-                );
+                return this.#httpErrorManagerService.handle(error).pipe(map(() => null));
             })
         );
     }

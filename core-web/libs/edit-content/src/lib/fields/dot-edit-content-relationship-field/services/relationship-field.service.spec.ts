@@ -8,7 +8,12 @@ import { of } from 'rxjs';
 
 import { formatDate } from '@angular/common';
 
-import { DotContentSearchService, DotFieldService, DotLanguagesService } from '@dotcms/data-access';
+import {
+    DotContentSearchService,
+    DotFieldService,
+    DotHttpErrorManagerService,
+    DotLanguagesService
+} from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { RelationshipFieldService } from './relationship-field.service';
@@ -26,6 +31,9 @@ describe('RelationshipFieldService', () => {
     const createService = createServiceFactory({
         service: RelationshipFieldService,
         providers: [
+            mockProvider(DotHttpErrorManagerService, {
+                handle: () => of(null)
+            }),
             mockProvider(DotFieldService),
             mockProvider(DotContentSearchService),
             mockProvider(DotLanguagesService, {
