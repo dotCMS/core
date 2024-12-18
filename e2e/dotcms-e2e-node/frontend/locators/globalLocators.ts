@@ -33,6 +33,11 @@ export const contentGeneric = {
     label: "Content (Generic)"
 }
 
+export const fileAsset = {
+    locator: "attach_fileFile Asset",
+    label: "File Asset"
+}
+
 export {
 } from './navigation/menuLocators';
 

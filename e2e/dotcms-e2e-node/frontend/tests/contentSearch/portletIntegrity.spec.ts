@@ -55,6 +55,7 @@ test('Search filter', async ({page}) => {
     // Adding new rich text content
     await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
     await contentUtils.fillRichTextForm(page, genericContent1.title, genericContent1.body, contentProperties.publishWfAction);
+    await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
 
     // Validate the content has been created
     await expect.soft(iframe.getByRole('link', {name: genericContent1.title}).first()).toBeVisible();
