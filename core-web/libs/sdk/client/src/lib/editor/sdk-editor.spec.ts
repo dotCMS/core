@@ -5,8 +5,10 @@ import {
     scrollHandler
 } from './listeners/listeners';
 import { postMessageToEditor, CLIENT_ACTIONS } from './models/client.model';
+import { UVE_MODE } from './models/editor.model';
 import {
     addClassToEmptyContentlets,
+    getUVEContext,
     initEditor,
     initInlineEditing,
     isInsideEditor,
@@ -165,14 +167,28 @@ describe('DotCMSPageEditor', () => {
         });
     });
 
-    it('should isInsideEditor return false when is preview mode', () => {
-        Object.defineProperty(window, 'location', {
-            value: {
-                search: '?preview=true'
-            },
-            writable: true
+    describe('getUVEContext', () => {
+        it('should getUVEContext return { mode: UVE_MODE.EDITOR } when is editor mode', () => {
+            expect(getUVEContext()).toEqual({ mode: UVE_MODE.EDIT });
         });
 
-        expect(isInsideEditor()).toBe(false);
+        it('should getUVEContext return { mode: UVE_MODE.PREVIEW } when is preview mode', () => {
+            Object.defineProperty(window, 'location', {
+                value: {
+                    search: '?editorMode=preview'
+                },
+                writable: true
+            });
+
+            expect(getUVEContext()).toEqual({ mode: UVE_MODE.PREVIEW });
+        });
+
+        it('should getUVEContext return null when is not inside editor', () => {
+            Object.defineProperty(window, 'parent', {
+                value: window,
+                writable: true
+            });
+            expect(getUVEContext()).toBe(null);
+        });
     });
 });

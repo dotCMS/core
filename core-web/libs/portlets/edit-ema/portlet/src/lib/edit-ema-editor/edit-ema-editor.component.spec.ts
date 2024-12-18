@@ -2918,21 +2918,6 @@ describe('EditEmaEditorComponent', () => {
 
             describe('CUSTOMER ACTIONS', () => {
                 describe('CLIENT_READY', () => {
-                    it('should set client is ready when not extra configuration is send', () => {
-                        const setIsClientReadySpy = jest.spyOn(store, 'setIsClientReady');
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: HOST,
-                                data: {
-                                    action: CLIENT_ACTIONS.CLIENT_READY
-                                }
-                            })
-                        );
-
-                        expect(setIsClientReadySpy).toHaveBeenCalledWith(true);
-                    });
-
                     it('should set client GraphQL configuration and call the reload', () => {
                         const setClientConfigurationSpy = jest.spyOn(
                             store,

@@ -2,6 +2,8 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed, untracked } from '@angular/core';
 
+import { UVE_MODE } from '@dotcms/client';
+
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
@@ -125,7 +127,7 @@ export const UVEStore = signalStore(
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
                 $isPreviewMode: computed<boolean>(() => {
-                    return pageParams()?.preview === 'true';
+                    return pageParams()?.editorMode === UVE_MODE.PREVIEW;
                 })
             };
         }

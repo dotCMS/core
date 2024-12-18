@@ -12,7 +12,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
@@ -21,6 +21,7 @@ import {
     ContentletDragPayload,
     ContentTypeDragPayload,
     DotPage,
+    DotPageAssetParams,
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
@@ -594,16 +595,16 @@ export const checkClientHostAccess = (
  * @param {Params} params
  * @return {*}  {DotPageApiParams}
  */
-export function getAllowedPageParams(params: Params): DotPageApiParams {
-    const allowedParams: DotPageApiKeys[] = Object.values(DotPageApiKeys);
+export function getAllowedPageParams(params: Params): DotPageAssetParams {
+    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
 
     return Object.keys(params)
-        .filter((key) => key && allowedParams.includes(key as DotPageApiKeys))
+        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
         .reduce((obj, key) => {
             obj[key] = params[key];
 
             return obj;
-        }, {}) as DotPageApiParams;
+        }, {}) as DotPageAssetParams;
 }
 
 /**
