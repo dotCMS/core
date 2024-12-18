@@ -1,12 +1,13 @@
-import { faker } from '@faker-js/faker';
 import { forkJoin, Observable } from 'rxjs';
 
 import { formatDate } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { catchError, map, pluck } from 'rxjs/operators';
 
-import { DotContentSearchService, DotFieldService, DotLanguagesService } from '@dotcms/data-access';
+
+import { DotContentSearchService, DotFieldService, DotHttpErrorManagerService, DotLanguagesService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 
@@ -15,6 +16,7 @@ import {
     MANDATORY_LAST_COLUMNS
 } from '../dot-edit-content-relationship-field.constants';
 import { Column } from '../models/column.model';
+
 
 type LanguagesMap = Record<number, string>;
 
@@ -25,6 +27,7 @@ export class RelationshipFieldService {
     readonly #fieldService = inject(DotFieldService);
     readonly #contentSearchService = inject(DotContentSearchService);
     readonly #dotLanguagesService = inject(DotLanguagesService);
+    readonly #httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Gets relationship content items
@@ -46,7 +49,7 @@ export class RelationshipFieldService {
      * @param contentTypeId The content type ID
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
-    getColumnsAndContent(contentTypeId: string): Observable<[Column[], RelationshipFieldItem[]]> {
+    getColumnsAndContent(contentTypeId: string): Observable<[Column[], RelationshipFieldItem[]] | null> {
         return forkJoin([
             this.getColumns(contentTypeId),
             this.getContent(contentTypeId),
@@ -55,7 +58,12 @@ export class RelationshipFieldService {
             map(([columns, content, languages]) => [
                 columns,
                 this.#matchColumnsWithContent(columns, content, languages)
-            ])
+            ]),
+            catchError((error: HttpErrorResponse) => {
+                return this.#httpErrorManagerService.handle(error).pipe(
+                    map(() => null)
+                );
+            })
         );
     }
 
@@ -154,21 +162,5 @@ export class RelationshipFieldService {
 
             return relationshipItem;
         });
-    }
-
-    #getRandomState(): { label: string; styleClass: string } {
-        const label = faker.helpers.arrayElement(['Changed', 'Published', 'Draft', 'Archived']);
-
-        const styleClasses = {
-            Changed: 'p-chip-sm p-chip-blue',
-            Published: 'p-chip-sm p-chip-success',
-            Draft: 'p-chip-sm p-chip-warning',
-            Archived: 'p-chip-sm p-chip-error'
-        };
-
-        return {
-            label,
-            styleClass: styleClasses[label]
-        };
     }
 }

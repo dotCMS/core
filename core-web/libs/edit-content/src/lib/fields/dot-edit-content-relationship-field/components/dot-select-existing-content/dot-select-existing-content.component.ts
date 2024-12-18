@@ -87,7 +87,7 @@ export class DotSelectExistingContentComponent {
      * A required input that holds the content id.
      * It is used to get the content type fields.
      */
-    $contentId = input.required<string | null>({ alias: 'contentId' });
+    $contentTypeId = input.required<string | null>({ alias: 'contentTypeId' });
 
     /**
      * A computed signal that determines the label for the apply button.
@@ -141,6 +141,6 @@ export class DotSelectExistingContentComponent {
      */
     onShowDialog() {
         this.store.applyInitialState();
-        this.store.loadContent(this.$contentId());
+        this.store.loadContent(this.$contentTypeId());
     }
 }

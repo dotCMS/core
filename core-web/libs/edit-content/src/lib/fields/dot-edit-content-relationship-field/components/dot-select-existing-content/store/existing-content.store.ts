@@ -57,17 +57,17 @@ export const ExistingContentStore = signalStore(
             loadContent: rxMethod<string>(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                    tap((contentId) => {
-                        if (!contentId) {
+                    tap((contentTypeId) => {
+                        if (!contentTypeId) {
                             patchState(store, {
                                 status: ComponentStatus.ERROR,
                                 errorMessage: 'dot.file.relationship.dialog.content.id.required'
                             });
                         }
                     }),
-                    filter((contentId) => !!contentId),
-                    switchMap((contentId) =>
-                        relationshipFieldService.getColumnsAndContent(contentId).pipe(
+                    filter((contentTypeId) => !!contentTypeId),
+                    switchMap((contentTypeId) =>
+                        relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
                                 next: ([columns, data]) => {
                                     patchState(store, {
