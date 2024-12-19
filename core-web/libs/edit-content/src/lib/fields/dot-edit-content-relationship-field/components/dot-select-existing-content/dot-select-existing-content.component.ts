@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, model, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    input,
+    model,
+    output
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -77,6 +85,12 @@ export class DotSelectExistingContentComponent {
     $isApplyDisabled = computed(() => this.$selectedItems().length === 0);
 
     /**
+     * A required input that holds the content id.
+     * It is used to get the content type fields.
+     */
+    $contentTypeId = input.required<string | null>({ alias: 'contentTypeId' });
+
+    /**
      * A computed signal that determines the label for the apply button.
      * It is used to display the appropriate message based on the number of selected items.
      */
@@ -128,6 +142,6 @@ export class DotSelectExistingContentComponent {
      */
     onShowDialog() {
         this.store.applyInitialState();
-        this.store.loadContent();
+        this.store.loadContent(this.$contentTypeId());
     }
 }
