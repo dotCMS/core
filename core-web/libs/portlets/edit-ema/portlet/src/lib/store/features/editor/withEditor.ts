@@ -29,7 +29,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
-import { EDITOR_STATE, PAGE_MODE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -124,10 +124,7 @@ export function withEditor() {
 
                     const url = sanitizeURL(params?.url);
 
-                    const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, {
-                        ...params,
-                        mode: PAGE_MODE.LIVE
-                    });
+                    const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
 
                     const showDialogs = canEditPage && isEditState;
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
