@@ -13,6 +13,11 @@ import {
 describe('Analytics Utils', () => {
     let mockLocation: Location;
 
+    beforeAll(() => {
+        jest.useFakeTimers({ doNotFake: [] });
+        jest.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+    });
+
     beforeEach(() => {
         // Mock Location object
         mockLocation = {
