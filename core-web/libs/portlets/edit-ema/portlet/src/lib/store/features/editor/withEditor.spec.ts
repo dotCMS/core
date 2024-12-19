@@ -651,7 +651,7 @@ describe('withEditor', () => {
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',
-                        src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                        src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000&mode=LIVE',
                         wrapper: null
                     },
                     progressBar: true,

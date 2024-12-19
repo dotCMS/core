@@ -10,7 +10,6 @@ import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model
 import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
-import { isPreviewMode } from '../utils';
 
 /**
  * Updates the navigation in the editor.
@@ -113,10 +112,6 @@ export function reorderMenu(config?: ReorderMenuConfig): void {
  */
 export function isInsideEditor(): boolean {
     if (typeof window === 'undefined') {
-        return false;
-    }
-
-    if (isPreviewMode()) {
         return false;
     }
 
