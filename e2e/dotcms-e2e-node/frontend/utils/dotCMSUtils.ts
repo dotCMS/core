@@ -7,8 +7,8 @@ export class dotCMSUtils {
     /**
      *  Login to dotCMS
      * @param page
-     * @param username 
-     * @param password 
+     * @param username
+     * @param password
      */
     async login(page: Page, username: string, password: string) {
         await page.goto('/dotAdmin');
@@ -34,16 +34,29 @@ export class dotCMSUtils {
     }
 };
 
-
+/**
+ * Wait for the locator to be in the provided state
+ * @param locator
+ * @param state
+ */
 export const waitFor = async (locator: Locator, state: "attached" | "detached" | "visible" | "hidden"): Promise<void> => {
     await locator.waitFor({state: state});
 }
 
+/**
+ * Wait for the locator to be visible
+ * @param locator
+ */
 export const waitForAndCallback = async (locator: Locator, state: "attached" | "detached" | "visible" | "hidden", callback: () => Promise<void>): Promise<void> => {
     await waitFor(locator, state);
     await callback();
 };
 
+/**
+ * Wait for the locator to be visible and execute the callback
+ * @param locator
+ * @param callback
+ */
 export const waitForVisibleAndCallback = async (locator: Locator, callback: () => Promise<void>): Promise<void> => {
     await waitForAndCallback(locator, 'visible', callback);
 };

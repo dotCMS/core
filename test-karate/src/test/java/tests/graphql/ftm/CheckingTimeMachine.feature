@@ -1,6 +1,11 @@
 Feature: Test Time Machine functionality
 
   Background:
+
+    * def CONTENTLET_ONE_V1 = 'test 1'
+    * def CONTENTLET_ONE_V2 = 'test 1 v2 (This ver will be publshed in the future)'
+    * def CONTENTLET_TWO_V2 = 'test 2 v2'
+
     * callonce read('classpath:graphql/ftm/setup.feature')
 
   @smoke @positive
@@ -10,15 +15,11 @@ Feature: Test Time Machine functionality
     When method GET
     Then status 200
     * def pageContents = extractContentlets (response)
-
-    * def contentPieceOne = getContentletByUUID(contentPieceOne, contentPieceOneId)
-    * def contentPieceTwo = getContentletByUUID(contentPieceTwo, contentPieceTwoId)
-
     * def titles = pageContents.map(x => x.title)
     # This is the first version of the content, test 1 v2 as the title says it will be published in the future
-    * match titles contains 'test 1'
+    * match titles contains CONTENTLET_ONE_V1
     # This is the second version of the content, Thisone is already published therefore it should be displayed
-    * match titles contains 'test 2 v2'
+    * match titles contains CONTENTLET_TWO_V2
 
   @positive
   Scenario: Test Time Machine functionality when a publish date is provided expect the future content to be displayed
@@ -27,13 +28,11 @@ Feature: Test Time Machine functionality
     And headers commonHeaders
     When method GET
     Then status 200
+    * def rendered = response.entity.page.rendered
+    * match rendered contains CONTENTLET_ONE_V2
     * def pageContents = extractContentlets (response)
-
-    * def contentPieceOne = getContentletByUUID(contentPieceOne, contentPieceOneId)
-    * def contentPieceTwo = getContentletByUUID(contentPieceTwo, contentPieceTwoId)
-
     * def titles = pageContents.map(x => x.title)
-    * match titles contains 'test 1 v2 (This ver will be publshed in the future)'
+    * match titles contains CONTENTLET_TWO_V2
 
   @smoke @positive
   Scenario: Send GraphQL query to fetch page details no publish date is sent
@@ -46,8 +45,8 @@ Feature: Test Time Machine functionality
     Then status 200
     * def contentlets = contentletsFromGraphQlResponse(response)
     * karate.log('contentlets:', contentlets)
-    * match contentlets contains 'test 1'
-    * match contentlets contains 'test 2 v2'
+    * match contentlets contains CONTENTLET_ONE_V1
+    * match contentlets contains CONTENTLET_TWO_V2
 
   @smoke @positive
   Scenario: Send GraphQL query to fetch page details, publish date is sent expect the future content to be displayed
@@ -60,4 +59,4 @@ Feature: Test Time Machine functionality
     Then status 200
     * def contentlets = contentletsFromGraphQlResponse(response)
     * karate.log('contentlets:', contentlets)
-    * match contentlets contains 'test 1 v2 (This ver will be publshed in the future)'
+    * match contentlets contains CONTENTLET_ONE_V2

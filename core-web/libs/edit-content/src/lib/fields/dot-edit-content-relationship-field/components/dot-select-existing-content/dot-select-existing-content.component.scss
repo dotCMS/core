@@ -2,15 +2,15 @@
 
 ::ng-deep {
     p-table {
-        .p-datatable-existing-content {
+        .dotTable.p-datatable.p-datatable-existing-content {
             .p-datatable-header {
                 background-color: $white;
                 border: 0px;
+                padding: $spacing-1 0;
             }
             .p-datatable-table {
                 border: 1px solid $color-palette-gray-300;
                 border-radius: $border-radius-md;
-                overflow: hidden;
             }
             .p-datatable-thead {
                 th {
@@ -21,8 +21,6 @@
             .p-inputtext {
                 height: auto;
             }
-        }
-        .dotTable.p-datatable {
             .p-datatable-tbody > tr > td:first-child:has(p-tableCheckbox) + td {
                 padding: 0 $spacing-1;
             }
