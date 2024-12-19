@@ -53,13 +53,13 @@ function App() {
 
 ### Tracking Custom Events
 
-Use the `useAnalyticsTracker` hook to track custom events:
+Use the `useContentAnalytics` hook to track custom events:
 
 ```tsx
-import { useAnalyticsTracker } from '@dotcms/analytics/react';
+import { useContentAnalytics } from '@dotcms/analytics/react';
 
 function Activity({ title, urlTitle }) {
-    const { track } = useAnalyticsTracker();
+    const { track } = useContentAnalytics();
 
     // First parameter: custom event name to identify the action
     // Second parameter: object with properties you want to track

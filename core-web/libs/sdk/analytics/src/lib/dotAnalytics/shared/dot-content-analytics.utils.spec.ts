@@ -158,9 +158,12 @@ describe('Analytics Utils', () => {
         it('should create page view data with basic properties', () => {
             const result = getBrowserEventData(mockLocation);
 
+            const mockDate = new Date('2024-01-01T00:00:00Z');
+            const expectedOffset = mockDate.getTimezoneOffset();
+
             expect(result).toEqual(
                 expect.objectContaining({
-                    local_tz_offset: 300,
+                    local_tz_offset: expectedOffset,
                     page_title: 'Test Page',
                     doc_path: '/page',
                     doc_host: 'example.com',
