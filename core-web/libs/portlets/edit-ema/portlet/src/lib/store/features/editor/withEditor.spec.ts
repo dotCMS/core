@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
@@ -672,7 +673,9 @@ describe('withEditor', () => {
             });
 
             it('should not have opacity or progressBar in preview mode', () => {
-                patchState(store, { pageParams: { ...emptyParams, preview: 'true' } });
+                patchState(store, {
+                    pageParams: { ...emptyParams, editorMode: UVE_MODE.PREVIEW }
+                });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
                 expect(store.$editorProps().progressBar).toBe(false);
@@ -830,6 +833,20 @@ describe('withEditor', () => {
                     });
 
                     expect(store.$editorProps().contentletTools).toBe(null);
+                });
+
+                it('should have contentletTools when the page can be edited and is in preview mode', () => {
+                    patchState(store, {
+                        isEditState: true,
+                        canEditPage: true,
+                        pageParams: {
+                            ...emptyParams,
+                            editorMode: UVE_MODE.PREVIEW
+                        },
+                        state: EDITOR_STATE.IDLE
+                    });
+
+                    expect(store.$editorProps().contentletTools).toEqual(null);
                 });
             });
             describe('dropzone', () => {

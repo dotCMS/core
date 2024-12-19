@@ -36,15 +36,15 @@ describe('Common Utils', () => {
     });
 
     describe('Is Preview Mode', () => {
-        it('should return true when preview mode is enabled', () => {
+        it('should return true when editorMode is preview', () => {
             jest.spyOn(window, 'location', 'get').mockReturnValueOnce({
-                search: '?preview=true'
+                search: '?editorMode=preview'
             } as Location);
 
             expect(isPreviewMode()).toBe(true);
         });
 
-        it('should return false when preview mode is disabled', () => {
+        it('should return false when editorMode is not preview', () => {
             jest.spyOn(window, 'location', 'get').mockReturnValueOnce({
                 search: ''
             } as Location);

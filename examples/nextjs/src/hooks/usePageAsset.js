@@ -5,7 +5,6 @@ import { CLIENT_ACTIONS, isInsideEditor, postMessageToEditor } from '@dotcms/cli
 
 export const usePageAsset = (currentPageAsset) => {
     const [pageAsset, setPageAsset] = useState(null);
-
     useEffect(() => {
         if (!isInsideEditor()) {
             return;
