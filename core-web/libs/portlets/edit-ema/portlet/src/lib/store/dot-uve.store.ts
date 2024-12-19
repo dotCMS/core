@@ -100,7 +100,8 @@ export const UVEStore = signalStore(
                                 label: 'editema.editor.navbar.rules',
                                 id: 'rules',
                                 href: `rules/${page?.identifier}`,
-                                isDisabled: !page?.canEdit || !isEnterpriseLicense
+                                isDisabled:
+                                    !page?.canSeeRules || !page?.canEdit || !isEnterpriseLicense
                             },
                             {
                                 iconURL: 'experiments',

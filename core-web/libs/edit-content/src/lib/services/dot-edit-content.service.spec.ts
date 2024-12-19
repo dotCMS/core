@@ -48,6 +48,12 @@ describe('DotEditContentService', () => {
             spectator.expectOne(`${CONTENT_API_ENDPOINT}/${ID}`, HttpMethod.GET);
         });
 
+        it('should get content by id and language', () => {
+            const ID = '1';
+            spectator.service.getContentById(ID, 1).subscribe();
+            spectator.expectOne(`${CONTENT_API_ENDPOINT}/${ID}?language=1`, HttpMethod.GET);
+        });
+
         it('should get tags', () => {
             const NAME = 'test';
             spectator.service.getTags(NAME).subscribe();

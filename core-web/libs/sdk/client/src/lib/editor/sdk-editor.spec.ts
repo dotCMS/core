@@ -108,6 +108,16 @@ describe('DotCMSPageEditor', () => {
                 lastScrollYPosition: 0
             });
         });
+
+        it('should isInsideEditor return false when is preview mode', () => {
+            Object.defineProperty(window, 'location', {
+                value: {
+                    search: '?editorMode=preview'
+                },
+                writable: true
+            });
+            expect(isInsideEditor()).toBe(false);
+        });
     });
 
     describe('Add Class to Empty Contentets', () => {

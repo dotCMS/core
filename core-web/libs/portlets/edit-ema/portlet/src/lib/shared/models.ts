@@ -170,6 +170,7 @@ export interface DotPage {
     inode: string;
     canEdit: boolean;
     canRead: boolean;
+    canSeeRules: boolean;
     canLock?: boolean;
     locked?: boolean;
     lockedBy?: string;

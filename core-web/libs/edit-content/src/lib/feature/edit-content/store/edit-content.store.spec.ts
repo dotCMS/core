@@ -3,6 +3,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/sp
 import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotContentletService,
@@ -44,7 +45,8 @@ describe('DotEditContentStore', () => {
             mockProvider(MessageService),
             mockProvider(DotMessageService),
             mockProvider(DotContentletService),
-            mockProvider(DotLanguagesService)
+            mockProvider(DotLanguagesService),
+            mockProvider(DialogService)
         ]
     });
 
@@ -66,6 +68,9 @@ describe('DotEditContentStore', () => {
         expect(store.showWorkflowActions).toBeDefined();
         expect(store.information).toBeDefined();
         expect(store.locales).toBeDefined();
-        expect(store.defaultLocale).toBeDefined();
+        expect(store.systemDefaultLocale).toBeDefined();
+        expect(store.currentLocale).toBeDefined();
+        expect(store.currentIdentifier).toBeDefined();
+        expect(store.localesStatus).toBeDefined();
     });
 });

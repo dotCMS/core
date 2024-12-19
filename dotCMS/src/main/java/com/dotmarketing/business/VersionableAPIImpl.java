@@ -524,6 +524,8 @@ public class VersionableAPIImpl implements VersionableAPI {
             newInfo.setLiveInode(versionable.getInode());
             newInfo.setPublishDate(new Date());
             versionableFactory.saveContentletVersionInfo( newInfo, true );
+
+            uniqueFieldValidationStrategyResolver.get().afterPublish(versionable.getInode());
         } else {
 
             final VersionInfo info = versionableFactory.getVersionInfo( versionable.getVersionId() );
@@ -534,8 +536,6 @@ public class VersionableAPIImpl implements VersionableAPI {
             info.setLiveInode( versionable.getInode() );
             this.versionableFactory.saveVersionInfo( info, true );
         }
-
-        uniqueFieldValidationStrategyResolver.get().afterPublish(versionable.getInode());
     }
 
     /**
