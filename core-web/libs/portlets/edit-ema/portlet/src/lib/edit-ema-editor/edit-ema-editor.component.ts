@@ -683,22 +683,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     setIframeContent(code: string) {
-        requestAnimationFrame(() => {
-            const doc = this.iframe?.nativeElement.contentDocument;
+        this.uveStore.updateIfameUrl(`about:blank?t=${Date.now()}`);
+        const iframe = this.iframe?.nativeElement;
+        // Set the onload event handler
+        iframe.onload = () => {
+            const doc = iframe.contentDocument;
 
-            if (doc) {
-                const newFile = this.inyectCodeToVTL(code);
-
-                doc.open();
-                doc.write(newFile);
-                doc.close();
-
-                this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-                this.ogTagsResults$ = this.dotSeoMetaTagsService
-                    .getMetaTagsResults(doc)
-                    .pipe(take(1));
+            if (!doc) {
+                return;
             }
-        });
+
+            const newFile = this.inyectCodeToVTL(code);
+
+            doc.open();
+            doc.write(newFile);
+            doc.close();
+
+            this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+            this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
+        };
     }
 
     protected handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {

@@ -26,6 +26,7 @@ export interface UVEState {
     pageIsLocked: boolean;
     isClientReady: boolean;
     workflowActions?: DotCMSWorkflowAction[];
+    baseIframeUrl: string;
 }
 
 export interface ShellProps {

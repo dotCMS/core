@@ -36,8 +36,6 @@ import {
     PositionPayload
 } from '../../../shared/models';
 import {
-    sanitizeURL,
-    createPageApiUrlWithQueryParams,
     mapContainerStructureToArrayOfContainers,
     getPersonalization,
     areContainersEquals,
@@ -121,10 +119,6 @@ export function withEditor() {
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
 
-                    const url = sanitizeURL(params?.url);
-
-                    const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
-
                     const showDialogs = canEditPage && isEditState;
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
@@ -137,8 +131,6 @@ export function withEditor() {
                     const shouldShowSeoResults = socialMedia && ogTags;
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
-                    const origin = params.clientHost || window.location.origin;
-                    const iframeURL = new URL(pageAPIQueryParams, origin);
 
                     return {
                         showDialogs,
@@ -147,7 +139,6 @@ export function withEditor() {
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
-                            src: !isTraditionalPage ? iframeURL.href : '',
                             wrapper: device
                                 ? {
                                       width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
