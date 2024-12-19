@@ -190,6 +190,7 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
         value = { // error codes only!
                 @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
                 @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                @ApiResponse(responseCode = "406", description = "Not Acceptable"), // no permission
                 @ApiResponse(responseCode = "500", description = "Internal Server Error") //
         }
 )
@@ -737,7 +738,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityBulkActionView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response getBulkActions(@Context final HttpServletRequest request,
@@ -802,7 +804,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityBulkActionsResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final void fireBulkActions(@Context final HttpServletRequest request,
@@ -864,7 +867,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = EventOutput.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public EventOutput fireBulkActions(@Context final HttpServletRequest request,
@@ -1222,7 +1226,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionsView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response findActionsBySchemesAndSystemAction(@Context final HttpServletRequest request,
@@ -1466,7 +1471,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityBulkActionsResultView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response saveSystemAction(@Context final HttpServletRequest request,
@@ -1599,7 +1605,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response saveAction(@Context final HttpServletRequest request,
@@ -1689,7 +1696,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response updateAction(@Context final HttpServletRequest request,
@@ -1806,7 +1814,8 @@ public class WorkflowResource {
                                     )
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response saveActionToStep(@Context final HttpServletRequest request,
@@ -1908,7 +1917,8 @@ public class WorkflowResource {
                                     )
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response saveActionletToAction(@Context final HttpServletRequest request,
@@ -2198,7 +2208,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response reorderStep(@Context final HttpServletRequest request,
@@ -2255,7 +2266,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowStepView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response updateStep(@Context final HttpServletRequest request,
@@ -2323,7 +2335,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowStepView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response addStep(@Context final HttpServletRequest request,
@@ -2439,7 +2452,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Content not found")
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response fireActionByNameMultipartNewPath(@Context final HttpServletRequest request,
@@ -2581,7 +2595,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Content not found")
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response fireActionByNameSinglePart(@Context final HttpServletRequest request,
@@ -2851,7 +2866,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Content not found")
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response fireActionDefaultSinglePart(@Context final HttpServletRequest request,
@@ -3118,7 +3134,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Content not found")
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response fireMultipleActionDefault(@Context final HttpServletRequest request,
@@ -3409,7 +3426,8 @@ public class WorkflowResource {
                                             "}")
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Content Type not found")
+                    @ApiResponse(responseCode = "404", description = "Content Type not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response fireMergeActionDefault(@Context final HttpServletRequest request,
@@ -3819,7 +3837,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Content not found")
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response fireActionMultipartNewPath(@Context final HttpServletRequest request,
@@ -3966,7 +3985,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Content not found")
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response fireActionDefaultMultipartNewPath(
@@ -4142,7 +4162,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Content not found")
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response fireActionSinglePart(@Context final HttpServletRequest request,
@@ -4640,7 +4661,9 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request")
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "404", description = "Workflow step or action not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response reorderAction(@Context final HttpServletRequest request,
@@ -4705,7 +4728,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request") // invalid param string like `\`
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response importScheme(@Context final HttpServletRequest  httpServletRequest,
@@ -5000,7 +5024,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found")
+                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response copyScheme(@Context final HttpServletRequest httpServletRequest,
@@ -5231,7 +5256,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowSchemeView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request") // invalid param string like `\`
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response saveScheme(@Context final HttpServletRequest request,
@@ -5285,7 +5311,8 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found.")
+                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found."),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final Response updateScheme(@Context final HttpServletRequest request,
@@ -5565,7 +5592,8 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowCommentView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request") // invalid param string like `\`
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
     )
     public final ResponseEntityWorkflowCommentView saveComment(@Context final HttpServletRequest request,
