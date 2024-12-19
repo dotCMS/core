@@ -9,7 +9,6 @@ function Header({ children }) {
     
 
     useEffect(() => {
-        console.log("isInsideEditor => ", isInsideEditor());
         setInsideEditor(isInsideEditor());
     }, [])
 
