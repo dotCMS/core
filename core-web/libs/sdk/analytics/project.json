@@ -11,6 +11,17 @@
             "options": {
                 "jestConfig": "libs/sdk/analytics/jest.config.ts"
             }
+        },
+        "build:standalone": {
+            "executor": "@nx/vite:build",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "../../core/dotCMS/src/main/resources/ca/html",
+                "main": "libs/sdk/analytics/src/lib/standalone.ts",
+                "tsConfig": "libs/sdk/analytics/tsconfig.lib.json",
+                "project": "libs/sdk/analytics/package.json",
+                "configFile": "libs/sdk/analytics/vite.standalone.config.mts"
+            }
         }
     }
 }

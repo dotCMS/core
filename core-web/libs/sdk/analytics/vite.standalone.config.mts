@@ -6,10 +6,10 @@ import { resolve } from 'path';
 
 export default defineConfig({
     root: __dirname,
-    cacheDir: '../../../node_modules/.vite/libs/sdk/sdk-analytics-3',
+    cacheDir: '../../../node_modules/.vite/libs/sdk/analytics',
     plugins: [nxViteTsPaths()],
     build: {
-        outDir: '../../../dist/libs/sdk/sdk-analytics-3',
+        outDir: '../../../dist/libs/sdk/analytics',
         emptyOutDir: false,
         reportCompressedSize: true,
         lib: {
@@ -19,8 +19,10 @@ export default defineConfig({
             formats: ['iife']
         },
         rollupOptions: {
+            external: ['react', 'react-dom', 'react/jsx-runtime', /^@dotcms\/analytics\/react/],
             output: {
-                entryFileNames: 'ca.min.js'
+                entryFileNames: 'ca.min.js',
+                globals: {}
             }
         }
     }
