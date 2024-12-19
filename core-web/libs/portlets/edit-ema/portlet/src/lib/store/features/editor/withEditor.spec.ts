@@ -540,7 +540,6 @@ describe('withEditor', () => {
                         currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
                         urlContentMap: null,
                         runningExperiment: null,
-                        workflowActionsInode: MOCK_RESPONSE_HEADLESS.page.inode,
                         unlockButton: null,
                         showInfoDisplay: false
                     });
@@ -670,6 +669,13 @@ describe('withEditor', () => {
                 store.setIsClientReady(true);
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
+            });
+
+            it('should not have opacity or progressBar in preview mode', () => {
+                patchState(store, { pageParams: { ...emptyParams, preview: 'true' } });
+
+                expect(store.$editorProps().iframe.opacity).toBe('1');
+                expect(store.$editorProps().progressBar).toBe(false);
             });
 
             describe('showDialogs', () => {

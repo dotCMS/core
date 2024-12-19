@@ -1,13 +1,13 @@
 import {expect, test} from '@playwright/test';
 import {dotCMSUtils, waitForVisibleAndCallback} from '../../utils/dotCMSUtils';
 import {ContentUtils} from '../../utils/contentUtils';
-import {addContent, iFramesLocators, richText} from '../../locators/globalLocators';
+import {addContent, iFramesLocators, contentGeneric} from '../../locators/globalLocators';
 import {
     GroupEntriesLocators,
     MenuEntriesLocators,
     ToolEntriesLocators
 } from '../../locators/navigation/menuLocators';
-import {contentProperties, richTextContent} from './contentData';
+import {contentProperties, genericContent1} from './contentData';
 
 const cmsUtils = new dotCMSUtils();
 
@@ -32,8 +32,6 @@ test.beforeEach('Navigate to content portlet', async ({page}) => {
     // Validate the portlet title
     const breadcrumbLocator = page.locator('p-breadcrumb');
     await waitForVisibleAndCallback(breadcrumbLocator, () => expect(breadcrumbLocator).toContainText('Search All'));
-
-    await expect(page.locator('p-breadcrumb')).toContainText('Search All');
 });
 
 
@@ -55,16 +53,17 @@ test('Search filter', async ({page}) => {
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
     // Adding new rich text content
-    await contentUtils.addNewContentAction(page, richText.locator, richText.label);
-    await contentUtils.fillRichTextForm(page, richTextContent.title, richTextContent.body, contentProperties.publishWfAction);
+    await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
+    await contentUtils.fillRichTextForm(page, genericContent1.title, genericContent1.body, contentProperties.publishWfAction);
+    await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
 
     // Validate the content has been created
-    await expect.soft(iframe.getByRole('link', {name: 'Automation Test'}).first()).toBeVisible();
-    await iframe.locator('#allFieldTB').fill(richTextContent.title);
+    await expect.soft(iframe.getByRole('link', {name: genericContent1.title}).first()).toBeVisible();
+    await iframe.locator('#allFieldTB').fill(genericContent1.title);
     await page.keyboard.press('Enter');
 
     //validate the search filter is working
-    await expect(iframe.getByRole('link', {name: 'Automation Test'}).first()).toBeVisible();
+    await expect(iframe.getByRole('link', {name: genericContent1.title}).first()).toBeVisible();
 });
 
 /**

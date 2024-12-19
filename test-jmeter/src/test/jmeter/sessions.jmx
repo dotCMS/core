@@ -57,6 +57,11 @@
               <stringProp name="Argument.value">${__P(test.duration,60)}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
+          <elementProp name="host" elementType="Argument">
+                  <stringProp name="Argument.name">admin.password</stringProp>
+                  <stringProp name="Argument.value">${__P(admin.password,admin)}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
         </collectionProp>
       </Arguments>
       <hashTree/>
@@ -227,7 +232,7 @@
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value">{&quot;userId&quot;:&quot;admin@dotcms.com&quot;,&quot;password&quot;:&quot;admin&quot;,&quot;rememberMe&quot;:false,&quot;language&quot;:&quot;en&quot;,&quot;country&quot;:&quot;US&quot;,&quot;backEndLogin&quot;:true}</stringProp>
+                  <stringProp name="Argument.value">{&quot;userId&quot;:&quot;admin@dotcms.com&quot;,&quot;password&quot;:&quot;${admin.password}&quot;,&quot;rememberMe&quot;:false,&quot;language&quot;:&quot;en&quot;,&quot;country&quot;:&quot;US&quot;,&quot;backEndLogin&quot;:true}</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
               </collectionProp>

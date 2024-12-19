@@ -2,11 +2,10 @@ package com.dotcms.rest.api.v1.content.dotimport;
 
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.repackage.javax.validation.ValidationException;
-import com.dotcms.rest.ResponseEntityJobView;
-import com.dotcms.rest.ResponseEntityStringView;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
+import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Constants;
@@ -19,6 +18,8 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.SseFeature;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +39,7 @@ public class ContentImportResource {
 
     private final WebResource webResource;
     private final ContentImportHelper importHelper;
+    private final SSEMonitorUtil sseMonitorUtil;
     private static final String IMPORT_QUEUE_NAME = "importContentlets";
     
     // Constants for commands
@@ -51,8 +53,8 @@ public class ContentImportResource {
      * @param importHelper The helper class used to manage content import jobs
      */
     @Inject
-    public ContentImportResource(final ContentImportHelper importHelper) {
-        this(new WebResource(), importHelper);
+    public ContentImportResource(final ContentImportHelper importHelper, final SSEMonitorUtil sseMonitorUtil) {
+        this(new WebResource(), importHelper, sseMonitorUtil);
     }
 
     /**
@@ -61,9 +63,10 @@ public class ContentImportResource {
      * @param webResource The web resource for handling HTTP requests and responses
      * @param importHelper The helper class used to manage content import jobs
      */
-    public ContentImportResource(final WebResource webResource, final ContentImportHelper importHelper) {
+    public ContentImportResource(final WebResource webResource, final ContentImportHelper importHelper, final SSEMonitorUtil sseMonitorUtil) {
         this.webResource = webResource;
         this.importHelper = importHelper;
+        this.sseMonitorUtil = sseMonitorUtil;
     }
 
     /**
@@ -240,8 +243,15 @@ public class ContentImportResource {
         }
     }
 
-
-
+    /**
+     * Retrieves the status of a content import job based on the provided job ID.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job whose status is to be retrieved.
+     * @return A ResponseEntityView containing the job status.
+     * @throws DotDataException If there is an issue with DotData during the retrieval process.
+     */
     @GET
     @Path("/{jobId}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -287,5 +297,481 @@ public class ContentImportResource {
 
         Job job = importHelper.getJob(jobId);
         return new ResponseEntityView<>(job);
+    }
+
+    /**
+     * Cancels a content import job based on the provided job ID.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job to be canceled.
+     * @return A ResponseEntityView containing a message indicating the cancellation status.
+     * @throws DotDataException If there is an issue with DotData during the cancellation process.
+     */
+    @POST
+    @Path("/{jobId}/cancel")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "cancelContentImportJob",
+            summary = "Cancel a content import job",
+            description = "Cancel a content import job based on the provided job ID.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully cancelled content import job",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityStringView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Job not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<String> cancelJob(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("jobId") @Parameter(
+                    required = true,
+                    description = "The ID of the job whose status is to be retrieved",
+                    schema = @Schema(type = "string")
+            ) final String jobId) throws DotDataException {
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is cancelling content import jobs with id '%s'",
+                initDataObject.getUser().getUserId(),
+                jobId));
+
+        importHelper.cancelJob(jobId);
+        return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
+    }
+
+    /**
+     * Retrieves the status of all content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of content import jobs.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getContentImportJobs",
+            summary = "Retrieves the status of a content import jobs",
+            description = "Fetches the current status of all content import jobs.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved content import jobs status",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<JobPaginatedResult> listJobs(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is listing content import jobs",
+                initDataObject.getUser().getUserId()));
+
+        final JobPaginatedResult result = importHelper.getJobs(page, pageSize);
+
+        return new ResponseEntityView<>(result);
+    }
+
+    /**
+     * Retrieves the status of active content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of active content import jobs.
+     */
+    @GET
+    @Path("/active")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getActiveContentImportJobs",
+            summary = "Retrieves the status of active content import jobs",
+            description = "Fetches the current status of active content import jobs.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved active content import jobs status",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<JobPaginatedResult> activeJobs(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is listing active content import jobs",
+                initDataObject.getUser().getUserId()));
+
+        final JobPaginatedResult result = importHelper.getActiveJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    /**
+     * Retrieves the status of completed content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of completed content import jobs.
+     */
+    @GET
+    @Path("/completed")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getCompletedContentImportJobs",
+            summary = "Retrieves the status of completed content import jobs",
+            description = "Fetches the current status of completed content import jobs.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved completed content import jobs status",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<JobPaginatedResult> completedJobs(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is listing completed content import jobs",
+                initDataObject.getUser().getUserId()));
+
+        final JobPaginatedResult result = importHelper.getCompletedJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    /**
+     * Retrieves the status of canceled content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of canceled content import jobs.
+     */
+    @GET
+    @Path("/canceled")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getCanceledContentImportJobs",
+            summary = "Retrieves the status of canceled content import jobs",
+            description = "Fetches the current status of canceled content import jobs.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved canceled content import jobs status",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<JobPaginatedResult> canceledJobs(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is listing canceled content import jobs",
+                initDataObject.getUser().getUserId()));
+
+        final JobPaginatedResult result = importHelper.getCanceledJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    /**
+     * Retrieves the status of failed content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of failed content import jobs.
+     */
+    @GET
+    @Path("/failed")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getFailedContentImportJobs",
+            summary = "Retrieves the status of failed content import jobs",
+            description = "Fetches the current status of failed content import jobs.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved failed content import jobs status",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<JobPaginatedResult> failedJobs(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is listing failed content import jobs",
+                initDataObject.getUser().getUserId()));
+
+        final JobPaginatedResult result = importHelper.getFailedJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    /**
+     * Retrieves the status of abandoned content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of abandoned content import jobs.
+     */
+    @GET
+    @Path("/abandoned")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getAbandonedContentImportJobs",
+            summary = "Retrieves the status of abandoned content import jobs",
+            description = "Fetches the current status of abandoned content import jobs.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved abandoned content import jobs status",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<JobPaginatedResult> abandonedJobs(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is listing abandoned content import jobs",
+                initDataObject.getUser().getUserId()));
+
+        final JobPaginatedResult result = importHelper.getAbandonedJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    /**
+     * Retrieves the status of successful content import jobs.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param page The page number for pagination (default is 1).
+     * @param pageSize The number of jobs per page (default is 20).
+     * @return A ResponseEntityView containing the paginated result of successful content import jobs.
+     */
+    @GET
+    @Path("/successful")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getSuccessfulContentImportJobs",
+            summary = "Retrieves the status of successful content import jobs",
+            description = "Fetches the current status of successful content import jobs.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successfully retrieved successful content import jobs status",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public ResponseEntityView<JobPaginatedResult> successfulJobs(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("page") @DefaultValue("1") final int page,
+            @QueryParam("pageSize") @DefaultValue("20") final int pageSize) {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is listing successful content import jobs",
+                initDataObject.getUser().getUserId()));
+
+        final JobPaginatedResult result = importHelper.getSuccessfulJobs(page, pageSize);
+        return new ResponseEntityView<>(result);
+    }
+
+    /**
+     * Monitors the progress of a specific content import job identified by its jobId.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param jobId The ID of the job whose progress is to be monitored.
+     * @return An EventOutput for real-time job progress updates.
+     */
+    @GET
+    @Path("/{jobId}/monitor")
+    @Produces(SseFeature.SERVER_SENT_EVENTS)
+    @SuppressWarnings("java:S1854") // jobWatcher assignment is needed for cleanup in catch blocks
+    @Operation(
+            operationId = "monitorContentImportJobs",
+            summary = "Monitor a specific content import job progress",
+            description = "Allows clients to monitor the progress of a specific content import job identified by its jobId. " +
+                    "The response uses Server-Sent Events (SSE) to provide real-time updates.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Real-time job progress updates",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityJobPaginatedResultView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid user authentication"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden due to insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Job not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public EventOutput monitorJob(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("jobId") @Parameter(
+                    required = true,
+                    description = "The ID of the job whose status is to be retrieved",
+                    schema = @Schema(type = "string")
+            ) final String jobId) {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.debug(this, () -> String.format("User %s is monitoring content import job %s",
+                initDataObject.getUser().getUserId(), jobId));
+
+        return sseMonitorUtil.monitorJob(jobId);
     }
 }
