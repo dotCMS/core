@@ -36,7 +36,7 @@ export class DotEditContentService {
     getContentById(id: string, languageId?: number): Observable<DotCMSContentlet> {
         const params = languageId
             ? new HttpParams().set('language', languageId.toString())
-            : undefined;
+            : new HttpParams();
 
         return this.#http.get(`/api/v1/content/${id}`, { params }).pipe(pluck('entity'));
     }

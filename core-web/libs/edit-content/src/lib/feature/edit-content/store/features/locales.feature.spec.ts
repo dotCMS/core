@@ -111,7 +111,7 @@ describe('LocalesFeature', () => {
         expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
     }));
 
-    describe('when there is swtich of locale', () => {
+    describe('when there is switch of locale', () => {
         beforeEach(() => {
             const mockContentlet = { inode: '456' } as DotCMSContentlet;
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
