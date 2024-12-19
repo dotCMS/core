@@ -1,7 +1,10 @@
-import { ReactElement, ReactNode, useEffect, useMemo } from 'react';
+import { ReactElement, ReactNode, useMemo } from 'react';
 
-import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
-import { DotContentAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import { initializeContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
+import {
+    DotAnalytics,
+    DotContentAnalyticsConfig
+} from '../../dotAnalytics/shared/dot-content-analytics.model';
 import DotContentAnalyticsContext from '../contexts/DotContentAnalyticsContext';
 import { useRouterTracker } from '../hook/useRouterTracker';
 
@@ -25,18 +28,14 @@ export const DotContentAnalyticsProvider = ({
     children,
     config
 }: DotContentAnalyticsProviderProps): ReactElement => {
-    const instance = useMemo(() => DotContentAnalytics.getInstance(config), [config]);
+    const analytics: DotAnalytics = useMemo(() => initializeContentAnalytics(config), [config]);
 
-    useEffect(() => {
-        instance.ready().catch((err) => {
-            console.error('Error initializing analytics:', err);
-        });
-    }, [instance]);
-
-    useRouterTracker(instance);
+    if (config.autoPageView !== false) {
+        useRouterTracker(analytics);
+    }
 
     return (
-        <DotContentAnalyticsContext.Provider value={instance}>
+        <DotContentAnalyticsContext.Provider value={analytics}>
             {children}
         </DotContentAnalyticsContext.Provider>
     );

@@ -1,11 +1,11 @@
-import { jest } from '@jest/globals';
 import '@testing-library/jest-dom';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 
 import { DotContentAnalyticsProvider } from './DotContentAnalyticsProvider';
 
-import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
+import { initializeContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
 import { DotContentAnalyticsConfig } from '../../dotAnalytics/shared/dot-content-analytics.model';
+import * as RouterTrackerHook from '../hook/useRouterTracker';
 
 // Mock dependencies
 jest.mock('../../dotAnalytics/dot-content-analytics');
@@ -18,69 +18,60 @@ describe('DotContentAnalyticsProvider', () => {
         debug: false
     };
 
-    const mockDotContentAnalyticsInstance = {
-        ready: jest.fn<() => Promise<void>>().mockResolvedValue(),
+    const mockAnalyticsInstance = {
         pageView: jest.fn(),
-        track: jest.fn(),
-        getInstance: jest.fn<() => Promise<boolean>>().mockResolvedValue(true)
-    } as Partial<DotContentAnalytics>;
+        track: jest.fn()
+    };
+
+    let useRouterTrackerSpy: jest.SpyInstance;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        DotContentAnalytics.getInstance = jest
-            .fn()
-            .mockReturnValue(mockDotContentAnalyticsInstance);
+        (initializeContentAnalytics as jest.Mock).mockReturnValue(mockAnalyticsInstance);
+        useRouterTrackerSpy = jest
+            .spyOn(RouterTrackerHook, 'useRouterTracker')
+            .mockImplementation();
     });
 
     it('should initialize analytics instance with config', () => {
         render(
             <DotContentAnalyticsProvider config={mockConfig}>
-                <div>Test Child</div>
+                <div>Test Content</div>
             </DotContentAnalyticsProvider>
         );
 
-        expect(DotContentAnalytics.getInstance).toHaveBeenCalledWith(mockConfig);
-    });
-
-    it('should call ready() on mount', async () => {
-        render(
-            <DotContentAnalyticsProvider config={mockConfig}>
-                <div>Test Child</div>
-            </DotContentAnalyticsProvider>
-        );
-
-        await waitFor(() => {
-            expect(mockDotContentAnalyticsInstance.ready).toHaveBeenCalled();
-        });
+        expect(initializeContentAnalytics).toHaveBeenCalledWith(mockConfig);
     });
 
     it('should render children', () => {
         const { getByText } = render(
             <DotContentAnalyticsProvider config={mockConfig}>
-                <div>Test Child</div>
+                <div>Test Content</div>
             </DotContentAnalyticsProvider>
         );
 
-        expect(getByText('Test Child')).toBeInTheDocument();
+        expect(getByText('Test Content')).toBeInTheDocument();
     });
 
-    it('should handle ready() rejection', async () => {
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
-            // Do nothing
-        });
-        const error = new Error('Test error');
-        mockDotContentAnalyticsInstance.ready.mockRejectedValueOnce(error);
-
+    it('should enable router tracking when autoPageView is not false', () => {
         render(
             <DotContentAnalyticsProvider config={mockConfig}>
-                <div>Test Child</div>
+                <div>Test Content</div>
             </DotContentAnalyticsProvider>
         );
 
-        await waitFor(() => {
-            expect(consoleSpy).toHaveBeenCalledWith('Error initializing analytics:', error);
-        });
+        expect(useRouterTrackerSpy).toHaveBeenCalledWith(mockAnalyticsInstance);
+    });
 
-        consoleSpy.mockRestore();
+    it('should not enable router tracking when autoPageView is false', () => {
+        const configWithAutoPageViewDisabled = { ...mockConfig, autoPageView: false };
+
+        render(
+            <DotContentAnalyticsProvider config={configWithAutoPageViewDisabled}>
+                <div>Test Content</div>
+            </DotContentAnalyticsProvider>
+        );
+
+        expect(useRouterTrackerSpy).not.toHaveBeenCalled();
     });
 });

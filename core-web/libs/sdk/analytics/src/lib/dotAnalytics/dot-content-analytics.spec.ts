@@ -1,110 +1,87 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import Analytics from 'analytics';
-
-import { DotContentAnalytics } from './dot-content-analytics';
-import { dotAnalytics } from './plugin/dot-analytics.plugin';
+import { initializeContentAnalytics } from './dot-content-analytics';
 import { DotContentAnalyticsConfig } from './shared/dot-content-analytics.model';
+import { createAnalyticsInstance } from './shared/dot-content-analytics.utils';
 
-// Mock the analytics library
-jest.mock('analytics');
-jest.mock('./plugin/dot-analytics.plugin');
+// Mock dependencies
+jest.mock('./shared/dot-content-analytics.utils');
 
-describe('DotAnalytics', () => {
+describe('initializeContentAnalytics', () => {
     const mockConfig: DotContentAnalyticsConfig = {
         debug: false,
         server: 'http://test.com',
-        apiKey: 'test-key',
-        autoPageView: false
+        apiKey: 'test-key'
+    };
+
+    const mockAnalyticsInstance = {
+        page: jest.fn(),
+        track: jest.fn()
     };
 
     beforeEach(() => {
         jest.clearAllMocks();
-        // Reset singleton instance between tests
-        (DotContentAnalytics as any).instance = null;
+        (createAnalyticsInstance as jest.Mock).mockReturnValue(mockAnalyticsInstance);
     });
 
-    describe('getInstance', () => {
-        it('should create single instance', () => {
-            const instance1 = DotContentAnalytics.getInstance(mockConfig);
-            const instance2 = DotContentAnalytics.getInstance(mockConfig);
+    it('should create analytics instance with correct config', () => {
+        initializeContentAnalytics(mockConfig);
+        expect(createAnalyticsInstance).toHaveBeenCalledWith(mockConfig);
+    });
 
-            expect(instance1).toBe(instance2);
+    describe('pageView', () => {
+        it('should call analytics.page with provided payload', () => {
+            const payload = { path: '/test' };
+            const analytics = initializeContentAnalytics(mockConfig);
+
+            analytics.pageView(payload);
+
+            expect(mockAnalyticsInstance.page).toHaveBeenCalledWith(payload);
         });
 
-        it('should maintain same instance even with different config', () => {
-            const instance1 = DotContentAnalytics.getInstance(mockConfig);
-            const instance2 = DotContentAnalytics.getInstance({ ...mockConfig, debug: true });
+        it('should call analytics.page with empty object when no payload provided', () => {
+            const analytics = initializeContentAnalytics(mockConfig);
 
-            expect(instance1).toBe(instance2);
+            analytics.pageView();
+
+            expect(mockAnalyticsInstance.page).toHaveBeenCalledWith({});
         });
     });
 
-    describe('ready', () => {
-        it('should initialize analytics with correct config', async () => {
-            const instance = DotContentAnalytics.getInstance(mockConfig);
-            const mockAnalytics = {};
+    describe('track', () => {
+        it('should call analytics.track with event name and payload', () => {
+            const eventName = 'test-event';
+            const payload = { value: 123 };
+            const analytics = initializeContentAnalytics(mockConfig);
 
-            (Analytics as jest.Mock).mockReturnValue(mockAnalytics);
-            (dotAnalytics as jest.Mock).mockReturnValue({ name: 'mock-plugin' });
+            analytics.track(eventName, payload);
 
-            // Mock del enricher plugin
-            jest.mock('./plugin/dot-analytics.enricher.plugin', () => ({
-                dotAnalyticsEnricherPlugin: {
-                    name: 'enrich-dot-analytics',
-                    'page:dot-analytics': jest.fn(),
-                    'track:dot-analytics': jest.fn()
-                }
-            }));
-
-            await instance.ready();
-
-            expect(Analytics).toHaveBeenCalledWith({
-                app: 'dotAnalytics',
-                debug: false,
-                plugins: [
-                    {
-                        name: 'enrich-dot-analytics',
-                        'page:dot-analytics': expect.any(Function),
-                        'track:dot-analytics': expect.any(Function)
-                    },
-                    { name: 'mock-plugin' }
-                ]
-            });
-            expect(dotAnalytics).toHaveBeenCalledWith(mockConfig);
+            expect(mockAnalyticsInstance.track).toHaveBeenCalledWith(eventName, payload);
         });
 
-        it('should only initialize once', async () => {
-            const instance = DotContentAnalytics.getInstance(mockConfig);
+        it('should call analytics.track with empty object when no payload provided', () => {
+            const eventName = 'test-event';
+            const analytics = initializeContentAnalytics(mockConfig);
 
-            await instance.ready();
-            await instance.ready();
+            analytics.track(eventName);
 
-            expect(Analytics).toHaveBeenCalledTimes(1);
+            expect(mockAnalyticsInstance.track).toHaveBeenCalledWith(eventName, {});
+        });
+    });
+
+    describe('when analytics instance is null', () => {
+        beforeEach(() => {
+            (createAnalyticsInstance as jest.Mock).mockReturnValue(null);
         });
 
-        it('should throw error if initialization fails', async () => {
-            const instance = DotContentAnalytics.getInstance(mockConfig);
-            const error = new Error('Init failed');
-            (Analytics as jest.Mock).mockImplementation(() => {
-                throw error;
-            });
+        it('should handle null analytics instance for pageView', () => {
+            const analytics = initializeContentAnalytics(mockConfig);
+            analytics.pageView({ path: '/test' });
+            expect(mockAnalyticsInstance.page).not.toHaveBeenCalled();
+        });
 
-            const consoleErrorMock = jest.spyOn(console, 'error').mockImplementation(() => {
-                // Do nothing
-            });
-
-            try {
-                await instance.ready();
-                fail('Should have thrown an error');
-            } catch (e) {
-                expect(e).toEqual(error);
-                expect(console.error).toHaveBeenCalledWith(
-                    '[dotCMS DotContentAnalytics] Failed to initialize: Error: Init failed'
-                );
-            }
-
-            consoleErrorMock.mockRestore();
+        it('should handle null analytics instance for track', () => {
+            const analytics = initializeContentAnalytics(mockConfig);
+            analytics.track('test-event', { value: 123 });
+            expect(mockAnalyticsInstance.track).not.toHaveBeenCalled();
         });
     });
 });

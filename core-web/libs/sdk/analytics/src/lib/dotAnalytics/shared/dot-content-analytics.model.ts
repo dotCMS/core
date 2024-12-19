@@ -161,3 +161,11 @@ export interface DotAnalyticsParams {
     config: DotContentAnalyticsConfig;
     payload: DotAnalyticsPayload;
 }
+
+/**
+ * Shared interface for the DotAnalytics plugin
+ */
+export interface DotAnalytics {
+    pageView: (payload?: Record<string, unknown>) => void;
+    track: (eventName: string, payload?: Record<string, unknown>) => void;
+}

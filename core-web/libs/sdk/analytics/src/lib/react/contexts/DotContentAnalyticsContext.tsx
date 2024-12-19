@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
+import { DotAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 
 /**
  * `DotContentAnalyticsContext` is a React context that is designed to provide an instance of
@@ -11,6 +11,6 @@ import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
  *
  * @see {@link https://reactjs.org/docs/context.html|React Context}
  */
-const DotContentAnalyticsContext = createContext<DotContentAnalytics | null>(null);
+const DotContentAnalyticsContext = createContext<DotAnalytics | null>(null);
 
 export default DotContentAnalyticsContext;

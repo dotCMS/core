@@ -68,6 +68,37 @@ function Activity({ title, urlTitle }) {
 }
 ```
 
+### Manual Page View Tracking
+
+To manually track page views, first disable automatic tracking in your config:
+
+```tsx
+const analyticsConfig = {
+    apiKey: 'your-api-key-from-dotcms-analytics-app',
+    server: 'https://your-dotcms-instance.com',
+    autoPageView: false // Disable automatic tracking
+};
+```
+
+Then use the `useContentAnalytics` hook in your layout component:
+
+```tsx
+import { useContentAnalytics } from '@dotcms/analytics/react';
+
+function Layout({ children }) {
+    const { pageView } = useContentAnalytics();
+
+    useEffect(() => {
+        pageView({
+            // Add any custom properties you want to track
+            myCustomValue: '2'
+        });
+    }, []);
+
+    return <div>{children}</div>;
+}
+```
+
 ## Browser Configuration
 
 The script can be configured using data attributes:

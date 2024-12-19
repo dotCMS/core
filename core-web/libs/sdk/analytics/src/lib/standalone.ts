@@ -1,21 +1,16 @@
-import { DotContentAnalytics } from './dotAnalytics/dot-content-analytics';
+import { initializeContentAnalytics } from './dotAnalytics/dot-content-analytics';
 import { ANALYTICS_WINDOWS_KEY } from './dotAnalytics/shared/dot-content-analytics.constants';
+import { DotAnalytics } from './dotAnalytics/shared/dot-content-analytics.model';
 import { getDataAnalyticsAttributes } from './dotAnalytics/shared/dot-content-analytics.utils';
 
-/**
- * Initialize the analytics library in standalone mode.
- */
 declare global {
     interface Window {
-        [ANALYTICS_WINDOWS_KEY]: DotContentAnalytics;
+        [ANALYTICS_WINDOWS_KEY]: DotAnalytics;
     }
 }
 
-(async () => {
+(() => {
     const dataAttributes = getDataAnalyticsAttributes(window.location);
-    const analytics = DotContentAnalytics.getInstance({ ...dataAttributes });
-    await analytics.ready();
+    const analytics = initializeContentAnalytics(dataAttributes);
     window[ANALYTICS_WINDOWS_KEY] = analytics;
-})().catch((error) => {
-    console.error('Failed to initialize analytics:', error);
-});
+})();

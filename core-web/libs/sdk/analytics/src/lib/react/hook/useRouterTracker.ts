@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { DotContentAnalytics } from '../../dotAnalytics/dot-content-analytics';
+import { DotAnalytics } from '../../dotAnalytics/shared/dot-content-analytics.model';
 import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.utils';
 
 /**
@@ -10,7 +10,7 @@ import { isInsideEditor } from '../../dotAnalytics/shared/dot-content-analytics.
  * @returns {void}
  *
  */
-export function useRouterTracker(analytics: DotContentAnalytics | null) {
+export function useRouterTracker(analytics: DotAnalytics | null) {
     const lastPathRef = useRef<string | null>(null);
 
     useEffect(() => {

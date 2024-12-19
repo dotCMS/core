@@ -1,5 +1,10 @@
+import Analytics from 'analytics';
+
 import { EXPECTED_UTM_KEYS } from './dot-content-analytics.constants';
 import { BrowserEventData, DotContentAnalyticsConfig } from './dot-content-analytics.model';
+
+import { dotAnalyticsEnricherPlugin } from '../plugin/dot-analytics.enricher.plugin';
+import { dotAnalytics } from '../plugin/dot-analytics.plugin';
 
 /**
  * Retrieves analytics attributes from a given script element.
@@ -103,4 +108,30 @@ export const isInsideEditor = (): boolean => {
     } catch (e) {
         return false;
     }
+};
+
+/**
+ * Creates an analytics instance.
+ *
+ * @param {DotContentAnalyticsConfig} config - The configuration object for the analytics instance.
+ * @returns {Analytics | null} - The analytics instance or null if there is an error.
+ */
+export const createAnalyticsInstance = (config: DotContentAnalyticsConfig) => {
+    if (!config.apiKey) {
+        console.error('DotContentAnalytics: Missing "apiKey" in configuration');
+
+        return null;
+    }
+
+    if (!config.server) {
+        console.error('DotContentAnalytics: Missing "server" in configuration');
+
+        return null;
+    }
+
+    return Analytics({
+        app: 'dotAnalytics',
+        debug: config.debug,
+        plugins: [dotAnalyticsEnricherPlugin, dotAnalytics(config)]
+    });
 };
