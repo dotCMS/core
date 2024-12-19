@@ -98,6 +98,16 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /**
+     * A computed signal that holds the content type id for the relationship field.
+     * This id is used to get the content type fields.
+     */
+    $contentTypeId = computed(() => {
+        const field = this.$field();
+
+        return field?.relationships?.velocityVar || null;
+    });
+
+    /**
      * A computed signal that holds the hint text for the relationship field.
      * This text is displayed in the table header to provide additional information about the field.
      */
