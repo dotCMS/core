@@ -11,12 +11,7 @@ import { ShellProps, TranslateProps, UVEState } from './models';
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
-import {
-    createPageApiUrlWithQueryParams,
-    getErrorPayload,
-    getRequestHostName,
-    sanitizeURL
-} from '../utils';
+import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
@@ -33,23 +28,14 @@ const initialState: UVEState = {
     isTraditionalPage: true,
     canEditPage: false,
     pageIsLocked: true,
-    isClientReady: false,
-    baseIframeUrl: ''
+    isClientReady: false
 };
 
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
     withComputed(
-        ({
-            pageAPIResponse,
-            pageParams,
-            languages,
-            baseIframeUrl,
-            errorCode: error,
-            status,
-            isEnterprise
-        }) => {
+        ({ pageAPIResponse, pageParams, languages, errorCode: error, status, isEnterprise }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
                     const response = pageAPIResponse();
@@ -141,16 +127,6 @@ export const UVEStore = signalStore(
                 }),
                 $isPreviewMode: computed<boolean>(() => {
                     return pageParams()?.preview === 'true';
-                }),
-                $iframeURL: computed<string>(() => {
-                    const params = pageParams();
-                    const pageAPIQueryParams = createPageApiUrlWithQueryParams(
-                        baseIframeUrl(),
-                        params
-                    );
-                    const origin = params.clientHost || window.location.origin;
-
-                    return new URL(pageAPIQueryParams, origin).toString();
                 })
             };
         }
@@ -160,11 +136,6 @@ export const UVEStore = signalStore(
             setUveStatus(status: UVE_STATUS) {
                 patchState(store, {
                     status
-                });
-            },
-            updateIfameUrl(baseIframeUrl: string) {
-                patchState(store, {
-                    baseIframeUrl
                 });
             },
             updatePageResponse(pageAPIResponse: DotPageApiResponse) {

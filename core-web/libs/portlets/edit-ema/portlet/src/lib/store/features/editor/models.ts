@@ -61,7 +61,6 @@ export interface EditorProps {
             width: string;
             height: string;
         };
-        src?: string;
         pointerEvents: string;
         opacity: string;
     };

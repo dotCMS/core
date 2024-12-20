@@ -29,7 +29,7 @@
             class="iframe-wrapper">
             <iframe
                 (load)="onIframePageLoad()"
-                [src]="uveStore.baseIframeUrl() | safeUrl"
+                [src]="uveStore.$iframeURL() | safeUrl"
                 [title]="host"
                 [ngStyle]="{
                     pointerEvents: $editorProps().iframe.pointerEvents,

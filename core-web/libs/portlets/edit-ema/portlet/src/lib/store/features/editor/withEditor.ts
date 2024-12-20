@@ -39,10 +39,24 @@ import {
     mapContainerStructureToArrayOfContainers,
     getPersonalization,
     areContainersEquals,
-    getEditorStates
+    getEditorStates,
+    createPageApiUrlWithQueryParams,
+    sanitizeURL
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
+
+const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
+    if (isTraditionalPage) {
+        return `about:blank?t=${Date.now()}`;
+    }
+
+    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI ?? params?.url, params);
+    const origin = params.clientHost || window.location.origin;
+    const url = new URL(pageAPIQueryParams, origin);
+
+    return sanitizeURL(url.toString());
+};
 
 const initialState: EditorState = {
     bounds: [],
@@ -175,6 +189,17 @@ export function withEditor() {
                               }
                             : null
                     };
+                }),
+                $iframeURL: computed<string>(() => {
+                    const page = store.pageAPIResponse()?.page;
+                    const url = buildIframeURL({
+                        pageURI: page.pageURI,
+                        params: store.pageParams(),
+                        // This can not change during the lifecycle of the app
+                        isTraditionalPage: untracked(() => store.isTraditionalPage())
+                    });
+
+                    return url;
                 })
             };
         }),

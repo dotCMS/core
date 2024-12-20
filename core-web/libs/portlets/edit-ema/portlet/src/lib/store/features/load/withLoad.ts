@@ -14,17 +14,10 @@ import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
-import {
-    computeCanEditPage,
-    computePageIsLocked,
-    isForwardOrPage,
-    sanitizeURL
-} from '../../../utils';
+import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 import { withWorkflow } from '../workflow/withWorkflow';
-
-const VTL_URL = 'about:blank';
 
 /**
  * Add load and reload method to the store
@@ -146,16 +139,9 @@ export function withLoad() {
                                                 pageAsset?.page,
                                                 currentUser
                                             );
-
-                                            const sanitizedUrl = sanitizeURL(
-                                                pageAsset.page.pageURI
-                                            );
                                             const isPreview = pageParams.preview === 'true';
                                             const isTraditionalPage = !pageParams.clientHost;
                                             const isClientReady = isTraditionalPage || isPreview;
-                                            const baseIframeUrl = isTraditionalPage
-                                                ? VTL_URL
-                                                : sanitizedUrl;
 
                                             patchState(store, {
                                                 pageAPIResponse: pageAsset,
@@ -167,7 +153,6 @@ export function withLoad() {
                                                 pageIsLocked,
                                                 isClientReady,
                                                 isTraditionalPage,
-                                                baseIframeUrl,
                                                 status: UVE_STATUS.LOADED
                                             });
                                         })
