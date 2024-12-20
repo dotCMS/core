@@ -37,15 +37,28 @@ import {
     PositionPayload
 } from '../../../shared/models';
 import {
-    sanitizeURL,
-    createPageApiUrlWithQueryParams,
     mapContainerStructureToArrayOfContainers,
     getPersonalization,
     areContainersEquals,
-    getEditorStates
+    getEditorStates,
+    createPageApiUrlWithQueryParams,
+    sanitizeURL
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
+
+const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
+    if (isTraditionalPage) {
+        // Force iframe reload on every page load to avoid caching issues and window dirty state
+        return `about:blank?t=${Date.now()}`;
+    }
+
+    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
+    const origin = params.clientHost || window.location.origin;
+    const url = new URL(pageAPIQueryParams, origin);
+
+    return sanitizeURL(url.toString());
+};
 
 const initialState: EditorState = {
     bounds: [],
@@ -122,10 +135,6 @@ export function withEditor() {
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
 
-                    const url = sanitizeURL(params?.url);
-
-                    const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
-
                     const showDialogs = canEditPage && isEditState;
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
@@ -142,8 +151,6 @@ export function withEditor() {
                     const shouldShowSeoResults = socialMedia && ogTags;
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
-                    const origin = params.clientHost || window.location.origin;
-                    const iframeURL = new URL(pageAPIQueryParams, origin);
 
                     return {
                         showDialogs,
@@ -152,7 +159,6 @@ export function withEditor() {
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
-                            src: !isTraditionalPage ? iframeURL.href : '',
                             wrapper: device
                                 ? {
                                       width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
@@ -189,6 +195,16 @@ export function withEditor() {
                               }
                             : null
                     };
+                }),
+                $iframeURL: computed<string>(() => {
+                    const page = store.pageAPIResponse().page;
+                    const url = buildIframeURL({
+                        pageURI: page?.pageURI,
+                        params: store.pageParams(),
+                        isTraditionalPage: untracked(() => store.isTraditionalPage())
+                    });
+
+                    return url;
                 })
             };
         }),
