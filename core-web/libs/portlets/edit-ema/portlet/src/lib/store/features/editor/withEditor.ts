@@ -196,7 +196,6 @@ export function withEditor() {
                     const url = buildIframeURL({
                         pageURI: page?.pageURI,
                         params: store.pageParams(),
-                        // This can not change during the lifecycle of the app
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });
 
