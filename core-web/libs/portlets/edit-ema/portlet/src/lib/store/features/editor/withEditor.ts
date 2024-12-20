@@ -51,7 +51,7 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
         return `about:blank?t=${Date.now()}`;
     }
 
-    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI ?? params?.url, params);
+    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI || params?.url, params);
     const origin = params.clientHost || window.location.origin;
     const url = new URL(pageAPIQueryParams, origin);
 
