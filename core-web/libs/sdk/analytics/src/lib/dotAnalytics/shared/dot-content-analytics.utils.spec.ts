@@ -1,15 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { ANALYTICS_SOURCE_TYPE } from './analytics.constants';
 import {
-    createAnalyticsPageViewData,
+    defaultRedirectFn,
     extractUTMParameters,
     getAnalyticsScriptTag,
-    getDataAnalyticsAttributes
-} from './analytics.utils';
+    getBrowserEventData,
+    getDataAnalyticsAttributes,
+    isInsideEditor
+} from './dot-content-analytics.utils';
 
 describe('Analytics Utils', () => {
     let mockLocation: Location;
+
+    beforeAll(() => {
+        jest.useFakeTimers({ doNotFake: [] });
+        jest.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+    });
 
     beforeEach(() => {
         // Mock Location object
@@ -19,7 +26,8 @@ describe('Analytics Utils', () => {
             hostname: 'example.com',
             protocol: 'https:',
             hash: '#section1',
-            search: '?param=1'
+            search: '?param=1',
+            origin: 'https://example.com'
         } as Location;
 
         // Clean up any previous script tags
@@ -29,14 +37,12 @@ describe('Analytics Utils', () => {
     describe('getAnalyticsScriptTag', () => {
         it('should return analytics script tag when present', () => {
             const script = document.createElement('script');
-            script.setAttribute('data-analytics-server', 'https://analytics.example.com');
+            script.setAttribute('data-analytics-key', 'test-key');
             document.body.appendChild(script);
 
             const result = getAnalyticsScriptTag();
             expect(result).toBeTruthy();
-            expect(result.getAttribute('data-analytics-server')).toBe(
-                'https://analytics.example.com'
-            );
+            expect(result.getAttribute('data-analytics-key')).toBe('test-key');
         });
 
         it('should throw error when analytics script tag is not found', () => {
@@ -47,7 +53,7 @@ describe('Analytics Utils', () => {
     describe('getDataAnalyticsAttributes', () => {
         beforeEach(() => {
             const script = document.createElement('script');
-            script.setAttribute('data-analytics-server', 'https://analytics.example.com');
+            script.setAttribute('data-analytics-key', 'test-key');
             document.body.appendChild(script);
         });
 
@@ -55,43 +61,43 @@ describe('Analytics Utils', () => {
             const result = getDataAnalyticsAttributes(mockLocation);
 
             expect(result).toEqual({
-                server: 'https://analytics.example.com',
+                server: mockLocation.origin,
                 debug: false,
                 autoPageView: false,
-                key: ''
+                apiKey: 'test-key'
             });
         });
 
         it('should enable debug when debug attribute exists', () => {
-            const script = document.querySelector('script[data-analytics-server]');
+            const script = document.querySelector('script[data-analytics-key]');
             script?.setAttribute('data-analytics-debug', '');
 
             const result = getDataAnalyticsAttributes(mockLocation);
 
             expect(result).toEqual({
-                server: 'https://analytics.example.com',
+                server: mockLocation.origin,
                 debug: true,
                 autoPageView: false,
-                key: ''
+                apiKey: 'test-key'
             });
         });
 
         it('should disable autoPageView when auto-page-view attribute exists', () => {
-            const script = document.querySelector('script[data-analytics-server]');
+            const script = document.querySelector('script[data-analytics-key]');
             script?.setAttribute('data-analytics-auto-page-view', '');
 
             const result = getDataAnalyticsAttributes(mockLocation);
 
             expect(result).toEqual({
-                server: 'https://analytics.example.com',
+                server: mockLocation.origin,
                 debug: false,
                 autoPageView: true,
-                key: ''
+                apiKey: 'test-key'
             });
         });
 
         it('should handle all attributes together', () => {
-            const script = document.querySelector('script[data-analytics-server]');
+            const script = document.querySelector('script[data-analytics-key]');
             script?.setAttribute('data-analytics-debug', '');
             script?.setAttribute('data-analytics-auto-page-view', '');
             script?.setAttribute('data-analytics-key', 'test-key');
@@ -99,30 +105,40 @@ describe('Analytics Utils', () => {
             const result = getDataAnalyticsAttributes(mockLocation);
 
             expect(result).toEqual({
-                server: 'https://analytics.example.com',
+                server: mockLocation.origin,
                 debug: true,
                 autoPageView: true,
-                key: 'test-key'
+                apiKey: 'test-key'
             });
         });
 
         it('should handle key attribute', () => {
-            const script = document.querySelector('script[data-analytics-server]');
-            script?.setAttribute('data-analytics-key', 'test-key');
+            const script = document.querySelector('script[data-analytics-key]');
+            script?.setAttribute('data-analytics-key', 'test-key2');
 
             const result = getDataAnalyticsAttributes(mockLocation);
 
             expect(result).toEqual({
-                server: 'https://analytics.example.com',
+                server: mockLocation.origin,
                 debug: false,
                 autoPageView: false,
-                key: 'test-key'
+                apiKey: 'test-key2'
             });
         });
     });
 
     describe('createAnalyticsPageViewData', () => {
         beforeEach(() => {
+            mockLocation = {
+                href: 'https://example.com/page',
+                pathname: '/page',
+                hostname: 'example.com',
+                protocol: 'https:',
+                hash: '#section1',
+                search: '?param=1',
+                origin: 'https://example.com'
+            } as Location;
+
             // Mock window properties
             Object.defineProperty(window, 'innerWidth', { value: 1024 });
             Object.defineProperty(window, 'innerHeight', { value: 768 });
@@ -140,11 +156,14 @@ describe('Analytics Utils', () => {
         });
 
         it('should create page view data with basic properties', () => {
-            const result = createAnalyticsPageViewData('page_view', mockLocation);
+            const result = getBrowserEventData(mockLocation);
+
+            const mockDate = new Date('2024-01-01T00:00:00Z');
+            const expectedOffset = mockDate.getTimezoneOffset();
 
             expect(result).toEqual(
                 expect.objectContaining({
-                    event_type: 'page_view',
+                    local_tz_offset: expectedOffset,
                     page_title: 'Test Page',
                     doc_path: '/page',
                     doc_host: 'example.com',
@@ -153,27 +172,12 @@ describe('Analytics Utils', () => {
                     doc_search: '?param=1',
                     screen_resolution: '1920x1080',
                     vp_size: '1024x768',
-                    user_agent: 'test-agent',
+                    userAgent: 'test-agent',
                     user_language: 'es-ES',
                     doc_encoding: 'UTF-8',
-                    referer: 'https://referrer.com',
-                    src: ANALYTICS_SOURCE_TYPE
+                    referrer: 'https://referrer.com'
                 })
             );
-        });
-
-        it('should handle UTM parameters correctly', () => {
-            mockLocation.search =
-                '?utm_source=test&utm_medium=email&utm_campaign=welcome&utm_id=123';
-
-            const result = createAnalyticsPageViewData('page_view', mockLocation);
-
-            expect(result.utm).toEqual({
-                source: 'test',
-                medium: 'email',
-                campaign: 'welcome',
-                id: '123'
-            });
         });
     });
 
@@ -229,6 +233,66 @@ describe('Analytics Utils', () => {
                 campaign: 'spring_sale',
                 id: '12345'
             });
+        });
+    });
+
+    describe('defaultRedirectFn', () => {
+        const originalLocation = window.location;
+
+        beforeEach(() => {
+            // Mock window.location
+            delete (window as any).location;
+            window.location = { ...originalLocation };
+        });
+
+        afterEach(() => {
+            window.location = originalLocation;
+        });
+
+        it('should update window.location.href with provided URL', () => {
+            const testUrl = 'https://test.com';
+            defaultRedirectFn(testUrl);
+            expect(window.location.href).toBe(testUrl);
+        });
+    });
+
+    describe('isInsideEditor', () => {
+        const originalWindow = window;
+
+        beforeEach(() => {
+            // Reset window to original state before each test
+            (global as any).window = { ...originalWindow };
+        });
+
+        afterEach(() => {
+            // Restore window object
+            (global as any).window = originalWindow;
+        });
+
+        it('should return false when window is undefined', () => {
+            (global as any).window = undefined;
+            expect(isInsideEditor()).toBe(false);
+        });
+
+        it('should return false when window.parent is undefined', () => {
+            (window as any).parent = undefined;
+            expect(isInsideEditor()).toBe(false);
+        });
+
+        it('should return false when window.parent equals window', () => {
+            window.parent = window;
+            expect(isInsideEditor()).toBe(false);
+        });
+
+        it('should return true when window.parent differs from window', () => {
+            // Create a new window-like object that's definitely different from window
+            const mockParent = { ...window, someUniqueProperty: true };
+            Object.defineProperty(window, 'parent', {
+                value: mockParent,
+                writable: true,
+                configurable: true
+            });
+            expect(isInsideEditor()).toBe(true);
         });
     });
 });

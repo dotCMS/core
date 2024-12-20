@@ -1,4 +1,5 @@
 import { PageApiOptions } from '../../client/sdk-js-client';
+import { UVE_MODE } from '../../editor/models/editor.model';
 
 /**
  * Interface representing the properties for page request parameters.
@@ -57,6 +58,10 @@ export const getPageRequestParams = ({
         finalParams['personaId'] = copiedParams['personaId'] || dotMarketingPersonaId;
     }
 
+    if (copiedParams['publishDate']) {
+        finalParams['publishDate'] = copiedParams['publishDate'];
+    }
+
     return {
         path,
         ...finalParams
@@ -70,7 +75,7 @@ export const getPageRequestParams = ({
  */
 export const isPreviewMode = (): boolean => {
     const queryParams = new URLSearchParams(window.location.search);
-    const isPreviewMode = queryParams.get('preview');
+    const editorMode = queryParams.get('editorMode');
 
-    return isPreviewMode === 'true';
+    return editorMode === UVE_MODE.PREVIEW;
 };

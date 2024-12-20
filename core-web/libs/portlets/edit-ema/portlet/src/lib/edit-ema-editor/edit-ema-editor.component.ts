@@ -1028,13 +1028,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                // If there is no client configuration, we just set the client as ready
-                if (!clientConfig) {
-                    this.uveStore.setIsClientReady(true);
-
-                    return;
-                }
-
                 this.uveStore.setClientConfiguration({ query, params });
                 this.uveStore.reloadCurrentPage();
             },

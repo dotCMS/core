@@ -162,6 +162,12 @@
                 "serveTargetName": "serve",
                 "serveStaticTargetName": "serve-static"
             }
+        },
+        {
+            "plugin": "@nx/rollup/plugin",
+            "options": {
+                "buildTargetName": "rollup:build"
+            }
         }
     ],
     "defaultBase": "main",

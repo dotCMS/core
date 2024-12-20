@@ -9,6 +9,7 @@ import {
 
 import { computed, untracked } from '@angular/core';
 
+import { UVE_MODE } from '@dotcms/client';
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
 
 import {
@@ -128,7 +129,7 @@ export function withEditor() {
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
 
-                    const isPreview = params?.preview === 'true';
+                    const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
                     const isPageReady = isTraditionalPage || isClientReady || isPreview;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
@@ -138,7 +139,11 @@ export function withEditor() {
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
                     const canUserHaveContentletTools =
-                        !!contentletArea && canEditPage && isEditState && !isScrolling;
+                        !!contentletArea &&
+                        canEditPage &&
+                        isEditState &&
+                        !isScrolling &&
+                        !isPreview;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
                     const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;
