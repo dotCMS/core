@@ -64,7 +64,9 @@
             #personaSelector
             data-testId="persona-selector" />
 
-        <dot-uve-workflow-actions />
+        @if ($toolbarProps().isDefaultVariant) {
+            <dot-uve-workflow-actions />
+        }
 
         @if ($toolbarProps().unlockButton; as unlockButton) {
             <p-button
