@@ -46,12 +46,13 @@ import {
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 
-const buildIframeURL = ({ params, isTraditionalPage }) => {
+const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
+        // Force iframe reload on every page load to avoid caching issues and window dirty state
         return `about:blank?t=${Date.now()}`;
     }
 
-    const pageAPIQueryParams = createPageApiUrlWithQueryParams(params?.url, params);
+    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
     const origin = params.clientHost || window.location.origin;
     const url = new URL(pageAPIQueryParams, origin);
 
@@ -191,8 +192,9 @@ export function withEditor() {
                     };
                 }),
                 $iframeURL: computed<string>(() => {
-                    store.pageAPIResponse();
+                    const page = store.pageAPIResponse().page;
                     const url = buildIframeURL({
+                        pageURI: page?.pageURI,
                         params: store.pageParams(),
                         // This can not change during the lifecycle of the app
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
