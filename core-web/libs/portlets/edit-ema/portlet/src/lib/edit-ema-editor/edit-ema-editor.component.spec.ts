@@ -125,6 +125,14 @@ const messagesMock = {
 
 const IFRAME_MOCK = {
     nativeElement: {
+        addEventListener: function (_event, cb) {
+            this.registerListener.push(cb);
+        },
+        dispatchEvent: function (event) {
+            this.registerListener.forEach((cb) => cb(event));
+        },
+        registerListener: [],
+        contentWindow: document.defaultView,
         contentDocument: {
             getElementsByTagName: () => [],
             querySelectorAll: () => [],
@@ -2614,7 +2622,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/index?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
+                        'http://localhost:3000/page-one?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
                     );
                 });
 
@@ -2638,6 +2646,9 @@ describe('EditEmaEditorComponent', () => {
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
                         );
+
+                        iframe.nativeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
 
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>hello world</div>'
@@ -2665,11 +2676,14 @@ describe('EditEmaEditorComponent', () => {
                             language_id: '4',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                         });
-                        spectator.detectChanges();
 
+                        spectator.detectChanges();
                         jest.runOnlyPendingTimers();
 
-                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                        iframe.nativeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
+                        expect(iframe.nativeElement.src).toContain('about:blank'); //When dont have src, the src is the same as the current page
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>New Content - Hello World</div>'
                         );
@@ -2809,23 +2823,22 @@ describe('EditEmaEditorComponent', () => {
 
                 describe('script and styles injection', () => {
                     let iframeDocument: Document;
+                    let iframeElement: HTMLIFrameElement;
                     let spy: jest.SpyInstance;
 
                     beforeEach(() => {
-                        jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-                            cb(0); // Pass a dummy value to satisfy the expected argument count
-
-                            return 0;
-                        });
-
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         spectator.component.iframe = IFRAME_MOCK as any;
-                        iframeDocument = spectator.component.iframe.nativeElement.contentDocument;
+                        iframeElement = spectator.component.iframe.nativeElement;
+                        iframeDocument = iframeElement.contentDocument;
                         spy = jest.spyOn(iframeDocument, 'write');
                     });
 
                     it('should add script and styles to iframe', () => {
                         spectator.component.setIframeContent(`<head></head></body></body>`);
+
+                        iframeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
 
                         expect(spy).toHaveBeenCalled();
                         expect(iframeDocument.body.innerHTML).toContain(
@@ -2842,6 +2855,9 @@ describe('EditEmaEditorComponent', () => {
                     it('should add script and styles to iframe for advance templates', () => {
                         spectator.component.setIframeContent(`<div>Advanced Template</div>`);
 
+                        iframeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
                         expect(spy).toHaveBeenCalled();
                         expect(iframeDocument.body.innerHTML).toContain(
                             `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
@@ -2853,10 +2869,6 @@ describe('EditEmaEditorComponent', () => {
                         expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"].empty-contentlet'
                         );
-                    });
-
-                    afterEach(() => {
-                        (window.requestAnimationFrame as jest.Mock).mockRestore();
                     });
                 });
             });
