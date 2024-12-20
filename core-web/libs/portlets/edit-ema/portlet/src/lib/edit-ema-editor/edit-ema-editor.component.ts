@@ -192,27 +192,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            this.setIframeContent(code);
+            this.setIframeContent(code, enableInlineEdit);
 
-            requestAnimationFrame(() => {
-                /**
-                 * The status of isClientReady is changed outside of editor
-                 * so we need to set it to true here to avoid the editor to be in a loading state
-                 * This is only for traditional pages. For Headless, the isClientReady is set from the client application
-                 */
-                this.uveStore.setIsClientReady(true);
-                const win = this.contentWindow;
-                if (enableInlineEdit) {
-                    this.inlineEditingService.injectInlineEdit(this.iframe);
-                } else {
-                    this.inlineEditingService.removeInlineEdit(this.iframe);
-                }
-
-                fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-                    this.handleInternalNav(e);
-                    this.handleInlineEditing(e); // If inline editing is not active this will do nothing
-                });
-            });
+            /**
+             * The status of isClientReady is changed outside of editor
+             * so we need to set it to true here to avoid the editor to be in a loading state
+             * This is only for traditional pages. For Headless, the isClientReady is set from the client application
+             */
+            this.uveStore.setIsClientReady(true);
 
             return;
         },
@@ -682,21 +669,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param code - The code to be added to the iframe.
      * @memberof EditEmaEditorComponent
      */
-    setIframeContent(code: string) {
+    setIframeContent(code: string, enableInlineEdit = false): void {
         const iframeElement = this.iframe?.nativeElement;
 
         if (!iframeElement) {
             return;
         }
 
-        iframeElement.onload = () => {
+        iframeElement.addEventListener('load', () => {
             const doc = iframeElement.contentDocument;
+            const newDoc = this.inyectCodeToVTL(code);
 
             if (!doc) {
                 return;
             }
-
-            const newDoc = this.inyectCodeToVTL(code);
 
             doc.open();
             doc.write(newDoc);
@@ -704,7 +690,32 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
             this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
             this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
-        };
+            this.handleInlineScripts(enableInlineEdit);
+        });
+    }
+
+    /**
+     * Handle the Injection and removal of the inline editing scripts
+     *
+     * @param {boolean} enableInlineEdit
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    handleInlineScripts(enableInlineEdit: boolean) {
+        const win = this.contentWindow;
+
+        fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+            this.handleInternalNav(e);
+            this.handleInlineEditing(e); // If inline editing is not active this will do nothing
+        });
+
+        if (enableInlineEdit) {
+            this.inlineEditingService.injectInlineEdit(this.iframe);
+
+            return;
+        }
+
+        this.inlineEditingService.removeInlineEdit(this.iframe);
     }
 
     protected handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {
