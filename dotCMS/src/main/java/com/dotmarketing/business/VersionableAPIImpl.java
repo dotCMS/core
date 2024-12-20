@@ -366,8 +366,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 
         // only contents are multi language
         return "contentlet".equals(identifier.getAssetType())?
-                !new DotConnect().setSQL("select working_inode, lang from contentlet_version_info where identifier = ? and lang != ?")
-                        .addParam(identifier.getId()).addParam(versionableLanguageId).loadObjectResults().isEmpty():false;
+                !this.versionableFactory.getWorkingVersionsExcludingLanguage(identifier.getId(), versionableLanguageId).isEmpty():false;
     }
 
     @CloseDBIfOpened
