@@ -140,7 +140,6 @@ export function withLoad() {
                                                 pageAsset?.page,
                                                 currentUser
                                             );
-
                                             const isTraditionalPage = !pageParams.clientHost;
 
                                             patchState(store, {
