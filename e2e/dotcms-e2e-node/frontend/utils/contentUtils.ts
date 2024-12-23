@@ -3,6 +3,7 @@ import {contentGeneric, iFramesLocators, fileAsset } from '../locators/globalLoc
 import {waitForVisibleAndCallback} from './dotCMSUtils';
 import {contentProperties} from "../tests/contentSearch/contentData";
 
+
 export class ContentUtils {
     page: Page;
 
@@ -44,31 +45,35 @@ export class ContentUtils {
      * @param newFileName
      * @param newFileText
      */
-    async fillFileAssetForm(page: Page, host: string, title: string, action?: string, fileName?: string, fromURL?: string, newFileName?: string, newFileText?: string) {
+    async fillFileAssetForm(params: FileAssetFormParams) {
+        const { page, host, title, action, fileName, fromURL, newFileName, newFileText } = params;
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-        const headingLocator = page.getByRole('heading');
-        await waitForVisibleAndCallback(headingLocator, () => expect.soft(headingLocator).toContainText(fileAsset.label));
+        await waitForVisibleAndCallback(page.getByRole('heading'), () =>
+            expect.soft(page.getByRole('heading')).toContainText(fileAsset.label)
+        );
 
         await dotIframe.locator('#HostSelector-hostFolderSelect').fill(host);
+
         if (newFileName && newFileText) {
-            await dotIframe.getByRole('button', {name: ' Create New File'}).click();
+            await dotIframe.getByRole('button', { name: ' Create New File' }).click();
             await dotIframe.getByTestId('editor-file-name').fill(newFileName);
             await dotIframe.getByLabel('Editor content;Press Alt+F1').fill(newFileText);
-            await dotIframe.getByRole('button', {name: 'Save'}).click();
-        } else {
-            if (fromURL) {
-                await dotIframe.getByRole('button', {name: ' Import from URL'}).click();
-                await dotIframe.getByTestId('url-input').fill(fromURL);
-                await dotIframe.getByRole('button', {name: ' Import'}).click();
-            }
+            await dotIframe.getByRole('button', { name: 'Save' }).click();
+        } else if (fromURL) {
+            await dotIframe.getByRole('button', { name: ' Import from URL' }).click();
+            await dotIframe.getByTestId('url-input').fill(fromURL);
+            await dotIframe.getByRole('button', { name: ' Import' }).click();
+            await waitForVisibleAndCallback(dotIframe.getByRole('button', { name: ' Remove' }), async () => {});
         }
-        const titleField = dotIframe.locator('#title');
-        await waitForVisibleAndCallback(headingLocator, () => titleField.fill(title));
+
+        await waitForVisibleAndCallback(dotIframe.locator('#title'), () =>
+            dotIframe.locator('#title').fill(title)
+        );
+
         if (action) {
             await dotIframe.getByText(action).first().click();
         }
-
     }
 
     /**
@@ -141,20 +146,7 @@ export class ContentUtils {
      * @param page
      * @param title
      */
-    async validateContentExist(page: Page, title: string) {
-        const iframe = page.frameLocator(iFramesLocators.main_iframe);
-
-        await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr:nth-of-type(2) td:nth-of-type(2)'), async () => {
-        });
-        await page.waitForTimeout(1000)
-        const secondCell = iframe.locator('#results_table tbody tr:nth-of-type(2) td:nth-of-type(2)');
-        const hasAutomationLink = await secondCell.locator(`a:has-text("${title}")`).count() > 0;
-
-        console.log(`The content with the title ${title} ${hasAutomationLink ? 'exists' : 'does not exist'}`);
-        return hasAutomationLink;
-    }
-
-    async validateContentExist1(page: Page, text: string) {
+    async validateContentExist(page: Page, text: string) {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
         await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr:nth-of-type(2)'), async () => {
@@ -303,6 +295,16 @@ export class ContentUtils {
 
 }
 
+interface FileAssetFormParams {
+    page: Page;
+    host: string;
+    title: string;
+    action?: string;
+    fileName?: string;
+    fromURL?: string;
+    newFileName?: string;
+    newFileText?: string;
+}
 
 
 

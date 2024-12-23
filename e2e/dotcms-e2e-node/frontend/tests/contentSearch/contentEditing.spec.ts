@@ -113,10 +113,16 @@ test('Validate you are able to add file assets importing from url', async ({page
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
     await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
-    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, contentProperties.publishWfAction, null, fileAssetContent.fromURL );
-    //fileName?: string, fromURL?: string, newFileName?: string, newFileText?: string) {
+    const params = {
+        page: page,
+        host: fileAssetContent.host,
+        title: fileAssetContent.title,
+        action: contentProperties.publishWfAction,
+        fromURL: fileAssetContent.fromURL
+    };
+    await contentUtils.fillFileAssetForm(params);
     await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
-    await contentUtils.validateContentExist(page, fileAssetContent.title).then(assert);
+    await expect(contentUtils.validateContentExist(page, 'DotCMS-logo.svg')).resolves.toBeTruthy();
 });
 
 /**
@@ -127,7 +133,15 @@ test('Validate you are able to add file assets creating a new file', async ({pag
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
     await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
-    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, contentProperties.publishWfAction, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
+    const params = {
+        page: page,
+        host: fileAssetContent.host,
+        title: fileAssetContent.title,
+        action: contentProperties.publishWfAction,
+        newFileName: fileAssetContent.newFileName,
+        newFileText: fileAssetContent.newFileText
+    };
+    await contentUtils.fillFileAssetForm(params);
     await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
     await contentUtils.validateContentExist(page, fileAssetContent.newFileName).then(assert);
 });
@@ -140,7 +154,13 @@ test('Validate the required on file asset fields', async ({page}) => {
     const contentUtils = new ContentUtils(page);
 
     await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
-    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, contentProperties.publishWfAction, null, null, null, null);
+    const params = {
+        page: page,
+        host: fileAssetContent.host,
+        title: fileAssetContent.title,
+        action: contentProperties.publishWfAction
+    }
+    await contentUtils.fillFileAssetForm(params);
     await waitForVisibleAndCallback(detailsFrame.getByText('Error x'), async () => {});
     let errorMessage = detailsFrame.getByText('The field File Asset is');
     await waitForVisibleAndCallback(errorMessage, () => expect(errorMessage).toBeVisible());
@@ -155,8 +175,14 @@ test('Validate the auto complete on FileName field accepting change', async ({pa
 
     await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
     await detailsFrame.locator('#fileName').fill('test');
-    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
-
+    const params = {
+        page: page,
+        host: fileAssetContent.host,
+        title: fileAssetContent.title,
+        newFileName: fileAssetContent.newFileName,
+        newFileText: fileAssetContent.newFileText
+    }
+    await contentUtils.fillFileAssetForm(params);
     const replaceText = detailsFrame.getByText('Do you want to replace the');
     await waitForVisibleAndCallback(replaceText, () => expect(replaceText).toBeVisible());
     await detailsFrame.getByLabel('Yes').click();
@@ -172,8 +198,14 @@ test('Validate the auto complete on FileName field rejecting change', async ({pa
 
     await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
     await detailsFrame.locator('#fileName').fill('test');
-    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
-
+    const params = {
+        page: page,
+        host: fileAssetContent.host,
+        title: fileAssetContent.title,
+        newFileName: fileAssetContent.newFileName,
+        newFileText: fileAssetContent.newFileText
+    }
+    await contentUtils.fillFileAssetForm(params);
     const replaceText = detailsFrame.getByText('Do you want to replace the');
     await waitForVisibleAndCallback(replaceText, async () => expect(replaceText).toBeVisible());
     await detailsFrame.getByLabel('No').click();
@@ -204,5 +236,7 @@ test('Delete a file asset content', async ({ page }) => {
     // Delete the content
     await contentUtils.deleteContent(page, fileAssetContent.title);
 });
+
+
 
 
