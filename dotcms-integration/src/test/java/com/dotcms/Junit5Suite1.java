@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.jobs.business.api.JobProcessorDiscoveryTest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPIIntegrationTest;
 import com.dotcms.jobs.business.processor.impl.ImportContentletsProcessorIntegrationTest;
@@ -16,7 +17,8 @@ import org.junit.platform.suite.api.Suite;
         JobQueueManagerAPIIntegrationTest.class,
         JobQueueHelperIntegrationTest.class,
         ImportContentletsProcessorIntegrationTest.class,
-        ContentImportResourceIntegrationTest.class
+        ContentImportResourceIntegrationTest.class,
+        JobProcessorDiscoveryTest.class
 })
 public class Junit5Suite1 {
 

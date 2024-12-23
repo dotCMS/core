@@ -1,5 +1,4 @@
 import { PageApiOptions } from '../../client/sdk-js-client';
-import { UVE_MODE } from '../../editor/models/editor.model';
 
 /**
  * Interface representing the properties for page request parameters.
@@ -42,9 +41,7 @@ export const getPageRequestParams = ({
     const finalParams: Record<string, unknown> = {};
     const dotMarketingPersonaId = copiedParams['com.dotmarketing.persona.id'] || '';
 
-    if (copiedParams['mode']) {
-        finalParams['mode'] = copiedParams['mode'];
-    }
+    finalParams['mode'] = copiedParams['mode'] || 'LIVE';
 
     if (copiedParams['language_id']) {
         finalParams['language_id'] = copiedParams['language_id'];
@@ -66,16 +63,4 @@ export const getPageRequestParams = ({
         path,
         ...finalParams
     };
-};
-
-/**
- * Checks if the code is running inside an editor.
- *
- * @return {*}  {boolean}
- */
-export const isPreviewMode = (): boolean => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const editorMode = queryParams.get('editorMode');
-
-    return editorMode === UVE_MODE.PREVIEW;
 };

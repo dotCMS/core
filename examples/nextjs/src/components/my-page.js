@@ -17,6 +17,7 @@ import Header from "./layout/header/header";
 import Navigation from "./layout/navigation";
 
 import NotFound from "@/app/not-found";
+import { withExperiments } from "@dotcms/experiments";
 import { usePageAsset } from "../hooks/usePageAsset";
 
 /**

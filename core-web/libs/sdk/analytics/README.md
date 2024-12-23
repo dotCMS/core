@@ -38,8 +38,7 @@ Wrap your application with the `DotContentAnalyticsProvider`:
 // Example configuration
 const analyticsConfig = {
     apiKey: 'your-api-key-from-dotcms-analytics-app',
-    server: 'https://your-dotcms-instance.com',
-    debug: false // Not required
+    server: 'https://your-dotcms-instance.com'
 };
 
 function App() {
