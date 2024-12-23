@@ -74,25 +74,28 @@ export const DEFAULT_DEVICES: DotDeviceListItem[] = [
     {
         icon: 'pi pi-desktop',
         identifier: 'default-id',
-        name: 'DOTCMS_KEY_FOR_DEFAULT',
-        cssHeight: '100',
+        name: 'uve.device.selector.default',
+        cssHeight: '100', // This will be used in %
         inode: 'default',
-        cssWidth: '100'
+        cssWidth: '100', // This will be used in %
+        _isDefault: true
     },
     {
         cssWidth: '820',
-        name: 'DOTCMS_KEY_FOR_TABLET',
+        name: 'uve.device.selector.tablet',
         icon: 'pi pi-tablet',
         cssHeight: '1180',
         inode: 'tablet',
-        identifier: 'tablet-id'
+        identifier: 'tablet-id',
+        _isDefault: true
     },
     {
         inode: 'mobile',
         icon: 'pi pi-mobile',
-        name: 'DOTCMS_KEY_FOR_MOBILE',
+        name: 'uve.device.selector.mobile',
         cssHeight: '844',
         identifier: 'mobile-id',
-        cssWidth: '390'
+        cssWidth: '390',
+        _isDefault: true
     }
 ];

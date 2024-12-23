@@ -6,41 +6,50 @@
     align-items: center;
     gap: $spacing-1;
     align-self: stretch;
-}
 
-.p-element {
-    &.p-disabled {
+    ::ng-deep {
+        .p-menuitem.active {
+            .p-menuitem-link,
+            .p-menuitem-link:not(.p-disabled):hover {
+                background-color: $color-palette-primary-op-20;
+            }
+        }
+    }
+
+    .p-element {
+        &.p-disabled {
+            ::ng-deep {
+                .p-button {
+                    use {
+                        color: inherit;
+                    }
+                }
+            }
+        }
+
         ::ng-deep {
             .p-button {
                 use {
-                    color: inherit;
+                    color: $color-palette-primary;
+                }
+
+                svg {
+                    transform: rotate(0deg);
+                    transition: all 0.3s ease-in-out;
+
+                    &.landscape {
+                        transform: rotate(90deg);
+                    }
                 }
             }
         }
     }
 
-    ::ng-deep {
-        .p-button {
-            use {
-                color: $color-palette-primary;
+    .p-element.active {
+        ::ng-deep {
+            .p-button {
+                background-color: $color-palette-primary-op-20;
             }
-
-            svg {
-                transform: rotate(0deg);
-                transition: all 0.3s ease-in-out;
-
-                &.landscape {
-                    transform: rotate(90deg);
-                }
-            }
-        }
-    }
-}
-
-.p-element.active {
-    ::ng-deep {
-        .p-button {
-            background-color: $color-palette-primary-op-20;
         }
     }
 }

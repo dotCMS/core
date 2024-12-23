@@ -28,7 +28,7 @@ import { take } from 'rxjs/operators';
 
 import { UVE_MODE } from '@dotcms/client';
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotPersona, DotLanguage, DotDevice } from '@dotcms/dotcms-models';
+import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -90,7 +90,7 @@ export class DotUveToolbarComponent implements OnInit {
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
-    readonly $devices: WritableSignal<DotDevice[]> = signal([]);
+    readonly $devices: WritableSignal<DotDeviceListItem[]> = signal([]);
 
     readonly $completeDevices = computed(() => {
         return [...DEFAULT_DEVICES, ...this.$devices()];
@@ -145,7 +145,6 @@ export class DotUveToolbarComponent implements OnInit {
 
     defaultDevices = DEFAULT_DEVICES;
 
-    // IF YOU DONT SEE ANY COMMENTS EXPLAINING THE CODE, PLEASE LEAVE ME A COMMENT, BECAUSE WE NEED DOCS OF THIS
     handleViewParamsEffect = effect(
         () => {
             // Get the device and orientation from the URL
@@ -177,7 +176,7 @@ export class DotUveToolbarComponent implements OnInit {
         this.#deviceService
             .get()
             .pipe(take(1))
-            .subscribe((devices: DotDevice[]) => {
+            .subscribe((devices: DotDeviceListItem[]) => {
                 this.$devices.set(devices);
             });
     }

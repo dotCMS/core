@@ -26,3 +26,15 @@
             height="24px"></use>
     </svg>
 </p-button>
+
+@if ($menuItems().length) {
+    <p-button
+        icon="pi pi-chevron-down"
+        iconPos="right"
+        [label]="'more' | dm"
+        [ngClass]="{ active: !$isADefaultDeviceActive() }"
+        styleClass="p-button-text p-button-sm"
+        (click)="menu.toggle($event)" />
+
+    <p-menu #menu [popup]="true" [model]="$menuItems()"></p-menu>
+}
