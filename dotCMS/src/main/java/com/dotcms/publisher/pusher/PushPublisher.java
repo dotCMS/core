@@ -183,36 +183,32 @@ public class PushPublisher extends Publisher {
 			int totalEndpoints = 0;
 			for (Environment environment : environments) {
 				List<PublishingEndPoint> allEndpoints = this.publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
-				if (UtilMethods.isNotSet(allEndpoints)) {
-					continue;
-				}
 				List<PublishingEndPoint> endpoints = new ArrayList<>();
-				totalEndpoints += allEndpoints.size();
+				totalEndpoints += (null != allEndpoints) ? allEndpoints.size() : 0;
 
 				Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());
 				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
-				for(PublishingEndPoint ep : allEndpoints) {
-					if(ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
-						// If pushing a bundle for the first time, always add
-						// all end-points
-						if (null == endpointsDetail || endpointsDetail.isEmpty()) {
-							endpoints.add(ep);
-						} else {
-							EndpointDetail epDetail = endpointsDetail.get(ep.getId());
-							// If re-trying a bundle or just re-attempting to
-							// install a bundle, send it only to those
-							// end-points whose status IS NOT success
-							if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-									&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
-                                    && Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
-									&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
+				if (null != allEndpoints) {
+					for (PublishingEndPoint ep : allEndpoints) {
+						if (ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
+							// If pushing a bundle for the first time, always add all end-points
+							if (null == endpointsDetail || endpointsDetail.isEmpty()) {
 								endpoints.add(ep);
+							} else {
+								EndpointDetail epDetail = endpointsDetail.get(ep.getId());
+								// If re-trying a bundle or just re-attempting to install a bundle,
+								// send it only to those end-points whose status IS NOT success
+								if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+										|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+										&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
+										&& Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
+										&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
+									endpoints.add(ep);
+								}
 							}
 						}
 					}
 				}
-
 				boolean failedEnvironment = false;
 				if(!environment.getPushToAll()) {
 					Collections.shuffle(endpoints);
