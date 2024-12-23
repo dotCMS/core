@@ -37,9 +37,7 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     ngOnInit() {
         const deviceInode = this.#store.viewParams().device;
 
-        // I HAVE TO CHANGE THIS TO LOOK IN A FULL LIST OF THE DEVICES
-        // I WILL FETCH THE DEVICES IN THE UVE TOOLBAR
-        const device = this.defaultDevices.find((d) => d.inode === deviceInode);
+        const device = this.$devices().find((d) => d.inode === deviceInode);
 
         if (device) {
             this.#store.setDevice(device);

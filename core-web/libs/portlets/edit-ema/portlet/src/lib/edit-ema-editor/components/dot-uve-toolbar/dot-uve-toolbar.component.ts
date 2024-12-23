@@ -92,6 +92,9 @@ export class DotUveToolbarComponent implements OnInit {
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $devices: WritableSignal<DotDevice[]> = signal([]);
 
+    readonly $completeDevices = computed(() => {
+        return [...DEFAULT_DEVICES, ...this.$devices()];
+    });
     protected readonly CURRENT_DATE = new Date();
 
     readonly $styleToolbarClass = computed(() => {
@@ -145,6 +148,7 @@ export class DotUveToolbarComponent implements OnInit {
     // IF YOU DONT SEE ANY COMMENTS EXPLAINING THE CODE, PLEASE LEAVE ME A COMMENT, BECAUSE WE NEED DOCS OF THIS
     handleViewParamsEffect = effect(
         () => {
+            // Get the device and orientation from the URL
             const { device: deviceInode, orientation } = this.#store.viewParams();
 
             // So we dont open the editor in a device
@@ -154,11 +158,13 @@ export class DotUveToolbarComponent implements OnInit {
                 return;
             }
 
-            const device = this.defaultDevices.find((d) => d.inode === deviceInode);
+            const device = this.$completeDevices().find((d) => d.inode === deviceInode);
 
+            // If we have a device, set it in the store
             if (device) {
                 this.#store.setDevice(device, orientation);
             } else {
+                // If we dont have a device, clear the device and social media
                 this.#store.clearDeviceAndSocialMedia();
             }
         },
@@ -182,7 +188,7 @@ export class DotUveToolbarComponent implements OnInit {
      * @param {Date} publishDate
      * @memberof DotUveToolbarComponent
      */
-    protected triggerPreviewMode(publishDate = new Date()) {
+    protected triggerPreviewMode(publishDate: Date = new Date()) {
         this.$previewDate.set(publishDate);
     }
 
@@ -192,7 +198,6 @@ export class DotUveToolbarComponent implements OnInit {
      * @memberof DotUveToolbarComponent
      */
     protected triggerEditMode() {
-        this.#store.patchViewParams({ device: undefined, seo: undefined });
         this.#store.loadPageAsset({ editorMode: undefined, publishDate: undefined });
     }
 
