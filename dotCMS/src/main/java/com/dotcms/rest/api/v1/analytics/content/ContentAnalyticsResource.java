@@ -137,6 +137,7 @@ public class ContentAnalyticsResource {
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
                     @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
@@ -196,6 +197,7 @@ public class ContentAnalyticsResource {
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
@@ -266,6 +268,7 @@ public class ContentAnalyticsResource {
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
@@ -319,6 +322,7 @@ public class ContentAnalyticsResource {
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
                     @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
