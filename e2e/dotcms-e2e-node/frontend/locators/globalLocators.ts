@@ -38,6 +38,11 @@ export const fileAsset = {
     label: "File Asset"
 }
 
+export const pageAsset = {
+    locator: "descriptionPage",
+    label: "Page"
+}
+
 export {
 } from './navigation/menuLocators';
 
