@@ -190,8 +190,9 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
         value = { // error codes only!
                 @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
                 @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
-                @ApiResponse(responseCode = "406", description = "Not Acceptable"), // no permission
-                @ApiResponse(responseCode = "500", description = "Internal Server Error") //
+                // @ApiResponse(responseCode = "405", description = "Method Not Allowed"), // wrong verb; unlikely a user will have to explicitly handle this
+                @ApiResponse(responseCode = "406", description = "Not Acceptable"), // accept header mismatch
+                @ApiResponse(responseCode = "500", description = "Internal Server Error")
         }
 )
 public class WorkflowResource {
@@ -2399,7 +2400,7 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "405", description = "Method Not Allowed") // if param string blank
+                    @ApiResponse(responseCode = "404", description = "Workflow step not found.")
             }
     )
     public final Response findStepById(@Context final HttpServletRequest request,
