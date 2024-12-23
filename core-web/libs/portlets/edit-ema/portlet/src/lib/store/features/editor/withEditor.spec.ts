@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
@@ -641,6 +642,23 @@ describe('withEditor', () => {
             });
         });
 
+        describe('$iframeURL', () => {
+            it("should return the iframe's URL", () => {
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                );
+            });
+
+            it('should contain `about:blanck` in src when the page is traditional', () => {
+                patchState(store, {
+                    pageAPIResponse: MOCK_RESPONSE_VTL,
+                    isTraditionalPage: true
+                });
+
+                expect(store.$iframeURL()).toContain('about:blank');
+            });
+        });
+
         describe('$editorProps', () => {
             it('should return the expected data on init', () => {
                 expect(store.$editorProps()).toEqual({
@@ -650,7 +668,6 @@ describe('withEditor', () => {
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',
-                        src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
                         wrapper: null
                     },
                     progressBar: true,
@@ -672,7 +689,9 @@ describe('withEditor', () => {
             });
 
             it('should not have opacity or progressBar in preview mode', () => {
-                patchState(store, { pageParams: { ...emptyParams, preview: 'true' } });
+                patchState(store, {
+                    pageParams: { ...emptyParams, editorMode: UVE_MODE.PREVIEW }
+                });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
                 expect(store.$editorProps().progressBar).toBe(false);
@@ -715,15 +734,6 @@ describe('withEditor', () => {
                     patchState(store, { state: EDITOR_STATE.SCROLL_DRAG });
 
                     expect(store.$editorProps().iframe.pointerEvents).toBe('none');
-                });
-
-                it('should have src as empty when the page is traditional', () => {
-                    patchState(store, {
-                        pageAPIResponse: MOCK_RESPONSE_VTL,
-                        isTraditionalPage: true
-                    });
-
-                    expect(store.$editorProps().iframe.src).toBe('');
                 });
 
                 it('should have a wrapper when a device is present', () => {
@@ -830,6 +840,20 @@ describe('withEditor', () => {
                     });
 
                     expect(store.$editorProps().contentletTools).toBe(null);
+                });
+
+                it('should have contentletTools when the page can be edited and is in preview mode', () => {
+                    patchState(store, {
+                        isEditState: true,
+                        canEditPage: true,
+                        pageParams: {
+                            ...emptyParams,
+                            editorMode: UVE_MODE.PREVIEW
+                        },
+                        state: EDITOR_STATE.IDLE
+                    });
+
+                    expect(store.$editorProps().contentletTools).toEqual(null);
                 });
             });
             describe('dropzone', () => {

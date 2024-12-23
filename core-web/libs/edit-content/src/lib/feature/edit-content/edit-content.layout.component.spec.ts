@@ -15,16 +15,19 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { ConfirmDialog } from 'primeng/confirmdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { MessagesModule } from 'primeng/messages';
 
 import {
     DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import {
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
     MOCK_SINGLE_WORKFLOW_ACTIONS
@@ -40,6 +43,8 @@ import { MOCK_CONTENTLET_1_TAB } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
 
+const MOCK_LANGUAGES = [{ id: 1, isoCode: 'en-us', defaultLanguage: false }] as DotLanguage[];
+
 describe('EditContentLayoutComponent', () => {
     let spectator: Spectator<EditContentLayoutComponent>;
 
@@ -47,6 +52,7 @@ describe('EditContentLayoutComponent', () => {
     let dotContentTypeService: SpyObject<DotContentTypeService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
+    let dotLanguagesService: SpyObject<DotLanguagesService>;
 
     const createComponent = createComponentFactory({
         component: EditContentLayoutComponent,
@@ -67,6 +73,8 @@ describe('EditContentLayoutComponent', () => {
         providers: [
             mockProvider(DotHttpErrorManagerService),
             mockProvider(MessageService),
+            mockProvider(DialogService),
+            mockProvider(DotLanguagesService),
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -99,6 +107,9 @@ describe('EditContentLayoutComponent', () => {
         dotContentTypeService = spectator.inject(DotContentTypeService, true);
         workflowActionsService = spectator.inject(DotWorkflowsActionsService, true);
         dotEditContentService = spectator.inject(DotEditContentService, true);
+        dotLanguagesService = spectator.inject(DotLanguagesService, true);
+
+        jest.spyOn(dotLanguagesService, 'get').mockReturnValue(of(MOCK_LANGUAGES));
 
         // By default, the local storage is set to true
         jest.spyOn(utils, 'getPersistSidebarState').mockReturnValue(true);

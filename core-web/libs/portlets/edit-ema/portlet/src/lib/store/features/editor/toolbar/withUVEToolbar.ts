@@ -9,6 +9,7 @@ import {
 
 import { computed } from '@angular/core';
 
+import { UVE_MODE } from '@dotcms/client';
 import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../../shared/consts';
@@ -82,7 +83,7 @@ export function withUVEToolbar() {
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
-                const isPreview = params?.preview === 'true';
+                const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
                 const prevewItem = isPreview
                     ? {
                           deviceSelector: {
@@ -139,7 +140,9 @@ export function withUVEToolbar() {
                         },
                         actionIcon: 'pi pi-times'
                     };
-                } else if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
+                }
+
+                if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
                     const variantId = pageAPIResponse.viewAs.variantId;
 
                     const currentExperiment = store.experiment?.();

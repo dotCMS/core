@@ -40,6 +40,8 @@
 }
 
 :root {
+    --border-radius: 0.375rem; // 6px;
+
     @include root-colors();
 }
 

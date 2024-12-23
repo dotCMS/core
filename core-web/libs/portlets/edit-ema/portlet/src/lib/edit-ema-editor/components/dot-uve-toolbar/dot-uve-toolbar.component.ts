@@ -11,7 +11,9 @@ import {
     Output,
     signal,
     viewChild,
-    WritableSignal
+    WritableSignal,
+    model,
+    untracked
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -24,8 +26,10 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
 
+import { UVE_MODE } from '@dotcms/client';
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotPersona, DotLanguage, DotDevice } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
@@ -59,6 +63,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
         EditEmaLanguageSelectorComponent,
         ClipboardModule,
         DotUveDeviceSelectorComponent,
+        DotMessagePipe,
         DotUveWorkflowActionsComponent,
         ChipModule
     ],
@@ -87,6 +92,8 @@ export class DotUveToolbarComponent implements OnInit {
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $devices: WritableSignal<DotDevice[]> = signal([]);
 
+    protected readonly CURRENT_DATE = new Date();
+
     readonly $styleToolbarClass = computed(() => {
         if (!this.$isPreviewMode()) {
             return 'uve-toolbar';
@@ -95,6 +102,35 @@ export class DotUveToolbarComponent implements OnInit {
         return 'uve-toolbar uve-toolbar-preview';
     });
 
+    protected readonly publishDateParam = this.#store.pageParams().publishDate;
+    protected readonly $previewDate = model<Date>(
+        this.publishDateParam ? new Date(this.publishDateParam) : null
+    );
+
+    readonly $previewDateEffect = effect(
+        () => {
+            const previewDate = this.$previewDate();
+
+            if (!previewDate) {
+                return;
+            }
+
+            // If previewDate is minor that the CURRENT DATE, set previewDate to CURRENT DATE
+            if (previewDate < this.CURRENT_DATE) {
+                this.$previewDate.set(this.CURRENT_DATE);
+
+                return;
+            }
+
+            untracked(() => {
+                this.#store.loadPageAsset({
+                    editorMode: UVE_MODE.PREVIEW,
+                    publishDate: previewDate?.toISOString()
+                });
+            });
+        },
+        { allowSignalWrites: true }
+    );
     readonly $pageInode = computed(() => {
         return this.#store.pageAPIResponse()?.page.inode;
     });
@@ -141,22 +177,23 @@ export class DotUveToolbarComponent implements OnInit {
     }
 
     /**
-     * Set the preview mode
+     * Initialize the preview mode
      *
+     * @param {Date} publishDate
      * @memberof DotUveToolbarComponent
      */
-    protected setPreviewMode() {
-        this.#store.loadPageAsset({ preview: 'true' });
+    protected triggerPreviewMode(publishDate = new Date()) {
+        this.$previewDate.set(publishDate);
     }
 
     /**
-     * Set the edit mode
+     * Initialize the edit mode
      *
      * @memberof DotUveToolbarComponent
      */
-    protected setEditMode() {
-        this.#store.patchViewParams({ device: null, seo: null });
-        this.#store.loadPageAsset({ preview: null });
+    protected triggerEditMode() {
+        this.#store.patchViewParams({ device: undefined, seo: undefined });
+        this.#store.loadPageAsset({ editorMode: undefined, publishDate: undefined });
     }
 
     /**
@@ -185,6 +222,11 @@ export class DotUveToolbarComponent implements OnInit {
         this.#store.loadPageAsset({ language_id });
     }
 
+    /**
+     * Trigger the copy toasts
+     *
+     * @memberof DotUveToolbarComponent
+     */
     triggerCopyToast() {
         this.#messageService.add({
             severity: 'success',

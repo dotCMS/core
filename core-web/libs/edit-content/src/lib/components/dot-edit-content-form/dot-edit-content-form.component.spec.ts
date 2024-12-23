@@ -12,6 +12,7 @@ import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { TabPanel, TabView } from 'primeng/tabview';
 
 import {
@@ -24,6 +25,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
+import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
@@ -73,6 +75,7 @@ describe('DotFormComponent', () => {
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
             mockProvider(DotContentletService),
+            mockProvider(DialogService),
 
             {
                 provide: ActivatedRoute,
@@ -320,6 +323,36 @@ describe('DotFormComponent', () => {
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
                 expect(store.showWorkflowActions()).toBe(false);
                 expect(workflowActions).toBeFalsy();
+            });
+
+            it('should send the correct parameters when firing an action. ', () => {
+                const spy = jest.spyOn(store, 'fireWorkflowAction');
+
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS) // Single workflow actions trigger the show
+                );
+                store.initializeExistingContent('inode');
+                spectator.detectChanges();
+
+                const workflowActions = spectator.query(DotWorkflowActionsComponent);
+
+                workflowActions.actionFired.emit({ id: '1' } as DotCMSWorkflowAction);
+
+                expect(spy).toHaveBeenCalledWith({
+                    actionId: '1',
+                    inode: 'cc120e84-ae80-49d8-9473-36d183d0c1c9',
+                    identifier: null,
+                    data: {
+                        contentlet: {
+                            contentType: 'TestMock',
+                            text1: 'content text 1',
+                            text11: 'Tab 2 input content',
+                            text2: 'content text 2',
+                            text3: 'default value modified',
+                            languageId: null
+                        }
+                    }
+                });
             });
         });
     });
