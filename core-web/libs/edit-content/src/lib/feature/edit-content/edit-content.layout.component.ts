@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
@@ -44,7 +45,8 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
         DotWorkflowActionsFireService,
         DotEditContentService,
         DotWorkflowService,
-        DotEditContentStore
+        DotEditContentStore,
+        DialogService
     ],
 
     host: {

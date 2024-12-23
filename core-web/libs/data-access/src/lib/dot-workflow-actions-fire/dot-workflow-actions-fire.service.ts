@@ -22,6 +22,7 @@ interface DotActionRequestOptions {
 export interface DotFireActionOptions<T> {
     actionId: string;
     inode?: string;
+    identifier?: string;
     data?: T;
 }
 

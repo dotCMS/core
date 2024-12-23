@@ -4,6 +4,10 @@
 @let actions = $store.getActions();
 @let showWorkflowActions = $store.showWorkflowActions();
 
+<!--Locales-->
+@let currentLocaleId = $store.currentLocale()?.id;
+@let currentIdentifier = $store.currentIdentifier();
+
 <!-- TODO: Handle the error, no form -->
 @if (form) {
     <form [formGroup]="form" class="p-fluid dot-edit-content-form h-100">
@@ -84,7 +88,9 @@
                     fireWorkflowAction({
                         actionId: $event.id,
                         inode: contentlet?.inode,
-                        contentType: contentType.variable
+                        contentType: contentType.variable,
+                        languageId: currentLocaleId,
+                        identifier: currentIdentifier
                     })
                 "
                 [actions]="actions"
