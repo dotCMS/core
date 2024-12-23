@@ -55,11 +55,13 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtil.HandlerType;
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
@@ -120,7 +122,6 @@ import com.liferay.util.FileUtil;
 import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.File;
@@ -131,10 +132,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
 
@@ -165,6 +168,7 @@ public class ContentHandler implements IHandler {
 	private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
 	private final Lazy<MultiTreeAPI> multiTreeAPI = Lazy.of(APILocator::getMultiTreeAPI);
+	private final Lazy<BundleAPI> bundleAPI = Lazy.of(APILocator::getBundleAPI);
 
 	private final Map<String,Long> infoToRemove = new HashMap<>();
 	private final ExistingContentMapping existingContentMap = new ExistingContentMapping();
@@ -818,10 +822,14 @@ public class ContentHandler implements IHandler {
         }
         content = this.contentletAPI.checkin(content, userToUse, !RESPECT_FRONTEND_ROLES);
 
-        //First we need to remove the "old" trees in order to add this new ones
-        cleanTrees( content );
-		regenerateTree(wrapper,remoteLocalLanguages.getLeft());
-
+		final String filterKey =
+				this.bundleAPI.get().getBundleById(com.dotmarketing.util.FileUtil.removeExtension(this.config.getId())).getFilterKey();
+        if (!Objects.equals(PublisherFilter.SHALLOW_PUSH_KEY, filterKey)) {
+			// Depending on the selected Push Publishing Filter, we need to remove the "old" trees
+			// in order to add the new ones
+			this.cleanTrees(content);
+			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
+		}
         // Categories
         if (UtilMethods.isSet(wrapper.getCategories())) {
             handleContentCategories(content.getInode(), wrapper.getCategories());
