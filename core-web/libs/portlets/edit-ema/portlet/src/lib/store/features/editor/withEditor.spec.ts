@@ -134,6 +134,7 @@ describe('withEditor', () => {
                             value: MOCK_RESPONSE_HEADLESS.viewAs.persona ?? DEFAULT_PERSONA
                         },
                         runningExperiment: null,
+                        isDefaultVariant: true,
                         showInfoDisplay: false,
                         unlockButton: null,
                         urlContentMap: null,
@@ -333,6 +334,35 @@ describe('withEditor', () => {
                         });
 
                         expect(store.$toolbarProps().showInfoDisplay).toBe(false);
+                    });
+                });
+
+                describe('isDefaultVariant', () => {
+                    it('should have isDefaultVariant as true if the page variant is default', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                viewAs: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                    variantId: DEFAULT_VARIANT_ID
+                                }
+                            }
+                        });
+
+                        expect(store.$toolbarProps().isDefaultVariant).toBe(true);
+                    });
+                    it('should have isDefaultVariant as false if the page is a variant different from default', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                viewAs: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                    variantId: 'test'
+                                }
+                            }
+                        });
+
+                        expect(store.$toolbarProps().isDefaultVariant).toBe(false);
                     });
                 });
             });

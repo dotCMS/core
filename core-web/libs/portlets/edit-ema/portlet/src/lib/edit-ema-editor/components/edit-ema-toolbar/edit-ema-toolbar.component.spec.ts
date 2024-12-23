@@ -167,6 +167,7 @@ describe('EditEmaToolbarComponent', () => {
                             runningExperiment: null,
                             workflowActionsInode: pageAPIResponse?.page.inode,
                             unlockButton: null,
+                            isDefaultVariant: true,
                             showInfoDisplay: shouldShowInfoDisplay,
                             deviceSelector: {
                                 apiLink: `${params?.clientHost ?? 'http://localhost'}${pageAPI}`,
@@ -405,12 +406,10 @@ describe('EditEmaToolbarComponent', () => {
                 });
             });
         });
-
         it('should have a dot-uve-workflow-actions component', () => {
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
             expect(workflowActions).toBeTruthy();
         });
-
         describe('dot-ema-info-display', () => {
             it('should be hidden', () => {
                 const infoDisplay = spectator.query(byTestId('info-display'));
@@ -426,7 +425,7 @@ describe('EditEmaToolbarComponent', () => {
         });
     });
 
-    xdescribe('constrains', () => {
+    describe('constrains', () => {
         describe('dot-ema-info-display', () => {
             beforeEach(() => {
                 spectator = createComponent({
@@ -466,6 +465,46 @@ describe('EditEmaToolbarComponent', () => {
                 expect(infoDisplay).toBeDefined();
             });
         });
+        describe('dot-uve-workflow-actions', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    providers: [
+                        mockProvider(UVEStore, {
+                            $toolbarProps: signal({
+                                bookmarksUrl,
+                                copyUrl: '',
+                                apiUrl: '',
+                                currentLanguage: pageAPIResponse?.viewAs.language,
+                                urlContentMap: null,
+                                runningExperiment: null,
+                                workflowActionsInode: '',
+                                unlockButton: null,
+                                isDefaultVariant: false,
+                                showInfoDisplay: true,
+                                deviceSelector: {
+                                    apiLink: '',
+                                    hideSocialMedia: true
+                                },
+                                personaSelector: {
+                                    pageId: '',
+                                    value: DEFAULT_PERSONA
+                                }
+                            }),
+                            setDevice: jest.fn(),
+                            setSocialMedia: jest.fn(),
+                            pageParams: signal(params)
+                        })
+                    ]
+                });
+                store = spectator.inject(UVEStore);
+                messageService = spectator.inject(MessageService);
+                confirmationService = spectator.inject(ConfirmationService);
+            });
+            it('should not show when isDefaultVariant is false in the store', () => {
+                const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+                expect(workflowActions).toBeNull();
+            });
+        });
         describe('experiments', () => {
             const experiment = getRunningExperimentMock();
 
@@ -499,7 +538,6 @@ describe('EditEmaToolbarComponent', () => {
                     ]
                 });
             });
-
             describe('dot-ema-running-experiment', () => {
                 it('should have attr', () => {
                     const experiments = spectator.query(DotEmaRunningExperimentComponent);

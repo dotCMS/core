@@ -92,6 +92,7 @@ export interface ToolbarProps {
     bookmarksUrl: string;
     copyUrl: string;
     apiUrl: string;
+    isDefaultVariant: boolean;
     showInfoDisplay: boolean;
     currentLanguage: DotLanguage;
     runningExperiment?: DotExperiment;
