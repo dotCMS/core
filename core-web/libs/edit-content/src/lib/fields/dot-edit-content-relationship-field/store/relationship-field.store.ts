@@ -15,11 +15,17 @@ import { tap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { RelationshipFieldItem } from '../models/relationship.models';
+import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
+import {
+    RelationshipFieldItem,
+    RelationshipTypes,
+    SelectionMode
+} from '../models/relationship.models';
 
 export interface RelationshipFieldState {
     data: RelationshipFieldItem[];
     status: ComponentStatus;
+    selectionMode: SelectionMode | null;
     pagination: {
         offset: number;
         currentPage: number;
@@ -30,6 +36,7 @@ export interface RelationshipFieldState {
 const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
+    selectionMode: null,
     pagination: {
         offset: 0,
         currentPage: 1,
@@ -45,7 +52,17 @@ export const RelationshipFieldStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withComputed((state) => ({
-        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage))
+        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+        isDisabledCreateNewContent: computed(() => {
+            const totalItems = state.data().length;
+            const selectionMode = state.selectionMode();
+
+            if (selectionMode === 'single') {
+                return totalItems >= 1;
+            }
+
+            return false;
+        })
     })),
     withMethods((store) => {
         return {
@@ -56,6 +73,25 @@ export const RelationshipFieldStore = signalStore(
             setData(data: RelationshipFieldItem[]) {
                 patchState(store, {
                     data
+                });
+            },
+            /**
+             * Sets the cardinality of the relationship field.
+             * @param {number} cardinality - The cardinality of the relationship field.
+             */
+            setCardinality(cardinality: number) {
+
+                const relationshipType = RELATIONSHIP_OPTIONS[cardinality];
+
+                if (!relationshipType) {
+                    throw new Error('Invalid relationship type');
+                }
+
+                const selectionMode: SelectionMode =
+                    relationshipType === RelationshipTypes.ONE_TO_ONE ? 'single' : 'multiple';
+
+                patchState(store, {
+                    selectionMode
                 });
             },
             /**
