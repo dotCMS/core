@@ -61,7 +61,6 @@ export interface EditorProps {
             width: string;
             height: string;
         };
-        src: string;
         pointerEvents: string;
         opacity: string;
     };
@@ -91,6 +90,7 @@ export interface ToolbarProps {
     bookmarksUrl: string;
     copyUrl: string;
     apiUrl: string;
+    isDefaultVariant: boolean;
     showInfoDisplay: boolean;
     currentLanguage: DotLanguage;
     runningExperiment?: DotExperiment;

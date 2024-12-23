@@ -32,6 +32,7 @@ import {
     FeaturedFlags,
     WorkflowStep
 } from '@dotcms/dotcms-models';
+import { DotContentletState } from '@dotcms/edit-content/models/dot-edit-content.model';
 
 import { WorkflowState } from './workflow.feature';
 
@@ -54,7 +55,7 @@ export interface ContentState {
             firstStep: WorkflowStep;
         }
     >;
-    initialContentletState: 'new' | 'existing' | 'reset';
+    initialContentletState: DotContentletState;
 }
 
 export const contentInitialState: ContentState = {

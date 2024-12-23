@@ -49,11 +49,8 @@ public class JobProcessorDiscovery {
             for (Bean<?> bean : beans) {
                 Class<?> beanClass = bean.getBeanClass();
 
-                if (JobProcessor.class.isAssignableFrom(beanClass)) {
-
-                    // Validate that the bean is in the correct scope
-                    validateScope(bean);
-
+                if (JobProcessor.class.isAssignableFrom(beanClass)
+                        && isValidateScope(bean)) {
                     processors.add((Class<? extends JobProcessor>) beanClass);
                     Logger.debug(this, "Discovered JobProcessor: " + beanClass.getName());
                 }
@@ -75,14 +72,20 @@ public class JobProcessorDiscovery {
      * Validates that the scope of the bean is correct for a JobProcessor.
      *
      * @param bean The bean to validate.
+     * @return True if the scope is valid, false otherwise.
      */
-    private void validateScope(Bean<?> bean) {
+    private boolean isValidateScope(Bean<?> bean) {
+
         Class<?> scope = bean.getScope();
         if (scope != Dependent.class) {
-            throw new DotRuntimeException(
-                    "JobProcessor " + bean.getBeanClass().getName() +
-                            " must use @Dependent scope, found: " + scope.getName());
+            final String errorMessage = "JobProcessor " + bean.getBeanClass().getName() +
+                    " must use @Dependent scope, found: " + scope.getName() + " scope. "
+                    + "Won't be registered.";
+            Logger.error(this, errorMessage);
+            return false;
         }
+
+        return true;
     }
 
 }

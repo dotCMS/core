@@ -9,6 +9,7 @@ import {
 
 import { computed } from '@angular/core';
 
+import { UVE_MODE } from '@dotcms/client';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
@@ -87,7 +88,7 @@ export function withUVEToolbar() {
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
-                const isPreview = params?.preview === 'true';
+                const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
                 const prevewItem = isPreview
                     ? {
                           deviceSelector: {

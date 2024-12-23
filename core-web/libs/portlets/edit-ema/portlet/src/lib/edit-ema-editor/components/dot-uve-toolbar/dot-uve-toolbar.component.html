@@ -12,21 +12,18 @@
 
     @if (preview) {
         <div class="p-toolbar-group-center">
-            <div>
-                <p-button
-                    icon="pi pi-chevron-left"
-                    styleClass="p-button-text p-button-sm"
-                    data-testId="arrow-left" />
-                <p-button
-                    icon="pi pi-chevron-right"
-                    styleClass="p-button-text p-button-sm"
-                    data-testId="arrow-right" />
-            </div>
             <p-calendar
                 inputStyleClass="p-inputtext-sm"
-                [(ngModel)]="date"
+                [(ngModel)]="$previewDate"
+                [showTime]="true"
+                [hourFormat]="'12'"
+                [minDate]="CURRENT_DATE"
                 [readonlyInput]="true" />
-            <p-chip styleClass="uve-toolbar-chips" label="Today" alt="Page Day" />
+            <p-button
+                styleClass="uve-toolbar-chips"
+                [label]="'Today' | dm"
+                alt="Page Day"
+                (click)="triggerPreviewMode()" />
         </div>
     }
 
@@ -62,7 +59,7 @@
         icon="pi pi-eye"
         styleClass="p-button-text p-button-sm"
         data-testId="uve-toolbar-preview"
-        (click)="setPreviewMode()" />
+        (click)="triggerPreviewMode()" />
 
     <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
 
@@ -89,7 +86,7 @@
     <p-button
         icon="pi pi-times"
         styleClass="p-button-text p-button-sm"
-        (click)="setEditMode()"
+        (click)="triggerEditMode()"
         data-testId="close-preview-mode" />
 
     <div class="vertical-divider"></div>
