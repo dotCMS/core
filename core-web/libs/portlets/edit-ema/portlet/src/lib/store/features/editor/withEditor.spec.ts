@@ -575,8 +575,7 @@ describe('withEditor', () => {
                         currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
                         urlContentMap: null,
                         runningExperiment: null,
-                        unlockButton: null,
-                        showInfoDisplay: false
+                        unlockButton: null
                     });
                 });
             });
