@@ -5,12 +5,12 @@
 
 @let hitText = attributes.hitText;
 
-    <p-table
-        [value]="data"
-        styleClass="dotTable p-datatable-relationship"
-        [paginator]="data.length > pagination.rowsPerPage"
-        [first]="pagination.offset"
-        [rows]="pagination.rowsPerPage"
+<p-table
+    [value]="data"
+    styleClass="dotTable p-datatable-relationship"
+    [paginator]="data.length > pagination.rowsPerPage"
+    [first]="pagination.offset"
+    [rows]="pagination.rowsPerPage"
     [reorderableColumns]="true"
     [scrollable]="true">
     <ng-template pTemplate="header" styleClass="relative">
@@ -91,4 +91,4 @@
             </div>
         </ng-template>
     }
-    </p-table>
+</p-table>

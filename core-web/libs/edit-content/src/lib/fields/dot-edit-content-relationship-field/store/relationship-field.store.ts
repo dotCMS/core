@@ -80,7 +80,6 @@ export const RelationshipFieldStore = signalStore(
              * @param {number} cardinality - The cardinality of the relationship field.
              */
             setCardinality(cardinality: number) {
-
                 const relationshipType = RELATIONSHIP_OPTIONS[cardinality];
 
                 if (!relationshipType) {

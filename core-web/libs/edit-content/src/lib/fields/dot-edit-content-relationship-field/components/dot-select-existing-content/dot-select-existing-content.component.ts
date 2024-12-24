@@ -3,11 +3,9 @@ import {
     Component,
     computed,
     inject,
-    input,
     model,
     output,
-    OnInit,
-    signal
+    OnInit
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -84,12 +82,6 @@ export class DotSelectExistingContentComponent implements OnInit {
     readonly #dialogConfig = inject(DynamicDialogConfig<DialogData>);
 
     /**
-     * A required input that holds the selection mode.
-     * It is used to determine the selection mode.
-     */
-    $selectionMode = signal<SelectionMode | null>(null);
-
-    /**
      * A signal that holds the selected items.
      * It is used to store the selected content items.
      */
@@ -144,9 +136,10 @@ export class DotSelectExistingContentComponent implements OnInit {
             throw new Error('Selection mode is required');
         }
 
-        this.store.loadContent(data.contentTypeId);
-        // TODO: remove this once we have the cardinality set
-        this.$selectionMode.set(data.selectionMode);
+        this.store.initLoad({
+            contentTypeId: data.contentTypeId,
+            selectionMode: data.selectionMode
+        });
     }
 
     /**
@@ -154,15 +147,6 @@ export class DotSelectExistingContentComponent implements OnInit {
      * It sets the visibility signal to false, hiding the dialog.
      */
     closeDialog() {
-        this.#dialogRef.close();
-    }
-
-    /**
-     * Closes the existing content dialog and sends the selected items to the parent component.
-     * It sets the visibility signal to false, hiding the dialog, and emits the selected items
-     * through the "selectItems" output signal.
-     */
-    emitSelectedItems() {
         this.#dialogRef.close(this.$items());
     }
 

@@ -25,6 +25,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotSelectExistingContentComponent } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { HeaderComponent } from './components/header/header.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldItem } from './models/relationship.models';
 import { RelationshipFieldStore } from './store/relationship-field.store';
@@ -227,6 +228,9 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             data: {
                 contentTypeId: this.$attributes().contentTypeId,
                 selectionMode: this.store.selectionMode()
+            },
+            templates: {
+                header: HeaderComponent
             }
         });
 

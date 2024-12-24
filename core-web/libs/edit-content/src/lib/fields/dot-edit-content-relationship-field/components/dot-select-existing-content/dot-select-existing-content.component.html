@@ -1,7 +1,7 @@
 @let data = store.data();
 @let columns = store.columns();
 @let pagination = store.pagination();
-@let selectionMode = $selectionMode();
+@let selectionMode = store.selectionMode();
 @let totalItems = $items().length;
 
 <div class="flex flex-column gap-2 h-full justify-content-between">
