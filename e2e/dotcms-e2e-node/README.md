@@ -13,17 +13,42 @@ Since we are only interested in the last one as we will probably deprecate the J
 ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false
 ```
 As every other test in out projects, if it has one or more dependencies, Maven will take care of their lifecycle.
-Hence you will see Docker containers for database, Elastic Search, Wiremock and (obviously) dotCMS itself being started up and killed down as the tests run.
+Hence, you will see Docker containers for database, ElasticSearch, Wiremock and (obviously) dotCMS itself being started up and killed down as the tests run.
 
-BTW, E2E will against a dotCMS container from the latest locally built image.
-
-```shell
-./mvnw -pl :dotcms-e2e-java verify -De2e.test.skip=false -Pdebug-suspend-e2e-tests
-```
+BTW, E2E will run against a dotCMS container from the latest locally built image.
 
 To manually kill the E2E dependencies run: 
 ```shell
-./mvnw -pl :dotcms-e2e-java,:dotcms-e2e-node -Pdocker-stop -De2e.test.skip=false
+./mvnw -pl :dotcms-e2e-node -Pdocker-stop -De2e.test.skip=false
+```
+
+To run a specific test file or space-delimited directory list you can run:
+```shell
+./mvnw -pl :dotcms-e2e-node verify \
+  -De2e.test.skip=false \
+  -De2e.test.specific=login.spec.ts
+```
+Or
+```shell
+./mvnw -pl :dotcms-e2e-node verify \
+  -De2e.test.skip=false \
+  -De2e.test.specific="frontend/tests/login/ frontend/tests/contentSearch/"
+```
+
+To debug, using `Playwright` UI mode, a specific test:
+```shell
+./mvnw -pl :dotcms-e2e-node verify \
+  -De2e.test.skip=false \
+  -De2e.test.debug="--ui" \
+  -De2e.test.specific=login.spec.ts
+```
+
+To debug, using `Playwright` debug inspector, a specific test:
+```shell
+./mvnw -pl :dotcms-e2e-node verify \
+  -De2e.test.skip=false \
+  -De2e.test.debug="--debug" \
+  -De2e.test.specific=login.spec.ts
 ```
 
 Two advantages of running E2E tests this way is that:
@@ -79,10 +104,22 @@ yarn run start-dev
 
 To run a specific E2E test:
 ```shell
-yarn run start-dev -- login.spec.ts
+yarn run start-dev login.spec.ts
 ```
 
 To run E2E tests located in specific folder(s):
 ```shell
-yarn run start-dev -- tests/login tests/contentSearch
+yarn run start-dev tests/login tests/contentSearch
 ```
+
+To debug, using `Playwright` UI mode, a specific test:
+```shell
+yarn run start-dev --ui login.spec.ts
+```
+
+To debug, using `Playwright` debug inspector, a specific test:
+```shell
+yarn run start-dev --debug login.spec.ts
+```
+
+When running in an environment other than `CI`, a HTML report will be opened in the browser.

@@ -24,7 +24,9 @@
         <e2e.test.skip>true</e2e.test.skip>
         <e2e.test.env>local</e2e.test.env>
         <e2e.frontend.dir>./frontend</e2e.frontend.dir>
-        <e2e.test.cmd>run start-${e2e.test.env}</e2e.test.cmd>
+        <e2e.test.debug></e2e.test.debug>
+        <e2e.test.specific></e2e.test.specific>
+        <e2e.test.cmd>run start-${e2e.test.env}${e2e.test.debug}${e2e.test.specific}</e2e.test.cmd>
         <e2e.post.test.cmd>run post-testing</e2e.post.test.cmd>
         <tomcat.port>8080</tomcat.port>
         <e2e.server.url>http://localhost:${tomcat.port}</e2e.server.url>
