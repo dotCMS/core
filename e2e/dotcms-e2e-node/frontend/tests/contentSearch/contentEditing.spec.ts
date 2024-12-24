@@ -75,7 +75,7 @@ test("Add a new Generic content", async ({ page }) => {
 
   await waitForVisibleAndCallback(
     iframe.locator("#results_table tbody tr").first(),
-    async () => {},
+    async () => undefined,
   );
 
   await contentUtils
@@ -101,7 +101,7 @@ test("Edit a generic content", async ({ page }) => {
   );
   await waitForVisibleAndCallback(
     iframe.locator("#results_table tbody tr").first(),
-    async () => {},
+    async () => undefined,
   );
   await contentUtils
     .validateContentExist(page, genericContent1.newTitle)
@@ -230,9 +230,9 @@ test("Validate the required on file asset fields", async ({ page }) => {
   await contentUtils.fillFileAssetForm(params);
   await waitForVisibleAndCallback(
     detailsFrame.getByText("Error x"),
-    async () => {},
+    async () => undefined,
   );
-  let errorMessage = detailsFrame.getByText("The field File Asset is");
+  const errorMessage = detailsFrame.getByText("The field File Asset is");
   await waitForVisibleAndCallback(errorMessage, () =>
     expect(errorMessage).toBeVisible(),
   );
@@ -332,7 +332,6 @@ test("Delete a file asset content", async ({ page }) => {
  */
 test("Add a new page", async ({ page }) => {
   const contentUtils = new ContentUtils(page);
-  const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.addNewContentAction(
     page,
@@ -354,7 +353,7 @@ test("Add a new page", async ({ page }) => {
   const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
   await waitForVisibleAndCallback(
     dataFrame.getByRole("banner"),
-    async () => {},
+    async () => undefined,
   );
   await expect(page.locator("ol")).toContainText(
     "Pages" + pageAssetContent.title,
@@ -384,7 +383,7 @@ test("Validate required fields on page asset", async ({ page }) => {
   await contentUtils.fillPageAssetForm(params);
   await waitForVisibleAndCallback(
     detailFrame.getByText("Error x"),
-    async () => {},
+    async () => undefined,
   );
 
   await expect(

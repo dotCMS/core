@@ -75,7 +75,7 @@ export class ContentUtils {
       await dotIframe.getByRole("button", { name: " Import" }).click();
       await waitForVisibleAndCallback(
         dotIframe.getByRole("button", { name: " Remove" }),
-        async () => {},
+        async () => undefined,
       );
     }
 
@@ -135,7 +135,7 @@ export class ContentUtils {
     );
     await waitForVisibleAndCallback(
       iframe.getByLabel("actionPrimaryMenu"),
-      async () => {},
+      async () => undefined,
     );
     await iframe.getByLabel("▼").getByText("Add New Content").click();
     const headingLocator = page.getByRole("heading");
@@ -196,7 +196,7 @@ export class ContentUtils {
 
     await waitForVisibleAndCallback(
       iframe.locator("#results_table tbody tr:nth-of-type(2)"),
-      async () => {},
+      async () => undefined,
     );
     await page.waitForTimeout(1000);
 
@@ -259,7 +259,6 @@ export class ContentUtils {
     newBody: string,
     action: string,
   ) {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
     const contentElement = await this.getContentElement(page, title);
     if (contentElement) {
       await contentElement.click();
@@ -330,9 +329,10 @@ export class ContentUtils {
     }
     const actionBtnLocator = iframe.getByRole("menuitem", { name: action });
     await waitForVisibleAndCallback(actionBtnLocator, () =>
-      actionBtnLocator.getByText(action).click(),
+        actionBtnLocator.getByText(action).click(),
     );
     const executionConfirmation = iframe.getByText("Workflow executed");
+    await expect(executionConfirmation).toBeVisible()
     await waitForVisibleAndCallback(executionConfirmation, () =>
       expect(executionConfirmation).toBeVisible(),
     );
