@@ -11,6 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { UVE_MODE } from '@dotcms/client';
 import {
+    DotDevicesService,
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
@@ -19,6 +20,7 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
+    DotDevicesServiceMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
@@ -33,7 +35,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
@@ -91,11 +93,21 @@ const baseUVEState = {
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
     }),
+    $infoDisplayProps: signal(undefined),
+    viewParams: signal({
+        seo: undefined,
+        device: undefined,
+        orientation: undefined
+    }),
     languages: signal([
         { id: 1, translated: true },
         { id: 2, translated: false },
         { id: 3, translated: true }
-    ])
+    ]),
+    patchViewParams: jest.fn(),
+    orientation: signal(''),
+    clearDeviceAndSocialMedia: jest.fn(),
+    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'))
 };
 
 describe('DotUveToolbarComponent', () => {
@@ -155,6 +167,10 @@ describe('DotUveToolbarComponent', () => {
                 useValue: {
                     add: jest.fn()
                 }
+            },
+            {
+                provide: DotDevicesService,
+                useValue: new DotDevicesServiceMock()
             }
         ],
         componentProviders: [
@@ -213,11 +229,11 @@ describe('DotUveToolbarComponent', () => {
                     icon: 'pi pi-external-link',
                     pTooltip: 'Copy URL',
                     'data-testId': 'uve-toolbar-copy-url',
-                    'ng-reflect-style-class': 'p-button-text p-button-sm',
+                    'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
                     'ng-reflect-content': 'Copy URL',
                     'ng-reflect-icon': 'pi pi-external-link',
                     'ng-reflect-text': 'http://localhost:3000/test-url',
-                    styleClass: 'p-button-text p-button-sm'
+                    styleClass: 'p-button-text p-button-sm p-button-rounded'
                 });
             });
 
@@ -434,24 +450,8 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        it('should have desktop button', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('desktop-preview'))).toBeTruthy();
-        });
-
-        it('should have mobile button', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('mobile-preview'))).toBeTruthy();
-        });
-
-        it('should have tablet button', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('tablet-preview'))).toBeTruthy();
-        });
-
-        it('should have more devices button', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('more-devices-preview'))).toBeTruthy();
+        it('should have a device selector', () => {
+            expect(spectator.query(byTestId('uve-toolbar-device-selector'))).toBeTruthy();
         });
 
         it('should not have experiments', () => {

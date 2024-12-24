@@ -89,7 +89,9 @@
         (click)="triggerEditMode()"
         data-testId="close-preview-mode" />
     <div class="vertical-divider"></div>
-    <dot-uve-device-selector [devices]="$completeDevices()" />
+    <dot-uve-device-selector
+        [devices]="$completeDevices()"
+        data-testId="uve-toolbar-device-selector" />
 </ng-template>
 
 @if ($infoDisplayProps()) {
