@@ -425,7 +425,7 @@ class FilesPushCommandIT extends CommandTest {
         final CommandLine commandLine = createCommand();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
-            //Pull down a workspace if empty
+
             commandLine.setOut(out);
             //Let's start by creating some data to pull down
             final String testSite1 = filesTestHelper.prepareData(true);
@@ -436,28 +436,28 @@ class FilesPushCommandIT extends CommandTest {
                     tempFolder.toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            //Now lets place a new file in the workspace us to push it using the specific path
+            //Now lets place a new file in the workspace for us to push it using a specific path
             final Path pathUsedForPush = Path.of(tempFolder.toString(), "/files/live/en-us/", testSite1,
                     "/folder1/subFolder1-1/subFolder1-1-1");
 
-            //This file should be pushed directly using the folder path
+            //This is the file that will be pushed directly using a folder path
             final Path newFilePath1 = Path.of(pathUsedForPush.toString(), "textFileToPush.txt");
             Files.write(newFilePath1, "I am a text file that will be pushed directly using the folder path".getBytes());
 
             //In this path we will also add a new file that will not be used for the push
             final Path pathWithNewContentButNotUsedForPush = Path.of(tempFolder.toString(), "/files/live/en-us/", testSite1,
                     "/folder3/");
-            //This file should remain in the workspace
+            //This file should remain in the workspace after pushing, it should not show in the output
             final Path newFilePath2 = Path.of(pathWithNewContentButNotUsedForPush.toString(), "excludedTextFile.txt");
             Files.write(newFilePath2, "I am a text file that will NOT be pushed directly using the folder path".getBytes());
-            // Reset writer for the next command to simplify the output
+            // Reset writer for the next command to simplify the output assertion
             writer.getBuffer().setLength(0);
-            //Now we will push the file using the specific path
+            //Now we will push the file using the specific path and the --dry-run flag
             status = commandLine.execute(FilesCommand.NAME, FilesPush.NAME,
                     pathUsedForPush.toAbsolutePath().toString(), "--dry-run");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            //We should see the file that will be pushed
+            //We should see the file that we're pushing in the output and not the one that falls outside the path
             final String string = writer.toString();
             Assertions.assertTrue(string.contains("textFileToPush.txt"));
             Assertions.assertFalse(string.contains("excludedTextFile.txt"));
