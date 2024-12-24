@@ -102,17 +102,17 @@ describe('DotSelectExistingContentComponent', () => {
         it('should close dialog with selected items', () => {
             const mockItems = [mockRelationshipItem('1'), mockRelationshipItem('2')];
             spectator.component.$selectedItems.set(mockItems);
-            
+
             spectator.component.closeDialog();
-            
+
             expect(dialogRef.close).toHaveBeenCalledWith(mockItems);
         });
 
         it('should close dialog with empty array when no items selected', () => {
             spectator.component.$selectedItems.set([]);
-            
+
             spectator.component.closeDialog();
-            
+
             expect(dialogRef.close).toHaveBeenCalledWith([]);
         });
     });

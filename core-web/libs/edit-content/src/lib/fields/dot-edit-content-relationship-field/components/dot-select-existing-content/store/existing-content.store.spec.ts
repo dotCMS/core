@@ -128,10 +128,10 @@ describe('ExistingContentStore', () => {
     describe('Computed Properties', () => {
         it('should compute loading state correctly', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
-            
+
             store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
             expect(store.isLoading()).toBe(true);
-            
+
             tick();
             expect(store.isLoading()).toBe(false);
         }));

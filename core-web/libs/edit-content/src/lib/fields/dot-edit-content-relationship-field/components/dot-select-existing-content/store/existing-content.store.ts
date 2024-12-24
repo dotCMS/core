@@ -9,7 +9,10 @@ import { tap, switchMap, filter } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
-import { RelationshipFieldItem, SelectionMode } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import {
+    RelationshipFieldItem,
+    SelectionMode
+} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
