@@ -254,7 +254,8 @@ test('Add a new page', async ({page}) => {
         action: contentProperties.publishWfAction,
     }
     await contentUtils.fillPageAssetForm(params);
-    await waitForVisibleAndCallback(page.locator('ol'), async () => {});
+    const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
+    await waitForVisibleAndCallback(dataFrame.getByRole('banner'), async () => {});
     await expect(page.locator('ol')).toContainText('Pages'+ pageAssetContent.title);
 });
 
