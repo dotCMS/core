@@ -130,6 +130,7 @@ describe('withEditor', () => {
                             value: MOCK_RESPONSE_HEADLESS.viewAs.persona ?? DEFAULT_PERSONA
                         },
                         runningExperiment: null,
+                        isDefaultVariant: true,
                         showInfoDisplay: false,
                         unlockButton: null,
                         urlContentMap: null,
@@ -329,6 +330,35 @@ describe('withEditor', () => {
                         });
 
                         expect(store.$toolbarProps().showInfoDisplay).toBe(false);
+                    });
+                });
+
+                describe('isDefaultVariant', () => {
+                    it('should have isDefaultVariant as true if the page variant is default', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                viewAs: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                    variantId: DEFAULT_VARIANT_ID
+                                }
+                            }
+                        });
+
+                        expect(store.$toolbarProps().isDefaultVariant).toBe(true);
+                    });
+                    it('should have isDefaultVariant as false if the page is a variant different from default', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                viewAs: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                    variantId: 'test'
+                                }
+                            }
+                        });
+
+                        expect(store.$toolbarProps().isDefaultVariant).toBe(false);
                     });
                 });
             });
@@ -642,6 +672,23 @@ describe('withEditor', () => {
             });
         });
 
+        describe('$iframeURL', () => {
+            it("should return the iframe's URL", () => {
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                );
+            });
+
+            it('should contain `about:blanck` in src when the page is traditional', () => {
+                patchState(store, {
+                    pageAPIResponse: MOCK_RESPONSE_VTL,
+                    isTraditionalPage: true
+                });
+
+                expect(store.$iframeURL()).toContain('about:blank');
+            });
+        });
+
         describe('$editorProps', () => {
             it('should return the expected data on init', () => {
                 expect(store.$editorProps()).toEqual({
@@ -651,7 +698,6 @@ describe('withEditor', () => {
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',
-                        src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
                         wrapper: null
                     },
                     progressBar: true,
@@ -718,15 +764,6 @@ describe('withEditor', () => {
                     patchState(store, { state: EDITOR_STATE.SCROLL_DRAG });
 
                     expect(store.$editorProps().iframe.pointerEvents).toBe('none');
-                });
-
-                it('should have src as empty when the page is traditional', () => {
-                    patchState(store, {
-                        pageAPIResponse: MOCK_RESPONSE_VTL,
-                        isTraditionalPage: true
-                    });
-
-                    expect(store.$editorProps().iframe.src).toBe('');
                 });
 
                 it('should have a wrapper when a device is present', () => {
