@@ -12,7 +12,8 @@
 <p-button
     styleClass="p-button-text p-button-sm p-button-rounded orientation p-button-icon-only"
     [disabled]="$disableOrientation()"
-    (click)="onOrientationChange()">
+    (click)="onOrientationChange()"
+    data-testId="orientation">
     <svg
         [ngClass]="$currentOrientation()"
         fill="currentColor"
@@ -34,7 +35,8 @@
         [label]="'more' | dm"
         [ngClass]="{ active: !$isADefaultDeviceActive() }"
         styleClass="p-button-text p-button-sm"
-        (click)="menu.toggle($event)" />
+        (click)="menu.toggle($event)"
+        data-testId="more-button" />
 
     <p-menu #menu [popup]="true" [model]="$menuItems()"></p-menu>
 }

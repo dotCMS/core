@@ -157,6 +157,7 @@ export class DotUveToolbarComponent implements OnInit {
                 return;
             }
 
+            // Find the device in the devices list
             const device = this.$completeDevices().find((d) => d.inode === deviceInode);
 
             // If we have a device, set it in the store
