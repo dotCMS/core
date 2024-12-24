@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -11,6 +12,7 @@ import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.EnterpriseFeature;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -61,7 +63,6 @@ public class BundlePublisherResource {
 	 *
 	 * @see PushPublisherJob
 	 */
-	@EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL)
 	@POST
 	@Path("/publish")
 	@Consumes(MediaType.APPLICATION_OCTET_STREAM)
@@ -73,6 +74,9 @@ public class BundlePublisherResource {
 			@QueryParam("filterkey")   final String filterKey,
 			@Context final HttpServletRequest  request,
 			@Context final HttpServletResponse response) throws Exception {
+		if (LicenseManager.getInstance().isCommunity()) {
+			throw new InvalidLicenseException("License required");
+		}
 		Logger.debug(this, String.format("Publishing bundle with type: [ %s ], callback: [ %s ], forcePush: [ %s ], filterKey: [ %s ]",
 				type, callback, forcePush, filterKey));
 		final Map<String, String> paramsMap = new HashMap<>();

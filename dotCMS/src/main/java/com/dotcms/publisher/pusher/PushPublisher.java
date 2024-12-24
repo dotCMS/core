@@ -147,9 +147,11 @@ public class PushPublisher extends Publisher {
 	 *             An error occurred which caused the publishing process to
 	 *             stop.
 	 */
-	@EnterpriseFeature(licenseLevel = LicenseLevel.PROFESSIONAL)
 	@Override
 	public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
+		if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
+			throw new RuntimeException("An Enterprise Pro License is required to run this publisher.");
+		}
 		PublishAuditHistory currentStatusHistory = null;
 
 		Client client = getRestClient();
