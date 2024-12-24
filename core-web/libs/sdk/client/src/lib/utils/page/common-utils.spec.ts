@@ -1,4 +1,4 @@
-import { getPageRequestParams, isPreviewMode } from './common-utils';
+import { getPageRequestParams } from './common-utils';
 
 describe('Common Utils', () => {
     it('should return the correct Request Params', () => {
@@ -32,24 +32,6 @@ describe('Common Utils', () => {
             }
         });
 
-        expect(pageRequestParams).toEqual({ path: 'test' });
-    });
-
-    describe('Is Preview Mode', () => {
-        it('should return true when editorMode is preview', () => {
-            jest.spyOn(window, 'location', 'get').mockReturnValueOnce({
-                search: '?editorMode=preview'
-            } as Location);
-
-            expect(isPreviewMode()).toBe(true);
-        });
-
-        it('should return false when editorMode is not preview', () => {
-            jest.spyOn(window, 'location', 'get').mockReturnValueOnce({
-                search: ''
-            } as Location);
-
-            expect(isPreviewMode()).toBe(false);
-        });
+        expect(pageRequestParams).toEqual({ path: 'test', mode: 'LIVE' });
     });
 });
