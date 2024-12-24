@@ -55,6 +55,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtil.HandlerType;
+import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
@@ -140,6 +141,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This handler deals with Contentlet-related information inside a bundle and
@@ -822,8 +824,7 @@ public class ContentHandler implements IHandler {
         }
         content = this.contentletAPI.checkin(content, userToUse, !RESPECT_FRONTEND_ROLES);
 
-		final String filterKey =
-				this.bundleAPI.get().getBundleById(com.dotmarketing.util.FileUtil.removeExtension(this.config.getId())).getFilterKey();
+		final String filterKey = this.getFilterKeyFromBundle();
         if (!Objects.equals(PublisherFilter.SHALLOW_PUSH_KEY, filterKey)) {
 			// Depending on the selected Push Publishing Filter, we need to remove the "old" trees
 			// in order to add the new ones
@@ -884,6 +885,20 @@ public class ContentHandler implements IHandler {
 				isHost ? PushPublishHandler.HOST : PushPublishHandler.CONTENT,
 				PushPublishAction.PUBLISH, content.getIdentifier(), content.getInode(), content.getName(), config.getId());
     }
+
+	/**
+	 * Retrieves the Push Publishing Filter that was selected to generate the current Bundle.
+	 *
+	 * @return The Push Publishing Filter key. But, if the bundle doesn't exist, returns an empty
+	 * String.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the data source.
+	 */
+	private String getFilterKeyFromBundle() throws DotDataException {
+		final Bundle bundle =
+				this.bundleAPI.get().getBundleById(com.dotmarketing.util.FileUtil.removeExtension(this.config.getId()));
+		return null != bundle ? bundle.getFilterKey() : BLANK;
+	}
 
 	/**
 	 * Invalidates the respective MultiTree cache entry when the pushed Contentlet is the child of an existing record
