@@ -214,7 +214,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      */
     showExistingContentDialog() {
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
-            header: 'sdsd',
             appendTo: 'body',
             closeOnEscape: false,
             draggable: false,
