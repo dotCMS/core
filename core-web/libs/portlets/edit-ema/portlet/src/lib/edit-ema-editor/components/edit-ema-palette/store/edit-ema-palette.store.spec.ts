@@ -8,6 +8,7 @@ import {
     DotESContentService,
     DotPropertiesService
 } from '@dotcms/data-access';
+import { DotConfigurationVariables } from '@dotcms/dotcms-models';
 
 import {
     DotPaletteStore,
@@ -127,7 +128,7 @@ describe('EditEmaPaletteStore', () => {
                 expect(patchStateSpy).toHaveBeenCalled();
                 expect(filterContentTypesSpy).toHaveBeenCalledWith('', 'contentTypeTest1');
                 expect(getKeyAsListSpy).toHaveBeenCalledWith(
-                    'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES'
+                    DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
                 );
                 expect(getContentTypesSpy).toHaveBeenCalledWith({
                     filter: '',
@@ -152,7 +153,7 @@ describe('EditEmaPaletteStore', () => {
             spectator.service.vm$.subscribe((state) => {
                 expect(state.contenttypes.items).toEqual([WIDGET_MOCK]);
                 expect(getKeyAsListSpy).toHaveBeenCalledWith(
-                    'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES'
+                    DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
                 );
                 done();
             });

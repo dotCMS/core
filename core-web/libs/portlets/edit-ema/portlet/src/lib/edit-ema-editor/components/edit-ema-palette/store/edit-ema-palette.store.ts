@@ -16,6 +16,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
+    DotConfigurationVariables,
     DotContainerStructure,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
@@ -244,7 +245,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 type: 'WIDGET'
             }),
             hiddenContentTypes: this.dotConfigurationService.getKeyAsList(
-                'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES'
+                DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
             )
         }).pipe(
             map(({ contentTypes, widgets, hiddenContentTypes }) => {

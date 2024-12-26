@@ -20,6 +20,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
+    DotConfigurationVariables,
     ESContent
 } from '@dotcms/dotcms-models';
 
@@ -267,7 +268,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                     type: 'WIDGET'
                 }),
                 hiddenContentTypes: this.dotConfigurationService.getKeyAsList(
-                    'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES'
+                    DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
                 )
             })
                 .pipe(take(1))
