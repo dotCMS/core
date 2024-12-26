@@ -92,9 +92,6 @@ export class DotUveToolbarComponent implements OnInit {
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $devices: WritableSignal<DotDeviceListItem[]> = signal([]);
 
-    readonly $completeDevices = computed(() => {
-        return [...DEFAULT_DEVICES, ...this.$devices()];
-    });
     protected readonly CURRENT_DATE = new Date();
 
     readonly $styleToolbarClass = computed(() => {
@@ -147,6 +144,11 @@ export class DotUveToolbarComponent implements OnInit {
 
     handleViewParamsEffect = effect(
         () => {
+            const devices = this.$devices();
+
+            //We want to be sure that we have devices
+            if (!devices.length) return;
+
             // Get the device and orientation from the URL
             const { device: deviceInode, orientation } = this.#store.viewParams();
 
@@ -155,10 +157,16 @@ export class DotUveToolbarComponent implements OnInit {
                 this.#store.patchViewParams({ device: null, orientation: null });
 
                 return;
+
+                // If we are in preview mode and we dont have a device, set the default device
+            } else if (this.#store.$isPreviewMode() && !deviceInode) {
+                this.#store.patchViewParams({ device: 'default', orientation: null });
+
+                return;
             }
 
             // Find the device in the devices list
-            const device = this.$completeDevices().find((d) => d.inode === deviceInode);
+            const device = this.$devices().find((d) => d.inode === deviceInode);
 
             // If we have a device, set it in the store
             if (device) {
@@ -177,8 +185,8 @@ export class DotUveToolbarComponent implements OnInit {
         this.#deviceService
             .get()
             .pipe(take(1))
-            .subscribe((devices: DotDeviceListItem[]) => {
-                this.$devices.set(devices);
+            .subscribe((devices: DotDeviceListItem[] = []) => {
+                this.$devices.set([...DEFAULT_DEVICES, ...devices]);
             });
     }
 

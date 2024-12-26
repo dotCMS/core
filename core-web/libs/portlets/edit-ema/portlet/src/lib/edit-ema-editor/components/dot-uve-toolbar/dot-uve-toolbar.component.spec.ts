@@ -517,6 +517,22 @@ describe('DotUveToolbarComponent', () => {
                     device: null
                 });
             });
+
+            it('should set the default device and orientation as null when there is no deviceInode on the queryParams', () => {
+                const spy = jest.spyOn(store, 'patchViewParams');
+
+                previewBaseUveState.viewParams.set({
+                    device: null,
+                    orientation: null,
+                    seo: undefined
+                });
+
+                spectator.detectChanges();
+                expect(spy).toHaveBeenCalledWith({
+                    device: 'default',
+                    orientation: null
+                });
+            });
         });
     });
 
@@ -529,11 +545,8 @@ describe('DotUveToolbarComponent', () => {
             expect(spy).toHaveBeenCalled();
         });
 
-        it("should fill the completedDevices with the devices that don't have a default device", () => {
-            expect(spectator.component.$completeDevices()).toEqual([
-                ...DEFAULT_DEVICES,
-                ...mockDotDevices
-            ]);
+        it("should fill the devices with the devices that don't have a default device", () => {
+            expect(spectator.component.$devices()).toEqual([...DEFAULT_DEVICES, ...mockDotDevices]);
         });
     });
 

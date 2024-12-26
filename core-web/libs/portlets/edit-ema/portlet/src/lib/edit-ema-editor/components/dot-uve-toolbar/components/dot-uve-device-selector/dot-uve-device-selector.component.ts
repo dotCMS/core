@@ -1,15 +1,7 @@
 import { DeepSignal } from '@ngrx/signals';
 
 import { NgClass } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    inject,
-    input,
-    OnChanges,
-    SimpleChanges
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
@@ -31,7 +23,7 @@ import { Orientation } from '../../../../../store/models';
     styleUrl: './dot-uve-device-selector.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUveDeviceSelectorComponent implements OnChanges {
+export class DotUveDeviceSelectorComponent {
     defaultDevices = DEFAULT_DEVICES;
 
     #store = inject(UVEStore);
@@ -65,24 +57,6 @@ export class DotUveDeviceSelectorComponent implements OnChanges {
     readonly $isADefaultDeviceActive = computed(() => {
         return !!this.$currentDevice()._isDefault;
     });
-
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes) {
-            const deviceInode = this.#store.viewParams().device;
-
-            const device = this.$devices().find((d) => d.inode === deviceInode);
-
-            if (device) {
-                this.#store.setDevice(device);
-            } else {
-                // If the device is not from the devices list, we need to reset the device
-                this.#store.patchViewParams({
-                    device: 'default',
-                    orientation: null
-                });
-            }
-        }
-    }
 
     onDeviceSelect(device: DotDevice): void {
         const currentDevice = this.$currentDevice();

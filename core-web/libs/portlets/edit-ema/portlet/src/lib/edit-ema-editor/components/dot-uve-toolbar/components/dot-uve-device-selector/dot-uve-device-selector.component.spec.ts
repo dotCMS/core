@@ -85,7 +85,6 @@ const baseUVEState = {
 
 describe('DotUveDeviceSelectorComponent', () => {
     let spectator: Spectator<DotUveDeviceSelectorComponent>;
-    let store: InstanceType<typeof UVEStore>;
 
     const createComponent = createComponentFactory({
         component: DotUveDeviceSelectorComponent,
@@ -108,46 +107,7 @@ describe('DotUveDeviceSelectorComponent', () => {
 
         spectator.setInput('devices', [...DEFAULT_DEVICES, ...mockDotDevices]);
 
-        store = spectator.inject(UVEStore, true);
         spectator.detectChanges();
-    });
-
-    describe('onChanges', () => {
-        it('should patchViewParams when they are not present', () => {
-            expect(store.patchViewParams).toHaveBeenCalledWith({
-                device: 'default',
-                orientation: null
-            });
-        });
-
-        it("should patchViewParams if the device doesn't exist", () => {
-            baseUVEState.viewParams.set({
-                device: 'unknown',
-                orientation: 'landscape',
-                seo: undefined
-            });
-
-            spectator.detectChanges();
-
-            expect(store.patchViewParams).toHaveBeenCalledWith({
-                device: 'default',
-                orientation: null
-            });
-        });
-
-        it("should set the device if it's present in the devices list", () => {
-            baseUVEState.viewParams.set({
-                device: 'mobile',
-                orientation: 'landscape',
-                seo: undefined
-            });
-
-            spectator.component.ngOnChanges({});
-
-            expect(store.setDevice).toHaveBeenCalledWith(
-                DEFAULT_DEVICES.find((device) => device.inode === 'mobile')
-            );
-        });
     });
 
     describe('DOM', () => {
