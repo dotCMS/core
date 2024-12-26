@@ -94,3 +94,4 @@ This maintenance release includes the following code fixes:
 88. https://github.com/dotCMS/core/issues/30053 : Overlay Misalignment in Content Type while relating content #30053
 89. https://github.com/dotCMS/core/issues/30457 : FileAssetContainers not found when using case #30457
 90. https://github.com/dotCMS/core/issues/30619 : Run dotCMS with jemalloc #30619
+91. https://github.com/dotCMS/core/issues/30969 : SAML: Retrieve the relay state on the SAML Endpoint #30969

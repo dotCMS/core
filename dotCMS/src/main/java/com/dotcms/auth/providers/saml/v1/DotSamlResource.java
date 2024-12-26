@@ -17,6 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -212,30 +213,36 @@ public class DotSamlResource implements Serializable {
 					// Add session based user ID to be used on the redirect.
 					session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
 
-					String loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-					Logger.debug(this,"LoginPath: " + loginPath);
-					if (null == loginPath) {
-						if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
-							loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
-						}else {
-							// At this stage we cannot determine whether this was a front
-							// end or back end request since we cannot determine
-							// original request.
-							//
-							// REDIRECT_AFTER_LOGIN should have already been set in relay
-							// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
-							// session attribute.
-							loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
-						}
-					} else {
+					String loginPath = httpServletRequest.getParameter("RelayState");
+					Logger.debug(this, "RelayState, LoginPath: " + loginPath);
+					if (!UtilMethods.isSet(loginPath)) {
 
-						session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+						loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+						Logger.debug(this, "REDIRECT_AFTER_LOGIN, LoginPath: " + loginPath);
+						if (null == loginPath) {
+							if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
+								loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
+							} else {
+								// At this stage we cannot determine whether this was a front
+								// end or back end request since we cannot determine
+								// original request.
+								//
+								// REDIRECT_AFTER_LOGIN should have already been set in relay
+								// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
+								// session attribute.
+								loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+							}
+						} else {
+
+							session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+						}
 					}
 
 					Logger.debug(this, ()-> "Doing login to the user " + (user != null? user.getEmailAddress() : "unknown"));
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
 							identityProviderConfiguration, user, APILocator.getLoginServiceAPI());
 
+					Logger.debug(this, "Final, LoginPath: " + loginPath);
 					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
 					return;
 				}
