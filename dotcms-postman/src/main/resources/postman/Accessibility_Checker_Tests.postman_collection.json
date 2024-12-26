@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "cb25dbbd-2dfc-4105-9c09-a0a55c58927f",
+		"_postman_id": "e01f8671-adc7-4d6e-a33c-096d1f2686be",
 		"name": "Accessibility Checker Tests",
 		"description": "This Postman Collection verifies that the Accessibility Checker -- a.k.a. AChecker -- is working as expected after being migrated from a DWR class to a REST Endpoint. Basically, this new endpoint exposes two methods:\n\n1. Retrieving the list of Accessiblity Guidelines that Content Authors can use to validate content.\n    \n2. Send the validation request to the specific service, and receive the list of errors/suggestions that must be followed in order to make the content comply with the selected Accessibility Guideline(s).",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "36604690"
 	},
 	"item": [
 		{
@@ -595,6 +595,80 @@
 							}
 						}
 					]
+				},
+				{
+					"name": "Unsupported Media Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lang\": \"en\",\n    \"content\": \"Adventure travel done right\\n\\nWherever you want to go, whatever you want to get into, we’ve got a trip that’ll make your dream vacation come true. Visit like a local, explore at your own pace, and eat like a king (or a vegan king, if that’s more your thing).\",\n    \"guidelines\": \"{{guidelines_abbr}}\",\n    \"fragment\": \"true\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/achecker/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"achecker",
+								"_validate"
+							]
+						},
+						"description": "The `guidelines` attribute is required. This request will fail."
+					},
+					"response": []
 				}
 			]
 		}
