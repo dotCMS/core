@@ -27,6 +27,7 @@ export interface EditorToolbarState {
     device?: DotDeviceWithIcon;
     socialMedia?: string;
     isEditState: boolean;
+    isPreviewModeActive?: boolean;
 }
 
 export interface PageDataContainer {
@@ -60,7 +61,6 @@ export interface EditorProps {
             width: string;
             height: string;
         };
-        src: string;
         pointerEvents: string;
         opacity: string;
     };
@@ -82,6 +82,7 @@ export interface EditorProps {
     showDialogs: boolean;
     progressBar: boolean;
     showEditorContent: boolean;
+    showBlockEditorSidebar: boolean;
 }
 
 export interface ToolbarProps {
@@ -89,6 +90,7 @@ export interface ToolbarProps {
     bookmarksUrl: string;
     copyUrl: string;
     apiUrl: string;
+    isDefaultVariant: boolean;
     showInfoDisplay: boolean;
     currentLanguage: DotLanguage;
     runningExperiment?: DotExperiment;
@@ -105,4 +107,38 @@ export interface ToolbarProps {
         apiLink: string;
         hideSocialMedia: boolean;
     };
+}
+
+/**
+ * This is used for model the props of
+ * the New UVE Toolbar with Preview Mode and Future Time Machine
+ *
+ * @export
+ * @interface UVEToolbarProps
+ */
+export interface UVEToolbarProps {
+    editor: {
+        bookmarksUrl: string;
+        copyUrl: string;
+        apiUrl: string;
+    };
+    preview?: {
+        deviceSelector: {
+            apiLink: string;
+            hideSocialMedia: boolean;
+        };
+    };
+    runningExperiment?: DotExperiment;
+    currentLanguage: DotLanguage;
+    workflowActionsInode?: string;
+    unlockButton?: {
+        inode: string;
+        loading: boolean;
+    };
+    showInfoDisplay?: boolean;
+}
+
+export interface PersonaSelectorProps {
+    pageId: string;
+    value: DotPersona;
 }

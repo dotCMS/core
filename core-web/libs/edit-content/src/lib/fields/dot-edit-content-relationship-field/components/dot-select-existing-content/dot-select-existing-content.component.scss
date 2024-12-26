@@ -1,0 +1,29 @@
+@use "variables" as *;
+
+::ng-deep {
+    p-table {
+        .dotTable.p-datatable.p-datatable-existing-content {
+            .p-datatable-header {
+                background-color: $white;
+                border: 0px;
+                padding: $spacing-1 0;
+            }
+            .p-datatable-table {
+                border: 1px solid $color-palette-gray-300;
+                border-radius: $border-radius-md;
+            }
+            .p-datatable-thead {
+                th {
+                    font-weight: $font-weight-bold;
+                    background-color: $color-palette-gray-100;
+                }
+            }
+            .p-inputtext {
+                height: auto;
+            }
+            .p-datatable-tbody > tr > td:first-child:has(p-tableCheckbox) + td {
+                padding: 0 $spacing-1;
+            }
+        }
+    }
+}

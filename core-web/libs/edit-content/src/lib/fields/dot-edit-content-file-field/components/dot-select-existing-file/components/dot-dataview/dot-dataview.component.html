@@ -1,0 +1,73 @@
+@let loading = $loading();
+@let data = $data();
+@let rowsPerPage = $rowsPerPage();
+@let errorMessage = $errorMessage();
+<p-table
+    #datatable
+    [value]="data"
+    [loading]="loading"
+    [paginator]="data.length >= rowsPerPage"
+    [rows]="rowsPerPage"
+    selectionMode="single"
+    dataKey="identifier"
+    [(selection)]="$selectedProduct"
+    (onRowSelect)="onRowSelect.emit($event.data)"
+    [globalFilterFields]="['title', 'modUserName']"
+    styleClass="flex flex-column h-full justify-content-between">
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="4">
+                @if (errorMessage) {
+                    {{ errorMessage | dm }}
+                } @else {
+                    {{ 'dot.file.field.dialog.select.existing.file.table.emptymessage' | dm }}
+                }
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="caption">
+        <div class="flex">
+            <p-iconField iconPosition="left">
+                <p-inputIcon styleClass="pi pi-search" />
+                <input
+                    #searchInput
+                    pInputText
+                    type="search"
+                    [placeholder]="'dot.file.field.dialog.select.existing.file.table.search' | dm"
+                    (input)="datatable.filterGlobal(searchInput.value, 'contains')" />
+            </p-iconField>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="header">
+        <tr class="file-selector__table_header">
+            <th scope="col">
+                {{ 'dot.file.field.dialog.select.existing.file.table.thumbnail' | dm }}
+            </th>
+            <th scope="col">{{ 'dot.file.field.dialog.select.existing.file.table.title' | dm }}</th>
+            <th scope="col">
+                {{ 'dot.file.field.dialog.select.existing.file.table.modified.by' | dm }}
+            </th>
+            <th scope="col">
+                {{ 'dot.file.field.dialog.select.existing.file.table.last.modified' | dm }}
+            </th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-content>
+        <tr class="h-3rem" [pSelectableRow]="content">
+            <td class="max-w-2rem">
+                <div class="dataview-thumbnail">
+                    <dot-contentlet-thumbnail
+                        [iconSize]="'48px'"
+                        [contentlet]="content"
+                        [playableVideo]="false"
+                        data-testId="contentlet-thumbnail" />
+                </div>
+            </td>
+            <td class="max-w-12rem">
+                <p class="truncate-text">{{ content.title }}</p>
+            </td>
+            <td>{{ content.modUserName }}</td>
+            <td>{{ content.modDate | date }}</td>
+        </tr>
+    </ng-template>
+</p-table>

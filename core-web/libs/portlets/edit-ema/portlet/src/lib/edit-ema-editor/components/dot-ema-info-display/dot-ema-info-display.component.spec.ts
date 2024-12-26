@@ -21,7 +21,8 @@ import {
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
@@ -53,6 +54,12 @@ describe('DotEmaInfoDisplayComponent', () => {
             MessageService,
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
             {
                 provide: DotLanguagesService,
                 useValue: new DotLanguagesServiceMock()
@@ -98,7 +105,7 @@ describe('DotEmaInfoDisplayComponent', () => {
 
             store = spectator.inject(UVEStore);
 
-            store.init({
+            store.loadPageAsset({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -134,7 +141,7 @@ describe('DotEmaInfoDisplayComponent', () => {
 
             store = spectator.inject(UVEStore);
 
-            store.init({
+            store.loadPageAsset({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -169,7 +176,7 @@ describe('DotEmaInfoDisplayComponent', () => {
             store = spectator.inject(UVEStore);
             router = spectator.inject(Router);
 
-            store.init({
+            store.loadPageAsset({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',

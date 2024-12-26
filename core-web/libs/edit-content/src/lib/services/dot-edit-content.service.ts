@@ -7,8 +7,8 @@ import { map, pluck } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
-    DotWorkflowActionsFireService,
-    DotSiteService
+    DotSiteService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -28,11 +28,17 @@ export class DotEditContentService {
 
     /**
      * Retrieves the content by its ID.
-     * @param id - The ID of the content to retrieve.
-     * @returns An observable of the DotCMSContentType object.
+     *
+     * @param {string} id - The ID of the content to retrieve.
+     * @param {number} [languageId] - Optional language ID to filter the content.
+     * @returns {Observable<DotCMSContentlet>} An observable of the DotCMSContentlet object.
      */
-    getContentById(id: string): Observable<DotCMSContentlet> {
-        return this.#http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
+    getContentById(id: string, languageId?: number): Observable<DotCMSContentlet> {
+        const params = languageId
+            ? new HttpParams().set('language', languageId.toString())
+            : new HttpParams();
+
+        return this.#http.get(`/api/v1/content/${id}`, { params }).pipe(pluck('entity'));
     }
 
     /**
@@ -75,15 +81,20 @@ export class DotEditContentService {
      * @return {*}  {Observable<TreeNodeItem[]>}
      * @memberof DotEditContentService
      */
-    getSitesTreePath(data: { filter: string; perPage: number }): Observable<TreeNodeItem[]> {
-        const { filter, perPage } = data;
+    getSitesTreePath(data: {
+        filter: string;
+        perPage?: number;
+        page?: number;
+    }): Observable<TreeNodeItem[]> {
+        const { filter, perPage, page } = data;
 
-        return this.#siteService.getSites(filter, perPage).pipe(
+        return this.#siteService.getSites(filter, perPage, page).pipe(
             map((sites) => {
                 return sites.map((site) => ({
                     key: site.hostname,
                     label: `//${site.hostname}`,
                     data: {
+                        id: site.identifier,
                         hostname: `//${site.hostname}`,
                         path: '',
                         type: 'site'
@@ -128,6 +139,7 @@ export class DotEditContentService {
                         key: `${folder.hostName}${folder.path}`.replace(/[/]/g, ''),
                         label: `//${folder.hostName}${folder.path}`,
                         data: {
+                            id: folder.id,
                             hostname: `//${folder.hostName}`,
                             path: folder.path,
                             type: 'folder'
@@ -198,6 +210,7 @@ export class DotEditContentService {
                 key: site.hostname,
                 label: `//${site.hostname}`,
                 data: {
+                    id: site.identifier,
                     hostname: `//${site.hostname}`,
                     path: '',
                     type: 'site'
@@ -207,5 +220,40 @@ export class DotEditContentService {
                 leaf: false
             }))
         );
+    }
+
+    /**
+     * Get the number of reference pages for a contentlet
+     * @param identifier - The identifier of the contentlet
+     * @returns An observable that emits the number of reference pages
+     */
+    getReferencePages(identifier: string): Observable<number> {
+        return this.#http
+            .get<{ entity: { count: number } }>(`/api/v1/content/${identifier}/references/count`)
+            .pipe(map((response) => response.entity.count));
+    }
+
+    /**
+     * Get content by folder
+     *
+     * @param {{ folderId: string; mimeTypes?: string[] }} { folderId, mimeTypes }
+     * @return {*}
+     * @memberof DotEditContentService
+     */
+    getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
+        const params = {
+            hostFolderId: folderId,
+            showLinks: false,
+            showDotAssets: true,
+            showPages: false,
+            showFiles: true,
+            showFolders: false,
+            showWorking: true,
+            showArchived: false,
+            sortByDesc: true,
+            mimeTypes: mimeTypes || []
+        };
+
+        return this.#siteService.getContentByFolder(params);
     }
 }

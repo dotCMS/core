@@ -51,3 +51,23 @@ export interface DotCMSPageEditorConfig {
      */
     onReload?: () => void;
 }
+
+/**
+ * Configuration for reordering a menu.
+ */
+export interface ReorderMenuConfig {
+    /**
+     * The starting level of the menu to be reordered.
+     */
+    startLevel: number;
+
+    /**
+     * The depth of the menu levels to be reordered.
+     */
+    depth: number;
+}
+
+export enum UVE_MODE {
+    EDIT = 'edit',
+    PREVIEW = 'preview'
+}

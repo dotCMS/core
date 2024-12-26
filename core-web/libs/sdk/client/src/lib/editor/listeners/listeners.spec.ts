@@ -6,19 +6,24 @@ import {
     scrollHandler
 } from './listeners';
 
-import { CUSTOMER_ACTIONS, postMessageToEditor } from '../models/client.model';
+import { CLIENT_ACTIONS, postMessageToEditor } from '../models/client.model';
 
 jest.mock('../models/client.model', () => ({
     postMessageToEditor: jest.fn(),
-    CUSTOMER_ACTIONS: {
+    CLIENT_ACTIONS: {
         NAVIGATION_UPDATE: 'set-url',
         SET_BOUNDS: 'set-bounds',
         SET_CONTENTLET: 'set-contentlet',
+        EDIT_CONTENTLET: 'edit-contentlet',
         IFRAME_SCROLL: 'scroll',
         PING_EDITOR: 'ping-editor',
         CONTENT_CHANGE: 'content-change',
         GET_PAGE_DATA: 'get-page-data',
         NOOP: 'noop'
+    },
+    INITIAL_DOT_UVE: {
+        editContentlet: jest.fn(),
+        lastScrollYPosition: 0
     }
 }));
 
@@ -72,7 +77,7 @@ describe('listeners', () => {
 
         expect(addEventListenerSpy).toHaveBeenCalledWith('pointermove', expect.any(Function));
         expect(postMessageToEditor).toHaveBeenCalledWith({
-            action: CUSTOMER_ACTIONS.SET_CONTENTLET,
+            action: CLIENT_ACTIONS.SET_CONTENTLET,
             payload: {
                 x: expect.any(Number),
                 y: expect.any(Number),
@@ -110,7 +115,7 @@ describe('listeners', () => {
     it('should get page data post message to editor', () => {
         fetchPageDataFromInsideUVE('some-url');
         expect(postMessageToEditor).toHaveBeenCalledWith({
-            action: CUSTOMER_ACTIONS.GET_PAGE_DATA,
+            action: CLIENT_ACTIONS.GET_PAGE_DATA,
             payload: {
                 pathname: 'some-url'
             }

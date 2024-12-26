@@ -41,6 +41,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import jakarta.inject.Inject;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -949,6 +951,21 @@ class PushServiceIT {
         final var remoteAssetPath = buildRemoteAssetURL(siteName, folderPath, assetName);
         Assertions.assertTrue(filesTestHelper.assetExist(remoteAssetPath),
                 String.format("Asset %s was not created", remoteAssetPath));
+    }
+
+
+    /**
+     * Verifies that the RESTEasy file upload threshold is properly configured.
+     * This test ensures that the 'quarkus.resteasy.multipart.file-size-threshold' property 
+     * is set to -1, which allows for unlimited file sizes during multipart file uploads.
+     * Setting this value to -1 is crucial for handling large file uploads
+     */
+    @Test
+    void testFileThresholdProperty() {
+        final Config config = ConfigProvider.getConfig();
+        final Long fileThreshold = config.getValue("dev.resteasy.entity.file.threshold", Long.class);
+        // Assert that the property is correctly set to -1
+        Assertions.assertEquals(-1L, fileThreshold, "The file threshold should be set to -1 for unlimited file size.");
     }
 
 }

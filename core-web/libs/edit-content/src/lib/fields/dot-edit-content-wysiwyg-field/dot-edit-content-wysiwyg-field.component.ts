@@ -38,8 +38,6 @@ import {
 } from './dot-edit-content-wysiwyg-field.constant';
 import { shouldUseDefaultEditor } from './dot-edit-content-wysiwyg-field.utils';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
-
 interface LanguageVariable {
     key: string;
     value: string;
@@ -104,12 +102,6 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     #confirmationService = inject(ConfirmationService);
     #dotMessageService = inject(DotMessageService);
     #dotLanguagesService = inject(DotLanguagesService);
-    #store = inject(DotEditContentStore);
-
-    /**
-     * This variable represents if the sidebar is closed.
-     */
-    $sidebarClosed = computed(() => !this.#store.showSidebar());
 
     /**
      * This variable represents a required content type field in DotCMS.

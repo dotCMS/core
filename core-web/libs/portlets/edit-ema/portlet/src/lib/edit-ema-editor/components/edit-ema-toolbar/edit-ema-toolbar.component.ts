@@ -9,7 +9,7 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
-import { Params, Router } from '@angular/router';
+import { Params } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -21,17 +21,18 @@ import {
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotDevice, DotPersona } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotDevice, DotLanguage, DotPersona } from '@dotcms/dotcms-models';
 import { DotDeviceSelectorSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { compareUrlPaths } from '../../../utils';
-import { DotEditEmaWorkflowActionsComponent } from '../dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
 import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
@@ -49,7 +50,7 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
         DotEmaInfoDisplayComponent,
-        DotEditEmaWorkflowActionsComponent,
+        DotUveWorkflowActionsComponent,
         ClipboardModule
     ],
     providers: [DotPersonalizeService],
@@ -58,14 +59,17 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditEmaToolbarComponent {
+    @Output() readonly translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
     @Output() readonly editUrlContentMap = new EventEmitter<DotCMSContentlet>();
 
     @ViewChild('personaSelector')
     personaSelector!: EditEmaPersonaSelectorComponent;
 
+    @ViewChild('languageSelector')
+    languageSelector!: EditEmaLanguageSelectorComponent;
+
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #router = inject(Router);
     readonly #dotContentletLockerService = inject(DotContentletLockerService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
@@ -110,13 +114,27 @@ export class EditEmaToolbarComponent {
     /**
      * Handle the language selection
      *
-     * @param {number} language_id
+     * @param {number} language
      * @memberof DotEmaComponent
      */
-    onLanguageSelected(language_id: number) {
-        this.updateQueryParams({
-            language_id
-        });
+    onLanguageSelected(language: number) {
+        const language_id = language.toString();
+
+        const languages = this.uveStore?.languages();
+        const currentLanguage = languages.find((lang) => lang.id === language);
+
+        const languageHasTranslation = languages.find(
+            (lang) => lang.id.toString() === language_id
+        )?.translated;
+
+        if (!languageHasTranslation) {
+            // Show confirmation dialog to create a new translation
+            this.createNewTranslation(currentLanguage, this.uveStore?.pageAPIResponse()?.page);
+
+            return;
+        }
+
+        this.uveStore.loadPageAsset({ language_id });
     }
 
     /**
@@ -127,7 +145,7 @@ export class EditEmaToolbarComponent {
      */
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
         if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
-            this.updateQueryParams({
+            this.uveStore.loadPageAsset({
                 'com.dotmarketing.persona.id': persona.identifier
             });
         } else {
@@ -143,7 +161,7 @@ export class EditEmaToolbarComponent {
                     this.#personalizeService
                         .personalized(persona.pageId, persona.keyTag)
                         .subscribe(() => {
-                            this.updateQueryParams({
+                            this.uveStore.loadPageAsset({
                                 'com.dotmarketing.persona.id': persona.identifier
                             });
 
@@ -179,7 +197,7 @@ export class EditEmaToolbarComponent {
                         this.personaSelector.fetchPersonas();
 
                         if (persona.selected) {
-                            this.updateQueryParams({
+                            this.uveStore.loadPageAsset({
                                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                             });
                         }
@@ -198,16 +216,17 @@ export class EditEmaToolbarComponent {
     handleNewPage(page: DotCMSContentlet): void {
         const { pageURI, url, languageId } = page;
         const params = {
-            ...this.uveStore.params(),
             url: pageURI ?? url,
             language_id: languageId?.toString()
         };
 
         if (this.shouldNavigateToNewPage(params)) {
-            this.updateQueryParams(params);
-        } else {
-            this.uveStore.reload();
+            this.uveStore.loadPageAsset(params);
+
+            return;
         }
+
+        this.uveStore.reloadCurrentPage();
     }
 
     /**
@@ -243,14 +262,7 @@ export class EditEmaToolbarComponent {
                     }
                 })
             )
-            .subscribe(() => this.uveStore.reload());
-    }
-
-    private updateQueryParams(params: Params) {
-        this.#router.navigate([], {
-            queryParams: params,
-            queryParamsHandling: 'merge'
-        });
+            .subscribe(() => this.uveStore.reloadCurrentPage());
     }
 
     /**
@@ -261,7 +273,7 @@ export class EditEmaToolbarComponent {
      */
     private shouldNavigateToNewPage(params: Params): boolean {
         const { url: newUrl, language_id: newLanguageId } = params;
-        const { url: currentUrl, language_id: currentLanguageId } = this.uveStore.params();
+        const { url: currentUrl, language_id: currentLanguageId } = this.uveStore.pageParams();
 
         // Determine the target URL, prioritizing the content map URL if available
         const urlContentMap = this.uveStore.pageAPIResponse().urlContentMap;
@@ -269,5 +281,38 @@ export class EditEmaToolbarComponent {
 
         // Return true if the URL paths are different or the language has changed
         return !compareUrlPaths(currentUrl, targetUrl) || newLanguageId != currentLanguageId;
+    }
+
+    /**
+     * Asks the user for confirmation to create a new translation for a given language.
+     *
+     * @param {DotLanguage} language - The language to create a new translation for.
+     * @private
+     *
+     * @return {void}
+     */
+    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            key: 'shell-confirm-dialog',
+            accept: () => {
+                this.translatePage.emit({
+                    page: page,
+                    newLanguage: language.id
+                });
+            },
+            reject: () => {
+                // If is rejected, bring back the current language on selector
+                this.languageSelector?.listbox.writeValue(this.$toolbarProps().currentLanguage);
+            }
+        });
     }
 }

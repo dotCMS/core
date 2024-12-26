@@ -1,4 +1,4 @@
-import { INPUT_TYPES } from './models';
+import { INPUT_TYPE } from '../../models/dot-edit-content-file.model';
 
 type Actions = {
     allowExistingFile: boolean;
@@ -9,7 +9,7 @@ type Actions = {
     maxFileSize: number | null;
 };
 
-type ConfigActions = Record<INPUT_TYPES, Actions>;
+type ConfigActions = Record<INPUT_TYPE, Actions>;
 
 export const INPUT_CONFIG: ConfigActions = {
     File: {
@@ -36,4 +36,11 @@ export const INPUT_CONFIG: ConfigActions = {
         acceptedFiles: [],
         maxFileSize: null
     }
+};
+
+export const DEFAULT_CONTENT_TYPE = 'asset';
+
+export const CONTENT_TYPES = {
+    DotAsset: 'asset',
+    FileAsset: 'fileAsset'
 };

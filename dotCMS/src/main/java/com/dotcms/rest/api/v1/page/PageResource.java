@@ -61,6 +61,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.StringUtils;
@@ -87,6 +88,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -133,6 +135,9 @@ import org.glassfish.jersey.server.JSONP;
 
 public class PageResource {
 
+    // publishDate is an alias for the timeMachine query parameter
+    public static final String PUBLISH_DATE = "publishDate";
+    //Time Machine, Request and session attributes
     public static final String TM_DATE = "tm_date";
     public static final String TM_LANG = "tm_lang";
     public static final String TM_HOST = "tm_host";
@@ -219,7 +224,7 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam("language_id") final String languageId,
             @QueryParam("device_inode") final String deviceInode,
-            @QueryParam(TM_DATE) final String timeMachineDateAsISO8601
+            @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
             ) throws DotDataException, DotSecurityException {
         Logger.debug(this, () -> String.format(
                 "Rendering page as JSON: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s, timeMachineDate -> %s",
@@ -296,7 +301,8 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
             @QueryParam("device_inode") final String deviceInode,
-            @QueryParam(TM_DATE) final String timeMachineDateAsISO8601    ) throws DotSecurityException, DotDataException {
+            @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
+    ) throws DotSecurityException, DotDataException {
         if (Boolean.TRUE.equals(HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false))
                 && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
             final String depth = HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.DEPTH_PARAM, null);
@@ -349,9 +355,18 @@ public class PageResource {
         if (null != deviceInode){
             builder.deviceInode(deviceInode);
         }
-        if(null != timeMachineDateAsISO8601){
-            final Instant date = Try.of(()->Instant.parse(timeMachineDateAsISO8601)).getOrElseThrow(e->new IllegalArgumentException("time machine date must be ISO-8601 compliant"));
-            builder.timeMachineDate(date);
+        if (null != timeMachineDateAsISO8601) {
+            final Date date;
+            try {
+                date = Try.of(() -> DateUtil.convertDate(timeMachineDateAsISO8601)).getOrElseThrow(
+                        e -> new IllegalArgumentException(
+                                String.format("Error Parsing date: %s", timeMachineDateAsISO8601),
+                                e));
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException(e);
+            }
+            final Instant instant = date.toInstant();
+            builder.timeMachineDate(instant);
         }
         return builder.build();
     }
@@ -412,7 +427,10 @@ public class PageResource {
                 request.getSession()
                         .setAttribute(WebKeys.CURRENT_DEVICE,deviceInode.get());
             } else {
-                request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
+                final HttpSession session = request.getSession(false);
+                if (null != session) {
+                    session.removeAttribute(WebKeys.CURRENT_DEVICE);
+                }
             }
             final PageView pageRendered;
             final PageContextBuilder pageContextBuilder = PageContextBuilder.builder()
@@ -430,12 +448,6 @@ public class PageResource {
                         request, response
                 );
             } else {
-                final HttpSession session = request.getSession(false);
-                if (null != session) {
-                    // Time Machine-Date affects the logic on the VTLs that conform parts of the
-                    // rendered pages. So, we better get rid of it
-                    session.removeAttribute(TM_DATE);
-                }
                 pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
                         pageContextBuilder.build(), request, response
                 );
@@ -460,18 +472,22 @@ public class PageResource {
     private void setUpTimeMachineIfPresent(final PageRenderParams renderParams) {
         final Optional<Instant> timeMachineDate = renderParams.timeMachineDate();
         if(timeMachineDate.isPresent()){
+            final String timeMachineEpochMillis = String.valueOf(timeMachineDate.get().toEpochMilli());
+            final Optional<Host> host = currentHost(renderParams);
+            if(host.isEmpty()){
+                throw new IllegalArgumentException("Unable to set a host for the Time Machine");
+            }
             final HttpServletRequest request = renderParams.request();
             final HttpSession session = request.getSession(false);
             if (null != session) {
-               session.setAttribute(TM_DATE, String.valueOf(timeMachineDate.get().toEpochMilli()));
+               session.setAttribute(TM_DATE, timeMachineEpochMillis);
                session.setAttribute(TM_LANG, renderParams.languageId());
                session.setAttribute(DOT_CACHE, "refresh");
-               final Optional<Host> host = currentHost(renderParams);
-               if(host.isPresent()){
-                   session.setAttribute(TM_HOST, host.get());
-               } else {
-                   throw new IllegalArgumentException("Unable to set a host for the Time Machine");
-               }
+            } else {
+               request.setAttribute(TM_DATE, timeMachineEpochMillis);
+               request.setAttribute(TM_LANG, renderParams.languageId());
+               request.setAttribute(DOT_CACHE, "refresh");
+               request.setAttribute(TM_HOST, host.get());
             }
         }
     }
@@ -1385,12 +1401,16 @@ public class PageResource {
      * whether the page is available in such a language or not.
      *
      * @throws DotDataException An error occurred when interacting with the database.
+     * @deprecated This method is deprecated and will be removed in future versions. Please use the
+     * more generic REST Endpoint
+     * {@link com.dotcms.rest.api.v1.content.ContentResource#getExistingLanguagesForContent(String, User)} instead.
      */
     @GET
     @Path("/{pageId}/languages")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
                                               @PathParam("pageId") final String pageId) throws DotDataException {

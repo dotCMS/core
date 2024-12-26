@@ -12,21 +12,16 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ControlContainer, FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 
 import {
-    DotContentTypeService,
-    DotHttpErrorManagerService,
     DotLanguagesService,
     DotLanguageVariableEntry,
     DotPropertiesService,
-    DotUploadFileService,
-    DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotUploadFileService
 } from '@dotcms/data-access';
 import { DotMessagePipe, mockMatchMedia, monacoMock } from '@dotcms/utils-testing';
 
@@ -46,8 +41,6 @@ import {
     WYSIWYG_MOCK
 } from './mocks/dot-edit-content-wysiwyg-field.mock';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
-import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { createFormGroupDirectiveMock } from '../../utils/mocks';
 
 const mockLanguageVariables: Record<string, DotLanguageVariableEntry> = {
@@ -131,16 +124,9 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         providers: [
             mockProvider(DotLanguagesService),
             mockProvider(DotUploadFileService),
-            mockProvider(DotWorkflowsActionsService),
-            mockProvider(DotWorkflowActionsFireService),
-            mockProvider(DotContentTypeService),
-            mockProvider(DotEditContentService),
-            mockProvider(DotHttpErrorManagerService),
-            mockProvider(ActivatedRoute),
             provideHttpClient(),
             provideHttpClientTesting(),
-            ConfirmationService,
-            DotEditContentStore
+            ConfirmationService
         ]
     });
 
@@ -212,21 +198,6 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
         it('should render language variable selector', () => {
             expect(spectator.query(byTestId('language-variable-selector'))).toBeTruthy();
-        });
-    });
-
-    describe('sidebar closed state', () => {
-        it('should add sidebar-closed class when sidebar is closed', () => {
-            const store = spectator.inject(DotEditContentStore);
-
-            spectator.detectChanges();
-            const element = spectator.query(byTestId('language-variable-selector'));
-            expect(element.classList).not.toContain('dot-wysiwyg__sidebar-closed');
-
-            store.toggleSidebar();
-            spectator.detectChanges();
-
-            expect(element.classList).toContain('dot-wysiwyg__sidebar-closed');
         });
     });
 });

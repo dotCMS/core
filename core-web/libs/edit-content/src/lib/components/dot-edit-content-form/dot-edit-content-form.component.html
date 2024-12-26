@@ -1,6 +1,12 @@
 @let contentType = $store.contentType();
 @let contentlet = $store.contentlet();
 @let showSidebar = $store.showSidebar();
+@let actions = $store.getActions();
+@let showWorkflowActions = $store.showWorkflowActions();
+
+<!--Locales-->
+@let currentLocaleId = $store.currentLocale()?.id;
+@let currentIdentifier = $store.currentIdentifier();
 
 <!-- TODO: Handle the error, no form -->
 @if (form) {
@@ -73,26 +79,32 @@
 <ng-template #appendContent>
     <div
         class="dot-edit-content-actions"
+        data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
-        <dot-workflow-actions
-            data-testId="workflow-actions"
-            (actionFired)="
-                fireWorkflowAction({
-                    actionId: $event.id,
-                    inode: contentlet?.inode,
-                    contentType: contentType.variable
-                })
-            "
-            [actions]="$store.actions()"
-            [groupActions]="true" />
+        @if (showWorkflowActions) {
+            <dot-workflow-actions
+                data-testId="workflow-actions"
+                (actionFired)="
+                    fireWorkflowAction({
+                        actionId: $event.id,
+                        inode: contentlet?.inode,
+                        contentType: contentType.variable,
+                        languageId: currentLocaleId,
+                        identifier: currentIdentifier
+                    })
+                "
+                [actions]="actions"
+                [groupActions]="true" />
+        }
 
         <div
             class="dot-edit-content-actions__sidebar-toggle"
+            data-testId="sidebar-toggle"
             [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
             <button
                 class="dot-edit-content-actions__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
                 (click)="$store.toggleSidebar()"
-                data-testId="sidebar-toggle">
+                data-testId="sidebar-toggle-button">
                 <svg
                     width="20"
                     height="20"

@@ -45,7 +45,7 @@ export function withEditorToolbar() {
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
             $toolbarProps: computed<ToolbarProps>(() => {
-                const params = store.params();
+                const params = store.pageParams();
                 const url = sanitizeURL(params?.url);
 
                 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
@@ -67,9 +67,10 @@ export function withEditorToolbar() {
                     inode: pageAPIResponse?.page.inode,
                     loading: store.status() === UVE_STATUS.LOADING
                 };
+                const isDefaultVariant = getIsDefaultVariant(pageAPIResponse?.viewAs.variantId);
 
                 const shouldShowInfoDisplay =
-                    !getIsDefaultVariant(pageAPIResponse?.viewAs.variantId) ||
+                    !isDefaultVariant ||
                     !store.canEditPage() ||
                     isPageLocked ||
                     !!store.device() ||
@@ -94,6 +95,7 @@ export function withEditorToolbar() {
                     runningExperiment: isExperimentRunning ? experiment : null,
                     workflowActionsInode: store.canEditPage() ? pageAPIResponse?.page.inode : null,
                     unlockButton: shouldShowUnlock ? unlockButton : null,
+                    isDefaultVariant,
                     showInfoDisplay: shouldShowInfoDisplay,
                     deviceSelector: {
                         apiLink: `${clientHost}${pageAPI}`,

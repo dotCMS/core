@@ -35,7 +35,12 @@ export class DotLanguagesService {
 
     /**
      * Return languages.
-     * @returns Observable<DotLanguage[]>
+     *
+     * This method fetches the available languages from the server. If a content inode is provided,
+     * it includes the content inode in the request URL to filter the languages accordingly.
+     *
+     * @param {string} [contentInode] - Optional content inode to filter the languages.
+     * @returns {Observable<DotLanguage[]>} An observable emitting the list of languages.
      * @memberof DotLanguagesService
      */
     get(contentInode?: string): Observable<DotLanguage[]> {
@@ -124,6 +129,20 @@ export class DotLanguagesService {
             .pipe(pluck('entity'));
     }
 
+    /**
+     * Get the default language.
+     *
+     * @returns {Observable<DotLanguage>} An observable emitting the default language.
+     */
+    getDefault(): Observable<DotLanguage> {
+        return this.httpClient.get(`${LANGUAGE_API_URL}/_getdefault`).pipe(pluck('entity'));
+    }
+
+    /**
+     * Get the ISO language codes.
+     *
+     * @returns {Observable<DotLanguagesISO>} An observable emitting the ISO language codes.
+     */
     getISO(): Observable<DotLanguagesISO> {
         return this.httpClient.get(`${LANGUAGE_API_URL}/iso`).pipe(pluck('entity'));
     }

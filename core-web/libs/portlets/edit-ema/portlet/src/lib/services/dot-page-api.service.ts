@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { graphqlToPageEntity } from '@dotcms/client';
+import { graphqlToPageEntity, UVE_MODE } from '@dotcms/client';
 import { Site } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -19,7 +19,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { PAGE_MODE } from '../shared/enums';
-import { DotPage, SavePagePayload } from '../shared/models';
+import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import { createPageApiUrlWithQueryParams } from '../utils';
 
@@ -36,6 +36,7 @@ export interface DotPageApiResponse {
     containers: DotPageContainerStructure;
     urlContentMap?: DotCMSContentlet;
     vanityUrl?: VanityUrl;
+    runningExperimentId?: string;
 }
 
 export interface DotPageApiParams {
@@ -47,6 +48,20 @@ export interface DotPageApiParams {
     mode?: string;
     clientHost?: string;
     depth?: string;
+    publishDate?: string;
+}
+
+export enum DotPageAssetKeys {
+    URL = 'url',
+    MODE = 'mode',
+    DEPTH = 'depth',
+    CLIENT_HOST = 'clientHost',
+    VARIANT_NAME = 'variantName',
+    LANGUAGE_ID = 'language_id',
+    EXPERIMENT_ID = 'experimentId',
+    PERSONA_ID = 'com.dotmarketing.persona.id',
+    PUBLISH_DATE = 'publishDate',
+    EDITOR_MODE = 'editorMode'
 }
 
 export interface GetPersonasParams {
@@ -78,20 +93,31 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get(params: DotPageApiParams): Observable<DotPageApiResponse> {
+    get(params: DotPageAssetParams): Observable<DotPageApiResponse> {
         // Remove trailing and leading slashes
+        const {
+            clientHost,
+            editorMode,
+            depth = '0',
+            language_id,
+            variantName,
+            experimentId,
+            publishDate
+        } = params;
         const url = params.url.replace(/^\/+|\/+$/g, '');
 
-        const pageType = params.clientHost ? 'json' : 'render';
-        const mode = PAGE_MODE.EDIT;
+        const pageType = clientHost ? 'json' : 'render';
+        const isPreview = editorMode === UVE_MODE.PREVIEW;
+        const mode = isPreview ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
-            language_id: params.language_id,
-            'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
-            variantName: params.variantName,
-            experimentId: params.experimentId,
-            depth: params['depth'] || '0',
-            mode
+            language_id,
+            'com.dotmarketing.persona.id': params?.['com.dotmarketing.persona.id'],
+            variantName,
+            experimentId,
+            depth,
+            mode,
+            publishDate: publishDate ?? undefined
         });
 
         const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;

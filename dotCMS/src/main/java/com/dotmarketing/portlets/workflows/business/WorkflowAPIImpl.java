@@ -1639,7 +1639,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return workflowActions;
     }
 
-    private void fillActionInfo(final WorkflowAction action,
+	/*
+	 * This method will fill the action info based on the action classes
+	 * @param action
+	 * @param actionClasses
+	 */
+    protected void fillActionInfo(final WorkflowAction action,
                                 final List<WorkflowActionClass> actionClasses) {
 
 	    boolean isSave        = false;
@@ -1652,6 +1657,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         boolean isPushPublish = false;
 		boolean isMove        = false;
 		boolean isMoveHasPath = false;
+		boolean isComment     = false;
+		boolean isReset       = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
 
@@ -1666,6 +1673,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			    isDelete      |= (null != actionlet) && actionlet.delete();
 			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
+			    isComment     |= (null != actionlet) && actionlet.comment();
+				isReset       |= (null != actionlet) && actionlet.reset();
 
 			/*
 			 * In order to determine if an action is moveable, it needs to have a MoveContentActionlet assigned AND
@@ -1692,6 +1701,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         action.setPushPublishActionlet(isPushPublish);
         action.setMoveActionlet(isMove);
         action.setMoveActionletHashPath(isMoveHasPath);
+		action.setCommentActionlet(isComment);
+		action.setResetable(isReset);
     }
 
 

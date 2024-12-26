@@ -1,6 +1,5 @@
 package com.dotcms.business;
 
-import com.dotcms.config.DotInitializer;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;

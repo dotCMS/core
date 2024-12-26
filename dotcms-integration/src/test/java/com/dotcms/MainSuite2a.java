@@ -1,7 +1,6 @@
 package com.dotcms;
 
 import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
-import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
@@ -80,6 +79,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
+        com.dotmarketing.portlets.contentlet.transform.WidgetViewStrategyTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
         com.dotmarketing.portlets.workflows.business.SaveContentDraftActionletTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest.class,
@@ -183,7 +183,6 @@ import org.junit.runners.Suite.SuiteClasses;
         UserResourceIntegrationTest.class,
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
-        ElasticsearchUtilTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,

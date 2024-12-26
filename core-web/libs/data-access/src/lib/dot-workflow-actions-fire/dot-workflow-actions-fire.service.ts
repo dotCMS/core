@@ -22,6 +22,7 @@ interface DotActionRequestOptions {
 export interface DotFireActionOptions<T> {
     actionId: string;
     inode?: string;
+    identifier?: string;
     data?: T;
 }
 
@@ -185,9 +186,21 @@ export class DotWorkflowActionsFireService {
         const bodyRequest = individualPermissions
             ? { contentlet, individualPermissions }
             : { contentlet };
+        const params = new URLSearchParams({});
 
-        if (data['inode']) {
-            url += `?inode=${data['inode']}`;
+        // It's not best approach but this legacy code
+        if (contentlet['inode']) {
+            params.append('inode', contentlet['inode']);
+            delete contentlet['inode'];
+        }
+
+        if (contentlet['indexPolicy']) {
+            params.append('indexPolicy', contentlet['indexPolicy']);
+            delete contentlet['indexPolicy'];
+        }
+
+        if (params.toString()) {
+            url = `${url}?${params.toString()}`;
         }
 
         if (formData) {

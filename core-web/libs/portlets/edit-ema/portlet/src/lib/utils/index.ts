@@ -1,6 +1,9 @@
+import { Params } from '@angular/router';
+
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
     DotContainerMap,
     DotExperiment,
     DotExperimentStatus,
@@ -9,7 +12,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
@@ -18,11 +21,15 @@ import {
     ContentletDragPayload,
     ContentTypeDragPayload,
     DotPage,
+    DotPageAssetParams,
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
+
+const REORDER_MENU_BASE_URL =
+    'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';
 
 export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
     baseType: 'dotAsset',
@@ -104,7 +111,10 @@ export function deleteContentletFromContainer(action: ActionPayload): {
             };
         }
 
-        return currentContainer;
+        return {
+            ...currentContainer,
+            personaTag
+        };
     });
 
     return {
@@ -209,12 +219,12 @@ export const getPersonalization = (persona: Record<string, string>) => {
  *
  * @export
  * @param {string} url
- * @param {Partial<DotPageApiParams>} params
+ * @param {Partial<DotPageAssetParams>} params
  * @return {*}  {string}
  */
 export function createPageApiUrlWithQueryParams(
     url: string,
-    params: Partial<DotPageApiParams>
+    params: Partial<DotPageAssetParams>
 ): string {
     // Set default values
     const completedParams = {
@@ -423,8 +433,8 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotPageCont
  * @param {DotPageApiParams} params
  * @return {*}  {string}
  */
-export const getRequestHostName = (isTraditionalPage: boolean, params: DotPageApiParams) => {
-    return !isTraditionalPage ? params.clientHost : window.location.origin;
+export const getRequestHostName = (params: DotPageApiParams) => {
+    return params?.clientHost || window.location.origin;
 };
 
 /**
@@ -509,4 +519,134 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
         // In that case, we are draging an invalid element from the window
         return null;
     }
+};
+
+/**
+ * Adds missing query parameters `pagePath` and `hostId` to the given URL if they are not already present.
+ *
+ * @param {Object} params - The parameters object.
+ * @param {string} params.url - The URL to which the parameters will be added.
+ * @param {string} params.pagePath - The page path to be added as a query parameter if missing.
+ * @param {string} params.hostId - The host ID to be added as a query parameter if missing.
+ * @returns {string} - The updated URL with the missing parameters added.
+ */
+export const createReorderMenuURL = ({
+    startLevel,
+    depth,
+    pagePath,
+    hostId
+}: {
+    startLevel: number;
+    depth: number;
+    pagePath: string;
+    hostId: string;
+}) => {
+    const urlObject = new URL(REORDER_MENU_BASE_URL, window.location.origin);
+
+    const params = urlObject.searchParams;
+
+    if (!params.has('startLevel')) {
+        params.set('startLevel', startLevel.toString());
+    }
+
+    if (!params.has('depth')) {
+        params.set('depth', depth.toString());
+    }
+
+    if (!params.has('pagePath')) {
+        params.set('pagePath', pagePath);
+    }
+
+    if (!params.has('hostId')) {
+        params.set('hostId', hostId);
+    }
+
+    return urlObject.toString();
+};
+
+/**
+ * Check if the clientHost is in the whitelist provided by the app
+ *
+ * @private
+ * @param {string} clientHost
+ * @param {*} [allowedDevURLs=[]]
+ * @return {*}
+ * @memberof DotEmaShellComponent
+ */
+export const checkClientHostAccess = (
+    clientHost: string,
+    allowedDevURLs: string[] = []
+): boolean => {
+    if (!clientHost || !Array.isArray(allowedDevURLs) || !allowedDevURLs.length) {
+        return false;
+    }
+
+    // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
+    const sanitizedClientHost = sanitizeURL(clientHost);
+    const sanitizedAllowedDevURLs = allowedDevURLs.map(sanitizeURL);
+
+    return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
+};
+
+/**
+ * Retrieve the page params from the router query params
+ *
+ * @export
+ * @param {Params} params
+ * @return {*}  {DotPageApiParams}
+ */
+export function getAllowedPageParams(params: Params): DotPageAssetParams {
+    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
+
+    return Object.keys(params)
+        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
+        .reduce((obj, key) => {
+            obj[key] = params[key];
+
+            return obj;
+        }, {}) as DotPageAssetParams;
+}
+
+/**
+ * Determines the target URL for navigation.
+ *
+ * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
+ * Otherwise, it falls back to the URL extracted from the event.
+ *
+ * @param {string | undefined} url - The URL extracted from the event.
+ * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
+ */
+export function getTargetUrl(
+    url: string | undefined,
+    urlContentMap: DotCMSContentlet
+): string | undefined {
+    // Return URL from content map or fallback to the provided URL
+    return urlContentMap?.URL_MAP_FOR_CONTENT || url;
+}
+
+/**
+ * Determines whether navigation to a new URL is necessary.
+ *
+ * @param {string | undefined} targetUrl - The target URL for navigation.
+ * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
+ */
+export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
+    // Navigate if the target URL is defined and different from the current URL
+    return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
+}
+
+/**
+ * Get the page URI from the contentlet
+ *
+ * If the URL_MAP_FOR_CONTENT is present, it will be used as the page URI.
+ *
+ * @param {DotCMSContentlet} { urlContentMap, pageURI, url}
+ * @return {*}  {string}
+ */
+export const getPageURI = ({ urlContentMap, pageURI, url }: DotCMSContentlet): string => {
+    const contentMapUrl = urlContentMap?.URL_MAP_FOR_CONTENT;
+    const pageURIUrl = pageURI ?? url;
+    const newUrl = contentMapUrl ?? pageURIUrl;
+
+    return sanitizeURL(newUrl);
 };

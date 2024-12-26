@@ -1,95 +1,212 @@
 {
 	"info": {
-		"_postman_id": "e003f644-856a-4639-ac55-dfbcd946bd4e",
+		"_postman_id": "630e7fe8-7824-4ab6-a56c-2f7c4056c596",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
 			"name": "Data Query",
 			"item": [
 				{
-					"name": "No User Authentication",
-					"event": [
+					"name": "Using Simple Strings",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"HTTP Status code must be unauthorized\", function () {",
-									"    pm.response.to.have.status(401);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
+							"name": "No User Authentication",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be unauthorized\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"measures\": \"count,totalSessions\",\n    \"dimensions\": \"host,whatAmI,url\",\n    \"timeDimensions\": \"createdAt,day:Last month\",\n    \"filters\": \"totalRequest gt 0,whatAmI contains PAGE||FILE\",\n    \"order\": \"count asc,createdAt asc\",\n    \"limit\": 5,\n    \"offset\": 0\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Missing Required Parameters",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be Bad Request\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});",
+											"",
+											"pm.test(\"Check that minimum required parameters are NOT present\", function () {",
+											"    pm.expect(pm.response.json().message).to.equal(\"The 'form' JSON data cannot be null\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content"
+									]
+								},
+								"description": "As the error message states, the CubeJS Query should contain either measures, dimensions or timeDimensions with granularities in order to be valid."
+							},
+							"response": []
 						}
 					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/analytics/content/_query",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"analytics",
-								"content",
-								"_query"
-							]
-						}
-					},
-					"response": []
+					"description": "This test group verifies that the Endpoint that receives simple String parameters for the Content Analytics query works as expected. This endpoint takes a JSON body with parameters such as the following:\n\n`{`\n\n`\"measures\": \"count,totalSessions\",`\n\n`\"dimensions\": \"host,whatAmI,url\",`\n\n`\"timeDimensions\": \"createdAt,day:Last month\",`\n\n`\"filters\": \"totalRequest gt 0,whatAmI contains PAGE,FILE\",`\n\n`\"order\": \"count asc,createdAt asc\",`\n\n`\"limit\": 5,`\n\n`\"offset\": 0`\n\n`}`\n\nThe schema prefix for the appropriate terms is appended automatically by the service."
 				},
 				{
-					"name": "No Query Form",
-					"event": [
+					"name": "Using the JSON query",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"query\": {}\n}\n",
-							"options": {
-								"raw": {
-									"language": "json"
+							"name": "No User Authentication",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"HTTP Status code must be unauthorized\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
 								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/analytics/content/_query",
-							"host": [
-								"{{serverURL}}"
 							],
-							"path": [
-								"api",
-								"v1",
-								"analytics",
-								"content",
-								"_query"
-							]
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/_query",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"_query"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "No Query Form",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"query\": {}\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/_query",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"_query"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				}
 			]
 		},
@@ -129,61 +246,6 @@
 						"body": {
 							"mode": "raw",
 							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/analytics/content/event",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"analytics",
-								"content",
-								"event"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "EventType is must",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"HTTP Status code must be 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"test\":\"test\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

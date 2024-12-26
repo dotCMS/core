@@ -48,7 +48,7 @@ build-prod:
 
 # Runs a comprehensive test suite including core integration and postman tests, suitable for final validation
 build-test-full:
-    ./mvnw clean install -Dcoreit.test.skip=false -Dpostman.test.skip=false
+    ./mvnw clean install -Dcoreit.test.skip=false -Dpostman.test.skip=false -Dkarate.test.skip=false
 
 # Builds a specified module without its dependencies, defaulting to the core server (dotcms-core)
 build-select-module module="dotcms-core":
@@ -59,10 +59,12 @@ build-select-module-deps module=":dotcms-core":
     ./mvnw install -pl {{ module }} --am -DskipTests=true
 
 # Development Commands
+dev-run:
+    ./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.glowroot.enabled=true
 
 # Starts the dotCMS application in a Docker container on a dynamic port, running in the foreground
-dev-run:
-    ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend
+dev-run-debug:
+    ./mvnw -pl :dotcms-core -Pdocker-start,debug
 
 # Maps paths in the docker container to local paths, useful for development
 dev-run-map-dev-paths:
@@ -71,10 +73,6 @@ dev-run-map-dev-paths:
 # Starts the dotCMS application in debug mode with suspension, useful for troubleshooting
 dev-run-debug-suspend port="8082":
     ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend -Dtomcat.port={{ port }}
-
-# Starts the dotCMS Docker container in the background, running on random port
-dev-start:
-    ./mvnw -pl :dotcms-core -Pdocker-start
 
 # Starts the dotCMS Docker container in the background
 dev-start-on-port port="8082":
@@ -101,6 +99,9 @@ dev-tomcat-stop:
 test-postman collections='page':
     ./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false -Pdebug -Dpostman.collections={{ collections }}
 
+test-karate collections='KarateCITests#defaults':
+    ./mvnw -pl :dotcms-test-karate verify -Dkarate.test.skip=false -Pdebug -Dit.test={{ collections }}
+
 # Stops Postman-related Docker containers
 postman-stop:
     ./mvnw -pl :dotcms-postman -Pdocker-stop -Dpostman.test.skip=false
@@ -123,7 +124,13 @@ build-core-only:
 
 # Prepares the environment for running integration tests in an IDE
 test-integration-ide:
-    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false
+    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false -Dtomcat.port=8080
+
+test-postman-ide:
+    ./mvnw -pl :dotcms-test-karate pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
+
+test-karate-ide:
+    ./mvnw -pl :dotcms-test-karate pre-integration-test -Dkarate.test.skip=false -Dtomcat.port=8080
 
 # Stops integration test services
 test-integration-stop:
@@ -190,6 +197,9 @@ run-built-cli *ARGS:
 run-java-cli-native *ARGS:
     tools/dotcms-cli/cli/target/dotcms-cli-1.0.0-SNAPSHOT-runner {{ARGS}}
 
+
+run-jmeter-tests:
+    ./mvnw verify -Djmeter.test.skip=false -pl :dotcms-test-jmeter
 
 ###########################################################
 # Useful Maven Helper Commands

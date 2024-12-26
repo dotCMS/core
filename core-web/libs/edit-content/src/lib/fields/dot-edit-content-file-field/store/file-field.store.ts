@@ -7,14 +7,20 @@ import { computed, inject } from '@angular/core';
 
 import { filter, switchMap, tap } from 'rxjs/operators';
 
+import {
+    INPUT_TYPE,
+    FILE_STATUS,
+    UIMessage,
+    UploadedFile
+} from '@dotcms/edit-content/models/dot-edit-content-file.model';
+
 import { INPUT_CONFIG } from '../dot-edit-content-file-field.const';
-import { INPUT_TYPES, FILE_STATUS, UIMessage, UploadedFile } from '../models';
 import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { getUiMessage } from '../utils/messages';
 
 export interface FileFieldState {
     value: string;
-    inputType: INPUT_TYPES | null;
+    inputType: INPUT_TYPE | null;
     fileStatus: FILE_STATUS;
     dropZoneActive: boolean;
     isEnterprise: boolean;
@@ -49,6 +55,7 @@ const initialState: FileFieldState = {
 };
 
 export const FileFieldStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState(initialState),
     withComputed(({ fileStatus }) => ({
         isInit: computed(() => {
@@ -76,7 +83,7 @@ export const FileFieldStore = signalStore(
              * @param initState
              */
             initLoad: (initState: {
-                inputType: INPUT_TYPES;
+                inputType: INPUT_TYPE;
                 fieldVariable: FileFieldState['fieldVariable'];
                 isAIPluginInstalled?: boolean;
             }) => {
@@ -89,6 +96,14 @@ export const FileFieldStore = signalStore(
                     fieldVariable,
                     isAIPluginInstalled,
                     ...actions
+                });
+            },
+            /**
+             * setAcceptedFiles is used to set accepted files
+             */
+            setMaxSizeFile: (maxFileSize: number) => {
+                patchState(store, {
+                    maxFileSize
                 });
             },
             /**
