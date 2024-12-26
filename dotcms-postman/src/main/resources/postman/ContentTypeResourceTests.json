@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "9aa702a3-2811-429a-a33c-480b75530b23",
+		"_postman_id": "173bf579-93b9-497b-baee-8f9c48e58b71",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "36604690"
 	},
 	"item": [
 		{
@@ -1205,6 +1205,248 @@
 							]
 						},
 						"description": "Given a content type ID.\nExpect that code is 200.\nExpect content type is deleted successfully."
+					},
+					"response": []
+				},
+				{
+					"name": "Create ContentType Unsupported Media Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/javascript"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\", \n    \"defaultType\": false, \n    \"name\": \"Test Content Type\", \n    \"description\": \"THE DESCRIPTION\", \n    \"host\": \"SYSTEM_HOST\", \n    \"owner\": \"dotcms.org.1\", \n    \"fixed\": false, \n    \"system\": false, \n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n            {\n                \"dataType\": \"SYSTEM\",\n                \"dbColumn\": \"system_field1\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1308941714000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Host/Folder\",\n                \"readOnly\": false,\n                \"required\": true,\n                \"searchable\": true,\n                \"sortOrder\": 1,\n                \"unique\": false,\n                \"variable\": \"hostfolder\"\n            },\n            {\n                \"dataType\": \"LONG_TEXT\",\n                \"dbColumn\": \"text_area2\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1453474468000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTagField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Tags\",\n                \"readOnly\": false,\n                \"required\": false,\n                \"searchable\": true,\n                \"sortOrder\": 3,\n                \"unique\": false,\n                \"variable\": \"tags\"\n            }],\n            \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+					},
+					"response": []
+				},
+				{
+					"name": "Filter ContentType Unsupported Media Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/javascript"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\", \n    \"defaultType\": false, \n    \"name\": \"Test Content Type\", \n    \"description\": \"THE DESCRIPTION\", \n    \"host\": \"SYSTEM_HOST\", \n    \"owner\": \"dotcms.org.1\", \n    \"fixed\": false, \n    \"system\": false, \n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n            {\n                \"dataType\": \"SYSTEM\",\n                \"dbColumn\": \"system_field1\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1308941714000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Host/Folder\",\n                \"readOnly\": false,\n                \"required\": true,\n                \"searchable\": true,\n                \"sortOrder\": 1,\n                \"unique\": false,\n                \"variable\": \"hostfolder\"\n            },\n            {\n                \"dataType\": \"LONG_TEXT\",\n                \"dbColumn\": \"text_area2\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1453474468000,\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTagField\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1478557845000,\n                \"name\": \"Tags\",\n                \"readOnly\": false,\n                \"required\": false,\n                \"searchable\": true,\n                \"sortOrder\": 3,\n                \"unique\": false,\n                \"variable\": \"tags\"\n            }],\n            \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/_filter",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"_filter"
+							]
+						},
+						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Content Type Unsupported Media Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/javascript",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"THE DESCRIPTION\",\n        \"fields\": [\n            {\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n                \"contentTypeId\": \"{{contentTypeID}}\",\n                \"dataType\": \"SYSTEM\",\n                \"fieldType\": \"Host-Folder\",\n                \"fieldTypeLabel\": \"Site or Folder\",\n                \"fieldVariables\": [],\n                \"fixed\": false,\n                \"iDate\": 1308941714000,\n                \"id\": \"{{contentTypeFieldID}}\",\n                \"indexed\": true,\n                \"listed\": false,\n                \"modDate\": 1632506750000,\n                \"name\": \"Host/Folder CHANGED\",\n                \"readOnly\": false,\n                \"required\": true,\n                \"searchable\": true,\n                \"sortOrder\": 1,\n                \"unique\": false,\n                \"variable\": \"hostfolder\"\n            }\n        ],\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"host\": \"SYSTEM_HOST\",\n    \"name\": \"Test Content Type\",\n\t\"fixed\": false,\n    \"id\": \"{{contentTypeID}}\",\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"icon\": \"icon2\",\n    \"sortOrder\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeID}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeID}}"
+							]
+						},
+						"description": "Given a content type ID and a payload containing content type properties.\nExpect that code is 200.\nExpect content type is updated without issues.\nExpect that the new properties (icon and sortOrder) are updated with the new values."
 					},
 					"response": []
 				}
@@ -3463,6 +3705,85 @@
 						},
 						"method": "POST",
 						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/fileAsset/_copy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"fileAsset",
+								"_copy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Copy FileAsset Unsupported Media Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/javascript",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"File Asset Copy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/contenttype/fileAsset/_copy",
 							"host": [

@@ -210,6 +210,7 @@ public class ContentTypeResource implements Serializable {
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
@@ -446,6 +447,7 @@ public class ContentTypeResource implements Serializable {
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
@@ -644,6 +646,7 @@ public class ContentTypeResource implements Serializable {
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
 					@ApiResponse(responseCode = "404", description = "Not Found"),
+					@ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
@@ -1236,6 +1239,7 @@ public class ContentTypeResource implements Serializable {
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)

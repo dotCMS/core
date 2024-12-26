@@ -410,6 +410,7 @@ public class ApiTokenResource implements Serializable {
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "401", description = "Invalid user"),
                     @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
             }
     )
@@ -575,6 +576,7 @@ public class ApiTokenResource implements Serializable {
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "401", description = "Invalid user"),
                     @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
             }
     )
