@@ -28,19 +28,13 @@ export default defineConfig({
         copyReadme
     ],
 
-    // Uncomment this if you are using workers.
-    // worker: {
-    //  plugins: [ nxViteTsPaths() ],
-    // },
-
-    // Configuration for building your library.
-    // See: https://vitejs.dev/guide/build.html#library-mode
     build: {
         outDir: '../../../dist/libs/sdk/analytics',
         emptyOutDir: true,
         reportCompressedSize: true,
         commonjsOptions: {
-            transformMixedEsModules: true
+            transformMixedEsModules: true,
+            requireReturnsDefault: 'auto'
         },
         lib: {
             entry: {
@@ -50,13 +44,13 @@ export default defineConfig({
             formats: ['es']
         },
         rollupOptions: {
-            external: ['react', 'react-dom', 'react/jsx-runtime'],
+            external: ['react', 'react-dom', 'react/jsx-runtime', 'analytics'],
             output: {
                 exports: 'named',
                 preserveModules: true,
                 preserveModulesRoot: 'src',
                 entryFileNames: '[name].js',
-                chunkFileNames: '[name].js'
+                chunkFileNames: 'chunks/[name].js'
             }
         }
     }
