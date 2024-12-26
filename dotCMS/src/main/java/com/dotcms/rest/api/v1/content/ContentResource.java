@@ -554,7 +554,7 @@ public class ContentResource {
     @PUT
     @Path("/_lock/{inodeOrIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "unlockContent", summary = "Lock a given contentlet by the current user",
+    @Operation(operationId = "lockContent", summary = "Lock a given contentlet by the current user",
             description = "If the user is allowed to lock the contentlet specified by its inode or identifier, " +
                     "the contentlet will be locked.",
             tags = {"Content"},
