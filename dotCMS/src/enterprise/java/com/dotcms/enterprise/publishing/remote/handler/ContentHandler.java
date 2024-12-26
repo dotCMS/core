@@ -827,9 +827,11 @@ public class ContentHandler implements IHandler {
         content = this.contentletAPI.checkin(content, userToUse, !RESPECT_FRONTEND_ROLES);
 
 		final String filterKey = this.getFilterKeyFromBundle();
+		Logger.debug(this, () -> "Filter Key: " + filterKey);
 		final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
 		boolean isRelationshipsFilter = filterDescriptor.getFilters().containsKey(RELATIONSHIPS_KEY) ? Boolean.class.cast(filterDescriptor.getFilters()
-				.get(FilterDescriptor.RELATIONSHIPS_KEY)) : false;
+				.get(FilterDescriptor.RELATIONSHIPS_KEY)) : true;
+		Logger.debug(this, () -> "Relationships Filter: " + isRelationshipsFilter);
         if (isRelationshipsFilter) {
 			// Depending on the selected Push Publishing Filter, we need to remove the "old" trees
 			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
