@@ -31,6 +31,7 @@ import {
     DEFAULT_VARIANT_NAME,
     DotCMSContentlet,
     DotCMSContentType,
+    DotConfigurationVariables,
     DotContainerStructure,
     DotContentletEventAddContentType,
     DotExperiment,
@@ -377,9 +378,8 @@ browse from the page internal links
     }
 
     private setAllowedContent(pageState: DotPageRenderState): void {
-        const CONTENT_HIDDEN_KEY = 'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES';
         this.dotConfigurationService
-            .getKeyAsList(CONTENT_HIDDEN_KEY)
+            .getKeyAsList(DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES)
             .pipe(take(1))
             .subscribe((results) => {
                 this.allowedContent = this.filterAllowedContentTypes(results, pageState) || [];
