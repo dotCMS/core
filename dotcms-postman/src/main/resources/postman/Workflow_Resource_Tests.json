@@ -18232,7 +18232,7 @@
 			"name": "SavingOnDiffLanguageByActionId",
 			"item": [
 				{
-					"name": "CreateFrench",
+					"name": "CreateFrenchType",
 					"event": [
 						{
 							"listen": "test",
@@ -18289,7 +18289,7 @@
 					"response": []
 				},
 				{
-					"name": "CreateEnglish",
+					"name": "CreateEnglishContent",
 					"event": [
 						{
 							"listen": "test",
@@ -18360,7 +18360,7 @@
 					"response": []
 				},
 				{
-					"name": "CreateFrench",
+					"name": "CreateFrenchContent",
 					"event": [
 						{
 							"listen": "test",
