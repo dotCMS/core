@@ -61,6 +61,7 @@ import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.rendering.velocity.services.PageLoader;
@@ -141,6 +142,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
@@ -825,9 +827,12 @@ public class ContentHandler implements IHandler {
         content = this.contentletAPI.checkin(content, userToUse, !RESPECT_FRONTEND_ROLES);
 
 		final String filterKey = this.getFilterKeyFromBundle();
-        if (!Objects.equals(PublisherFilter.SHALLOW_PUSH_KEY, filterKey)) {
+		final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
+		boolean isRelationshipsFilter = filterDescriptor.getFilters().containsKey(RELATIONSHIPS_KEY) ? Boolean.class.cast(filterDescriptor.getFilters()
+				.get(FilterDescriptor.RELATIONSHIPS_KEY)) : false;
+        if (isRelationshipsFilter) {
 			// Depending on the selected Push Publishing Filter, we need to remove the "old" trees
-			// in order to add the new ones
+			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
 			this.cleanTrees(content);
 			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
 		}
