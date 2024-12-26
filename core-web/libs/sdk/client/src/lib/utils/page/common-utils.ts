@@ -41,9 +41,7 @@ export const getPageRequestParams = ({
     const finalParams: Record<string, unknown> = {};
     const dotMarketingPersonaId = copiedParams['com.dotmarketing.persona.id'] || '';
 
-    if (copiedParams['mode']) {
-        finalParams['mode'] = copiedParams['mode'];
-    }
+    finalParams['mode'] = copiedParams['mode'] || 'LIVE';
 
     if (copiedParams['language_id']) {
         finalParams['language_id'] = copiedParams['language_id'];
@@ -57,20 +55,12 @@ export const getPageRequestParams = ({
         finalParams['personaId'] = copiedParams['personaId'] || dotMarketingPersonaId;
     }
 
+    if (copiedParams['publishDate']) {
+        finalParams['publishDate'] = copiedParams['publishDate'];
+    }
+
     return {
         path,
         ...finalParams
     };
-};
-
-/**
- * Checks if the code is running inside an editor.
- *
- * @return {*}  {boolean}
- */
-export const isPreviewMode = (): boolean => {
-    const queryParams = new URLSearchParams(window.location.search);
-    const isPreviewMode = queryParams.get('preview');
-
-    return isPreviewMode === 'true';
 };

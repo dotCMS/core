@@ -1,16 +1,23 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "module": "ES2015",
-        "target": "es2015",
-        "declaration": true,
         "outDir": "../../../dist/out-tsc",
-        "types": ["node"],
-        "moduleResolution": "node",
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true
+        "types": [
+            "node",
+            "@nx/react/typings/cssmodule.d.ts",
+            "@nx/react/typings/image.d.ts",
+            "vite/client"
+        ]
     },
-    "include": ["src/**/*.ts"],
-    "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+    "exclude": [
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "**/*.spec.tsx",
+        "**/*.test.tsx",
+        "**/*.spec.js",
+        "**/*.test.js",
+        "**/*.spec.jsx",
+        "**/*.test.jsx"
+    ],
+    "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx"]
 }

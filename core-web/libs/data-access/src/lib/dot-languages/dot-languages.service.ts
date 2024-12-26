@@ -35,7 +35,12 @@ export class DotLanguagesService {
 
     /**
      * Return languages.
-     * @returns Observable<DotLanguage[]>
+     *
+     * This method fetches the available languages from the server. If a content inode is provided,
+     * it includes the content inode in the request URL to filter the languages accordingly.
+     *
+     * @param {string} [contentInode] - Optional content inode to filter the languages.
+     * @returns {Observable<DotLanguage[]>} An observable emitting the list of languages.
      * @memberof DotLanguagesService
      */
     get(contentInode?: string): Observable<DotLanguage[]> {

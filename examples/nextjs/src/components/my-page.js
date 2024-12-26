@@ -1,24 +1,24 @@
 "use client";
 
-import WebPageContent from "./content-types/webPageContent";
+import Activity from "./content-types/activity";
 import Banner from "./content-types/banner";
 import Blog from "./content-types/blog";
-import Activity from "./content-types/activity";
-import CallToAction from "./content-types/callToAction";
 import CalendarEvent from "./content-types/calendarEvent";
-import Product from "./content-types/product";
+import CallToAction from "./content-types/callToAction";
 import ImageComponent from "./content-types/image";
+import Product from "./content-types/product";
+import WebPageContent from "./content-types/webPageContent";
 
-import Header from "./layout/header/header";
-import Footer from "./layout/footer/footer";
-import Navigation from "./layout/navigation";
-import { usePathname, useRouter } from "next/navigation";
 import { DotcmsLayout } from "@dotcms/react";
-import { withExperiments } from "@dotcms/experiments";
+import { usePathname, useRouter } from "next/navigation";
 import { CustomNoComponent } from "./content-types/empty";
+import Footer from "./layout/footer/footer";
+import Header from "./layout/header/header";
+import Navigation from "./layout/navigation";
 
-import { usePageAsset } from "../hooks/usePageAsset";
 import NotFound from "@/app/not-found";
+import { withExperiments } from "@dotcms/experiments";
+import { usePageAsset } from "../hooks/usePageAsset";
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -53,7 +53,8 @@ export function MyPage({ pageAsset, nav }) {
      * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
      * - Remove DotExperimentsProvider from the return statement.
      */
-    const DotLayoutComponent = experimentConfig.apiKey
+
+    const DotLayoutComponent = experimentConfig?.apiKey
         ? withExperiments(DotcmsLayout, {
               ...experimentConfig,
               redirectFn: replace,
@@ -76,15 +77,15 @@ export function MyPage({ pageAsset, nav }) {
                 <DotLayoutComponent
                     pageContext={{
                         pageAsset,
-                        components: componentsMap
+                        components: componentsMap,
                     }}
                     config={{
                         pathname,
                         editor: {
                             params: {
-                                depth: 3
-                            }
-                        }
+                                depth: 3,
+                            },
+                        },
                     }}
                 />
             </main>

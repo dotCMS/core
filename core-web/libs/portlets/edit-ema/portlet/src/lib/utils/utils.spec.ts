@@ -23,6 +23,7 @@ import {
 } from '.';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
+import { PAGE_MODE } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
 
@@ -357,11 +358,11 @@ describe('utils functions', () => {
                 language_id: '20',
                 'com.dotmarketing.persona.id': 'the-chosen-one',
                 experimentId: '123',
-                mode: 'PREVIEW_MODE'
+                mode: PAGE_MODE.LIVE
             };
             const result = createPageApiUrlWithQueryParams('test', queryParams);
             expect(result).toBe(
-                'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=PREVIEW_MODE'
+                'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=LIVE'
             );
         });
 
