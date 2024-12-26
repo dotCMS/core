@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "769562e3-1639-4158-b011-3a6e3d68cf06",
+		"_postman_id": "5ccc1142-2412-44f1-a682-d9ee757e8ecb",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -18227,6 +18227,222 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "SavingOnDiffLanguageByActionId",
+			"item": [
+				{
+					"name": "CreateFrenchType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"frenchLanguageId\", jsonData.entity.id);",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"languageCode\":\"fr\",\n    \"countryCode\":\"fr\",\n    \"language\":\"French\",\n    \"country\":\"French\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateEnglishContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"englishidentifier\", jsonData.entity.identifier);",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that the Contentlet's english languageId\", function () {",
+									"    pm.expect(jsonData.entity.languageId).to.eql(1);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestEnglishFrench\",\n        \"contentHost\":\"default\",\n        \"body\":\"Body Test\",\n        \"languageId\":1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR ",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateFrenchContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let englishidentifier = pm.collectionVariables.get(\"englishidentifier\");",
+									"let frenchLanguageId = pm.collectionVariables.get(\"frenchLanguageId\");",
+									"",
+									"pm.test(\"Check that the Contentlet's french id\", function () {",
+									"    pm.expect(jsonData.entity.identifier).to.eql(englishidentifier);",
+									"});",
+									"",
+									"pm.test(\"Check that the Contentlet's french languageId\", function () {",
+									"    pm.expect(jsonData.entity.languageId).to.eql(frenchLanguageId);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"identifier\":\"{{englishidentifier}}\",\n        \"languageId\":\"{{frenchLanguageId}}\",\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestEnglishFrench\",\n        \"contentHost\":\"default\",\n        \"body\":\"Corps d essai\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/ceca71a0-deee-4999-bd47-b01baa1bcfc8/fire?identifier={{englishidentifier}}&lang=1&indexPolicy=WAIT_FOR ",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{englishidentifier}}"
+								},
+								{
+									"key": "lang",
+									"value": "1"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Creates a French language and them creates a rich text in english and finally the french version of the english one previously created\n\nshould has the same id but diff language\n\nSince will use the system working, uses the safe action to creates the contentlets"
 		}
 	],
 	"event": [
@@ -18328,6 +18544,10 @@
 		},
 		{
 			"key": "identifier",
+			"value": ""
+		},
+		{
+			"key": "frenchLanguageId",
 			"value": ""
 		}
 	]
