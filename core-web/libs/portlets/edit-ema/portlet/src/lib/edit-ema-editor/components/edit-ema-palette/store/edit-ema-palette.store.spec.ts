@@ -8,7 +8,7 @@ import {
     DotESContentService,
     DotPropertiesService
 } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotConfigurationVariables } from '@dotcms/dotcms-models';
 
 import {
     DotPaletteStore,
@@ -17,8 +17,23 @@ import {
     PALETTE_TYPES
 } from './edit-ema-palette.store';
 
+const WIDGET_MOCK = {
+    baseType: 'WIDGET',
+    id: 'widgetTest1',
+    name: 'widgetTest1',
+    variable: 'widgetTest1'
+};
+
+const VALID_CONTENT_TYPE_MOCK = {
+    baseType: 'someContent',
+    id: 'contentTypeTest1',
+    name: 'contentTypeTest1',
+    variable: 'contentTypeTest1'
+};
+
 describe('EditEmaPaletteStore', () => {
     let spectator: SpectatorService<DotPaletteStore>;
+    let dotPropertiesService: DotPropertiesService;
     const createService = createServiceFactory({
         service: DotPaletteStore,
         providers: [
@@ -43,25 +58,21 @@ describe('EditEmaPaletteStore', () => {
                 useValue: {
                     filterContentTypes: () =>
                         of([
-                            {
-                                baseType: 'someContent',
-                                id: 'contentTypeTest1',
-                                name: 'contentTypeTest1'
-                            },
+                            VALID_CONTENT_TYPE_MOCK,
                             {
                                 baseType: 'WIDGET',
                                 id: 'contentTypeTest2',
-                                name: 'contentTypeTest2'
+                                name: 'contentTypeTest2',
+                                variable: 'contentTypeTest2'
                             }
                         ]),
-                    getContentTypes: () =>
-                        of([
-                            {
-                                baseType: 'WIDGET',
-                                id: 'widgetTest1',
-                                name: 'widgetTest1'
-                            }
-                        ])
+                    getContentTypes: () => of([WIDGET_MOCK])
+                }
+            },
+            {
+                provide: DotPropertiesService,
+                useValue: {
+                    getKeyAsList: () => of([])
                 }
             }
         ]
@@ -69,6 +80,7 @@ describe('EditEmaPaletteStore', () => {
 
     beforeEach(() => {
         spectator = createService();
+        dotPropertiesService = spectator.inject(DotPropertiesService);
     });
 
     describe('updaters', () => {
@@ -105,31 +117,44 @@ describe('EditEmaPaletteStore', () => {
                 spectator.inject(DotContentTypeService),
                 'getContentTypes'
             );
+
+            const getKeyAsListSpy = jest.spyOn(dotPropertiesService, 'getKeyAsList');
             spectator.service.loadContentTypes({
                 filter: '',
                 allowedContent: ['contentTypeTest1']
             });
-            const expected = [
-                {
-                    baseType: 'someContent',
-                    id: 'contentTypeTest1',
-                    name: 'contentTypeTest1'
-                },
-                {
-                    baseType: 'WIDGET',
-                    id: 'widgetTest1',
-                    name: 'widgetTest1'
-                }
-            ];
             spectator.service.vm$.subscribe((state) => {
-                expect(state.contenttypes.items).toEqual(expected as DotCMSContentType[]);
+                expect(state.contenttypes.items).toEqual([VALID_CONTENT_TYPE_MOCK, WIDGET_MOCK]);
                 expect(patchStateSpy).toHaveBeenCalled();
                 expect(filterContentTypesSpy).toHaveBeenCalledWith('', 'contentTypeTest1');
+                expect(getKeyAsListSpy).toHaveBeenCalledWith(
+                    DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
+                );
                 expect(getContentTypesSpy).toHaveBeenCalledWith({
                     filter: '',
                     page: 40,
                     type: 'WIDGET'
                 });
+                done();
+            });
+        });
+
+        it('should load content types with filter hidden content types', (done) => {
+            const getKeyAsListSpy = jest
+                .spyOn(dotPropertiesService, 'getKeyAsList')
+                .mockReturnValue(of(['contentTypeTest1']));
+
+            const payload = {
+                filter: '',
+                allowedContent: ['contentTypeTest1']
+            };
+
+            spectator.service.loadContentTypes(payload);
+            spectator.service.vm$.subscribe((state) => {
+                expect(state.contenttypes.items).toEqual([WIDGET_MOCK]);
+                expect(getKeyAsListSpy).toHaveBeenCalledWith(
+                    DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
+                );
                 done();
             });
         });
