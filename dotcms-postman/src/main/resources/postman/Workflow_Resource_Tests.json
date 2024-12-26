@@ -18411,7 +18411,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/ceca71a0-deee-4999-bd47-b01baa1bcfc8/fire?identifier=b990357cfd94ec063a64c30c23887e58&lang=1&indexPolicy=WAIT_FOR ",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/ceca71a0-deee-4999-bd47-b01baa1bcfc8/fire?identifier={{englishidentifier}}&lang=1&indexPolicy=WAIT_FOR ",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -18426,7 +18426,7 @@
 							"query": [
 								{
 									"key": "identifier",
-									"value": "b990357cfd94ec063a64c30c23887e58"
+									"value": "{{englishidentifier}}"
 								},
 								{
 									"key": "lang",
