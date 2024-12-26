@@ -59,7 +59,7 @@
                 <tr>
                     <th
                         scope="col"
-                        style="width: 4rem"
+                        class="max-w-5rem"
                         pFrozenColumn
                         alignFrozen="left"
                         [frozen]="true">
@@ -80,7 +80,7 @@
             </ng-template>
             <ng-template pTemplate="body" let-item let-columns="columns">
                 <tr [class.p-highlight]="checkIfSelected(item)">
-                    <td pFrozenColumn alignFrozen="left" [frozen]="true">
+                    <td class="max-w-5rem" pFrozenColumn alignFrozen="left" [frozen]="true">
                         @if (selectionMode === 'multiple') {
                             <p-tableCheckbox [value]="item" />
                         } @else {

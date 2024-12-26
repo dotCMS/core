@@ -222,7 +222,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             resizable: false,
             position: 'center',
             width: '90%',
-            height: '90vh',
+            height: '90%',
             style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
                 contentTypeId: this.$attributes().contentTypeId,
