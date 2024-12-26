@@ -5,6 +5,8 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.postgresql.util.PGobject;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -158,9 +160,26 @@ public class LiferayUserTransformer {
                 user.setDeleteDate((java.util.Date) map.get("delete_date"));
             }
             if (null != map.get("additional_info")) {
-                user.setAdditionalInfo(Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
-                        .readValue((String) map.get("additional_info"), HashMap.class))
-                        .getOrElse(new HashMap<String, String>()));
+                Object additionalInfoObject = map.get("additional_info");
+
+                if (additionalInfoObject instanceof PGobject) {
+                    PGobject pgObject = (PGobject) additionalInfoObject;
+                    String jsonString = pgObject.getValue();
+                    user.setAdditionalInfo(
+                            Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                                            .readValue(jsonString, HashMap.class))
+                                    .getOrElse(new HashMap<>())
+                    );
+                } else if (additionalInfoObject instanceof String) {
+                    user.setAdditionalInfo(
+                            Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                                            .readValue((String) additionalInfoObject, HashMap.class))
+                                    .getOrElse(new HashMap<>())
+                    );
+                } else {
+                    // Fallback in case of an unexpected type
+                    user.setAdditionalInfo(new HashMap<>());
+                }
             }
         }
 
