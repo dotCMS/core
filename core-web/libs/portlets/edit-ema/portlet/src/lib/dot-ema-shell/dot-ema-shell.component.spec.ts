@@ -312,8 +312,35 @@ describe('DotEmaShellComponent', () => {
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
+        it('should patch viewParams with empty object when the editorMode is edit', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+            const params = {
+                ...INITIAL_PAGE_PARAMS,
+                editorMode: UVE_MODE.EDIT
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({});
+        });
+
         it('should patch viewParams with empty params on init', () => {
             const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+
+            const params = {
+                ...INITIAL_PAGE_PARAMS,
+                editorMode: UVE_MODE.PREVIEW
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
 
             spectator.detectChanges();
 
@@ -330,7 +357,8 @@ describe('DotEmaShellComponent', () => {
             const withViewParams = {
                 device: 'mobile',
                 orientation: 'landscape',
-                seo: undefined
+                seo: undefined,
+                editorMode: UVE_MODE.PREVIEW
             };
 
             overrideRouteSnashot(

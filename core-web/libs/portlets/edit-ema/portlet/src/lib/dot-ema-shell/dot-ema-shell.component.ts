@@ -1,7 +1,5 @@
-import { Subject } from 'rxjs';
-
 import { CommonModule, Location } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, effect, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -82,7 +80,7 @@ import {
         DotNotLicenseComponent
     ]
 })
-export class DotEmaShellComponent implements OnInit, OnDestroy {
+export class DotEmaShellComponent implements OnInit {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
@@ -94,8 +92,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #location = inject(Location);
 
     protected readonly $shellProps = this.uveStore.$shellProps;
-
-    readonly #destroy$ = new Subject<boolean>();
 
     /**
      * Handle the update of the page params
@@ -122,7 +118,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         const params = this.#getPageParams();
 
-        const viewParams = this.#getViewParams();
+        const viewParams = this.#getViewParams(params.editorMode);
 
         this.uveStore.patchViewParams(viewParams);
 
@@ -132,11 +128,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         this.#siteService.switchSite$
             .pipe(skip(1))
             .subscribe(() => this.#router.navigate(['/pages']));
-    }
-
-    ngOnDestroy(): void {
-        this.#destroy$.next(true);
-        this.#destroy$.complete();
     }
 
     handleNgEvent({ event }: DialogAction) {
@@ -236,8 +227,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         return params;
     }
 
-    #getViewParams(): DotUveViewParams {
+    #getViewParams(uveMode: UVE_MODE): DotUveViewParams {
         const { queryParams } = this.#activatedRoute.snapshot;
+
+        const isPreviewMode = uveMode === UVE_MODE.PREVIEW;
 
         const viewParams: DotUveViewParams = {
             device: queryParams.device,
@@ -245,7 +238,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             seo: queryParams.seo
         };
 
-        return viewParams;
+        return isPreviewMode
+            ? viewParams
+            : { device: undefined, orientation: undefined, seo: undefined };
     }
 
     /**

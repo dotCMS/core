@@ -28,7 +28,6 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -42,9 +41,10 @@ import {
     areContainersEquals,
     getEditorStates,
     createPageApiUrlWithQueryParams,
-    sanitizeURL
+    sanitizeURL,
+    getWrapperMeasures
 } from '../../../utils';
-import { Orientation, UVEState } from '../../models';
+import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 
 const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
@@ -152,18 +152,7 @@ export function withEditor() {
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
 
-                    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
-
-                    const wrapper =
-                        store.orientation() === Orientation.LANDSCAPE
-                            ? {
-                                  width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-                                  height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-                              }
-                            : {
-                                  width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-                                  height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-                              };
+                    const wrapper = getWrapperMeasures(device);
 
                     return {
                         showDialogs,

@@ -44,7 +44,6 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { Orientation } from '../../../store/models';
 import {
     createFavoritePagesURL,
     createFullURL,
@@ -471,68 +470,6 @@ describe('DotUveToolbarComponent', () => {
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
             expect(workflowActions).toBeNull();
-        });
-
-        describe('handleViewParamsEffect', () => {
-            it('should set the device for an existing device', () => {
-                const spy = jest.spyOn(store, 'setDevice');
-
-                previewBaseUveState.viewParams.set({
-                    device: 'mobile',
-                    orientation: Orientation.LANDSCAPE,
-                    seo: undefined
-                });
-
-                spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith(
-                    DEFAULT_DEVICES.find((device) => device.inode === 'mobile'),
-                    Orientation.LANDSCAPE
-                );
-            });
-            it('should clear device when the device is not valid', () => {
-                const spy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
-
-                previewBaseUveState.viewParams.set({
-                    device: 'invalid',
-                    orientation: Orientation.LANDSCAPE,
-                    seo: undefined
-                });
-
-                spectator.detectChanges();
-                expect(spy).toHaveBeenCalled();
-            });
-            it('should clear viewParams when we are not in preview mode', () => {
-                const spy = jest.spyOn(store, 'patchViewParams');
-
-                previewBaseUveState.viewParams.set({
-                    device: 'mobile',
-                    orientation: Orientation.LANDSCAPE,
-                    seo: undefined
-                });
-                previewBaseUveState.$isPreviewMode.set(false);
-
-                spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith({
-                    orientation: null,
-                    device: null
-                });
-            });
-
-            it('should set the default device and orientation as null when there is no deviceInode on the queryParams', () => {
-                const spy = jest.spyOn(store, 'patchViewParams');
-
-                previewBaseUveState.viewParams.set({
-                    device: null,
-                    orientation: null,
-                    seo: undefined
-                });
-
-                spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith({
-                    device: 'default',
-                    orientation: null
-                });
-            });
         });
     });
 

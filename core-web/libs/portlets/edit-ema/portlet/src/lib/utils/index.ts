@@ -5,6 +5,7 @@ import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotContainerMap,
+    DotDevice,
     DotExperiment,
     DotExperimentStatus,
     DotPageContainerStructure,
@@ -13,7 +14,7 @@ import {
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
-import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
+import { BASE_IFRAME_MEASURE_UNIT, COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
@@ -25,6 +26,7 @@ import {
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
+import { Orientation } from '../store/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
 
@@ -649,4 +651,24 @@ export const getPageURI = ({ urlContentMap, pageURI, url }: DotCMSContentlet): s
     const newUrl = contentMapUrl ?? pageURIUrl;
 
     return sanitizeURL(newUrl);
+};
+
+export const getOrientation = (device: DotDevice): Orientation => {
+    return Number(device?.cssHeight) > Number(device?.cssWidth)
+        ? Orientation.PORTRAIT
+        : Orientation.LANDSCAPE;
+};
+
+export const getWrapperMeasures = (device: DotDevice): { width: string; height: string } => {
+    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
+
+    return getOrientation(device) === Orientation.LANDSCAPE
+        ? {
+              width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+              height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
+          }
+        : {
+              width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+              height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
+          };
 };

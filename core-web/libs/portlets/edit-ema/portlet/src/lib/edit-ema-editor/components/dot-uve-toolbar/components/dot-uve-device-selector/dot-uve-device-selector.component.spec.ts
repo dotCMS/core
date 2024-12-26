@@ -15,6 +15,7 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { Orientation } from '../../../../../store/models';
 import {
     sanitizeURL,
     createPageApiUrlWithQueryParams,
@@ -134,11 +135,9 @@ describe('DotUveDeviceSelectorComponent', () => {
             it('should be disabled if the device is default', () => {
                 const button = spectator.query(`[data-testid="orientation"]`);
 
-                baseUVEState.viewParams.set({
-                    device: 'default',
-                    orientation: 'landscape',
-                    seo: undefined
-                });
+                baseUVEState.device.set(
+                    DEFAULT_DEVICES.find((device) => device.inode === 'default')
+                );
                 spectator.detectChanges();
 
                 expect(button.getAttribute('ng-reflect-disabled')).toBe('true');
@@ -174,6 +173,66 @@ describe('DotUveDeviceSelectorComponent', () => {
                 firstCustomDevice.command();
 
                 expect(onDeviceSelectSpy).toHaveBeenCalledWith(mockDotDevices[0]);
+            });
+        });
+
+        describe('onInit', () => {
+            it('should set the device when is present in viewParams', () => {
+                const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+
+                const device = DEFAULT_DEVICES[1];
+                baseUVEState.viewParams.set({
+                    device: device.inode,
+                    orientation: undefined,
+                    seo: undefined
+                });
+                spectator.component.ngOnInit();
+
+                expect(setDeviceSpy).toHaveBeenCalledWith(device);
+            });
+
+            it('should set the device and orientation when is present in viewParams', () => {
+                const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+
+                const device = DEFAULT_DEVICES[1];
+                const orientation = Orientation.PORTRAIT;
+                baseUVEState.viewParams.set({
+                    device: device.inode,
+                    orientation: orientation,
+                    seo: undefined
+                });
+                spectator.component.ngOnInit();
+
+                expect(setDeviceSpy).toHaveBeenCalledWith(device, orientation);
+            });
+            it('should set the default device when is not present in viewParams', () => {
+                const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+
+                baseUVEState.viewParams.set({
+                    device: undefined,
+                    orientation: undefined,
+                    seo: undefined
+                });
+                spectator.component.ngOnInit();
+
+                expect(setDeviceSpy).toHaveBeenCalledWith(
+                    DEFAULT_DEVICES.find((d) => d.inode === 'default')
+                );
+            });
+
+            it('should set the default device when the device is not found in the devices list', () => {
+                const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+
+                baseUVEState.viewParams.set({
+                    device: 'not-found',
+                    orientation: undefined,
+                    seo: undefined
+                });
+                spectator.component.ngOnInit();
+
+                expect(setDeviceSpy).toHaveBeenCalledWith(
+                    DEFAULT_DEVICES.find((d) => d.inode === 'default')
+                );
             });
         });
     });

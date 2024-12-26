@@ -21,6 +21,7 @@ import {
     createFullURL,
     createPageApiUrlWithQueryParams,
     getIsDefaultVariant,
+    getOrientation,
     sanitizeURL
 } from '../../../../utils';
 import { Orientation, UVEState } from '../../../models';
@@ -195,20 +196,29 @@ export function withUVEToolbar() {
         })),
         withMethods((store) => ({
             setDevice: (device: DotDevice, orientation?: Orientation) => {
+                const isValidOrientation = Object.values(Orientation).includes(orientation);
+
+                const newOrientation = isValidOrientation ? orientation : getOrientation(device);
+
                 patchState(store, {
                     device,
+                    viewParams: {
+                        ...store.viewParams(),
+                        device: device.inode,
+                        orientation: newOrientation
+                    },
                     socialMedia: null,
                     isEditState: false,
-                    orientation:
-                        orientation ??
-                        (device?.cssHeight > device?.cssWidth
-                            ? Orientation.PORTRAIT
-                            : Orientation.LANDSCAPE)
+                    orientation: newOrientation
                 });
             },
             setOrientation: (orientation: Orientation) => {
                 patchState(store, {
-                    orientation
+                    orientation,
+                    viewParams: {
+                        ...store.viewParams(),
+                        orientation
+                    }
                 });
             },
             clearDeviceAndSocialMedia: () => {
@@ -216,7 +226,13 @@ export function withUVEToolbar() {
                     device: null,
                     socialMedia: null,
                     isEditState: true,
-                    orientation: null
+                    orientation: null,
+                    viewParams: {
+                        ...store.viewParams(),
+                        device: undefined,
+                        orientation: undefined,
+                        seo: undefined
+                    }
                 });
             }
         }))

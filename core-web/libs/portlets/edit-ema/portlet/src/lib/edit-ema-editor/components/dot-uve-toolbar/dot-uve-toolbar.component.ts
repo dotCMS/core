@@ -142,45 +142,6 @@ export class DotUveToolbarComponent implements OnInit {
 
     defaultDevices = DEFAULT_DEVICES;
 
-    handleViewParamsEffect = effect(
-        () => {
-            const devices = this.$devices();
-
-            //We want to be sure that we have devices
-            if (!devices.length) return;
-
-            // Get the device and orientation from the URL
-            const { device: deviceInode, orientation } = this.#store.viewParams();
-
-            // So we dont open the editor in a device
-            if (!this.#store.$isPreviewMode() && (deviceInode || orientation)) {
-                this.#store.patchViewParams({ device: null, orientation: null });
-
-                return;
-
-                // If we are in preview mode and we dont have a device, set the default device
-            } else if (this.#store.$isPreviewMode() && !deviceInode) {
-                this.#store.patchViewParams({ device: 'default', orientation: null });
-
-                return;
-            }
-
-            // Find the device in the devices list
-            const device = this.$devices().find((d) => d.inode === deviceInode);
-
-            // If we have a device, set it in the store
-            if (device) {
-                this.#store.setDevice(device, orientation);
-            } else {
-                // If we dont have a device, clear the device and social media
-                this.#store.clearDeviceAndSocialMedia();
-            }
-        },
-        {
-            allowSignalWrites: true
-        }
-    );
-
     ngOnInit(): void {
         this.#deviceService
             .get()
@@ -206,6 +167,7 @@ export class DotUveToolbarComponent implements OnInit {
      * @memberof DotUveToolbarComponent
      */
     protected triggerEditMode() {
+        this.#store.clearDeviceAndSocialMedia();
         this.#store.loadPageAsset({ editorMode: undefined, publishDate: undefined });
     }
 

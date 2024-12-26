@@ -1,7 +1,7 @@
 import { DeepSignal } from '@ngrx/signals';
 
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
@@ -23,7 +23,7 @@ import { Orientation } from '../../../../../store/models';
     styleUrl: './dot-uve-device-selector.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUveDeviceSelectorComponent {
+export class DotUveDeviceSelectorComponent implements OnInit {
     defaultDevices = DEFAULT_DEVICES;
 
     #store = inject(UVEStore);
@@ -35,7 +35,7 @@ export class DotUveDeviceSelectorComponent {
 
     readonly $currentDevice = this.#store.device as DeepSignal<DotDeviceListItem>;
 
-    readonly $disableOrientation = computed(() => this.#store.viewParams().device === 'default');
+    readonly $disableOrientation = computed(() => this.#store.device().inode === 'default');
 
     readonly $currentOrientation = this.#store.orientation;
 
@@ -58,26 +58,34 @@ export class DotUveDeviceSelectorComponent {
         return !!this.$currentDevice()._isDefault;
     });
 
+    ngOnInit(): void {
+        const deviceInode = this.#store.viewParams().device;
+        const orientation = this.#store.viewParams().orientation;
+
+        const device = this.$devices().find((d) => d.inode === deviceInode);
+
+        if (device) {
+            this.#store.setDevice(device, orientation);
+        } else {
+            this.#store.setDevice(DEFAULT_DEVICES.find((d) => d.inode === 'default'));
+        }
+    }
+
     onDeviceSelect(device: DotDevice): void {
         const currentDevice = this.$currentDevice();
 
         if (currentDevice && currentDevice.inode === device.inode) {
-            this.#store.patchViewParams({
-                device: 'default'
-            });
+            this.#store.setDevice(DEFAULT_DEVICES.find((d) => d.inode === 'default'));
         } else {
-            this.#store.patchViewParams({
-                device: device.inode
-            });
+            this.#store.setDevice(device);
         }
     }
 
     onOrientationChange(): void {
-        this.#store.patchViewParams({
-            orientation:
-                this.$currentOrientation() === Orientation.LANDSCAPE
-                    ? Orientation.PORTRAIT
-                    : Orientation.LANDSCAPE
-        });
+        this.#store.setOrientation(
+            this.$currentOrientation() === Orientation.LANDSCAPE
+                ? Orientation.PORTRAIT
+                : Orientation.LANDSCAPE
+        );
     }
 }

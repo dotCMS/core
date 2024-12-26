@@ -32,7 +32,6 @@ import {
 } from '../../../shared/mocks';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
-
 const mockCurrentUser: CurrentUser = {
     email: 'admin@dotcms.com',
     givenName: 'Admin',
@@ -71,7 +70,12 @@ const initialState: UVEState = {
     isTraditionalPage: false,
     canEditPage: true,
     pageIsLocked: true,
-    isClientReady: false
+    isClientReady: false,
+    viewParams: {
+        orientation: undefined,
+        seo: undefined,
+        device: undefined
+    }
 };
 
 export const uveStoreMock = signalStore(

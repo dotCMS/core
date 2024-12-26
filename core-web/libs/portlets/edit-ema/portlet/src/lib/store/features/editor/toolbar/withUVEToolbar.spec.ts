@@ -35,7 +35,12 @@ const initialState: UVEState = {
     isTraditionalPage: false,
     canEditPage: true,
     pageIsLocked: true,
-    isClientReady: false
+    isClientReady: false,
+    viewParams: {
+        orientation: undefined,
+        seo: undefined,
+        device: undefined
+    }
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withUVEToolbar());
@@ -97,12 +102,18 @@ describe('withEditor', () => {
 
     describe('methods', () => {
         describe('setDevice', () => {
-            it('should set the device', () => {
+            it('should set the device and viewParams', () => {
                 const iphone = mockDotDevices[0];
 
                 store.setDevice(iphone);
                 expect(store.device()).toBe(iphone);
                 expect(store.orientation()).toBe(Orientation.LANDSCAPE); // This mock is on landscape, because the width is greater than the height
+
+                expect(store.viewParams()).toEqual({
+                    device: iphone.inode,
+                    orientation: Orientation.LANDSCAPE,
+                    seo: undefined
+                });
             });
 
             it('should set the device and orientation', () => {
@@ -111,27 +122,44 @@ describe('withEditor', () => {
                 store.setDevice(iphone, Orientation.PORTRAIT);
                 expect(store.device()).toBe(iphone);
                 expect(store.orientation()).toBe(Orientation.PORTRAIT);
+
+                expect(store.viewParams()).toEqual({
+                    device: iphone.inode,
+                    orientation: Orientation.PORTRAIT,
+                    seo: undefined
+                });
             });
         });
 
         describe('setOrientation', () => {
-            it('should set the orientation', () => {
+            it('should set the orientation and the view params', () => {
                 store.setOrientation(Orientation.PORTRAIT);
                 expect(store.orientation()).toBe(Orientation.PORTRAIT);
+
+                expect(store.viewParams()).toEqual({
+                    device: store.viewParams().device,
+                    orientation: Orientation.PORTRAIT,
+                    seo: undefined
+                });
             });
-        });
 
-        describe('clearDeviceAndSocialMedia', () => {
-            // We have to extend this test because we have to test the social media
-            it('should clear the device and social media', () => {
-                store.setDevice(mockDotDevices[0]);
+            describe('clearDeviceAndSocialMedia', () => {
+                // We have to extend this test because we have to test the social media
+                it('should clear the device and social media', () => {
+                    store.setDevice(mockDotDevices[0]);
 
-                store.clearDeviceAndSocialMedia();
+                    store.clearDeviceAndSocialMedia();
 
-                expect(store.device()).toBe(null);
-                expect(store.socialMedia()).toBe(null);
-                expect(store.isEditState()).toBe(true);
-                expect(store.orientation()).toBe(null);
+                    expect(store.device()).toBe(null);
+                    expect(store.socialMedia()).toBe(null);
+                    expect(store.isEditState()).toBe(true);
+                    expect(store.orientation()).toBe(null);
+                    expect(store.viewParams()).toEqual({
+                        device: undefined,
+                        orientation: undefined,
+                        seo: undefined
+                    });
+                });
             });
         });
     });
