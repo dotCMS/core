@@ -13,6 +13,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     DotContainerStructure,
@@ -232,36 +233,34 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
      * @returns An Observable that emits the filtered content types.
      */
     private getFilteredContentTypes(filter: string, allowedContent: string[]) {
-        return forkJoin([
-            this.dotContentTypeService.filterContentTypes(filter, allowedContent.join(',')),
-            this.dotContentTypeService.getContentTypes({
+        return forkJoin({
+            contentTypes: this.dotContentTypeService.filterContentTypes(
+                filter,
+                allowedContent.join(',')
+            ),
+            widgets: this.dotContentTypeService.getContentTypes({
                 filter,
                 page: 40,
                 type: 'WIDGET'
             }),
-            this.dotConfigurationService.getKeyAsList('CONTENT_PALETTE_HIDDEN_CONTENT_TYPES')
-        ]).pipe(
-            map((results) => {
-                const [filteredContentTypes, widgets, hiddenContentTypes] = results;
-
-                // Some pages bring widgets in the CONTENT_PALETTE_HIDDEN_CONTENT_TYPES, and others don't.
-                // However, all pages allow widgets, so we make a request just to get them.
-                // Full comment here: https://github.com/dotCMS/core/pull/22573#discussion_r921263060
-                // This filter is used to prevent widgets from being repeated.
-                const contentLets = filteredContentTypes.filter(
-                    (item) => item.baseType !== 'WIDGET'
+            hiddenContentTypes: this.dotConfigurationService.getKeyAsList(
+                'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES'
+            )
+        }).pipe(
+            map(({ contentTypes, widgets, hiddenContentTypes }) => {
+                /**
+                 * This filter is used to prevent widgets from being repeated.
+                 * More information here: https://github.com/dotCMS/core/pull/22573#discussion_r921263060
+                 */
+                const filteredContentTypes = contentTypes.filter(
+                    (item) => item.baseType !== DotCMSBaseTypesContentTypes.WIDGET
                 );
-                // Filter widgets based to exclude hidden content types
-                const relevantWidgets = widgets.filter(
-                    (widget) => !hiddenContentTypes.includes(widget.variable)
-                );
+                const mergedContentAndWidgets = [...filteredContentTypes, ...widgets];
 
-                // Merge both array and order them by name
-                const contentTypes = [...contentLets, ...relevantWidgets]
+                return mergedContentAndWidgets
+                    .filter((item) => !hiddenContentTypes.includes(item.variable))
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .slice(0, 40);
-
-                return contentTypes;
             }),
             catchError(() => EMPTY)
         );
