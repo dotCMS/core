@@ -10,6 +10,8 @@ export interface DotWorkflowActionParams {
     actionId: string;
     inode: string;
     contentType: string;
+    languageId: string;
+    identifier: string;
 }
 
 /**
@@ -18,7 +20,7 @@ export interface DotWorkflowActionParams {
  * @export
  * @type {DotContentletState}
  */
-export type DotContentletState = 'new' | 'existing' | 'reset';
+export type DotContentletState = 'new' | 'existing' | 'reset' | 'copy';
 
 export interface DotWorkflowState extends DotCMSWorkflowStatus {
     contentState: DotContentletState;

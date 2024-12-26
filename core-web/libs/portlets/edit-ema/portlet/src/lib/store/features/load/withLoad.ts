@@ -12,8 +12,9 @@ import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
-import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
+import { DotPageAssetParams } from '../../../shared/models';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
@@ -48,11 +49,11 @@ export function withLoad() {
                  * @param {DotPageApiParams} pageParams - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                loadPageAsset: rxMethod<Partial<DotPageApiParams>>(
+                loadPageAsset: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
                             if (!store.pageParams()) {
-                                return params as DotPageApiParams;
+                                return params as DotPageAssetParams;
                             }
 
                             return {
@@ -139,10 +140,7 @@ export function withLoad() {
                                                 pageAsset?.page,
                                                 currentUser
                                             );
-
-                                            const isPreview = pageParams.preview === 'true';
                                             const isTraditionalPage = !pageParams.clientHost;
-                                            const isClientReady = isTraditionalPage || isPreview;
 
                                             patchState(store, {
                                                 pageAPIResponse: pageAsset,
@@ -152,7 +150,7 @@ export function withLoad() {
                                                 languages,
                                                 canEditPage,
                                                 pageIsLocked,
-                                                isClientReady,
+                                                isClientReady: isTraditionalPage,
                                                 isTraditionalPage,
                                                 status: UVE_STATUS.LOADED
                                             });
