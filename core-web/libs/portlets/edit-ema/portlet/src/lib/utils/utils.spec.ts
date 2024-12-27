@@ -795,23 +795,23 @@ describe('utils functions', () => {
     describe('getWrapperMeasures', () => {
         it('should return correct measures for landscape orientation', () => {
             const device: DotDevice = {
-                cssHeight: '800',
-                cssWidth: '1200',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device);
-            expect(result).toEqual({ width: '1200px', height: '800px' });
-        });
-
-        it('should return correct measures for portrait orientation', () => {
-            const device: DotDevice = {
                 cssHeight: '1200',
                 cssWidth: '800',
                 inode: 'some-inode'
             } as DotDevice;
 
-            const result = getWrapperMeasures(device);
+            const result = getWrapperMeasures(device, Orientation.LANDSCAPE);
+            expect(result).toEqual({ width: '1200px', height: '800px' });
+        });
+
+        it('should return correct measures for portrait orientation', () => {
+            const device: DotDevice = {
+                cssHeight: '800',
+                cssWidth: '1200',
+                inode: 'some-inode'
+            } as DotDevice;
+
+            const result = getWrapperMeasures(device, Orientation.PORTRAIT);
             expect(result).toEqual({ width: '800px', height: '1200px' });
         });
 

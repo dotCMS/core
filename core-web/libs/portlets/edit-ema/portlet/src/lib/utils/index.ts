@@ -659,10 +659,13 @@ export const getOrientation = (device: DotDevice): Orientation => {
         : Orientation.LANDSCAPE;
 };
 
-export const getWrapperMeasures = (device: DotDevice): { width: string; height: string } => {
+export const getWrapperMeasures = (
+    device: DotDevice,
+    orientation?: Orientation
+): { width: string; height: string } => {
     const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
 
-    return getOrientation(device) === Orientation.LANDSCAPE
+    return orientation === Orientation.LANDSCAPE
         ? {
               width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
               height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`

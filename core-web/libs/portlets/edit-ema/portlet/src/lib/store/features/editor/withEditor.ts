@@ -152,7 +152,7 @@ export function withEditor() {
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
 
-                    const wrapper = getWrapperMeasures(device);
+                    const wrapper = getWrapperMeasures(device, store.orientation());
 
                     return {
                         showDialogs,
