@@ -9,12 +9,16 @@ import { tap, switchMap, filter } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
-import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import {
+    RelationshipFieldItem,
+    SelectionMode
+} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
     data: RelationshipFieldItem[];
     status: ComponentStatus;
+    selectionMode: SelectionMode | null;
     errorMessage: string | null;
     columns: Column[];
     pagination: {
@@ -28,6 +32,7 @@ const initialState: ExistingContentState = {
     data: [],
     columns: [],
     status: ComponentStatus.INIT,
+    selectionMode: null,
     errorMessage: null,
     pagination: {
         offset: 0,
@@ -54,10 +59,15 @@ export const ExistingContentStore = signalStore(
              * Initiates the loading of content by setting the status to LOADING and fetching content from the service.
              * @returns {Observable<void>} An observable that completes when the content has been loaded.
              */
-            loadContent: rxMethod<string>(
+            initLoad: rxMethod<{
+                contentTypeId: string;
+                selectionMode: SelectionMode;
+            }>(
                 pipe(
-                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                    tap((contentTypeId) => {
+                    tap(({ selectionMode }) =>
+                        patchState(store, { status: ComponentStatus.LOADING, selectionMode })
+                    ),
+                    tap(({ contentTypeId }) => {
                         if (!contentTypeId) {
                             patchState(store, {
                                 status: ComponentStatus.ERROR,
@@ -65,8 +75,8 @@ export const ExistingContentStore = signalStore(
                             });
                         }
                     }),
-                    filter((contentTypeId) => !!contentTypeId),
-                    switchMap((contentTypeId) =>
+                    filter(({ contentTypeId }) => !!contentTypeId),
+                    switchMap(({ contentTypeId }) =>
                         relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
                                 next: ([columns, data]) => {
@@ -88,12 +98,6 @@ export const ExistingContentStore = signalStore(
                 )
             ),
             /**
-             * Applies the initial state for the existing content.
-             */
-            applyInitialState: () => {
-                patchState(store, initialState);
-            },
-            /**
              * Advances the pagination to the next page and updates the state accordingly.
              */
             nextPage: () => {
@@ -109,11 +113,17 @@ export const ExistingContentStore = signalStore(
              * Moves the pagination to the previous page and updates the state accordingly.
              */
             previousPage: () => {
+                const { currentPage, offset, rowsPerPage } = store.pagination();
+
+                if (currentPage === 1) {
+                    return;
+                }
+
                 patchState(store, {
                     pagination: {
                         ...store.pagination(),
-                        offset: store.pagination().offset - store.pagination().rowsPerPage,
-                        currentPage: store.pagination().currentPage - 1
+                        offset: offset - rowsPerPage,
+                        currentPage: currentPage - 1
                     }
                 });
             }

@@ -1,7 +1,9 @@
 import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+
+import { delay } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
@@ -39,9 +41,9 @@ describe('ExistingContentStore', () => {
         expect(store).toBeTruthy();
     });
 
-    describe('Method: loadContent', () => {
-        it('should set error state when contentId is empty', fakeAsync(() => {
-            store.loadContent('');
+    describe('State Management', () => {
+        it('should handle empty contentTypeId', fakeAsync(() => {
+            store.initLoad({ contentTypeId: null, selectionMode: 'single' });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.ERROR);
@@ -52,7 +54,7 @@ describe('ExistingContentStore', () => {
         it('should load content successfully', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 
-            store.loadContent('123');
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.LOADED);
@@ -66,7 +68,7 @@ describe('ExistingContentStore', () => {
                 throwError(() => new Error('Server Error'))
             );
 
-            store.loadContent('123');
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.ERROR);
@@ -77,15 +79,8 @@ describe('ExistingContentStore', () => {
         }));
     });
 
-    describe('Method: applyInitialState', () => {
-        it('should reset store to initial state', () => {
-            // First set some data
-            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
-            store.loadContent('123');
-
-            // Then reset
-            store.applyInitialState();
-
+    describe('Initial State', () => {
+        it('should have correct initial state', () => {
             expect(store.data()).toEqual([]);
             expect(store.columns()).toEqual([]);
             expect(store.status()).toBe(ComponentStatus.INIT);
@@ -95,51 +90,64 @@ describe('ExistingContentStore', () => {
                 currentPage: 1,
                 rowsPerPage: 50
             });
+            expect(store.selectionMode()).toBe(null);
         });
     });
 
-    describe('Pagination Methods', () => {
-        describe('Method: nextPage', () => {
-            it('should update pagination state for next page', () => {
-                store.nextPage();
+    describe('Pagination', () => {
+        it('should handle next page', () => {
+            store.nextPage();
 
-                expect(store.pagination()).toEqual({
-                    offset: 50,
-                    currentPage: 2,
-                    rowsPerPage: 50
-                });
+            expect(store.pagination()).toEqual({
+                offset: 50,
+                currentPage: 2,
+                rowsPerPage: 50
             });
         });
 
-        describe('Method: previousPage', () => {
-            it('should update pagination state for previous page', () => {
-                // First go to next page
-                store.nextPage();
-                // Then go back
-                store.previousPage();
+        it('should handle previous page', () => {
+            store.nextPage();
+            store.previousPage();
 
-                expect(store.pagination()).toEqual({
-                    offset: 0,
-                    currentPage: 1,
-                    rowsPerPage: 50
-                });
+            expect(store.pagination()).toEqual({
+                offset: 0,
+                currentPage: 1,
+                rowsPerPage: 50
+            });
+        });
+
+        it('should not go to previous page when on first page', () => {
+            store.previousPage();
+
+            expect(store.pagination()).toEqual({
+                offset: 0,
+                currentPage: 1,
+                rowsPerPage: 50
             });
         });
     });
 
     describe('Computed Properties', () => {
-        it('should compute isLoading correctly', () => {
-            store.loadContent('123');
-            expect(store.isLoading()).toBe(true);
-        });
+        it('should compute loading state correctly', fakeAsync(() => {
+            const mockObservable = of([mockColumns, mockData]).pipe(delay(100)) as Observable<
+                [Column[], RelationshipFieldItem[]]
+            >;
 
-        it('should compute totalPages correctly', fakeAsync(() => {
+            service.getColumnsAndContent.mockReturnValue(mockObservable);
+
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            expect(store.isLoading()).toBe(true);
+
+            tick(100);
+            expect(store.isLoading()).toBe(false);
+        }));
+
+        it('should compute total pages correctly', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 
-            store.loadContent('123');
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
             tick();
 
-            // With 3 items and 50 items per page, should be 1 page
             expect(store.totalPages()).toBe(1);
         }));
     });
