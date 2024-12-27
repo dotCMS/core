@@ -9,6 +9,10 @@ import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.mozilla.universalchardet.UniversalDetector;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -35,9 +39,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.mozilla.universalchardet.UniversalDetector;
 
 /**
  * Provide utility methods to work with binary files in dotCMS.
@@ -536,6 +537,25 @@ public class FileUtil {
 		}
 
 		return totalCount;
+	}
+
+	/**
+	 * Removes the extension from a filename. This method will remove all characters starting from
+	 * the first occurrence of the period character.
+	 *
+	 * @param filename The filename to remove the extension from.
+	 *
+	 * @return The filename without the extension.
+	 */
+	public static String removeExtension(final String filename) {
+		if (filename == null) {
+			return null;
+		}
+		final int pos = filename.indexOf(StringPool.PERIOD);
+		if (pos == -1) {
+			return filename;
+		}
+		return filename.substring(0, pos);
 	}
 
 }
