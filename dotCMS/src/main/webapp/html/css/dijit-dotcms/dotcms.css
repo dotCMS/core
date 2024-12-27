@@ -10125,6 +10125,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .view-roles__tree {
   height: auto;
+  padding-bottom: 0.75rem;
 }
 
 .view-roles__tabs,
