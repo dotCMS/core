@@ -73,9 +73,6 @@
                             <p-sortIcon [field]="column.field" />
                         </th>
                     }
-                    <th scope="col" pFrozenColumn alignFrozen="right" [frozen]="true">
-                        {{ 'dot.file.relationship.dialog.menu.column' | dm }}
-                    </th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-item let-columns="columns">
@@ -92,9 +89,6 @@
                             <p class="truncate-text">{{ item[column.field] }}</p>
                         </td>
                     }
-                    <td pFrozenColumn alignFrozen="right" [frozen]="true">
-                        <i class="pi pi-pencil"></i>
-                    </td>
                 </tr>
             </ng-template>
         </p-table>
