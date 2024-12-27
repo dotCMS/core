@@ -3530,7 +3530,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			try {
 
 				final boolean isValidContentlet = !InodeUtils.isSet(contentlet.getInode())
-						|| contentlet.isWorking();
+						|| contentlet.isWorking() ||
+						APILocator.getVersionableAPI().hasWorkingVersionInAnyOtherLanguage(contentlet, contentlet.getLanguageId());
 				if (!isValidContentlet) {
 
 					throw new IllegalArgumentException(LanguageUtil

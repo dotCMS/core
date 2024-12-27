@@ -1,4 +1,3 @@
-import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
     signalStore,
@@ -10,14 +9,13 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
-import { computed, inject } from '@angular/core';
+import { computed } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { RelationshipFieldItem } from '../models/relationship.models';
-import { RelationshipFieldService } from '../services/relationship-field.service';
 
 export interface RelationshipFieldState {
     data: RelationshipFieldItem[];
@@ -50,8 +48,6 @@ export const RelationshipFieldStore = signalStore(
         totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage))
     })),
     withMethods((store) => {
-        const relationshipFieldService = inject(RelationshipFieldService);
-
         return {
             /**
              * Sets the data in the state.
@@ -89,18 +85,7 @@ export const RelationshipFieldStore = signalStore(
              * It updates the state with the loaded data and sets the status to LOADED.
              */
             loadData: rxMethod<void>(
-                pipe(
-                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                    switchMap(() =>
-                        relationshipFieldService.getContent(10).pipe(
-                            tapResponse({
-                                next: (data) =>
-                                    patchState(store, { data, status: ComponentStatus.LOADED }),
-                                error: () => patchState(store, { status: ComponentStatus.ERROR })
-                            })
-                        )
-                    )
-                )
+                pipe(tap(() => patchState(store, { status: ComponentStatus.LOADED })))
             ),
             /**
              * Advances the pagination to the next page and updates the state accordingly.

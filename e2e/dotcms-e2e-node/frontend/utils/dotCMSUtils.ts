@@ -13,8 +13,10 @@ export class dotCMSUtils {
     async login(page: Page, username: string, password: string) {
         await page.goto('/dotAdmin');
         await page.waitForLoadState()
-        await page.fill(loginLocators.userNameInput, username);
-        await page.fill(loginLocators.passwordInput, password);
+        const userNameInputLocator = page.locator(loginLocators.userNameInput);
+        await waitForVisibleAndCallback(userNameInputLocator, () => userNameInputLocator.fill(username));
+        const passwordInputLocator = page.locator(loginLocators.passwordInput);
+        await waitForVisibleAndCallback(passwordInputLocator, () => passwordInputLocator.fill(password));
         const loginBtnLocator = page.getByTestId(loginLocators.loginBtn);
         await waitForVisibleAndCallback(loginBtnLocator, () => loginBtnLocator.click());
         const gettingStartedLocator = page.getByRole('link', { name: 'Getting Started' });

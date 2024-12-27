@@ -1,4 +1,5 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -11,6 +12,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
+import { RelationshipFieldService } from '../../services/relationship-field.service';
+
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
     let store: InstanceType<typeof ExistingContentStore>;
@@ -19,13 +22,9 @@ describe('DotSelectExistingContentComponent', () => {
         id,
         title: `Test Content ${id}`,
         language: '1',
-        state: {
-            label: 'Published',
-            styleClass: 'small-chip'
-        },
         description: 'Test description',
         step: 'Step 1',
-        lastUpdate: new Date().toISOString()
+        modDate: new Date().toISOString()
     });
 
     const messageServiceMock = new MockDotMessageService({
@@ -36,7 +35,12 @@ describe('DotSelectExistingContentComponent', () => {
     const createComponent = createComponentFactory({
         component: DotSelectExistingContentComponent,
         componentProviders: [ExistingContentStore],
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        providers: [
+            mockProvider(RelationshipFieldService, {
+                getContent: jest.fn(() => of([]))
+            }),
+            { provide: DotMessageService, useValue: messageServiceMock }
+        ],
         detectChanges: false
     });
 

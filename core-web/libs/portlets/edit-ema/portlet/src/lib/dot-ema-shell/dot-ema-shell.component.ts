@@ -11,6 +11,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { skip } from 'rxjs/operators';
 
+import { UVE_MODE } from '@dotcms/client';
 import {
     DotESContentService,
     DotExperimentsService,
@@ -30,10 +31,10 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DialogAction } from '../shared/models';
+import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import {
     checkClientHostAccess,
@@ -183,7 +184,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 inode: page.inode,
                 title: page.title,
                 identifier: page.identifier,
-                contentType: page.contentType
+                contentType: page.contentType,
+                angularCurrentPortlet: 'edit-page'
             });
         }
     }
@@ -201,7 +203,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @return {*}  {DotPageApiParams}
      * @memberof DotEmaShellComponent
      */
-    #getPageParams(): DotPageApiParams {
+    #getPageParams(): DotPageAssetParams {
         const { queryParams, data } = this.#activatedRoute.snapshot;
         const uveConfig = data?.uveConfig;
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
@@ -216,6 +218,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         if (uveConfig?.url && !validHost) {
             params.clientHost = uveConfig.url;
+        }
+
+        if (params.editorMode !== UVE_MODE.EDIT && params.editorMode !== UVE_MODE.PREVIEW) {
+            params.editorMode = UVE_MODE.EDIT;
+        }
+
+        if (params.editorMode === UVE_MODE.PREVIEW && !params.publishDate) {
+            params.publishDate = new Date().toISOString();
         }
 
         return params;
