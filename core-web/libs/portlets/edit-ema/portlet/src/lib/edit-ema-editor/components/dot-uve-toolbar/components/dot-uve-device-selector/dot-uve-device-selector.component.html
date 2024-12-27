@@ -1,0 +1,42 @@
+@for (device of defaultDevices; track $index) {
+    <p-button
+        [icon]="device.icon"
+        [pTooltip]="device.name | dm"
+        tooltipPosition="bottom"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
+        (click)="onDeviceSelect(device)"
+        [attr.data-testId]="device.inode" />
+}
+
+<p-button
+    styleClass="p-button-text p-button-sm p-button-rounded orientation p-button-icon-only"
+    [disabled]="$disableOrientation()"
+    (click)="onOrientationChange()"
+    data-testId="orientation">
+    <svg
+        [ngClass]="$currentOrientation()"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+        width="24px"
+        height="24px">
+        <use
+            data-testId="orientation"
+            href="./assets/edit-ema/orientation.svg#orientation"
+            width="24px"
+            height="24px"></use>
+    </svg>
+</p-button>
+
+@if ($menuItems().length) {
+    <p-button
+        icon="pi pi-chevron-down"
+        iconPos="right"
+        [label]="'more' | dm"
+        [ngClass]="{ active: !$isADefaultDeviceActive() }"
+        styleClass="p-button-text p-button-sm"
+        (click)="menu.toggle($event)"
+        data-testId="more-button" />
+
+    <p-menu #menu [popup]="true" [model]="$menuItems()"></p-menu>
+}

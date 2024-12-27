@@ -18,7 +18,7 @@ import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaBookmarksComponent } from './dot-ema-bookmarks.component';
 
-import { UVEStore } from '../../../store/dot-uve.store';
+import { UVEStore } from '../../../../../store/dot-uve.store';
 
 describe('DotEmaBookmarksComponent', () => {
     let spectator: Spectator<DotEmaBookmarksComponent>;

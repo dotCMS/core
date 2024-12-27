@@ -1,5 +1,5 @@
 import { UVE_MODE, CLIENT_ACTIONS } from '@dotcms/client';
-import { DotCMSContentlet, DotDevice } from '@dotcms/dotcms-models';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
@@ -183,10 +183,6 @@ export interface DotPage {
     stInode?: string;
     working?: boolean;
     workingInode?: string;
-}
-
-export interface DotDeviceWithIcon extends DotDevice {
-    icon?: string;
 }
 
 export type CommonErrorsInfo = Record<CommonErrors, InfoPage>;

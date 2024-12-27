@@ -11,6 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { UVE_MODE } from '@dotcms/client';
 import {
+    DotDevicesService,
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
@@ -19,16 +20,24 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
+    DotDevicesServiceMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
-    getRunningExperimentMock
+    getRunningExperimentMock,
+    mockDotDevices
 } from '@dotcms/utils-testing';
 
+import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
+import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
@@ -41,11 +50,6 @@ import {
     createPageApiUrlWithQueryParams,
     sanitizeURL
 } from '../../../utils';
-import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
-import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
-import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
-import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -91,11 +95,21 @@ const baseUVEState = {
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
     }),
+    $infoDisplayProps: signal(undefined),
+    viewParams: signal({
+        seo: undefined,
+        device: undefined,
+        orientation: undefined
+    }),
     languages: signal([
         { id: 1, translated: true },
         { id: 2, translated: false },
         { id: 3, translated: true }
-    ])
+    ]),
+    patchViewParams: jest.fn(),
+    orientation: signal(''),
+    clearDeviceAndSocialMedia: jest.fn(),
+    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'))
 };
 
 describe('DotUveToolbarComponent', () => {
@@ -103,6 +117,8 @@ describe('DotUveToolbarComponent', () => {
     let store: InstanceType<typeof UVEStore>;
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
+
+    let devicesService: DotDevicesService;
 
     const fixedDate = new Date('2024-01-01');
     jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
@@ -114,7 +130,8 @@ describe('DotUveToolbarComponent', () => {
             MockComponent(DotEmaBookmarksComponent),
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaPersonaSelectorComponent),
-            MockComponent(DotUveWorkflowActionsComponent)
+            MockComponent(DotUveWorkflowActionsComponent),
+            MockComponent(DotUveDeviceSelectorComponent)
         ],
         providers: [
             UVEStore,
@@ -155,6 +172,10 @@ describe('DotUveToolbarComponent', () => {
                 useValue: {
                     add: jest.fn()
                 }
+            },
+            {
+                provide: DotDevicesService,
+                useValue: new DotDevicesServiceMock()
             }
         ],
         componentProviders: [
@@ -176,6 +197,8 @@ describe('DotUveToolbarComponent', () => {
             store = spectator.inject(UVEStore, true);
             messageService = spectator.inject(MessageService, true);
             confirmationService = spectator.inject(ConfirmationService);
+
+            devicesService = spectator.inject(DotDevicesService, true);
         });
 
         describe('dot-ema-bookmarks', () => {
@@ -213,11 +236,11 @@ describe('DotUveToolbarComponent', () => {
                     icon: 'pi pi-external-link',
                     pTooltip: 'Copy URL',
                     'data-testId': 'uve-toolbar-copy-url',
-                    'ng-reflect-style-class': 'p-button-text p-button-sm',
+                    'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
                     'ng-reflect-content': 'Copy URL',
                     'ng-reflect-icon': 'pi pi-external-link',
                     'ng-reflect-text': 'http://localhost:3000/test-url',
-                    styleClass: 'p-button-text p-button-sm'
+                    styleClass: 'p-button-text p-button-sm p-button-rounded'
                 });
             });
 
@@ -382,14 +405,14 @@ describe('DotUveToolbarComponent', () => {
     });
 
     describe('preview', () => {
+        const previewBaseUveState = {
+            ...baseUVEState,
+            $isPreviewMode: signal(true)
+        };
+
         beforeEach(() => {
             spectator = createComponent({
-                providers: [
-                    mockProvider(UVEStore, {
-                        ...baseUVEState,
-                        $isPreviewMode: signal(true)
-                    })
-                ]
+                providers: [mockProvider(UVEStore, previewBaseUveState)]
             });
 
             store = spectator.inject(UVEStore, true);
@@ -434,24 +457,8 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        it('should have desktop button', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('desktop-preview'))).toBeTruthy();
-        });
-
-        it('should have mobile button', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('mobile-preview'))).toBeTruthy();
-        });
-
-        it('should have tablet button', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('tablet-preview'))).toBeTruthy();
-        });
-
-        it('should have more devices button', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('more-devices-preview'))).toBeTruthy();
+        it('should have a device selector', () => {
+            expect(spectator.query(byTestId('uve-toolbar-device-selector'))).toBeTruthy();
         });
 
         it('should not have experiments', () => {
@@ -463,6 +470,20 @@ describe('DotUveToolbarComponent', () => {
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
             expect(workflowActions).toBeNull();
+        });
+    });
+
+    describe('onInit', () => {
+        it('should fetch devices', () => {
+            const spy = jest.spyOn(devicesService, 'get');
+
+            spectator.component.ngOnInit(); // At this point the component already has initializated so we need to call the method directly
+
+            expect(spy).toHaveBeenCalled();
+        });
+
+        it("should fill the devices with the devices that don't have a default device", () => {
+            expect(spectator.component.$devices()).toEqual([...DEFAULT_DEVICES, ...mockDotDevices]);
         });
     });
 

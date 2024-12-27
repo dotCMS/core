@@ -312,6 +312,69 @@ describe('DotEmaShellComponent', () => {
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
+        it('should patch viewParams with empty object when the editorMode is edit', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+            const params = {
+                ...INITIAL_PAGE_PARAMS,
+                editorMode: UVE_MODE.EDIT
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({});
+        });
+
+        it('should patch viewParams with empty params on init', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+
+            const params = {
+                ...INITIAL_PAGE_PARAMS,
+                editorMode: UVE_MODE.PREVIEW
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+                orientation: undefined,
+                seo: undefined,
+                device: undefined
+            });
+        });
+
+        it('should patch viewParams with the correct params on init', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+
+            const withViewParams = {
+                device: 'mobile',
+                orientation: 'landscape',
+                seo: undefined,
+                editorMode: UVE_MODE.PREVIEW
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: withViewParams, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+                orientation: 'landscape',
+                seo: undefined,
+                device: 'mobile'
+            });
+        });
+
         it('should call store.loadPageAsset when the `loadPageAsset` is called', () => {
             const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
             const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');

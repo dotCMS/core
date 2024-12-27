@@ -36,10 +36,10 @@ import {
 
 import { DotEmaInfoDisplayComponent } from './dot-ema-info-display.component';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
-import { UVEStore } from '../../../store/dot-uve.store';
+import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DEFAULT_PERSONA } from '../../../../../shared/consts';
+import { MOCK_RESPONSE_HEADLESS } from '../../../../../shared/mocks';
+import { UVEStore } from '../../../../../store/dot-uve.store';
 
 describe('DotEmaInfoDisplayComponent', () => {
     let spectator: Spectator<DotEmaInfoDisplayComponent>;

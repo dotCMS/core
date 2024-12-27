@@ -9,7 +9,7 @@ import {
 
 import { computed } from '@angular/core';
 
-import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
@@ -186,22 +186,12 @@ export function withEditorToolbar() {
         })),
         withMethods((store) => {
             return {
-                setDevice: (device: DotDevice) => {
-                    patchState(store, {
-                        device,
-                        socialMedia: null,
-                        isEditState: false
-                    });
-                },
                 setSocialMedia: (socialMedia: string) => {
                     patchState(store, {
                         socialMedia,
                         device: null,
                         isEditState: false
                     });
-                },
-                clearDeviceAndSocialMedia: () => {
-                    patchState(store, initialState);
                 }
             };
         })
