@@ -8,7 +8,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME,
+    DotCMSContentlet,
+    DotDeviceListItem
+} from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
 
 import { withEditor } from './withEditor';
@@ -25,10 +30,8 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
-import { DotDeviceWithIcon } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
-
 const mockCurrentUser: CurrentUser = {
     email: 'admin@dotcms.com',
     givenName: 'Admin',
@@ -67,7 +70,12 @@ const initialState: UVEState = {
     isTraditionalPage: false,
     canEditPage: true,
     pageIsLocked: true,
-    isClientReady: false
+    isClientReady: false,
+    viewParams: {
+        orientation: undefined,
+        seo: undefined,
+        device: undefined
+    }
 };
 
 export const uveStoreMock = signalStore(
@@ -370,7 +378,7 @@ describe('withEditor', () => {
                 });
 
                 it('should return info for device', () => {
-                    const device = mockDotDevices[0] as DotDeviceWithIcon;
+                    const device = mockDotDevices[0] as DotDeviceListItem;
 
                     patchState(store, { device });
 
@@ -571,8 +579,7 @@ describe('withEditor', () => {
                         currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
                         urlContentMap: null,
                         runningExperiment: null,
-                        unlockButton: null,
-                        showInfoDisplay: false
+                        unlockButton: null
                     });
                 });
             });
@@ -767,7 +774,7 @@ describe('withEditor', () => {
                 });
 
                 it('should have a wrapper when a device is present', () => {
-                    const device = mockDotDevices[0] as DotDeviceWithIcon;
+                    const device = mockDotDevices[0] as DotDeviceListItem;
 
                     patchState(store, { device });
 

@@ -28,7 +28,6 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -42,7 +41,8 @@ import {
     areContainersEquals,
     getEditorStates,
     createPageApiUrlWithQueryParams,
-    sanitizeURL
+    sanitizeURL,
+    getWrapperMeasures
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
@@ -152,6 +152,8 @@ export function withEditor() {
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
 
+                    const wrapper = getWrapperMeasures(device, store.orientation());
+
                     return {
                         showDialogs,
                         showBlockEditorSidebar,
@@ -159,12 +161,7 @@ export function withEditor() {
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
-                            wrapper: device
-                                ? {
-                                      width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
-                                      height: `${device.cssHeight}${BASE_IFRAME_MEASURE_UNIT}`
-                                  }
-                                : null
+                            wrapper: device ? wrapper : null
                         },
                         progressBar: isLoading,
                         contentletTools: canUserHaveContentletTools

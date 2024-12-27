@@ -8,7 +8,7 @@ import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
-import { ShellProps, TranslateProps, UVEState } from './models';
+import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
@@ -144,6 +144,14 @@ export const UVEStore = signalStore(
                 patchState(store, {
                     status: UVE_STATUS.LOADED,
                     pageAPIResponse
+                });
+            },
+            patchViewParams(viewParams: Partial<DotUveViewParams>) {
+                patchState(store, {
+                    viewParams: {
+                        ...store.viewParams(),
+                        ...viewParams
+                    }
                 });
             }
         };

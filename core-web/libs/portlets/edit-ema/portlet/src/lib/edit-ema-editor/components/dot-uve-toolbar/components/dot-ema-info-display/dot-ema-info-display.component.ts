@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { UVEStore } from '../../../store/dot-uve.store';
+import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-ema-info-display',

@@ -15,8 +15,8 @@ import {
 import { DotCMSContentlet, DotCMSWorkflowAction, DotWorkflowPayload } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 
-import { UVEStore } from '../../../store/dot-uve.store';
-import { compareUrlPaths, getPageURI } from '../../../utils';
+import { UVEStore } from '../../../../../store/dot-uve.store';
+import { getPageURI, compareUrlPaths } from '../../../../../utils';
 
 @Component({
     selector: 'dot-uve-workflow-actions',

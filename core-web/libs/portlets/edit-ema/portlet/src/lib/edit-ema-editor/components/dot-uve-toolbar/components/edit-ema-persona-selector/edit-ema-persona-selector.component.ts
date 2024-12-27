@@ -28,7 +28,7 @@ import { catchError } from 'rxjs/operators';
 import { DotPersona } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api.service';
 
 interface PersonaSelector {
     items: DotPersona[];

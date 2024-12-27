@@ -11,7 +11,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { UVEStore } from '../../../store/dot-uve.store';
+import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-ema-bookmarks',
