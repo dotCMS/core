@@ -1,7 +1,9 @@
 import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+
+import { delay } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
@@ -127,12 +129,16 @@ describe('ExistingContentStore', () => {
 
     describe('Computed Properties', () => {
         it('should compute loading state correctly', fakeAsync(() => {
-            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+            const mockObservable = of([mockColumns, mockData]).pipe(delay(100)) as Observable<
+                [Column[], RelationshipFieldItem[]]
+            >;
+
+            service.getColumnsAndContent.mockReturnValue(mockObservable);
 
             store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
             expect(store.isLoading()).toBe(true);
 
-            tick();
+            tick(100);
             expect(store.isLoading()).toBe(false);
         }));
 

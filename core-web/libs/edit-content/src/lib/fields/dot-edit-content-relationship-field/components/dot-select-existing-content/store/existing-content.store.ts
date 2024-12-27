@@ -113,11 +113,17 @@ export const ExistingContentStore = signalStore(
              * Moves the pagination to the previous page and updates the state accordingly.
              */
             previousPage: () => {
+                const { currentPage, offset, rowsPerPage } = store.pagination();
+
+                if (currentPage === 1) {
+                    return;
+                }
+
                 patchState(store, {
                     pagination: {
                         ...store.pagination(),
-                        offset: store.pagination().offset - store.pagination().rowsPerPage,
-                        currentPage: store.pagination().currentPage - 1
+                        offset: offset - rowsPerPage,
+                        currentPage: currentPage - 1
                     }
                 });
             }

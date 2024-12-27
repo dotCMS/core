@@ -10,7 +10,19 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
+import { Column } from '../../models/column.model';
 import { RelationshipFieldService } from '../../services/relationship-field.service';
+
+const mockColumns: Column[] = [
+    { field: 'title', header: 'Title' },
+    { field: 'modDate', header: 'Mod Date' }
+];
+
+const mockData: RelationshipFieldItem[] = [
+    { id: '1', title: 'Content 1', language: '1', modDate: new Date().toISOString() },
+    { id: '2', title: 'Content 2', language: '1', modDate: new Date().toISOString() },
+    { id: '3', title: 'Content 3', language: '1', modDate: new Date().toISOString() }
+];
 
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
@@ -43,7 +55,7 @@ describe('DotSelectExistingContentComponent', () => {
         componentProviders: [ExistingContentStore],
         providers: [
             mockProvider(RelationshipFieldService, {
-                getContent: jest.fn(() => of([]))
+                getColumnsAndContent: jest.fn(() => of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
             { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
@@ -65,36 +77,15 @@ describe('DotSelectExistingContentComponent', () => {
     });
 
     describe('Initialization', () => {
-        it('should initialize with required configuration', () => {
-            const spy = jest.spyOn(store, 'initLoad');
-            spectator.component.ngOnInit();
-            expect(spy).toHaveBeenCalledWith({
-                contentTypeId: 'test-content-type-id',
-                selectionMode: 'multiple'
+        describe('with valid configuration', () => {
+            it('should initialize with required configuration', () => {
+                const spy = jest.spyOn(store, 'initLoad');
+                spectator.component.ngOnInit();
+                expect(spy).toHaveBeenCalledWith({
+                    contentTypeId: 'test-content-type-id',
+                    selectionMode: 'multiple'
+                });
             });
-        });
-
-        it('should throw error when selectionMode is missing', () => {
-            const invalidConfig = createComponentFactory({
-                component: DotSelectExistingContentComponent,
-                componentProviders: [ExistingContentStore],
-                providers: [
-                    mockProvider(RelationshipFieldService, {
-                        getContent: jest.fn(() => of([]))
-                    }),
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
-                    {
-                        provide: DynamicDialogConfig,
-                        useValue: { data: { contentTypeId: 'test-id' } }
-                    }
-                ]
-            });
-
-            expect(() => {
-                const component = invalidConfig();
-                component.detectChanges();
-            }).toThrow('Selection mode is required');
         });
     });
 
@@ -205,5 +196,69 @@ describe('DotSelectExistingContentComponent', () => {
 
             expect(result).toBe(false);
         });
+    });
+});
+
+describe('DotSelectExistingContentComponent when selectionMode is missing', () => {
+    let spectator: Spectator<DotSelectExistingContentComponent>;
+
+    const messageServiceMock = new MockDotMessageService({
+        'dot.file.relationship.dialog.apply.one.entry': 'Apply 1 entry',
+        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries'
+    });
+
+    const createComponentWithInvalidConfig = createComponentFactory({
+        component: DotSelectExistingContentComponent,
+        componentProviders: [ExistingContentStore],
+        providers: [
+            mockProvider(RelationshipFieldService, {
+                getColumnsAndContent: jest.fn(() => of([mockColumns, mockData]))
+            }),
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+            {
+                provide: DynamicDialogConfig,
+                useValue: { data: { contentTypeId: 'test-id' } }
+            }
+        ]
+    });
+
+    it('should throw error when selectionMode is missing', () => {
+        expect(() => {
+            spectator = createComponentWithInvalidConfig();
+            spectator.detectChanges();
+        }).toThrow('Selection mode is required');
+    });
+});
+
+describe('DotSelectExistingContentComponent when contentTypeId is missing', () => {
+    let spectator: Spectator<DotSelectExistingContentComponent>;
+
+    const messageServiceMock = new MockDotMessageService({
+        'dot.file.relationship.dialog.apply.one.entry': 'Apply 1 entry',
+        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries'
+    });
+
+    const createComponentWithInvalidConfig = createComponentFactory({
+        component: DotSelectExistingContentComponent,
+        componentProviders: [ExistingContentStore],
+        providers: [
+            mockProvider(RelationshipFieldService, {
+                getColumnsAndContent: jest.fn(() => of([mockColumns, mockData]))
+            }),
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+            {
+                provide: DynamicDialogConfig,
+                useValue: { data: { selectionMode: 'multiple' } }
+            }
+        ]
+    });
+
+    it('should throw error when contentTypeId is missing', () => {
+        expect(() => {
+            spectator = createComponentWithInvalidConfig();
+            spectator.detectChanges();
+        }).toThrow('Content type id is required');
     });
 });
