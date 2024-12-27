@@ -7412,7 +7412,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         if (languageId > 0 && !this.languageAPI.hasLanguage(languageId)) {
             throw new DotContentletValidationException(
-                    "Contentlet [" + contentIdentifier + "] is associated to an invalid language.");
+                    "Contentlet [" + contentIdentifier + "] is associated to an invalid language id: " + languageId);
         }
 
         final ContentType contentType = Sneaky.sneak(
