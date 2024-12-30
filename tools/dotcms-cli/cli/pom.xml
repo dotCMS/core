@@ -19,8 +19,8 @@
         <testcontainers.version>1.17.6</testcontainers.version>
         <test.failure.ignore>false</test.failure.ignore>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
-        <docker.version.tag>24.12.27</docker.version.tag>
-        <testcontainers.docker.image>${docker.output.image.name}:${docker.version.tag}</testcontainers.docker.image>
+        <docker.version.tag>${project.version}</docker.version.tag>
+        <testcontainers.docker.image>${docker.output.image.name}/${docker.version.tag}</testcontainers.docker.image>
         <java.keytar.version>1.0.0</java.keytar.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
