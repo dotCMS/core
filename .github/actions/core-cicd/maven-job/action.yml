@@ -241,7 +241,7 @@ runs:
       name: Save Docker Image to Tar File
       if: ${{ inputs.generate-docker == 'true' }}
       shell: bash
-      run: docker save dotcms/dotcms-test:24.12.27 > /tmp/image.tar
+      run: docker save dotcms/dotcms-test:${{ inputs.version }} > /tmp/image.tar
 
     - id: upload-docker-image
       name: Upload Docker Image as Artifact
