@@ -372,7 +372,6 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
         final Map<String, Object> expectedDataMap = Map.of(
                 Collector.EVENT_TYPE, EventType.PAGE_REQUEST.getType(),
                 Collector.SITE_NAME, testSite.getHostname(),
-                Collector.COME_FROM_VANITY_URL, true,
                 Collector.LANGUAGE, defaultLanguage.getIsoCode(),
                 Collector.URL, TEST_PAGE_URL,
                 Collector.OBJECT, Map.of(

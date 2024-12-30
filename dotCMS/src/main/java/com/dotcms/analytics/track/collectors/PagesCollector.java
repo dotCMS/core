@@ -100,6 +100,7 @@ public class PagesCollector implements Collector {
         collectorPayloadBean.put(OBJECT,  pageObject);
         collectorPayloadBean.put(URL, uri);
         collectorPayloadBean.put(LANGUAGE, language);
+        collectorPayloadBean.put(LANGUAGE_ID, languageId);
 
         if (Objects.nonNull(site)) {
             collectorPayloadBean.put(SITE_NAME,  site.getHostname());
