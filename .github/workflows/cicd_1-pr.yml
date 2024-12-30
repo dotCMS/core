@@ -1,29 +1,19 @@
-# PR Checks Workflow
 #
-# This workflow is triggered on pull requests to the main branch and orchestrates
-# the entire PR check process. It uses reusable workflows to modularize different
-# stages of the CI process.
+# GitHub Actions Workflow for LTS Auto-run Tests
+# This file is a GitHub Actions workflow configuration for running automated tests on long-term support (LTS) branches.
+# It defines a series of jobs that are triggered on pushes to branches matching the pattern release-*. The workflow includes the following jobs:
+# Initialize: Sets up the environment and performs initial validation.
+# Build: Compiles the project if no artifacts were found during initialization.
+# Test: Runs various tests (unit, integration, frontend, etc.) based on the outputs from the initialization step.
+# Finalize: Aggregates and finalizes the results from the previous jobs.
+# The workflow uses concurrency control to manage multiple runs and cancels in-progress runs for the same branch or pull request to prevent delays.
 #
-# Key features:
-# - Triggered on PR open and synchronize events
-# - Uses concurrency to manage multiple runs
-# - Modular structure using reusable workflows
-# - Conditional execution based on initialization results
-# - Comprehensive PR checks including build, tests, and SonarQube analysis
-# - Final status notification
-#
-# Security Note:
-#  As PR checks are run on code that
-#  is not yet merged into the main branch, we should not add anything that requires secrets
-#  post-workflow-reporting is triggered to run after this workflow unlike the other workflow and can handle any notifications like slack
-#  that require secrets. That workflow cannot be modified by PRs until they are merged.
 
-
-name: '-1 PR Check'
+name: 'LTS Auto-run Tests'
 
 on:
   push:
-    - release-24.12.27_lts
+    - release-*
 
 # Concurrency group to manage multiple runs
 concurrency:
@@ -69,32 +59,6 @@ jobs:
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 
-  # SonarQube analysis job
-#  sonar:
-#    name: PR SonarQube
-#    needs: [ initialize,build ]
-#    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
-#      (
-#      (github.event_name == 'workflow_dispatch' && !inputs.disable-sonar) ||
-#      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SONAR != 'true')
-#      )
-#    uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
-#    secrets:
-#      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-#  semgrep:
-#    name: PR Semgrep
-#    needs: [ initialize,build ]
-#    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
-#      (
-#      (github.event_name == 'workflow_dispatch' && !inputs.disable-semgrep) ||
-#      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SEMGREP != 'true')
-#      )
-#    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
-#    secrets:
-#      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
@@ -104,16 +68,3 @@ jobs:
     with:
       needsData: ${{ toJson(needs) }}
 
-  # PR Notifier job - sends notifications about the PR status
-  # Note this functionality should be in cicd_post-workflow-reporting.yml
-#  pr-notifier:
-#    name: PR Notifier
-#    needs: [ finalize ]
-#    if: always()
-#    uses: ./.github/workflows/cicd_comp_pr-notifier.yml
-#    with:
-#      pr_status: ${{ needs.finalize.outputs.aggregate_status }}
-#    secrets:
-#      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
-#      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
-#      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
