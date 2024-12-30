@@ -13,7 +13,8 @@ name: 'LTS Auto-run Tests'
 
 on:
   push:
-    - release-*
+    branches:
+      - release-*
 
 # Concurrency group to manage multiple runs
 concurrency:
