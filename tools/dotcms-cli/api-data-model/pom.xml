@@ -20,7 +20,7 @@
         <jackson.datatype.guava.version>2.13.3</jackson.datatype.guava.version>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
         <docker.version.tag>24.12.27</docker.version.tag>
-        <testcontainers.docker.image>${docker.output.image.name}/${docker.version.tag}</testcontainers.docker.image>
+        <testcontainers.docker.image>${docker.output.image.name}:${docker.version.tag}</testcontainers.docker.image>
     </properties>
 
     <dependencyManagement>
