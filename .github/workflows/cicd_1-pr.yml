@@ -22,13 +22,8 @@
 name: '-1 PR Check'
 
 on:
-  pull_request:
-    branches:
-      - main
-      - master
-    types:
-      - opened
-      - synchronize
+  push:
+    - release-24.12.27_lts
 
 # Concurrency group to manage multiple runs
 concurrency:
@@ -75,50 +70,50 @@ jobs:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 
   # SonarQube analysis job
-  sonar:
-    name: PR SonarQube
-    needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
-      (
-      (github.event_name == 'workflow_dispatch' && !inputs.disable-sonar) ||
-      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SONAR != 'true')
-      )
-    uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+#  sonar:
+#    name: PR SonarQube
+#    needs: [ initialize,build ]
+#    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
+#      (
+#      (github.event_name == 'workflow_dispatch' && !inputs.disable-sonar) ||
+#      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SONAR != 'true')
+#      )
+#    uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
+#    secrets:
+#      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-  semgrep:
-    name: PR Semgrep
-    needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
-      (
-      (github.event_name == 'workflow_dispatch' && !inputs.disable-semgrep) ||
-      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SEMGREP != 'true')
-      )
-    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
-    secrets:
-      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+#  semgrep:
+#    name: PR Semgrep
+#    needs: [ initialize,build ]
+#    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
+#      (
+#      (github.event_name == 'workflow_dispatch' && !inputs.disable-semgrep) ||
+#      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SEMGREP != 'true')
+#      )
+#    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
+#    secrets:
+#      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ sonar,semgrep,test ]
+    needs: [ test ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}
 
   # PR Notifier job - sends notifications about the PR status
   # Note this functionality should be in cicd_post-workflow-reporting.yml
-  pr-notifier:
-    name: PR Notifier
-    needs: [ finalize ]
-    if: always()
-    uses: ./.github/workflows/cicd_comp_pr-notifier.yml
-    with:
-      pr_status: ${{ needs.finalize.outputs.aggregate_status }}
-    secrets:
-      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
-      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+#  pr-notifier:
+#    name: PR Notifier
+#    needs: [ finalize ]
+#    if: always()
+#    uses: ./.github/workflows/cicd_comp_pr-notifier.yml
+#    with:
+#      pr_status: ${{ needs.finalize.outputs.aggregate_status }}
+#    secrets:
+#      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+#      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+#      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

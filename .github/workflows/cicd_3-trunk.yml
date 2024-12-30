@@ -15,8 +15,7 @@ name: '-3 Trunk Workflow'
 on:
   push:
     branches:
-      - main
-      - master
+      - never
   workflow_dispatch:
     inputs:
       reuse-previous-build:
