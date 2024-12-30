@@ -68,7 +68,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
     @Output() readonly cancel = new EventEmitter<void>();
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
     readonly form = new FormGroup({
-        name: new FormControl('', [Validators.required, Validators.pattern(/^[^.]+\.[^.]+$/)]),
+        name: new FormControl('', [Validators.required]),
         content: new FormControl('')
     });
     mimeType = '';
@@ -189,7 +189,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
             this.updateLanguageForFileExtension(fileExtension);
         }
 
-        this.validateFileType(fileExtension);
+        this.validateFileType();
         this.cd.detectChanges();
     }
 
@@ -210,13 +210,12 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
         this.updateEditorLanguage(id);
     }
 
-    private validateFileType(fileExtension: string) {
+    private validateFileType() {
         const isValidType = this.dotBinaryFieldValidatorService.isValidType({
             extension: this.extension,
             mimeType: this.mimeType
         });
-
-        if (fileExtension && !isValidType) {
+        if (!isValidType) {
             this.name.setErrors({ invalidExtension: this.invalidFileMessage });
         }
     }
