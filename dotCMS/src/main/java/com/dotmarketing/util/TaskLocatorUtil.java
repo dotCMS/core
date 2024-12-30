@@ -576,7 +576,7 @@ public class TaskLocatorUtil {
 		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
 		.add(Task241014AddTemplateValueOnContentletIndex.class)
 		.add(Task241015ReplaceLanguagesWithLocalesPortlet.class)
-    .add(Task241016AddCustomLanguageVariablesPortletToLayout.class)
+    	.add(Task241016AddCustomLanguageVariablesPortletToLayout.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
