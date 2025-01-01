@@ -670,8 +670,32 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     setIframeContent(code: string, enableInlineEdit = false): void {
-        const iframeElement = this.iframe?.nativeElement;
+        console.log("setIframeContent", {code, enableInlineEdit})
+        // requestAnimationFrame(() => {
+            // const iframeElement = this.iframe?.nativeElement;
+    
+            // if (!iframeElement) {
+            //     return;
+            // }
 
+        //     const doc = iframeElement.contentDocument;
+        //     const newDoc = this.inyectCodeToVTL(code);
+
+        //     if (!doc) {
+        //         return;
+        //     }
+
+        //     doc.open();
+        //     doc.write(newDoc);
+        //     doc.close();
+
+        //     this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
+        //     this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
+        //     this.handleInlineScripts(enableInlineEdit);
+        // })
+
+        const iframeElement = this.iframe?.nativeElement;
+    
         if (!iframeElement) {
             return;
         }
@@ -679,7 +703,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         iframeElement.addEventListener('load', () => {
             const doc = iframeElement.contentDocument;
             const newDoc = this.inyectCodeToVTL(code);
-
+            console.log("load!", {newDoc, doc})
             if (!doc) {
                 return;
             }

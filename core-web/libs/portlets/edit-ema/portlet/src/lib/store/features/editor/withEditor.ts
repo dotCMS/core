@@ -51,6 +51,7 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
         // Force iframe reload on every page load to avoid caching issues and window dirty state
         return `about:blank?t=${Date.now()}`;
+        // return '';
     }
 
     const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
