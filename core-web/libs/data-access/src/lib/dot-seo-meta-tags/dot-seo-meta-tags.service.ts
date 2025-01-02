@@ -41,6 +41,8 @@ export class DotSeoMetaTagsService {
 
         const resolves = SeoMediaKeys.all.map((key) => ogMap[key]?.getItems(metaTagsObject));
 
+        // console.log(resolves);
+
         return forkJoin(resolves).pipe(
             map((resolve) => {
                 return resolve.map((items, index) => {

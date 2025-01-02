@@ -1,5 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -46,7 +46,8 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
-    SeoMetaTags
+    SeoMetaTags,
+    SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
@@ -160,7 +161,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly $previewMode = this.uveStore.$previewMode;
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
-    readonly ogTagsResults$ = this.uveStore.ogTagsResults$;
+    readonly ogTagsResults$ = new BehaviorSubject<SeoMetaTagsResult[]>([]);
+
+    constructor() {
+        effect(() => {
+            this.ogTagsResults$.next(this.uveStore.ogTagsResults());
+        });
+    }
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
@@ -670,11 +677,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     setIframeContent(code: string, enableInlineEdit = false): void {
         // requestAnimationFrame(() => {
-            // const iframeElement = this.iframe?.nativeElement;
-    
-            // if (!iframeElement) {
-            //     return;
-            // }
+        // const iframeElement = this.iframe?.nativeElement;
+
+        // if (!iframeElement) {
+        //     return;
+        // }
 
         //     const doc = iframeElement.contentDocument;
         //     const newDoc = this.inyectCodeToVTL(code);
@@ -693,7 +700,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         // })
 
         const iframeElement = this.iframe?.nativeElement;
-    
+
         if (!iframeElement) {
             return;
         }
@@ -710,9 +717,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             doc.write(newDoc);
             doc.close();
 
-            this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-            // this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
-            this.uveStore.setOGTagResults(this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1)));
             this.handleInlineScripts(enableInlineEdit);
         });
     }

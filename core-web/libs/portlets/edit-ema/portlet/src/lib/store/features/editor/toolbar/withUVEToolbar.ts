@@ -6,14 +6,13 @@ import {
     type,
     patchState
 } from '@ngrx/signals';
-import { Observable } from 'rxjs';
 
 import { computed } from '@angular/core';
 
 import { UVE_MODE } from '@dotcms/client';
 import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 
-import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../../shared/consts';
+import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions } from '../../../../shared/models';
 import {
@@ -38,12 +37,12 @@ import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../mo
  * @property {boolean} initialState.isPreviewModeActive - Flag indicating whether the preview mode is active.
  */
 const initialState: EditorToolbarState = {
-    device: DEFAULT_DEVICES.find((device) => device.inode === 'default'),
+    device: DEFAULT_DEVICE,
     socialMedia: null,
     isEditState: true,
     isPreviewModeActive: false,
     orientation: Orientation.LANDSCAPE,
-    ogTagsResults$: null
+    ogTagsResults: null
 };
 
 export function withUVEToolbar() {
@@ -248,7 +247,7 @@ export function withUVEToolbar() {
                 //         ...store.viewParams(),
                 //         device: isPreview ? store.device().inode : null,
                 //         orientation: isPreview ? store.orientation() : null,
-                //         seo: null  
+                //         seo: null
                 //     }
                 // }
                 // patchState(store, patched)
@@ -266,10 +265,8 @@ export function withUVEToolbar() {
                     }
                 });
             },
-            setOGTagResults: (ogTagsResults$: Observable<SeoMetaTagsResult[]>) => {
-                patchState(store, {
-                    ogTagsResults$
-                });
+            setOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
+                patchState(store, { ogTagsResults });
             }
         }))
     );

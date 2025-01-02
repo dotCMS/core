@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs';
-
 import {
     DotCMSContentlet,
     DotDeviceListItem,
@@ -33,12 +31,7 @@ export interface EditorToolbarState {
     isEditState: boolean;
     isPreviewModeActive?: boolean;
     orientation?: Orientation;
-    /**
-     * This is used for DotResultsSeoToolComponent.
-     * For now that component needs an observable to work
-     * This is a temporary solution until we refactor the SEO tool to use a single input.
-     */
-    ogTagsResults$?: Observable<SeoMetaTagsResult[]>;
+    ogTagsResults?: SeoMetaTagsResult[];
 }
 
 export interface PageDataContainer {
