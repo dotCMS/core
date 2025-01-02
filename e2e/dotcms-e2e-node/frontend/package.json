@@ -6,7 +6,8 @@
   "devDependencies": {
     "@playwright/test": "^1.48.2",
     "@types/node": "^22.5.4",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "prettier": "3.4.2"
   },
   "dependencies": {
     "jsdom": "^25.0.1",
@@ -17,6 +18,7 @@
     "start-local": "CURRENT_ENV=local yarn run start",
     "start-dev": "CURRENT_ENV=dev yarn run start",
     "start-ci": "CURRENT_ENV=ci yarn run start",
-    "post-testing": "PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' node index.js"
+    "post-testing": "PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' node index.js",
+    "format": "prettier --write ."
   }
 }
