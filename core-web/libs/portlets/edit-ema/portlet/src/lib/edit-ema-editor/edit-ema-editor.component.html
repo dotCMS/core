@@ -6,11 +6,13 @@
         (editUrlContentMap)="editContentMap($event)" />
 }
 
-@if ($editorProps().seoResults && ogTagsResults$) {
+@let ogTagsResults = ogTagsResults$();
+
+@if ($editorProps().seoResults && ogTagsResults) {
     <dot-results-seo-tool
         [seoMedia]="$editorProps().seoResults.socialMedia"
         [seoOGTags]="$editorProps().seoResults.ogTags"
-        [seoOGTagsResults]="ogTagsResults$"
+        [seoOGTagsResults]="ogTagsResults"
         data-testId="results-seo-tool"></dot-results-seo-tool>
 }
 @if ($editorProps().showEditorContent) {

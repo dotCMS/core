@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import {
     DotCMSContentlet,
     DotDeviceListItem,
@@ -5,7 +7,8 @@ import {
     DotLanguage,
     DotPageContainerStructure,
     DotPersona,
-    SeoMetaTags
+    SeoMetaTags,
+    SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 
 import {
@@ -30,6 +33,12 @@ export interface EditorToolbarState {
     isEditState: boolean;
     isPreviewModeActive?: boolean;
     orientation?: Orientation;
+    /**
+     * This is used for DotResultsSeoToolComponent.
+     * For now that component needs an observable to work
+     * This is a temporary solution until we refactor the SEO tool to use a single input.
+     */
+    ogTagsResults$?: Observable<SeoMetaTagsResult[]>;
 }
 
 export interface PageDataContainer {

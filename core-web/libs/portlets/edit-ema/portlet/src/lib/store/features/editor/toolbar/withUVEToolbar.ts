@@ -6,11 +6,12 @@ import {
     type,
     patchState
 } from '@ngrx/signals';
+import { Observable } from 'rxjs';
 
 import { computed } from '@angular/core';
 
 import { UVE_MODE } from '@dotcms/client';
-import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
@@ -41,7 +42,8 @@ const initialState: EditorToolbarState = {
     socialMedia: null,
     isEditState: true,
     isPreviewModeActive: false,
-    orientation: Orientation.LANDSCAPE
+    orientation: Orientation.LANDSCAPE,
+    ogTagsResults$: null
 };
 
 export function withUVEToolbar() {
@@ -130,8 +132,9 @@ export function withUVEToolbar() {
                 const pageAPIResponse = store.pageAPIResponse();
                 const canEditPage = store.canEditPage();
                 const socialMedia = store.socialMedia();
+                const isPreview = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
 
-                if (socialMedia) {
+                if (socialMedia && !isPreview) {
                     return {
                         icon: `pi pi-${socialMedia.toLowerCase()}`,
                         id: 'socialMedia',
@@ -199,7 +202,6 @@ export function withUVEToolbar() {
                 const isValidOrientation = Object.values(Orientation).includes(orientation);
 
                 const newOrientation = isValidOrientation ? orientation : getOrientation(device);
-
                 patchState(store, {
                     device,
                     viewParams: {
@@ -262,6 +264,11 @@ export function withUVEToolbar() {
                         orientation: undefined,
                         seo: undefined
                     }
+                });
+            },
+            setOGTagResults: (ogTagsResults$: Observable<SeoMetaTagsResult[]>) => {
+                patchState(store, {
+                    ogTagsResults$
                 });
             }
         }))

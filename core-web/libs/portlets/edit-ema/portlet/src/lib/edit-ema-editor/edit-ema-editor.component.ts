@@ -46,8 +46,7 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
-    SeoMetaTags,
-    SeoMetaTagsResult
+    SeoMetaTags
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
@@ -154,7 +153,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
 
     readonly destroy$ = new Subject<boolean>();
-    protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -162,6 +160,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly $previewMode = this.uveStore.$previewMode;
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
+    readonly ogTagsResults$ = this.uveStore.ogTagsResults$;
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
@@ -670,7 +669,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     setIframeContent(code: string, enableInlineEdit = false): void {
-        console.log("setIframeContent", {code, enableInlineEdit})
         // requestAnimationFrame(() => {
             // const iframeElement = this.iframe?.nativeElement;
     
@@ -703,7 +701,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         iframeElement.addEventListener('load', () => {
             const doc = iframeElement.contentDocument;
             const newDoc = this.inyectCodeToVTL(code);
-            console.log("load!", {newDoc, doc})
+
             if (!doc) {
                 return;
             }
@@ -713,7 +711,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             doc.close();
 
             this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-            this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
+            // this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
+            this.uveStore.setOGTagResults(this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1)));
             this.handleInlineScripts(enableInlineEdit);
         });
     }
