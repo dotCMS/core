@@ -208,16 +208,29 @@ public class PublisherAPIImpl implements PublisherAPI {
             List.class.cast(filterDescriptor.getFilters().get("excludeDependencyClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
         }
 
+        /**
+         * Do it host by host instead of all, since data is too big.
+         * YML must be like:
+         *  excludeQuery:             "conhost:SYSTEM_HOST conhost:ed093e7b-f1cf-40da-a441-c9ef697bdef5 conhost:XXXXX"
+         *  excludeDependencyQuery:   "conhost:SYSTEM_HOST conhost:ed093e7b-f1cf-40da-a441-c9ef697bdef5 conhost:XXXXX"
+         */
+
         if(filterDescriptor.getFilters().containsKey("excludeQuery")){
-            final String query = filterDescriptor.getFilters().get("excludeQuery").toString();
-            APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
-                    .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
+            final String queryOriginal = filterDescriptor.getFilters().get("excludeQuery").toString();
+            String[] parts = queryOriginal.split(" ");
+            for(String part : parts) {
+                APILocator.getContentletAPI().search("+"+part, 0, 0, "moddate", APILocator.systemUser(), false)
+                        .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
+            }
         }
 
         if(filterDescriptor.getFilters().containsKey("excludeDependencyQuery")){
-            final String query = filterDescriptor.getFilters().get("excludeDependencyQuery").toString();
-            APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false)
-                    .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
+            final String queryOriginal = filterDescriptor.getFilters().get("excludeDependencyQuery").toString();
+            String[] parts = queryOriginal.split(" ");
+            for(String part : parts) {
+                APILocator.getContentletAPI().search("+"+part, 0, 0, "moddate", APILocator.systemUser(), false)
+                        .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
+            }
         }
 
         return publisherFilter;
