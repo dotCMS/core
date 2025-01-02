@@ -49,9 +49,7 @@ export interface PageData {
 }
 
 export interface ReloadEditorContent {
-    code: string;
     isTraditionalPage: boolean;
-    enableInlineEdit: boolean;
     isClientReady: boolean;
 }
 

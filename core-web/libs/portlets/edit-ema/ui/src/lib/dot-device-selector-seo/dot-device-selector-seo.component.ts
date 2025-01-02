@@ -27,7 +27,6 @@ import {
     DotCurrentUser,
     DotDevice,
     DotDeviceListItem,
-    SEO_MEDIA_TYPES,
     SocialMediaOption,
     socialMediaTiles
 } from '@dotcms/dotcms-models';
@@ -139,12 +138,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     ngOnInit() {
         this.options$ = this.getOptions();
         this.isCMSAdmin$ = this.checkIfCMSAdmin();
-        this.socialMediaTiles = Object.values(socialMediaTiles).filter(
-            (item) =>
-                item.value === SEO_MEDIA_TYPES.FACEBOOK ||
-                item.value === SEO_MEDIA_TYPES.TWITTER ||
-                item.value === SEO_MEDIA_TYPES.LINKEDIN
-        );
+        this.socialMediaTiles = Object.values(socialMediaTiles);
     }
 
     /**

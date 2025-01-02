@@ -1,5 +1,7 @@
 @let ogTagsResults = ogTagsResults$;
 @let showSEOTool = $editorProps().seoResults && ogTagsResults;
+<!-- This should be a computed -->
+@let iframeDisplay = $editorProps().showEditorContent ? 'block' : 'none';
 
 @if ($previewMode()) {
     <dot-uve-toolbar (translatePage)="translatePage($event)" />
@@ -19,9 +21,7 @@
 
 <div
     class="editor-content"
-    [ngStyle]="{
-        display: $editorProps().showEditorContent ? 'block' : 'none'
-    }"
+    [ngStyle]="{ display: iframeDisplay }"
     [ngClass]="{ 'editor-content-preview': $isPreviewMode() }"
     data-testId="editor-content">
     <div

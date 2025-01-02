@@ -51,7 +51,6 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
         // Force iframe reload on every page load to avoid caching issues and window dirty state
         return `about:blank?t=${Date.now()}`;
-        // return '';
     }
 
     const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
@@ -110,6 +109,12 @@ export function withEditor() {
                         enableInlineEdit:
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
+                }),
+                $pageRender: computed<string>(() => {
+                    return store.pageAPIResponse()?.page?.rendered;
+                }),
+                $enableInlineEdit: computed<boolean>(() => {
+                    return store.isEditState() && untracked(() => store.isEnterprise());
                 }),
                 $editorIsInDraggingState: computed<boolean>(
                     () => store.state() === EDITOR_STATE.DRAGGING

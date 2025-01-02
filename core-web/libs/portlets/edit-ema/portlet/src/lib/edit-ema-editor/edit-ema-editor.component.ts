@@ -181,38 +181,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
     });
 
-    readonly $handleReloadContentEffect = effect(
-        () => {
-            const { code, isTraditionalPage, enableInlineEdit, isClientReady } =
-                this.uveStore.$reloadEditorContent();
+    readonly $handleReloadContentEffect = effect(() => {
+        // We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
+        // This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
+        const { isTraditionalPage, isClientReady } = this.uveStore.$reloadEditorContent();
 
-            this.uveStore.resetEditorProperties();
-            this.dialog?.resetDialog();
+        this.uveStore.resetEditorProperties();
+        this.dialog?.resetDialog();
 
-            if (!isTraditionalPage) {
-                if (isClientReady) {
-                    // This should have another name.
-                    return this.reloadIframeContent();
-                }
-
-                return;
-            }
-
-            this.setIframeContent(code, enableInlineEdit);
-
-            /**
-             * The status of isClientReady is changed outside of editor
-             * so we need to set it to true here to avoid the editor to be in a loading state
-             * This is only for traditional pages. For Headless, the isClientReady is set from the client application
-             */
-            this.uveStore.setIsClientReady(true);
-
+        if (isTraditionalPage || !isClientReady) {
             return;
-        },
-        {
-            allowSignalWrites: true
         }
-    );
+
+        this.reloadIframeContent();
+    });
 
     readonly $handleIsDraggingEffect = effect(() => {
         const isDragging = this.uveStore.$editorIsInDraggingState();
@@ -464,9 +446,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad() {
+        if (!this.uveStore.isTraditionalPage()) {
+            return;
+        }
+
+        this.#insertPageContent();
+        this.#setSeoData();
+
         if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
+
+        /**
+         * The status of isClientReady is changed outside of editor
+         * so we need to set it to true here to avoid the editor to be in a loading state
+         * This is only for traditional pages. For Headless, the isClientReady is set from the client application
+         */
+        this.uveStore.setIsClientReady(true);
     }
 
     /**
@@ -675,50 +671,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param code - The code to be added to the iframe.
      * @memberof EditEmaEditorComponent
      */
-    setIframeContent(code: string, enableInlineEdit = false): void {
-        // requestAnimationFrame(() => {
-        // const iframeElement = this.iframe?.nativeElement;
-
-        // if (!iframeElement) {
-        //     return;
-        // }
-
-        //     const doc = iframeElement.contentDocument;
-        //     const newDoc = this.inyectCodeToVTL(code);
-
-        //     if (!doc) {
-        //         return;
-        //     }
-
-        //     doc.open();
-        //     doc.write(newDoc);
-        //     doc.close();
-
-        //     this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-        //     this.ogTagsResults$ = this.dotSeoMetaTagsService.getMetaTagsResults(doc).pipe(take(1));
-        //     this.handleInlineScripts(enableInlineEdit);
-        // })
-
+    #insertPageContent(): void {
         const iframeElement = this.iframe?.nativeElement;
+        const doc = iframeElement.contentDocument;
 
-        if (!iframeElement) {
+        const enableInlineEdit = this.uveStore.$enableInlineEdit();
+        const pageRender = this.uveStore.$pageRender();
+
+        const newDoc = this.inyectCodeToVTL(pageRender);
+
+        if (!doc) {
             return;
         }
 
-        iframeElement.addEventListener('load', () => {
-            const doc = iframeElement.contentDocument;
-            const newDoc = this.inyectCodeToVTL(code);
+        doc.open();
+        doc.write(newDoc);
+        doc.close();
 
-            if (!doc) {
-                return;
-            }
-
-            doc.open();
-            doc.write(newDoc);
-            doc.close();
-
-            this.handleInlineScripts(enableInlineEdit);
-        });
+        this.handleInlineScripts(enableInlineEdit);
     }
 
     /**
@@ -757,6 +727,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     ...actionPayload,
                     newContentletId: detail.data.identifier
                 });
+
                 if (!didInsert) {
                     this.handleDuplicatedContentlet();
 
@@ -1486,5 +1457,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     #goBackToCurrentLanguage(): void {
         this.uveStore.loadPageAsset({ language_id: '1' });
+    }
+
+    #setSeoData() {
+        const iframeElement = this.iframe?.nativeElement;
+        const doc = iframeElement.contentDocument;
+        this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
+            const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
+            this.uveStore.setOgTags(ogTags);
+            this.uveStore.setOGTagResults(results);
+        });
     }
 }

@@ -15,7 +15,7 @@ import {
 import {
     DotDevice,
     DotDeviceListItem,
-    SEO_MEDIA_TYPES,
+    searchEngineTile,
     socialMediaTiles
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -68,29 +68,20 @@ export class DotUveDeviceSelectorComponent implements OnInit {
 
         const socialMediaMenu = {
             label: 'Social Media Tiles',
-            items: Object.values(socialMediaTiles)
-                .filter(
-                    (item) =>
-                        item.value === SEO_MEDIA_TYPES.FACEBOOK ||
-                        item.value === SEO_MEDIA_TYPES.TWITTER ||
-                        item.value === SEO_MEDIA_TYPES.LINKEDIN
-                )
-                .map((item) => ({
-                    label: item.label,
-                    command: () => this.onSocialMediaSelect(item.value),
-                    styleClass: this.$currentSocialMedia() === item.value ? 'active' : ''
-                }))
+            items: Object.values(socialMediaTiles).map((item) => ({
+                label: item.label,
+                command: () => this.onSocialMediaSelect(item.value),
+                styleClass: this.$currentSocialMedia() === item.value ? 'active' : ''
+            }))
         };
 
         const searchEngineMenu = {
             label: 'Search Engine',
-            items: Object.values(socialMediaTiles)
-                .filter((item) => item.value === SEO_MEDIA_TYPES.GOOGLE)
-                .map((item) => ({
-                    label: item.label,
-                    command: () => this.onSocialMediaSelect(item.value),
-                    styleClass: this.$currentSocialMedia() === item.value ? 'active' : ''
-                }))
+            items: Object.values(searchEngineTile).map((item) => ({
+                label: item.label,
+                command: () => this.onSocialMediaSelect(item.value),
+                styleClass: this.$currentSocialMedia() === item.value ? 'active' : ''
+            }))
         };
 
         const menu = [];

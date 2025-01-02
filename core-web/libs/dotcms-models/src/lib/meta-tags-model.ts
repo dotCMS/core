@@ -132,11 +132,21 @@ export interface MetaTagsPreview {
     twitterImage?: string;
 }
 
-export enum SEO_MEDIA_TYPES {
-    GOOGLE = 'Google',
+export enum SOCIAL_MEDIA_TYPES {
+    FACEBOOK = 'Facebook',
     TWITTER = 'Twitter',
-    LINKEDIN = 'LinkedIn',
-    FACEBOOK = 'Facebook'
+    LINKEDIN = 'LinkedIn'
+}
+
+export enum SEARCH_ENGINE_TYPES {
+    GOOGLE = 'Google'
+}
+
+export enum SEO_MEDIA_TYPES {
+    FACEBOOK = SOCIAL_MEDIA_TYPES.FACEBOOK,
+    TWITTER = SOCIAL_MEDIA_TYPES.TWITTER,
+    LINKEDIN = SOCIAL_MEDIA_TYPES.LINKEDIN,
+    GOOGLE = SEARCH_ENGINE_TYPES.GOOGLE
 }
 
 export const SEO_TAGS = [
@@ -149,7 +159,7 @@ export const SEO_TAGS = [
     SEO_OPTIONS.TWITTER_IMAGE
 ];
 
-export const socialMediaTiles: Record<SEO_MEDIA_TYPES, SocialMediaOption> = {
+export const socialMediaTiles: Record<SOCIAL_MEDIA_TYPES, SocialMediaOption> = {
     [SEO_MEDIA_TYPES.FACEBOOK]: {
         label: 'Facebook',
         value: SEO_MEDIA_TYPES.FACEBOOK,
@@ -167,13 +177,21 @@ export const socialMediaTiles: Record<SEO_MEDIA_TYPES, SocialMediaOption> = {
         value: SEO_MEDIA_TYPES.LINKEDIN,
         icon: 'pi pi-linkedin',
         description: 'seo.rules.media.preview.tile'
-    },
+    }
+};
+
+export const searchEngineTile: Record<SEARCH_ENGINE_TYPES, SocialMediaOption> = {
     [SEO_MEDIA_TYPES.GOOGLE]: {
         label: 'Google',
         value: SEO_MEDIA_TYPES.GOOGLE,
         icon: 'pi pi-google',
         description: 'seo.rules.media.search.engine'
     }
+};
+
+export const seoTiles: Record<SEO_MEDIA_TYPES, SocialMediaOption> = {
+    ...socialMediaTiles,
+    ...searchEngineTile
 };
 
 export interface SocialMediaOption {
