@@ -149,12 +149,12 @@ test-e2e-node:
     ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false
 
 # The `e2e.test.specific` param can be a single test or a list of directories, please refer to: https://playwright.dev/docs/running-tests#run-specific-tests
-test-e2e-node-specific test="contentEditing.spec.ts":
+test-e2e-node-specific test="login.spec.ts":
     ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false -De2e.test.specific="{{ test }}"
 
 # Starts a de debug session using Playwright's UI mode, please refer to: https://playwright.dev/docs/test-ui-mode
 # The `e2e.test.specific` param can be a single test or a list of directories, please refer to: https://playwright.dev/docs/running-tests#run-specific-tests
-test-e2e-node-debug-ui test="contentEditing.spec.ts":
+test-e2e-node-debug-ui test="login.spec.ts":
     ./mvnw -pl :dotcms-e2e-node verify -De2e.test.skip=false -De2e.test.debug="--ui" -De2e.test.specific="{{ test }}"
 
 # Starts a de debug session using Playwright's debug inspector, please refer to: https://playwright.dev/docs/running-tests#debug-tests-with-the-playwright-inspector

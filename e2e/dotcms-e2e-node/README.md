@@ -80,8 +80,9 @@ Now that we have these packages installed we need to start dotCMS (with its depe
 At `e2e/e2e-dotcms-node/frontend/package.json` you can find the available scripts you can call to execute the tests:
 
 ```json lines
-  "scripts": {
-    "start": "PLAYWRIGHT_JUNIT_SUITE_ID=nodee2etestsuite PLAYWRIGHT_JUNIT_SUITE_NAME='E2E Node Test Suite' PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' yarn playwright test",
+  "scripts": {yarn playwright show-report;
+    "show-report": "if [[ \"$CURRENT_ENV\" != \"ci\" ]]; then  fi",
+    "start": "PLAYWRIGHT_JUNIT_SUITE_ID=nodee2etestsuite PLAYWRIGHT_JUNIT_SUITE_NAME='E2E Node Test Suite' PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' yarn playwright test ${PLAYWRIGHT_SPECIFIC} ${PLAYWRIGHT_DEBUG}; yarn run show-report",
     "start-local": "CURRENT_ENV=local yarn run start",
     "start-dev": "CURRENT_ENV=dev yarn run start",
     "start-ci": "CURRENT_ENV=ci yarn run start",
