@@ -352,14 +352,13 @@ export class DotEditContentFormComponent implements OnInit {
         languageId,
         identifier
     }: DotWorkflowActionParams): void {
-        const transformedFormValues = this.$store.formValues();
         this.$store.fireWorkflowAction({
             actionId,
             inode,
             identifier,
             data: {
                 contentlet: {
-                    ...transformedFormValues,
+                    ...this.processFormValue(this.form.value),
                     contentType,
                     languageId
                 }
