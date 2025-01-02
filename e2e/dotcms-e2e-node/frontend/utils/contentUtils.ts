@@ -1,5 +1,5 @@
 import {expect, FrameLocator, Locator, Page} from '@playwright/test';
-import {contentGeneric, iFramesLocators, fileAsset } from '../locators/globalLocators';
+import {contentGeneric, iFramesLocators, fileAsset, pageAsset} from '../locators/globalLocators';
 import {waitForVisibleAndCallback} from './dotCMSUtils';
 import {contentProperties} from "../tests/contentSearch/contentData";
 
@@ -36,17 +36,10 @@ export class ContentUtils {
 
     /**
      * Fill the file asset form
-     * @param page
-     * @param host
-     * @param title
-     * @param action
-     * @param fileName
-     * @param fromURL
-     * @param newFileName
-     * @param newFileText
+        * @param params
      */
     async fillFileAssetForm(params: FileAssetFormParams) {
-        const { page, host, title, action, fileName, fromURL, newFileName, newFileText } = params;
+        const { page, host, title, action, fromURL, newFileName, newFileText } = params;
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
         await waitForVisibleAndCallback(page.getByRole('heading'), () =>
@@ -79,6 +72,7 @@ export class ContentUtils {
     /**
      * Validate the workflow execution and close the modal
      * @param page
+     * @param message
      */
     async workflowExecutionValidationAndClose(page: Page, message: string) {
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
@@ -114,7 +108,6 @@ export class ContentUtils {
      * Select content type on filter on the content portlet
      * @param page
      * @param typeLocator
-     * @param typeString
      */
     async selectTypeOnFilter(page: Page, typeLocator: string) {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
@@ -144,7 +137,7 @@ export class ContentUtils {
     /**
      * Validate if the content exists in the results table on the content portlet
      * @param page
-     * @param title
+     * @param text
      */
     async validateContentExist(page: Page, text: string) {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
@@ -267,8 +260,9 @@ export class ContentUtils {
     }
 
     /**
-     * Get the content state from the results table on the content portle
+     * Get the content state from the results table on the content portlet
      * @param page
+     * @param title
      */
     async getContentState(page: Page, title: string): Promise<string | null> {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
@@ -293,8 +287,42 @@ export class ContentUtils {
     }
 
 
+    /**
+     * Fill the pageAsset form
+     * @param params
+     */
+    async fillPageAssetForm(params: PageAssetFormParams) {
+        const { page, title, action, url, host, template, friendlyName, showOnMenu, sortOrder, cacheTTL } = params;
+        const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
+
+        await waitForVisibleAndCallback(page.getByRole('heading'), () =>
+            expect.soft(page.getByRole('heading')).toContainText(pageAsset.label)
+        );
+        await dotIframe.locator('#titleBox').fill(title);
+
+        if (url) await dotIframe.locator('#url').fill(url);
+        if (host) {
+            await dotIframe.locator('#hostFolder_field div').nth(2).click();
+            await dotIframe.getByRole('treeitem', { name: host }).click();
+        }
+        if (template) {
+            await dotIframe.locator('#widget_templateSel div').first().click();
+            await dotIframe.getByText(template).click();
+        }
+        if (friendlyName) await dotIframe.locator('#friendlyName').fill(friendlyName);
+        if (showOnMenu) await dotIframe.getByLabel('Content', { exact: true }).getByLabel('').check();
+        if (sortOrder) await dotIframe.locator('#sortOrder').fill(sortOrder);
+        if (cacheTTL) await dotIframe.locator('#cachettlbox').fill(cacheTTL.toString());
+        if (action) await dotIframe.getByText(action).first().click();
+    }
+
+
 }
 
+
+/**
+ * Parameters for the fillFileAssetForm method
+ */
 interface FileAssetFormParams {
     page: Page;
     host: string;
@@ -306,6 +334,21 @@ interface FileAssetFormParams {
     newFileText?: string;
 }
 
+/**
+ * Parameters for the fillPageAssetForm method
+ */
+interface PageAssetFormParams {
+    page: Page;
+    title: string;
+    url?: string;
+    host?: string;
+    action?: string;
+    template?: string;
+    friendlyName?: string;
+    showOnMenu?: boolean;
+    sortOrder?: string;
+    cacheTTL?: number
+}
 
 
 
