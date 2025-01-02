@@ -135,7 +135,9 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     onDeviceSelect(device: DotDevice): void {
         if (this.#store.socialMedia()) {
             this.#store.setSEO(null);
-            this.#store.reloadCurrentPage();
+
+            // Bug Importante
+            // this.#store.reloadCurrentPage();
         }
 
         const currentDevice = this.$currentDevice();
