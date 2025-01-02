@@ -115,7 +115,7 @@ public class ESIndexAPI {
     private final String REPOSITORY_PATH = "path.repo";
 
 	public static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
-			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
+			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 3600000);
 
 	final private ESClient esclient;
 	final private ContentletIndexAPI iapi;
