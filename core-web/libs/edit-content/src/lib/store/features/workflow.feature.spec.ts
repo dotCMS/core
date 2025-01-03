@@ -24,9 +24,9 @@ import {
     MOCK_CONTENTLET_1_TAB,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
     MOCK_WORKFLOW_DATA
-} from '../../../../utils/edit-content.mock';
-import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
-import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
+} from '../../utils/edit-content.mock';
+import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
+import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
 import { initialRootState } from '../edit-content.store';
 
 const mockInitialStateWithContent: ContentState = {

@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals';
 import {
     byTestId,
     createComponentFactory,
@@ -35,9 +36,9 @@ import {
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
     MOCK_CONTENTTYPE_1_TAB,
@@ -272,7 +273,9 @@ describe('DotFormComponent', () => {
                     component.$hasSingleTab = signal(true);
                     spectator.detectChanges();
 
-                    expect(tabView).toHaveClass('dot-edit-content-tabview--single-tab');
+                    expect(tabView.classList.contains('dot-edit-content-tabview--single-tab')).toBe(
+                        true
+                    );
                 });
             });
         });
@@ -325,17 +328,16 @@ describe('DotFormComponent', () => {
                 expect(workflowActions).toBeFalsy();
             });
 
-            it('should send the correct parameters when firing an action. ', () => {
+            it('should send the correct parameters when firing an action', () => {
                 const spy = jest.spyOn(store, 'fireWorkflowAction');
 
                 workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS) // Single workflow actions trigger the show
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );
                 store.initializeExistingContent('inode');
                 spectator.detectChanges();
 
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
-
                 workflowActions.actionFired.emit({ id: '1' } as DotCMSWorkflowAction);
 
                 expect(spy).toHaveBeenCalledWith({
@@ -349,6 +351,7 @@ describe('DotFormComponent', () => {
                             text11: 'Tab 2 input content',
                             text2: 'content text 2',
                             text3: 'default value modified',
+                            multiselect: 'A,B,C',
                             languageId: null
                         }
                     }

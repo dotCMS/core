@@ -36,9 +36,9 @@ import { DotContentletState } from '@dotcms/edit-content/models/dot-edit-content
 
 import { WorkflowState } from './workflow.feature';
 
-import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { transformFormDataFn } from '../../../../utils/functions.util';
-import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
+import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { transformFormDataFn } from '../../utils/functions.util';
+import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
 
 export interface ContentState {

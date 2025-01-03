@@ -4,7 +4,8 @@
 export const iFramesLocators = {
     main_iframe: 'iframe[name="detailFrame"]',
     dot_iframe: 'dot-iframe-dialog iframe[name="detailFrame"]',
-    wysiwygFrame: 'iframe[title="Rich Text Area\\. Press ALT-F9 for menu\\. Press ALT-F10 for toolbar\\. Press ALT-0 for help"]'
+    wysiwygFrame: 'iframe[title="Rich Text Area\\. Press ALT-F9 for menu\\. Press ALT-F10 for toolbar\\. Press ALT-0 for help"]',
+    dataTestId:  '[data-testid="iframe"]'
 }
 
 /**
@@ -36,6 +37,11 @@ export const contentGeneric = {
 export const fileAsset = {
     locator: "attach_fileFile Asset",
     label: "File Asset"
+}
+
+export const pageAsset = {
+    locator: "descriptionPage",
+    label: "Page"
 }
 
 export {
