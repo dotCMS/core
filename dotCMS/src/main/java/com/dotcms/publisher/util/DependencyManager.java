@@ -179,8 +179,10 @@ public class DependencyManager {
 
 
 		final PublisherFilter publisherFilter = APILocator.getPublisherAPI().createPublisherFilter(config.getId());
-		Logger.info(this,publisherFilter.toString());
+		Logger.info(this,"PPF to use: " + publisherFilter.toString());
+		Logger.info(this,"List of assets" + assets.toString());
 		for (PublishQueueElement asset : assets) {
+			Logger.info(this,"Asset: " + asset.toString());
 			//Check if the asset.Type is in the excludeClasses filter, if it is, the asset is not added to the bundle
 			if(publisherFilter.doesExcludeClassesContainsType(asset.getType())){
 				continue;
@@ -257,14 +259,17 @@ public class DependencyManager {
 					Logger.error(getClass(), "Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Folder ID: " + asset.getAsset(), e);
 				}
 			} else if(asset.getType().equals(PusheableAsset.SITE.getType())) {
+				Logger.info(this,"Adding host to the bundle");
 				try {
 					Host h = APILocator.getHostAPI().find(asset.getAsset(), user, false);
 
 					if(h == null){
 						Logger.warn(getClass(), "Host id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
+						Logger.info(this,"Adding host to the bundle: " + h.getIdentifier());
 						hosts.add(asset.getAsset(), h.getModDate());
 						hostsSet.add(asset.getAsset());
+						Logger.info(this,"Host added to the bundle: " + h.getIdentifier());
 					}
 
 				} catch (DotSecurityException e) {
@@ -323,19 +328,23 @@ public class DependencyManager {
 		}
 
 		if(UtilMethods.isSet(config.getLuceneQueries())){
+			Logger.info(this,"Lucene Queries: " + config.getLuceneQueries());
 			List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
 			for(String id : contentIds){
 				List<Contentlet> contentlets = APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false);
 				for(Contentlet con : contentlets){
+					Logger.info(this,"Adding content to the bundle: " + con.getIdentifier());
 					if(!publisherFilter.doesExcludeQueryContainsContentletId(con.getIdentifier())) {
 						contents.add(con.getIdentifier(), con.getModDate());
 						contentsSet.add(con.getIdentifier());
+						Logger.info(this,"Content added to the bundle: " + con.getIdentifier());
 					}
 				}
 			}
 		}
 
 		if(publisherFilter.isDependencies()){
+			Logger.info(this,"Dependencies are enabled. Starting...");
 			setHostDependencies(publisherFilter);
 			setFolderDependencies(publisherFilter);
 			setHTMLPagesDependencies(publisherFilter);
@@ -346,6 +355,7 @@ public class DependencyManager {
 			setLanguageDependencies(publisherFilter);
 			setContentDependencies(publisherFilter);
 			setRuleDependencies(publisherFilter);
+			Logger.info(this,"End of dependencies");
 		}
 
 		config.setHostSet(hosts);
@@ -442,15 +452,20 @@ public class DependencyManager {
 	 * </ul>
 	 */
 	private void setHostDependencies (final PublisherFilter publisherFilter) {
+		Logger.info(this,"Start Host Dependencies");
+		Logger.info(this,"Hosts: " + hostsSet.toString());
 		try {
 			for (final String hostId : hostsSet) {
+				Logger.info(this,"Getting Dependencies for Host: " + hostId);
 				final Host host = APILocator.getHostAPI().find(hostId, user, false);
 
 				// Template dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.TEMPLATE.getType())) {
 					final List<Template> templateList = APILocator.getTemplateAPI()
 							.findTemplatesAssignedTo(host);
+					Logger.info(this,"Templates: " + templateList.toString());
 					for (final Template template : templateList) {
+						Logger.info(this,"Adding template to the bundle: " + template.getIdentifier());
 						templates.addOrClean(template.getIdentifier(), template.getModDate());
 						templatesSet.add(template.getIdentifier());
 					}
@@ -460,11 +475,12 @@ public class DependencyManager {
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTAINER.getType())) {
 					final List<Container> containerList = APILocator.getContainerAPI()
 							.findContainersUnder(host);
+					Logger.info(this,"Containers: " + containerList.toString());
 					for (final Container container : containerList) {
-
 						if (container instanceof FileAssetContainer) {
 							fileAssetContainersSet.add(container.getIdentifier());
 						} else {
+							Logger.info(this,"Adding container to the bundle: " + container.getIdentifier());
 							containers
 									.addOrClean(container.getIdentifier(), container.getModDate());
 							containersSet.add(container.getIdentifier());
@@ -474,16 +490,19 @@ public class DependencyManager {
 
 				// Content dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
-					final String luceneQuery = "+conHost:" + host.getIdentifier();
+					final String luceneQuery = "+deleted:false +conHost:" + host.getIdentifier();//we only want to get the contentlets that are not deleted
 					final List<Contentlet> contentList = APILocator.getContentletAPI()
 							.search(luceneQuery, 0, 0, null, user, false);
+					Logger.info(this,"Query: " + luceneQuery + " Contentlets Size: " + contentList.size());
 					for (final Contentlet contentlet : contentList) {
 						if(UtilMethods.isSet(contentlet.getIdentifier()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
+							Logger.info(this,"Adding content to the bundle: " + contentlet.getIdentifier());
 							contents.addOrClean(contentlet.getIdentifier(),
 									contentlet.getModDate());
 							contentsSet.add(contentlet.getIdentifier());
 						}
 					}
+					Logger.info(this,"Contents Size: " + contentsSet.size());
 				}
 
 				// Structure dependencies
@@ -500,7 +519,9 @@ public class DependencyManager {
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.FOLDER.getType())) {
 					final List<Folder> folderList = APILocator.getFolderAPI()
 							.findFoldersByHost(host, user, false);
+					Logger.info(this,"Folders: " + folderList.toString());
 					for (final Folder folder : folderList) {
+						Logger.info(this,"Adding folder to the bundle: " + folder.getInode());
 						folders.addOrClean(folder.getInode(), folder.getModDate());
 						foldersSet.add(folder.getInode());
 					}
@@ -515,12 +536,14 @@ public class DependencyManager {
 						this.ruleSet.add(rule.getId());
 					}
 				}
+				Logger.info(this,"End Host Dependencies for host: " + hostId);
 			}
 		} catch (DotSecurityException e) {
 			Logger.error(this, e.getMessage(),e);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(),e);
 		}
+		Logger.info(this,"End Host Dependencies");
 	}
 
 	/**
