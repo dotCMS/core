@@ -4,11 +4,11 @@ import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ComponentStatus, DotContentletDepths } from '@dotcms/dotcms-models';
-import { withLocales } from '@dotcms/edit-content/feature/edit-content/store/features/locales.feature';
 
 import { withContent } from './features/content.feature';
 import { withForm } from './features/form.feature';
 import { withInformation } from './features/information.feature';
+import { withLocales } from './features/locales.feature';
 import { withSidebar } from './features/sidebar.feature';
 import { withWorkflow } from './features/workflow.feature';
 

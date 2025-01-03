@@ -19,7 +19,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { DotEditContentStore } from './edit-content.store';
 
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { DotEditContentService } from '../services/dot-edit-content.service';
 
 describe('DotEditContentStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotEditContentStore>>;

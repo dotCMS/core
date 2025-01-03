@@ -36,9 +36,9 @@ import {
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
     MOCK_CONTENTTYPE_1_TAB,
