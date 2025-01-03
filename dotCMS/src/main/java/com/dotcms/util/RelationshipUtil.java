@@ -54,7 +54,7 @@ public class RelationshipUtil {
             final Relationship relationship, final ContentType contentType, final long language,
             final String query, final User user) throws DotDataException, DotSecurityException {
         List<Contentlet> relatedContentlets = Collections.EMPTY_LIST;
-//todo aca hay que validar
+
         if (UtilMethods.isSet(query)) {
             relatedContentlets = filterContentlet(language, query, user, true);
             validateRelatedContent(relationship, contentType, relatedContentlets);
