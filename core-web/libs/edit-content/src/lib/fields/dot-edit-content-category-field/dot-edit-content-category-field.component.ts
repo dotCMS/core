@@ -73,7 +73,7 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      *
      * @returns {Boolean} - True if there are selected categories, false otherwise.
      */
-    $hasSelectedCategories = computed(() => !!this.store.selected());
+    $hasSelectedCategories = computed(() => this.store.selected().length > 0);
 
     /**
      * Getter to retrieve the category field control.
