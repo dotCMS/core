@@ -87,7 +87,7 @@ public class RelationshipUtil {
         //Filter can be an identifier or a lucene query (comma separated)
         for (final String elem : filter.split(StringPool.COMMA)) {
             if (!UUIDUtil.isUUID(elem.trim()) && !isLuceneQuery){
-                throw new DotSecurityException("The field has a value (" + filter  + ") that is not an identifier or a lucene query");
+                throw new DotValidationException("The field has a value (" + filter  + ") that is not an identifier or a lucene query");
             }
             if (UUIDUtil.isUUID(elem.trim()) && !relatedContentlets.containsKey(elem.trim())) {
                 final Identifier identifier = identifierAPI.find(elem.trim());
