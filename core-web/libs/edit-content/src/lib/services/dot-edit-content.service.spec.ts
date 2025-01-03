@@ -79,7 +79,11 @@ describe('DotEditContentService', () => {
             const CONTENTID_OR_VAR = '456';
             const DEPTH = DotContentletDepths.TWO;
             spectator.service.getContentById(CONTENTID_OR_VAR, null, DEPTH).subscribe(() => {
-                expect(spectator.service.getContentById).toHaveBeenCalledWith(CONTENTID_OR_VAR, null, DEPTH);
+                expect(spectator.service.getContentById).toHaveBeenCalledWith(
+                    CONTENTID_OR_VAR,
+                    null,
+                    DEPTH
+                );
                 done();
             });
         });
