@@ -28,15 +28,13 @@ export class ContentUtils {
         await dotIframe.locator('#title').fill(title);
         //Fill body
         await dotIframe.locator('#block-editor-body div').nth(1).fill(body);
-
-        //await dotIframe.locator(iFramesLocators.wysiwygFrame).contentFrame().locator('#tinymce').fill(body);
         //Click on action
         await dotIframe.getByText(action).first().click();
     }
 
     /**
      * Fill the file asset form
-        * @param params
+     * @param params
      */
     async fillFileAssetForm(params: FileAssetFormParams) {
         const { page, host, title, action, fromURL, newFileName, newFileText } = params;
@@ -77,8 +75,9 @@ export class ContentUtils {
     async workflowExecutionValidationAndClose(page: Page, message: string) {
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-        await expect(dotIframe.getByText(message)).toBeVisible({timeout: 9000});
-        await expect(dotIframe.getByText(message)).toBeHidden();
+        const executionConfirmation = dotIframe.getByText(message);
+        await waitForVisibleAndCallback(executionConfirmation, () => expect(executionConfirmation).toBeVisible());
+        await expect(executionConfirmation).toBeHidden();
         //Click on close
         const closeBtnLocator = page.getByTestId('close-button').getByRole('button');
         await waitForVisibleAndCallback(closeBtnLocator, () => closeBtnLocator.click());
@@ -97,8 +96,8 @@ export class ContentUtils {
         await waitForVisibleAndCallback(structureINodeLocator, () => expect(structureINodeLocator).toBeVisible());
         await this.selectTypeOnFilter(page, typeLocator);
 
-        await iframe.locator('#dijit_form_DropDownButton_0').click();
-        await expect(iframe.getByLabel('actionPrimaryMenu')).toBeVisible();
+        await waitForVisibleAndCallback(iframe.locator('#dijit_form_DropDownButton_0'), () => iframe.locator('#dijit_form_DropDownButton_0').click());
+        await waitForVisibleAndCallback(iframe.getByLabel('actionPrimaryMenu'), async () => {});
         await iframe.getByLabel('▼').getByText('Add New Content').click();
         const headingLocator = page.getByRole('heading');
         await waitForVisibleAndCallback(headingLocator, () => expect(headingLocator).toHaveText(typeString));
@@ -154,12 +153,12 @@ export class ContentUtils {
             const cellText = await cell.textContent();
 
             if (cellText && cellText.includes(text)) {
-                console.log(`The text "${text}" exists in the second row of the table.`);
+                console.log(`The text "${text}" exists in the results table.`);
                 return true;
             }
         }
 
-        console.log(`The text "${text}" does not exist in the second row of the table.`);
+        console.log(`The text "${text}" does not exist in the results table.`);
         return false;
     }
 
@@ -319,15 +318,20 @@ export class ContentUtils {
 
 }
 
-
 /**
- * Parameters for the fillFileAssetForm method
+ * Base form params
  */
-interface FileAssetFormParams {
+interface BaseFormParams {
     page: Page;
-    host: string;
     title: string;
     action?: string;
+}
+
+/**
+ * Parameter to fill the file asset form params
+ */
+interface FileAssetFormParams extends BaseFormParams {
+    host: string;
     fileName?: string;
     fromURL?: string;
     newFileName?: string;
@@ -335,21 +339,17 @@ interface FileAssetFormParams {
 }
 
 /**
- * Parameters for the fillPageAssetForm method
+ * Parameter to fill the page asset form params
  */
-interface PageAssetFormParams {
-    page: Page;
-    title: string;
+interface PageAssetFormParams extends BaseFormParams {
     url?: string;
     host?: string;
-    action?: string;
     template?: string;
     friendlyName?: string;
     showOnMenu?: boolean;
     sortOrder?: string;
-    cacheTTL?: number
+    cacheTTL?: number;
 }
-
 
 
 
