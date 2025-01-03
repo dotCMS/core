@@ -127,7 +127,10 @@ describe('LocalesFeature', () => {
             store.switchLocale(MOCK_LANGUAGES[1]);
             tick();
 
-            expect(dotEditContentService.getContentById).toHaveBeenCalledWith('123', 2);
+            expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                id: '123',
+                languageId: 2
+            });
 
             expect(router.navigate).toHaveBeenCalledWith(['/content', '456'], {
                 replaceUrl: true,

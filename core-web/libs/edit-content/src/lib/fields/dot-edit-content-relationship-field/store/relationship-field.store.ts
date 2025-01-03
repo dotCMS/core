@@ -1,17 +1,6 @@
-import {
-    patchState,
-    signalStore,
-    withComputed,
-    withHooks,
-    withMethods,
-    withState
-} from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
-
-import { tap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -52,7 +41,15 @@ export const RelationshipFieldStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withComputed((state) => ({
+        /**
+         * Computes the total number of pages based on the number of items and the rows per page.
+         * @returns {number} The total number of pages.
+         */
         totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+        /**
+         * Checks if the create new content button is disabled based on the selection mode and the number of items.
+         * @returns {boolean} True if the button is disabled, false otherwise.
+         */
         isDisabledCreateNewContent: computed(() => {
             const totalItems = state.data().length;
             const selectionMode = state.selectionMode();
@@ -62,6 +59,15 @@ export const RelationshipFieldStore = signalStore(
             }
 
             return false;
+        }),
+        /**
+         * Formats the relationship field data into a string of IDs.
+         * @returns {string} A string of IDs separated by commas.
+         */
+        formattedRelationship: computed(() => {
+            const data = state.data();
+
+            return data.map((item) => item.id).join(',');
         })
     })),
     withMethods((store) => {
@@ -116,13 +122,6 @@ export const RelationshipFieldStore = signalStore(
                 });
             },
             /**
-             * Loads the data for the relationship field by fetching content from the service.
-             * It updates the state with the loaded data and sets the status to LOADED.
-             */
-            loadData: rxMethod<void>(
-                pipe(tap(() => patchState(store, { status: ComponentStatus.LOADED })))
-            ),
-            /**
              * Advances the pagination to the next page and updates the state accordingly.
              */
             nextPage: () => {
@@ -147,10 +146,5 @@ export const RelationshipFieldStore = signalStore(
                 });
             }
         };
-    }),
-    withHooks({
-        onInit: (store) => {
-            store.loadData();
-        }
     })
 );

@@ -142,6 +142,14 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 allowSignalWrites: true
             }
         );
+
+        effect(() => {
+            if (this.onChange && this.onTouched) {
+                const value = this.store.formattedRelationship();
+                this.onChange(value);
+                this.onTouched();
+            }
+        });
     }
 
     /**
