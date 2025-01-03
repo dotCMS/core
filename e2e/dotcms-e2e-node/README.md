@@ -99,6 +99,7 @@ command before the tests on top of what is found on http://localhost:8080
 - `start-ci`: runs E2E tests against http://localhost:8080 in `headless` mode which is how it's done in the pipeline
 
 So, assuming that you are a frontend developer and you are still implementing a feature using the `start-dev` script will make much sense since it will run `nx` to start the app in the `4200` port.
+
 ```shell
 yarn run start-dev
 ```
