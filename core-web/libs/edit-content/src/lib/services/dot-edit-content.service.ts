@@ -34,22 +34,25 @@ export class DotEditContentService {
      * @param {DotContentletDepth} [depth] - Optional depth to filter the content.
      * @returns {Observable<DotCMSContentlet>} An observable of the DotCMSContentlet object.
      */
-    getContentById(
-        id: string,
-        languageId?: number,
-        depth?: DotContentletDepth
-    ): Observable<DotCMSContentlet> {
-        let params = new HttpParams();
+    getContentById(params: {
+        id: string;
+        languageId?: number;
+        depth?: DotContentletDepth;
+    }): Observable<DotCMSContentlet> {
+        const { id, languageId, depth } = params;
+        let httpParams = new HttpParams();
 
         if (languageId) {
-            params = params.set('language', languageId.toString());
+            httpParams = httpParams.set('language', languageId.toString());
         }
 
         if (depth) {
-            params = params.set('depth', depth);
+            httpParams = httpParams.set('depth', depth);
         }
 
-        return this.#http.get(`/api/v1/content/${id}`, { params }).pipe(pluck('entity'));
+        return this.#http
+            .get(`/api/v1/content/${id}`, { params: httpParams })
+            .pipe(pluck('entity'));
     }
 
     /**
