@@ -358,7 +358,7 @@ export class DotEditContentFormComponent implements OnInit {
             identifier,
             data: {
                 contentlet: {
-                    ...this.form.value,
+                    ...this.processFormValue(this.form.value),
                     contentType,
                     languageId
                 }
