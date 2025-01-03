@@ -98,7 +98,8 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
                 const categoryValues = this.store.selected();
 
                 if (this.categoryFieldControl) {
-                    this.categoryFieldControl.setValue(categoryValues);
+                    const inodes = categoryValues?.map((category) => category.inode) ?? [];
+                    this.categoryFieldControl.setValue(inodes);
                 }
             },
             {
