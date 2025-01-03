@@ -12,6 +12,7 @@ import {
     DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { DotContentletDepths } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from './dot-edit-content.service';
 
@@ -68,6 +69,17 @@ describe('DotEditContentService', () => {
 
             spectator.service.getContentType(CONTENTID_OR_VAR).subscribe(() => {
                 expect(dotContentTypeService.getContentType).toHaveBeenCalledWith(CONTENTID_OR_VAR);
+                done();
+            });
+        });
+
+        it('should get content by id and depth', (done) => {
+            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+
+            const CONTENTID_OR_VAR = '456';
+            const DEPTH = DotContentletDepths.TWO;
+            spectator.service.getContentById(CONTENTID_OR_VAR, null, DEPTH).subscribe(() => {
+                expect(spectator.service.getContentById).toHaveBeenCalledWith(CONTENTID_OR_VAR, null, DEPTH);
                 done();
             });
         });

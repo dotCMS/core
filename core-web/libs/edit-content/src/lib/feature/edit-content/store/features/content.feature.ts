@@ -234,7 +234,7 @@ export function withContent() {
                  * @returns {Observable<string>} An observable that emits the content's inode when initialization is complete
                  * @throws Will redirect to /c/content and show error if initialization fails
                  */
-                initializeExistingContent: rxMethod<{ inode: string; depth?: DotContentletDepth }>(
+                initializeExistingContent: rxMethod<{ inode: string; depth: DotContentletDepth }>(
                     pipe(
                         switchMap(({ inode, depth }) => {
                             patchState(store, { state: ComponentStatus.LOADING });

@@ -49,6 +49,15 @@ export interface DotContentletPermissions {
     CAN_ADD_CHILDREN?: string[];
 }
 
+/**
+ * The depth of the contentlet.
+ *
+ * @enum {string}
+ * @property {string} ZERO - Without relationships
+ * @property {string} ONE - Retrieve the id of relationships
+ * @property {string} TWO - Retrieve relationships
+ * @property {string} THREE - Retrieve relationships with their relationships
+ */
 export enum DotContentletDepths {
     /**
      * Without relationships

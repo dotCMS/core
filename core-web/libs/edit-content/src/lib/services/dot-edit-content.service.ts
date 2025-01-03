@@ -31,6 +31,7 @@ export class DotEditContentService {
      *
      * @param {string} id - The ID of the content to retrieve.
      * @param {number} [languageId] - Optional language ID to filter the content.
+     * @param {DotContentletDepth} [depth] - Optional depth to filter the content.
      * @returns {Observable<DotCMSContentlet>} An observable of the DotCMSContentlet object.
      */
     getContentById(
