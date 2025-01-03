@@ -31,7 +31,7 @@ import { Orientation } from '../../../../../store/models';
 export class DotUveDeviceSelectorComponent implements OnInit {
     #store = inject(UVEStore);
     #messageService = inject(DotMessageService);
-    $devices = input.required<DotDeviceListItem[]>({
+    $devices = input<DotDeviceListItem[]>([], {
         alias: 'devices'
     });
 
@@ -40,11 +40,11 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     readonly $currentSocialMedia = this.#store.socialMedia;
     readonly $currentOrientation = this.#store.orientation;
     readonly socialMediaMenu = {
-        label: this.#messageService.get('Social Media Tiles'),
+        label: this.#messageService.get('uve.preview.mode.social.media.subheader'),
         items: this.#getSocialMediaMenuItems(socialMediaTiles)
     };
     readonly searchEngineMenu = {
-        label: this.#messageService.get('Search Engine'),
+        label: this.#messageService.get('uve.preview.mode.search.engine.subheader'),
         items: this.#getSocialMediaMenuItems(searchEngineTile)
     };
 
@@ -58,7 +58,7 @@ export class DotUveDeviceSelectorComponent implements OnInit {
 
         const extraDevices = this.$devices().filter((device) => !device._isDefault);
         const customDevices = {
-            label: 'Custom Devices',
+            label: this.#messageService.get('uve.preview.mode.device.subheader'),
             items: this.#getDeviceMenuItems(extraDevices)
         };
 
@@ -69,9 +69,7 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         return menu;
     });
 
-    readonly $isADefaultDeviceActive = computed(() => {
-        return !!this.$currentDevice()?._isDefault;
-    });
+    readonly $isMoreButtonActive = computed(() => !this.$currentDevice()?._isDefault);
 
     ngOnInit(): void {
         const { device: deviceInode, orientation, seo: socialMedia } = this.#store.viewParams();
@@ -83,7 +81,6 @@ export class DotUveDeviceSelectorComponent implements OnInit {
             return;
         }
 
-        this.#store.setDevice(DEFAULT_DEVICE);
         this.#store.setSEO(socialMedia);
     }
 
@@ -96,7 +93,13 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     onSocialMediaSelect(socialMedia: string): void {
         const isSameSocialMedia = this.$currentSocialMedia() === socialMedia;
 
-        this.#store.setSEO(isSameSocialMedia ? null : socialMedia);
+        if (isSameSocialMedia) {
+            this.#store.setDevice(DEFAULT_DEVICE);
+
+            return;
+        }
+
+        this.#store.setSEO(socialMedia);
     }
 
     /**
@@ -106,10 +109,6 @@ export class DotUveDeviceSelectorComponent implements OnInit {
      * @memberof DotUveDeviceSelectorComponent
      */
     onDeviceSelect(device: DotDevice): void {
-        if (this.#store.socialMedia()) {
-            this.#store.setSEO(null);
-        }
-
         const currentDevice = this.$currentDevice();
         const isSameDevice = currentDevice?.inode === device.inode;
         this.#store.setDevice(isSameDevice ? DEFAULT_DEVICE : device);

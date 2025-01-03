@@ -105,7 +105,7 @@ describe('DotUveDeviceSelectorComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            providers: [mockProvider(UVEStore, { ...baseUVEState })]
+            providers: [mockProvider(UVEStore, baseUVEState)]
         });
 
         spectator.setInput('devices', [...DEFAULT_DEVICES, ...mockDotDevices]);

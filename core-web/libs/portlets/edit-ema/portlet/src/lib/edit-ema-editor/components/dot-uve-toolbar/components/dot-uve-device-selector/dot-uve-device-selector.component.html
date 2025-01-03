@@ -33,7 +33,7 @@
         icon="pi pi-chevron-down"
         iconPos="right"
         [label]="'more' | dm"
-        [ngClass]="{ active: !$isADefaultDeviceActive() }"
+        [ngClass]="{ active: $isMoreButtonActive() }"
         styleClass="p-button-text p-button-sm"
         (click)="menu.toggle($event)"
         data-testId="more-button" />

@@ -236,22 +236,6 @@ export function withUVEToolbar() {
                 });
             },
             clearDeviceAndSocialMedia: () => {
-                // const isPreview = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
-
-                // const patched = {
-                //     device: isPreview ? store.device() : null,
-                //     socialMedia: null,
-                //     isEditState: isPreview ? store.isEditState() : true,
-                //     orientation: isPreview ? store.orientation() : null,
-                //     viewParams: {
-                //         ...store.viewParams(),
-                //         device: isPreview ? store.device().inode : null,
-                //         orientation: isPreview ? store.orientation() : null,
-                //         seo: null
-                //     }
-                // }
-                // patchState(store, patched)
-                // console.log("called clearDeviceAndSocialMedia", patched)
                 patchState(store, {
                     device: null,
                     socialMedia: null,
