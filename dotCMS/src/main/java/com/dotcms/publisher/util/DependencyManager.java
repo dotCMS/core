@@ -820,7 +820,7 @@ public class DependencyManager {
 									.search("+identifier:" + contentIdentifier, 0, 0, "moddate",
 											user, false);
 							for (final Contentlet contentletI : contentList) {
-								if(UtilMethods.isSet(contentlet.getIdentifier) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
+								if(UtilMethods.isSet(contentlet.getIdentifier()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
 									contents.addOrClean(contentletI.getIdentifier(),
 											contentletI.getModDate());
 									contentsSet.add(contentletI.getIdentifier());
