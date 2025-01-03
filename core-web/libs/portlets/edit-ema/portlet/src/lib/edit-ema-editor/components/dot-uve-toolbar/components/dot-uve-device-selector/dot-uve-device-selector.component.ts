@@ -1,21 +1,17 @@
-import { DeepSignal } from '@ngrx/signals';
-
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
-import {
-    DotMessageService,
-    DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
-} from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotDevice,
     DotDeviceListItem,
     searchEngineTile,
+    SocialMediaOption,
     socialMediaTiles
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -33,62 +29,38 @@ import { Orientation } from '../../../../../store/models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveDeviceSelectorComponent implements OnInit {
-    defaultDevices = DEFAULT_DEVICES;
-
     #store = inject(UVEStore);
     #messageService = inject(DotMessageService);
-    private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
-    private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
-
-    $devices = input<DotDeviceListItem[]>([], {
+    $devices = input.required<DotDeviceListItem[]>({
         alias: 'devices'
     });
 
-    readonly $currentDevice = this.#store.device as DeepSignal<DotDeviceListItem>;
-
+    readonly defaultDevices = DEFAULT_DEVICES;
+    readonly $currentDevice = this.#store.device;
     readonly $currentSocialMedia = this.#store.socialMedia;
+    readonly $currentOrientation = this.#store.orientation;
+    readonly socialMediaMenu = {
+        label: this.#messageService.get('Social Media Tiles'),
+        items: this.#getSocialMediaMenuItems(socialMediaTiles)
+    };
+    readonly searchEngineMenu = {
+        label: this.#messageService.get('Search Engine'),
+        items: this.#getSocialMediaMenuItems(searchEngineTile)
+    };
 
     readonly $disableOrientation = computed(
         () => this.#store.device()?.inode === 'default' || this.#store.socialMedia()
     );
 
-    readonly $currentOrientation = this.#store.orientation;
-
     readonly $menuItems = computed(() => {
-        const extraDevices = this.$devices().filter((device) => !device._isDefault);
+        const isTraditionalPage = this.#store.isTraditionalPage();
+        const menu = isTraditionalPage ? [this.socialMediaMenu, this.searchEngineMenu] : [];
 
+        const extraDevices = this.$devices().filter((device) => !device._isDefault);
         const customDevices = {
             label: 'Custom Devices',
-            items: extraDevices.map((device) => ({
-                label: `${this.#messageService.get(device.name)} (${device.cssWidth}x${device.cssHeight})`,
-                command: () => this.onDeviceSelect(device),
-                styleClass: this.$currentDevice()?.inode === device.inode ? 'active' : ''
-            }))
+            items: this.#getDeviceMenuItems(extraDevices)
         };
-
-        const socialMediaMenu = {
-            label: 'Social Media Tiles',
-            items: Object.values(socialMediaTiles).map((item) => ({
-                label: item.label,
-                command: () => this.onSocialMediaSelect(item.value),
-                styleClass: this.$currentSocialMedia() === item.value ? 'active' : ''
-            }))
-        };
-
-        const searchEngineMenu = {
-            label: 'Search Engine',
-            items: Object.values(searchEngineTile).map((item) => ({
-                label: item.label,
-                command: () => this.onSocialMediaSelect(item.value),
-                styleClass: this.$currentSocialMedia() === item.value ? 'active' : ''
-            }))
-        };
-
-        const menu = [];
-        if (this.#store.isTraditionalPage()) {
-            menu.push(socialMediaMenu);
-            menu.push(searchEngineMenu);
-        }
 
         if (extraDevices.length) {
             menu.push(customDevices);
@@ -105,8 +77,6 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         const { device: deviceInode, orientation, seo: socialMedia } = this.#store.viewParams();
         const device = this.$devices().find((d) => d.inode === deviceInode);
 
-        this.loadOGTags();
-
         if (!socialMedia) {
             this.#store.setDevice(device || DEFAULT_DEVICE, orientation);
 
@@ -117,18 +87,27 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         this.#store.setSEO(socialMedia);
     }
 
+    /**
+     * Select a social media
+     *
+     * @param {string} socialMedia
+     * @memberof DotUveDeviceSelectorComponent
+     */
     onSocialMediaSelect(socialMedia: string): void {
         const isSameSocialMedia = this.$currentSocialMedia() === socialMedia;
 
         this.#store.setSEO(isSameSocialMedia ? null : socialMedia);
     }
 
+    /**
+     * Select a device
+     *
+     * @param {DotDevice} device
+     * @memberof DotUveDeviceSelectorComponent
+     */
     onDeviceSelect(device: DotDevice): void {
         if (this.#store.socialMedia()) {
             this.#store.setSEO(null);
-
-            // Bug Importante
-            // this.#store.reloadCurrentPage();
         }
 
         const currentDevice = this.$currentDevice();
@@ -136,6 +115,11 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         this.#store.setDevice(isSameDevice ? DEFAULT_DEVICE : device);
     }
 
+    /**
+     * Toggle orientation
+     *
+     * @memberof DotUveDeviceSelectorComponent
+     */
     onOrientationChange(): void {
         this.#store.setOrientation(
             this.$currentOrientation() === Orientation.LANDSCAPE
@@ -144,15 +128,33 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         );
     }
 
-    loadOGTags() {
-        const parser = new DOMParser();
-        const content = this.#store.pageAPIResponse()?.page.rendered;
-        const doc = parser.parseFromString(content, 'text/html');
-        const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
+    /**
+     * Get the menu items for social media
+     *
+     * @param {Record<string, SocialMediaOption>} options
+     * @return {*}  {MenuItem[]}
+     * @memberof DotUveDeviceSelectorComponent
+     */
+    #getSocialMediaMenuItems(options: Record<string, SocialMediaOption>): MenuItem[] {
+        return Object.values(options).map((item) => ({
+            label: item.label,
+            id: item.value,
+            command: () => this.onSocialMediaSelect(item.value)
+        }));
+    }
 
-        this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
-            this.#store.setOgTags(ogTags);
-            this.#store.setOGTagResults(results);
-        });
+    /**
+     * Get the menu items for devices
+     *
+     * @param {DotDeviceListItem[]} devices
+     * @return {*}  {MenuItem[]}
+     * @memberof DotUveDeviceSelectorComponent
+     */
+    #getDeviceMenuItems(devices: DotDeviceListItem[]): MenuItem[] {
+        return devices.map((device) => ({
+            label: `${this.#messageService.get(device.name)} (${device.cssWidth}x${device.cssHeight})`,
+            id: device.inode,
+            command: () => this.onDeviceSelect(device)
+        }));
     }
 }

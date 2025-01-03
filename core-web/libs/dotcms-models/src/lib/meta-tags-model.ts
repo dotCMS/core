@@ -160,19 +160,19 @@ export const SEO_TAGS = [
 ];
 
 export const socialMediaTiles: Record<SOCIAL_MEDIA_TYPES, SocialMediaOption> = {
-    [SEO_MEDIA_TYPES.FACEBOOK]: {
+    [SOCIAL_MEDIA_TYPES.FACEBOOK]: {
         label: 'Facebook',
         value: SEO_MEDIA_TYPES.FACEBOOK,
         icon: 'pi pi-facebook',
         description: 'seo.rules.media.preview.tile'
     },
-    [SEO_MEDIA_TYPES.TWITTER]: {
+    [SOCIAL_MEDIA_TYPES.TWITTER]: {
         label: 'X (Formerly Twitter)',
         value: SEO_MEDIA_TYPES.TWITTER,
         icon: 'pi pi-twitter',
         description: 'seo.rules.media.preview.tile'
     },
-    [SEO_MEDIA_TYPES.LINKEDIN]: {
+    [SOCIAL_MEDIA_TYPES.LINKEDIN]: {
         label: 'Linkedin',
         value: SEO_MEDIA_TYPES.LINKEDIN,
         icon: 'pi pi-linkedin',
@@ -181,7 +181,7 @@ export const socialMediaTiles: Record<SOCIAL_MEDIA_TYPES, SocialMediaOption> = {
 };
 
 export const searchEngineTile: Record<SEARCH_ENGINE_TYPES, SocialMediaOption> = {
-    [SEO_MEDIA_TYPES.GOOGLE]: {
+    [SEARCH_ENGINE_TYPES.GOOGLE]: {
         label: 'Google',
         value: SEO_MEDIA_TYPES.GOOGLE,
         icon: 'pi pi-google',

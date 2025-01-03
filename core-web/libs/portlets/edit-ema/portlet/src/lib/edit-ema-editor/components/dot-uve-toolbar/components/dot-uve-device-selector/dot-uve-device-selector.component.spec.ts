@@ -8,7 +8,7 @@ import { mockDotDevices } from '@dotcms/utils-testing';
 
 import { DotUveDeviceSelectorComponent } from './dot-uve-device-selector.component';
 
-import { DEFAULT_PERSONA, DEFAULT_DEVICES } from '../../../../../shared/consts';
+import { DEFAULT_PERSONA, DEFAULT_DEVICES, DEFAULT_DEVICE } from '../../../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
@@ -81,7 +81,9 @@ const baseUVEState = {
     patchViewParams: jest.fn(),
     orientation: signal(''),
     clearDeviceAndSocialMedia: jest.fn(),
-    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'))
+    device: signal(DEFAULT_DEVICE),
+    socialMedia: signal(null),
+    isTraditionalPage: signal(false)
 };
 
 describe('DotUveDeviceSelectorComponent', () => {
@@ -170,7 +172,7 @@ describe('DotUveDeviceSelectorComponent', () => {
                 const onDeviceSelectSpy = jest.spyOn(spectator.component, 'onDeviceSelect');
                 const firstCustomDevice = spectator.component.$menuItems()[0].items[0];
 
-                firstCustomDevice.command();
+                firstCustomDevice.command({});
 
                 expect(onDeviceSelectSpy).toHaveBeenCalledWith(mockDotDevices[0]);
             });

@@ -1,5 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import { BehaviorSubject, EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
+import { EMPTY, Observable, Subject, fromEvent, of } from 'rxjs';
 
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -14,8 +14,10 @@ import {
     WritableSignal,
     effect,
     inject,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -46,8 +48,7 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
-    SeoMetaTags,
-    SeoMetaTagsResult
+    SeoMetaTags
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
@@ -161,13 +162,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly $previewMode = this.uveStore.$previewMode;
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
-    readonly ogTagsResults$ = new BehaviorSubject<SeoMetaTagsResult[]>([]);
-
-    constructor() {
-        effect(() => {
-            this.ogTagsResults$.next(this.uveStore.ogTagsResults());
-        });
-    }
+    readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
@@ -186,8 +181,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         // This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
         const { isTraditionalPage, isClientReady } = this.uveStore.$reloadEditorContent();
 
-        this.uveStore.resetEditorProperties();
-        this.dialog?.resetDialog();
+        untracked(() => {
+            this.uveStore.resetEditorProperties();
+            this.dialog?.resetDialog();
+        });
 
         if (isTraditionalPage || !isClientReady) {
             return;
@@ -199,14 +196,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $handleIsDraggingEffect = effect(() => {
         const isDragging = this.uveStore.$editorIsInDraggingState();
 
-        if (isDragging) {
-            this.contentWindow?.postMessage(
-                {
-                    name: NOTIFY_CLIENT.UVE_REQUEST_BOUNDS
-                },
-                this.host
-            );
+        if (!isDragging) {
+            return;
         }
+
+        this.contentWindow?.postMessage({ name: NOTIFY_CLIENT.UVE_REQUEST_BOUNDS }, this.host);
     });
 
     ngOnInit(): void {
@@ -457,11 +451,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.inlineEditingService.initEditor();
         }
 
-        /**
-         * The status of isClientReady is changed outside of editor
-         * so we need to set it to true here to avoid the editor to be in a loading state
-         * This is only for traditional pages. For Headless, the isClientReady is set from the client application
-         */
         this.uveStore.setIsClientReady(true);
     }
 

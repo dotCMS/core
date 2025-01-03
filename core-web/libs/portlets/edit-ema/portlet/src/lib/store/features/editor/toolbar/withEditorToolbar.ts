@@ -11,7 +11,7 @@ import { computed } from '@angular/core';
 
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 
-import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../../shared/consts';
+import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions } from '../../../../shared/models';
 import {
@@ -189,7 +189,7 @@ export function withEditorToolbar() {
                 setSocialMedia: (socialMedia: string) => {
                     patchState(store, {
                         socialMedia,
-                        device: DEFAULT_DEVICES.find((d) => d.inode === 'default'),
+                        device: null,
                         isEditState: false
                     });
                 }
