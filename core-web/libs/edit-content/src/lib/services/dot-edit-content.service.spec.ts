@@ -55,6 +55,14 @@ describe('DotEditContentService', () => {
             spectator.expectOne(`${CONTENT_API_ENDPOINT}/${ID}?language=1`, HttpMethod.GET);
         });
 
+        it('should get content by id and depth', () => {
+            const ID = '1';
+            const DEPTH = DotContentletDepths.TWO;
+            spectator.service.getContentById(ID, null, DEPTH).subscribe();
+
+            spectator.expectOne(`${CONTENT_API_ENDPOINT}/${ID}?depth=${DEPTH}`, HttpMethod.GET);
+        });
+
         it('should get tags', () => {
             const NAME = 'test';
             spectator.service.getTags(NAME).subscribe();
@@ -69,21 +77,6 @@ describe('DotEditContentService', () => {
 
             spectator.service.getContentType(CONTENTID_OR_VAR).subscribe(() => {
                 expect(dotContentTypeService.getContentType).toHaveBeenCalledWith(CONTENTID_OR_VAR);
-                done();
-            });
-        });
-
-        it('should get content by id and depth', (done) => {
-            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
-
-            const CONTENTID_OR_VAR = '456';
-            const DEPTH = DotContentletDepths.TWO;
-            spectator.service.getContentById(CONTENTID_OR_VAR, null, DEPTH).subscribe(() => {
-                expect(spectator.service.getContentById).toHaveBeenCalledWith(
-                    CONTENTID_OR_VAR,
-                    null,
-                    DEPTH
-                );
                 done();
             });
         });

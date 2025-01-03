@@ -2,16 +2,11 @@ import {
     patchState,
     signalStore,
     withComputed,
-    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
 
 import { computed } from '@angular/core';
-
-import { tap } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -133,13 +128,6 @@ export const RelationshipFieldStore = signalStore(
                 });
             },
             /**
-             * Loads the data for the relationship field by fetching content from the service.
-             * It updates the state with the loaded data and sets the status to LOADED.
-             */
-            loadData: rxMethod<void>(
-                pipe(tap(() => patchState(store, { status: ComponentStatus.LOADED })))
-            ),
-            /**
              * Advances the pagination to the next page and updates the state accordingly.
              */
             nextPage: () => {
@@ -165,9 +153,4 @@ export const RelationshipFieldStore = signalStore(
             }
         };
     }),
-    withHooks({
-        onInit: (store) => {
-            store.loadData();
-        }
-    })
 );
