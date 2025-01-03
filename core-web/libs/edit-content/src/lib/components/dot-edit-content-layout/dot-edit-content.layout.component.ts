@@ -14,12 +14,12 @@ import {
 } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotEditContentStore } from './store/edit-content.store';
 
-import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
+import { DotEditContentFormComponent } from '../dot-edit-content-form/dot-edit-content-form.component';
+import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 
 /**
  * Component that displays the edit content layout.
@@ -52,11 +52,11 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
     host: {
         '[class.edit-content--with-sidebar]': '$store.showSidebar()'
     },
-    templateUrl: './edit-content.layout.component.html',
-    styleUrls: ['./edit-content.layout.component.scss'],
+    templateUrl: './dot-edit-content.layout.component.html',
+    styleUrls: ['./dot-edit-content.layout.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditContentLayoutComponent {
+export class DotEditContentLayoutComponent {
     /**
      * The store instance.
      *
