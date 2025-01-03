@@ -219,18 +219,24 @@ public class PublisherAPIImpl implements PublisherAPI {
             final String queryOriginal = filterDescriptor.getFilters().get("excludeQuery").toString();
             String[] parts = queryOriginal.split(" ");
             for(String part : parts) {
+                Logger.info(this,"Part: " + part);
                 APILocator.getContentletAPI().search("+"+part, 0, 0, "moddate", APILocator.systemUser(), false)
                         .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
+                Logger.info(this,"Done with part: " + part);
             }
+            Logger.info(this,"Done with all parts for excludeQuery");
         }
 
         if(filterDescriptor.getFilters().containsKey("excludeDependencyQuery")){
             final String queryOriginal = filterDescriptor.getFilters().get("excludeDependencyQuery").toString();
             String[] parts = queryOriginal.split(" ");
             for(String part : parts) {
+                Logger.info(this,"Part: " + part);
                 APILocator.getContentletAPI().search("+"+part, 0, 0, "moddate", APILocator.systemUser(), false)
                         .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
+                Logger.info(this,"Done with part: " + part);
             }
+            Logger.info(this,"Done with all parts for excludeDependencyQuery");
         }
 
         return publisherFilter;

@@ -410,7 +410,7 @@ public class DependencyManager {
 												false);
 
 								for (final Contentlet contentlet : contentList) {
-									if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
+									if(UtilMethods.isSet(contentlet.getIdentifier()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
 										contents.addOrClean(contentlet.getIdentifier(),
 												contentlet.getModDate());
 										contentsSet.add(contentlet.getIdentifier());
@@ -478,7 +478,7 @@ public class DependencyManager {
 					final List<Contentlet> contentList = APILocator.getContentletAPI()
 							.search(luceneQuery, 0, 0, null, user, false);
 					for (final Contentlet contentlet : contentList) {
-						if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
+						if(UtilMethods.isSet(contentlet.getIdentifier()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
 							contents.addOrClean(contentlet.getIdentifier(),
 									contentlet.getModDate());
 							contentsSet.add(contentlet.getIdentifier());
@@ -590,7 +590,7 @@ public class DependencyManager {
 				final List<Contentlet> contentList = APILocator.getContentletAPI()
 						.search(luceneQuery, 0, 0, null, user, false);
 				for (final Contentlet contentlet : contentList) {
-					if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
+					if(UtilMethods.isSet(contentlet.getIdentifier()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
 						contents.addOrClean(contentlet.getIdentifier(), contentlet.getModDate());
 						contentsSet.add(contentlet.getIdentifier());
 					}
@@ -820,7 +820,7 @@ public class DependencyManager {
 									.search("+identifier:" + contentIdentifier, 0, 0, "moddate",
 											user, false);
 							for (final Contentlet contentletI : contentList) {
-								if(!publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
+								if(UtilMethods.isSet(contentlet.getIdentifier) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
 									contents.addOrClean(contentletI.getIdentifier(),
 											contentletI.getModDate());
 									contentsSet.add(contentletI.getIdentifier());
