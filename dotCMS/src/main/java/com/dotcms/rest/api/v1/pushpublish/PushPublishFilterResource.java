@@ -52,7 +52,7 @@ public class PushPublishFilterResource {
 
         final List<FilterDescriptor> list = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(user);
 
-        return Response.ok(new ResponseEntityView<>(list)).build();
+        return Response.ok(new ResponseEntityView(list)).build();
     }
 
 }
