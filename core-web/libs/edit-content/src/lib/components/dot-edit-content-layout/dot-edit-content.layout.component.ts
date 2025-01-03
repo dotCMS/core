@@ -14,7 +14,6 @@ import {
 } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
