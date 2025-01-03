@@ -41,10 +41,12 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     readonly $currentOrientation = this.#store.orientation;
     readonly socialMediaMenu = {
         label: this.#messageService.get('uve.preview.mode.social.media.subheader'),
+        id: 'social-media',
         items: this.#getSocialMediaMenuItems(socialMediaTiles)
     };
     readonly searchEngineMenu = {
         label: this.#messageService.get('uve.preview.mode.search.engine.subheader'),
+        id: 'search-engine',
         items: this.#getSocialMediaMenuItems(searchEngineTile)
     };
 
@@ -59,6 +61,7 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         const extraDevices = this.$devices().filter((device) => !device._isDefault);
         const customDevices = {
             label: this.#messageService.get('uve.preview.mode.device.subheader'),
+            id: 'custom-devices',
             items: this.#getDeviceMenuItems(extraDevices)
         };
 
@@ -138,6 +141,7 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         return Object.values(options).map((item) => ({
             label: item.label,
             id: item.value,
+            value: item.value,
             command: () => this.onSocialMediaSelect(item.value)
         }));
     }
