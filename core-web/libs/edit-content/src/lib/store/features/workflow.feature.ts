@@ -36,7 +36,7 @@ import {
 
 import { ContentState } from './content.feature';
 
-import { parseCurrentActions } from '../../../../utils/workflows.utils';
+import { parseCurrentActions } from '../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
 
 export type CurrentContentActionsWithScheme = Record<string, DotCMSWorkflowAction[]>;

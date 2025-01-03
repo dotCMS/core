@@ -8,7 +8,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.models';
-import { DotCategoryFieldSearchListComponent } from '../dot-category-field-search-list/dot-category-field-search-list.component';
 
 /**
  * Represents the Dot Category Field Selected Component.
@@ -19,13 +18,7 @@ import { DotCategoryFieldSearchListComponent } from '../dot-category-field-searc
 @Component({
     selector: 'dot-category-field-selected',
     standalone: true,
-    imports: [
-        ButtonModule,
-        DotMessagePipe,
-        DotCategoryFieldSearchListComponent,
-        ChipModule,
-        TooltipModule
-    ],
+    imports: [ButtonModule, DotMessagePipe, ChipModule, TooltipModule],
     templateUrl: './dot-category-field-selected.component.html',
     styleUrl: './dot-category-field-selected.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,

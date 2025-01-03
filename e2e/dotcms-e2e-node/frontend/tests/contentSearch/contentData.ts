@@ -1,3 +1,5 @@
+import {Page} from "@playwright/test";
+
 /**
  * Content to add a Rich Text content
  */
@@ -28,4 +30,17 @@ export const fileAssetContent = {
     newFileText:"This is a new file asset content",
     host:"default"
 }
+
+export const pageAssetContent = {
+    title: "PageAsset1",
+    host: "default",
+    template: "System Template",
+    friendlyName: "friendlyName-test",
+    showOnMenu: true,
+    sortOrder: "1",
+    cacheTTL: 0,
+}
+
+
+
 

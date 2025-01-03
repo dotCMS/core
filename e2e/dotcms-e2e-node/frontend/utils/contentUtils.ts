@@ -1,5 +1,5 @@
 import {expect, FrameLocator, Locator, Page} from '@playwright/test';
-import {contentGeneric, iFramesLocators, fileAsset } from '../locators/globalLocators';
+import {contentGeneric, iFramesLocators, fileAsset, pageAsset} from '../locators/globalLocators';
 import {waitForVisibleAndCallback} from './dotCMSUtils';
 import {contentProperties} from "../tests/contentSearch/contentData";
 
@@ -28,25 +28,16 @@ export class ContentUtils {
         await dotIframe.locator('#title').fill(title);
         //Fill body
         await dotIframe.locator('#block-editor-body div').nth(1).fill(body);
-
-        //await dotIframe.locator(iFramesLocators.wysiwygFrame).contentFrame().locator('#tinymce').fill(body);
         //Click on action
         await dotIframe.getByText(action).first().click();
     }
 
     /**
      * Fill the file asset form
-     * @param page
-     * @param host
-     * @param title
-     * @param action
-     * @param fileName
-     * @param fromURL
-     * @param newFileName
-     * @param newFileText
+     * @param params
      */
     async fillFileAssetForm(params: FileAssetFormParams) {
-        const { page, host, title, action, fileName, fromURL, newFileName, newFileText } = params;
+        const { page, host, title, action, fromURL, newFileName, newFileText } = params;
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
         await waitForVisibleAndCallback(page.getByRole('heading'), () =>
@@ -79,12 +70,14 @@ export class ContentUtils {
     /**
      * Validate the workflow execution and close the modal
      * @param page
+     * @param message
      */
     async workflowExecutionValidationAndClose(page: Page, message: string) {
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-        await expect(dotIframe.getByText(message)).toBeVisible({timeout: 9000});
-        await expect(dotIframe.getByText(message)).toBeHidden();
+        const executionConfirmation = dotIframe.getByText(message);
+        await waitForVisibleAndCallback(executionConfirmation, () => expect(executionConfirmation).toBeVisible());
+        await expect(executionConfirmation).toBeHidden();
         //Click on close
         const closeBtnLocator = page.getByTestId('close-button').getByRole('button');
         await waitForVisibleAndCallback(closeBtnLocator, () => closeBtnLocator.click());
@@ -103,8 +96,8 @@ export class ContentUtils {
         await waitForVisibleAndCallback(structureINodeLocator, () => expect(structureINodeLocator).toBeVisible());
         await this.selectTypeOnFilter(page, typeLocator);
 
-        await iframe.locator('#dijit_form_DropDownButton_0').click();
-        await expect(iframe.getByLabel('actionPrimaryMenu')).toBeVisible();
+        await waitForVisibleAndCallback(iframe.locator('#dijit_form_DropDownButton_0'), () => iframe.locator('#dijit_form_DropDownButton_0').click());
+        await waitForVisibleAndCallback(iframe.getByLabel('actionPrimaryMenu'), async () => {});
         await iframe.getByLabel('▼').getByText('Add New Content').click();
         const headingLocator = page.getByRole('heading');
         await waitForVisibleAndCallback(headingLocator, () => expect(headingLocator).toHaveText(typeString));
@@ -114,7 +107,6 @@ export class ContentUtils {
      * Select content type on filter on the content portlet
      * @param page
      * @param typeLocator
-     * @param typeString
      */
     async selectTypeOnFilter(page: Page, typeLocator: string) {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
@@ -144,7 +136,7 @@ export class ContentUtils {
     /**
      * Validate if the content exists in the results table on the content portlet
      * @param page
-     * @param title
+     * @param text
      */
     async validateContentExist(page: Page, text: string) {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
@@ -161,12 +153,12 @@ export class ContentUtils {
             const cellText = await cell.textContent();
 
             if (cellText && cellText.includes(text)) {
-                console.log(`The text "${text}" exists in the second row of the table.`);
+                console.log(`The text "${text}" exists in the results table.`);
                 return true;
             }
         }
 
-        console.log(`The text "${text}" does not exist in the second row of the table.`);
+        console.log(`The text "${text}" does not exist in the results table.`);
         return false;
     }
 
@@ -267,8 +259,9 @@ export class ContentUtils {
     }
 
     /**
-     * Get the content state from the results table on the content portle
+     * Get the content state from the results table on the content portlet
      * @param page
+     * @param title
      */
     async getContentState(page: Page, title: string): Promise<string | null> {
         const iframe = page.frameLocator(iFramesLocators.main_iframe);
@@ -293,20 +286,70 @@ export class ContentUtils {
     }
 
 
+    /**
+     * Fill the pageAsset form
+     * @param params
+     */
+    async fillPageAssetForm(params: PageAssetFormParams) {
+        const { page, title, action, url, host, template, friendlyName, showOnMenu, sortOrder, cacheTTL } = params;
+        const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
+
+        await waitForVisibleAndCallback(page.getByRole('heading'), () =>
+            expect.soft(page.getByRole('heading')).toContainText(pageAsset.label)
+        );
+        await dotIframe.locator('#titleBox').fill(title);
+
+        if (url) await dotIframe.locator('#url').fill(url);
+        if (host) {
+            await dotIframe.locator('#hostFolder_field div').nth(2).click();
+            await dotIframe.getByRole('treeitem', { name: host }).click();
+        }
+        if (template) {
+            await dotIframe.locator('#widget_templateSel div').first().click();
+            await dotIframe.getByText(template).click();
+        }
+        if (friendlyName) await dotIframe.locator('#friendlyName').fill(friendlyName);
+        if (showOnMenu) await dotIframe.getByLabel('Content', { exact: true }).getByLabel('').check();
+        if (sortOrder) await dotIframe.locator('#sortOrder').fill(sortOrder);
+        if (cacheTTL) await dotIframe.locator('#cachettlbox').fill(cacheTTL.toString());
+        if (action) await dotIframe.getByText(action).first().click();
+    }
+
+
 }
 
-interface FileAssetFormParams {
+/**
+ * Base form params
+ */
+interface BaseFormParams {
     page: Page;
-    host: string;
     title: string;
     action?: string;
+}
+
+/**
+ * Parameter to fill the file asset form params
+ */
+interface FileAssetFormParams extends BaseFormParams {
+    host: string;
     fileName?: string;
     fromURL?: string;
     newFileName?: string;
     newFileText?: string;
 }
 
-
+/**
+ * Parameter to fill the page asset form params
+ */
+interface PageAssetFormParams extends BaseFormParams {
+    url?: string;
+    host?: string;
+    template?: string;
+    friendlyName?: string;
+    showOnMenu?: boolean;
+    sortOrder?: string;
+    cacheTTL?: number;
+}
 
 
 
