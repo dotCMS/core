@@ -5,11 +5,9 @@ import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
-import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
@@ -75,7 +73,6 @@ import com.liferay.util.FileUtil;
 
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.UserAgent;
-import io.vavr.control.Try;
 
 /**
  * This servlet allows you invoke content exporters over binary fields. With the following URL syntax you are able to
@@ -247,27 +244,14 @@ public class BinaryExporterServlet extends HttpServlet {
 			} else {
 				tempBinaryImageInodes = new ArrayList<>();
 			}
-
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
-			User user;
-			try {
-				final User currentUser = ServletUtils.getUserAndAuthenticateIfRequired(
+			final User user = ServletUtils.getUserAndAuthenticateIfRequired(
 						this.webResource, req, resp);
-				Logger.debug(this, () -> "User: " + currentUser);
-				user = currentUser;
-			} catch (SecurityException e) {
-				SecurityLogger.logInfo(BinaryExporterServlet.class, e.getMessage());
-				Logger.debug(BinaryExporterServlet.class, e,  () -> "Error getting user and authenticating");
-				resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-				return;
-			}
-
 			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
 			final long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
-
 
 			if (isContent){
 				Contentlet content = null;
@@ -637,6 +621,11 @@ public class BinaryExporterServlet extends HttpServlet {
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
+		} catch (SecurityException e) {
+			Logger.debug(BinaryExporterServlet.class, e,  () -> "Error getting user and authenticating");
+			if(!resp.isCommitted()) {
+				resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+			}
 		} catch (PortalException e) {
 			Logger.error(BinaryExporterServlet.class, "[PortalException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);

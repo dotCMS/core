@@ -43,7 +43,6 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -270,7 +269,7 @@ public class ShortyServlet extends HttpServlet {
     try {
         final User user = ServletUtils.getUserAndAuthenticateIfRequired(
                 this.webResource, request, response);
-        Logger.debug(this, () -> "User: " + user);
+        Logger.debug(ShortyServlet.class, () -> "User: " + user);
     } catch (SecurityException e) {
         SecurityLogger.logInfo(ShortyServlet.class, e.getMessage());
         Logger.debug(ShortyServlet.class, e,  () -> "Error getting user and authenticating");
@@ -338,7 +337,7 @@ public class ShortyServlet extends HttpServlet {
     final Language language =WebAPILocator.getLanguageWebAPI().getLanguage(request);
     try {
 
-        
+
         String inodePath = null;
         if(shorty.type!= ShortType.TEMP_FILE) {
           final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)

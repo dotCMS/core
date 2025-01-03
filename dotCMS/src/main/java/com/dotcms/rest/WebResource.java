@@ -554,8 +554,8 @@ public  class WebResource {
         }
 
 
-        if( UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
-
+        if(Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS::equals)
+                && UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } 
 
@@ -664,13 +664,11 @@ public  class WebResource {
 
                 throw e;
             } catch (Exception e) {  // doLogin throwing Exception
-
                 Logger.warn(WebResource.class, "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
                 SecurityLogger.logDebug(WebResource.class, "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
                 throw new SecurityException("Authentication credentials are required", e, Response.Status.UNAUTHORIZED);
             }
         } else if(StringUtils.isNotEmpty(username) || StringUtils.isNotEmpty(password)) { // providing login or password
-
             Logger.warn(WebResource.class, "Request IP: " + ip + ". Can't authenticate user.");
             SecurityLogger.logDebug(WebResource.class, "Request IP: " + ip + ". Can't authenticate user.");
             throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);

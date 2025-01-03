@@ -26,7 +26,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -34,7 +33,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 
 public class SpeedyAssetServlet extends HttpServlet {
 
@@ -60,9 +58,8 @@ public class SpeedyAssetServlet extends HttpServlet {
         try {
             final User user = ServletUtils.getUserAndAuthenticateIfRequired(
                     webResource, request, response);
-            Logger.debug(this, () -> "User: " + user);
+            Logger.debug(ShortyServlet.class, () -> "User: " + user);
         } catch (SecurityException e) {
-            SecurityLogger.logInfo(SpeedyAssetServlet.class, e.getMessage());
             Logger.debug(SpeedyAssetServlet.class, e,  () -> "Error getting user and authenticating");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
