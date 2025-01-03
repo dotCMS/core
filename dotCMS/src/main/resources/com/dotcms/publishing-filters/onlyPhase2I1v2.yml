@@ -1,0 +1,18 @@
+title:                    Only phase2.1 after commit 535883e
+default:                  false
+roles:                    CMS_ADMINISTRATOR_ROLE
+filters:
+       ## Lucene query that exclude content to be added to the bundle
+       excludeQuery:             "conhost:SYSTEM_HOST conhost:ed093e7b-f1cf-40da-a441-c9ef697bdef5 conhost:6fcdd9ec-3c05-4cf9-9457-2cb96f0ed51f conhost:b12f75ad-bc9b-4ee0-b2bb-8c01ad341e50 conhost:40a930c0-63af-4481-b891-4f390b6fabfa conhost:96ae38ac-66f0-48db-8b84-81c2f613b6b1 conhost:949a4a86-8014-4d81-b566-b59f90099eb8 conhost:95845442-ac15-4c4b-9497-373d63cf33a3 conhost:884e44e1-95f6-4862-978f-232adee04c6e conhost:d4666037-65c6-4650-a888-6f95cb8786ea conhost:9cf864fe-debd-4ead-93ca-81a2e65c406a conhost:feae5e6d-b517-4028-86dd-b3b28ef4c785 conhost:90e122a0-d4fe-4b1c-9b54-a56183e90b89 conhost:250fbad4-9865-4161-ac96-ebed6c6513d4 conhost:0789b28e-094e-4c12-abfb-1d2461387128 conhost:872081f7-ddf9-4fa6-afef-9ccb19cf897c conhost:e8500ca5-3231-4e22-a32b-0ebe62698ee7 conhost:79fd1e79-454a-427e-a91a-cf9dad6ad76b"
+       ## list of classes that should never be pushed: ContentType, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
+       excludeClasses:           [Workflow,ContentType,User,OSGI,Language]
+       ## check for any dependency that the pushed asset may need (if false will not look for any dependency or relationship)
+       dependencies:             true
+       ## Lucene query that exclude content to be added to the bundle as a dependency
+       excludeDependencyQuery:   "conhost:SYSTEM_HOST conhost:ed093e7b-f1cf-40da-a441-c9ef697bdef5 conhost:6fcdd9ec-3c05-4cf9-9457-2cb96f0ed51f conhost:b12f75ad-bc9b-4ee0-b2bb-8c01ad341e50 conhost:40a930c0-63af-4481-b891-4f390b6fabfa conhost:96ae38ac-66f0-48db-8b84-81c2f613b6b1 conhost:949a4a86-8014-4d81-b566-b59f90099eb8 conhost:95845442-ac15-4c4b-9497-373d63cf33a3 conhost:884e44e1-95f6-4862-978f-232adee04c6e conhost:d4666037-65c6-4650-a888-6f95cb8786ea conhost:9cf864fe-debd-4ead-93ca-81a2e65c406a conhost:feae5e6d-b517-4028-86dd-b3b28ef4c785 conhost:90e122a0-d4fe-4b1c-9b54-a56183e90b89 conhost:250fbad4-9865-4161-ac96-ebed6c6513d4 conhost:0789b28e-094e-4c12-abfb-1d2461387128 conhost:872081f7-ddf9-4fa6-afef-9ccb19cf897c conhost:e8500ca5-3231-4e22-a32b-0ebe62698ee7 conhost:79fd1e79-454a-427e-a91a-cf9dad6ad76b"
+       ##  list of classes that should never be pushed as dependencies: ContentType, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
+       excludeDependencyClasses: [Workflow,ContentType,Language]
+       ## force push as always worked, if true will push regardless the pushed asset history
+       forcePush:                false
+       ## check for relationships (if false neither the Relationship object nor the related content nor the related content type will be pushed)
+       relationships:            true

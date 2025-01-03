@@ -986,7 +986,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 */
 	protected List<Contentlet> findContentletsByHost(String hostId, int limit, int offset) throws DotDataException {
 		try {
-            Logger.info(this, "INDEX_OPERATIONS_TIMEOUT_IN_MS: " + INDEX_OPERATIONS_TIMEOUT_IN_MS);
 			SearchResponse response = createRequest(client.getClient(), "+conhost:"+hostId).
 			        setSize(limit).setFrom(offset).execute()
 					.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
@@ -1296,7 +1295,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final SearchRequestBuilder searchRequestBuilder = client.prepareSearch().setSize(0);
         searchRequestBuilder.setQuery(qb);
         searchRequestBuilder.setIndices(indexToHit);
-        Logger.info(this, "INDEX_OPERATIONS_TIMEOUT_IN_MS: " + INDEX_OPERATIONS_TIMEOUT_IN_MS);
         return searchRequestBuilder.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getHits().getTotalHits();
 	}
 
@@ -1328,7 +1326,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchRequestBuilder.setQuery(queryStringQueryBuilder);
         searchRequestBuilder.setIndices(
                 query.contains("+live:true") && !query.contains("+deleted:true")? info.live: info.working);
-        Logger.info(this, "INDEX_OPERATIONS_TIMEOUT_IN_MS: " + INDEX_OPERATIONS_TIMEOUT_IN_MS);
         return searchRequestBuilder.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getHits().getTotalHits();
     }
 
@@ -1531,7 +1528,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
             try{
-                Logger.info(this, "INDEX_OPERATIONS_TIMEOUT_IN_MS: " + INDEX_OPERATIONS_TIMEOUT_IN_MS);
             	resp = srb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
             }catch (SearchPhaseExecutionException e) {
 				if(e.getMessage().contains("dotraw] in order to sort on")){
