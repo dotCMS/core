@@ -10,7 +10,7 @@ import {
     DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotCMSContentlet, DotContentletDepth } from '@dotcms/dotcms-models';
 
 import {
     CustomTreeNode,
@@ -33,10 +33,20 @@ export class DotEditContentService {
      * @param {number} [languageId] - Optional language ID to filter the content.
      * @returns {Observable<DotCMSContentlet>} An observable of the DotCMSContentlet object.
      */
-    getContentById(id: string, languageId?: number): Observable<DotCMSContentlet> {
-        const params = languageId
-            ? new HttpParams().set('language', languageId.toString())
-            : new HttpParams();
+    getContentById(
+        id: string,
+        languageId?: number,
+        depth?: DotContentletDepth
+    ): Observable<DotCMSContentlet> {
+        let params = new HttpParams();
+
+        if (languageId) {
+            params = params.set('language', languageId.toString());
+        }
+
+        if (depth) {
+            params = params.set('depth', depth);
+        }
 
         return this.#http.get(`/api/v1/content/${id}`, { params }).pipe(pluck('entity'));
     }

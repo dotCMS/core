@@ -48,3 +48,24 @@ export interface DotContentletPermissions {
     PUBLISH?: string[];
     CAN_ADD_CHILDREN?: string[];
 }
+
+export enum DotContentletDepths {
+    /**
+     * Without relationships
+     */
+    ZERO = '0',
+    /**
+     * Retrieve the id of relationships
+     */
+    ONE = '1',
+    /**
+     * Retrieve relationships
+     */
+    TWO = '2',
+    /**
+     * Retrieve relationships with their relationships
+     */
+    THREE = '3'
+}
+
+export type DotContentletDepth = `${DotContentletDepths}`;

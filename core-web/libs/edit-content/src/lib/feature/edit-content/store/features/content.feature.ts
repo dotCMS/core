@@ -29,6 +29,7 @@ import {
     DotCMSContentType,
     DotCMSWorkflow,
     DotCMSWorkflowAction,
+    DotContentletDepth,
     FeaturedFlags,
     WorkflowStep
 } from '@dotcms/dotcms-models';
@@ -233,12 +234,12 @@ export function withContent() {
                  * @returns {Observable<string>} An observable that emits the content's inode when initialization is complete
                  * @throws Will redirect to /c/content and show error if initialization fails
                  */
-                initializeExistingContent: rxMethod<string>(
+                initializeExistingContent: rxMethod<{ inode: string; depth?: DotContentletDepth }>(
                     pipe(
-                        switchMap((inode: string) => {
+                        switchMap(({ inode, depth }) => {
                             patchState(store, { state: ComponentStatus.LOADING });
 
-                            return dotEditContentService.getContentById(inode).pipe(
+                            return dotEditContentService.getContentById(inode, null, depth).pipe(
                                 switchMap((contentlet) => {
                                     const { contentType } = contentlet;
 
