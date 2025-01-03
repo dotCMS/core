@@ -82,10 +82,12 @@ public class RelationshipUtil {
         //LinkedHashMap to preserve the order of the contentlets
         final Map<String, Contentlet> relatedContentlets = new LinkedHashMap<>();
 
+        boolean isLuceneQuery = UtilMethods.isLuceneQuery(filter);
+
         //Filter can be an identifier or a lucene query (comma separated)
         for (final String elem : filter.split(StringPool.COMMA)) {
-            if (!UUIDUtil.isUUID(elem.trim()) && !UtilMethods.isLuceneQuery(elem) ){
-                throw new DotSecurityException("The relationship field has a value (" + filter  + ") that is not an identifier or a lucene query");
+            if (!UUIDUtil.isUUID(elem.trim()) && !isLuceneQuery){
+                throw new DotSecurityException("The field has a value (" + filter  + ") that is not an identifier or a lucene query");
             }
             if (UUIDUtil.isUUID(elem.trim()) && !relatedContentlets.containsKey(elem.trim())) {
                 final Identifier identifier = identifierAPI.find(elem.trim());
