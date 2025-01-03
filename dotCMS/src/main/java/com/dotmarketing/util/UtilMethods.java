@@ -25,6 +25,8 @@ import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -3700,6 +3702,22 @@ public class UtilMethods {
      */
     public static boolean isVectorImage(String fileExtension) {
         return VECTOR_EXTENSIONS.contains(fileExtension);
+    }
+
+    /**
+    *  Check if the given string is a valid Lucene query
+    *
+    *  @param query String to be checked
+    */
+    public static boolean isLuceneQuery(String query) {
+        try {
+            QueryParser parser = new QueryParser("defaultField", new StandardAnalyzer());
+            // try to parse the query, if it fails, the string is invalid so return false
+            parser.parse(query);
+            return true;
+        } catch (org.apache.lucene.queryparser.classic.ParseException e) {
+           return false;
+        }
     }
 
 }

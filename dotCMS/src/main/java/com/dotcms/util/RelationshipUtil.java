@@ -54,7 +54,7 @@ public class RelationshipUtil {
             final Relationship relationship, final ContentType contentType, final long language,
             final String query, final User user) throws DotDataException, DotSecurityException {
         List<Contentlet> relatedContentlets = Collections.EMPTY_LIST;
-
+//todo aca hay que validar
         if (UtilMethods.isSet(query)) {
             relatedContentlets = filterContentlet(language, query, user, true);
             validateRelatedContent(relationship, contentType, relatedContentlets);
@@ -84,6 +84,9 @@ public class RelationshipUtil {
 
         //Filter can be an identifier or a lucene query (comma separated)
         for (final String elem : filter.split(StringPool.COMMA)) {
+            if (!UUIDUtil.isUUID(elem.trim()) && !UtilMethods.isLuceneQuery(elem) ){
+                throw new DotSecurityException("The relationship field has a value (" + filter  + ") that is not an identifier or a lucene query");
+            }
             if (UUIDUtil.isUUID(elem.trim()) && !relatedContentlets.containsKey(elem.trim())) {
                 final Identifier identifier = identifierAPI.find(elem.trim());
                 final Contentlet relatedContentlet = contentletAPI
