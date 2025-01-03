@@ -22,7 +22,6 @@ import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -43,6 +42,7 @@ import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     BINARY_FIELD_CONTENTLET,
     createFormGroupDirectiveMock,

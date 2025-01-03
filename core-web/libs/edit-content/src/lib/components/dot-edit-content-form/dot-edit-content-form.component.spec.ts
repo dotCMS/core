@@ -34,9 +34,9 @@ import {
     MOCK_SINGLE_WORKFLOW_ACTIONS
 } from '@dotcms/utils-testing';
 
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
