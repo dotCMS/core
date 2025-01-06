@@ -3712,6 +3712,7 @@ public class UtilMethods {
     public static boolean isLuceneQuery(String query) {
         try {
             QueryParser parser = new QueryParser("defaultField", new StandardAnalyzer());
+            parser.setAllowLeadingWildcard(true);
             // try to parse the query, if it fails, the string is invalid so return false
             parser.parse(query);
             return true;
