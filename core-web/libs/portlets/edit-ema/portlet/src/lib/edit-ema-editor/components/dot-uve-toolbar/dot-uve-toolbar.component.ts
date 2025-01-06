@@ -7,14 +7,13 @@ import {
     effect,
     EventEmitter,
     inject,
-    OnInit,
     Output,
-    signal,
     viewChild,
-    WritableSignal,
     model,
-    untracked
+    untracked,
+    Signal
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -24,7 +23,7 @@ import { ChipModule } from 'primeng/chip';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { UVE_MODE } from '@dotcms/client';
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
@@ -72,7 +71,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     styleUrl: './dot-uve-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUveToolbarComponent implements OnInit {
+export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
@@ -90,7 +89,9 @@ export class DotUveToolbarComponent implements OnInit {
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
-    readonly $devices: WritableSignal<DotDeviceListItem[]> = signal([]);
+    readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
+        this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices]))
+    );
 
     protected readonly CURRENT_DATE = new Date();
 
@@ -141,15 +142,6 @@ export class DotUveToolbarComponent implements OnInit {
     protected readonly date = new Date();
 
     defaultDevices = DEFAULT_DEVICES;
-
-    ngOnInit(): void {
-        this.#deviceService
-            .get()
-            .pipe(take(1))
-            .subscribe((devices: DotDeviceListItem[] = []) => {
-                this.$devices.set([...DEFAULT_DEVICES, ...devices]);
-            });
-    }
 
     /**
      * Initialize the preview mode

@@ -20,7 +20,6 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
-    DotDevicesServiceMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
@@ -117,7 +116,6 @@ describe('DotUveToolbarComponent', () => {
     let store: InstanceType<typeof UVEStore>;
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
-
     let devicesService: DotDevicesService;
 
     const fixedDate = new Date('2024-01-01');
@@ -139,7 +137,6 @@ describe('DotUveToolbarComponent', () => {
             mockProvider(ConfirmationService, {
                 confirm: jest.fn()
             }),
-
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: () => of([])
             }),
@@ -175,7 +172,9 @@ describe('DotUveToolbarComponent', () => {
             },
             {
                 provide: DotDevicesService,
-                useValue: new DotDevicesServiceMock()
+                useValue: {
+                    get: jest.fn().mockReturnValue(of(mockDotDevices))
+                }
             }
         ],
         componentProviders: [
@@ -191,14 +190,30 @@ describe('DotUveToolbarComponent', () => {
     describe('base state', () => {
         beforeEach(() => {
             spectator = createComponent({
-                providers: [mockProvider(UVEStore, { ...baseUVEState })]
+                providers: [mockProvider(UVEStore, baseUVEState)]
             });
-
             store = spectator.inject(UVEStore, true);
             messageService = spectator.inject(MessageService, true);
-            confirmationService = spectator.inject(ConfirmationService);
+            devicesService = spectator.inject(DotDevicesService);
+            confirmationService = spectator.inject(ConfirmationService, true);
+        });
 
-            devicesService = spectator.inject(DotDevicesService, true);
+        it('should have a dot-uve-workflow-actions component', () => {
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+            expect(workflowActions).toBeTruthy();
+        });
+
+        describe('custom devices', () => {
+            it('should get custom devices', () => {
+                expect(devicesService.get).toHaveBeenCalled();
+            });
+
+            it('should set default devices and custom devices', () => {
+                expect(spectator.component.$devices()).toEqual([
+                    ...DEFAULT_DEVICES,
+                    ...mockDotDevices
+                ]);
+            });
         });
 
         describe('dot-ema-bookmarks', () => {
@@ -213,12 +228,6 @@ describe('DotUveToolbarComponent', () => {
             it('should be null', () => {
                 expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeNull();
             });
-        });
-
-        it('should have a dot-uve-workflow-actions component', () => {
-            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
-
-            expect(workflowActions).toBeTruthy();
         });
 
         describe('copy-url', () => {
@@ -475,20 +484,6 @@ describe('DotUveToolbarComponent', () => {
         });
     });
 
-    describe('onInit', () => {
-        it('should fetch devices', () => {
-            const spy = jest.spyOn(devicesService, 'get');
-
-            spectator.component.ngOnInit(); // At this point the component already has initializated so we need to call the method directly
-
-            expect(spy).toHaveBeenCalled();
-        });
-
-        it("should fill the devices with the devices that don't have a default device", () => {
-            expect(spectator.component.$devices()).toEqual([...DEFAULT_DEVICES, ...mockDotDevices]);
-        });
-    });
-
     describe('State changes', () => {
         beforeEach(() => {
             const state = {
@@ -510,4 +505,6 @@ describe('DotUveToolbarComponent', () => {
             });
         });
     });
+
+    // afterEach(() => jest.clearAllMocks());
 });

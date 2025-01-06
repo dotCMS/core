@@ -91,7 +91,7 @@ const baseUVEState = {
 
 describe('DotUveDeviceSelectorComponent', () => {
     let spectator: Spectator<DotUveDeviceSelectorComponent>;
-    let uveStore;
+    let uveStore: InstanceType<typeof UVEStore>;
 
     const createComponent = createComponentFactory({
         component: DotUveDeviceSelectorComponent,
