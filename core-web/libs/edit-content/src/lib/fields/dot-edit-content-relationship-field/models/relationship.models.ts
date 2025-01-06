@@ -1,16 +1,13 @@
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 import { MANDATORY_FIELDS } from '../dot-edit-content-relationship-field.constants';
 
 export type MandatoryFields = typeof MANDATORY_FIELDS;
 
-export interface RelatsionshipFieldItem {
+export interface DynamicRelationshipFieldItem {
     id: string;
-    title: string;
-    language: string;
-}
-
-export interface DynamicRelationshipFieldItem extends MandatoryFields {
-    id: string;
-    [key: string]: string;
+    dynamicFields: MandatoryFields & { [key: string]: string };
+    contentlet: DotCMSContentlet;
 }
 
 export enum RelationshipTypes {

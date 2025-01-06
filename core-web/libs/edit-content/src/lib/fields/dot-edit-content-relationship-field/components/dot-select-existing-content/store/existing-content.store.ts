@@ -21,6 +21,7 @@ export interface ExistingContentState {
     selectionMode: SelectionMode | null;
     errorMessage: string | null;
     columns: Column[];
+    currentItemsIds: string[];
     pagination: {
         offset: number;
         currentPage: number;
@@ -38,7 +39,8 @@ const initialState: ExistingContentState = {
         offset: 0,
         currentPage: 1,
         rowsPerPage: 50
-    }
+    },
+    currentItemsIds: []
 };
 
 /**
@@ -49,7 +51,8 @@ export const ExistingContentStore = signalStore(
     withState(initialState),
     withComputed((state) => ({
         isLoading: computed(() => state.status() === ComponentStatus.LOADING),
-        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage))
+        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+        selectedItems: computed(() => state.data().filter((item) => state.currentItemsIds().includes(item.id)))
     })),
     withMethods((store) => {
         const relationshipFieldService = inject(RelationshipFieldService);
@@ -62,6 +65,7 @@ export const ExistingContentStore = signalStore(
             initLoad: rxMethod<{
                 contentTypeId: string;
                 selectionMode: SelectionMode;
+                currentItemsIds: string[];
             }>(
                 pipe(
                     tap(({ selectionMode }) =>
@@ -76,14 +80,15 @@ export const ExistingContentStore = signalStore(
                         }
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
-                    switchMap(({ contentTypeId }) =>
+                    switchMap(({ contentTypeId, currentItemsIds }) =>
                         relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
                                 next: ([columns, data]) => {
                                     patchState(store, {
                                         columns,
                                         data,
-                                        status: ComponentStatus.LOADED
+                                        status: ComponentStatus.LOADED,
+                                        currentItemsIds
                                     });
                                 },
                                 error: () =>

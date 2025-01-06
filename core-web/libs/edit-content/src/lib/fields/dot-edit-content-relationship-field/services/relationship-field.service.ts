@@ -4,6 +4,7 @@ import { formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
+
 import { catchError, map, pluck } from 'rxjs/operators';
 
 import {
@@ -12,7 +13,7 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
 
 import {
     MANDATORY_FIRST_COLUMNS,
@@ -21,7 +22,11 @@ import {
 import { Column } from '../models/column.model';
 import { DynamicRelationshipFieldItem } from '../models/relationship.models';
 
-type LanguagesMap = Record<number, string>;
+type DotLanguageWithLabel = DotLanguage & {
+    label: string;
+};
+
+type LanguagesMap = Record<number, DotLanguageWithLabel>;
 
 @Injectable({
     providedIn: 'root'
@@ -89,8 +94,10 @@ export class RelationshipFieldService {
         return this.#dotLanguagesService.get().pipe(
             map((languages) =>
                 languages.reduce((acc, lang) => {
-                    const code = lang.isoCode || lang.languageCode;
-                    acc[lang.id] = `${lang.language} (${code})`;
+                    acc[lang.id] = {
+                        ...lang,
+                        label: `${lang.language} (${lang.isoCode || lang.languageCode})`
+                    };
 
                     return acc;
                 }, {})
@@ -156,11 +163,17 @@ export class RelationshipFieldService {
             }, {});
 
             const relationshipItem: DynamicRelationshipFieldItem = {
-                ...dynamicColumns,
                 id: item.identifier,
-                title: item.title || item.identifier,
-                language: languages[item.languageId] || '',
-                modDate: formatDate(item.modDate, 'short', 'en-US')
+                contentlet: {
+                    ...item,
+                    language: languages[item.languageId]
+                },
+                dynamicFields: {
+                    ...dynamicColumns,
+                    title: item.title || item.identifier,
+                    language: languages[item.languageId].label,
+                    modDate: formatDate(item.modDate, 'short', 'en-US')
+                }
             };
 
             return relationshipItem;

@@ -23,12 +23,14 @@ import { filter } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotSelectExistingContentComponent } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
+import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
+import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { HeaderComponent } from './components/header/header.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
-import { DynamicRelationshipFieldItem } from './models/relationship.models';
 import { RelationshipFieldStore } from './store/relationship-field.store';
+
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
@@ -39,7 +41,9 @@ import { RelationshipFieldStore } from './store/relationship-field.store';
         MenuModule,
         DotMessagePipe,
         ChipModule,
-        PaginationComponent
+        PaginationComponent,
+        ContentletStatusPipe,
+        LanguagePipe
     ],
     providers: [
         RelationshipFieldStore,
@@ -247,7 +251,8 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
                 contentTypeId: this.$attributes().contentTypeId,
-                selectionMode: this.store.selectionMode()
+                selectionMode: this.store.selectionMode(),
+                currentItemsIds: this.store.data().map((item) => item.identifier)
             },
             templates: {
                 header: HeaderComponent
@@ -259,7 +264,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 filter((file) => !!file),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((items: DynamicRelationshipFieldItem[]) => {
+            .subscribe((items: DotCMSContentlet[]) => {
                 this.store.addData(items);
             });
     }

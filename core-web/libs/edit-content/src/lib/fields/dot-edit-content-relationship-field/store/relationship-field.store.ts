@@ -4,11 +4,11 @@ import { computed } from '@angular/core';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DynamicRelationshipFieldItem, SelectionMode } from '../models/relationship.models';
+import { SelectionMode } from '../models/relationship.models';
 import { getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
 
 export interface RelationshipFieldState {
-    data: DynamicRelationshipFieldItem[];
+    data: DotCMSContentlet[];
     status: ComponentStatus;
     selectionMode: SelectionMode | null;
     pagination: {
@@ -72,7 +72,7 @@ export const RelationshipFieldStore = signalStore(
              * Sets the data in the state.
              * @param {RelationshipFieldItem[]} data - The data to be set.
              */
-            setData(data: DynamicRelationshipFieldItem[]) {
+            setData(data: DotCMSContentlet[]) {
                 patchState(store, {
                     data
                 });
@@ -88,36 +88,28 @@ export const RelationshipFieldStore = signalStore(
             }) {
                 const { cardinality, contentlet, variable } = params;
 
-                const relationship = getRelationshipFromContentlet({ contentlet, variable });
-
-                console.log('relationship', relationship);
-
+                const data = getRelationshipFromContentlet({ contentlet, variable });
                 const selectionMode = getSelectionModeByCardinality(cardinality);
 
                 patchState(store, {
-                    selectionMode
+                    selectionMode,
+                    data
                 });
             },
             /**
              * Adds new data to the existing data in the state.
              * @param {RelationshipFieldItem[]} data - The new data to be added.
              */
-            addData(data: DynamicRelationshipFieldItem[]) {
-                const currentData = store.data();
-
-                const existingIds = new Set(currentData.map((item) => item.id));
-                const uniqueNewData = data.filter((item) => !existingIds.has(item.id));
-                patchState(store, {
-                    data: [...currentData, ...uniqueNewData]
-                });
+            addData(data: DotCMSContentlet[]) {
+                patchState(store, { data });
             },
             /**
              * Deletes an item from the store at the specified index.
              * @param index - The index of the item to delete.
              */
-            deleteItem(id: string) {
+            deleteItem(identifier: string) {
                 patchState(store, {
-                    data: store.data().filter((item) => item.id !== id)
+                    data: store.data().filter((item) => item.identifier !== identifier)
                 });
             },
             /**

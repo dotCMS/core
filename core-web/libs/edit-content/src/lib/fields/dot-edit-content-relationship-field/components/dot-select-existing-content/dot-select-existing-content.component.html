@@ -86,7 +86,7 @@
                     </td>
                     @for (column of columns; track $index) {
                         <td class="max-w-12rem">
-                            <p class="truncate-text">{{ item[column.field] }}</p>
+                            <p class="truncate-text">{{ item.dynamicFields[column.field] }}</p>
                         </td>
                     }
                 </tr>

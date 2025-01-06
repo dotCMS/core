@@ -31,10 +31,11 @@ export function getRelationshipFromContentlet({
 }: {
     contentlet: DotCMSContentlet;
     variable: string;
-}) {
+}): DotCMSContentlet[] {
     if (!contentlet || !variable) {
         return [];
     }
+    
 
     const relationship = contentlet[variable] || [];
 

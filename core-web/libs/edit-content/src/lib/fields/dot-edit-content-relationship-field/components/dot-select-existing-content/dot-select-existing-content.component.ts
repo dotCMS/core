@@ -5,7 +5,8 @@ import {
     inject,
     model,
     output,
-    OnInit
+    OnInit,
+    effect
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -31,6 +32,7 @@ import { PaginationComponent } from '../pagination/pagination.component';
 type DialogData = {
     contentTypeId: string;
     selectionMode: SelectionMode;
+    currentItemsIds: string[];
 };
 
 @Component({
@@ -121,11 +123,13 @@ export class DotSelectExistingContentComponent implements OnInit {
         return this.#dotMessage.get(messageKey, count.toString());
     });
 
-    /**
-     * A signal that sends the selected items when the dialog is closed.
-     * It is used to notify the parent component that the user has selected content items.
-     */
-    onSelectItems = output<DynamicRelationshipFieldItem[]>();
+    constructor() {
+        effect(() => {
+            this.$selectedItems.set(this.store.selectedItems());
+        }, {
+            allowSignalWrites: true
+        });
+    }
 
     ngOnInit() {
         const data: DialogData = this.#dialogConfig.data;
@@ -140,7 +144,8 @@ export class DotSelectExistingContentComponent implements OnInit {
 
         this.store.initLoad({
             contentTypeId: data.contentTypeId,
-            selectionMode: data.selectionMode
+            selectionMode: data.selectionMode,
+            currentItemsIds: data.currentItemsIds
         });
     }
 
@@ -149,7 +154,8 @@ export class DotSelectExistingContentComponent implements OnInit {
      * It sets the visibility signal to false, hiding the dialog.
      */
     closeDialog() {
-        this.#dialogRef.close(this.$items());
+        const contentlets = this.$items().map((item) => item.contentlet);
+        this.#dialogRef.close(contentlets);
     }
 
     /**
