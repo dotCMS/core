@@ -24,7 +24,8 @@ import {
     DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -200,6 +201,7 @@ export function withWorkflow() {
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
                 messageService = inject(MessageService),
                 dotMessageService = inject(DotMessageService),
+                dotWorkflowService = inject(DotWorkflowService),
                 router = inject(Router)
             ) => ({
                 /**
@@ -282,11 +284,18 @@ export function withWorkflow() {
                                             DotRenderMode.EDITING
                                         ),
                                         contentlet: of(contentlet),
-                                        isReset: of(isReset)
+                                        isReset: of(isReset),
+                                        // Workflow status for this inode
+                                        workflowStatus: dotWorkflowService.getWorkflowStatus(inode)
                                     });
                                 }),
                                 tapResponse({
-                                    next: ({ contentlet, currentContentActions, isReset }) => {
+                                    next: ({
+                                        contentlet,
+                                        currentContentActions,
+                                        isReset,
+                                        workflowStatus
+                                    }) => {
                                         // Always navigate if the inode has changed
                                         if (contentlet.inode !== currentContentlet?.inode) {
                                             router.navigate(['/content', contentlet.inode], {
@@ -297,6 +306,8 @@ export function withWorkflow() {
 
                                         const parsedCurrentActions =
                                             parseCurrentActions(currentContentActions);
+
+                                        const { step } = workflowStatus;
 
                                         if (isReset) {
                                             patchState(store, {
@@ -317,6 +328,7 @@ export function withWorkflow() {
                                                 currentContentActions: parsedCurrentActions,
                                                 currentSchemeId: store.currentSchemeId(),
                                                 state: ComponentStatus.LOADED,
+                                                currentStep: step,
                                                 error: null
                                             });
                                         }
