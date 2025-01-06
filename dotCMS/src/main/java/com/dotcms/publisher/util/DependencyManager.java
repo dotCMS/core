@@ -496,10 +496,10 @@ public class DependencyManager {
 					Logger.info(this,"Query: " + luceneQuery + " Contentlets Size: " + contentList.size());
 					for (final Contentlet contentlet : contentList) {
 						if(UtilMethods.isSet(contentlet.getIdentifier()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
-							Logger.info(this,"Adding content to the bundle: " + contentlet.getIdentifier());
-							contents.addOrClean(contentlet.getIdentifier(),
-									contentlet.getModDate());
+							final boolean wasContentAdded = contents.addOrClean(contentlet.getIdentifier(),
+									contentlet.getModDate());//Add it in a variable to check if an asset was added or not
 							contentsSet.add(contentlet.getIdentifier());
+							Logger.info(this,"Adding content to the bundle: " + contentlet.getIdentifier() + " was added: " + wasContentAdded);
 						}
 					}
 					Logger.info(this,"Contents Size: " + contentsSet.size());

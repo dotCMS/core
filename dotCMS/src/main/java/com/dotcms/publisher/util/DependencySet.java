@@ -165,10 +165,10 @@ public class DependencySet extends HashSet<String> {
 		// if the asset hasn't been sent to at least one environment or an older version was sen't,
 		// we need to add it to the cache
 
-		Boolean isForcePush = false;
-		if ( bundle != null ) {
-			isForcePush = bundle.isForcePush();
-		}
+		Boolean isForcePush = true;//change to true and remove following if, in order to ForcePush all assets
+//		if ( bundle != null ) {
+//			isForcePush = bundle.isForcePush();
+//		}
 
 		if ( !isForcePush && !isDownload && isPublish ) {
 			for (Environment env : envs) {
