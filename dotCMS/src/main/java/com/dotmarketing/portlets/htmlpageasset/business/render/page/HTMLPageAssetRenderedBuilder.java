@@ -159,7 +159,7 @@ public class HTMLPageAssetRenderedBuilder {
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
 
         final PageRenderUtil pageRenderUtil = new PageRenderUtil(
-                this.htmlPageAsset, systemUser, mode, language.getId(), this.site);
+                this.htmlPageAsset, user, mode, language.getId(), this.site);
 
         final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
 
