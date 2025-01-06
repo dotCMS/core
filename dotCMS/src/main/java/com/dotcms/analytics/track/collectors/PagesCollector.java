@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import java.util.HashMap;
@@ -94,6 +95,7 @@ public class PagesCollector implements Collector {
                 pageObject.put(WORKING, String.valueOf(Try.of(()->page.isWorking()).getOrElse(false)));
                 collectorPayloadBean.put(EVENT_TYPE, EventType.PAGE_REQUEST.getType());
             }
+
             pageObject.put(URL, uri);
         }
 
@@ -104,6 +106,7 @@ public class PagesCollector implements Collector {
 
         if (Objects.nonNull(site)) {
             collectorPayloadBean.put(SITE_NAME,  site.getHostname());
+            collectorPayloadBean.put(SITE_ID, site.getIdentifier());
         }
 
         return collectorPayloadBean;
