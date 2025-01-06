@@ -7,7 +7,11 @@
     gap: $spacing-1;
     align-self: stretch;
 
-    .active {
+    .menu-item {
+        padding: $spacing-2;
+    }
+
+    .menu-item--active {
         background-color: $color-palette-primary-op-20;
     }
 
@@ -45,6 +49,16 @@
             .p-button {
                 background-color: $color-palette-primary-op-20;
             }
+        }
+    }
+
+    ::ng-deep {
+        .more-menu {
+            padding: $spacing-1;
+        }
+
+        .p-submenu-header {
+            border-bottom: 1px solid $color-palette-gray-300;
         }
     }
 }

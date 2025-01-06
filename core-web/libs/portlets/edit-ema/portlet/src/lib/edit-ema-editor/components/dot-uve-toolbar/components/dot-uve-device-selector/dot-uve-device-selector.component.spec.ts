@@ -323,6 +323,14 @@ describe('DotUveDeviceSelectorComponent', () => {
         describe('More items menu', () => {
             const EXPECT_MENU_ITEM_OPTION = [
                 {
+                    label: 'uve.preview.mode.device.subheader',
+                    id: 'custom-devices',
+                    items: [
+                        { label: 'iphone (200x100)', id: '1', command: expect.any(Function) },
+                        { label: 'bad device (0x0)', id: '2', command: expect.any(Function) }
+                    ]
+                },
+                {
                     label: 'uve.preview.mode.social.media.subheader',
                     id: 'social-media',
                     items: [
@@ -356,14 +364,6 @@ describe('DotUveDeviceSelectorComponent', () => {
                             value: 'Google',
                             command: expect.any(Function)
                         }
-                    ]
-                },
-                {
-                    label: 'uve.preview.mode.device.subheader',
-                    id: 'custom-devices',
-                    items: [
-                        { label: 'iphone (200x100)', id: '1', command: expect.any(Function) },
-                        { label: 'bad device (0x0)', id: '2', command: expect.any(Function) }
                     ]
                 }
             ];

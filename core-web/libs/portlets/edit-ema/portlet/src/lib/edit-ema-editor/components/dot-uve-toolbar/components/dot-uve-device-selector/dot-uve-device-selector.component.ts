@@ -55,7 +55,7 @@ export class DotUveDeviceSelectorComponent implements OnInit {
 
     readonly $menuItems = computed(() => {
         const isTraditionalPage = this.#store.isTraditionalPage();
-        const menu = isTraditionalPage ? [this.socialMediaMenu, this.searchEngineMenu] : [];
+        const menu = [];
 
         const extraDevices = this.$devices().filter((device) => !device._isDefault);
         const customDevices = {
@@ -66,6 +66,11 @@ export class DotUveDeviceSelectorComponent implements OnInit {
 
         if (extraDevices.length) {
             menu.push(customDevices);
+        }
+
+        if (isTraditionalPage) {
+            menu.push(this.socialMediaMenu);
+            menu.push(this.searchEngineMenu);
         }
 
         return menu;
