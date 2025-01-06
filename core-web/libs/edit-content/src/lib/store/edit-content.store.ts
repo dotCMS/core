@@ -3,7 +3,7 @@ import { signalStore, withHooks, withState } from '@ngrx/signals';
 import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotContentletDepths } from '@dotcms/dotcms-models';
 
 import { withContent } from './features/content.feature';
 import { withForm } from './features/form.feature';
@@ -46,7 +46,7 @@ export const DotEditContentStore = signalStore(
 
                 // TODO: refactor this when we will use EditContent as sidebar
                 if (inode) {
-                    store.initializeExistingContent(inode);
+                    store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
                 } else if (contentType) {
                     store.initializeNewContent(contentType);
                 }
