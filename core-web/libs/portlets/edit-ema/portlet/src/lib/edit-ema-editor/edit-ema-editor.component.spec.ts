@@ -3076,6 +3076,24 @@ describe('EditEmaEditorComponent', () => {
                     });
                 });
             });
+
+            describe('Editor content', () => {
+                it('should have display block when there is not SEO view', () => {
+                    const editorContent = spectator.query(
+                        byTestId('editor-content')
+                    ) as HTMLElement;
+                    expect(editorContent.style.display).toBe('block');
+                });
+
+                it('should have display none when there is SEO view', () => {
+                    store.setSEO('test');
+                    spectator.detectChanges();
+                    const editorContent = spectator.query(
+                        byTestId('editor-content')
+                    ) as HTMLElement;
+                    expect(editorContent.style.display).toBe('none');
+                });
+            });
         });
     });
 
