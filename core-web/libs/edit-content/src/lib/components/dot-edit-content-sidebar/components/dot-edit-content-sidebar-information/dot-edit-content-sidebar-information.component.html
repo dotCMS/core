@@ -18,6 +18,7 @@
             <a
                 data-testid="content-type-link"
                 [pTooltip]="'edit.content.sidebar.information.go.to.content.type' | dm"
+                tooltipPosition="bottom"
                 class="sidebar-card sidebar-card__content-type"
                 [routerLink]="'/content-types-angular/edit/' + contentType.variable"
                 target="_blank">
@@ -32,7 +33,7 @@
                 <span
                     class="sidebar-card__subtitle"
                     [pTooltip]="contentlet?.ownerName"
-                    tooltipPosition="left">
+                    tooltipPosition="bottom">
                     {{
                         contentlet?.creationDate
                             ? (contentlet?.ownerName | dotNameFormat) ||
@@ -44,7 +45,8 @@
                     <span
                         class="sidebar-card__date"
                         data-testid="created-date"
-                        [pTooltip]="contentlet?.creationDate | date: 'MM/dd/yyyy HH:mm:ss'">
+                        [pTooltip]="contentlet?.creationDate | date: 'MM/dd/yyyy HH:mm:ss'"
+                        tooltipPosition="bottom">
                         {{ contentlet?.creationDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
                     </span>
                 }
@@ -54,7 +56,7 @@
                 <span class="sidebar-card__title">{{ 'Modified' | dm }}</span>
                 <span
                     class="sidebar-card__subtitle"
-                    [tooltipPosition]="'left'"
+                    [tooltipPosition]="'bottom'"
                     [pTooltip]="contentlet?.modUserName">
                     {{ contentlet?.modDate ? (contentlet?.modUserName | dotNameFormat) : '-' }}
                 </span>
@@ -62,7 +64,8 @@
                     <span
                         class="sidebar-card__date"
                         data-testid="modified-date"
-                        [pTooltip]="contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss'">
+                        [pTooltip]="contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss'"
+                        tooltipPosition="bottom">
                         {{ contentlet?.modDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
                     </span>
                 }
@@ -72,7 +75,7 @@
                 <span class="sidebar-card__title">{{ 'Published' | dm }}</span>
                 <span
                     class="sidebar-card__subtitle"
-                    [tooltipPosition]="'left'"
+                    [tooltipPosition]="'bottom'"
                     [pTooltip]="contentlet?.publishUserName">
                     {{
                         contentlet?.publishDate
@@ -84,7 +87,8 @@
                     <span
                         class="sidebar-card__date"
                         data-testid="published-date"
-                        [pTooltip]="contentlet?.publishDate | date: 'MM/dd/yyyy HH:mm:ss'">
+                        [pTooltip]="contentlet?.publishDate | date: 'MM/dd/yyyy HH:mm:ss'"
+                        tooltipPosition="bottom">
                         {{ contentlet?.publishDate | dotRelativeDate: 'MM/dd/yyyy' : null }}
                     </span>
                 }
