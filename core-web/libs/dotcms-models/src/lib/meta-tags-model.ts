@@ -132,21 +132,21 @@ export interface MetaTagsPreview {
     twitterImage?: string;
 }
 
-export enum SOCIAL_MEDIA_TYPES {
+export enum SEO_SOCIAL_MEDIA {
     FACEBOOK = 'Facebook',
     TWITTER = 'Twitter',
     LINKEDIN = 'LinkedIn'
 }
 
-export enum SEARCH_ENGINE_TYPES {
+export enum SEO_SEARCH_ENGINE {
     GOOGLE = 'Google'
 }
 
 export enum SEO_MEDIA_TYPES {
-    FACEBOOK = SOCIAL_MEDIA_TYPES.FACEBOOK,
-    TWITTER = SOCIAL_MEDIA_TYPES.TWITTER,
-    LINKEDIN = SOCIAL_MEDIA_TYPES.LINKEDIN,
-    GOOGLE = SEARCH_ENGINE_TYPES.GOOGLE
+    FACEBOOK = SEO_SOCIAL_MEDIA.FACEBOOK,
+    TWITTER = SEO_SOCIAL_MEDIA.TWITTER,
+    LINKEDIN = SEO_SOCIAL_MEDIA.LINKEDIN,
+    GOOGLE = SEO_SEARCH_ENGINE.GOOGLE
 }
 
 export const SEO_TAGS = [
@@ -159,20 +159,20 @@ export const SEO_TAGS = [
     SEO_OPTIONS.TWITTER_IMAGE
 ];
 
-export const socialMediaTiles: Record<SOCIAL_MEDIA_TYPES, SocialMediaOption> = {
-    [SOCIAL_MEDIA_TYPES.FACEBOOK]: {
+export const SOCIAL_MEDIA_TILES: Record<SEO_SOCIAL_MEDIA, SocialMediaOption> = {
+    [SEO_SOCIAL_MEDIA.FACEBOOK]: {
         label: 'Facebook',
         value: SEO_MEDIA_TYPES.FACEBOOK,
         icon: 'pi pi-facebook',
         description: 'seo.rules.media.preview.tile'
     },
-    [SOCIAL_MEDIA_TYPES.TWITTER]: {
+    [SEO_SOCIAL_MEDIA.TWITTER]: {
         label: 'X (Formerly Twitter)',
         value: SEO_MEDIA_TYPES.TWITTER,
         icon: 'pi pi-twitter',
         description: 'seo.rules.media.preview.tile'
     },
-    [SOCIAL_MEDIA_TYPES.LINKEDIN]: {
+    [SEO_SOCIAL_MEDIA.LINKEDIN]: {
         label: 'Linkedin',
         value: SEO_MEDIA_TYPES.LINKEDIN,
         icon: 'pi pi-linkedin',
@@ -180,8 +180,8 @@ export const socialMediaTiles: Record<SOCIAL_MEDIA_TYPES, SocialMediaOption> = {
     }
 };
 
-export const searchEngineTile: Record<SEARCH_ENGINE_TYPES, SocialMediaOption> = {
-    [SEARCH_ENGINE_TYPES.GOOGLE]: {
+export const SEARCH_ENGINE_TILES: Record<SEO_SEARCH_ENGINE, SocialMediaOption> = {
+    [SEO_SEARCH_ENGINE.GOOGLE]: {
         label: 'Google',
         value: SEO_MEDIA_TYPES.GOOGLE,
         icon: 'pi pi-google',
@@ -189,9 +189,9 @@ export const searchEngineTile: Record<SEARCH_ENGINE_TYPES, SocialMediaOption> = 
     }
 };
 
-export const seoTiles: Record<SEO_MEDIA_TYPES, SocialMediaOption> = {
-    ...socialMediaTiles,
-    ...searchEngineTile
+export const SEO_TILES: Record<SEO_MEDIA_TYPES, SocialMediaOption> = {
+    ...SOCIAL_MEDIA_TILES,
+    ...SEARCH_ENGINE_TILES
 };
 
 export interface SocialMediaOption {

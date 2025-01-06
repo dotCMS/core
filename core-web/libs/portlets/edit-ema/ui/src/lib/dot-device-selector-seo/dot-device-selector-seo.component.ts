@@ -28,7 +28,7 @@ import {
     DotDevice,
     DotDeviceListItem,
     SocialMediaOption,
-    socialMediaTiles
+    SOCIAL_MEDIA_TILES
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
@@ -75,7 +75,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     options$: Observable<DotDevice[]>;
     isCMSAdmin$: Observable<boolean>;
-    socialMediaTiles: SocialMediaOption[];
+    SOCIAL_MEDIA_TILES: SocialMediaOption[];
 
     defaultOptions: DotDeviceListItem[] = [
         {
@@ -138,7 +138,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     ngOnInit() {
         this.options$ = this.getOptions();
         this.isCMSAdmin$ = this.checkIfCMSAdmin();
-        this.socialMediaTiles = Object.values(socialMediaTiles);
+        this.SOCIAL_MEDIA_TILES = Object.values(SOCIAL_MEDIA_TILES);
     }
 
     /**

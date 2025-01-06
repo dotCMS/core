@@ -81,7 +81,7 @@
             <div class="dot-device-selector__content">
                 <ul class="device-list">
                     <li
-                        *ngFor="let tile of socialMediaTiles"
+                        *ngFor="let tile of SOCIAL_MEDIA_TILES"
                         class="device-list-item device-list-item-media">
                         <button
                             (click)="changeSeoMediaEvent(tile.value); deviceSelector.hide()"

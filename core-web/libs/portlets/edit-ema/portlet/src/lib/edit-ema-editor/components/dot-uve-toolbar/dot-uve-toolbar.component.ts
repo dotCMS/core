@@ -143,7 +143,6 @@ export class DotUveToolbarComponent implements OnInit {
     defaultDevices = DEFAULT_DEVICES;
 
     ngOnInit(): void {
-        // TODO: Transform this to a signal
         this.#deviceService
             .get()
             .pipe(take(1))

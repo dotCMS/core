@@ -10,9 +10,9 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DotDevice,
     DotDeviceListItem,
-    searchEngineTile,
+    SEARCH_ENGINE_TILES,
     SocialMediaOption,
-    socialMediaTiles
+    SOCIAL_MEDIA_TILES
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -42,12 +42,12 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     readonly socialMediaMenu = {
         label: this.#messageService.get('uve.preview.mode.social.media.subheader'),
         id: 'social-media',
-        items: this.#getSocialMediaMenuItems(socialMediaTiles)
+        items: this.#getSocialMediaMenuItems(SOCIAL_MEDIA_TILES)
     };
     readonly searchEngineMenu = {
         label: this.#messageService.get('uve.preview.mode.search.engine.subheader'),
         id: 'search-engine',
-        items: this.#getSocialMediaMenuItems(searchEngineTile)
+        items: this.#getSocialMediaMenuItems(SEARCH_ENGINE_TILES)
     };
     readonly $disableOrientation = computed(
         () => this.#store.device()?.inode === 'default' || this.#store.socialMedia()
@@ -58,13 +58,14 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         const menu = [];
 
         const extraDevices = this.$devices().filter((device) => !device._isDefault);
-        const customDevices = {
-            label: this.#messageService.get('uve.preview.mode.device.subheader'),
-            id: 'custom-devices',
-            items: this.#getDeviceMenuItems(extraDevices)
-        };
 
         if (extraDevices.length) {
+            const customDevices = {
+                label: this.#messageService.get('uve.preview.mode.device.subheader'),
+                id: 'custom-devices',
+                items: this.#getDeviceMenuItems(extraDevices)
+            };
+
             menu.push(customDevices);
         }
 
