@@ -12,7 +12,7 @@ import { computed } from '@angular/core';
 
 import { ContentState } from './content.feature';
 
-import { getPersistSidebarState, setPersistSidebarState } from '../../../../utils/functions.util';
+import { getPersistSidebarState, setPersistSidebarState } from '../../utils/functions.util';
 
 export interface SidebarState {
     showSidebar: boolean;

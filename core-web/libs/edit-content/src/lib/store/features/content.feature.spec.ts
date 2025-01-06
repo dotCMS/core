@@ -25,10 +25,10 @@ import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 import { withContent } from './content.feature';
 import { workflowInitialState } from './workflow.feature';
 
-import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { MOCK_WORKFLOW_STATUS } from '../../../../utils/edit-content.mock';
-import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
-import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
+import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
+import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
+import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
 import { initialRootState } from '../edit-content.store';
 
 describe('ContentFeature', () => {

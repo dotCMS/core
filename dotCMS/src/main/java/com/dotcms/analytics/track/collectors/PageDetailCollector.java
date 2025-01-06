@@ -91,6 +91,7 @@ public class PageDetailCollector implements Collector {
         collectorPayloadBean.put(EVENT_TYPE, EventType.PAGE_REQUEST.getType());
         collectorPayloadBean.put(URL, uri);
         collectorPayloadBean.put(LANGUAGE, language);
+        collectorPayloadBean.put(LANGUAGE_ID, languageId);
 
         if (Objects.nonNull(site)) {
             collectorPayloadBean.put(SITE_NAME, site.getHostname());

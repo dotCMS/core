@@ -27,12 +27,14 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import { DotEditContentSidebarUntranslatedLocaleComponent } from '@dotcms/edit-content/components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
-import { EditContentRootState } from '@dotcms/edit-content/feature/edit-content/store/edit-content.store';
-import { ContentState } from '@dotcms/edit-content/feature/edit-content/store/features/content.feature';
-import { FormState } from '@dotcms/edit-content/feature/edit-content/store/features/form.feature';
-import { WorkflowState } from '@dotcms/edit-content/feature/edit-content/store/features/workflow.feature';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
-import { parseCurrentActions } from '@dotcms/edit-content/utils/workflows.utils';
+
+import { ContentState } from './content.feature';
+import { FormState } from './form.feature';
+import { WorkflowState } from './workflow.feature';
+
+import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EditContentRootState } from '../../store/edit-content.store';
+import { parseCurrentActions } from '../../utils/workflows.utils';
 
 export interface LocalesState {
     locales: DotLanguage[] | null;
@@ -189,7 +191,10 @@ export function withLocales() {
                              */
                             if (locale.translated) {
                                 return dotEditContentService
-                                    .getContentById(store.currentIdentifier(), locale.id)
+                                    .getContentById({
+                                        id: store.currentIdentifier(),
+                                        languageId: locale.id
+                                    })
                                     .pipe(
                                         tapResponse({
                                             next: (contentlet) => {

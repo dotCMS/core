@@ -1,6 +1,6 @@
 import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 
-import { FormValues } from '../../../../models/dot-edit-content-form.interface';
+import { FormValues } from '../../models/dot-edit-content-form.interface';
 
 export interface FormState {
     formValues: FormValues;
