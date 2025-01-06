@@ -31,12 +31,8 @@
                 <span class="sidebar-card__title">{{ 'Created' | dm }}</span>
                 <span
                     class="sidebar-card__subtitle"
-                    [tooltipPosition]="'left'"
-                    [pTooltip]="
-                        !contentlet?.creationDate
-                            ? ('edit.content.sidebar.information.no.created.yet' | dm)
-                            : null
-                    ">
+                    [pTooltip]="contentlet?.ownerName"
+                    tooltipPosition="left">
                     {{
                         contentlet?.creationDate
                             ? (contentlet?.ownerName | dotNameFormat) ||
@@ -59,11 +55,7 @@
                 <span
                     class="sidebar-card__subtitle"
                     [tooltipPosition]="'left'"
-                    [pTooltip]="
-                        !contentlet?.modDate
-                            ? ('edit.content.sidebar.information.moddate.tooltip' | dm)
-                            : null
-                    ">
+                    [pTooltip]="contentlet?.modUserName">
                     {{ contentlet?.modDate ? (contentlet?.modUserName | dotNameFormat) : '-' }}
                 </span>
                 @if (contentlet?.modDate) {
@@ -81,11 +73,7 @@
                 <span
                     class="sidebar-card__subtitle"
                     [tooltipPosition]="'left'"
-                    [pTooltip]="
-                        !contentlet?.publishDate
-                            ? ('edit.content.sidebar.information.publishdate.tooltip' | dm)
-                            : null
-                    ">
+                    [pTooltip]="contentlet?.publishUserName">
                     {{
                         contentlet?.publishDate
                             ? (contentlet?.publishUserName | dotNameFormat)

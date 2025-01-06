@@ -6,6 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { withContent } from './features/content.feature';
+import { withDebug } from './features/debug.feature';
 import { withForm } from './features/form.feature';
 import { withInformation } from './features/information.feature';
 import { withLocales } from './features/locales.feature';
@@ -52,5 +53,6 @@ export const DotEditContentStore = signalStore(
                 }
             }
         }
-    })
+    }),
+    withDebug()
 );
