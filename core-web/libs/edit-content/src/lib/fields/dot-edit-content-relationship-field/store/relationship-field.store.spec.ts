@@ -4,12 +4,12 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { RelationshipFieldStore } from './relationship-field.store';
 
-import { RelationshipFieldItem } from '../models/relationship.models';
+import { DynamicRelationshipFieldItem } from '../models/relationship.models';
 
 describe('RelationshipFieldStore', () => {
     let store: InstanceType<typeof RelationshipFieldStore>;
 
-    const mockData: RelationshipFieldItem[] = [
+    const mockData: DynamicRelationshipFieldItem[] = [
         { id: '1', title: 'Content 1', language: '1', modDate: new Date().toISOString() },
         { id: '2', title: 'Content 2', language: '1', modDate: new Date().toISOString() },
         { id: '3', title: 'Content 3', language: '1', modDate: new Date().toISOString() }

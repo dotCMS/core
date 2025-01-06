@@ -2,17 +2,13 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed } from '@angular/core';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
-import {
-    RelationshipFieldItem,
-    RelationshipTypes,
-    SelectionMode
-} from '../models/relationship.models';
+import { DynamicRelationshipFieldItem, SelectionMode } from '../models/relationship.models';
+import { getRelationshipFromContentlet, getSelectionModeByCardinality } from '../utils';
 
 export interface RelationshipFieldState {
-    data: RelationshipFieldItem[];
+    data: DynamicRelationshipFieldItem[];
     status: ComponentStatus;
     selectionMode: SelectionMode | null;
     pagination: {
@@ -76,7 +72,7 @@ export const RelationshipFieldStore = signalStore(
              * Sets the data in the state.
              * @param {RelationshipFieldItem[]} data - The data to be set.
              */
-            setData(data: RelationshipFieldItem[]) {
+            setData(data: DynamicRelationshipFieldItem[]) {
                 patchState(store, {
                     data
                 });
@@ -85,15 +81,18 @@ export const RelationshipFieldStore = signalStore(
              * Sets the cardinality of the relationship field.
              * @param {number} cardinality - The cardinality of the relationship field.
              */
-            setCardinality(cardinality: number) {
-                const relationshipType = RELATIONSHIP_OPTIONS[cardinality];
+            initialize(params: {
+                cardinality: number;
+                contentlet: DotCMSContentlet;
+                variable: string;
+            }) {
+                const { cardinality, contentlet, variable } = params;
 
-                if (!relationshipType) {
-                    throw new Error('Invalid relationship type');
-                }
+                const relationship = getRelationshipFromContentlet({ contentlet, variable });
 
-                const selectionMode: SelectionMode =
-                    relationshipType === RelationshipTypes.ONE_TO_ONE ? 'single' : 'multiple';
+                console.log('relationship', relationship);
+
+                const selectionMode = getSelectionModeByCardinality(cardinality);
 
                 patchState(store, {
                     selectionMode
@@ -103,7 +102,7 @@ export const RelationshipFieldStore = signalStore(
              * Adds new data to the existing data in the state.
              * @param {RelationshipFieldItem[]} data - The new data to be added.
              */
-            addData(data: RelationshipFieldItem[]) {
+            addData(data: DynamicRelationshipFieldItem[]) {
                 const currentData = store.data();
 
                 const existingIds = new Set(currentData.map((item) => item.id));

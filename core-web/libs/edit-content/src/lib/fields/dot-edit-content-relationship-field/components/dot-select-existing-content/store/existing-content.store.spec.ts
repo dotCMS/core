@@ -11,7 +11,7 @@ import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-c
 import { ExistingContentStore } from './existing-content.store';
 
 import { Column } from '../../../models/column.model';
-import { RelationshipFieldItem } from '../../../models/relationship.models';
+import { DynamicRelationshipFieldItem } from '../../../models/relationship.models';
 
 describe('ExistingContentStore', () => {
     let store: InstanceType<typeof ExistingContentStore>;
@@ -22,7 +22,7 @@ describe('ExistingContentStore', () => {
         { field: 'modDate', header: 'Mod Date' }
     ];
 
-    const mockData: RelationshipFieldItem[] = [
+    const mockData: DynamicRelationshipFieldItem[] = [
         { id: '1', title: 'Content 1', language: '1', modDate: new Date().toISOString() },
         { id: '2', title: 'Content 2', language: '1', modDate: new Date().toISOString() },
         { id: '3', title: 'Content 3', language: '1', modDate: new Date().toISOString() }
@@ -130,7 +130,7 @@ describe('ExistingContentStore', () => {
     describe('Computed Properties', () => {
         it('should compute loading state correctly', fakeAsync(() => {
             const mockObservable = of([mockColumns, mockData]).pipe(delay(100)) as Observable<
-                [Column[], RelationshipFieldItem[]]
+                [Column[], DynamicRelationshipFieldItem[]]
             >;
 
             service.getColumnsAndContent.mockReturnValue(mockObservable);

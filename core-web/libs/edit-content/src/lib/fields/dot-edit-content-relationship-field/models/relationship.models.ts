@@ -2,7 +2,13 @@ import { MANDATORY_FIELDS } from '../dot-edit-content-relationship-field.constan
 
 export type MandatoryFields = typeof MANDATORY_FIELDS;
 
-export interface RelationshipFieldItem extends MandatoryFields {
+export interface RelatsionshipFieldItem {
+    id: string;
+    title: string;
+    language: string;
+}
+
+export interface DynamicRelationshipFieldItem extends MandatoryFields {
     id: string;
     [key: string]: string;
 }

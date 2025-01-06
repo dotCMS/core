@@ -21,13 +21,13 @@ import { TableModule } from 'primeng/table';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotSelectExistingContentComponent } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { HeaderComponent } from './components/header/header.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
-import { RelationshipFieldItem } from './models/relationship.models';
+import { DynamicRelationshipFieldItem } from './models/relationship.models';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
 @Component({
@@ -120,6 +120,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /**
+     * DotCMS Contentlet
+     *
+     * @memberof DotEditContentRelationshipFieldComponent
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+
+    /**
      * Creates an instance of DotEditContentRelationshipFieldComponent.
      * It sets the cardinality of the relationship field based on the field's cardinality.
      *
@@ -129,14 +136,19 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
         effect(
             () => {
                 const field = this.$field();
+                const contentlet = this.$contentlet();
 
                 const cardinality = field?.relationships?.cardinality ?? null;
 
-                if (cardinality === null) {
+                if (cardinality === null || !field?.variable) {
                     return;
                 }
 
-                this.store.setCardinality(cardinality);
+                this.store.initialize({
+                    cardinality,
+                    contentlet,
+                    variable: field?.variable
+                });
             },
             {
                 allowSignalWrites: true
@@ -247,7 +259,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 filter((file) => !!file),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((items: RelationshipFieldItem[]) => {
+            .subscribe((items: DynamicRelationshipFieldItem[]) => {
                 this.store.addData(items);
             });
     }

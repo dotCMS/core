@@ -13,13 +13,13 @@ import {
     DotLanguagesService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 
 import {
     MANDATORY_FIRST_COLUMNS,
     MANDATORY_LAST_COLUMNS
 } from '../dot-edit-content-relationship-field.constants';
 import { Column } from '../models/column.model';
+import { DynamicRelationshipFieldItem } from '../models/relationship.models';
 
 type LanguagesMap = Record<number, string>;
 
@@ -54,7 +54,7 @@ export class RelationshipFieldService {
      */
     getColumnsAndContent(
         contentTypeId: string
-    ): Observable<[Column[], RelationshipFieldItem[]] | null> {
+    ): Observable<[Column[], DynamicRelationshipFieldItem[]] | null> {
         return forkJoin([
             this.getColumns(contentTypeId),
             this.getContent(contentTypeId),
@@ -144,7 +144,7 @@ export class RelationshipFieldService {
         columns: Column[],
         content: DotCMSContentlet[],
         languages: LanguagesMap
-    ): RelationshipFieldItem[] {
+    ): DynamicRelationshipFieldItem[] {
         return content.map((item) => {
             const dynamicColumns = columns.reduce((acc, column) => {
                 const key = column.field;
@@ -155,7 +155,7 @@ export class RelationshipFieldService {
                 return acc;
             }, {});
 
-            const relationshipItem: RelationshipFieldItem = {
+            const relationshipItem: DynamicRelationshipFieldItem = {
                 ...dynamicColumns,
                 id: item.identifier,
                 title: item.title || item.identifier,

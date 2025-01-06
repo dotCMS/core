@@ -25,7 +25,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { SearchComponent } from './components/search/search.compoment';
 import { ExistingContentStore } from './store/existing-content.store';
 
-import { RelationshipFieldItem, SelectionMode } from '../../models/relationship.models';
+import { DynamicRelationshipFieldItem, SelectionMode } from '../../models/relationship.models';
 import { PaginationComponent } from '../pagination/pagination.component';
 
 type DialogData = {
@@ -85,7 +85,9 @@ export class DotSelectExistingContentComponent implements OnInit {
      * A signal that holds the selected items.
      * It is used to store the selected content items.
      */
-    $selectedItems = model<RelationshipFieldItem[] | RelationshipFieldItem | null>(null);
+    $selectedItems = model<DynamicRelationshipFieldItem[] | DynamicRelationshipFieldItem | null>(
+        null
+    );
 
     /**
      * A computed signal that holds the items.
@@ -123,7 +125,7 @@ export class DotSelectExistingContentComponent implements OnInit {
      * A signal that sends the selected items when the dialog is closed.
      * It is used to notify the parent component that the user has selected content items.
      */
-    onSelectItems = output<RelationshipFieldItem[]>();
+    onSelectItems = output<DynamicRelationshipFieldItem[]>();
 
     ngOnInit() {
         const data: DialogData = this.#dialogConfig.data;
@@ -155,7 +157,7 @@ export class DotSelectExistingContentComponent implements OnInit {
      * @param item - The item to check.
      * @returns True if the item is selected, false otherwise.
      */
-    checkIfSelected(item: RelationshipFieldItem) {
+    checkIfSelected(item: DynamicRelationshipFieldItem) {
         const items = this.$items();
 
         return items.some((selectedItem) => selectedItem.id === item.id);
