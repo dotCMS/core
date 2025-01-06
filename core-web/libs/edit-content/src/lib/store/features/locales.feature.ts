@@ -191,7 +191,10 @@ export function withLocales() {
                              */
                             if (locale.translated) {
                                 return dotEditContentService
-                                    .getContentById(store.currentIdentifier(), locale.id)
+                                    .getContentById({
+                                        id: store.currentIdentifier(),
+                                        languageId: locale.id
+                                    })
                                     .pipe(
                                         tapResponse({
                                             next: (contentlet) => {
