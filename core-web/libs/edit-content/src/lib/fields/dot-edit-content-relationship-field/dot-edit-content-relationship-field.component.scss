@@ -2,9 +2,13 @@
 
 ::ng-deep {
     p-table {
-        .p-datatable-relationship.p-datatable-sm {
+        .dotTable.p-datatable.p-datatable-relationship {
             .p-datatable-header {
                 background-color: $color-palette-gray-100;
+            }
+            .p-datatable-footer {
+                padding-left: 0;
+                padding-right: 0;
             }
             .p-datatable-wrapper {
                 border: 1px solid $color-palette-gray-300;

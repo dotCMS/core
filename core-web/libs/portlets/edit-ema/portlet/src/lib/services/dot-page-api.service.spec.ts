@@ -1,5 +1,7 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
+import { UVE_MODE } from '@dotcms/client';
+
 import { DotPageApiService } from './dot-page-api.service';
 
 describe('DotPageApiService', () => {
@@ -109,18 +111,18 @@ describe('DotPageApiService', () => {
     });
 
     describe('preview', () => {
-        it("should request page in preview mode if 'preview' is true", () => {
+        it("should request page in preview mode if 'editorMode' is 'preview'", () => {
             spectator.service
                 .get({
                     url: 'test-url',
                     language_id: 'en',
                     'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                    preview: 'true'
+                    editorMode: UVE_MODE.PREVIEW
                 })
                 .subscribe();
 
             spectator.expectOne(
-                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=PREVIEW_MODE',
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=LIVE',
                 HttpMethod.GET
             );
         });

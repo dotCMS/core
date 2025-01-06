@@ -12,6 +12,7 @@ import static org.mockito.Mockito.*;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.ESQueryCache;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
@@ -63,6 +64,7 @@ import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.quartz.JobExecutionException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -315,6 +317,39 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         templateAPI.publishTemplate(templateSaved, user, false);
         assertTrue(templateSaved.isLive());
+    }
+
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#publishTemplate(Template, User, boolean)}
+     * When: Publish a Template with the UniqueField Database Validation set to true
+     * should: Template should be live true
+     */
+    @Test
+    public void publishTemplateWithUniqueFieldDatbaseValidationEnabled() throws Exception {
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+            final Host host = hostAPI.findDefaultHost(user, false);
+            final String body = "<html><body> I'm mostly empty </body></html>";
+            final String title = "empty test template " + UUIDGenerator.generateUuid();
+            final Template template = new Template();
+            template.setTitle(title);
+            template.setBody(body);
+            final Template templateSaved = templateAPI.saveTemplate(template, host, user, false);
+            assertTrue(UtilMethods.isSet(templateSaved.getInode()));
+            assertTrue(UtilMethods.isSet(templateSaved.getIdentifier()));
+            assertEquals(templateSaved.getBody(), body);
+            assertEquals(templateSaved.getTitle(), title);
+            assertFalse(templateSaved.isLive());
+
+            templateAPI.publishTemplate(templateSaved, user, false);
+            assertTrue(templateSaved.isLive());
+        } finally {
+
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
     }
 
     /**

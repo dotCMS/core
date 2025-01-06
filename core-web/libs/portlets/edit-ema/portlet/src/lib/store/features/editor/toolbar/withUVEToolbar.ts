@@ -9,19 +9,22 @@ import {
 
 import { computed } from '@angular/core';
 
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/client';
+import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PERSONA } from '../../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
+import { InfoOptions } from '../../../../shared/models';
 import {
     computePageIsLocked,
     createFavoritePagesURL,
     createFullURL,
     createPageApiUrlWithQueryParams,
     getIsDefaultVariant,
+    getOrientation,
     sanitizeURL
 } from '../../../../utils';
-import { UVEState } from '../../../models';
+import { Orientation, UVEState } from '../../../models';
 import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
 
 /**
@@ -34,10 +37,11 @@ import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../mo
  * @property {boolean} initialState.isPreviewModeActive - Flag indicating whether the preview mode is active.
  */
 const initialState: EditorToolbarState = {
-    device: null,
+    device: DEFAULT_DEVICES.find((device) => device.inode === 'default'),
     socialMedia: null,
     isEditState: true,
-    isPreviewModeActive: false
+    isPreviewModeActive: false,
+    orientation: Orientation.LANDSCAPE
 };
 
 export function withUVEToolbar() {
@@ -77,17 +81,10 @@ export function withUVEToolbar() {
                     loading: store.status() === UVE_STATUS.LOADING
                 };
 
-                const shouldShowInfoDisplay =
-                    !getIsDefaultVariant(pageAPIResponse?.viewAs.variantId) ||
-                    !store.canEditPage() ||
-                    isPageLocked ||
-                    !!store.device() ||
-                    !!store.socialMedia();
-
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
-                const isPreview = params?.preview === 'true';
+                const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
                 const prevewItem = isPreview
                     ? {
                           deviceSelector: {
@@ -109,9 +106,7 @@ export function withUVEToolbar() {
                         ? (pageAPIResponse?.urlContentMap ?? null)
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
-                    workflowActionsInode: store.canEditPage() ? pageAPIResponse?.page.inode : null,
-                    unlockButton: shouldShowUnlock ? unlockButton : null,
-                    showInfoDisplay: shouldShowInfoDisplay
+                    unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
@@ -130,14 +125,114 @@ export function withUVEToolbar() {
                 const pageAPI = `/api/v1/page/${pageType}/${params}`;
 
                 return pageAPI;
+            }),
+            $infoDisplayProps: computed<InfoOptions>(() => {
+                const pageAPIResponse = store.pageAPIResponse();
+                const canEditPage = store.canEditPage();
+                const socialMedia = store.socialMedia();
+
+                if (socialMedia) {
+                    return {
+                        icon: `pi pi-${socialMedia.toLowerCase()}`,
+                        id: 'socialMedia',
+                        info: {
+                            message: `Viewing <b>${socialMedia}</b> social media preview`,
+                            args: []
+                        },
+                        actionIcon: 'pi pi-times'
+                    };
+                }
+
+                if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
+                    const variantId = pageAPIResponse.viewAs.variantId;
+
+                    const currentExperiment = store.experiment?.();
+
+                    const name =
+                        currentExperiment?.trafficProportion.variants.find(
+                            (variant) => variant.id === variantId
+                        )?.name ?? 'Unknown Variant';
+
+                    return {
+                        info: {
+                            message: canEditPage
+                                ? 'editpage.editing.variant'
+                                : 'editpage.viewing.variant',
+                            args: [name]
+                        },
+                        icon: 'pi pi-file-edit',
+                        id: 'variant',
+                        actionIcon: 'pi pi-arrow-left'
+                    };
+                }
+
+                if (pageAPIResponse?.page.locked) {
+                    let message = 'editpage.locked-by';
+
+                    if (!pageAPIResponse.page.canLock) {
+                        message = 'editpage.locked-contact-with';
+                    }
+
+                    return {
+                        icon: 'pi pi-lock',
+                        id: 'locked',
+                        info: {
+                            message,
+                            args: [pageAPIResponse.page.lockedByName]
+                        }
+                    };
+                }
+
+                if (!canEditPage) {
+                    return {
+                        icon: 'pi pi-exclamation-circle warning',
+                        id: 'no-permission',
+                        info: { message: 'editema.dont.have.edit.permission', args: [] }
+                    };
+                }
+
+                return null;
             })
         })),
         withMethods((store) => ({
-            // Fake method to toggle preview mode
-            // This method should be implemented in the real application
-            togglePreviewMode: (preview) => {
+            setDevice: (device: DotDevice, orientation?: Orientation) => {
+                const isValidOrientation = Object.values(Orientation).includes(orientation);
+
+                const newOrientation = isValidOrientation ? orientation : getOrientation(device);
+
                 patchState(store, {
-                    isPreviewModeActive: preview
+                    device,
+                    viewParams: {
+                        ...store.viewParams(),
+                        device: device.inode,
+                        orientation: newOrientation
+                    },
+                    socialMedia: null,
+                    isEditState: false,
+                    orientation: newOrientation
+                });
+            },
+            setOrientation: (orientation: Orientation) => {
+                patchState(store, {
+                    orientation,
+                    viewParams: {
+                        ...store.viewParams(),
+                        orientation
+                    }
+                });
+            },
+            clearDeviceAndSocialMedia: () => {
+                patchState(store, {
+                    device: null,
+                    socialMedia: null,
+                    isEditState: true,
+                    orientation: null,
+                    viewParams: {
+                        ...store.viewParams(),
+                        device: undefined,
+                        orientation: undefined,
+                        seo: undefined
+                    }
                 });
             }
         }))

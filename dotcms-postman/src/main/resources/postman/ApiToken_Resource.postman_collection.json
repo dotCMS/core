@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "f445f00a-010c-4560-b726-aacf92908f74",
+    "_postman_id": "ea297de7-1ffd-423f-9cfe-c9d697c42e8b",
     "name": "ApiToken Resource",
     "description": "Tests for the api token",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "5403727"
+    "_exporter_id": "36604690"
   },
   "item": [
     {
@@ -41,8 +41,14 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/configuration",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "configuration"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "configuration"
+              ]
             }
           },
           "response": []
@@ -83,9 +89,8 @@
             "header": [
               {
                 "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "body": {
@@ -99,8 +104,15 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apitoken/remote",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "apitoken", "remote"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "apitoken",
+                "remote"
+              ]
             },
             "description": "Create a new remote token should response 403 when ENABLE_PROXY_TOKEN_REQUESTS is set to false"
           },
@@ -137,8 +149,14 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/configuration",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "configuration"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "configuration"
+              ]
             }
           },
           "response": []
@@ -186,9 +204,8 @@
             "header": [
               {
                 "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "body": {
@@ -202,8 +219,15 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apitoken/remote",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "apitoken", "remote"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "apitoken",
+                "remote"
+              ]
             },
             "description": "Create a new remote token"
           },
@@ -229,8 +253,14 @@
             "header": [],
             "url": {
               "raw": "{{serverURL}}/api/v1/logout",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "logout"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "logout"
+              ]
             },
             "description": "Logout before try with invalid user"
           },
@@ -272,9 +302,8 @@
             "header": [
               {
                 "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "body": {
@@ -288,8 +317,15 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apitoken/remote",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "apitoken", "remote"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "apitoken",
+                "remote"
+              ]
             },
             "description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
           },
@@ -331,9 +367,8 @@
             "header": [
               {
                 "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "body": {
@@ -347,8 +382,15 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apitoken/remote",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "apitoken", "remote"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "apitoken",
+                "remote"
+              ]
             },
             "description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
           },
@@ -390,9 +432,8 @@
             "header": [
               {
                 "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "body": {
@@ -406,8 +447,15 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apitoken/remote",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "apitoken", "remote"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "apitoken",
+                "remote"
+              ]
             },
             "description": "Try to create a new remote token with a invalid local user, it mean send a invalid_user in the auth header"
           },
@@ -448,9 +496,8 @@
             "header": [
               {
                 "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "body": {
@@ -464,8 +511,15 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apitoken/remote",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "apitoken", "remote"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "apitoken",
+                "remote"
+              ]
             },
             "description": "Try to create a new remote token with a remote user, it mean send a inavlid user in the body request auth section"
           },
@@ -507,9 +561,8 @@
             "header": [
               {
                 "key": "Content-Type",
-                "name": "Content-Type",
-                "type": "text",
-                "value": "application/json"
+                "value": "application/json",
+                "type": "text"
               }
             ],
             "body": {
@@ -523,8 +576,89 @@
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apitoken/remote",
-              "host": ["{{serverURL}}"],
-              "path": ["api", "v1", "apitoken", "remote"]
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "apitoken",
+                "remote"
+              ]
+            },
+            "description": "Create a new remote token should response 403 when ENABLE_PROXY_TOKEN_REQUESTS is set to false"
+          },
+          "response": []
+        },
+        {
+          "name": "createToken remote Unsupported Media Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Validate the response status is 415",
+                  "pm.test(\"Response status is 415\", function () {",
+                  "    pm.response.to.have.status(415);",
+                  "});",
+                  "",
+                  "// Validate that the response body contains the 'message' property and it is not empty",
+                  "pm.test(\"Response should have an error message\", function () {",
+                  "    const responseBody = pm.response.json();",
+                  "    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+                  "    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/javascript",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"auth\": {\n        \"login\": \"admin@dotcms.com\", \n        \"password\": \"YWRtaW4=\"\n    },\n    \"remote\": {\n        \"host\": \"{{remoteTokenHost}}\", \n        \"port\": \"{{remoteTokenPort}}\", \n        \"protocol\": \"http\"\n    },\n    \"token\": {\n        \"expirationSeconds\": 94575023, \n        \"network\": \"0.0.0.0/0\", \n        \"userId\": \"dotcms.org.1\",\n        \"claims\": {\n            \"label\": \"Push Publish\"            \n        }\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/apitoken/remote",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "apitoken",
+                "remote"
+              ]
             },
             "description": "Create a new remote token should response 403 when ENABLE_PROXY_TOKEN_REQUESTS is set to false"
           },
@@ -567,7 +701,9 @@
           "listen": "test",
           "script": {
             "type": "text/javascript",
-            "exec": [""]
+            "exec": [
+              ""
+            ]
           }
         }
       ]
@@ -592,42 +728,42 @@
               "pm.collectionVariables.set(\"tokenid\", jsonData.entity.token.id);",
               "",
               "pm.test(\"Token should expire after certain duration\", function () {",
-							"    const currentTimestamp = Math.floor(Date.now() / 1000);",
-							"    const expirationTime = jsonData.entity.token.expiresDate;",
-							"    pm.expect(expirationTime).to.be.above(currentTimestamp);",
-							"});",
-							"",
-							"pm.test(\"Token ID should be unique\", function () {",
-							"    const tokenID = jsonData.entity.token.id;",
-							"    pm.collectionVariables.get(\"tokenIDs\") || pm.collectionVariables.set(\"tokenIDs\", []);",
-							"    const tokenIDs = pm.collectionVariables.get(\"tokenIDs\");",
-							"    pm.expect(tokenIDs).to.not.include(tokenID);",
-							"    tokenIDs.push(tokenID);",
-							"    pm.collectionVariables.set(\"tokenIDs\", tokenIDs);",
-							"});",
-							"",
-							"pm.test(\"Token should be securely generated\", function () {",
-							"    const jwtToken = jsonData.entity.jwt;",
-							"    // Add your custom logic to check the security of the JWT token",
-							"    pm.expect(jwtToken.length).to.be.above(50);  // Example: Check for a minimum length",
-							"    pm.expect(jwtToken).to.match(/^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.+/=]+$/);  // Example: Check for a typical JWT format",
-							"});",
-							"",
-							"pm.test(\"Rate-limit shouldn't exceed\", function () {",
-							"    // Adjust the expected status code and message based on your API's rate limiting response",
-							"    const expectedRateLimitStatusCode = 429; // HTTP status code for Too Many Requests",
-							"    const expectedRateLimitMessage = \"Rate Limit Exceeded\"; // Message indicating rate limit exceeded",
-							"",
-							"    if (pm.response.code === expectedRateLimitStatusCode) {",
-							"        // Rate limit exceeded, which is expected behavior",
-							"        pm.expect(pm.response.text()).to.include(expectedRateLimitMessage);",
-							"    } else {",
-							"        ",
-							"        pm.expect(pm.response.code).to.eql(200);",
-							"    }",
-							"});",
-							"",
-							""
+              "    const currentTimestamp = Math.floor(Date.now() / 1000);",
+              "    const expirationTime = jsonData.entity.token.expiresDate;",
+              "    pm.expect(expirationTime).to.be.above(currentTimestamp);",
+              "});",
+              "",
+              "pm.test(\"Token ID should be unique\", function () {",
+              "    const tokenID = jsonData.entity.token.id;",
+              "    pm.collectionVariables.get(\"tokenIDs\") || pm.collectionVariables.set(\"tokenIDs\", []);",
+              "    const tokenIDs = pm.collectionVariables.get(\"tokenIDs\");",
+              "    pm.expect(tokenIDs).to.not.include(tokenID);",
+              "    tokenIDs.push(tokenID);",
+              "    pm.collectionVariables.set(\"tokenIDs\", tokenIDs);",
+              "});",
+              "",
+              "pm.test(\"Token should be securely generated\", function () {",
+              "    const jwtToken = jsonData.entity.jwt;",
+              "    // Add your custom logic to check the security of the JWT token",
+              "    pm.expect(jwtToken.length).to.be.above(50);  // Example: Check for a minimum length",
+              "    pm.expect(jwtToken).to.match(/^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.+/=]+$/);  // Example: Check for a typical JWT format",
+              "});",
+              "",
+              "pm.test(\"Rate-limit shouldn't exceed\", function () {",
+              "    // Adjust the expected status code and message based on your API's rate limiting response",
+              "    const expectedRateLimitStatusCode = 429; // HTTP status code for Too Many Requests",
+              "    const expectedRateLimitMessage = \"Rate Limit Exceeded\"; // Message indicating rate limit exceeded",
+              "",
+              "    if (pm.response.code === expectedRateLimitStatusCode) {",
+              "        // Rate limit exceeded, which is expected behavior",
+              "        pm.expect(pm.response.text()).to.include(expectedRateLimitMessage);",
+              "    } else {",
+              "        ",
+              "        pm.expect(pm.response.code).to.eql(200);",
+              "    }",
+              "});",
+              "",
+              ""
             ],
             "type": "text/javascript"
           }
@@ -653,7 +789,6 @@
         "header": [
           {
             "key": "Content-Type",
-            "name": "Content-Type",
             "value": "application/json",
             "type": "text"
           }
@@ -669,8 +804,14 @@
         },
         "url": {
           "raw": "{{serverURL}}/api/v1/apitoken",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "apitoken"]
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken"
+          ]
         }
       },
       "response": []
@@ -695,26 +836,26 @@
               "pm.collectionVariables.set(\"tokenid\", jsonData.entity.token.id);",
               "",
               "pm.test(\"Token should expire\", function () {",
-							"    const currentTimestamp = Math.floor(Date.now() / 1000);",
-							"    const expirationTime = jsonData.entity.token.expiresDate;",
-							"    pm.expect(expirationTime).to.be.above(currentTimestamp);",
-							"});",
-							"",
-							"pm.test(\"Token ID should be unique\", function () {",
-							"    const tokenID = jsonData.entity.token.id;",
-							"    pm.collectionVariables.get(\"tokenIDs\") || pm.collectionVariables.set(\"tokenIDs\", []);",
-							"    const tokenIDs = pm.collectionVariables.get(\"tokenIDs\");",
-							"    pm.expect(tokenIDs).to.not.include(tokenID);",
-							"    tokenIDs.push(tokenID);",
-							"    pm.collectionVariables.set(\"tokenIDs\", tokenIDs);",
-							"});",
-							"",
-							"pm.test(\"Token should be securely generated\", function () {",
-							"    const jwtToken = jsonData.entity.jwt;",
-							"    // Add your custom logic to check the security of the JWT token",
-							"    pm.expect(jwtToken.length).to.be.above(50);  // Example: Check for a minimum length",
-							"    pm.expect(jwtToken).to.match(/^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.+/=]+$/);  // Example: Check for a typical JWT format",
-							"});"
+              "    const currentTimestamp = Math.floor(Date.now() / 1000);",
+              "    const expirationTime = jsonData.entity.token.expiresDate;",
+              "    pm.expect(expirationTime).to.be.above(currentTimestamp);",
+              "});",
+              "",
+              "pm.test(\"Token ID should be unique\", function () {",
+              "    const tokenID = jsonData.entity.token.id;",
+              "    pm.collectionVariables.get(\"tokenIDs\") || pm.collectionVariables.set(\"tokenIDs\", []);",
+              "    const tokenIDs = pm.collectionVariables.get(\"tokenIDs\");",
+              "    pm.expect(tokenIDs).to.not.include(tokenID);",
+              "    tokenIDs.push(tokenID);",
+              "    pm.collectionVariables.set(\"tokenIDs\", tokenIDs);",
+              "});",
+              "",
+              "pm.test(\"Token should be securely generated\", function () {",
+              "    const jwtToken = jsonData.entity.jwt;",
+              "    // Add your custom logic to check the security of the JWT token",
+              "    pm.expect(jwtToken.length).to.be.above(50);  // Example: Check for a minimum length",
+              "    pm.expect(jwtToken).to.match(/^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.+/=]+$/);  // Example: Check for a typical JWT format",
+              "});"
             ],
             "type": "text/javascript"
           }
@@ -740,9 +881,8 @@
         "header": [
           {
             "key": "Content-Type",
-            "name": "Content-Type",
-            "type": "text",
-            "value": "application/json"
+            "value": "application/json",
+            "type": "text"
           }
         ],
         "body": {
@@ -756,8 +896,14 @@
         },
         "url": {
           "raw": "{{serverURL}}/api/v1/apitoken",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "apitoken"]
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken"
+          ]
         }
       },
       "response": []
@@ -803,8 +949,16 @@
         "header": [],
         "url": {
           "raw": "{{serverURL}}/api/v1/apitoken/dotcms.org.1/tokens",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "apitoken", "dotcms.org.1", "tokens"]
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken",
+            "dotcms.org.1",
+            "tokens"
+          ]
         },
         "description": "Get tokens of admin user"
       },
@@ -822,9 +976,8 @@
               "});",
               "",
               "pm.test(\"Response has a valid JWT\", function () {",
-							"    pm.expect(pm.response.json().entity.jwt).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_.+/=]*$/);",
-							"});"
-							
+              "    pm.expect(pm.response.json().entity.jwt).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_.+/=]*$/);",
+              "});"
             ],
             "type": "text/javascript"
           }
@@ -850,8 +1003,16 @@
         "header": [],
         "url": {
           "raw": "{{serverURL}}/api/v1/apitoken/{{tokenid}}/jwt",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "apitoken", "{{tokenid}}", "jwt"]
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken",
+            "{{tokenid}}",
+            "jwt"
+          ]
         }
       },
       "response": []
@@ -891,8 +1052,16 @@
         "header": [],
         "url": {
           "raw": "{{serverURL}}/api/v1/apitoken/{{tokenid}}/revoke",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "apitoken", "{{tokenid}}", "revoke"]
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken",
+            "{{tokenid}}",
+            "revoke"
+          ]
         }
       },
       "response": []
@@ -932,8 +1101,15 @@
         "header": [],
         "url": {
           "raw": "{{serverURL}}/api/v1/apitoken/{{tokenid}}",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "apitoken", "{{tokenid}}"]
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken",
+            "{{tokenid}}"
+          ]
         }
       },
       "response": []
@@ -973,8 +1149,17 @@
         "header": [],
         "url": {
           "raw": "{{serverURL}}/api/v1/apitoken/users/dotcms.org.1/revoke",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "apitoken", "users", "dotcms.org.1", "revoke"]
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken",
+            "users",
+            "dotcms.org.1",
+            "revoke"
+          ]
         }
       },
       "response": []
@@ -1014,8 +1199,88 @@
         "header": [],
         "url": {
           "raw": "{{serverURL}}/api/v1/apitoken/users/revoke",
-          "host": ["{{serverURL}}"],
-          "path": ["api", "v1", "apitoken", "users", "revoke"]
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken",
+            "users",
+            "revoke"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "createToken Unsupported Media Type",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Validate the response status is 415",
+              "pm.test(\"Response status is 415\", function () {",
+              "    pm.response.to.have.status(415);",
+              "});",
+              "",
+              "// Validate that the response body contains the 'message' property and it is not empty",
+              "pm.test(\"Response should have an error message\", function () {",
+              "    const responseBody = pm.response.json();",
+              "    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+              "    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "admin@dotcms.com",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "admin",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/javascript",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\t\"userId\":\"dotcms.org.1\",\n\t\"tokenId\":\"123\",\n\t\"expirationSeconds\":\"100000\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/apitoken",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "apitoken"
+          ]
         }
       },
       "response": []

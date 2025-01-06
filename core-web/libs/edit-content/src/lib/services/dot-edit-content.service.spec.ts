@@ -12,6 +12,7 @@ import {
     DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { DotContentletDepths } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from './dot-edit-content.service';
 
@@ -44,8 +45,22 @@ describe('DotEditContentService', () => {
     describe('Endpoints', () => {
         it('should get content by id', () => {
             const ID = '1';
-            spectator.service.getContentById(ID).subscribe();
+            spectator.service.getContentById({ id: ID }).subscribe();
             spectator.expectOne(`${CONTENT_API_ENDPOINT}/${ID}`, HttpMethod.GET);
+        });
+
+        it('should get content by id and language', () => {
+            const ID = '1';
+            spectator.service.getContentById({ id: ID, languageId: 1 }).subscribe();
+            spectator.expectOne(`${CONTENT_API_ENDPOINT}/${ID}?language=1`, HttpMethod.GET);
+        });
+
+        it('should get content by id and depth', () => {
+            const ID = '1';
+            const DEPTH = DotContentletDepths.TWO;
+            spectator.service.getContentById({ id: ID, depth: DEPTH }).subscribe();
+
+            spectator.expectOne(`${CONTENT_API_ENDPOINT}/${ID}?depth=${DEPTH}`, HttpMethod.GET);
         });
 
         it('should get tags', () => {

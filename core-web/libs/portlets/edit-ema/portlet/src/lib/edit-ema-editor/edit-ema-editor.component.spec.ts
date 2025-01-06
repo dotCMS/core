@@ -1,5 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
-import { SpectatorRouting, createRoutingFactory, byTestId } from '@ngneat/spectator/jest';
+import {
+    SpectatorRouting,
+    createRoutingFactory,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -25,18 +30,22 @@ import {
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotIframeService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPersonalizeService,
     DotPropertiesService,
+    DotRouterService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
     DotSessionStorageService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -67,8 +76,8 @@ import {
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
-import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
-import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
@@ -116,6 +125,14 @@ const messagesMock = {
 
 const IFRAME_MOCK = {
     nativeElement: {
+        addEventListener: function (_event, cb) {
+            this.registerListener.push(cb);
+        },
+        dispatchEvent: function (event) {
+            this.registerListener.forEach((cb) => cb(event));
+        },
+        registerListener: [],
+        contentWindow: document.defaultView,
         contentDocument: {
             getElementsByTagName: () => [],
             querySelectorAll: () => [],
@@ -136,7 +153,7 @@ const createRouting = () =>
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
-            MockComponent(DotEditEmaWorkflowActionsComponent),
+            MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaToolbarComponent)
@@ -149,6 +166,15 @@ const createRouting = () =>
             DotFavoritePageService,
             DotESContentService,
             DotSessionStorageService,
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotRouterService),
+            mockProvider(DotGlobalMessageService),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
             {
                 provide: DotPropertiesService,
                 useValue: {
@@ -440,6 +466,7 @@ describe('EditEmaEditorComponent', () => {
                 store.setFlags({
                     FEATURE_FLAG_UVE_PREVIEW_MODE: true
                 });
+
                 spectator.detectChanges();
 
                 const toolbar = spectator.query(DotUveToolbarComponent);
@@ -2595,7 +2622,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/index?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
+                        'http://localhost:3000/page-one?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
                     );
                 });
 
@@ -2619,6 +2646,9 @@ describe('EditEmaEditorComponent', () => {
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
                         );
+
+                        iframe.nativeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
 
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>hello world</div>'
@@ -2646,11 +2676,14 @@ describe('EditEmaEditorComponent', () => {
                             language_id: '4',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                         });
-                        spectator.detectChanges();
 
+                        spectator.detectChanges();
                         jest.runOnlyPendingTimers();
 
-                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                        iframe.nativeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
+                        expect(iframe.nativeElement.src).toContain('about:blank'); //When dont have src, the src is the same as the current page
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>New Content - Hello World</div>'
                         );
@@ -2790,23 +2823,22 @@ describe('EditEmaEditorComponent', () => {
 
                 describe('script and styles injection', () => {
                     let iframeDocument: Document;
+                    let iframeElement: HTMLIFrameElement;
                     let spy: jest.SpyInstance;
 
                     beforeEach(() => {
-                        jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-                            cb(0); // Pass a dummy value to satisfy the expected argument count
-
-                            return 0;
-                        });
-
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         spectator.component.iframe = IFRAME_MOCK as any;
-                        iframeDocument = spectator.component.iframe.nativeElement.contentDocument;
+                        iframeElement = spectator.component.iframe.nativeElement;
+                        iframeDocument = iframeElement.contentDocument;
                         spy = jest.spyOn(iframeDocument, 'write');
                     });
 
                     it('should add script and styles to iframe', () => {
                         spectator.component.setIframeContent(`<head></head></body></body>`);
+
+                        iframeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
 
                         expect(spy).toHaveBeenCalled();
                         expect(iframeDocument.body.innerHTML).toContain(
@@ -2823,6 +2855,9 @@ describe('EditEmaEditorComponent', () => {
                     it('should add script and styles to iframe for advance templates', () => {
                         spectator.component.setIframeContent(`<div>Advanced Template</div>`);
 
+                        iframeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
                         expect(spy).toHaveBeenCalled();
                         expect(iframeDocument.body.innerHTML).toContain(
                             `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
@@ -2834,10 +2869,6 @@ describe('EditEmaEditorComponent', () => {
                         expect(iframeDocument.body.innerHTML).toContain(
                             '[data-dot-object="contentlet"].empty-contentlet'
                         );
-                    });
-
-                    afterEach(() => {
-                        (window.requestAnimationFrame as jest.Mock).mockRestore();
                     });
                 });
             });
@@ -2899,21 +2930,6 @@ describe('EditEmaEditorComponent', () => {
 
             describe('CUSTOMER ACTIONS', () => {
                 describe('CLIENT_READY', () => {
-                    it('should set client is ready when not extra configuration is send', () => {
-                        const setIsClientReadySpy = jest.spyOn(store, 'setIsClientReady');
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: HOST,
-                                data: {
-                                    action: CLIENT_ACTIONS.CLIENT_READY
-                                }
-                            })
-                        );
-
-                        expect(setIsClientReadySpy).toHaveBeenCalledWith(true);
-                    });
-
                     it('should set client GraphQL configuration and call the reload', () => {
                         const setClientConfigurationSpy = jest.spyOn(
                             store,

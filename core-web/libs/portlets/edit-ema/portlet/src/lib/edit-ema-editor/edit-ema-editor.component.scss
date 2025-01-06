@@ -55,6 +55,7 @@ dot-results-seo-tool {
     border: solid 1px $color-palette-gray-300;
     height: 100%;
     width: 100%;
+    transition: all 0.3s ease-in-out;
 
     iframe {
         border: none;

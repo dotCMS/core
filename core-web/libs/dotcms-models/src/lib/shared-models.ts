@@ -31,6 +31,11 @@ export const enum FeaturedFlags {
     FEATURE_FLAG_UVE_PREVIEW_MODE = 'FEATURE_FLAG_UVE_PREVIEW_MODE'
 }
 
+export const enum DotConfigurationVariables {
+    CONTENT_PALETTE_HIDDEN_CONTENT_TYPES = 'CONTENT_PALETTE_HIDDEN_CONTENT_TYPES',
+    WYSIWYG_IMAGE_URL_PATTERN = 'WYSIWYG_IMAGE_URL_PATTERN'
+}
+
 export const FEATURE_FLAG_NOT_FOUND = 'NOT_FOUND';
 
 export type DotDropdownGroupSelectOption<T> = {

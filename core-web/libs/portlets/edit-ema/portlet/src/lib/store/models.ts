@@ -1,16 +1,21 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotExperiment, DotLanguage, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import {
+    DotCMSWorkflowAction,
+    DotExperiment,
+    DotLanguage,
+    DotPageToolUrlParams
+} from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
-import { DotPageApiParams, DotPageApiResponse } from '../services/dot-page-api.service';
+import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
-import { DotPage, NavigationBarItem } from '../shared/models';
+import { DotPage, DotPageAssetParams, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
     languages: DotLanguage[];
     isEnterprise: boolean;
     pageAPIResponse?: DotPageApiResponse;
-    pageParams?: DotPageApiParams;
+    pageParams?: DotPageAssetParams;
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     errorCode?: number;
@@ -20,6 +25,7 @@ export interface UVEState {
     canEditPage: boolean;
     pageIsLocked: boolean;
     isClientReady: boolean;
+    workflowActions?: DotCMSWorkflowAction[];
 }
 
 export interface ShellProps {
@@ -38,8 +44,12 @@ export interface TranslateProps {
 }
 
 export interface DotUveViewParams {
-    preview: boolean;
-    orientation: string;
+    orientation: Orientation;
     device: string;
     seo: string;
+}
+
+export enum Orientation {
+    LANDSCAPE = 'landscape',
+    PORTRAIT = 'portrait'
 }

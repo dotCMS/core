@@ -1,5 +1,6 @@
 import {
     DotCMSContentlet,
+    DotDeviceListItem,
     DotExperiment,
     DotLanguage,
     DotPageContainerStructure,
@@ -13,7 +14,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
-import { DotDeviceWithIcon } from '../../../shared/models';
+import { Orientation } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
@@ -24,10 +25,11 @@ export interface EditorState {
 }
 
 export interface EditorToolbarState {
-    device?: DotDeviceWithIcon;
+    device?: DotDeviceListItem;
     socialMedia?: string;
     isEditState: boolean;
     isPreviewModeActive?: boolean;
+    orientation?: Orientation;
 }
 
 export interface PageDataContainer {
@@ -61,7 +63,6 @@ export interface EditorProps {
             width: string;
             height: string;
         };
-        src: string;
         pointerEvents: string;
         opacity: string;
     };
@@ -91,6 +92,7 @@ export interface ToolbarProps {
     bookmarksUrl: string;
     copyUrl: string;
     apiUrl: string;
+    isDefaultVariant: boolean;
     showInfoDisplay: boolean;
     currentLanguage: DotLanguage;
     runningExperiment?: DotExperiment;

@@ -12,12 +12,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
+import { UVE_MODE } from '@dotcms/client';
 import {
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -67,6 +69,12 @@ describe('UVEStore', () => {
             MessageService,
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of({})
+                }
+            },
             {
                 provide: DotPropertiesService,
                 useValue: dotPropertiesServiceMock
@@ -355,13 +363,13 @@ describe('UVEStore', () => {
 
         describe('$isPreviewMode', () => {
             it("should return true when the preview is 'true'", () => {
-                store.loadPageAsset({ preview: 'true' });
+                store.loadPageAsset({ editorMode: UVE_MODE.PREVIEW });
 
                 expect(store.$isPreviewMode()).toBe(true);
             });
 
             it("should return false when the preview is not 'true'", () => {
-                store.loadPageAsset({ preview: null });
+                store.loadPageAsset({ editorMode: null });
 
                 expect(store.$isPreviewMode()).toBe(false);
             });

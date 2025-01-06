@@ -130,7 +130,7 @@ export class DotFileFieldUploadService {
      */
     getContentById(identifier: string) {
         return this.#contentService
-            .getContentById(identifier)
+            .getContentById({ id: identifier })
             .pipe(switchMap((contentlet) => this.#addContent(contentlet)));
     }
 

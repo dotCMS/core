@@ -15,12 +15,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Map;
 import java.util.Optional;
+import javax.enterprise.context.Dependent;
 
 /**
  * This class reads a large file and prints the content to the log.
  * It is here for the sole purpose of demonstrating the job queue system.
  */
 @Queue("demo")
+@Dependent
 public class LargeFileReader implements JobProcessor, Cancellable {
 
     public static final int LOG_EVERY_LINES = 1;

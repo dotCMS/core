@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -28,8 +29,11 @@ public class VelocityContextFactory {
         return getMockContext(contentlet, APILocator.systemUser());
     }
 
-    public static Context getMockContext(Contentlet contentlet, User user) {
-        Host host = Try.of(() -> APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), true)).getOrElse(APILocator.systemHost());
+    public static Context getMockContext(final Contentlet contentlet, final User user) {
+        final Host host = UtilMethods.isSet(contentlet.getIdentifier()) ?
+                Try.of(() -> APILocator.getHostAPI().find(contentlet.getHost(),
+                        APILocator.systemUser(), true)).getOrElse(APILocator.systemHost()) :
+                APILocator.systemHost();
         String hostName = "SYSTEM_HOST".equalsIgnoreCase(host.getIdentifier())
                 ? Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname()).getOrElseThrow(DotRuntimeException::new)
                 : host.getHostname();
