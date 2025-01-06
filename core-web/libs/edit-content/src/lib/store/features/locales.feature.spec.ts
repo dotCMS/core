@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SpyObject, createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
@@ -16,11 +16,13 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotLanguage } from '@dotcms/dotcms-models';
-import { initialRootState } from '@dotcms/edit-content/feature/edit-content/store/edit-content.store';
-import { contentInitialState } from '@dotcms/edit-content/feature/edit-content/store/features/content.feature';
-import { withLocales } from '@dotcms/edit-content/feature/edit-content/store/features/locales.feature';
-import { workflowInitialState } from '@dotcms/edit-content/feature/edit-content/store/features/workflow.feature';
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
+
+import { contentInitialState } from './content.feature';
+import { withLocales } from './locales.feature';
+import { workflowInitialState } from './workflow.feature';
+
+import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { initialRootState } from '../../store/edit-content.store';
 
 const MOCK_LANGUAGES = [
     { id: 1, isoCode: 'en-us', translated: true },
@@ -125,7 +127,10 @@ describe('LocalesFeature', () => {
             store.switchLocale(MOCK_LANGUAGES[1]);
             tick();
 
-            expect(dotEditContentService.getContentById).toHaveBeenCalledWith('123', 2);
+            expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                id: '123',
+                languageId: 2
+            });
 
             expect(router.navigate).toHaveBeenCalledWith(['/content', '456'], {
                 replaceUrl: true,
