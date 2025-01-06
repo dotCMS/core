@@ -26,7 +26,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
@@ -36,9 +36,9 @@ import {
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
     MOCK_CONTENTTYPE_1_TAB,
@@ -122,7 +122,10 @@ describe('DotFormComponent', () => {
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
-            store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            }); // called with the inode of the contentlet
 
             spectator.detectChanges();
         });
@@ -200,7 +203,10 @@ describe('DotFormComponent', () => {
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
-            store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            }); // called with the inode of the contentlet
             spectator.detectChanges();
         });
 
@@ -293,7 +299,10 @@ describe('DotFormComponent', () => {
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
-            store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode);
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
             spectator.detectChanges();
         });
 
@@ -307,7 +316,10 @@ describe('DotFormComponent', () => {
                 workflowActionsService.getWorkFlowActions.mockReturnValue(
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS) // Single workflow actions trigger the show
                 );
-                store.initializeExistingContent('inode');
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
                 spectator.detectChanges();
 
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
@@ -320,7 +332,10 @@ describe('DotFormComponent', () => {
                     of(MOCK_MULTIPLE_WORKFLOW_ACTIONS) // Multiple workflow actions trigger the hide
                 );
 
-                store.initializeExistingContent('inode');
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
                 spectator.detectChanges();
 
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
@@ -334,7 +349,10 @@ describe('DotFormComponent', () => {
                 workflowActionsService.getWorkFlowActions.mockReturnValue(
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );
-                store.initializeExistingContent('inode');
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
                 spectator.detectChanges();
 
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);

@@ -33,20 +33,20 @@ import {
     MOCK_SINGLE_WORKFLOW_ACTIONS
 } from '@dotcms/utils-testing';
 
-import { EditContentLayoutComponent } from './edit-content.layout.component';
-import { DotEditContentStore } from './store/edit-content.store';
+import { DotEditContentLayoutComponent } from './dot-edit-content.layout.component';
 
-import { DotEditContentFormComponent } from '../../components/dot-edit-content-form/dot-edit-content-form.component';
-import { DotEditContentSidebarComponent } from '../../components/dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_CONTENTLET_1_TAB } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
+import { DotEditContentFormComponent } from '../dot-edit-content-form/dot-edit-content-form.component';
+import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 
 const MOCK_LANGUAGES = [{ id: 1, isoCode: 'en-us', defaultLanguage: false }] as DotLanguage[];
 
 describe('EditContentLayoutComponent', () => {
-    let spectator: Spectator<EditContentLayoutComponent>;
+    let spectator: Spectator<DotEditContentLayoutComponent>;
 
     let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
@@ -55,7 +55,7 @@ describe('EditContentLayoutComponent', () => {
     let dotLanguagesService: SpyObject<DotLanguagesService>;
 
     const createComponent = createComponentFactory({
-        component: EditContentLayoutComponent,
+        component: DotEditContentLayoutComponent,
         imports: [
             MockModule(MessagesModule),
             MockComponent(DotEditContentFormComponent),
