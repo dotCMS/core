@@ -82,10 +82,9 @@
 		<tr>
 			<td nowrap="true" valign="top" style="text-align: right;"><%if(workflowActionletParameter.isRequired()){ %><span class="required"></span><%} %><%=workflowActionletParameter.getDisplayName() %>:</td>
 			<td>
-				<%=workflowActionletParameter.getDefaultValue()%> | <%=value%>
-				<input  id="acp-<%=workflowActionletParameter.getKey() %>" name="acp-<%=workflowActionletParameter.getKey() %>" value="<%=workflowActionletParameter.getDefaultValue()%>"
+				<input  id="acp-<%=workflowActionletParameter.getKey() %>" name="acp-<%=workflowActionletParameter.getKey() %>" value="true"
 						type="checkbox"
-						<%=workflowActionletParameter.getDefaultValue().equals(value)? "checked":""%>  dojoType="dijit.form.CheckBox" />
+						<%=!workflowActionletParameter.getDefaultValue().equals(value)? "checked":""%>  dojoType="dijit.form.CheckBox" />
 			</td>
 		</tr>
 		<% } else { %>

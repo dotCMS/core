@@ -81,7 +81,7 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 
 		final List<WorkflowActionletParameter> workflowActionletParameters = new ArrayList<>();
 
-		workflowActionletParameters.add(new CheckboxWorkflowActionletParameter(FORCE_UNLOCK_ALLOWED, "Force Unlock", "force-unlock", false));
+		workflowActionletParameters.add(new CheckboxWorkflowActionletParameter(FORCE_UNLOCK_ALLOWED, "Force Unlock", "false", false));
 
 		return workflowActionletParameters;
 	}
