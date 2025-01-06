@@ -7,13 +7,8 @@
     gap: $spacing-1;
     align-self: stretch;
 
-    ::ng-deep {
-        .p-menuitem.active {
-            .p-menuitem-link,
-            .p-menuitem-link:not(.p-disabled):hover {
-                background-color: $color-palette-primary-op-20;
-            }
-        }
+    .active {
+        background-color: $color-palette-primary-op-20;
     }
 
     .p-element {

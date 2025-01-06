@@ -230,6 +230,7 @@ export function withUVEToolbar() {
                     viewParams: {
                         ...store.viewParams(),
                         device: null,
+                        orientation: null,
                         seo: socialMedia
                     },
                     isEditState: false

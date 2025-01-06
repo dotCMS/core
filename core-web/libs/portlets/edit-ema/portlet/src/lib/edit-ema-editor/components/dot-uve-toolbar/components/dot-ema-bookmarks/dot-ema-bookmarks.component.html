@@ -1,5 +1,7 @@
 @if (store.$previewMode()) {
     <p-button
+        pTooltip="Bookmark"
+        tooltipPosition="bottom"
         (click)="toggleBookmark()"
         [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
         [loading]="loading()"
@@ -7,6 +9,8 @@
         data-testId="bookmark-button" />
 } @else {
     <p-button
+        pTooltip="Bookmark"
+        tooltipPosition="bottom"
         (onClick)="toggleBookmark()"
         [loading]="loading()"
         [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"

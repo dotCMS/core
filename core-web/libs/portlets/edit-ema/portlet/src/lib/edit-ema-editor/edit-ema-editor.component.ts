@@ -162,6 +162,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
     readonly $previewMode = this.uveStore.$previewMode;
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
+    readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
 
     get contentWindow(): Window {

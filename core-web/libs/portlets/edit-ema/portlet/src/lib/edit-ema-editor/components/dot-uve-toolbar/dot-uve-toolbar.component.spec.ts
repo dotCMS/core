@@ -240,6 +240,8 @@ describe('DotUveToolbarComponent', () => {
                     'ng-reflect-content': 'Copy URL',
                     'ng-reflect-icon': 'pi pi-external-link',
                     'ng-reflect-text': 'http://localhost:3000/test-url',
+                    'ng-reflect-tooltip-position': 'bottom',
+                    tooltipPosition: 'bottom',
                     styleClass: 'p-button-text p-button-sm p-button-rounded'
                 });
             });

@@ -3,6 +3,8 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
 
+import { Menu } from 'primeng/menu';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { mockDotDevices } from '@dotcms/utils-testing';
 
@@ -315,6 +317,71 @@ describe('DotUveDeviceSelectorComponent', () => {
 
                 expect(setDeviceSpy).toHaveBeenCalledWith(DEFAULT_DEVICE);
                 expect(setSEOSpy).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('More items menu', () => {
+            const EXPECT_MENU_ITEM_OPTION = [
+                {
+                    label: 'uve.preview.mode.social.media.subheader',
+                    id: 'social-media',
+                    items: [
+                        {
+                            label: 'Facebook',
+                            id: 'Facebook',
+                            value: 'Facebook',
+                            command: expect.any(Function)
+                        },
+                        {
+                            label: 'X (Formerly Twitter)',
+                            id: 'Twitter',
+                            value: 'Twitter',
+                            command: expect.any(Function)
+                        },
+                        {
+                            label: 'Linkedin',
+                            id: 'LinkedIn',
+                            value: 'LinkedIn',
+                            command: expect.any(Function)
+                        }
+                    ]
+                },
+                {
+                    label: 'uve.preview.mode.search.engine.subheader',
+                    id: 'search-engine',
+                    items: [
+                        {
+                            label: 'Google',
+                            id: 'Google',
+                            value: 'Google',
+                            command: expect.any(Function)
+                        }
+                    ]
+                },
+                {
+                    label: 'uve.preview.mode.device.subheader',
+                    id: 'custom-devices',
+                    items: [
+                        { label: 'iphone (200x100)', id: '1', command: expect.any(Function) },
+                        { label: 'bad device (0x0)', id: '2', command: expect.any(Function) }
+                    ]
+                }
+            ];
+
+            it('should receive the right items', () => {
+                const menuElement = spectator.query(Menu);
+
+                expect(menuElement.model).toEqual(EXPECT_MENU_ITEM_OPTION);
+            });
+
+            it('should show the menu after clicking the `more` button', () => {
+                const moreButton = spectator.query(`[data-testid="more-button"]`);
+
+                moreButton.dispatchEvent(new Event('click'));
+                spectator.detectChanges();
+
+                const menuList = spectator.query("[data-testid='more-menu'] > ul");
+                expect(menuList).toBeDefined();
             });
         });
     });

@@ -1,4 +1,4 @@
-import { describe } from '@jest/globals';
+import { expect, describe } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -159,6 +159,22 @@ describe('withEditor', () => {
                         orientation: undefined,
                         seo: undefined
                     });
+                });
+            });
+        });
+
+        describe('setSEO', () => {
+            it('should set the seo, update viewparams, and remove device and orientation', () => {
+                store.setSEO('seo');
+
+                expect(store.socialMedia()).toBe('seo');
+                expect(store.device()).toBe(null);
+                expect(store.orientation()).toBe(null);
+
+                expect(store.viewParams()).toEqual({
+                    device: null,
+                    orientation: null,
+                    seo: 'seo'
                 });
             });
         });

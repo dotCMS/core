@@ -163,7 +163,6 @@ export function withEditor() {
                     return {
                         showDialogs,
                         showBlockEditorSidebar,
-                        showEditorContent: !socialMedia,
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
@@ -208,6 +207,13 @@ export function withEditor() {
                     });
 
                     return url;
+                }),
+                $editorContentStyles: computed<Record<string, string>>(() => {
+                    const socialMedia = store.socialMedia();
+
+                    return {
+                        display: socialMedia ? 'none' : 'block'
+                    };
                 })
             };
         }),

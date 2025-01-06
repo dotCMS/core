@@ -49,7 +49,6 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         id: 'search-engine',
         items: this.#getSocialMediaMenuItems(searchEngineTile)
     };
-
     readonly $disableOrientation = computed(
         () => this.#store.device()?.inode === 'default' || this.#store.socialMedia()
     );
@@ -70,6 +69,13 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         }
 
         return menu;
+    });
+
+    readonly activeMenuItemId = computed(() => {
+        const deviceInode = this.$currentDevice()?.inode;
+        const socialMedia = this.$currentSocialMedia();
+
+        return socialMedia || deviceInode;
     });
 
     readonly $isMoreButtonActive = computed(() => !this.$currentDevice()?._isDefault);

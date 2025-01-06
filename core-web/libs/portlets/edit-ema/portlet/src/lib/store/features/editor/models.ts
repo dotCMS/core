@@ -83,7 +83,6 @@ export interface EditorProps {
     };
     showDialogs: boolean;
     progressBar: boolean;
-    showEditorContent: boolean;
     showBlockEditorSidebar: boolean;
 }
 

@@ -38,5 +38,14 @@
         (click)="menu.toggle($event)"
         data-testId="more-button" />
 
-    <p-menu #menu [popup]="true" [model]="$menuItems()" data-testId="more-options-btn" />
+    <p-menu #menu [popup]="true" [model]="$menuItems()" data-testId="more-menu">
+        <ng-template pTemplate="item" let-item>
+            <a
+                pRipple
+                class="flex align-items-center p-menuitem-link"
+                [ngClass]="{ active: item.id === activeMenuItemId() }">
+                <span>{{ item.label }}</span>
+            </a>
+        </ng-template>
+    </p-menu>
 }
