@@ -147,7 +147,7 @@ public class ContentBundler implements IBundler {
 				for (String contentIdentifier : contentsIds) {
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +live:true" + excludeDeleted, 0, -1, null, systemUser, false));
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +working:true" + excludeDeleted, 0, -1, null, systemUser, false));
-					if(config.isSameIndexNotIncremental()){
+					if(config.isSameIndexNotIncremental() || Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",false)){
 						contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +deleted:true", 0, -1, null, systemUser, false));
 					}
 				}
@@ -293,7 +293,7 @@ public class ContentBundler implements IBundler {
 
 		for(Field ff : fields) {
 			//Avoid this to reduce bundle size since we're gonna do a rsync of the assets directory of the datasets
-			if(Config.getBooleanProperty("BUNDLE_ASSETS", true)) {
+			if(Config.getBooleanProperty("INCLUDE_ASSETS_BUNDLE", true)) {
 				if (ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
 					File sourceFile = con.getBinary(ff.getVelocityVarName());
 
