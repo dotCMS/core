@@ -109,7 +109,7 @@ describe('DotEmaBookmarksComponent', () => {
 
         const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
 
-        button.triggerEventHandler('onClick');
+        button.triggerEventHandler('click');
 
         expect(dialogServiceOpenSpy).toHaveBeenCalledWith(
             expect.anything(),
