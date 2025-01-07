@@ -161,6 +161,29 @@ export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
             sortOrder: 5,
             unique: false,
             variable: 'text3'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+            contentTypeId: 'bec7fa8325253216d9ee23a0693baa17',
+            dataType: 'LONG_TEXT',
+            fieldType: 'Multi-Select',
+            fieldTypeLabel: 'Multi Select',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012357000,
+            id: 'c3817bbc0b605578daca363ba752a3a3',
+            indexed: false,
+            listed: false,
+            modDate: 1729012357000,
+            name: 'Multi select',
+            values: 'A\r\nB\r\nC',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 5,
+            unique: false,
+            variable: 'multiselect'
         }
     ],
     fixed: false,
@@ -425,6 +448,7 @@ export const MOCK_CONTENTLET_1_TAB: DotCMSContentlet = {
     text1: 'content text 1',
     text2: 'content text 2',
     text3: 'default value modified',
+    multiselect: 'A,B,C', // stored selected options
     text11: 'Tab 2 input content', // input in the second tab
     // end content of the form
     title: '2978bb3b66e372b1ffffa9376f33c37b',
@@ -692,6 +716,29 @@ export const MOCK_CONTENTTYPE_2_TABS: DotCMSContentType = {
 
             unique: false,
             variable: 'text11'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+            contentTypeId: 'bec7fa8325253216d9ee23a0693baa17',
+            dataType: 'LONG_TEXT',
+            fieldType: 'Multi-Select',
+            fieldTypeLabel: 'Multi Select',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1735844530000,
+            id: 'c3817bbc0b605578daca363ba752a3a3',
+            indexed: false,
+            listed: false,
+            modDate: 1735844530000,
+            name: 'Multi select',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 2,
+            unique: false,
+            values: 'A\r\nB\r\nC', // this are the options of the multiselect field
+            variable: 'multiselect'
         }
     ],
     fixed: false,
@@ -1091,6 +1138,30 @@ export const MOCK_FORM_CONTROL_FIELDS: DotCMSContentTypeField[] = [
         sortOrder: 9,
 
         variable: 'text11'
+    },
+
+    {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+        contentTypeId: 'bec7fa8325253216d9ee23a0693baa17',
+        dataType: 'LONG_TEXT',
+        fieldType: 'Multi-Select',
+        fieldTypeLabel: 'Multi Select',
+        fieldVariables: [],
+        fixed: false,
+        forceIncludeInApi: false,
+        iDate: 1735844530000,
+        id: 'c3817bbc0b605578daca363ba752a3a3',
+        indexed: false,
+        listed: false,
+        modDate: 1735844530000,
+        name: 'Multi select',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 2,
+        unique: false,
+        values: 'A\r\nB\r\nC', // this are the options of the multiselect field
+        variable: 'multiselect'
     }
 ];
 

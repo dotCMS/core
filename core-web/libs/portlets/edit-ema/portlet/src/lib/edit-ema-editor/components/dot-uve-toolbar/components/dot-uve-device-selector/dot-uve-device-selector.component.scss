@@ -7,13 +7,12 @@
     gap: $spacing-1;
     align-self: stretch;
 
-    ::ng-deep {
-        .p-menuitem.active {
-            .p-menuitem-link,
-            .p-menuitem-link:not(.p-disabled):hover {
-                background-color: $color-palette-primary-op-20;
-            }
-        }
+    .menu-item {
+        padding: $spacing-2;
+    }
+
+    .menu-item--active {
+        background-color: $color-palette-primary-op-20;
     }
 
     .p-element {
@@ -50,6 +49,16 @@
             .p-button {
                 background-color: $color-palette-primary-op-20;
             }
+        }
+    }
+
+    ::ng-deep {
+        .more-menu {
+            padding: $spacing-1;
+        }
+
+        .p-submenu-header {
+            border-bottom: 1px solid $color-palette-gray-300;
         }
     }
 }

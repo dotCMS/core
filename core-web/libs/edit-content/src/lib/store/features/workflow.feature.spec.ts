@@ -13,7 +13,8 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -23,10 +24,11 @@ import { withWorkflow } from './workflow.feature';
 import {
     MOCK_CONTENTLET_1_TAB,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
-    MOCK_WORKFLOW_DATA
-} from '../../../../utils/edit-content.mock';
-import { CONTENT_TYPE_MOCK } from '../../../../utils/mocks';
-import { parseCurrentActions, parseWorkflows } from '../../../../utils/workflows.utils';
+    MOCK_WORKFLOW_DATA,
+    MOCK_WORKFLOW_STATUS
+} from '../../utils/edit-content.mock';
+import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
+import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
 import { initialRootState } from '../edit-content.store';
 
 const mockInitialStateWithContent: ContentState = {
@@ -44,7 +46,7 @@ describe('WorkflowFeature', () => {
     let router: SpyObject<Router>;
     let messageService: SpyObject<MessageService>;
     let dotMessageService: SpyObject<DotMessageService>;
-
+    let dotWorkflowService: SpyObject<DotWorkflowService>;
     const createStore = createServiceFactory({
         service: signalStore(
             withState({ ...initialRootState, ...mockInitialStateWithContent }),
@@ -56,7 +58,8 @@ describe('WorkflowFeature', () => {
             DotHttpErrorManagerService,
             DotMessageService,
             MessageService,
-            Router
+            Router,
+            DotWorkflowService
         ]
     });
 
@@ -68,7 +71,7 @@ describe('WorkflowFeature', () => {
         router = spectator.inject(Router);
         messageService = spectator.inject(MessageService);
         dotMessageService = spectator.inject(DotMessageService);
-
+        dotWorkflowService = spectator.inject(DotWorkflowService);
         dotMessageService.get.mockReturnValue('Success Message');
     });
 
@@ -86,6 +89,7 @@ describe('WorkflowFeature', () => {
                 workflowActionService.getByInode.mockReturnValue(
                     of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
                 store.fireWorkflowAction(mockOptions);
                 tick();
@@ -156,7 +160,10 @@ describe('WorkflowFeature', () => {
                 expect(store.getCurrentStep()).toBeNull();
                 expect(messageService.add).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        severity: 'success'
+                        detail: 'Success Message',
+                        icon: 'pi pi-spin pi-spinner',
+                        severity: 'info',
+                        summary: 'Success Message'
                     })
                 );
             }));
@@ -165,6 +172,7 @@ describe('WorkflowFeature', () => {
                 workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
 
                 store.fireWorkflowAction(mockOptions);
+                tick();
 
                 expect(messageService.add).toHaveBeenCalledWith(
                     expect.objectContaining({

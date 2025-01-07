@@ -29,29 +29,31 @@ export class DotEmaInfoDisplayComponent {
      * @memberof DotEmaInfoDisplayComponent
      */
     protected handleAction() {
-        const options = this.$options();
+        const optionId = this.$options().id;
 
-        if (options.id === 'device' || options.id === 'socialMedia') {
+        if (optionId === 'device' || optionId === 'socialMedia') {
             this.uveStore.clearDeviceAndSocialMedia();
-        } else if (options.id === 'variant') {
-            const currentExperiment = this.uveStore.experiment();
 
-            this.router.navigate(
-                [
-                    '/edit-page/experiments/',
-                    currentExperiment.pageId,
-                    currentExperiment.id,
-                    'configuration'
-                ],
-                {
-                    queryParams: {
-                        mode: null,
-                        variantName: null,
-                        experimentId: null
-                    },
-                    queryParamsHandling: 'merge'
-                }
-            );
+            return;
         }
+
+        const currentExperiment = this.uveStore.experiment();
+
+        this.router.navigate(
+            [
+                '/edit-page/experiments/',
+                currentExperiment.pageId,
+                currentExperiment.id,
+                'configuration'
+            ],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
     }
 }
