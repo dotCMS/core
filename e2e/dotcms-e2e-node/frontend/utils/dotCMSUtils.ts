@@ -61,14 +61,18 @@ export const waitFor = async (
 /**
  * Wait for the locator to be visible
  * @param locator
+ * @param state
+ * @param callback
  */
 export const waitForAndCallback = async (
   locator: Locator,
   state: "attached" | "detached" | "visible" | "hidden",
-  callback: () => Promise<void>,
+  callback?: () => Promise<void>,
 ): Promise<void> => {
   await waitFor(locator, state);
-  await callback();
+  if (callback) {
+    await callback();
+  }
 };
 
 /**
@@ -78,7 +82,7 @@ export const waitForAndCallback = async (
  */
 export const waitForVisibleAndCallback = async (
   locator: Locator,
-  callback: () => Promise<void>,
+  callback?: () => Promise<void>,
 ): Promise<void> => {
   await waitForAndCallback(locator, "visible", callback);
 };
