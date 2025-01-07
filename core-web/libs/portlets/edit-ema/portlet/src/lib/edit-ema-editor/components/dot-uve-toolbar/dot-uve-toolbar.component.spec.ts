@@ -242,10 +242,10 @@ describe('DotUveToolbarComponent', () => {
             it('should have attrs', () => {
                 expect(button.attributes).toEqual({
                     class: 'ng-star-inserted',
-                    icon: 'pi pi-external-link',
+                    icon: 'pi pi-copy',
                     'data-testId': 'uve-toolbar-copy-url',
                     'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
-                    'ng-reflect-icon': 'pi pi-external-link',
+                    'ng-reflect-icon': 'pi pi-copy',
                     'ng-reflect-text': 'http://localhost:3000/test-url',
                     'ng-reflect-tooltip-position': 'bottom',
                     tooltipPosition: 'bottom',
