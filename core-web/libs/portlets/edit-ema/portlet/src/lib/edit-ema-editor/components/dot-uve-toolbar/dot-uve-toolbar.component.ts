@@ -4,11 +4,16 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    effect,
     EventEmitter,
     inject,
     Output,
-    viewChild
+    viewChild,
+    model,
+    untracked,
+    Signal
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -18,18 +23,24 @@ import { ChipModule } from 'primeng/chip';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotPersona, DotLanguage } from '@dotcms/dotcms-models';
+import { map } from 'rxjs/operators';
 
-import { DEFAULT_PERSONA } from '../../../shared/consts';
+import { UVE_MODE } from '@dotcms/client';
+import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
+import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
+import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
+
+import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { DotEmaBookmarksComponent } from '../dot-ema-bookmarks/dot-ema-bookmarks.component';
-import { DotEmaInfoDisplayComponent } from '../dot-ema-info-display/dot-ema-info-display.component';
-import { DotEmaRunningExperimentComponent } from '../dot-ema-running-experiment/dot-ema-running-experiment.component';
-import { DotUveWorkflowActionsComponent } from '../dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from '../edit-ema-language-selector/edit-ema-language-selector.component';
-import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -49,10 +60,13 @@ import { EditEmaPersonaSelectorComponent } from '../edit-ema-persona-selector/ed
         ReactiveFormsModule,
         EditEmaPersonaSelectorComponent,
         EditEmaLanguageSelectorComponent,
+        ClipboardModule,
+        DotUveDeviceSelectorComponent,
+        DotMessagePipe,
         DotUveWorkflowActionsComponent,
         ChipModule
     ],
-    providers: [DotPersonalizeService],
+    providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
     styleUrl: './dot-uve-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -68,11 +82,21 @@ export class DotUveToolbarComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
+    readonly #deviceService = inject(DotDevicesService);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
+    readonly $infoDisplayProps = this.#store.$infoDisplayProps;
+    readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
+        this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
+        {
+            initialValue: DEFAULT_DEVICES
+        }
+    );
+
+    protected readonly CURRENT_DATE = new Date();
 
     readonly $styleToolbarClass = computed(() => {
         if (!this.$isPreviewMode()) {
@@ -82,6 +106,35 @@ export class DotUveToolbarComponent {
         return 'uve-toolbar uve-toolbar-preview';
     });
 
+    protected readonly publishDateParam = this.#store.pageParams().publishDate;
+    protected readonly $previewDate = model<Date>(
+        this.publishDateParam ? new Date(this.publishDateParam) : null
+    );
+
+    readonly $previewDateEffect = effect(
+        () => {
+            const previewDate = this.$previewDate();
+
+            if (!previewDate) {
+                return;
+            }
+
+            // If previewDate is minor that the CURRENT DATE, set previewDate to CURRENT DATE
+            if (previewDate < this.CURRENT_DATE) {
+                this.$previewDate.set(this.CURRENT_DATE);
+
+                return;
+            }
+
+            untracked(() => {
+                this.#store.loadPageAsset({
+                    editorMode: UVE_MODE.PREVIEW,
+                    publishDate: previewDate?.toISOString()
+                });
+            });
+        },
+        { allowSignalWrites: true }
+    );
     readonly $pageInode = computed(() => {
         return this.#store.pageAPIResponse()?.page.inode;
     });
@@ -91,22 +144,26 @@ export class DotUveToolbarComponent {
 
     protected readonly date = new Date();
 
+    defaultDevices = DEFAULT_DEVICES;
+
     /**
-     * Set the preview mode
+     * Initialize the preview mode
      *
+     * @param {Date} publishDate
      * @memberof DotUveToolbarComponent
      */
-    protected setPreviewMode() {
-        this.#store.loadPageAsset({ preview: 'true' });
+    protected triggerPreviewMode(publishDate: Date = new Date()) {
+        this.$previewDate.set(publishDate);
     }
 
     /**
-     * Set the edit mode
+     * Initialize the edit mode
      *
      * @memberof DotUveToolbarComponent
      */
-    protected setEditMode() {
-        this.#store.loadPageAsset({ preview: null });
+    protected triggerEditMode() {
+        this.#store.clearDeviceAndSocialMedia();
+        this.#store.loadPageAsset({ editorMode: undefined, publishDate: undefined });
     }
 
     /**
@@ -135,6 +192,11 @@ export class DotUveToolbarComponent {
         this.#store.loadPageAsset({ language_id });
     }
 
+    /**
+     * Trigger the copy toasts
+     *
+     * @memberof DotUveToolbarComponent
+     */
     triggerCopyToast() {
         this.#messageService.add({
             severity: 'success',

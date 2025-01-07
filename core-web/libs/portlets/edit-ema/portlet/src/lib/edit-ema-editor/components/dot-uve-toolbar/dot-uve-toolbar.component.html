@@ -12,21 +12,18 @@
 
     @if (preview) {
         <div class="p-toolbar-group-center">
-            <div>
-                <p-button
-                    icon="pi pi-chevron-left"
-                    styleClass="p-button-text p-button-sm"
-                    data-testId="arrow-left" />
-                <p-button
-                    icon="pi pi-chevron-right"
-                    styleClass="p-button-text p-button-sm"
-                    data-testId="arrow-right" />
-            </div>
             <p-calendar
                 inputStyleClass="p-inputtext-sm"
-                [(ngModel)]="date"
+                [(ngModel)]="$previewDate"
+                [showTime]="true"
+                [hourFormat]="'12'"
+                [minDate]="CURRENT_DATE"
                 [readonlyInput]="true" />
-            <p-chip styleClass="uve-toolbar-chips" label="Today" alt="Page Day" />
+            <p-button
+                styleClass="uve-toolbar-chips"
+                [label]="'Today' | dm"
+                alt="Page Day"
+                (click)="triggerPreviewMode()" />
         </div>
     }
 
@@ -58,28 +55,31 @@
 
 <ng-template #editLeftOptionsTemplate>
     <p-button
-        pTooltip="Preview Mode"
+        [pTooltip]="'uve.preview.mode' | dm"
+        tooltipPosition="bottom"
         icon="pi pi-eye"
-        styleClass="p-button-text p-button-sm"
+        styleClass="p-button-text p-button-sm p-button-rounded"
         data-testId="uve-toolbar-preview"
-        (click)="setPreviewMode()" />
+        (click)="triggerPreviewMode()" />
 
     <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
 
     <p-button
-        pTooltip="Copy URL"
+        [pTooltip]="'editpage.header.copy' | dm"
+        tooltipPosition="bottom"
         icon="pi pi-external-link"
-        styleClass="p-button-text p-button-sm"
+        styleClass="p-button-text p-button-sm p-button-rounded"
         (cdkCopyToClipboardCopied)="triggerCopyToast()"
         [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
         data-testId="uve-toolbar-copy-url" />
 
     <a
         title="Page API URL"
-        pTooltip="Page API URL"
+        [pTooltip]="'uve.preview.page.api.url' | dm"
+        tooltipPosition="bottom"
         pButton
         label="API"
-        class="p-button-text p-button-sm"
+        class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
         target="_blank"
         data-testId="uve-toolbar-api-link"
         [href]="$apiURL()"></a>
@@ -88,38 +88,16 @@
 <ng-template #previewLeftOptionsTemplate>
     <p-button
         icon="pi pi-times"
-        styleClass="p-button-text p-button-sm"
-        (click)="setEditMode()"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        (click)="triggerEditMode()"
         data-testId="close-preview-mode" />
-
     <div class="vertical-divider"></div>
-
-    <p-button
-        icon="pi pi-desktop"
-        pTooltip="Desktop Preview"
-        styleClass="p-button-text p-button-sm"
-        data-testId="desktop-preview" />
-
-    <p-button
-        icon="pi pi-tablet"
-        pTooltip="Tablet Preview"
-        styleClass="p-button-text p-button-sm"
-        data-testId="tablet-preview" />
-
-    <p-button
-        icon="pi pi-mobile"
-        pTooltip="Mobile Preview"
-        styleClass="p-button-text p-button-sm"
-        data-testId="mobile-preview" />
-
-    <p-splitButton
-        styleClass="p-button-sm"
-        label="More"
-        [model]="[]"
-        text
-        data-testId="more-devices-preview" />
+    <!-- We want to be sure we have devices -->
+    @if ($devices().length) {
+        <dot-uve-device-selector [devices]="$devices()" data-testId="uve-toolbar-device-selector" />
+    }
 </ng-template>
 
-@if ($toolbar().showInfoDisplay) {
+@if ($infoDisplayProps()) {
     <dot-ema-info-display data-testId="info-display" />
 }

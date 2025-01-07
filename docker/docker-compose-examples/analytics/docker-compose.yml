@@ -135,7 +135,7 @@ services:
 
   ch_server:
     container_name: ch_server
-    image: dotcms/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:latest
     ports:
       - "${CH_HOST_PORT:-8124}:8123"
     ulimits:
@@ -150,6 +150,7 @@ services:
       - CLICKHOUSE_PASSWORD=${CH_PWD:-clickhouse_password}
     volumes:
       - ch_data:/var/lib/clickhouse
+      - ./setup/db/clickhouse/init-scripts:/docker-entrypoint-initdb.d
 
 volumes:
   workspace:

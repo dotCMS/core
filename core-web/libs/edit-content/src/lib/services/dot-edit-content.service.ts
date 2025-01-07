@@ -10,7 +10,7 @@ import {
     DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotCMSContentlet, DotContentletDepth } from '@dotcms/dotcms-models';
 
 import {
     CustomTreeNode,
@@ -28,11 +28,31 @@ export class DotEditContentService {
 
     /**
      * Retrieves the content by its ID.
-     * @param id - The ID of the content to retrieve.
-     * @returns An observable of the DotCMSContentType object.
+     *
+     * @param {string} id - The ID of the content to retrieve.
+     * @param {number} [languageId] - Optional language ID to filter the content.
+     * @param {DotContentletDepth} [depth] - Optional depth to filter the content.
+     * @returns {Observable<DotCMSContentlet>} An observable of the DotCMSContentlet object.
      */
-    getContentById(id: string): Observable<DotCMSContentlet> {
-        return this.#http.get(`/api/v1/content/${id}`).pipe(pluck('entity'));
+    getContentById(params: {
+        id: string;
+        languageId?: number;
+        depth?: DotContentletDepth;
+    }): Observable<DotCMSContentlet> {
+        const { id, languageId, depth } = params;
+        let httpParams = new HttpParams();
+
+        if (languageId) {
+            httpParams = httpParams.set('language', languageId.toString());
+        }
+
+        if (depth) {
+            httpParams = httpParams.set('depth', depth);
+        }
+
+        return this.#http
+            .get(`/api/v1/content/${id}`, { params: httpParams })
+            .pipe(pluck('entity'));
     }
 
     /**

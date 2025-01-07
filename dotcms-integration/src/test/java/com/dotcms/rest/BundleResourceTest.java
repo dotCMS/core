@@ -19,6 +19,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
@@ -64,6 +65,10 @@ public class BundleResourceTest {
         IntegrationTestInitService.getInstance().init();
         bundleResource = new BundleResource();
         adminUser = APILocator.systemUser();
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        if (!roleAPI.doesUserHaveRole(adminUser, roleAPI.loadBackEndUserRole())) {
+            roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), adminUser);
+        }
         response = new MockHttpResponse();
     }
 

@@ -5,8 +5,9 @@ export interface DotDevice {
     name: string;
     inode: string;
     stInode?: string;
+    _isDefault?: boolean;
 }
 
 export interface DotDeviceListItem extends DotDevice {
-    icon: string;
+    icon?: string;
 }

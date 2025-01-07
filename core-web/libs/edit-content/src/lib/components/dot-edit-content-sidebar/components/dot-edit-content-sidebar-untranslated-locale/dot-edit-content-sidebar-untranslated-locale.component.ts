@@ -1,0 +1,24 @@
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { ButtonDirective } from 'primeng/button';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { RadioButtonModule } from 'primeng/radiobutton';
+
+import { DotMessagePipe } from '@dotcms/ui';
+
+@Component({
+    selector: 'dot-edit-content-sidebar-untranslated-locale',
+    standalone: true,
+    imports: [CommonModule, RadioButtonModule, DotMessagePipe, FormsModule, ButtonDirective],
+    templateUrl: './dot-edit-content-sidebar-untranslated-locale.component.html',
+    styleUrl: './dot-edit-content-sidebar-untranslated-locale.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotEditContentSidebarUntranslatedLocaleComponent {
+    selectedOption = 'populate';
+
+    dialogRef = inject(DynamicDialogRef);
+    config = inject(DynamicDialogConfig);
+}

@@ -29,7 +29,6 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import { resolutionValue } from './utils';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import {
     CALENDAR_FIELD_TYPES,
     CONTENT_SEARCH_ROUTE,
@@ -38,6 +37,7 @@ import {
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { getFinalCastedValue, isFilteredType } from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
@@ -88,7 +88,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     ]
 })
 export class DotEditContentFormComponent implements OnInit {
-    readonly $store = inject(DotEditContentStore);
+    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
@@ -152,12 +152,30 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     constructor() {
+        /**
+         * Effect that enables or disables the form based on the loading state.
+         */
         effect(() => {
             const isLoading = this.$store.isLoading();
             if (isLoading) {
                 this.form.disable();
             } else {
                 this.form.enable();
+            }
+        });
+
+        /**
+         * Effect that initializes the form and form listener when copying locale.
+         *
+         * This effect listens for changes in the `isCopyingLocale` state from the store.
+         * If `isCopyingLocale` is true, it initializes the form and sets up the form listener.
+         */
+        effect(() => {
+            const isCopyingLocale = this.$store.isCopyingLocale();
+
+            if (isCopyingLocale) {
+                this.initializeForm();
+                this.initializeFormListener();
             }
         });
     }
@@ -327,14 +345,22 @@ export class DotEditContentFormComponent implements OnInit {
      * @param {DotCMSWorkflowAction} action
      * @memberof EditContentLayoutComponent
      */
-    fireWorkflowAction({ actionId, inode, contentType }: DotWorkflowActionParams): void {
+    fireWorkflowAction({
+        actionId,
+        inode,
+        contentType,
+        languageId,
+        identifier
+    }: DotWorkflowActionParams): void {
         this.$store.fireWorkflowAction({
             actionId,
             inode,
+            identifier,
             data: {
                 contentlet: {
-                    ...this.form.value,
-                    contentType
+                    ...this.processFormValue(this.form.value),
+                    contentType,
+                    languageId
                 }
             }
         });

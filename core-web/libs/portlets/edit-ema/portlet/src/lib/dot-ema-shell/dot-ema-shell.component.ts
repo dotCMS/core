@@ -1,7 +1,5 @@
-import { Subject } from 'rxjs';
-
 import { CommonModule, Location } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, effect, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -11,6 +9,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { skip } from 'rxjs/operators';
 
+import { UVE_MODE } from '@dotcms/client';
 import {
     DotESContentService,
     DotExperimentsService,
@@ -30,11 +29,12 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api.service';
 import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DialogAction } from '../shared/models';
+import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
     getAllowedPageParams,
@@ -80,7 +80,7 @@ import {
         DotNotLicenseComponent
     ]
 })
-export class DotEmaShellComponent implements OnInit, OnDestroy {
+export class DotEmaShellComponent implements OnInit {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
 
@@ -92,8 +92,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #location = inject(Location);
 
     protected readonly $shellProps = this.uveStore.$shellProps;
-
-    readonly #destroy$ = new Subject<boolean>();
 
     /**
      * Handle the update of the page params
@@ -119,17 +117,17 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         const params = this.#getPageParams();
+
+        const viewParams = this.#getViewParams(params.editorMode);
+
+        this.uveStore.patchViewParams(viewParams);
+
         this.uveStore.loadPageAsset(params);
 
         // We need to skip one because it's the initial value
         this.#siteService.switchSite$
             .pipe(skip(1))
             .subscribe(() => this.#router.navigate(['/pages']));
-    }
-
-    ngOnDestroy(): void {
-        this.#destroy$.next(true);
-        this.#destroy$.complete();
     }
 
     handleNgEvent({ event }: DialogAction) {
@@ -183,7 +181,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 inode: page.inode,
                 title: page.title,
                 identifier: page.identifier,
-                contentType: page.contentType
+                contentType: page.contentType,
+                angularCurrentPortlet: 'edit-page'
             });
         }
     }
@@ -201,7 +200,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @return {*}  {DotPageApiParams}
      * @memberof DotEmaShellComponent
      */
-    #getPageParams(): DotPageApiParams {
+    #getPageParams(): DotPageAssetParams {
         const { queryParams, data } = this.#activatedRoute.snapshot;
         const uveConfig = data?.uveConfig;
         const allowedDevURLs = uveConfig?.options?.allowedDevURLs;
@@ -218,7 +217,31 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             params.clientHost = uveConfig.url;
         }
 
+        if (params.editorMode !== UVE_MODE.EDIT && params.editorMode !== UVE_MODE.PREVIEW) {
+            params.editorMode = UVE_MODE.EDIT;
+        }
+
+        if (params.editorMode === UVE_MODE.PREVIEW && !params.publishDate) {
+            params.publishDate = new Date().toISOString();
+        }
+
         return params;
+    }
+
+    #getViewParams(uveMode: UVE_MODE): DotUveViewParams {
+        const { queryParams } = this.#activatedRoute.snapshot;
+
+        const isPreviewMode = uveMode === UVE_MODE.PREVIEW;
+
+        const viewParams: DotUveViewParams = {
+            device: queryParams.device,
+            orientation: queryParams.orientation,
+            seo: queryParams.seo
+        };
+
+        return isPreviewMode
+            ? viewParams
+            : { device: undefined, orientation: undefined, seo: undefined };
     }
 
     /**

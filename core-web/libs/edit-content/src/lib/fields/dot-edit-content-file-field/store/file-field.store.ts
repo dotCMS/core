@@ -99,7 +99,9 @@ export const FileFieldStore = signalStore(
                 });
             },
             /**
-             * setAcceptedFiles is used to set accepted files
+             * Sets the maximum file size allowed for uploads.
+             *
+             * @param {number} maxFileSize - The maximum file size.
              */
             setMaxSizeFile: (maxFileSize: number) => {
                 patchState(store, {

@@ -23,6 +23,10 @@
                 top: -2px;
                 right: -4px;
             }
+
+            &:not(:has(.p-chip-filled)) {
+                cursor: pointer;
+            }
         }
     }
 }

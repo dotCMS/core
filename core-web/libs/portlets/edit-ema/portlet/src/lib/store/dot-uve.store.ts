@@ -2,11 +2,13 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed, untracked } from '@angular/core';
 
+import { UVE_MODE } from '@dotcms/client';
+
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
-import { ShellProps, TranslateProps, UVEState } from './models';
+import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
@@ -98,7 +100,8 @@ export const UVEStore = signalStore(
                                 label: 'editema.editor.navbar.rules',
                                 id: 'rules',
                                 href: `rules/${page?.identifier}`,
-                                isDisabled: !page?.canEdit || !isEnterpriseLicense
+                                isDisabled:
+                                    !page?.canSeeRules || !page?.canEdit || !isEnterpriseLicense
                             },
                             {
                                 iconURL: 'experiments',
@@ -125,7 +128,7 @@ export const UVEStore = signalStore(
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
                 $isPreviewMode: computed<boolean>(() => {
-                    return pageParams()?.preview === 'true';
+                    return pageParams()?.editorMode === UVE_MODE.PREVIEW;
                 })
             };
         }
@@ -141,6 +144,14 @@ export const UVEStore = signalStore(
                 patchState(store, {
                     status: UVE_STATUS.LOADED,
                     pageAPIResponse
+                });
+            },
+            patchViewParams(viewParams: Partial<DotUveViewParams>) {
+                patchState(store, {
+                    viewParams: {
+                        ...store.viewParams(),
+                        ...viewParams
+                    }
                 });
             }
         };
