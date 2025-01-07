@@ -252,6 +252,12 @@ public class PageRenderUtil implements Serializable {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Date timeMachineDate    = timeMachineDate(request).orElseGet(()->null);
+        if(null != timeMachineDate){
+            Logger.debug(this, "Time Machine date found cache must be evicted: " + timeMachineDate);
+            // for future time machine we need to invalidate the cache for there can be precalculated content
+            // that was loaded before without using time machine date see https://github.com/dotCMS/core/issues/31061
+            new PageLoader().invalidate(htmlPage, mode);
+        }
         final boolean live            = this.isLive(request);
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI
