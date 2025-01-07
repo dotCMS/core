@@ -119,21 +119,21 @@ describe('withEditor', () => {
                 expect(store.$infoDisplayProps()).toBe(null);
             });
 
-            // describe('socialMedia', () => {
-            //     it('should text for current social media', () => {
-            //         store.setSEO('facebook');
+            describe('socialMedia', () => {
+                it('should text for current social media', () => {
+                    store.setSEO('facebook');
 
-            //         expect(store.$infoDisplayProps()).toEqual({
-            //             icon: 'pi pi-facebook',
-            //             id: 'socialMedia',
-            //             info: {
-            //                 message: 'Viewing <b>facebook</b> social media preview',
-            //                 args: []
-            //             },
-            //             actionIcon: 'pi pi-times'
-            //         });
-            //     });
-            // });
+                    expect(store.$infoDisplayProps()).toEqual({
+                        icon: 'pi pi-facebook',
+                        id: 'socialMedia',
+                        info: {
+                            message: 'Viewing <b>facebook</b> social media preview',
+                            args: []
+                        },
+                        actionIcon: 'pi pi-times'
+                    });
+                });
+            });
 
             describe('variant', () => {
                 it('should show have text for variant', () => {
