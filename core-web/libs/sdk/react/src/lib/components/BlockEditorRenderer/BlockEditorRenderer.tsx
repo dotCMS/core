@@ -5,7 +5,7 @@ import { initInlineEditing, isInsideEditor } from '@dotcms/client';
 import { BlockEditorBlock } from './item/BlockEditorBlock';
 
 import { DotCMSContentlet } from '../../models';
-import { Block } from '../../models/blocks.interface';
+import { Block, BlockEditorState } from '../../models/blocks.interface';
 import { CustomRenderer } from '../../models/content-node.interface';
 import { isValidBlocks } from '../../utils/utils';
 
@@ -29,11 +29,6 @@ interface NonEditableProps extends BaseProps {
 }
 
 type BlockEditorRendererProps = EditableProps | NonEditableProps;
-
-interface BlockEditorState {
-    isValid: boolean;
-    error: string | null;
-}
 
 /**
  * BlockEditorRenderer component for rendering block editor field.
@@ -113,22 +108,21 @@ export const BlockEditorRenderer = ({
     }, [editable, contentlet, blocks, fieldName]);
 
     /**
-     * Validates the blocks prop and updates the BlockEditorState accordingly.
-     * If blocks is valid, clears any error state.
-     * If blocks is invalid, sets error state and logs error message.
+     * Validates the blocks structure and updates the block editor state.
+     *
+     * This effect:
+     * 1. Validates that blocks have the correct structure (doc type, content array, etc)
+     * 2. Updates the block editor state with validation result
+     * 3. Logs any validation errors to console
+     *
+     * @dependency {Block} blocks - The content blocks to validate
      */
     useEffect(() => {
-        if (isValidBlocks(blocks)) {
-            setBlockEditorState({
-                isValid: true,
-                error: null
-            });
-        } else {
-            setBlockEditorState({
-                isValid: false,
-                error: 'BlockEditorRenderer Error: Invalid prop "blocks"'
-            });
-            console.error('BlockEditorRenderer Error: Invalid prop "blocks"');
+        const validationResult = isValidBlocks(blocks);
+        setBlockEditorState(validationResult);
+
+        if (!validationResult.isValid) {
+            console.error(validationResult.error);
         }
     }, [blocks]);
 

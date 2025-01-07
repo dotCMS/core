@@ -80,3 +80,15 @@ export enum Blocks {
     TABLE = 'table',
     DOT_CONTENT = 'dotContent'
 }
+
+/**
+ * Represents the validation state of a Block Editor instance
+ *
+ * @interface BlockEditorState
+ * @property {boolean} isValid - Whether the blocks structure is valid
+ * @property {string | null} error - Error message if blocks are invalid, null otherwise
+ */
+export interface BlockEditorState {
+    isValid: boolean;
+    error: string | null;
+}
