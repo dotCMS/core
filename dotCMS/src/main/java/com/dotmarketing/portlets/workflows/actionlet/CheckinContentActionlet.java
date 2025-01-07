@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 /**
  * {@link WorkFlowActionlet} that unlock a {@link Contentlet}
@@ -56,7 +57,10 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 				contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 				if (forceUnlock) {
 
-					user = user.isAdmin()?user:APILocator.systemUser();
+					final User finalUser = user;
+					user = user.isAdmin()
+							|| Try.of(()->APILocator.getContentletAPI().canLock(contentlet, finalUser)).getOrElse(false)?
+							user:APILocator.systemUser();
 				}
 
 				APILocator.getContentletAPI().unlock(contentlet, user,
