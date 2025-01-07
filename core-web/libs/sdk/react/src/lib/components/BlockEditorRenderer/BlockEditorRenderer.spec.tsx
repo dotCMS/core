@@ -10,6 +10,7 @@ import { Block } from '../../models/blocks.interface';
 
 describe('BlockEditorRenderer', () => {
     const blocks = {
+        type: 'doc',
         content: [
             {
                 type: 'paragraph',
@@ -50,6 +51,26 @@ describe('BlockEditorRenderer', () => {
         );
         expect(container.firstChild).toHaveClass('test-class');
         expect(container.firstChild).toHaveStyle('color: red');
+    });
+
+    it('should render console error and the invalid blocks message', () => {
+        jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+        const consoleSpy = jest.spyOn(console, 'error');
+
+        const { getByText } = render(<BlockEditorRenderer blocks={{} as Block} />);
+
+        expect(getByText('BlockEditorRenderer Error: Invalid prop "blocks"')).toBeInTheDocument();
+        expect(consoleSpy).toHaveBeenCalledWith('BlockEditorRenderer Error: Invalid prop "blocks"');
+    });
+
+    it('should render console error and not render the invalid blocks message', () => {
+        jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+        const consoleSpy = jest.spyOn(console, 'error');
+
+        const { queryByText } = render(<BlockEditorRenderer blocks={{} as Block} />);
+
+        expect(queryByText('BlockEditorRenderer Error: Invalid prop "blocks"')).toBeNull();
+        expect(consoleSpy).toHaveBeenCalledWith('BlockEditorRenderer Error: Invalid prop "blocks"');
     });
 
     describe('when the editable prop is true', () => {

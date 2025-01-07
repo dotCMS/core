@@ -8,6 +8,7 @@ import { ContentNode } from './content-node.interface';
  */
 export interface Block {
     content: ContentNode[];
+    type: string;
 }
 
 /**

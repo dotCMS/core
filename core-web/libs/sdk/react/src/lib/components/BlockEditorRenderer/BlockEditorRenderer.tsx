@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { initInlineEditing, isInsideEditor } from '@dotcms/client';
 
@@ -7,6 +7,7 @@ import { BlockEditorBlock } from './item/BlockEditorBlock';
 import { DotCMSContentlet } from '../../models';
 import { Block } from '../../models/blocks.interface';
 import { CustomRenderer } from '../../models/content-node.interface';
+import { isValidBlocks } from '../../utils/utils';
 
 interface BaseProps {
     blocks: Block;
@@ -28,6 +29,11 @@ interface NonEditableProps extends BaseProps {
 }
 
 type BlockEditorRendererProps = EditableProps | NonEditableProps;
+
+interface BlockEditorState {
+    isValid: boolean;
+    error: string | null;
+}
 
 /**
  * BlockEditorRenderer component for rendering block editor field.
@@ -53,7 +59,26 @@ export const BlockEditorRenderer = ({
     customRenderers
 }: BlockEditorRendererProps) => {
     const ref = useRef<HTMLDivElement>(null);
+    const [blockEditorState, setBlockEditorState] = useState<BlockEditorState>({
+        isValid: true,
+        error: null
+    });
 
+    /**
+     * Sets up inline editing functionality when the component is editable and inside the editor.
+     *
+     * This effect:
+     * 1. Checks if inline editing should be enabled based on props and editor context
+     * 2. Validates required props for inline editing (contentlet and fieldName)
+     * 3. Extracts necessary data from the contentlet
+     * 4. Adds a click handler to initialize inline editing with the block editor
+     * 5. Cleans up event listener on unmount
+     *
+     * @dependency {boolean} editable - Flag to enable/disable inline editing
+     * @dependency {DotCMSContentlet} contentlet - Contentlet data required for editing
+     * @dependency {Block} blocks - The content blocks to edit
+     * @dependency {string} fieldName - Name of the field being edited
+     */
     useEffect(() => {
         if (!editable || !ref.current || !isInsideEditor()) {
             return;
@@ -86,6 +111,35 @@ export const BlockEditorRenderer = ({
 
         return () => element.removeEventListener('click', handleClickEvent);
     }, [editable, contentlet, blocks, fieldName]);
+
+    /**
+     * Validates the blocks prop and updates the BlockEditorState accordingly.
+     * If blocks is valid, clears any error state.
+     * If blocks is invalid, sets error state and logs error message.
+     */
+    useEffect(() => {
+        if (isValidBlocks(blocks)) {
+            setBlockEditorState({
+                isValid: true,
+                error: null
+            });
+        } else {
+            setBlockEditorState({
+                isValid: false,
+                error: 'BlockEditorRenderer Error: Invalid prop "blocks"'
+            });
+            console.error('BlockEditorRenderer Error: Invalid prop "blocks"');
+        }
+    }, [blocks]);
+
+    if (!blockEditorState.isValid) {
+        console.error(blockEditorState.error);
+        if (isInsideEditor()) {
+            return <div key="invalid-blocks-message">{blockEditorState.error}</div>;
+        }
+
+        return null;
+    }
 
     return (
         <div className={className} style={style} ref={ref} data-testid="dot-block-editor-container">

@@ -1,4 +1,5 @@
 import { ContainerData, DotCMSPageContext } from '../models';
+import { Block } from '../models/blocks.interface';
 
 const endClassMap: Record<number, string> = {
     1: 'col-end-1',
@@ -94,4 +95,19 @@ export const getPositionStyleClasses = (start: number, end: number) => {
         startClass,
         endClass
     };
+};
+
+/**
+ * Validates if the provided blocks object has the correct structure for the Block Editor.
+ *
+ * @param {Block} blocks - The blocks object to validate
+ * @returns {boolean} True if the blocks object is valid, false otherwise
+ */
+export const isValidBlocks = (blocks: Block) => {
+    if (!blocks || typeof blocks !== 'object') return false;
+    if (blocks.type !== 'doc') return false;
+
+    if (!blocks.content || !Array.isArray(blocks.content)) return false;
+
+    return true;
 };
