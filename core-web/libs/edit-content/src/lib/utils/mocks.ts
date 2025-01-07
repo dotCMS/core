@@ -737,6 +737,29 @@ export const HIDDEN_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'hidden'
 };
 
+export const LINE_DIVIDER_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+    contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
+    dataType: 'SYSTEM',
+    fieldType: 'Line_divider',
+    fieldTypeLabel: 'Line Divider',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1685464291000,
+    id: '0cc62946e4889894f3fe83a18a8bdffa',
+    indexed: false,
+    listed: false,
+    modDate: 1735915174000,
+    name: 'Open Graph (OG Meta Tags)',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 27,
+    unique: false,
+    variable: 'openGraph'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -766,7 +789,8 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     CATEGORY_MOCK,
     CONSTANT_FIELD_MOCK,
     HIDDEN_FIELD_MOCK,
-    RELATIONSHIP_FIELD_MOCK
+    RELATIONSHIP_FIELD_MOCK,
+    LINE_DIVIDER_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
