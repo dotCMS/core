@@ -73,10 +73,7 @@ test("Add a new Generic content", async ({ page }) => {
   );
   await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
 
-  await waitForVisibleAndCallback(
-    iframe.locator("#results_table tbody tr").first(),
-    async () => undefined,
-  );
+  await waitForVisibleAndCallback(iframe.locator("#results_table tbody tr").first());
 
   await contentUtils
     .validateContentExist(page, genericContent1.title)
@@ -99,10 +96,7 @@ test("Edit a generic content", async ({ page }) => {
     genericContent1.newBody,
     contentProperties.publishWfAction,
   );
-  await waitForVisibleAndCallback(
-    iframe.locator("#results_table tbody tr").first(),
-    async () => undefined,
-  );
+  await waitForVisibleAndCallback(iframe.locator("#results_table tbody tr").first());
   await contentUtils
     .validateContentExist(page, genericContent1.newTitle)
     .then(assert);
@@ -228,10 +222,7 @@ test("Validate the required on file asset fields", async ({ page }) => {
     action: contentProperties.publishWfAction,
   };
   await contentUtils.fillFileAssetForm(params);
-  await waitForVisibleAndCallback(
-    detailsFrame.getByText("Error x"),
-    async () => undefined,
-  );
+  await waitForVisibleAndCallback(detailsFrame.getByText("Error x"));
   const errorMessage = detailsFrame.getByText("The field File Asset is");
   await waitForVisibleAndCallback(errorMessage, () =>
     expect(errorMessage).toBeVisible(),
@@ -351,10 +342,7 @@ test("Add a new page", async ({ page }) => {
   };
   await contentUtils.fillPageAssetForm(params);
   const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
-  await waitForVisibleAndCallback(
-    dataFrame.getByRole("banner"),
-    async () => undefined,
-  );
+  await waitForVisibleAndCallback(dataFrame.getByRole("banner"));
   await expect(page.locator("ol")).toContainText(
     "Pages" + pageAssetContent.title,
   );
@@ -381,10 +369,7 @@ test("Validate required fields on page asset", async ({ page }) => {
     action: contentProperties.publishWfAction,
   };
   await contentUtils.fillPageAssetForm(params);
-  await waitForVisibleAndCallback(
-    detailFrame.getByText("Error x"),
-    async () => undefined,
-  );
+  await waitForVisibleAndCallback(detailFrame.getByText("Error x"));
 
   await expect(
     detailFrame.getByText("The field Title is required."),
