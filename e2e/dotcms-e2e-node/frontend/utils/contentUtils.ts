@@ -73,10 +73,7 @@ export class ContentUtils {
         .click();
       await dotIframe.getByTestId("url-input").fill(fromURL);
       await dotIframe.getByRole("button", { name: " Import" }).click();
-      await waitForVisibleAndCallback(
-        dotIframe.getByRole("button", { name: " Remove" }),
-        async () => {},
-      );
+      await waitForVisibleAndCallback(dotIframe.getByRole("button", { name: " Remove" }));
     }
 
     await waitForVisibleAndCallback(dotIframe.locator("#title"), () =>
@@ -133,10 +130,7 @@ export class ContentUtils {
       iframe.locator("#dijit_form_DropDownButton_0"),
       () => iframe.locator("#dijit_form_DropDownButton_0").click(),
     );
-    await waitForVisibleAndCallback(
-      iframe.getByLabel("actionPrimaryMenu"),
-      async () => {},
-    );
+    await waitForVisibleAndCallback(iframe.getByLabel("actionPrimaryMenu"));
     await iframe.getByLabel("▼").getByText("Add New Content").click();
     const headingLocator = page.getByRole("heading");
     await waitForVisibleAndCallback(headingLocator, () =>
@@ -194,10 +188,7 @@ export class ContentUtils {
   async validateContentExist(page: Page, text: string) {
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
-    await waitForVisibleAndCallback(
-      iframe.locator("#results_table tbody tr:nth-of-type(2)"),
-      async () => {},
-    );
+    await waitForVisibleAndCallback(iframe.locator("#results_table tbody tr:nth-of-type(2)"));
     await page.waitForTimeout(1000);
 
     const cells = iframe.locator("#results_table tbody tr:nth-of-type(2) td");
@@ -259,7 +250,6 @@ export class ContentUtils {
     newBody: string,
     action: string,
   ) {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
     const contentElement = await this.getContentElement(page, title);
     if (contentElement) {
       await contentElement.click();
@@ -330,9 +320,10 @@ export class ContentUtils {
     }
     const actionBtnLocator = iframe.getByRole("menuitem", { name: action });
     await waitForVisibleAndCallback(actionBtnLocator, () =>
-      actionBtnLocator.getByText(action).click(),
+        actionBtnLocator.getByText(action).click(),
     );
     const executionConfirmation = iframe.getByText("Workflow executed");
+    await expect(executionConfirmation).toBeVisible()
     await waitForVisibleAndCallback(executionConfirmation, () =>
       expect(executionConfirmation).toBeVisible(),
     );
