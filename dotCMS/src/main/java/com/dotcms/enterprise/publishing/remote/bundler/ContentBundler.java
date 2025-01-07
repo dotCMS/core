@@ -293,7 +293,7 @@ public class ContentBundler implements IBundler {
 
 		for(Field ff : fields) {
 			//Avoid this to reduce bundle size since we're gonna do a rsync of the assets directory of the datasets
-			if(Config.getProperty("BUNDLE_ASSETS", true)) {
+			if(Config.getBooleanProperty("BUNDLE_ASSETS", true)) {
 				if (ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
 					File sourceFile = con.getBinary(ff.getVelocityVarName());
 
