@@ -97,7 +97,6 @@
     }
     @case (fieldTypes.CUSTOM_FIELD) {
         @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-custom-field
                 [field]="field"
                 [contentType]="contentType"
