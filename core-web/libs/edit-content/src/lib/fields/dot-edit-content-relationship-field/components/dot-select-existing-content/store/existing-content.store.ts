@@ -7,16 +7,15 @@ import { computed, inject } from '@angular/core';
 
 import { tap, switchMap, filter } from 'rxjs/operators';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
 import {
-    DynamicRelationshipFieldItem,
     SelectionMode
 } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
-    data: DynamicRelationshipFieldItem[];
+    data: DotCMSContentlet[];
     status: ComponentStatus;
     selectionMode: SelectionMode | null;
     errorMessage: string | null;

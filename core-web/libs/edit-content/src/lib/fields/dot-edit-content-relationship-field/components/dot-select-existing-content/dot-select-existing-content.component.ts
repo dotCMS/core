@@ -1,15 +1,16 @@
+import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
     inject,
     model,
-    output,
     OnInit,
     effect
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -21,12 +22,15 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
+import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { SearchComponent } from './components/search/search.compoment';
 import { ExistingContentStore } from './store/existing-content.store';
 
-import { DynamicRelationshipFieldItem, SelectionMode } from '../../models/relationship.models';
+import { SelectionMode } from '../../models/relationship.models';
 import { PaginationComponent } from '../pagination/pagination.component';
 
 type DialogData = {
@@ -50,7 +54,11 @@ type DialogData = {
         PaginationComponent,
         InputGroupModule,
         OverlayPanelModule,
-        SearchComponent
+        SearchComponent,
+        ContentletStatusPipe,
+        LanguagePipe,
+        DatePipe,
+        ChipModule
     ],
     templateUrl: './dot-select-existing-content.component.html',
     styleUrls: ['./dot-select-existing-content.component.scss'],
@@ -87,9 +95,7 @@ export class DotSelectExistingContentComponent implements OnInit {
      * A signal that holds the selected items.
      * It is used to store the selected content items.
      */
-    $selectedItems = model<DynamicRelationshipFieldItem[] | DynamicRelationshipFieldItem | null>(
-        null
-    );
+    $selectedItems = model<DotCMSContentlet[] | DotCMSContentlet | null>(null);
 
     /**
      * A computed signal that holds the items.
@@ -154,8 +160,7 @@ export class DotSelectExistingContentComponent implements OnInit {
      * It sets the visibility signal to false, hiding the dialog.
      */
     closeDialog() {
-        const contentlets = this.$items().map((item) => item.contentlet);
-        this.#dialogRef.close(contentlets);
+        this.#dialogRef.close(this.$items());
     }
 
     /**
@@ -163,7 +168,7 @@ export class DotSelectExistingContentComponent implements OnInit {
      * @param item - The item to check.
      * @returns True if the item is selected, false otherwise.
      */
-    checkIfSelected(item: DynamicRelationshipFieldItem) {
+    checkIfSelected(item: DotCMSContentlet) {
         const items = this.$items();
 
         return items.some((selectedItem) => selectedItem.id === item.id);

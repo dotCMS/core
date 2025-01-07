@@ -1,6 +1,5 @@
 import { forkJoin, Observable } from 'rxjs';
 
-import { formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
@@ -15,18 +14,9 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
 
-import {
-    MANDATORY_FIRST_COLUMNS,
-    MANDATORY_LAST_COLUMNS
-} from '../dot-edit-content-relationship-field.constants';
 import { Column } from '../models/column.model';
-import { DynamicRelationshipFieldItem } from '../models/relationship.models';
 
-type DotLanguageWithLabel = DotLanguage & {
-    label: string;
-};
-
-type LanguagesMap = Record<number, DotLanguageWithLabel>;
+type LanguagesMap = Record<number, DotLanguage>;
 
 @Injectable({
     providedIn: 'root'
@@ -59,7 +49,7 @@ export class RelationshipFieldService {
      */
     getColumnsAndContent(
         contentTypeId: string
-    ): Observable<[Column[], DynamicRelationshipFieldItem[]] | null> {
+    ): Observable<[Column[], DotCMSContentlet[]] | null> {
         return forkJoin([
             this.getColumns(contentTypeId),
             this.getContent(contentTypeId),
@@ -67,7 +57,7 @@ export class RelationshipFieldService {
         ]).pipe(
             map(([columns, content, languages]) => [
                 columns,
-                this.#matchColumnsWithContent(columns, content, languages)
+                this.#prepareContent(content, languages)
             ]),
             catchError((error: HttpErrorResponse) => {
                 return this.#httpErrorManagerService.handle(error).pipe(map(() => null));
@@ -94,10 +84,7 @@ export class RelationshipFieldService {
         return this.#dotLanguagesService.get().pipe(
             map((languages) =>
                 languages.reduce((acc, lang) => {
-                    acc[lang.id] = {
-                        ...lang,
-                        label: `${lang.language} (${lang.isoCode || lang.languageCode})`
-                    };
+                    acc[lang.id] = {...lang};
 
                     return acc;
                 }, {})
@@ -111,72 +98,25 @@ export class RelationshipFieldService {
      * @returns Array of Column
      */
     #buildColumns(columns: DotCMSContentTypeField[]): Column[] {
-        const firstColumnsMap = new Map(
-            MANDATORY_FIRST_COLUMNS.map((field) => [field, { field, header: field }])
-        );
-
-        const lastColumnsMap = new Map(
-            MANDATORY_LAST_COLUMNS.map((field) => [field, { field, header: field }])
-        );
-
-        const contentColumnsMap = new Map(
-            columns
-                .filter((column) => column.variable && column.name)
-                .map((column) => [
-                    column.variable,
-                    {
-                        field: column.variable,
-                        header: column.name
-                    }
-                ])
-        );
-
-        // Merge maps while preserving order and removing duplicates
-        const uniqueColumns = new Map([
-            ...firstColumnsMap,
-            ...contentColumnsMap,
-            ...lastColumnsMap
-        ]);
-
-        return Array.from(uniqueColumns.values());
+        return columns
+        .filter((column) => column.variable && column.name)
+        .map((column) => ({
+                field: column.variable,
+                header: column.name
+            }));
     }
 
     /**
-     * Maps contentlets to relationship field items
-     * @param columns The columns to map
-     * @param content The contentlets to map
-     * @returns Array of RelationshipFieldItem
+     * Prepares the content for the relationship field
+     * @param content The contentlets to prepare
+     * @param languages The languages to prepare
+     * @returns Array of DotCMSContentlet
      */
-    #matchColumnsWithContent(
-        columns: Column[],
-        content: DotCMSContentlet[],
-        languages: LanguagesMap
-    ): DynamicRelationshipFieldItem[] {
-        return content.map((item) => {
-            const dynamicColumns = columns.reduce((acc, column) => {
-                const key = column.field;
-                const value = item[key];
-
-                acc[key] = value ?? '';
-
-                return acc;
-            }, {});
-
-            const relationshipItem: DynamicRelationshipFieldItem = {
-                id: item.identifier,
-                contentlet: {
-                    ...item,
-                    language: languages[item.languageId]
-                },
-                dynamicFields: {
-                    ...dynamicColumns,
-                    title: item.title || item.identifier,
-                    language: languages[item.languageId].label,
-                    modDate: formatDate(item.modDate, 'short', 'en-US')
-                }
-            };
-
-            return relationshipItem;
-        });
+    #prepareContent(content: DotCMSContentlet[], languages: LanguagesMap): DotCMSContentlet[] {
+        return content.map((item) => ({
+            ...item,
+            title: item.title || item.identifier,
+            language: languages[item.languageId]
+        }));
     }
 }
