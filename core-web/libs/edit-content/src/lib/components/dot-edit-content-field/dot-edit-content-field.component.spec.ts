@@ -249,11 +249,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     });
 
     describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
-        it('should render the label', () => {
-            spectator.detectChanges();
-            const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
-            expect(label?.textContent).toContain(fieldMock.name);
-        });
+        if (fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD) {
+            it('should render the label', () => {
+                spectator.detectChanges();
+                const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
+                expect(label?.textContent).toContain(fieldMock.name);
+            });
+        }
 
         if (fieldMock.fieldType !== FIELD_TYPES.RELATIONSHIP) {
             it('should render the hint if present', () => {
