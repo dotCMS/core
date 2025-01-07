@@ -142,7 +142,7 @@ public class ContentBundler implements IBundler {
 				String excludeDeleted = "";
 				if (config.getOperation() == PushPublisherConfig.Operation.PUBLISH) {
 					// If push or push & delete, exclude deleted contents
-					excludeDeleted = " +deleted:false";
+					excludeDeleted = " +deleted:false";//
 				}
 				for (String contentIdentifier : contentsIds) {
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +live:true" + excludeDeleted, 0, -1, null, systemUser, false));
@@ -292,21 +292,26 @@ public class ContentBundler implements IBundler {
 		Map<String, List<Tag>> contentTags = new HashMap<>();
 
 		for(Field ff : fields) {
-			if(ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
-				File sourceFile = con.getBinary( ff.getVelocityVarName());
+			//Avoid this to reduce bundle size since we're gonna do a rsync of the assets directory of the datasets
+			if(Config.getProperty("BUNDLE_ASSETS", true)) {
+				if (ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
+					File sourceFile = con.getBinary(ff.getVelocityVarName());
 
-				if(sourceFile != null && sourceFile.exists()) {
-					if(!assetFolder.exists())
-						assetFolder.mkdir();
+					if (sourceFile != null && sourceFile.exists()) {
+						if (!assetFolder.exists())
+							assetFolder.mkdir();
 
-					String folderTree = inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+
-					        inode+File.separator+ff.getVelocityVarName()+File.separator+sourceFile.getName();
+						String folderTree = inode.charAt(0) + File.separator + inode.charAt(1) + File.separator +
+								inode + File.separator + ff.getVelocityVarName() + File.separator + sourceFile.getName();
 
-					File destFile = new File(assetFolder, folderTree);
-		            destFile.getParentFile().mkdirs();
-		            FileUtil.copyFile(sourceFile, destFile);
+						File destFile = new File(assetFolder, folderTree);
+						destFile.getParentFile().mkdirs();
+						FileUtil.copyFile(sourceFile, destFile);
+					}
 				}
-			} else if ( ff.getFieldType().toString().equals(Field.FieldType.TAG.toString()) ) {
+			}
+
+			if ( ff.getFieldType().toString().equals(Field.FieldType.TAG.toString()) ) {
 				List<Tag> tagsByFieldVarName = APILocator.getTagAPI().getTagsByInodeAndFieldVarName(con.getInode(), ff.getVelocityVarName());
 				contentTags.put(ff.getVelocityVarName(), tagsByFieldVarName);
 			}
