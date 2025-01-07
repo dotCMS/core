@@ -93,16 +93,16 @@ test('Validate required on text fields', async ({page}) => {
  * Test to make sure we are validating the required of blockEditor fields on the content creation
  */
 /**
-test('Validate required on blockContent fields', async ({page}) => {
-    const contentUtils = new ContentUtils(page);
-    const iframe = page.frameLocator(iFramesLocators.main_iframe).first();
+ test('Validate required on blockContent fields', async ({page}) => {
+ const contentUtils = new ContentUtils(page);
+ const iframe = page.frameLocator(iFramesLocators.main_iframe).first();
 
-    await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
-    await contentUtils.fillRichTextForm(page, genericContent1.title, '', contentProperties.publishWfAction);
-    await expect(iframe.getByText('Error x')).toBeVisible();
-    await expect(iframe.getByText('The field Title is required.')).toBeVisible();
-});
-*/
+ await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
+ await contentUtils.fillRichTextForm(page, genericContent1.title, '', contentProperties.publishWfAction);
+ await expect(iframe.getByText('Error x')).toBeVisible();
+ await expect(iframe.getByText('The field Title is required.')).toBeVisible();
+ });
+ */
 
 /**
  * Test to validate you are able to add file assets importing from url
@@ -115,6 +115,7 @@ test('Validate you are able to add file assets importing from url', async ({page
         page: page,
         host: fileAssetContent.host,
         title: fileAssetContent.title,
+        editContent: true,
         action: contentProperties.publishWfAction,
         fromURL: fileAssetContent.fromURL
     };
@@ -133,15 +134,50 @@ test('Validate you are able to add file assets creating a new file', async ({pag
     const params = {
         page: page,
         host: fileAssetContent.host,
+        editContent: false,
         title: fileAssetContent.title,
         action: contentProperties.publishWfAction,
-        newFileName: fileAssetContent.newFileName,
-        newFileText: fileAssetContent.newFileText
+        binaryFileName: fileAssetContent.newFileName,
+        binaryFileText: fileAssetContent.newFileText,
+
     };
     await contentUtils.fillFileAssetForm(params);
     await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
     await contentUtils.validateContentExist(page, fileAssetContent.newFileName).then(assert);
 });
+
+/**
+ * Test to validate you are able to edit file assets text
+ */
+test ('Validate you are able to edit text on binary fields', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+
+    await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
+    const contentElement = await contentUtils.getContentElement(page, fileAssetContent.newFileName);
+    await contentElement.click();
+    await waitForVisibleAndCallback(page.getByRole('heading'), () =>
+        expect.soft(page.getByRole('heading')).toContainText(fileAsset.label)
+    );
+    const params = {
+        page: page,
+        host: fileAssetContent.host,
+        editContent: true,
+        title: fileAssetContent.title,
+        action: contentProperties.publishWfAction,
+        binaryFileName: fileAssetContent.newFileName,
+        binaryFileText: fileAssetContent.newFileTextEdited
+    };
+    await contentUtils.fillFileAssetForm(params);
+    await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
+
+    await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
+    await contentUtils.getContentElement(page, fileAssetContent.newFileName);
+    await contentElement.click();
+    const editIframe= page.frameLocator(iFramesLocators.dot_edit_iframe);
+    await expect(editIframe.getByRole('code')).toHaveText(fileAssetContent.newFileTextEdited);
+
+});
+
 
 /**
  * Test to validate the required on file asset fields
@@ -154,6 +190,7 @@ test('Validate the required on file asset fields', async ({page}) => {
     const params = {
         page: page,
         host: fileAssetContent.host,
+        editContent: false,
         title: fileAssetContent.title,
         action: contentProperties.publishWfAction
     }
@@ -175,9 +212,10 @@ test('Validate the auto complete on FileName field accepting change', async ({pa
     const params = {
         page: page,
         host: fileAssetContent.host,
+        editContent: false,
         title: fileAssetContent.title,
-        newFileName: fileAssetContent.newFileName,
-        newFileText: fileAssetContent.newFileText
+        binaryFileName: fileAssetContent.newFileName,
+        binaryFileText: fileAssetContent.newFileText
     }
     await contentUtils.fillFileAssetForm(params);
     const replaceText = detailsFrame.getByText('Do you want to replace the');
@@ -198,9 +236,10 @@ test('Validate the auto complete on FileName field rejecting change', async ({pa
     const params = {
         page: page,
         host: fileAssetContent.host,
+        editContent: false,
         title: fileAssetContent.title,
-        newFileName: fileAssetContent.newFileName,
-        newFileText: fileAssetContent.newFileText
+        binaryFileName: fileAssetContent.newFileName,
+        binaryFileText: fileAssetContent.newFileText
     }
     await contentUtils.fillFileAssetForm(params);
     const replaceText = detailsFrame.getByText('Do you want to replace the');
@@ -213,17 +252,17 @@ test('Validate the auto complete on FileName field rejecting change', async ({pa
  * Test to validate the title is not changing in the auto complete on FileName
  */
 /** ENABLE AS SOON WE FIXED THE ISSUE #30945
-test('Validate the title field is not changing in the file asset auto complete', async ({page}) => {
-    const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
-    const contentUtils = new ContentUtils(page);
+ test('Validate the title field is not changing in the file asset auto complete', async ({page}) => {
+ const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
+ const contentUtils = new ContentUtils(page);
 
-    await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
-    await detailsFrame.locator('#title').fill('test');
-    await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
+ await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
+ await detailsFrame.locator('#title').fill('test');
+ await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
 
-    await expect(detailsFrame.locator('#title')).toHaveValue('test');
-});
-*/
+ await expect(detailsFrame.locator('#title')).toHaveValue('test');
+ });
+ */
 
 /**
  * Test to validate you are able to delete a file asset content
@@ -239,7 +278,6 @@ test('Delete a file asset content', async ({ page }) => {
  */
 test('Add a new page', async ({page}) => {
     const contentUtils = new ContentUtils(page);
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
     await contentUtils.addNewContentAction(page, pageAsset.locator, pageAsset.label);
     const params = {

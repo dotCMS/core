@@ -1,4 +1,3 @@
-import {Page} from "@playwright/test";
 
 /**
  * Content to add a Rich Text content
@@ -28,6 +27,7 @@ export const fileAssetContent = {
     fromURL:"https://upload.wikimedia.org/wikipedia/commons/0/03/DotCMS-logo.svg",
     newFileName:"New file asset.txt",
     newFileText:"This is a new file asset content",
+    newFileTextEdited:"Validate you are able to edit text on binary fields",
     host:"default"
 }
 

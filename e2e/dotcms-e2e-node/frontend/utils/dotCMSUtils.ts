@@ -2,7 +2,6 @@ import { Page, expect, Locator } from '@playwright/test';
 import { loginLocators } from '../locators/globalLocators';
 
 export class dotCMSUtils {
-    page: Page;
 
     /**
      *  Login to dotCMS
@@ -34,7 +33,7 @@ export class dotCMSUtils {
         await group.click();
         await tool.click();
     }
-};
+}
 
 /**
  * Wait for the locator to be in the provided state
@@ -48,6 +47,8 @@ export const waitFor = async (locator: Locator, state: "attached" | "detached" |
 /**
  * Wait for the locator to be visible
  * @param locator
+ * @param state
+ * @param callback
  */
 export const waitForAndCallback = async (locator: Locator, state: "attached" | "detached" | "visible" | "hidden", callback: () => Promise<void>): Promise<void> => {
     await waitFor(locator, state);

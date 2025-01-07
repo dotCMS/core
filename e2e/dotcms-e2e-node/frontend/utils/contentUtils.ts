@@ -1,7 +1,7 @@
 import {expect, FrameLocator, Locator, Page} from '@playwright/test';
 import {contentGeneric, iFramesLocators, fileAsset, pageAsset} from '../locators/globalLocators';
 import {waitForVisibleAndCallback} from './dotCMSUtils';
-import {contentProperties} from "../tests/contentSearch/contentData";
+import {contentProperties, fileAssetContent} from "../tests/contentSearch/contentData";
 
 
 export class ContentUtils {
@@ -37,30 +37,39 @@ export class ContentUtils {
      * @param params
      */
     async fillFileAssetForm(params: FileAssetFormParams) {
-        const { page, host, title, action, fromURL, newFileName, newFileText } = params;
+        const { page, host, editContent, title, action, fromURL, binaryFileName, binaryFileText } = params;
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-        await waitForVisibleAndCallback(page.getByRole('heading'), () =>
-            expect.soft(page.getByRole('heading')).toContainText(fileAsset.label)
-        );
+        if (binaryFileName && binaryFileText) {
+            if (editContent) {
+                const editFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
+                await editFrame.getByRole('button', { name: ' Edit' }).click();
+                await waitForVisibleAndCallback(editFrame.getByLabel('Editor content;Press Alt+F1'), async () => {});
+                await editFrame.getByLabel('Editor content;Press Alt+F1').clear();
+                await editFrame.getByLabel('Editor content;Press Alt+F1').fill(fileAssetContent.newFileTextEdited);
+                await editFrame.getByRole('button', { name: 'Save' }).click();
+            } else {
+                await waitForVisibleAndCallback(page.getByRole('heading'), async () => {
+                    expect.soft(page.getByRole('heading')).toContainText(fileAsset.label);
+                });
+                await dotIframe.locator('#HostSelector-hostFolderSelect').fill(host);
+                await dotIframe.getByRole('button', { name: ' Create New File' }).click();
+                await dotIframe.getByTestId('editor-file-name').fill(binaryFileName);
+                await dotIframe.getByLabel('Editor content;Press Alt+F1').fill(binaryFileText);
+                await dotIframe.getByRole('button', { name: 'Save' }).click();
+            }
+        }
 
-        await dotIframe.locator('#HostSelector-hostFolderSelect').fill(host);
-
-        if (newFileName && newFileText) {
-            await dotIframe.getByRole('button', { name: ' Create New File' }).click();
-            await dotIframe.getByTestId('editor-file-name').fill(newFileName);
-            await dotIframe.getByLabel('Editor content;Press Alt+F1').fill(newFileText);
-            await dotIframe.getByRole('button', { name: 'Save' }).click();
-        } else if (fromURL) {
+        if (fromURL) {
             await dotIframe.getByRole('button', { name: ' Import from URL' }).click();
             await dotIframe.getByTestId('url-input').fill(fromURL);
             await dotIframe.getByRole('button', { name: ' Import' }).click();
             await waitForVisibleAndCallback(dotIframe.getByRole('button', { name: ' Remove' }), async () => {});
         }
 
-        await waitForVisibleAndCallback(dotIframe.locator('#title'), () =>
-            dotIframe.locator('#title').fill(title)
-        );
+        await waitForVisibleAndCallback(dotIframe.locator('#title'), async () => {
+            await dotIframe.locator('#title').fill(title);
+        });
 
         if (action) {
             await dotIframe.getByText(action).first().click();
@@ -115,6 +124,7 @@ export class ContentUtils {
         await waitForVisibleAndCallback(structureINodeDivLocator, () => structureINodeDivLocator.click());
         const typeLocatorByTextLocator = iframe.getByText(typeLocator);
         await waitForVisibleAndCallback(typeLocatorByTextLocator, () => typeLocatorByTextLocator.click());
+        await page.waitForLoadState();
     }
 
     /**
@@ -196,7 +206,6 @@ export class ContentUtils {
      * @param action
      */
     async editContent(page: Page, title: string, newTitle: string, newBody: string, action: string) {
-        const iframe = page.frameLocator(iFramesLocators.main_iframe);
         const contentElement = await this.getContentElement(page, title);
         if (contentElement) {
             await contentElement.click();
@@ -332,10 +341,11 @@ interface BaseFormParams {
  */
 interface FileAssetFormParams extends BaseFormParams {
     host: string;
+    editContent : boolean;
     fileName?: string;
     fromURL?: string;
-    newFileName?: string;
-    newFileText?: string;
+    binaryFileName?: string;
+    binaryFileText?: string;
 }
 
 /**
