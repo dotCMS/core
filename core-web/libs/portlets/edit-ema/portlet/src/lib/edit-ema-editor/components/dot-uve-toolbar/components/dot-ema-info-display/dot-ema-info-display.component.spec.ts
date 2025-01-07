@@ -138,7 +138,6 @@ describe('DotEmaInfoDisplayComponent', () => {
     describe('socialMedia', () => {
         beforeEach(() => {
             spectator = createComponent();
-
             store = spectator.inject(UVEStore);
 
             store.loadPageAsset({
@@ -147,18 +146,19 @@ describe('DotEmaInfoDisplayComponent', () => {
                 language_id: '1',
                 'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
             });
+
             store.setSocialMedia('facebook');
-        });
-        it('should text for current social media', () => {
             spectator.detectChanges();
+        });
+
+        it('should text for current social media', () => {
             expect(spectator.query(byTestId('info-text')).textContent.trim()).toBe(
                 'Viewing facebook social media preview'
             );
             expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
         });
-        it('should call clearDeviceAndSocialMedia when action button is clicked', () => {
-            spectator.detectChanges();
 
+        it('should call clearDeviceAndSocialMedia when action button is clicked', () => {
             const clearDeviceAndSocialMediaSpy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
 
             const infoAction = spectator.debugElement.query(By.css('[data-testId="info-action"]'));

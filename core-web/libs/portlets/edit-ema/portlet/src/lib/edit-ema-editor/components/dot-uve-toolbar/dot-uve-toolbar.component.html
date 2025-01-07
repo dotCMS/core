@@ -55,7 +55,8 @@
 
 <ng-template #editLeftOptionsTemplate>
     <p-button
-        pTooltip="Preview Mode"
+        [pTooltip]="'uve.preview.mode' | dm"
+        tooltipPosition="bottom"
         icon="pi pi-eye"
         styleClass="p-button-text p-button-sm p-button-rounded"
         data-testId="uve-toolbar-preview"
@@ -64,7 +65,8 @@
     <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
 
     <p-button
-        pTooltip="Copy URL"
+        [pTooltip]="'editpage.header.copy' | dm"
+        tooltipPosition="bottom"
         icon="pi pi-external-link"
         styleClass="p-button-text p-button-sm p-button-rounded"
         (cdkCopyToClipboardCopied)="triggerCopyToast()"
@@ -73,7 +75,8 @@
 
     <a
         title="Page API URL"
-        pTooltip="Page API URL"
+        [pTooltip]="'uve.preview.page.api.url' | dm"
+        tooltipPosition="bottom"
         pButton
         label="API"
         class="p-button-icon-only p-button-text p-button-sm p-button-rounded"

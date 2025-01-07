@@ -33,10 +33,27 @@
         icon="pi pi-chevron-down"
         iconPos="right"
         [label]="'more' | dm"
-        [ngClass]="{ active: !$isADefaultDeviceActive() }"
-        styleClass="p-button-text p-button-sm"
+        [class.active]="$isMoreButtonActive()"
+        styleClass="p-button-text p-2"
         (click)="menu.toggle($event)"
         data-testId="more-button" />
 
-    <p-menu #menu [popup]="true" [model]="$menuItems()"></p-menu>
+    <p-menu
+        #menu
+        [popup]="true"
+        styleClass="more-menu"
+        [model]="$menuItems()"
+        data-testId="more-menu">
+        <ng-template pTemplate="submenuheader" let-item>
+            <span class="text-primary font-bold">{{ item.label }}</span>
+        </ng-template>
+        <ng-template pTemplate="item" let-item>
+            <a
+                pRipple
+                class="flex align-items-center p-menuitem-link menu-item"
+                [ngClass]="{ 'menu-item--active': item.id === activeMenuItemId() }">
+                <span>{{ item.label }}</span>
+            </a>
+        </ng-template>
+    </p-menu>
 }
