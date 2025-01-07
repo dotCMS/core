@@ -39,7 +39,7 @@ export function withLayout() {
                 };
             }),
             $canEditLayout: computed<boolean>(() => {
-                const { page, template } = pageAPIResponse();
+                const { page, template } = pageAPIResponse() ?? {};
 
                 return page?.canEdit || template?.drawed;
             })

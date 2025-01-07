@@ -98,6 +98,6 @@
     }
 </ng-template>
 
-@if ($infoDisplayProps()) {
-    <dot-ema-info-display data-testId="info-display" />
+@if ($infoDisplayProps(); as options) {
+    <dot-ema-info-display data-testId="info-display" [options]="options" />
 }

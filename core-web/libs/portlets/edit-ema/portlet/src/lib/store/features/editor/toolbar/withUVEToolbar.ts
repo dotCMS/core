@@ -130,6 +130,7 @@ export function withUVEToolbar() {
                 const pageAPIResponse = store.pageAPIResponse();
                 const canEditPage = store.canEditPage();
                 const socialMedia = store.socialMedia();
+                const currentUser = store.currentUser();
 
                 if (socialMedia) {
                     return {
@@ -166,7 +167,7 @@ export function withUVEToolbar() {
                     };
                 }
 
-                if (pageAPIResponse?.page.locked) {
+                if (computePageIsLocked(pageAPIResponse.page, currentUser)) {
                     let message = 'editpage.locked-by';
 
                     if (!pageAPIResponse.page.canLock) {

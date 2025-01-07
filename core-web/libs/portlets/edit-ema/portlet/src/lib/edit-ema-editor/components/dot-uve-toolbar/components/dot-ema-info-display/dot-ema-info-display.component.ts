@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { InfoOptions } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
@@ -19,7 +20,7 @@ export class DotEmaInfoDisplayComponent {
     protected readonly uveStore = inject(UVEStore);
     protected readonly router = inject(Router);
 
-    protected readonly $options = this.uveStore.$infoDisplayOptions;
+    $options = input<InfoOptions>(undefined, { alias: 'options' });
 
     /**
      * Handle the action based on the options
