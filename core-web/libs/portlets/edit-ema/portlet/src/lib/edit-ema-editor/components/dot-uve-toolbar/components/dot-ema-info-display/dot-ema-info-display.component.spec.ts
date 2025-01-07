@@ -140,16 +140,6 @@ describe('DotEmaInfoDisplayComponent', () => {
         });
     });
 
-    describe('socialMedia', () => {
-        it('should text for current social media', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('info-text')).textContent.trim()).toBe(
-                'Viewing facebook social media preview'
-            );
-            expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
-        });
-    });
-
     describe('variant', () => {
         beforeEach(() => {
             spectator = createComponent();

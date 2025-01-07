@@ -55,7 +55,8 @@
 
 <ng-template #editLeftOptionsTemplate>
     <p-button
-        [pTooltip]="'Preview' | dm"
+        [pTooltip]="'uve.preview.mode' | dm"
+        tooltipPosition="bottom"
         icon="pi pi-eye"
         [tooltipPosition]="'bottom'"
         styleClass="p-button-text p-button-sm p-button-rounded"
@@ -66,7 +67,7 @@
 
     <p-button
         [pTooltip]="'editpage.header.copy' | dm"
-        [tooltipPosition]="'bottom'"
+        tooltipPosition="bottom"
         icon="pi pi-external-link"
         styleClass="p-button-text p-button-sm p-button-rounded"
         (cdkCopyToClipboardCopied)="triggerCopyToast()"
@@ -75,8 +76,8 @@
 
     <a
         title="Page API URL"
-        [pTooltip]="'uve.toolbar.page.api.url' | dm"
-        [tooltipPosition]="'bottom'"
+        [pTooltip]="'uve.preview.page.api.url' | dm"
+        tooltipPosition="bottom"
         pButton
         label="API"
         class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
