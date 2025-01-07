@@ -90,7 +90,10 @@ export class DotUveToolbarComponent {
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
-        this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices]))
+        this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
+        {
+            initialValue: DEFAULT_DEVICES
+        }
     );
 
     protected readonly CURRENT_DATE = new Date();

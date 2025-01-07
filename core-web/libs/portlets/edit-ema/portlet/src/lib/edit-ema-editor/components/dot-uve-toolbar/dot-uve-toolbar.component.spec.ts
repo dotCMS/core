@@ -243,10 +243,8 @@ describe('DotUveToolbarComponent', () => {
                 expect(button.attributes).toEqual({
                     class: 'ng-star-inserted',
                     icon: 'pi pi-external-link',
-                    pTooltip: 'Copy URL',
                     'data-testId': 'uve-toolbar-copy-url',
                     'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
-                    'ng-reflect-content': 'Copy URL',
                     'ng-reflect-icon': 'pi pi-external-link',
                     'ng-reflect-text': 'http://localhost:3000/test-url',
                     'ng-reflect-tooltip-position': 'bottom',
@@ -505,6 +503,4 @@ describe('DotUveToolbarComponent', () => {
             });
         });
     });
-
-    // afterEach(() => jest.clearAllMocks());
 });

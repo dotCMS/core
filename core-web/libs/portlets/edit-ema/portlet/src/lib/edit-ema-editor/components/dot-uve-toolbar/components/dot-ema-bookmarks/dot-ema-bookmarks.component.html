@@ -1,6 +1,6 @@
 @if (store.$previewMode()) {
     <p-button
-        pTooltip="Bookmark"
+        [pTooltip]="'editpage.toolbar.bookmark' | dm"
         tooltipPosition="bottom"
         (click)="toggleBookmark()"
         [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
@@ -9,7 +9,7 @@
         data-testId="bookmark-button" />
 } @else {
     <p-button
-        pTooltip="Bookmark"
+        [pTooltip]="'editpage.toolbar.bookmark' | dm"
         tooltipPosition="bottom"
         (onClick)="toggleBookmark()"
         [loading]="loading()"
