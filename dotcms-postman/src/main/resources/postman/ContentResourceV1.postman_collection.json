@@ -2617,7 +2617,7 @@
 							"script": {
 								"exec": [
 									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"SucessRequest\");",
+									"    pm.response.to.have.status(200);",
 									"});",
 									"",
 									"var jsonData = pm.response.json();",

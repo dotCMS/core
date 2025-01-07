@@ -26,7 +26,7 @@ import com.liferay.util.StringPool;
  */
 public class CheckinContentActionlet extends WorkFlowActionlet {
 
-	private static final String FORCE_UNLOCK_ALLOWED = "force-unlock";
+	public static final String FORCE_UNLOCK_ALLOWED = "force-unlock";
 
 	/**
 	 * 
