@@ -62,6 +62,13 @@
     }
 }
 
+.temporal-content {
+    padding-top: $spacing-3;
+    padding-left: $spacing-3;
+    display: flex;
+    width: 100%;
+}
+
 .content-sidebar {
     overflow: auto;
     width: 100%;

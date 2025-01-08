@@ -1,14 +1,16 @@
 import { it, expect, describe } from '@jest/globals';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
+
+import { Menu } from 'primeng/menu';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { mockDotDevices } from '@dotcms/utils-testing';
 
 import { DotUveDeviceSelectorComponent } from './dot-uve-device-selector.component';
 
-import { DEFAULT_PERSONA, DEFAULT_DEVICES } from '../../../../../shared/consts';
+import { DEFAULT_PERSONA, DEFAULT_DEVICES, DEFAULT_DEVICE } from '../../../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
@@ -56,6 +58,7 @@ const baseUVEToolbarState = {
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
+    setSEO: jest.fn(),
     setSocialMedia: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
@@ -81,17 +84,22 @@ const baseUVEState = {
     patchViewParams: jest.fn(),
     orientation: signal(''),
     clearDeviceAndSocialMedia: jest.fn(),
-    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'))
+    device: signal(DEFAULT_DEVICE),
+    socialMedia: signal(null),
+    isTraditionalPage: signal(true)
 };
 
 describe('DotUveDeviceSelectorComponent', () => {
     let spectator: Spectator<DotUveDeviceSelectorComponent>;
+    let uveStore: InstanceType<typeof UVEStore>;
 
     const createComponent = createComponentFactory({
         component: DotUveDeviceSelectorComponent,
-
         providers: [
-            UVEStore,
+            {
+                provide: UVEStore,
+                useValue: baseUVEState
+            },
             {
                 provide: DotMessageService,
                 useValue: {
@@ -102,16 +110,78 @@ describe('DotUveDeviceSelectorComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            providers: [mockProvider(UVEStore, { ...baseUVEState })]
+        spectator = createComponent({ detectChanges: false });
+        uveStore = spectator.inject(UVEStore, true);
+    });
+
+    it('should set the device when is present in viewParams', () => {
+        const setDeviceSpy = jest.spyOn(uveStore, 'setDevice');
+        const device = DEFAULT_DEVICES[1];
+
+        baseUVEState.viewParams.set({
+            device: device.inode,
+            orientation: undefined,
+            seo: undefined
         });
 
         spectator.setInput('devices', [...DEFAULT_DEVICES, ...mockDotDevices]);
-
         spectator.detectChanges();
+
+        expect(setDeviceSpy).toHaveBeenCalledWith(device, undefined);
+    });
+
+    it('should set the device and orientation when is present in viewParams', () => {
+        const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+
+        const device = DEFAULT_DEVICES[1];
+        const orientation = Orientation.PORTRAIT;
+        baseUVEState.viewParams.set({
+            device: device.inode,
+            orientation: orientation,
+            seo: undefined
+        });
+
+        spectator.setInput('devices', [...DEFAULT_DEVICES, ...mockDotDevices]);
+        spectator.detectChanges();
+
+        expect(setDeviceSpy).toHaveBeenCalledWith(device, orientation);
+    });
+
+    it('should set the default device when is not present in viewParams', () => {
+        const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+
+        baseUVEState.viewParams.set({
+            device: undefined,
+            orientation: undefined,
+            seo: undefined
+        });
+
+        spectator.setInput('devices', [...DEFAULT_DEVICES, ...mockDotDevices]);
+        spectator.detectChanges();
+        expect(setDeviceSpy).toHaveBeenCalledWith(DEFAULT_DEVICE, undefined);
+    });
+
+    it('should set the default device when the device is not found in the devices list', () => {
+        const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+
+        baseUVEState.viewParams.set({
+            device: 'not-found',
+            orientation: undefined,
+            seo: undefined
+        });
+        spectator.component.ngOnInit();
+
+        spectator.setInput('devices', [...DEFAULT_DEVICES, ...mockDotDevices]);
+        spectator.detectChanges();
+
+        expect(setDeviceSpy).toHaveBeenCalledWith(DEFAULT_DEVICE, undefined);
     });
 
     describe('DOM', () => {
+        beforeEach(() => {
+            spectator.setInput('devices', [...DEFAULT_DEVICES, ...mockDotDevices]);
+        });
+
         describe('Default devices button', () => {
             it.each(DEFAULT_DEVICES)('should have a button for $inode', ({ inode }) => {
                 const button = spectator.query(`[data-testid="${inode}"]`);
@@ -165,75 +235,156 @@ describe('DotUveDeviceSelectorComponent', () => {
             });
 
             it('should trigger onDeviceSelect when a custom device is clicked', () => {
+                const setDeviceSpy = jest.spyOn(uveStore, 'setDevice');
+
+                const customDevices = spectator.component
+                    .$menuItems()
+                    .find((item) => item.id === 'custom-devices');
+                const customDeviceItem = customDevices.items[0];
+
+                const deviceSelected = mockDotDevices.find(
+                    (device) => device.inode === customDeviceItem.id
+                );
+
                 spectator.detectChanges();
+                customDeviceItem.command({});
 
-                const onDeviceSelectSpy = jest.spyOn(spectator.component, 'onDeviceSelect');
-                const firstCustomDevice = spectator.component.$menuItems()[0].items[0];
-
-                firstCustomDevice.command();
-
-                expect(onDeviceSelectSpy).toHaveBeenCalledWith(mockDotDevices[0]);
+                expect(setDeviceSpy).toHaveBeenCalledWith(deviceSelected);
             });
         });
 
-        describe('onInit', () => {
-            it('should set the device when is present in viewParams', () => {
-                const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+        describe('Social media', () => {
+            it('should trigger onSocialMediaSelect when the social media button is clicked', () => {
+                const setSEOSpy = jest.spyOn(uveStore, 'setSEO');
 
-                const device = DEFAULT_DEVICES[1];
-                baseUVEState.viewParams.set({
-                    device: device.inode,
-                    orientation: undefined,
-                    seo: undefined
-                });
-                spectator.component.ngOnInit();
+                const socialMedia = spectator.component
+                    .$menuItems()
+                    .find((item) => item.id === 'social-media');
+                const socialMediaItem = socialMedia.items[0];
 
-                expect(setDeviceSpy).toHaveBeenCalledWith(device);
+                socialMediaItem.command({});
+
+                spectator.detectChanges();
+
+                expect(setSEOSpy).toHaveBeenCalledWith(socialMediaItem.value);
             });
 
-            it('should set the device and orientation when is present in viewParams', () => {
-                const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+            it('should set the default device when the social media is the same as the current one', () => {
+                const setDeviceSpy = jest.spyOn(uveStore, 'setDevice');
+                const setSEOSpy = jest.spyOn(uveStore, 'setSEO');
 
-                const device = DEFAULT_DEVICES[1];
-                const orientation = Orientation.PORTRAIT;
-                baseUVEState.viewParams.set({
-                    device: device.inode,
-                    orientation: orientation,
-                    seo: undefined
-                });
-                spectator.component.ngOnInit();
+                const socialMedia = spectator.component
+                    .$menuItems()
+                    .find((item) => item.id === 'social-media');
+                const socialMediaItem = socialMedia.items[0];
 
-                expect(setDeviceSpy).toHaveBeenCalledWith(device, orientation);
+                baseUVEState.socialMedia.set(socialMediaItem.value);
+
+                spectator.detectChanges();
+                socialMediaItem.command({});
+
+                expect(setDeviceSpy).toHaveBeenCalledWith(DEFAULT_DEVICE);
+                expect(setSEOSpy).not.toHaveBeenCalled();
             });
-            it('should set the default device when is not present in viewParams', () => {
-                const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+        });
 
-                baseUVEState.viewParams.set({
-                    device: undefined,
-                    orientation: undefined,
-                    seo: undefined
-                });
-                spectator.component.ngOnInit();
+        describe('Search engine', () => {
+            it('should trigger onSocialMediaSelect when the search engine button is clicked', () => {
+                const setSEOSpy = jest.spyOn(uveStore, 'setSEO');
 
-                expect(setDeviceSpy).toHaveBeenCalledWith(
-                    DEFAULT_DEVICES.find((d) => d.inode === 'default')
-                );
+                const searchEngine = spectator.component
+                    .$menuItems()
+                    .find((item) => item.id === 'search-engine');
+                const searchEngineItem = searchEngine.items[0];
+
+                searchEngineItem.command({});
+                expect(setSEOSpy).toHaveBeenCalledWith(searchEngineItem.value);
             });
 
-            it('should set the default device when the device is not found in the devices list', () => {
-                const setDeviceSpy = jest.spyOn(baseUVEState, 'setDevice');
+            it('should set the default device when the search engine is the same as the current one', () => {
+                const setDeviceSpy = jest.spyOn(uveStore, 'setDevice');
+                const setSEOSpy = jest.spyOn(uveStore, 'setSEO');
 
-                baseUVEState.viewParams.set({
-                    device: 'not-found',
-                    orientation: undefined,
-                    seo: undefined
-                });
-                spectator.component.ngOnInit();
+                const socialMedia = spectator.component
+                    .$menuItems()
+                    .find((item) => item.id === 'search-engine');
+                const socialMediaItem = socialMedia.items[0];
 
-                expect(setDeviceSpy).toHaveBeenCalledWith(
-                    DEFAULT_DEVICES.find((d) => d.inode === 'default')
-                );
+                baseUVEState.socialMedia.set(socialMediaItem.value);
+
+                spectator.detectChanges();
+                socialMediaItem.command({});
+
+                expect(setDeviceSpy).toHaveBeenCalledWith(DEFAULT_DEVICE);
+                expect(setSEOSpy).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('More items menu', () => {
+            const EXPECT_MENU_ITEM_OPTION = [
+                {
+                    label: 'uve.preview.mode.device.subheader',
+                    id: 'custom-devices',
+                    items: [
+                        { label: 'iphone (200x100)', id: '1', command: expect.any(Function) },
+                        { label: 'bad device (0x0)', id: '2', command: expect.any(Function) }
+                    ]
+                },
+                {
+                    label: 'uve.preview.mode.social.media.subheader',
+                    id: 'social-media',
+                    items: [
+                        {
+                            label: 'Facebook',
+                            id: 'Facebook',
+                            value: 'Facebook',
+                            command: expect.any(Function)
+                        },
+                        {
+                            label: 'X (Formerly Twitter)',
+                            id: 'Twitter',
+                            value: 'Twitter',
+                            command: expect.any(Function)
+                        },
+                        {
+                            label: 'Linkedin',
+                            id: 'LinkedIn',
+                            value: 'LinkedIn',
+                            command: expect.any(Function)
+                        }
+                    ]
+                },
+                {
+                    label: 'uve.preview.mode.search.engine.subheader',
+                    id: 'search-engine',
+                    items: [
+                        {
+                            label: 'Google',
+                            id: 'Google',
+                            value: 'Google',
+                            command: expect.any(Function)
+                        }
+                    ]
+                }
+            ];
+
+            it('should receive the right items', () => {
+                const menuElement = spectator.query(Menu);
+
+                expect(menuElement.model).toEqual(EXPECT_MENU_ITEM_OPTION);
+            });
+
+            it('should show the menu after clicking the `more` button', () => {
+                const moreButton = spectator.query(`[data-testid="more-button"]`);
+
+                moreButton.dispatchEvent(new Event('click'));
+                spectator.detectChanges();
+
+                const menuList = spectator.query("[data-testid='more-menu'] > ul");
+                expect(menuList).toBeDefined();
             });
         });
     });
+
+    afterEach(() => jest.clearAllMocks());
 });

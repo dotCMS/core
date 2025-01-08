@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } fro
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -16,7 +17,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 @Component({
     selector: 'dot-ema-bookmarks',
     standalone: true,
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [ButtonModule, DotMessagePipe, TooltipModule],
     templateUrl: './dot-ema-bookmarks.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

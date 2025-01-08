@@ -700,7 +700,6 @@ describe('withEditor', () => {
             it('should return the expected data on init', () => {
                 expect(store.$editorProps()).toEqual({
                     showDialogs: true,
-                    showEditorContent: true,
                     showBlockEditorSidebar: true,
                     iframe: {
                         opacity: '0.5',
@@ -748,9 +747,19 @@ describe('withEditor', () => {
                 });
             });
 
-            describe('showEditorContent', () => {
-                it('should have showEditorContent as true when there is no socialMedia', () => {
-                    expect(store.$editorProps().showEditorContent).toBe(true);
+            describe('editorContentStyles', () => {
+                it('should have display block when there is not social media', () => {
+                    expect(store.$editorContentStyles()).toEqual({
+                        display: 'block'
+                    });
+                });
+
+                it('should have display none when there is social media', () => {
+                    patchState(store, { socialMedia: 'facebook' });
+
+                    expect(store.$editorContentStyles()).toEqual({
+                        display: 'none'
+                    });
                 });
             });
 

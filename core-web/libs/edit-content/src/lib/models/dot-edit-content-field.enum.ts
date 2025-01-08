@@ -31,5 +31,6 @@ export enum FIELD_TYPES {
     TEXTAREA = 'Textarea',
     TIME = 'Time',
     WYSIWYG = 'WYSIWYG',
-    RELATIONSHIP = 'Relationship'
+    RELATIONSHIP = 'Relationship',
+    LINE_DIVIDER = 'Line_divider'
 }

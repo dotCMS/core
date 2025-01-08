@@ -192,6 +192,9 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     },
     [FIELD_TYPES.HIDDEN]: {
         component: null // this field is not being rendered for now.
+    },
+    [FIELD_TYPES.LINE_DIVIDER]: {
+        component: null
     }
 };
 
@@ -206,7 +209,10 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
 });
 
 const FIELDS_TO_BE_RENDER = FIELDS_MOCK.filter(
-    (field) => field.fieldType !== FIELD_TYPES.CONSTANT && field.fieldType !== FIELD_TYPES.HIDDEN
+    (field) =>
+        field.fieldType !== FIELD_TYPES.CONSTANT &&
+        field.fieldType !== FIELD_TYPES.HIDDEN &&
+        field.fieldType !== FIELD_TYPES.LINE_DIVIDER
 );
 
 describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields', (fieldMock) => {
@@ -243,11 +249,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     });
 
     describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
-        it('should render the label', () => {
-            spectator.detectChanges();
-            const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
-            expect(label?.textContent).toContain(fieldMock.name);
-        });
+        if (fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD) {
+            it('should render the label', () => {
+                spectator.detectChanges();
+                const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
+                expect(label?.textContent).toContain(fieldMock.name);
+            });
+        }
 
         if (fieldMock.fieldType !== FIELD_TYPES.RELATIONSHIP) {
             it('should render the hint if present', () => {
