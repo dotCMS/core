@@ -56,3 +56,12 @@ export const mockLanguagesISO: DotLanguagesISO = {
         { code: 'es', name: 'Spanish' }
     ]
 };
+
+/**
+ * Creates a fake language with optional overrides.
+ * @param overrides - Partial overrides for the default language properties.
+ * @returns {DotLanguage} - The fake language with applied overrides.
+ */
+export function createFakeLanguage(overrides: Partial<DotLanguage> = {}): DotLanguage {
+    return { ...mockDotLanguage, ...overrides };
+}

@@ -5,7 +5,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
@@ -18,117 +18,31 @@ const mockColumns: Column[] = [
     { field: 'modDate', header: 'Mod Date' }
 ];
 
-const mockContentletDefaults = {
-    hasTitleImage: false,
-    hostName: 'demo.dotcms.com',
-    modUserName: 'admin',
-    sortOrder: 0,
-    type: 'content',
-    url: '',
-    titleImage: null
-};
-
 const mockData: DotCMSContentlet[] = [
-    {
-        ...mockContentletDefaults,
+    createFakeContentlet({
+        title: 'Content 1',
         inode: '1',
         identifier: 'id-1',
-        title: 'Content 1',
-        languageId: 1,
-        modDate: new Date().toISOString(),
-        contentType: 'test',
-        baseType: 'CONTENT',
-        owner: 'admin',
-        hasLiveVersion: true,
-        live: true,
-        working: true,
-        archived: false,
-        locked: false,
-        deleted: false,
-        statusIcons: '',
-        folder: 'SYSTEM_FOLDER',
-        friendlyName: 'Content 1',
-        modUser: 'admin',
-        host: 'demo.dotcms.com',
-        stInode: 'st-1'
-    },
-    {
-        ...mockContentletDefaults,
+        languageId: mockLocales[0].id
+    }),
+    createFakeContentlet({
+        title: 'Content 2',
         inode: '2',
         identifier: 'id-2',
-        title: 'Content 2',
-        languageId: 1,
-        modDate: new Date().toISOString(),
-        contentType: 'test',
-        baseType: 'CONTENT',
-        owner: 'admin',
-        hasLiveVersion: true,
-        live: true,
-        working: true,
-        archived: false,
-        locked: false,
-        deleted: false,
-        statusIcons: '',
-        folder: 'SYSTEM_FOLDER',
-        friendlyName: 'Content 2',
-        modUser: 'admin',
-        host: 'demo.dotcms.com',
-        stInode: 'st-2'
-    },
-    {
-        ...mockContentletDefaults,
+        languageId: mockLocales[1].id
+    }),
+    createFakeContentlet({
+        title: 'Content 3',
         inode: '3',
         identifier: 'id-3',
-        title: 'Content 3',
-        languageId: 1,
-        modDate: new Date().toISOString(),
-        contentType: 'test',
-        baseType: 'CONTENT',
-        owner: 'admin',
-        hasLiveVersion: true,
-        live: true,
-        working: true,
-        archived: false,
-        locked: false,
-        deleted: false,
-        statusIcons: '',
-        folder: 'SYSTEM_FOLDER',
-        friendlyName: 'Content 3',
-        modUser: 'admin',
-        host: 'demo.dotcms.com',
-        stInode: 'st-3'
-    }
+        languageId: mockLocales[0].id
+    })
 ];
 
 describe('DotSelectExistingContentComponent', () => {
     let spectator: Spectator<DotSelectExistingContentComponent>;
     let store: InstanceType<typeof ExistingContentStore>;
     let dialogRef: DynamicDialogRef;
-
-    const mockRelationshipItem = (inode: string): DotCMSContentlet => ({
-        ...mockContentletDefaults,
-        inode,
-        identifier: `id-${inode}`,
-        title: `Test Content ${inode}`,
-        languageId: 1,
-        description: 'Test description',
-        contentType: 'test',
-        modDate: new Date().toISOString(),
-        baseType: 'CONTENT',
-        owner: 'admin',
-        hasLiveVersion: true,
-        live: true,
-        working: true,
-        archived: false,
-        locked: false,
-        deleted: false,
-        statusIcons: '',
-        folder: 'SYSTEM_FOLDER',
-        friendlyName: `Test Content ${inode}`,
-        modUser: 'admin',
-        host: 'demo.dotcms.com',
-        stInode: `st-${inode}`
-    });
 
     const messageServiceMock = new MockDotMessageService({
         'dot.file.relationship.dialog.apply.one.entry': 'Apply 1 entry',
@@ -185,7 +99,10 @@ describe('DotSelectExistingContentComponent', () => {
 
     describe('Dialog Behavior', () => {
         it('should close dialog with selected items', () => {
-            const mockItems = [mockRelationshipItem('1'), mockRelationshipItem('2')];
+            const mockItems = [
+                createFakeContentlet({ inode: '1' }),
+                createFakeContentlet({ inode: '2' })
+            ];
             spectator.component.$selectedItems.set(mockItems);
 
             spectator.component.closeDialog();
@@ -209,20 +126,23 @@ describe('DotSelectExistingContentComponent', () => {
         });
 
         it('should enable apply button when items are selected', () => {
-            const mockContent = [mockRelationshipItem('1')];
+            const mockContent = [createFakeContentlet({ inode: '1' })];
             spectator.component.$selectedItems.set(mockContent);
             expect(spectator.component.$items().length).toBe(1);
         });
 
         it('should handle single item selection', () => {
-            const singleItem = mockRelationshipItem('1');
+            const singleItem = createFakeContentlet({ inode: '1' });
             spectator.component.$selectedItems.set(singleItem);
             expect(spectator.component.$items().length).toBe(1);
             expect(spectator.component.$items()[0]).toEqual(singleItem);
         });
 
         it('should handle multiple items selection', () => {
-            const multipleItems = [mockRelationshipItem('1'), mockRelationshipItem('2')];
+            const multipleItems = [
+                createFakeContentlet({ inode: '1' }),
+                createFakeContentlet({ inode: '2' })
+            ];
             spectator.component.$selectedItems.set(multipleItems);
             expect(spectator.component.$items().length).toBe(2);
             expect(spectator.component.$items()).toEqual(multipleItems);
@@ -231,7 +151,7 @@ describe('DotSelectExistingContentComponent', () => {
 
     describe('Apply Button Label', () => {
         it('should show singular label when one item is selected', () => {
-            const mockContent = [mockRelationshipItem('1')];
+            const mockContent = [createFakeContentlet({ inode: '1' })];
             spectator.component.$selectedItems.set(mockContent);
 
             const label = spectator.component.$applyLabel();
@@ -239,7 +159,10 @@ describe('DotSelectExistingContentComponent', () => {
         });
 
         it('should show plural label when multiple items are selected', () => {
-            const mockContent = [mockRelationshipItem('1'), mockRelationshipItem('2')];
+            const mockContent = [
+                createFakeContentlet({ inode: '1' }),
+                createFakeContentlet({ inode: '2' })
+            ];
             spectator.component.$selectedItems.set(mockContent);
 
             const label = spectator.component.$applyLabel();
@@ -255,7 +178,7 @@ describe('DotSelectExistingContentComponent', () => {
 
     describe('Item Selection', () => {
         it('should return true when content is in selectedContent array', () => {
-            const testContent = mockRelationshipItem('1');
+            const testContent = createFakeContentlet({ inode: '1' });
             spectator.component.$selectedItems.set([testContent]);
 
             const result = spectator.component.checkIfSelected(testContent);
@@ -264,8 +187,8 @@ describe('DotSelectExistingContentComponent', () => {
         });
 
         it('should return false when content is not in selectedContent array', () => {
-            const testContent = mockRelationshipItem('123');
-            const differentContent = mockRelationshipItem('456');
+            const testContent = createFakeContentlet({ inode: '123' });
+            const differentContent = createFakeContentlet({ inode: '456' });
             spectator.component.$selectedItems.set([differentContent]);
 
             const result = spectator.component.checkIfSelected(testContent);
@@ -274,7 +197,7 @@ describe('DotSelectExistingContentComponent', () => {
         });
 
         it('should return false when selectedContent is empty', () => {
-            const testContent = mockRelationshipItem('123');
+            const testContent = createFakeContentlet({ inode: '123' });
             spectator.component.$selectedItems.set([]);
 
             const result = spectator.component.checkIfSelected(testContent);
@@ -283,7 +206,7 @@ describe('DotSelectExistingContentComponent', () => {
         });
 
         it('should handle null selectedContent', () => {
-            const testContent = mockRelationshipItem('123');
+            const testContent = createFakeContentlet({ inode: '123' });
             spectator.component.$selectedItems.set(null);
 
             const result = spectator.component.checkIfSelected(testContent);

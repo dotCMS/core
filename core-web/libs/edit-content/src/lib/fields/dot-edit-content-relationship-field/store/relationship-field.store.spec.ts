@@ -1,144 +1,33 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { RelationshipFieldStore } from './relationship-field.store';
 
 describe('RelationshipFieldStore', () => {
     let store: InstanceType<typeof RelationshipFieldStore>;
 
-    const mockData: DotCMSContentlet[] = [
-        {
-            id: '1',
-            title: 'Content 1',
-            language: '1',
-            modDate: new Date().toISOString(),
+    const mockData = [
+        createFakeContentlet({
             inode: 'inode1',
-            archived: false,
-            baseType: 'content',
-            contentType: 'test',
-            folder: 'test',
-            host: 'test',
-            identifier: 'test',
-            live: true,
-            locked: false,
-            owner: 'test',
-            permissions: [],
-            working: true,
-            languageId: 1,
-            contentTypeId: 'test',
-            url: 'test',
-            hasLiveVersion: true,
-            deleted: false,
-            hasTitleImage: false,
-            hostName: 'test',
-            modUser: 'test',
-            modUserName: 'test',
-            publishDate: new Date().toISOString(),
-            sortOrder: 0,
-            versionType: 'test',
-            stInode: 'test',
-            titleImage: null
-        },
-        {
-            id: '2',
-            title: 'Content 2',
-            language: '1',
-            modDate: new Date().toISOString(),
+            id: '1'
+        }),
+        createFakeContentlet({
             inode: 'inode2',
-            archived: false,
-            baseType: 'content',
-            contentType: 'test',
-            folder: 'test',
-            host: 'test',
-            identifier: 'test',
-            live: true,
-            locked: false,
-            owner: 'test',
-            permissions: [],
-            working: true,
-            languageId: 1,
-            contentTypeId: 'test',
-            url: 'test',
-            hasLiveVersion: true,
-            deleted: false,
-            hasTitleImage: false,
-            hostName: 'test',
-            modUser: 'test',
-            modUserName: 'test',
-            publishDate: new Date().toISOString(),
-            sortOrder: 0,
-            versionType: 'test',
-            stInode: 'test',
-            titleImage: null
-        },
-        {
-            id: '3',
-            title: 'Content 3',
-            language: '1',
-            modDate: new Date().toISOString(),
+            id: '2'
+        }),
+        createFakeContentlet({
             inode: 'inode3',
-            archived: false,
-            baseType: 'content',
-            contentType: 'test',
-            folder: 'test',
-            host: 'test',
-            identifier: 'test',
-            live: true,
-            locked: false,
-            owner: 'test',
-            permissions: [],
-            working: true,
-            languageId: 1,
-            contentTypeId: 'test',
-            url: 'test',
-            hasLiveVersion: true,
-            deleted: false,
-            hasTitleImage: false,
-            hostName: 'test',
-            modUser: 'test',
-            modUserName: 'test',
-            publishDate: new Date().toISOString(),
-            sortOrder: 0,
-            versionType: 'test',
-            stInode: 'test',
-            titleImage: null
-        }
+            id: '3'
+        })
     ];
 
-    const mockContentlet: DotCMSContentlet = {
+    const mockContentlet = createFakeContentlet({
         id: '123',
-        inode: 'inode123',
-        title: 'Test Contentlet',
-        language: '1',
-        modDate: new Date().toISOString(),
-        relationship_field: '1,2,3',
-        archived: false,
-        baseType: 'content',
-        contentType: 'test',
-        folder: 'test',
-        host: 'test',
-        identifier: 'test',
-        live: true,
-        locked: false,
-        owner: 'test',
-        permissions: [],
-        working: true,
-        languageId: 1,
-        contentTypeId: 'test',
-        url: 'test',
-        hasLiveVersion: true,
-        deleted: false,
-        hasTitleImage: false,
-        hostName: 'test',
-        modUser: 'test',
-        modUserName: 'test',
-        publishDate: new Date().toISOString(),
-        sortOrder: 0,
-        versionType: 'test',
-        stInode: 'test',
-        titleImage: null
-    };
+        inode: '123',
+        variable: 'relationship_field'
+    });
 
     beforeEach(() => {
         TestBed.configureTestingModule({

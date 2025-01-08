@@ -1,45 +1,11 @@
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { getSelectionModeByCardinality, getRelationshipFromContentlet } from './index';
 
 import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
 import { RelationshipTypes } from '../models/relationship.models';
 
-const mockContentlet: DotCMSContentlet = {
-    id: '1',
-    title: 'Content 1',
-    language: '1',
-    modDate: new Date().toISOString(),
-    archived: false,
-    baseType: 'content',
-    contentType: 'testType',
-    folder: 'default',
-    hasLiveVersion: false,
-    host: 'demo.dotcms.com',
-    inode: '123',
-    isLocked: false,
-    live: false,
-    locked: false,
-    owner: 'admin',
-    permissionId: '123',
-    permissionType: 'content',
-    statusIcons: [],
-    working: true,
-    workingInode: '123',
-    url: '',
-    hasTitleImage: false,
-    hostName: 'demo.dotcms.com',
-    identifier: '123',
-    languageId: 1,
-    sortOrder: 0,
-    structureName: 'Test Structure',
-    type: 'content',
-    workflowState: 'published',
-    modUser: 'admin',
-    modUserName: 'Admin User',
-    stInode: '456',
-    titleImage: null
-};
+const mockContentlet = createFakeContentlet();
 
 describe('Relationship Field Utils', () => {
     describe('getSelectionModeByCardinality', () => {

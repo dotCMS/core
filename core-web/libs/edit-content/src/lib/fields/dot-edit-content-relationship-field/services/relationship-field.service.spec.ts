@@ -13,6 +13,7 @@ import {
     DotLanguagesService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
 
 import { RelationshipFieldService } from './relationship-field.service';
 
@@ -29,13 +30,7 @@ describe('RelationshipFieldService', () => {
             }),
             mockProvider(DotFieldService),
             mockProvider(DotContentSearchService),
-            mockProvider(DotLanguagesService, {
-                get: () =>
-                    of([
-                        { id: 1, language: 'English', isoCode: 'en', languageCode: 'en-US' },
-                        { id: 2, language: 'Spanish', isoCode: 'es', languageCode: 'es-ES' }
-                    ])
-            })
+            mockProvider(DotLanguagesService, { get: () => of(mockLocales) })
         ]
     });
 
@@ -252,24 +247,14 @@ describe('RelationshipFieldService', () => {
                         title: 'Test Content 1',
                         field: 'Field 1',
                         description: 'Description 1',
-                        language: {
-                            id: 1,
-                            language: 'English',
-                            isoCode: 'en',
-                            languageCode: 'en-US'
-                        }
+                        language: mockLocales[0]
                     });
                     expect(item1).toEqual({
                         identifier: '456',
                         title: 'Test Content 2',
                         field: 'Field 2',
                         description: 'Description 2',
-                        language: {
-                            id: 2,
-                            language: 'Spanish',
-                            isoCode: 'es',
-                            languageCode: 'es-ES'
-                        }
+                        language: mockLocales[1]
                     });
 
                     // Verify service calls
@@ -304,16 +289,15 @@ describe('RelationshipFieldService', () => {
                 });
         });
 
-        it('should handle content without title', (done) => {
-            const contentWithoutTitle = [
-                {
-                    identifier: '789',
-                    description: 'Description 3',
-                    field: 'Field 3',
-                    languageId: 1,
-                    modDate: '2024-01-03T00:00:00Z'
-                }
-            ] as unknown as DotCMSContentlet[];
+        it('should handle content without title', () => {
+            const contentWithoutTitle = createFakeContentlet({
+                identifier: '789',
+                title: null,
+                description: 'Description 3',
+                field: 'Field 3',
+                languageId: mockLocales[0].id,
+                modDate: '2024-01-03T00:00:00Z'
+            });
 
             dotContentSearchService.get.mockReturnValue(
                 of({
@@ -336,9 +320,8 @@ describe('RelationshipFieldService', () => {
                     title: '789', // Should use identifier when title is null
                     field: 'Field 3',
                     description: 'Description 3',
-                    language: { id: 1, language: 'English', isoCode: 'en', languageCode: 'en-US' }
+                    language: mockLocales[0]
                 });
-                done();
             });
         });
     });

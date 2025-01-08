@@ -7,6 +7,7 @@ import { delay } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
 
 import { ExistingContentStore } from './existing-content.store';
 
@@ -22,111 +23,18 @@ describe('ExistingContentStore', () => {
     ];
 
     const mockData: DotCMSContentlet[] = [
-        {
+        createFakeContentlet({
             id: '1',
-            title: 'Content 1',
-            language: '1',
-            modDate: new Date().toISOString(),
-            archived: false,
-            baseType: 'content',
-            contentType: 'testType',
-            folder: 'default',
-            hasLiveVersion: false,
-            host: 'demo.dotcms.com',
-            inode: '123',
-            isLocked: false,
-            live: false,
-            locked: false,
-            owner: 'admin',
-            permissionId: '123',
-            permissionType: 'content',
-            statusIcons: [],
-            working: true,
-            workingInode: '123',
-            url: '',
-            hasTitleImage: false,
-            hostName: 'demo.dotcms.com',
-            identifier: '123',
-            languageId: 1,
-            sortOrder: 0,
-            structureName: 'Test Structure',
-            type: 'content',
-            workflowState: 'published',
-            modUser: 'admin',
-            modUserName: 'Admin User',
-            stInode: '456',
-            titleImage: null
-        },
-        {
+            inode: '1',
+            identifier: 'id-1',
+            languageId: mockLocales[0].id
+        }),
+        createFakeContentlet({
             id: '2',
-            title: 'Content 2',
-            language: '1',
-            modDate: new Date().toISOString(),
-            archived: false,
-            baseType: 'content',
-            contentType: 'testType',
-            folder: 'default',
-            hasLiveVersion: false,
-            host: 'demo.dotcms.com',
-            inode: '123',
-            isLocked: false,
-            live: false,
-            locked: false,
-            owner: 'admin',
-            permissionId: '123',
-            permissionType: 'content',
-            statusIcons: [],
-            working: true,
-            workingInode: '123',
-            url: '',
-            hasTitleImage: false,
-            hostName: 'demo.dotcms.com',
-            identifier: '123',
-            languageId: 1,
-            sortOrder: 0,
-            structureName: 'Test Structure',
-            type: 'content',
-            workflowState: 'published',
-            modUser: 'admin',
-            modUserName: 'Admin User',
-            stInode: '456',
-            titleImage: null
-        },
-        {
-            id: '3',
-            title: 'Content 3',
-            language: '1',
-            modDate: new Date().toISOString(),
-            archived: false,
-            baseType: 'content',
-            contentType: 'testType',
-            folder: 'default',
-            hasLiveVersion: false,
-            host: 'demo.dotcms.com',
-            inode: '123',
-            isLocked: false,
-            live: false,
-            locked: false,
-            owner: 'admin',
-            permissionId: '123',
-            permissionType: 'content',
-            statusIcons: [],
-            working: true,
-            workingInode: '123',
-            url: '',
-            hasTitleImage: false,
-            hostName: 'demo.dotcms.com',
-            identifier: '123',
-            languageId: 1,
-            sortOrder: 0,
-            structureName: 'Test Structure',
-            type: 'content',
-            workflowState: 'published',
-            modUser: 'admin',
-            modUserName: 'Admin User',
-            stInode: '456',
-            titleImage: null
-        }
+            inode: '2',
+            identifier: 'id-2',
+            languageId: mockLocales[1].id
+        })
     ];
 
     beforeEach(() => {
