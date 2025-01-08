@@ -178,6 +178,7 @@ describe('EditEmaToolbarComponent', () => {
                                 value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
                             }
                         }),
+                        $infoDisplayOptions: signal({}),
                         setDevice: jest.fn(),
                         setSocialMedia: jest.fn(),
                         pageParams: signal(params),
@@ -450,6 +451,7 @@ describe('EditEmaToolbarComponent', () => {
                                     value: DEFAULT_PERSONA
                                 }
                             }),
+                            $infoDisplayOptions: signal({}),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
                             pageParams: signal(params)
@@ -490,6 +492,7 @@ describe('EditEmaToolbarComponent', () => {
                                     value: DEFAULT_PERSONA
                                 }
                             }),
+                            $infoDisplayOptions: signal({}),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
                             pageParams: signal(params)
@@ -531,6 +534,7 @@ describe('EditEmaToolbarComponent', () => {
                                     value: DEFAULT_PERSONA
                                 }
                             }),
+                            $infoDisplayOptions: signal({}),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
                             pageParams: signal(params)
@@ -569,6 +573,7 @@ describe('EditEmaToolbarComponent', () => {
                                     value: DEFAULT_PERSONA
                                 }
                             }),
+                            $infoDisplayOptions: signal({}),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
                             pageParams: signal(params)
@@ -631,6 +636,7 @@ describe('EditEmaToolbarComponent', () => {
                                     value: DEFAULT_PERSONA
                                 }
                             }),
+                            $infoDisplayOptions: signal({}),
                             setDevice: jest.fn(),
                             setSocialMedia: jest.fn(),
                             pageParams: signal(params)

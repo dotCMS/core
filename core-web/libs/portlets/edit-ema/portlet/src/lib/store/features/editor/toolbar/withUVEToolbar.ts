@@ -10,9 +10,9 @@ import {
 import { computed } from '@angular/core';
 
 import { UVE_MODE } from '@dotcms/client';
-import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 
-import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../../shared/consts';
+import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions } from '../../../../shared/models';
 import {
@@ -37,11 +37,12 @@ import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../mo
  * @property {boolean} initialState.isPreviewModeActive - Flag indicating whether the preview mode is active.
  */
 const initialState: EditorToolbarState = {
-    device: DEFAULT_DEVICES.find((device) => device.inode === 'default'),
+    device: DEFAULT_DEVICE,
     socialMedia: null,
     isEditState: true,
     isPreviewModeActive: false,
-    orientation: Orientation.LANDSCAPE
+    orientation: Orientation.LANDSCAPE,
+    ogTagsResults: null
 };
 
 export function withUVEToolbar() {
@@ -130,8 +131,10 @@ export function withUVEToolbar() {
                 const pageAPIResponse = store.pageAPIResponse();
                 const canEditPage = store.canEditPage();
                 const socialMedia = store.socialMedia();
+                const currentUser = store.currentUser();
+                const isPreview = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
 
-                if (socialMedia) {
+                if (socialMedia && !isPreview) {
                     return {
                         icon: `pi pi-${socialMedia.toLowerCase()}`,
                         id: 'socialMedia',
@@ -166,7 +169,7 @@ export function withUVEToolbar() {
                     };
                 }
 
-                if (pageAPIResponse?.page.locked) {
+                if (computePageIsLocked(pageAPIResponse.page, currentUser)) {
                     let message = 'editpage.locked-by';
 
                     if (!pageAPIResponse.page.canLock) {
@@ -199,7 +202,6 @@ export function withUVEToolbar() {
                 const isValidOrientation = Object.values(Orientation).includes(orientation);
 
                 const newOrientation = isValidOrientation ? orientation : getOrientation(device);
-
                 patchState(store, {
                     device,
                     viewParams: {
@@ -221,6 +223,20 @@ export function withUVEToolbar() {
                     }
                 });
             },
+            setSEO: (socialMedia: string | null) => {
+                patchState(store, {
+                    device: null,
+                    orientation: null,
+                    socialMedia,
+                    viewParams: {
+                        ...store.viewParams(),
+                        device: null,
+                        orientation: null,
+                        seo: socialMedia
+                    },
+                    isEditState: false
+                });
+            },
             clearDeviceAndSocialMedia: () => {
                 patchState(store, {
                     device: null,
@@ -234,6 +250,9 @@ export function withUVEToolbar() {
                         seo: undefined
                     }
                 });
+            },
+            setOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
+                patchState(store, { ogTagsResults });
             }
         }))
     );
