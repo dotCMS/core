@@ -85,6 +85,8 @@ public class ContentBundler implements IBundler {
 	private UserAPI uAPI = null;
 	private PublisherAPI pubAPI = null;
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
+	final boolean shouldIncludeAssets = Config.getBooleanProperty("INCLUDE_ASSETS_BUNDLE", true);
+	final boolean shouldIncludeArchivedContent =  Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",false);
 
 	public final static String CONTENT_EXTENSION = ".content.xml" ;
 	public final static String CONTENT_WORKFLOW_EXTENSION = ".contentworkflow.xml";
@@ -144,11 +146,12 @@ public class ContentBundler implements IBundler {
 					// If push or push & delete, exclude deleted contents
 					excludeDeleted = " +deleted:false";//
 				}
-				Logger.info(this,"Include Archived Content In The Bundle: " + Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",false));
+				Logger.info(this,"Include Archived Content In The Bundle: " + shouldIncludeArchivedContent);
+				Logger.info(this, "Include Assets In The Bundle: " + shouldIncludeAssets);
 				for (String contentIdentifier : contentsIds) {
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +live:true" + excludeDeleted, 0, -1, null, systemUser, false));
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +working:true" + excludeDeleted, 0, -1, null, systemUser, false));
-					if(config.isSameIndexNotIncremental() || Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",false)){
+					if(config.isSameIndexNotIncremental() || shouldIncludeArchivedContent){
 						contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +deleted:true", 0, -1, null, systemUser, false));
 					}
 				}
@@ -291,8 +294,6 @@ public class ContentBundler implements IBundler {
 		File assetFolder = new File(bundleRoot.getPath()+File.separator+"assets");
 		String inode=con.getInode();
 		Map<String, List<Tag>> contentTags = new HashMap<>();
-		final boolean shouldIncludeAssets = Config.getBooleanProperty("INCLUDE_ASSETS_BUNDLE", true);
-		Logger.info(this, "Include Assets In The Bundle: " + shouldIncludeAssets);
 		for(Field ff : fields) {
 			//Avoid this to reduce bundle size since we're gonna do a rsync of the assets directory of the datasets
 			if(shouldIncludeAssets) {
