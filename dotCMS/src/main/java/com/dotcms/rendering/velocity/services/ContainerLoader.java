@@ -4,6 +4,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -261,51 +262,75 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
             }
 
+            // Evaluate the time-machine block only if the caller is not pageAPI as when called by pageAPI
+            // the contentlets arriving are already filtered by the time-machine date logic.
+            // This attribute is set on the PageResource
+            velocityCodeBuilder.append("#set($_pageAPI=false)")
+            .append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\""+ PageResource.PAGE_API_REQUEST +"\"))")
+                 .append("#set($_pageAPI=true)")
+            .append("#end")
+            .append("#if($request.getAttribute(\""+PageResource.PAGE_API_REQUEST+"\"))")
+                .append("#set($_pageAPI=true)")
+            .append("#end");
+
+            //Let's find out if the time-machine attribute is set
+            velocityCodeBuilder.append("#set($_timeMachineOn=false)")
+            .append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\""+PageResource.TM_DATE+"\"))")
+                .append("#set($_timeMachineOn=true)")
+            .append("#end");
+
             // FOR LOOP
+            velocityCodeBuilder
+            .append("#foreach ($contentletId in $CONTENTLETS )")
+              .append("#set($dotContentMap=$dotcontent.load($contentletId))")
+              .append("#set($_show_working_=false)");
 
-            velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
+                //Time-machine block begin
+                // - This logic applies if the contentlets here are pulled from the $dotcontent.pullPerPage viewTool as the time-machine date is not applied there
+                // - But if the caller is pageAPI, the contentlets are already filtered by the time-machine date logic that was introduced in PageRenderUtil, so we don't need to apply it again
+                  velocityCodeBuilder.append("#if($_timeMachineOn && !$_pageAPI) ");
 
-              velocityCodeBuilder.append("#set($dotContentMap=$dotcontent.load($contentletId))");
-              velocityCodeBuilder.append("#set($_show_working_=false)");
+                      velocityCodeBuilder
+                        .append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\""+PageResource.TM_DATE+"\"))))")
+                        .append("#set($_ident=$webapi.findIdentifierById($contentletId))");
 
-            //Time-machine block begin
-              velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
+                      // if the content has expired we rewrite the identifier, so it isn't loaded
+                      velocityCodeBuilder
+                      .append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))")
+                        .append("#set($contentletId='')")
+                        .append("#end");
 
-                  velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
-                  velocityCodeBuilder.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
-                  // if the content has expired we rewrite the identifier so it isn't loaded
-                  velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
-                  velocityCodeBuilder.append("#set($contentletId='')");
+                      // if the content should be published then force to show the working version
+                      velocityCodeBuilder
+                       .append("#if($UtilMethods.isSet($_ident.sysPublishDate) && ($_tmdate.equals($_ident.sysPublishDate) || $_tmdate.after($_ident.sysPublishDate)))")
+                        .append("#set($_show_working_=true)")
+                        .append("#end");
+
+                      velocityCodeBuilder.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
+                        .append("#set($contentletId='')") // working contentlet still not published
+                        .append("#end");
+
+                      velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
+                        .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
+                        .append("#end");
+                  //end of time-machine block
                   velocityCodeBuilder.append("#end");
 
-                  // if the content should be published then force to show the working version
-                  velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && ($_tmdate.equals($_ident.sysPublishDate) || $_tmdate.after($_ident.sysPublishDate)))");
-                  velocityCodeBuilder.append("#set($_show_working_=true)");
-                  velocityCodeBuilder.append("#end");
+                    velocityCodeBuilder
+                    .append("#set($CONTENT_INODE = '')")
+                    .append("#set($CONTENT_BASE_TYPE = '')")
+                    .append("#set($CONTENT_LANGUAGE = '')")
+                    .append("#set($ContentletTitle = '')")
+                    .append("#set($CONTENT_TYPE_ID = '')")
+                    .append("#set($CONTENT_TYPE = '')")
+                    .append("#set($CONTENT_VARIANT = '')")
+                    .append("#set($ON_NUMBER_OF_PAGES = '')");
 
-                  velocityCodeBuilder.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
-                    .append("#set($contentletId='')") // working contentlet still not published
-                  .append("#end");
-
-                  velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
-                    .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
-                  .append("#end");
-              //end of time-machine block
-              velocityCodeBuilder.append("#end");
-
-                velocityCodeBuilder.append("#set($CONTENT_INODE = '')");
-                velocityCodeBuilder.append("#set($CONTENT_BASE_TYPE = '')");
-                velocityCodeBuilder.append("#set($CONTENT_LANGUAGE = '')");
-                velocityCodeBuilder.append("#set($ContentletTitle = '')");
-                velocityCodeBuilder.append("#set($CONTENT_TYPE_ID = '')");
-                velocityCodeBuilder.append("#set($CONTENT_TYPE = '')");
-                velocityCodeBuilder.append("#set($CONTENT_VARIANT = '')");
-                velocityCodeBuilder.append("#set($ON_NUMBER_OF_PAGES = '')");
-                
-                // read in the content
-                velocityCodeBuilder.append("#if($contentletId != '')");
-                velocityCodeBuilder.append("#contentDetail($contentletId)");
-                velocityCodeBuilder.append("#end");
+                    // read in the content
+                    velocityCodeBuilder
+                    .append("#if($contentletId != '')")
+                      .append("#contentDetail($contentletId)")
+                    .append("#end");
 
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
 
@@ -354,13 +379,13 @@ public class ContainerLoader implements DotLoader {
 
                             for (int i = 0; i < containerContentTypeList.size(); i++) {
                                 ContainerStructure cs = containerContentTypeList.get(i);
-                                String ifelse = (i == 0) ? "if" : "elseif";
-                                velocityCodeBuilder.append("#").append(ifelse)
+                                String ifElse = (i == 0) ? "if" : "elseif";
+                                velocityCodeBuilder.append("#").append(ifElse)
                                         .append("($ContentletStructure ==\"")
                                         .append(cs.getStructureId()).append("\")");
                                 velocityCodeBuilder.append(cs.getCode());
                             }
-                            if (containerContentTypeList.size() > 0) {
+                            if (!containerContentTypeList.isEmpty()) {
                                 velocityCodeBuilder.append("#end");
                             }
                             
@@ -375,11 +400,11 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
 
                // end content dot-data-content
-            if (mode == PageMode.EDIT_MODE) {
-                velocityCodeBuilder.append("</div>");
-            }
+                if (mode == PageMode.EDIT_MODE) {
+                    velocityCodeBuilder.append("</div>");
+                }
 
-            velocityCodeBuilder.append("#set($dotContentMap='')");
+                velocityCodeBuilder.append("#set($dotContentMap='')");
                 // ##End of foreach loop
             velocityCodeBuilder.append("#end");
                 
@@ -408,7 +433,7 @@ public class ContainerLoader implements DotLoader {
 
 
         final String containerCode = velocityCodeBuilder.toString();
-        Logger.debug(this, "DotResourceLoader:\tWriting out container code = " + containerCode);
+        Logger.info(this, "DotResourceLoader:\tWriting out container code = " + containerCode);
         return writeOutVelocity(filePath, containerCode);
     }
 
