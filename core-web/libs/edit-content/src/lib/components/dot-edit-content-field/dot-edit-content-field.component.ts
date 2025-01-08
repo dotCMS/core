@@ -1,5 +1,8 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding, inject, Input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+
+import { DividerModule } from 'primeng/divider';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -58,7 +61,9 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentKeyValueComponent,
         DotEditContentWYSIWYGFieldComponent,
         DotEditContentFileFieldComponent,
-        DotEditContentRelationshipFieldComponent
+        DotEditContentRelationshipFieldComponent,
+        DividerModule,
+        NgTemplateOutlet
     ]
 })
 export class DotEditContentFieldComponent {

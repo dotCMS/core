@@ -80,5 +80,5 @@
 </p-toolbar>
 
 @if ($toolbarProps().showInfoDisplay) {
-    <dot-ema-info-display data-testId="info-display" />
+    <dot-ema-info-display data-testId="info-display" [options]="$infoOptions()" />
 }

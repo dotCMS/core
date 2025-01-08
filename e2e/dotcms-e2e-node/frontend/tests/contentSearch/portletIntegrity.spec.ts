@@ -223,15 +223,15 @@ test("Validate the clear button in the search filter", async ({ page }) => {
   await iframe.getByLabel("Clear").click();
 
   // Validate the search filter has been cleared
-  expect(
-    await iframe
+  await expect(
+    iframe
       .locator('input[name="scheme_id_select"]')
-      .getAttribute("value"),
-  ).toBe("catchall");
-  expect(
-    await iframe.locator('input[name="step_id_select"]').getAttribute("value"),
-  ).toBe("catchall");
-  expect(await iframe.locator("#showingSelect").getAttribute("value")).toBe(
+      ,
+  ).toHaveAttribute("value", "catchall");
+  await expect(
+    iframe.locator('input[name="step_id_select"]'),
+  ).toHaveAttribute("value", "catchall");
+  await expect(iframe.locator("#showingSelect")).toHaveAttribute("value", 
     "All",
   );
 });
@@ -244,7 +244,7 @@ test("Validate the hide button collapse the filter", async ({ page }) => {
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
   await expect(iframe.getByRole("button", { name: "Search" })).toBeVisible();
-  let advancedLinkLocator = iframe.getByRole("link", { name: "Advanced" });
+  const advancedLinkLocator = iframe.getByRole("link", { name: "Advanced" });
   await waitForVisibleAndCallback(advancedLinkLocator, () =>
     advancedLinkLocator.click(),
   );
@@ -252,7 +252,7 @@ test("Validate the hide button collapse the filter", async ({ page }) => {
   await page.waitForTimeout(1000);
   await expect(
     iframe.getByRole("link", { name: "Advanced" }),
-  ).not.toBeVisible();
+  ).toBeHidden();
 
   // Click on the hide button
   await iframe.getByRole("link", { name: "Hide" }).click();

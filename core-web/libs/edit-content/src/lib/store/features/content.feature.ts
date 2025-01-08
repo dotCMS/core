@@ -286,9 +286,6 @@ export function withContent() {
                                         const initialContentletState =
                                             !scheme || !step ? 'reset' : 'existing';
 
-                                        // The current step is the first step of the selected scheme
-                                        const currentScheme = parsedSchemes[currentSchemeId];
-
                                         patchState(store, {
                                             contentType,
                                             currentSchemeId,
@@ -296,7 +293,7 @@ export function withContent() {
                                             currentContentActions: parsedCurrentActions,
                                             contentlet,
                                             state: ComponentStatus.LOADED,
-                                            currentStep: currentScheme?.firstStep,
+                                            currentStep: step,
                                             lastTask: task,
                                             initialContentletState
                                         });

@@ -78,6 +78,8 @@ export class EditEmaToolbarComponent {
 
     protected readonly $toolbarProps = this.uveStore.$toolbarProps;
 
+    protected readonly $infoOptions = this.uveStore.$infoDisplayOptions;
+
     /**
      * Update the current device
      *

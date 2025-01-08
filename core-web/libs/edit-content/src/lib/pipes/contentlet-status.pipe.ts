@@ -57,16 +57,24 @@ export class ContentletStatusPipe implements PipeTransform {
 
     private getContentletStatus(contentlet: DotCMSContentlet): DotEditContentStatus {
         // Archived: Content has been archived
-        if (contentlet.archived) return DotEditContentStatus.ARCHIVED;
+        if (contentlet.archived) {
+            return DotEditContentStatus.ARCHIVED;
+        }
 
-        // Changed: Has both live and working versions (unpublished changes exist)
-        if (contentlet.live && contentlet.working) return DotEditContentStatus.CHANGED;
+        // Live content handling
+        if (contentlet.live) {
+            // Compare working and live inodes to determine if content has changed
+            if (contentlet.workingInode === contentlet.liveInode) {
+                return DotEditContentStatus.PUBLISHED;
+            } else {
+                return DotEditContentStatus.CHANGED;
+            }
+        }
 
-        // Published: Has live version but no working version (no unpublished changes)
-        if (contentlet.live && !contentlet.working) return DotEditContentStatus.PUBLISHED;
-
-        // Draft: Has working version but no live version (never published)
-        if (contentlet.working && !contentlet.live) return DotEditContentStatus.DRAFT;
+        // Draft: Not live and has working version
+        if (contentlet.working) {
+            return DotEditContentStatus.DRAFT;
+        }
 
         // Unknown: None of the above conditions match
         return DotEditContentStatus.UNKNOWN;
