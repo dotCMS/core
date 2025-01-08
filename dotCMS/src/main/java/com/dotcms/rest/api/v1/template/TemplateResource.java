@@ -136,15 +136,26 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
         final User user = initData.getUser();
-        final Lazy<String> lazyCurrentHost = Lazy.of(() -> Try.of(() -> Host.class.cast(httpRequest.getSession().getAttribute(WebKeys.CURRENT_HOST)).getIdentifier()).getOrNull());
-        final Optional<String> checkedHostId = Optional.ofNullable(Try.of(()-> APILocator.getHostAPI()
-                .find(hostId, user, false).getIdentifier()).getOrElse(lazyCurrentHost.get()));
+
 
         Logger.debug(this, ()-> "Getting the List of templates");
 
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(ARCHIVE_PARAM, archive);
-        checkedHostId.ifPresent(checkedHostIdentifier -> extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostIdentifier));
+
+        //In case we need to get the list of templates across multiple sites, we don't set the TemplatePaginator.HOST_PARAMETER_ID
+        if (null == hostId || !StringPool.STAR.equals(hostId)) {
+            final Lazy<String> lazyCurrentHost = Lazy.of(() -> Try.of(() -> Host.class.cast(
+                            httpRequest.getSession().getAttribute(WebKeys.CURRENT_HOST)).getIdentifier())
+                    .getOrNull());
+            final Optional<String> checkedHostId = Optional.ofNullable(
+                    Try.of(() -> APILocator.getHostAPI()
+                                    .find(hostId, user, false).getIdentifier())
+                            .getOrElse(lazyCurrentHost.get()));
+            checkedHostId.ifPresent(
+                    checkedHostIdentifier -> extraParams.put(TemplatePaginator.HOST_PARAMETER_ID,
+                            checkedHostIdentifier));
+        }
         return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                 extraParams);
     }
