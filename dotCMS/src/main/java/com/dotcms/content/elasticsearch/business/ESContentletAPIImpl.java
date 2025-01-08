@@ -7401,6 +7401,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException("The contentlet must not be null.");
         }
         final String contentTypeId = contentlet.getContentTypeId();
+        final long languageId = contentlet.getLanguageId();
         final String contentIdentifier = (UtilMethods.isSet(contentlet.getIdentifier())
                 ? contentlet.getIdentifier()
                 : "Unknown/New");
@@ -7409,6 +7410,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "Contentlet [" + contentIdentifier + "] is not associated to " +
                             "any Content Type.");
         }
+        if (languageId > 0 && !this.languageAPI.hasLanguage(languageId)) {
+            throw new DotContentletValidationException(
+                    "Contentlet [" + contentIdentifier + "] is associated to an invalid language id: " + languageId);
+        }
+
         final ContentType contentType = Sneaky.sneak(
                 () -> APILocator.getContentTypeAPI(APILocator.systemUser()).find
                         (contentTypeId));

@@ -972,6 +972,14 @@ export const UVE_PAGE_RESPONSE_MAP = {
     })
 };
 
+export const PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK = {
+    ...MOCK_RESPONSE_VTL,
+    page: {
+        ...MOCK_RESPONSE_VTL.page,
+        rendered: '<h1>Advance template render</h1>'
+    }
+};
+
 export const dotPropertiesServiceMock = {
     getFeatureFlags: () =>
         of({

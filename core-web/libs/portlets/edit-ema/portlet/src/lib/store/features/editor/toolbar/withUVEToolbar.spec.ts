@@ -1,11 +1,13 @@
-import { describe } from '@jest/globals';
+import { expect, describe } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { mockDotDevices } from '@dotcms/utils-testing';
+import { CurrentUser } from '@dotcms/dotcms-js';
+import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
+import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
 import { withUVEToolbar } from './withUVEToolbar';
 
@@ -43,7 +45,20 @@ const initialState: UVEState = {
     }
 };
 
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withUVEToolbar());
+const currentUser: CurrentUser = {
+    email: 'test@example.com',
+    givenName: 'Test',
+    loginAs: false,
+    roleId: 'role123',
+    surname: 'User',
+    userId: 'user123'
+};
+
+export const uveStoreMock = signalStore(
+    { protectedState: false },
+    withState<UVEState>(initialState),
+    withUVEToolbar()
+);
 
 describe('withEditor', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
@@ -97,6 +112,145 @@ describe('withEditor', () => {
         // We don't need to test all the interactions of this because we already test this in the proper component
         it('should return the right infoDisplayProps', () => {
             expect(store.$infoDisplayProps()).toEqual(null);
+        });
+
+        describe('infoDisplayProps', () => {
+            it('should return null', () => {
+                expect(store.$infoDisplayProps()).toBe(null);
+            });
+
+            describe('socialMedia', () => {
+                it('should text for current social media', () => {
+                    store.setSEO('facebook');
+
+                    expect(store.$infoDisplayProps()).toEqual({
+                        icon: 'pi pi-facebook',
+                        id: 'socialMedia',
+                        info: {
+                            message: 'Viewing <b>facebook</b> social media preview',
+                            args: []
+                        },
+                        actionIcon: 'pi pi-times'
+                    });
+                });
+            });
+
+            describe('variant', () => {
+                it('should show have text for variant', () => {
+                    const currentExperiment = getRunningExperimentMock();
+
+                    const variantID = currentExperiment.trafficProportion.variants.find(
+                        (variant) => variant.name !== DEFAULT_VARIANT_NAME
+                    ).id;
+
+                    patchState(store, {
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                variantId: variantID
+                            }
+                        },
+                        experiment: currentExperiment
+                    });
+
+                    expect(store.$infoDisplayProps()).toEqual({
+                        icon: 'pi pi-file-edit',
+                        id: 'variant',
+                        info: {
+                            message: 'editpage.editing.variant',
+                            args: ['Variant A']
+                        },
+                        actionIcon: 'pi pi-arrow-left'
+                    });
+                });
+            });
+
+            describe('edit permissions', () => {
+                it('should show label and icon for no permissions', () => {
+                    patchState(store, {
+                        canEditPage: false
+                    });
+
+                    expect(store.$infoDisplayProps()).toEqual({
+                        icon: 'pi pi-exclamation-circle warning',
+                        id: 'no-permission',
+                        info: {
+                            message: 'editema.dont.have.edit.permission',
+                            args: []
+                        }
+                    });
+                });
+                it('should show label and icon when page is lock for editing and has unlock permission', () => {
+                    patchState(store, {
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            page: {
+                                ...MOCK_RESPONSE_HEADLESS.page,
+                                locked: true,
+                                canLock: true,
+                                lockedByName: 'John Doe',
+                                lockedBy: '456'
+                            }
+                        },
+                        currentUser
+                    });
+                    expect(store.$infoDisplayProps()).toEqual({
+                        icon: 'pi pi-lock',
+                        id: 'locked',
+                        info: {
+                            message: 'editpage.locked-by',
+                            args: ['John Doe']
+                        }
+                    });
+                });
+
+                it("should show a different message for that can't be locked", () => {
+                    patchState(store, {
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            page: {
+                                ...MOCK_RESPONSE_HEADLESS.page,
+                                locked: true,
+                                canLock: false,
+                                lockedByName: currentUser.givenName,
+                                lockedBy: currentUser.userId
+                            }
+                        },
+                        currentUser: {
+                            ...currentUser,
+                            userId: '123'
+                        }
+                    });
+
+                    expect(store.$infoDisplayProps()).toEqual({
+                        icon: 'pi pi-lock',
+                        id: 'locked',
+                        info: {
+                            message: 'editpage.locked-contact-with',
+                            args: ['Test']
+                        }
+                    });
+                });
+
+                it('should be null when locked by the same user', () => {
+                    patchState(store, {
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            page: {
+                                ...MOCK_RESPONSE_HEADLESS.page,
+                                locked: true,
+                                canLock: true,
+                                lockedByName: currentUser.givenName,
+                                lockedBy: currentUser.userId
+                            }
+                        },
+                        currentUser
+                    });
+
+                    expect(store.$infoDisplayProps()).toBe(null);
+                });
+            });
         });
     });
 
@@ -159,6 +313,22 @@ describe('withEditor', () => {
                         orientation: undefined,
                         seo: undefined
                     });
+                });
+            });
+        });
+
+        describe('setSEO', () => {
+            it('should set the seo, update viewparams, and remove device and orientation', () => {
+                store.setSEO('seo');
+
+                expect(store.socialMedia()).toBe('seo');
+                expect(store.device()).toBe(null);
+                expect(store.orientation()).toBe(null);
+
+                expect(store.viewParams()).toEqual({
+                    device: null,
+                    orientation: null,
+                    seo: 'seo'
                 });
             });
         });
