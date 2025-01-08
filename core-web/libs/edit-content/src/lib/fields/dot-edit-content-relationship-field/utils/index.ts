@@ -36,7 +36,7 @@ export function getRelationshipFromContentlet({
         return [];
     }
 
-    const relationship = contentlet[variable] || [];
+    const relationship = Array.isArray(contentlet[variable]) ? contentlet[variable] : [];
 
     return relationship;
 }
