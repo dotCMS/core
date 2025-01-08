@@ -433,7 +433,7 @@ public class ContainerLoader implements DotLoader {
 
 
         final String containerCode = velocityCodeBuilder.toString();
-        Logger.info(this, "DotResourceLoader:\tWriting out container code = " + containerCode);
+        Logger.debug(this, "DotResourceLoader:\tWriting out container code = " + containerCode);
         return writeOutVelocity(filePath, containerCode);
     }
 
