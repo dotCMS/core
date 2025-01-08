@@ -53,24 +53,44 @@ describe('BlockEditorRenderer', () => {
         expect(container.firstChild).toHaveStyle('color: red');
     });
 
-    it('should render console error and the invalid blocks message', () => {
-        jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
-        const consoleSpy = jest.spyOn(console, 'error');
+    describe('Error Handling', () => {
+        it('should show error message when blocks object is not valid', () => {
+            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+            const consoleSpy = jest.spyOn(console, 'error');
 
-        const { getByText } = render(<BlockEditorRenderer blocks={{} as Block} />);
+            const { getByText } = render(<BlockEditorRenderer blocks={'' as unknown as Block} />);
 
-        expect(getByText('BlockEditorRenderer Error: Invalid prop "blocks"')).toBeInTheDocument();
-        expect(consoleSpy).toHaveBeenCalledWith('BlockEditorRenderer Error: Invalid prop "blocks"');
-    });
+            expect(
+                getByText('Error: Blocks must be an object, but received: string')
+            ).toBeInTheDocument();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                'Error: Blocks must be an object, but received: string'
+            );
+        });
 
-    it('should render console error and not render the invalid blocks message', () => {
-        jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
-        const consoleSpy = jest.spyOn(console, 'error');
+        it('should show error message when blocks object dont have a doc type', () => {
+            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+            const consoleSpy = jest.spyOn(console, 'error');
 
-        const { queryByText } = render(<BlockEditorRenderer blocks={{} as Block} />);
+            const { queryByText } = render(
+                <BlockEditorRenderer blocks={{ content: [] } as unknown as Block} />
+            );
 
-        expect(queryByText('BlockEditorRenderer Error: Invalid prop "blocks"')).toBeNull();
-        expect(consoleSpy).toHaveBeenCalledWith('BlockEditorRenderer Error: Invalid prop "blocks"');
+            expect(queryByText('Error: Blocks must have a doc type')).toBeNull();
+            expect(consoleSpy).toHaveBeenCalledWith('Error: Blocks must have a doc type');
+        });
+
+        it('should show error message when blocks content array is empty', () => {
+            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+            const consoleSpy = jest.spyOn(console, 'error');
+
+            const { queryByText } = render(
+                <BlockEditorRenderer blocks={{ content: [], type: 'doc' } as unknown as Block} />
+            );
+
+            expect(queryByText('Error: Blocks content is empty')).toBeNull();
+            expect(consoleSpy).toHaveBeenCalledWith('Error: Blocks content is empty');
+        });
     });
 
     describe('when the editable prop is true', () => {
