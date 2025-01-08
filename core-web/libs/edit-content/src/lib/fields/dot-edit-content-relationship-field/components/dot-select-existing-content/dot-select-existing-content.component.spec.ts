@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { RelationshipFieldItem } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
@@ -18,10 +18,86 @@ const mockColumns: Column[] = [
     { field: 'modDate', header: 'Mod Date' }
 ];
 
-const mockData: RelationshipFieldItem[] = [
-    { id: '1', title: 'Content 1', language: '1', modDate: new Date().toISOString() },
-    { id: '2', title: 'Content 2', language: '1', modDate: new Date().toISOString() },
-    { id: '3', title: 'Content 3', language: '1', modDate: new Date().toISOString() }
+const mockContentletDefaults = {
+    hasTitleImage: false,
+    hostName: 'demo.dotcms.com',
+    modUserName: 'admin',
+    sortOrder: 0,
+    type: 'content',
+    url: '',
+    titleImage: null
+};
+
+const mockData: DotCMSContentlet[] = [
+    { 
+        ...mockContentletDefaults,
+        inode: '1',
+        identifier: 'id-1',
+        title: 'Content 1',
+        languageId: 1,
+        modDate: new Date().toISOString(),
+        contentType: 'test',
+        baseType: 'CONTENT',
+        owner: 'admin',
+        hasLiveVersion: true,
+        live: true,
+        working: true,
+        archived: false,
+        locked: false,
+        deleted: false,
+        statusIcons: '',
+        folder: 'SYSTEM_FOLDER',
+        friendlyName: 'Content 1',
+        modUser: 'admin',
+        host: 'demo.dotcms.com',
+        stInode: 'st-1'
+    },
+    { 
+        ...mockContentletDefaults,
+        inode: '2',
+        identifier: 'id-2',
+        title: 'Content 2',
+        languageId: 1,
+        modDate: new Date().toISOString(),
+        contentType: 'test',
+        baseType: 'CONTENT',
+        owner: 'admin',
+        hasLiveVersion: true,
+        live: true,
+        working: true,
+        archived: false,
+        locked: false,
+        deleted: false,
+        statusIcons: '',
+        folder: 'SYSTEM_FOLDER',
+        friendlyName: 'Content 2',
+        modUser: 'admin',
+        host: 'demo.dotcms.com',
+        stInode: 'st-2'
+    },
+    { 
+        ...mockContentletDefaults,
+        inode: '3',
+        identifier: 'id-3',
+        title: 'Content 3',
+        languageId: 1,
+        modDate: new Date().toISOString(),
+        contentType: 'test',
+        baseType: 'CONTENT',
+        owner: 'admin',
+        hasLiveVersion: true,
+        live: true,
+        working: true,
+        archived: false,
+        locked: false,
+        deleted: false,
+        statusIcons: '',
+        folder: 'SYSTEM_FOLDER',
+        friendlyName: 'Content 3',
+        modUser: 'admin',
+        host: 'demo.dotcms.com',
+        stInode: 'st-3'
+    }
 ];
 
 describe('DotSelectExistingContentComponent', () => {
@@ -29,13 +105,29 @@ describe('DotSelectExistingContentComponent', () => {
     let store: InstanceType<typeof ExistingContentStore>;
     let dialogRef: DynamicDialogRef;
 
-    const mockRelationshipItem = (id: string): RelationshipFieldItem => ({
-        id,
-        title: `Test Content ${id}`,
-        language: '1',
+    const mockRelationshipItem = (inode: string): DotCMSContentlet => ({
+        ...mockContentletDefaults,
+        inode,
+        identifier: `id-${inode}`,
+        title: `Test Content ${inode}`,
+        languageId: 1,
         description: 'Test description',
-        step: 'Step 1',
-        modDate: new Date().toISOString()
+        contentType: 'test',
+        modDate: new Date().toISOString(),
+        baseType: 'CONTENT',
+        owner: 'admin',
+        hasLiveVersion: true,
+        live: true,
+        working: true,
+        archived: false,
+        locked: false,
+        deleted: false,
+        statusIcons: '',
+        folder: 'SYSTEM_FOLDER',
+        friendlyName: `Test Content ${inode}`,
+        modUser: 'admin',
+        host: 'demo.dotcms.com',
+        stInode: `st-${inode}`
     });
 
     const messageServiceMock = new MockDotMessageService({
@@ -46,7 +138,8 @@ describe('DotSelectExistingContentComponent', () => {
     const mockDialogConfig = {
         data: {
             contentTypeId: 'test-content-type-id',
-            selectionMode: 'multiple'
+            selectionMode: 'multiple',
+            currentItemsIds: []
         }
     };
 
@@ -83,7 +176,8 @@ describe('DotSelectExistingContentComponent', () => {
                 spectator.component.ngOnInit();
                 expect(spy).toHaveBeenCalledWith({
                     contentTypeId: 'test-content-type-id',
-                    selectionMode: 'multiple'
+                    selectionMode: 'multiple',
+                    currentItemsIds: []
                 });
             });
         });

@@ -171,6 +171,6 @@ export class DotSelectExistingContentComponent implements OnInit {
     checkIfSelected(item: DotCMSContentlet) {
         const items = this.$items();
 
-        return items.some((selectedItem) => selectedItem.id === item.id);
+        return items.some((selectedItem) => selectedItem.inode === item.inode);
     }
 }

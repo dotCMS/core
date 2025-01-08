@@ -107,9 +107,9 @@ export const RelationshipFieldStore = signalStore(
              * Deletes an item from the store at the specified index.
              * @param index - The index of the item to delete.
              */
-            deleteItem(identifier: string) {
+            deleteItem(inode: string) {
                 patchState(store, {
-                    data: store.data().filter((item) => item.identifier !== identifier)
+                    data: store.data().filter((item) => item.inode !== inode)
                 });
             },
             /**

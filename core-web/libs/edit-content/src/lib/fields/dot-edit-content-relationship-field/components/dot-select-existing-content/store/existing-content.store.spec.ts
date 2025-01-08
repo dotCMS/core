@@ -5,13 +5,12 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { delay } from 'rxjs/operators';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 import { ExistingContentStore } from './existing-content.store';
 
 import { Column } from '../../../models/column.model';
-import { DynamicRelationshipFieldItem } from '../../../models/relationship.models';
 
 describe('ExistingContentStore', () => {
     let store: InstanceType<typeof ExistingContentStore>;
@@ -22,10 +21,112 @@ describe('ExistingContentStore', () => {
         { field: 'modDate', header: 'Mod Date' }
     ];
 
-    const mockData: DynamicRelationshipFieldItem[] = [
-        { id: '1', title: 'Content 1', language: '1', modDate: new Date().toISOString() },
-        { id: '2', title: 'Content 2', language: '1', modDate: new Date().toISOString() },
-        { id: '3', title: 'Content 3', language: '1', modDate: new Date().toISOString() }
+    const mockData: DotCMSContentlet[] = [
+        {
+            id: '1',
+            title: 'Content 1',
+            language: '1',
+            modDate: new Date().toISOString(),
+            archived: false,
+            baseType: 'content',
+            contentType: 'testType',
+            folder: 'default',
+            hasLiveVersion: false,
+            host: 'demo.dotcms.com',
+            inode: '123',
+            isLocked: false,
+            live: false,
+            locked: false,
+            owner: 'admin',
+            permissionId: '123',
+            permissionType: 'content',
+            statusIcons: [],
+            working: true,
+            workingInode: '123',
+            url: '',
+            hasTitleImage: false,
+            hostName: 'demo.dotcms.com',
+            identifier: '123',
+            languageId: 1,
+            sortOrder: 0,
+            structureName: 'Test Structure',
+            type: 'content',
+            workflowState: 'published',
+            modUser: 'admin',
+            modUserName: 'Admin User',
+            stInode: '456',
+            titleImage: null
+        },
+        {
+            id: '2',
+            title: 'Content 2',
+            language: '1',
+            modDate: new Date().toISOString(),
+            archived: false,
+            baseType: 'content',
+            contentType: 'testType',
+            folder: 'default',
+            hasLiveVersion: false,
+            host: 'demo.dotcms.com',
+            inode: '123',
+            isLocked: false,
+            live: false,
+            locked: false,
+            owner: 'admin',
+            permissionId: '123',
+            permissionType: 'content',
+            statusIcons: [],
+            working: true,
+            workingInode: '123',
+            url: '',
+            hasTitleImage: false,
+            hostName: 'demo.dotcms.com',
+            identifier: '123',
+            languageId: 1,
+            sortOrder: 0,
+            structureName: 'Test Structure',
+            type: 'content',
+            workflowState: 'published',
+            modUser: 'admin',
+            modUserName: 'Admin User',
+            stInode: '456',
+            titleImage: null
+        },
+        {
+            id: '3',
+            title: 'Content 3',
+            language: '1',
+            modDate: new Date().toISOString(),
+            archived: false,
+            baseType: 'content',
+            contentType: 'testType',
+            folder: 'default',
+            hasLiveVersion: false,
+            host: 'demo.dotcms.com',
+            inode: '123',
+            isLocked: false,
+            live: false,
+            locked: false,
+            owner: 'admin',
+            permissionId: '123',
+            permissionType: 'content',
+            statusIcons: [],
+            working: true,
+            workingInode: '123',
+            url: '',
+            hasTitleImage: false,
+            hostName: 'demo.dotcms.com',
+            identifier: '123',
+            languageId: 1,
+            sortOrder: 0,
+            structureName: 'Test Structure',
+            type: 'content',
+            workflowState: 'published',
+            modUser: 'admin',
+            modUserName: 'Admin User',
+            stInode: '456',
+            titleImage: null
+        }
     ];
 
     beforeEach(() => {
@@ -43,7 +144,7 @@ describe('ExistingContentStore', () => {
 
     describe('State Management', () => {
         it('should handle empty contentTypeId', fakeAsync(() => {
-            store.initLoad({ contentTypeId: null, selectionMode: 'single' });
+            store.initLoad({ contentTypeId: null, selectionMode: 'single', currentItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.ERROR);
@@ -54,7 +155,7 @@ describe('ExistingContentStore', () => {
         it('should load content successfully', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.LOADED);
@@ -68,7 +169,7 @@ describe('ExistingContentStore', () => {
                 throwError(() => new Error('Server Error'))
             );
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.ERROR);
@@ -130,12 +231,12 @@ describe('ExistingContentStore', () => {
     describe('Computed Properties', () => {
         it('should compute loading state correctly', fakeAsync(() => {
             const mockObservable = of([mockColumns, mockData]).pipe(delay(100)) as Observable<
-                [Column[], DynamicRelationshipFieldItem[]]
+                [Column[], DotCMSContentlet[]]
             >;
 
             service.getColumnsAndContent.mockReturnValue(mockObservable);
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
             expect(store.isLoading()).toBe(true);
 
             tick(100);
@@ -145,7 +246,7 @@ describe('ExistingContentStore', () => {
         it('should compute total pages correctly', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
             tick();
 
             expect(store.totalPages()).toBe(1);

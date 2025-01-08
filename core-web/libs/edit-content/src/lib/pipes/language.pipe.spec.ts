@@ -1,4 +1,4 @@
-import { SpectatorPipe, createPipeFactory } from '@ngneat/spectator';
+import { SpectatorPipe, createPipeFactory } from '@ngneat/spectator/jest';
 
 import { DotLanguage } from '@dotcms/dotcms-models';
 
@@ -22,7 +22,7 @@ describe('LanguagePipe', () => {
         prop: null
       }
     });
-    expect(spectator.element).toHaveText('');
+    expect(spectator.element.textContent).toBe('');
   });
 
   it('should return empty string when language is undefined', () => {
@@ -31,7 +31,7 @@ describe('LanguagePipe', () => {
         prop: undefined
       }
     });
-    expect(spectator.element).toHaveText('');
+    expect(spectator.element.textContent).toBe('');
   });
 
   it('should format language with languageCode', () => {
@@ -46,7 +46,7 @@ describe('LanguagePipe', () => {
         prop: language
       }
     });
-    expect(spectator.element).toHaveText('English (en)');
+    expect(spectator.element.textContent).toBe('English (en)');
   });
 
   it('should format language with isoCode when languageCode is empty', () => {
@@ -62,7 +62,7 @@ describe('LanguagePipe', () => {
         prop: language
       }
     });
-    expect(spectator.element).toHaveText('Spanish (es)');
+    expect(spectator.element.textContent).toBe('Spanish (es)');
   });
 
   it('should format language with empty code when neither languageCode nor isoCode has value', () => {
@@ -77,6 +77,6 @@ describe('LanguagePipe', () => {
         prop: language
       }
     });
-    expect(spectator.element).toHaveText('French ()');
+    expect(spectator.element.textContent).toBe('French ()');
   });
 }); 

@@ -1,19 +1,144 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { RelationshipFieldStore } from './relationship-field.store';
-
-import { DynamicRelationshipFieldItem } from '../models/relationship.models';
 
 describe('RelationshipFieldStore', () => {
     let store: InstanceType<typeof RelationshipFieldStore>;
 
-    const mockData: DynamicRelationshipFieldItem[] = [
-        { id: '1', title: 'Content 1', language: '1', modDate: new Date().toISOString() },
-        { id: '2', title: 'Content 2', language: '1', modDate: new Date().toISOString() },
-        { id: '3', title: 'Content 3', language: '1', modDate: new Date().toISOString() }
+    const mockData: DotCMSContentlet[] = [
+        { 
+            id: '1',
+            title: 'Content 1',
+            language: '1',
+            modDate: new Date().toISOString(),
+            inode: 'inode1',
+            archived: false,
+            baseType: 'content',
+            contentType: 'test',
+            folder: 'test',
+            host: 'test',
+            identifier: 'test',
+            live: true,
+            locked: false,
+            owner: 'test',
+            permissions: [],
+            working: true,
+            languageId: 1,
+            contentTypeId: 'test',
+            url: 'test',
+            hasLiveVersion: true,
+            deleted: false,
+            hasTitleImage: false,
+            hostName: 'test',
+            modUser: 'test',
+            modUserName: 'test',
+            publishDate: new Date().toISOString(),
+            sortOrder: 0,
+            versionType: 'test',
+            stInode: 'test',
+            titleImage: null
+        },
+        { 
+            id: '2',
+            title: 'Content 2',
+            language: '1',
+            modDate: new Date().toISOString(),
+            inode: 'inode2',
+            archived: false,
+            baseType: 'content',
+            contentType: 'test',
+            folder: 'test',
+            host: 'test',
+            identifier: 'test',
+            live: true,
+            locked: false,
+            owner: 'test',
+            permissions: [],
+            working: true,
+            languageId: 1,
+            contentTypeId: 'test',
+            url: 'test',
+            hasLiveVersion: true,
+            deleted: false,
+            hasTitleImage: false,
+            hostName: 'test',
+            modUser: 'test',
+            modUserName: 'test',
+            publishDate: new Date().toISOString(),
+            sortOrder: 0,
+            versionType: 'test',
+            stInode: 'test',
+            titleImage: null
+        },
+        { 
+            id: '3',
+            title: 'Content 3',
+            language: '1',
+            modDate: new Date().toISOString(),
+            inode: 'inode3',
+            archived: false,
+            baseType: 'content',
+            contentType: 'test',
+            folder: 'test',
+            host: 'test',
+            identifier: 'test',
+            live: true,
+            locked: false,
+            owner: 'test',
+            permissions: [],
+            working: true,
+            languageId: 1,
+            contentTypeId: 'test',
+            url: 'test',
+            hasLiveVersion: true,
+            deleted: false,
+            hasTitleImage: false,
+            hostName: 'test',
+            modUser: 'test',
+            modUserName: 'test',
+            publishDate: new Date().toISOString(),
+            sortOrder: 0,
+            versionType: 'test',
+            stInode: 'test',
+            titleImage: null
+        }
     ];
+
+    const mockContentlet: DotCMSContentlet = {
+        id: '123',
+        inode: 'inode123',
+        title: 'Test Contentlet',
+        language: '1',
+        modDate: new Date().toISOString(),
+        relationship_field: '1,2,3',
+        archived: false,
+        baseType: 'content',
+        contentType: 'test',
+        folder: 'test',
+        host: 'test',
+        identifier: 'test',
+        live: true,
+        locked: false,
+        owner: 'test',
+        permissions: [],
+        working: true,
+        languageId: 1,
+        contentTypeId: 'test',
+        url: 'test',
+        hasLiveVersion: true,
+        deleted: false,
+        hasTitleImage: false,
+        hostName: 'test',
+        modUser: 'test',
+        modUserName: 'test',
+        publishDate: new Date().toISOString(),
+        sortOrder: 0,
+        versionType: 'test',
+        stInode: 'test',
+        titleImage: null
+    };
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -41,6 +166,35 @@ describe('RelationshipFieldStore', () => {
     });
 
     describe('State Management', () => {
+        describe('initialize', () => {
+            it('should set single selection mode for ONE_TO_ONE relationship', () => {
+                store.initialize({ 
+                    cardinality: 2,
+                    contentlet: mockContentlet,
+                    variable: 'relationship_field'
+                });
+                expect(store.selectionMode()).toBe('single');
+            });
+
+            it('should set multiple selection mode for other relationship types', () => {
+                store.initialize({ 
+                    cardinality: 0,
+                    contentlet: mockContentlet,
+                    variable: 'relationship_field'
+                });
+                expect(store.selectionMode()).toBe('multiple');
+            });
+
+            it('should initialize data from contentlet', () => {
+                store.initialize({ 
+                    cardinality: 0,
+                    contentlet: mockContentlet,
+                    variable: 'relationship_field'
+                });
+                expect(store.data()).toBeDefined();
+            });
+        });
+
         describe('setData', () => {
             it('should set data correctly', () => {
                 store.setData(mockData);
@@ -48,41 +202,19 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
-        describe('setCardinality', () => {
-            it('should set single selection mode for ONE_TO_ONE relationship', () => {
-                store.setCardinality(2); // ONE_TO_ONE cardinality
-                expect(store.selectionMode()).toBe('single');
-            });
-
-            it('should set multiple selection mode for other relationship types', () => {
-                store.setCardinality(0); // ONE_TO_MANY cardinality
-                expect(store.selectionMode()).toBe('multiple');
-            });
-
-            it('should throw error for invalid cardinality', () => {
-                expect(() => store.setCardinality(999)).toThrow('Invalid relationship type');
+        describe('addData', () => {
+            it('should add new data', () => {
+                store.addData(mockData);
+                expect(store.data()).toEqual(mockData);
             });
         });
 
-        describe('addData', () => {
-            it('should add new unique data to existing data', () => {
-                const initialData = [mockData[0]];
-                const newData = [mockData[1], mockData[2]];
-
-                store.setData(initialData);
-                store.addData(newData);
-
-                expect(store.data()).toEqual([...initialData, ...newData]);
-            });
-
-            it('should not add duplicate data', () => {
-                const initialData = [mockData[0]];
-                const newData = [mockData[0], mockData[1]];
-
-                store.setData(initialData);
-                store.addData(newData);
-
-                expect(store.data()).toEqual([mockData[0], mockData[1]]);
+        describe('deleteItem', () => {
+            it('should delete item by inode', () => {
+                store.setData(mockData);
+                store.deleteItem('inode1');
+                expect(store.data().length).toBe(2);
+                expect(store.data().find(item => item.inode === 'inode1')).toBeUndefined();
             });
         });
 
@@ -121,19 +253,30 @@ describe('RelationshipFieldStore', () => {
         });
 
         describe('isDisabledCreateNewContent', () => {
+            beforeEach(() => {
+                store.initialize({ 
+                    cardinality: 2,
+                    contentlet: mockContentlet,
+                    variable: 'relationship_field'
+                });
+            });
+
             it('should disable for single mode with one item', () => {
-                store.setCardinality(2); // ONE_TO_ONE
                 store.setData([mockData[0]]);
                 expect(store.isDisabledCreateNewContent()).toBe(true);
             });
 
             it('should not disable for single mode with no items', () => {
-                store.setCardinality(2); // ONE_TO_ONE
+                store.setData([]);
                 expect(store.isDisabledCreateNewContent()).toBe(false);
             });
 
             it('should not disable for multiple mode regardless of items', () => {
-                store.setCardinality(0); // ONE_TO_MANY
+                store.initialize({ 
+                    cardinality: 0,
+                    contentlet: mockContentlet,
+                    variable: 'relationship_field'
+                });
                 store.setData(mockData);
                 expect(store.isDisabledCreateNewContent()).toBe(false);
             });

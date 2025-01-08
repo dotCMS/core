@@ -229,8 +229,8 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      *
      * @param index - The index of the item to delete.
      */
-    deleteItem(id: string) {
-        this.store.deleteItem(id);
+    deleteItem(inode: string) {
+        this.store.deleteItem(inode);
     }
 
     /**
@@ -252,7 +252,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             data: {
                 contentTypeId: this.$attributes().contentTypeId,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.identifier)
+                currentItemsIds: this.store.data().map((item) => item.inode)
             },
             templates: {
                 header: HeaderComponent
