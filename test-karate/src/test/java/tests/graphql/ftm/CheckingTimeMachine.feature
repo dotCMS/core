@@ -8,7 +8,7 @@ Feature: Test Time Machine functionality
 
     * callonce read('classpath:graphql/ftm/setup.feature')
 
-  @smoke @positive @ignore
+  @smoke @positive @ftm
   Scenario: Test Time Machine functionality when no publish date is provided
     Given url baseUrl + '/api/v1/page/render/'+pageUrl+'?language_id=1&mode=LIVE'
     And headers commonHeaders
@@ -27,7 +27,7 @@ Feature: Test Time Machine functionality
     * match rendered contains CONTENTLET_ONE_V1
     * match rendered contains CONTENTLET_TWO_V2
 
-  @positive
+  @positive @ftm
   Scenario: Test Time Machine functionality when a publish date is provided expect the future content to be displayed
 
     Given url baseUrl + '/api/v1/page/render/'+pageUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTime
@@ -44,7 +44,7 @@ Feature: Test Time Machine functionality
     * match rendered contains CONTENTLET_ONE_V2
     * match rendered contains CONTENTLET_TWO_V2
 
-  @smoke @positive @ignore @graphql
+  @smoke @positive @graphql @ftm
   Scenario: Send GraphQL query to fetch page details no publish date is sent
     * def graphQLRequestPayLoad = buildGraphQLRequestPayload (pageUrl)
     Given url baseUrl + '/api/v1/graphql'
@@ -58,7 +58,7 @@ Feature: Test Time Machine functionality
     * match contentlets contains CONTENTLET_ONE_V1
     * match contentlets contains CONTENTLET_TWO_V2
 
-  @smoke @positive @ignore @graphql
+  @smoke @positive @graphql @ftm
   Scenario: Send GraphQL query to fetch page details, publish date is sent expect the future content to be displayed
     * def graphQLRequestPayLoad = buildGraphQLRequestPayload (pageUrl, formattedFutureDateTime)
     Given url baseUrl + '/api/v1/graphql'
