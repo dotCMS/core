@@ -144,6 +144,7 @@ public class ContentBundler implements IBundler {
 					// If push or push & delete, exclude deleted contents
 					excludeDeleted = " +deleted:false";//
 				}
+				Logger.info(this,"Include Archived Content In The Bundle: " + Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",false));
 				for (String contentIdentifier : contentsIds) {
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +live:true" + excludeDeleted, 0, -1, null, systemUser, false));
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +working:true" + excludeDeleted, 0, -1, null, systemUser, false));
@@ -290,10 +291,11 @@ public class ContentBundler implements IBundler {
 		File assetFolder = new File(bundleRoot.getPath()+File.separator+"assets");
 		String inode=con.getInode();
 		Map<String, List<Tag>> contentTags = new HashMap<>();
-
+		final boolean shouldIncludeAssets = Config.getBooleanProperty("INCLUDE_ASSETS_BUNDLE", true);
+		Logger.info(this, "Include Assets In The Bundle: " + shouldIncludeAssets);
 		for(Field ff : fields) {
 			//Avoid this to reduce bundle size since we're gonna do a rsync of the assets directory of the datasets
-			if(Config.getBooleanProperty("INCLUDE_ASSETS_BUNDLE", true)) {
+			if(shouldIncludeAssets) {
 				if (ff.getFieldType().toString().equals(Field.FieldType.BINARY.toString())) {
 					File sourceFile = con.getBinary(ff.getVelocityVarName());
 
