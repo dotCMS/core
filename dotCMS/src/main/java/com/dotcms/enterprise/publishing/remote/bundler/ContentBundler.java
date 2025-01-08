@@ -85,8 +85,8 @@ public class ContentBundler implements IBundler {
 	private UserAPI uAPI = null;
 	private PublisherAPI pubAPI = null;
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
-	final boolean shouldIncludeAssets = Config.getBooleanProperty("INCLUDE_ASSETS_BUNDLE", true);
-	final boolean shouldIncludeArchivedContent =  Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",false);
+	final boolean shouldIncludeAssets = Config.getBooleanProperty("INCLUDE_ASSETS_BUNDLE", false);
+	final boolean shouldIncludeArchivedContent =  Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",true);
 
 	public final static String CONTENT_EXTENSION = ".content.xml" ;
 	public final static String CONTENT_WORKFLOW_EXTENSION = ".contentworkflow.xml";
