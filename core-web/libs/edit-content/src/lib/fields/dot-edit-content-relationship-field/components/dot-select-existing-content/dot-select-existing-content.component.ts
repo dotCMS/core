@@ -130,11 +130,14 @@ export class DotSelectExistingContentComponent implements OnInit {
     });
 
     constructor() {
-        effect(() => {
-            this.$selectedItems.set(this.store.selectedItems());
-        }, {
-            allowSignalWrites: true
-        });
+        effect(
+            () => {
+                this.$selectedItems.set(this.store.selectedItems());
+            },
+            {
+                allowSignalWrites: true
+            }
+        );
     }
 
     ngOnInit() {

@@ -29,7 +29,7 @@ const mockContentletDefaults = {
 };
 
 const mockData: DotCMSContentlet[] = [
-    { 
+    {
         ...mockContentletDefaults,
         inode: '1',
         identifier: 'id-1',
@@ -52,7 +52,7 @@ const mockData: DotCMSContentlet[] = [
         host: 'demo.dotcms.com',
         stInode: 'st-1'
     },
-    { 
+    {
         ...mockContentletDefaults,
         inode: '2',
         identifier: 'id-2',
@@ -75,7 +75,7 @@ const mockData: DotCMSContentlet[] = [
         host: 'demo.dotcms.com',
         stInode: 'st-2'
     },
-    { 
+    {
         ...mockContentletDefaults,
         inode: '3',
         identifier: 'id-3',

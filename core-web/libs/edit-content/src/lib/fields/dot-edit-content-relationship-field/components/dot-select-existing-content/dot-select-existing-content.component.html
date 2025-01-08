@@ -68,7 +68,9 @@
                         }
                     </th>
                     <th scope="col" class="max-w-12rem" [pSortableColumn]="'title'">
-                        <span class="capitalize">{{ 'dot.file.relationship.dialog.table.title' | dm }}</span>
+                        <span class="capitalize">
+                            {{ 'dot.file.relationship.dialog.table.title' | dm }}
+                        </span>
                         <p-sortIcon [field]="'title'" />
                     </th>
                     @for (column of columns; track $index) {
@@ -78,13 +80,19 @@
                         </th>
                     }
                     <th scope="col" class="max-w-12rem" [pSortableColumn]="'language'">
-                        <span class="capitalize">{{ 'dot.file.relationship.dialog.table.language' | dm }}</span>
+                        <span class="capitalize">
+                            {{ 'dot.file.relationship.dialog.table.language' | dm }}
+                        </span>
                     </th>
                     <th scope="col" class="max-w-12rem" [pSortableColumn]="'state'">
-                        <span class="capitalize">{{ 'dot.file.relationship.dialog.table.state' | dm }}</span>
+                        <span class="capitalize">
+                            {{ 'dot.file.relationship.dialog.table.state' | dm }}
+                        </span>
                     </th>
                     <th scope="col" class="max-w-12rem" [pSortableColumn]="'modDate'">
-                        <span class="capitalize">{{ 'dot.file.relationship.dialog.table.last.modified' | dm }}</span>
+                        <span class="capitalize">
+                            {{ 'dot.file.relationship.dialog.table.last.modified' | dm }}
+                        </span>
                         <p-sortIcon [field]="'modDate'" />
                     </th>
                 </tr>
@@ -111,7 +119,9 @@
                     </td>
                     <td class="max-w-12rem">
                         @let status = item | contentletStatus;
-                        <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
+                        <p-chip
+                            [styleClass]="'p-chip-sm ' + status.classes"
+                            [label]="status.label" />
                     </td>
                     <td class="max-w-12rem">
                         <p class="truncate-text">{{ item.modDate | date: 'longDate' }}</p>

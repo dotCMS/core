@@ -62,7 +62,10 @@ describe('RelationshipFieldService', () => {
 
             const contentTypeId = '123';
 
-            const expectedColumns = mockFields.map((field) => ({ field: field.variable, header: field.name }));
+            const expectedColumns = mockFields.map((field) => ({
+                field: field.variable,
+                header: field.name
+            }));
 
             spectator.service.getColumns(contentTypeId).subscribe((columns) => {
                 expect(dotFieldService.getFields).toHaveBeenCalledWith(
@@ -249,14 +252,24 @@ describe('RelationshipFieldService', () => {
                         title: 'Test Content 1',
                         field: 'Field 1',
                         description: 'Description 1',
-                        language: { id: 1, language: 'English', isoCode: 'en', languageCode: 'en-US' }
+                        language: {
+                            id: 1,
+                            language: 'English',
+                            isoCode: 'en',
+                            languageCode: 'en-US'
+                        }
                     });
                     expect(item1).toEqual({
                         identifier: '456',
                         title: 'Test Content 2',
                         field: 'Field 2',
                         description: 'Description 2',
-                        language: { id: 2, language: 'Spanish', isoCode: 'es', languageCode: 'es-ES' }
+                        language: {
+                            id: 2,
+                            language: 'Spanish',
+                            isoCode: 'es',
+                            languageCode: 'es-ES'
+                        }
                     });
 
                     // Verify service calls

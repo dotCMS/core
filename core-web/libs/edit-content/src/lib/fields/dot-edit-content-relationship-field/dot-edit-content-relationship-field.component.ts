@@ -31,7 +31,6 @@ import { HeaderComponent } from './components/header/header.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
-
 @Component({
     selector: 'dot-edit-content-relationship-field',
     standalone: true,

@@ -8,7 +8,7 @@ describe('RelationshipFieldStore', () => {
     let store: InstanceType<typeof RelationshipFieldStore>;
 
     const mockData: DotCMSContentlet[] = [
-        { 
+        {
             id: '1',
             title: 'Content 1',
             language: '1',
@@ -40,7 +40,7 @@ describe('RelationshipFieldStore', () => {
             stInode: 'test',
             titleImage: null
         },
-        { 
+        {
             id: '2',
             title: 'Content 2',
             language: '1',
@@ -72,7 +72,7 @@ describe('RelationshipFieldStore', () => {
             stInode: 'test',
             titleImage: null
         },
-        { 
+        {
             id: '3',
             title: 'Content 3',
             language: '1',
@@ -168,7 +168,7 @@ describe('RelationshipFieldStore', () => {
     describe('State Management', () => {
         describe('initialize', () => {
             it('should set single selection mode for ONE_TO_ONE relationship', () => {
-                store.initialize({ 
+                store.initialize({
                     cardinality: 2,
                     contentlet: mockContentlet,
                     variable: 'relationship_field'
@@ -177,7 +177,7 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should set multiple selection mode for other relationship types', () => {
-                store.initialize({ 
+                store.initialize({
                     cardinality: 0,
                     contentlet: mockContentlet,
                     variable: 'relationship_field'
@@ -186,7 +186,7 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should initialize data from contentlet', () => {
-                store.initialize({ 
+                store.initialize({
                     cardinality: 0,
                     contentlet: mockContentlet,
                     variable: 'relationship_field'
@@ -214,7 +214,7 @@ describe('RelationshipFieldStore', () => {
                 store.setData(mockData);
                 store.deleteItem('inode1');
                 expect(store.data().length).toBe(2);
-                expect(store.data().find(item => item.inode === 'inode1')).toBeUndefined();
+                expect(store.data().find((item) => item.inode === 'inode1')).toBeUndefined();
             });
         });
 
@@ -254,7 +254,7 @@ describe('RelationshipFieldStore', () => {
 
         describe('isDisabledCreateNewContent', () => {
             beforeEach(() => {
-                store.initialize({ 
+                store.initialize({
                     cardinality: 2,
                     contentlet: mockContentlet,
                     variable: 'relationship_field'
@@ -272,7 +272,7 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should not disable for multiple mode regardless of items', () => {
-                store.initialize({ 
+                store.initialize({
                     cardinality: 0,
                     contentlet: mockContentlet,
                     variable: 'relationship_field'

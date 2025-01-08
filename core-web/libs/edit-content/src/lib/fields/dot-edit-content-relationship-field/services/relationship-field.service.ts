@@ -3,7 +3,6 @@ import { forkJoin, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-
 import { catchError, map, pluck } from 'rxjs/operators';
 
 import {
@@ -47,9 +46,7 @@ export class RelationshipFieldService {
      * @param contentTypeId The content type ID
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
-    getColumnsAndContent(
-        contentTypeId: string
-    ): Observable<[Column[], DotCMSContentlet[]] | null> {
+    getColumnsAndContent(contentTypeId: string): Observable<[Column[], DotCMSContentlet[]] | null> {
         return forkJoin([
             this.getColumns(contentTypeId),
             this.getContent(contentTypeId),
@@ -84,7 +81,7 @@ export class RelationshipFieldService {
         return this.#dotLanguagesService.get().pipe(
             map((languages) =>
                 languages.reduce((acc, lang) => {
-                    acc[lang.id] = {...lang};
+                    acc[lang.id] = { ...lang };
 
                     return acc;
                 }, {})
@@ -99,8 +96,8 @@ export class RelationshipFieldService {
      */
     #buildColumns(columns: DotCMSContentTypeField[]): Column[] {
         return columns
-        .filter((column) => column.variable && column.name)
-        .map((column) => ({
+            .filter((column) => column.variable && column.name)
+            .map((column) => ({
                 field: column.variable,
                 header: column.name
             }));

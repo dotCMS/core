@@ -35,7 +35,6 @@ export function getRelationshipFromContentlet({
     if (!contentlet || !variable) {
         return [];
     }
-    
 
     const relationship = contentlet[variable] || [];
 

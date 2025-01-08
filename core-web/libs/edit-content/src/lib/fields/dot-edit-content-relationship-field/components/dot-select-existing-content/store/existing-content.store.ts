@@ -9,9 +9,7 @@ import { tap, switchMap, filter } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
-import {
-    SelectionMode
-} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import { SelectionMode } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
@@ -67,7 +65,7 @@ export const ExistingContentStore = signalStore(
             const data = state.data();
             const currentItemsIds = state.currentItemsIds();
 
-            return data.filter((item) => currentItemsIds.includes(item.inode));;
+            return data.filter((item) => currentItemsIds.includes(item.inode));
         })
     })),
     withMethods((store) => {
@@ -96,7 +94,7 @@ export const ExistingContentStore = signalStore(
                         }
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
-                    switchMap(({ contentTypeId, currentItemsIds }) => 
+                    switchMap(({ contentTypeId, currentItemsIds }) =>
                         relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
                                 next: ([columns, data]) => {
