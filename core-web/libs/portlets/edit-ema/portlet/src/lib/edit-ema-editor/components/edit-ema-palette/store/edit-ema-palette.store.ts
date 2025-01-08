@@ -248,15 +248,15 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
             )
         }).pipe(
-            retryWhen((errors) => {
-                return errors.pipe(
+            retryWhen((errors) =>
+                errors.pipe(
                     delay(500),
                     takeWhile((error) => {
                         // The request is returning null in some cases and we need to retry
                         return error instanceof TypeError;
                     })
-                );
-            }),
+                )
+            ),
             map(({ contentTypes, widgets, hiddenContentTypes }) => {
                 /**
                  * This filter is used to prevent widgets from being repeated.

@@ -86,15 +86,15 @@ export class DotEmaBookmarksComponent implements OnInit {
             })
             .pipe(
                 takeUntilDestroyed(this.destroyRef),
-                retryWhen((errors) => {
-                    return errors.pipe(
+                retryWhen((errors) =>
+                    errors.pipe(
                         delay(500),
                         takeWhile((error) => {
                             // This request is returning null in some cases and we need to retry
                             return error instanceof TypeError;
                         })
-                    );
-                }),
+                    )
+                ),
 
                 map((res) => res.jsonObjectView.contentlets[0])
             )
