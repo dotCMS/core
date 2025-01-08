@@ -4,7 +4,7 @@ import { EMPTY, Observable, forkJoin } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, delay, map, retryWhen, switchMap, takeWhile, tap } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -248,6 +248,15 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                 DotConfigurationVariables.CONTENT_PALETTE_HIDDEN_CONTENT_TYPES
             )
         }).pipe(
+            retryWhen((errors) => {
+                return errors.pipe(
+                    delay(500),
+                    takeWhile((error) => {
+                        // The request is returning null in some cases and we need to retry
+                        return error instanceof TypeError;
+                    })
+                );
+            }),
             map(({ contentTypes, widgets, hiddenContentTypes }) => {
                 /**
                  * This filter is used to prevent widgets from being repeated.

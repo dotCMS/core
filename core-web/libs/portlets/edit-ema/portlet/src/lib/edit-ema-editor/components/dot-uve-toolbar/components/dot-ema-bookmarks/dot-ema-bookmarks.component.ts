@@ -1,13 +1,22 @@
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    Input,
+    OnInit,
+    inject,
+    signal
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { map, switchMap } from 'rxjs/operators';
+import { delay, map, retryWhen, takeWhile } from 'rxjs/operators';
 
 import { DotFavoritePageService, DotMessageService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -24,10 +33,11 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
 
-    private readonly loginService = inject(LoginService);
     private readonly dotFavoritePageService = inject(DotFavoritePageService);
+    private readonly http = inject(HttpClient);
     private readonly dialogService = inject(DialogService);
     private readonly dotMessageService = inject(DotMessageService);
+    private readonly destroyRef = inject(DestroyRef);
     protected readonly store = inject(UVEStore);
 
     favoritePage: DotCMSContentlet;
@@ -68,18 +78,25 @@ export class DotEmaBookmarksComponent implements OnInit {
     private fetchFavoritePage(url: string): void {
         this.loading.set(true);
 
-        this.loginService
-            .getCurrentUser()
+        this.dotFavoritePageService
+            .get({
+                url,
+                userId: this.store.currentUser()?.userId,
+                limit: 10
+            })
             .pipe(
-                switchMap((user) => {
-                    return this.dotFavoritePageService
-                        .get({
-                            url,
-                            userId: user.userId,
-                            limit: 10
+                takeUntilDestroyed(this.destroyRef),
+                retryWhen((errors) => {
+                    return errors.pipe(
+                        delay(500),
+                        takeWhile((error) => {
+                            // This request is returning null in some cases and we need to retry
+                            return error instanceof TypeError;
                         })
-                        .pipe(map((res) => res.jsonObjectView.contentlets[0]));
-                })
+                    );
+                }),
+
+                map((res) => res.jsonObjectView.contentlets[0])
             )
             .subscribe((favoritePage) => {
                 this.loading.set(false);
