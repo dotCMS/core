@@ -99,14 +99,6 @@ export class DotUveToolbarComponent {
 
     protected readonly CURRENT_DATE = new Date();
 
-    readonly $styleToolbarClass = computed(() => {
-        if (!this.$isPreviewMode()) {
-            return 'uve-toolbar';
-        }
-
-        return 'uve-toolbar uve-toolbar-preview';
-    });
-
     protected readonly publishDateParam = this.#store.pageParams().publishDate;
     protected readonly $previewDate = model<Date>(
         this.publishDateParam ? new Date(this.publishDateParam) : null

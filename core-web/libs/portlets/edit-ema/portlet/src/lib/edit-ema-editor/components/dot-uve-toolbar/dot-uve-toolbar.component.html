@@ -1,7 +1,7 @@
 @let preview = $isPreviewMode();
 @let runningExperiment = $toolbar().runningExperiment;
 
-<p-toolbar [styleClass]="$styleToolbarClass()">
+<p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview }">
         @if (preview) {
             <ng-container [ngTemplateOutlet]="previewLeftOptionsTemplate"></ng-container>
