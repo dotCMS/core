@@ -47,7 +47,7 @@
             #personaSelector
             data-testId="uve-toolbar-persona-selector" />
 
-        @if (!preview) {
+        @if ($showWorkflowActions()) {
             <dot-uve-workflow-actions />
         }
     </div>

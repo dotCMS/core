@@ -85,6 +85,7 @@ export class DotUveToolbarComponent {
     readonly #deviceService = inject(DotDevicesService);
 
     readonly $toolbar = this.#store.$uveToolbar;
+    readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
