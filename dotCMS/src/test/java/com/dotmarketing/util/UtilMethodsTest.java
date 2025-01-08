@@ -270,4 +270,18 @@ public class UtilMethodsTest extends UnitTestBase {
 		}
 	}
 
+	/**
+	 * Given a string
+	 * Check if it is a valid lucene query
+	 *
+	 */
+	@Test
+	public void testIsLuceneQuery(){
+		final String luceneQuery = "+title:hello";
+		final String invalidLuceneQuery = "badExample";
+
+		assertTrue(UtilMethods.isLuceneQuery(luceneQuery));
+		assertFalse(UtilMethods.isLuceneQuery(invalidLuceneQuery));
+	}
+
 }
