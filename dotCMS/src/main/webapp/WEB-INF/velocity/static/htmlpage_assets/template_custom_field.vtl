@@ -151,7 +151,7 @@ dojo.ready(function(){
     currentTemplateIdElement.value = templateId;
 
     const templateStore = new dotcms.dojo.data.TemplateReadStore({
-        hostId: hostId,
+        hostId: '*',
         templateSelected: templateId
     });
 
@@ -182,8 +182,7 @@ dojo.ready(function(){
 
     const templateFetchParams = {
         query: {
-            fullTitle: '*',
-            hostId: hostId
+            fullTitle: '*'
         },
         queryOptions: {},
         start: 0,
