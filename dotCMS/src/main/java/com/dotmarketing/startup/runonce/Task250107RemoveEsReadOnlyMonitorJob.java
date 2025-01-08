@@ -6,7 +6,9 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 
 import java.util.ArrayList;
-
+/**
+ * Deletes the EsReadOnlyMonitorJob from the database and all the related records.
+ * */
 public class Task250107RemoveEsReadOnlyMonitorJob implements StartupTask {
 
 
@@ -22,15 +24,14 @@ public class Task250107RemoveEsReadOnlyMonitorJob implements StartupTask {
      * @return true if EsReadOnlyMonitorJob is found, false otherwise.
      */
     @Override
-    public boolean forceRun() {
+    public final boolean forceRun() {
         String sql=String.format("SELECT * FROM %s WHERE job_name=?", JOB_TABLE_NAME);
         DotConnect dc=new DotConnect();
         dc.setSQL(sql);
 
         dc.addParam(JOB_NAME);
         try {
-            ArrayList results=dc.loadResults();
-            if (!results.isEmpty()){
+            if (!dc.loadResults().isEmpty()){
                 return true;
             }
         } catch (DotDataException e) {
@@ -40,7 +41,7 @@ public class Task250107RemoveEsReadOnlyMonitorJob implements StartupTask {
     }
 
     @Override
-    public void executeUpgrade() throws DotDataException, DotRuntimeException {
+    public final void executeUpgrade() throws DotDataException, DotRuntimeException {
         removeCron();
         removeTrigger();
         removeJob();
@@ -48,19 +49,22 @@ public class Task250107RemoveEsReadOnlyMonitorJob implements StartupTask {
 
     private void removeJob() throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL(String.format("DELETE FROM %s WHERE job_name = %s", JOB_TABLE_NAME, JOB_NAME));
+        dc.setSQL(String.format("DELETE FROM %s WHERE job_name = ?", JOB_TABLE_NAME));
+        dc.addParam(JOB_NAME);
         dc.loadResult();
     }
 
     private void removeTrigger() throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL(String.format("DELETE FROM %s WHERE job_name = %s", TRIGGER_TABLE_NAME, JOB_NAME));
+        dc.setSQL(String.format("DELETE FROM %s WHERE job_name = ?", TRIGGER_TABLE_NAME));
+        dc.addParam(JOB_NAME);
         dc.loadResult();
     }
 
     private void removeCron() throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL(String.format("DELETE FROM %s WHERE trigger_name = %s", CRON_TABLE_NAME, TRIGGER_NAME));
+        dc.setSQL(String.format("DELETE FROM %s WHERE trigger_name = ?", CRON_TABLE_NAME));
+        dc.addParam(TRIGGER_NAME);
         dc.loadResult();
     }
 }
