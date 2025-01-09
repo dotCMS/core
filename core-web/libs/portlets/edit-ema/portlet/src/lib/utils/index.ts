@@ -3,7 +3,9 @@ import { Params } from '@angular/router';
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
     DotContainerMap,
+    DotDevice,
     DotExperiment,
     DotExperimentStatus,
     DotPageContainerStructure,
@@ -11,8 +13,8 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiKeys, DotPageApiParams } from '../services/dot-page-api.service';
-import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
+import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import { BASE_IFRAME_MEASURE_UNIT, COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
@@ -20,9 +22,11 @@ import {
     ContentletDragPayload,
     ContentTypeDragPayload,
     DotPage,
+    DotPageAssetParams,
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
+import { Orientation } from '../store/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
 
@@ -109,7 +113,10 @@ export function deleteContentletFromContainer(action: ActionPayload): {
             };
         }
 
-        return currentContainer;
+        return {
+            ...currentContainer,
+            personaTag
+        };
     });
 
     return {
@@ -214,12 +221,12 @@ export const getPersonalization = (persona: Record<string, string>) => {
  *
  * @export
  * @param {string} url
- * @param {Partial<DotPageApiParams>} params
+ * @param {Partial<DotPageAssetParams>} params
  * @return {*}  {string}
  */
 export function createPageApiUrlWithQueryParams(
     url: string,
-    params: Partial<DotPageApiParams>
+    params: Partial<DotPageAssetParams>
 ): string {
     // Set default values
     const completedParams = {
@@ -590,14 +597,81 @@ export const checkClientHostAccess = (
  * @param {Params} params
  * @return {*}  {DotPageApiParams}
  */
-export function getAllowedPageParams(params: Params): DotPageApiParams {
-    const allowedParams: DotPageApiKeys[] = Object.values(DotPageApiKeys);
+export function getAllowedPageParams(params: Params): DotPageAssetParams {
+    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
 
     return Object.keys(params)
-        .filter((key) => key && allowedParams.includes(key as DotPageApiKeys))
+        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
         .reduce((obj, key) => {
             obj[key] = params[key];
 
             return obj;
-        }, {}) as DotPageApiParams;
+        }, {}) as DotPageAssetParams;
 }
+
+/**
+ * Determines the target URL for navigation.
+ *
+ * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
+ * Otherwise, it falls back to the URL extracted from the event.
+ *
+ * @param {string | undefined} url - The URL extracted from the event.
+ * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
+ */
+export function getTargetUrl(
+    url: string | undefined,
+    urlContentMap: DotCMSContentlet
+): string | undefined {
+    // Return URL from content map or fallback to the provided URL
+    return urlContentMap?.URL_MAP_FOR_CONTENT || url;
+}
+
+/**
+ * Determines whether navigation to a new URL is necessary.
+ *
+ * @param {string | undefined} targetUrl - The target URL for navigation.
+ * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
+ */
+export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
+    // Navigate if the target URL is defined and different from the current URL
+    return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
+}
+
+/**
+ * Get the page URI from the contentlet
+ *
+ * If the URL_MAP_FOR_CONTENT is present, it will be used as the page URI.
+ *
+ * @param {DotCMSContentlet} { urlContentMap, pageURI, url}
+ * @return {*}  {string}
+ */
+export const getPageURI = ({ urlContentMap, pageURI, url }: DotCMSContentlet): string => {
+    const contentMapUrl = urlContentMap?.URL_MAP_FOR_CONTENT;
+    const pageURIUrl = pageURI ?? url;
+    const newUrl = contentMapUrl ?? pageURIUrl;
+
+    return sanitizeURL(newUrl);
+};
+
+export const getOrientation = (device: DotDevice): Orientation => {
+    return Number(device?.cssHeight) > Number(device?.cssWidth)
+        ? Orientation.PORTRAIT
+        : Orientation.LANDSCAPE;
+};
+
+export const getWrapperMeasures = (
+    device: DotDevice,
+    orientation?: Orientation
+): { width: string; height: string } => {
+    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
+
+    return orientation === Orientation.LANDSCAPE
+        ? {
+              width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+              height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
+          }
+        : {
+              width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+              height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
+          };
+};

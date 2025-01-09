@@ -92,15 +92,21 @@ export function reorderMenu(config?: ReorderMenuConfig): void {
 }
 
 /**
- * Checks if the code is running inside an editor.
+ * Checks if the code is running inside the DotCMS Universal Visual Editor (UVE).
  *
- * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
+ * The function checks three conditions:
+ * 1. If window is defined (for SSR environments)
+ * 2. If the page is not in preview mode
+ * 3. If the current window is embedded in a parent frame
+ *
+ * @returns {boolean} Returns true if running inside the UVE editor, false if running standalone or in preview mode
  * @example
  * ```ts
+ * // Check if code is running in editor before initializing editor-specific features
  * if (isInsideEditor()) {
- *     console.log('Running inside the editor');
+ *     initEditor(config);
  * } else {
- *     console.log('Running outside the editor');
+ *     initStandaloneMode();
  * }
  * ```
  */

@@ -32,6 +32,6 @@ describe('Common Utils', () => {
             }
         });
 
-        expect(pageRequestParams).toEqual({ path: 'test' });
+        expect(pageRequestParams).toEqual({ path: 'test', mode: 'LIVE' });
     });
 });

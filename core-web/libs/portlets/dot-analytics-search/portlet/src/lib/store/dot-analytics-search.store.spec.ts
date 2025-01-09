@@ -19,6 +19,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAnalyticsSearchStore } from './dot-analytics-search.store';
 
+import { AnalyticsQueryExamples } from '../utils';
+
 const mockResponse = [
     {
         'request.count': '5',
@@ -86,8 +88,12 @@ describe('DotAnalyticsSearchStore', () => {
 
         it('should initialize with default state', () => {
             expect(store.isEnterprise()).toEqual(true);
-            expect(store.results()).toEqual(null);
-            expect(store.query()).toEqual({ value: null, type: AnalyticsQueryType.CUBE });
+            expect(store.results()).toEqual('');
+            expect(store.query()).toEqual({
+                value: '',
+                type: AnalyticsQueryType.CUBE,
+                isValidJson: false
+            });
             expect(store.state()).toEqual(ComponentStatus.INIT);
             expect(store.healthCheck()).toEqual(HealthStatusTypes.OK);
             expect(store.wallEmptyConfig()).toEqual(null);
@@ -96,6 +102,7 @@ describe('DotAnalyticsSearchStore', () => {
                 subtitle: 'Execute a query to get results',
                 title: 'No results'
             });
+            expect(store.queryExamples()).toEqual(AnalyticsQueryExamples);
         });
     });
 
@@ -121,17 +128,35 @@ describe('DotAnalyticsSearchStore', () => {
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
         });
 
+        it('should update the query state with a valid JSON query', () => {
+            const validQuery = '{"measures": ["request.count"]}';
+            store.setQuery(validQuery);
+
+            expect(store.query().value).toBe(validQuery);
+            expect(store.query().isValidJson).toBe(true);
+        });
+
+        it('should update the query state with an invalid JSON query', () => {
+            const invalidQuery = 'invalid json';
+            store.setQuery(invalidQuery);
+
+            expect(store.query().value).toBe(invalidQuery);
+            expect(store.query().isValidJson).toBe(false);
+        });
+
         it('should perform a POST request to the base URL and return results', () => {
+            store.setQuery('{"measures": ["request.count"]}');
+
             dotAnalyticsSearchService.get.mockReturnValue(of(mockResponse));
 
-            store.getResults({ query: 'test' });
+            store.getResults();
 
             expect(dotAnalyticsSearchService.get).toHaveBeenCalledWith(
-                { query: 'test' },
+                { measures: ['request.count'] },
                 AnalyticsQueryType.CUBE
             );
 
-            expect(store.results()).toEqual(mockResponse);
+            expect(store.results()).toEqual(JSON.stringify(mockResponse, null, 2));
         });
 
         it('should handle error while getting results', () => {
@@ -139,7 +164,7 @@ describe('DotAnalyticsSearchStore', () => {
 
             dotAnalyticsSearchService.get.mockReturnValue(throwError(() => mockError));
 
-            store.getResults({ query: 'test' });
+            store.getResults();
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
         });

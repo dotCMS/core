@@ -1,17 +1,17 @@
 {
 	"info": {
-		"_postman_id": "10c05583-df4b-45e1-8794-0a1721e168f6",
+		"_postman_id": "2bcae4b8-bb49-4fa7-911d-5ca9e7f6ddd5",
 		"name": "Content Analytics",
 		"description": "Performs simple data validation for the Content Analytics REST Endpoint. It's very important to notice that, for the time being, the CICD instance does not start up any of the additional third-party tools required to actually run the Content Analytics feature.\n\nThis means that these test do not deal with retrieveing or saving data at all. It verifies that important/required information is present.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "36604690"
 	},
 	"item": [
 		{
 			"name": "Data Query",
 			"item": [
 				{
-					"name": "Using Path Parameters",
+					"name": "Using Simple Strings",
 					"item": [
 						{
 							"name": "No User Authentication",
@@ -38,7 +38,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "",
+									"raw": "{\n    \"measures\": \"count,totalSessions\",\n    \"dimensions\": \"host,whatAmI,url\",\n    \"timeDimensions\": \"createdAt,day:Last month\",\n    \"filters\": \"totalRequest gt 0,whatAmI contains PAGE||FILE\",\n    \"order\": \"count asc,createdAt asc\",\n    \"limit\": 5,\n    \"offset\": 0\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -46,7 +46,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/query/measures/request.count request.totalSessions/dimensions/request.host request.whatAmI request.url/timeDimensions/request.createdAt:day:This month/filters/request.totalRequest gt 0:request.whatAmI contains PAGE,FILE/order/request.count asc:request.createdAt asc/limit/5/offset/0",
+									"raw": "{{serverURL}}/api/v1/analytics/content",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -54,22 +54,7 @@
 										"api",
 										"v1",
 										"analytics",
-										"content",
-										"query",
-										"measures",
-										"request.count request.totalSessions",
-										"dimensions",
-										"request.host request.whatAmI request.url",
-										"timeDimensions",
-										"request.createdAt:day:This month",
-										"filters",
-										"request.totalRequest gt 0:request.whatAmI contains PAGE,FILE",
-										"order",
-										"request.count asc:request.createdAt asc",
-										"limit",
-										"5",
-										"offset",
-										"0"
+										"content"
 									]
 								}
 							},
@@ -87,7 +72,7 @@
 											"});",
 											"",
 											"pm.test(\"Check that minimum required parameters are NOT present\", function () {",
-											"    pm.expect(pm.response.json().message).to.equal(\"Query should contain either measures, dimensions or timeDimensions with granularities in order to be valid\", \"This is NOT the expected error message\");",
+											"    pm.expect(pm.response.json().message).to.equal(\"The 'form' JSON data cannot be null\");",
 											"});",
 											""
 										],
@@ -119,7 +104,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/analytics/content/query/filters/request.totalRequest gt 0:request.whatAmI contains PAGE,FILE/order/request.count asc:request.createdAt asc/limit/5/offset/0",
+									"raw": "{{serverURL}}/api/v1/analytics/content",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -127,24 +112,78 @@
 										"api",
 										"v1",
 										"analytics",
-										"content",
-										"query",
-										"filters",
-										"request.totalRequest gt 0:request.whatAmI contains PAGE,FILE",
-										"order",
-										"request.count asc:request.createdAt asc",
-										"limit",
-										"5",
-										"offset",
-										"0"
+										"content"
 									]
 								},
 								"description": "As the error message states, the CubeJS Query should contain either measures, dimensions or timeDimensions with granularities in order to be valid."
 							},
 							"response": []
+						},
+						{
+							"name": "Unsupported Media Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Validate the response status is 415",
+											"pm.test(\"Response status is 415\", function () {",
+											"    pm.response.to.have.status(415);",
+											"});",
+											"",
+											"// Validate that the response body contains the 'message' property and it is not empty",
+											"pm.test(\"Response should have an error message\", function () {",
+											"    const responseBody = pm.response.json();",
+											"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+											"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"query\": {}\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content"
+									]
+								}
+							},
+							"response": []
 						}
 					],
-					"description": "This test group verifies that the Endpoint that receives plain String parameters for the CubeJS query works as expected.\n\nParameter has specfic formatting and separator characters that allow Users a more dynamic interaction with the Content Analitycs service:\n\n- Measures: Values are separated by blank spaces: `/measures/request.count request.totalSessions`\n    \n- Dimensions: Values are separated by blank spaces: `/dimensions/request.host request.whatAmI request.url`\n    \n- Time Dimensions: Values are separated by colons: `/timeDimensions/request.createdAt:day:This month` . The second parameter 'day' -- the \"granularity\" parameter -- is optional.\n    \n- Filters: Values are separated by colons: `/filters/request.totalRequest gt 0:request.whatAmI contains PAGE,FILE` . In this case, you're filtering by the number of requests, and the type of object being queried: Pages and Files.\n    \n- Order: Values are separated by colon: `/order/request.count asc:request.createdAt asc`\n    \n- Limit: Value is provided as is: `/limit/50`\n    \n- Offset: Value is provided as is: `/ffset/0`"
+					"description": "This test group verifies that the Endpoint that receives simple String parameters for the Content Analytics query works as expected. This endpoint takes a JSON body with parameters such as the following:\n\n`{`\n\n`\"measures\": \"count,totalSessions\",`\n\n`\"dimensions\": \"host,whatAmI,url\",`\n\n`\"timeDimensions\": \"createdAt,day:Last month\",`\n\n`\"filters\": \"totalRequest gt 0,whatAmI contains PAGE,FILE\",`\n\n`\"order\": \"count asc,createdAt asc\",`\n\n`\"limit\": 5,`\n\n`\"offset\": 0`\n\n`}`\n\nThe schema prefix for the appropriate terms is appended automatically by the service."
 				},
 				{
 					"name": "Using the JSON query",
@@ -229,6 +268,135 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Unsupported Media Type _Query",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Validate the response status is 415",
+											"pm.test(\"Response status is 415\", function () {",
+											"    pm.response.to.have.status(415);",
+											"});",
+											"",
+											"// Validate that the response body contains the 'message' property and it is not empty",
+											"pm.test(\"Response should have an error message\", function () {",
+											"    const responseBody = pm.response.json();",
+											"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+											"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"query\": {}\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/_query",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"_query"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Unsupported Media Type _Query Cube",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"// Validate the response status is 415",
+											"pm.test(\"Response status is 415\", function () {",
+											"    pm.response.to.have.status(415);",
+											"});",
+											"",
+											"// Validate that the response body contains the 'message' property and it is not empty",
+											"pm.test(\"Response should have an error message\", function () {",
+											"    const responseBody = pm.response.json();",
+											"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+											"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"content-type": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"query\": {}\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/analytics/content/_query/cube",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"analytics",
+										"content",
+										"_query",
+										"cube"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				}
@@ -270,6 +438,70 @@
 						"body": {
 							"mode": "raw",
 							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/analytics/content/event",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"analytics",
+								"content",
+								"event"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unsupported Media Type Event",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Validate the response status is 415",
+									"pm.test(\"Response status is 415\", function () {",
+									"    pm.response.to.have.status(415);",
+									"});",
+									"",
+									"// Validate that the response body contains the 'message' property and it is not empty",
+									"pm.test(\"Response should have an error message\", function () {",
+									"    const responseBody = pm.response.json();",
+									"    pm.expect(responseBody).to.have.property('message').that.is.not.empty;",
+									"    pm.expect(responseBody.message).to.equal('HTTP 415 Unsupported Media Type');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"query\": {}\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"

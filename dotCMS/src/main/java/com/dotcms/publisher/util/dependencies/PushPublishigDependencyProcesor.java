@@ -479,10 +479,9 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 if(publisherFilter.isRelationships() && publisherFilter.isDependencies()) {
                     for (Entry<Relationship, List<Contentlet>> relationshipListEntry : contentRelationships
                             .entrySet()) {
-                        contentsToProcess.addAll(relationshipListEntry.getValue());
 
-                        tryToAddAll(PusheableAsset.CONTENTLET, relationshipListEntry.getValue(),
-                                ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                        tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
+                                relationshipListEntry.getValue(), ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
                     }
                 }
 

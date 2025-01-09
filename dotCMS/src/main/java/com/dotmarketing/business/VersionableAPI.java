@@ -269,7 +269,18 @@ public interface VersionableAPI {
 	 * @throws DotSecurityException
 	 */
 	boolean isWorking(Versionable versionable) throws DotDataException, DotStateException,DotSecurityException;
-	
+
+	/**
+	 * Tells if has working version in any language.
+	 *
+	 * @param versionable
+	 * @return true if it has the working version. False if not
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 */
+	boolean hasWorkingVersionInAnyOtherLanguage(Versionable versionable, long versionableLanguageId) throws DotDataException, DotStateException,DotSecurityException;
+
 	/**
 	 * Sets the versionable as the working version for its identifier
 	 * 

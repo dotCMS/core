@@ -11,6 +11,7 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { TabView } from 'primeng/tabview';
 
 import {
@@ -28,8 +29,8 @@ import { DotEditContentSidebarInformationComponent } from './components/dot-edit
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import { MockResizeObserver } from '../../utils/mocks';
 
@@ -57,6 +58,7 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(MessageService),
             mockProvider(DotContentletService),
             mockProvider(DotLanguagesService),
+            mockProvider(DialogService),
             {
                 provide: ActivatedRoute,
                 useValue: {

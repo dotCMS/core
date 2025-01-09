@@ -1,39 +1,114 @@
 # @dotcms/analytics
 
-`@dotcms/analytics` is the official dotCMS JavaScript library for Content Analytics that helps track events and analytics in your webapps. Currently available as an IIFE (Immediately Invoked Function Expression) module for direct browser usage.
+`@dotcms/analytics` is the official dotCMS JavaScript library for Content Analytics that helps track events and analytics in your webapps. Available for both browser and React applications.
 
 ## Features
 
 -   **Simple Browser Integration**: Easy to implement via script tags using IIFE implementation
+-   **React Support**: Built-in React components and hooks for seamless integration
 -   **Event Tracking**: Simple API to track custom events with additional properties
 -   **Automatic PageView**: Option to automatically track page views
 -   **Debug Mode**: Optional debug logging for development
 
 ## Installation
 
-Include the script in your HTML page:
-
-```html
-<script src="analytics.iife.js"></script>
+```bash
+npm install @dotcms/analytics
 ```
 
-## Configuration
+Or include the script in your HTML page:
+
+```html
+<script src="ca.min.js"></script>
+```
+
+## React Integration
+
+### Provider Setup
+
+First, import the provider:
+
+```tsx
+import { DotContentAnalyticsProvider } from '@dotcms/analytics/react';
+```
+
+Wrap your application with the `DotContentAnalyticsProvider`:
+
+```tsx
+// Example configuration
+const analyticsConfig = {
+    apiKey: 'your-api-key-from-dotcms-analytics-app',
+    server: 'https://your-dotcms-instance.com'
+};
+
+function App() {
+    return (
+        <DotContentAnalyticsProvider config={analyticsConfig}>
+            <YourApp />
+        </DotContentAnalyticsProvider>
+    );
+}
+```
+
+### Tracking Custom Events
+
+Use the `useContentAnalytics` hook to track custom events:
+
+```tsx
+import { useContentAnalytics } from '@dotcms/analytics/react';
+
+function Activity({ title, urlTitle }) {
+    const { track } = useContentAnalytics();
+
+    // First parameter: custom event name to identify the action
+    // Second parameter: object with properties you want to track
+
+    return <button onClick={() => track('btn-click', { title, urlTitle })}>See Details →</button>;
+}
+```
+
+### Manual Page View Tracking
+
+To manually track page views, first disable automatic tracking in your config:
+
+```tsx
+const analyticsConfig = {
+    apiKey: 'your-api-key-from-dotcms-analytics-app',
+    server: 'https://your-dotcms-instance.com',
+    autoPageView: false // Disable automatic tracking
+};
+```
+
+Then use the `useContentAnalytics` hook in your layout component:
+
+```tsx
+import { useContentAnalytics } from '@dotcms/analytics/react';
+
+function Layout({ children }) {
+    const { pageView } = useContentAnalytics();
+
+    useEffect(() => {
+        pageView({
+            // Add any custom properties you want to track
+            myCustomValue: '2'
+        });
+    }, []);
+
+    return <div>{children}</div>;
+}
+```
+
+## Browser Configuration
 
 The script can be configured using data attributes:
 
--   **data-analytics-server**: URL of the server where events will be sent. If not provided, it defaults to the current location (window.location.href).
--   **data-analytics-debug**: Presence of this attribute enables debug logging (no value needed)
--   **data-analytics-auto-page-view**: Presence of this attribute enables automatic page view tracking (no value needed)
--   **data-analytics-key**: Required. API key for authentication with the analytics server. This key is provided by the DotCMS Analytics app.
-
-## Usage
-
-### Automatic PageView Tracking
-
-When `data-analytics-auto-page-view` is enabled, the library will automatically send a page view event to dotCMS when the page loads. If this attribute is not present, you'll need to manually track page views and other events using the tracking API.
+-   **data-analytics-server**: URL of the server where events will be sent. If not provided, the current domain will be used
+-   **data-analytics-debug**: Enables debug logging
+-   **data-analytics-auto-page-view**: Recommended for IIFE implementation. Enables automatic page view tracking
+-   **data-analytics-key**: **(Required)** API key for authentication
 
 ```html
-<!-- Automatic page view tracking enabled & debug logging enabled -->
+<!-- Example configuration -->
 <script
     src="ca.min.js"
     data-analytics-server="http://localhost:8080"
@@ -53,14 +128,7 @@ When `data-analytics-auto-page-view` is enabled, the library will automatically 
 
 The following features are planned for future releases:
 
-1. **Manual Event Tracking**
-
-    - Manual track events support for IIFE implementation
-
 2. **Headless Support**
-
-    - React integration for event tracking
-    - Next.js integration for event tracking
     - Angular integration for event tracking
 
 ## Contributing

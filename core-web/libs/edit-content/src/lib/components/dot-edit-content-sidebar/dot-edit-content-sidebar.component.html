@@ -3,10 +3,6 @@
 <!-- Information Component -->
 @let isLoadingInformation = store.isLoadingInformation();
 @let referencePagesCount = store.information.relatedContent();
-<!-- Locales Component -->
-@let locales = store.locales();
-@let defaultLocale = store.defaultLocale();
-@let isLoadingLocales = store.isLoadingLocales();
 
 <aside class="content-sidebar">
     <p-tabView>
@@ -17,7 +13,7 @@
             <!-- Information section -->
             <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.general.title' | dm">
                 <ng-template #sectionAction>
-                    @if (!store.isNew()) {
+                    @if (!store.isNew() && !store.isCopyingLocale()) {
                         <dot-copy-button
                             [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
@@ -37,10 +33,11 @@
 
             <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
                 <dot-edit-content-sidebar-locales
-                    [locales]="locales"
-                    [defaultLocale]="defaultLocale"
-                    [contentlet]="contentlet"
-                    [isLoading]="isLoadingLocales"
+                    [locales]="store.locales()"
+                    [defaultLocale]="store.systemDefaultLocale()"
+                    [currentLocale]="store.currentLocale()"
+                    [isLoading]="store.isLoadingLocales()"
+                    (switchLocale)="store.switchLocale($event)"
                     data-testId="locales" />
             </dot-edit-content-sidebar-section>
 
@@ -57,6 +54,17 @@
                     [isLoading]="store.isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
+        </p-tabPanel>
+
+        <p-tabPanel [header]="'History' | dm">
+            <ng-template pTemplate="content">
+                <span class="temporal-content">{{ 'coming.soon' | dm }}</span>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel [header]="'Settings' | dm">
+            <ng-template pTemplate="content">
+                <span class="temporal-content">{{ 'coming.soon' | dm }}</span>
+            </ng-template>
         </p-tabPanel>
     </p-tabView>
 </aside>

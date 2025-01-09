@@ -99,6 +99,8 @@ public class PageViewStrategy extends WebAssetStrategy<HTMLPageAsset> {
         map.put("canEdit", toolBox.permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user, false));
         map.put("canRead", toolBox.permissionAPI.doesUserHavePermission(page, PermissionLevel.READ.getType(), user, false));
         map.put("canLock", canLock(page, user));
+        map.put("canSeeRules", toolBox.permissionAPI.doesUserHavePermissions(page, "RULES: " + PermissionLevel.READ.getType(), user, false));
+
 
         if(info.isPresent() && info.get().getLockedBy()!=null) {
             map.put("lockedOn", info.get().getLockedOn());

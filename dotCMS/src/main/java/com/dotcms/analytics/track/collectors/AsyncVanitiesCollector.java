@@ -63,11 +63,10 @@ public class AsyncVanitiesCollector implements Collector {
         if (UtilMethods.isSet(whoIAM)) {
 
             final CollectorContextMap innerCollectorContextMap = new WrapperCollectorContextMap(collectorContextMap,
-                    Map.of("uri", cachedVanityUrl.forwardTo));
+                    Map.of(CollectorContextMap.URI, cachedVanityUrl.forwardTo));
             match.get(whoIAM).collect(innerCollectorContextMap, collectorPayloadBean);
         }
 
-        collectorPayloadBean.put(COME_FROM_VANITY_URL, true);
         return collectorPayloadBean;
     }
 

@@ -84,15 +84,20 @@ public class AsyncVanitiesCollectorTest extends IntegrationTestBase {
         assertTrue("Resolved vanity url must be present", resolvedVanity.isPresent());
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "event_type", EventType.PAGE_REQUEST.getType(),
-                "host", testSite.getHostname(),
-                "comeFromVanityURL", true,
-                "language", defaultLanguage.getIsoCode(),
-                "url", TEST_PAGE_URL,
-                "object", Map.of(
-                        "id", testHTMLPage.getIdentifier(),
-                        "title", TEST_PAGE_NAME,
-                        "url", TEST_PAGE_URL)
+                Collector.EVENT_TYPE, EventType.PAGE_REQUEST.getType(),
+                Collector.SITE_NAME, testSite.getHostname(),
+                Collector.LANGUAGE, defaultLanguage.getIsoCode(),
+                Collector.URL, TEST_PAGE_URL,
+                Collector.OBJECT, Map.of(
+                        Collector.ID, testHTMLPage.getIdentifier(),
+                        Collector.TITLE, TEST_PAGE_NAME,
+                        Collector.URL, TEST_PAGE_URL,
+                        Collector.CONTENT_TYPE_ID, testHTMLPage.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testHTMLPage.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testHTMLPage.getContentType().variable(),
+                        Collector.BASE_TYPE, testHTMLPage.getContentType().baseType().name(),
+                        Collector.LIVE, testHTMLPage.isLive(),
+                        Collector.WORKING, testHTMLPage.isWorking())
         );
 
         final Collector collector = new AsyncVanitiesCollector();

@@ -1,48 +1,104 @@
-<p-toolbar>
-    <div class="p-toolbar-group-start">
-        @if ($toolbar().editor) {
-            <p-button
-                icon="pi pi-eye"
-                styleClass="p-button-text"
-                data-testId="uve-toolbar-preview"
-                (click)="togglePreviewMode(true)" />
+@let preview = $isPreviewMode();
+@let runningExperiment = $toolbar().runningExperiment;
 
-            <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
-
-            <p-button
-                icon="pi pi-external-link"
-                styleClass="p-button-text"
-                (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
-                data-testId="uve-toolbar-copy-url" />
-
-            <a
-                title="Page API URL"
-                pButton
-                label="API"
-                class="p-button-text"
-                target="_blank"
-                data-testId="uve-toolbar-api-link"
-                [href]="$apiURL()"></a>
-        } @else if ($toolbar().preview) {
-            <div>PREVIEW MODE CONTENT</div>
-            <button (click)="togglePreviewMode(false)">Back</button>
+<p-toolbar [styleClass]="$styleToolbarClass()">
+    <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview }">
+        @if (preview) {
+            <ng-container [ngTemplateOutlet]="previewLeftOptionsTemplate"></ng-container>
+        } @else {
+            <ng-container [ngTemplateOutlet]="editLeftOptionsTemplate"></ng-container>
         }
     </div>
 
+    @if (preview) {
+        <div class="p-toolbar-group-center">
+            <p-calendar
+                inputStyleClass="p-inputtext-sm"
+                [(ngModel)]="$previewDate"
+                [showTime]="true"
+                [hourFormat]="'12'"
+                [minDate]="CURRENT_DATE"
+                [readonlyInput]="true" />
+            <p-button
+                styleClass="uve-toolbar-chips"
+                [label]="'Today' | dm"
+                alt="Page Day"
+                (click)="triggerPreviewMode()" />
+        </div>
+    }
+
     <div class="p-toolbar-group-end">
-        @if ($toolbar().runningExperiment; as runningExperiment) {
+        @if (runningExperiment) {
             <dot-ema-running-experiment
                 [runningExperiment]="runningExperiment"
                 data-testId="uve-toolbar-running-experiment" />
         }
+        <dot-edit-ema-language-selector
+            #languageSelector
+            (selected)="onLanguageSelected($event)"
+            [language]="$toolbar().currentLanguage"
+            data-testId="uve-toolbar-language-selector" />
 
-        <span data-testId="uve-toolbar-language-selector">Language</span>
-        <span data-testId="uve-toolbar-persona-selector">Persona</span>
-        <span data-testId="uve-toolbar-workflow-actions">Workflows</span>
+        <dot-edit-ema-persona-selector
+            (selected)="onPersonaSelected($event)"
+            (despersonalize)="onDespersonalize($event)"
+            [pageId]="$personaSelectorProps().pageId"
+            [value]="$personaSelectorProps().value"
+            #personaSelector
+            data-testId="uve-toolbar-persona-selector" />
+
+        @if (!preview) {
+            <dot-uve-workflow-actions />
+        }
     </div>
 </p-toolbar>
 
-@if ($toolbar().showInfoDisplay) {
-    <dot-ema-info-display data-testId="info-display" />
+<ng-template #editLeftOptionsTemplate>
+    <p-button
+        [pTooltip]="'uve.preview.mode' | dm"
+        tooltipPosition="bottom"
+        icon="pi pi-eye"
+        [tooltipPosition]="'bottom'"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        data-testId="uve-toolbar-preview"
+        (click)="triggerPreviewMode()" />
+
+    <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
+
+    <p-button
+        [pTooltip]="'editpage.header.copy' | dm"
+        tooltipPosition="bottom"
+        icon="pi pi-copy"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        (cdkCopyToClipboardCopied)="triggerCopyToast()"
+        [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
+        data-testId="uve-toolbar-copy-url" />
+
+    <a
+        title="Page API URL"
+        [pTooltip]="'uve.toolbar.page.api.url' | dm"
+        tooltipPosition="bottom"
+        pButton
+        label="API"
+        class="p-button-icon-only p-button-text p-button-sm p-button-rounded"
+        target="_blank"
+        data-testId="uve-toolbar-api-link"
+        [href]="$apiURL()"></a>
+</ng-template>
+
+<ng-template #previewLeftOptionsTemplate>
+    <p-button
+        icon="pi pi-times"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        (click)="triggerEditMode()"
+        data-testId="close-preview-mode" />
+    <div class="vertical-divider"></div>
+    <!-- We want to be sure we have devices -->
+    @if ($devices().length) {
+        <dot-uve-device-selector [devices]="$devices()" data-testId="uve-toolbar-device-selector" />
+    }
+</ng-template>
+
+@if ($infoDisplayProps(); as options) {
+    <dot-ema-info-display data-testId="info-display" [options]="options" />
 }

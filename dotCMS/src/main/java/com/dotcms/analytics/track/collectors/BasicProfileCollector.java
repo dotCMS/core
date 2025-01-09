@@ -6,6 +6,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +14,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -66,10 +69,7 @@ public class BasicProfileCollector implements Collector {
         collectorPayloadBean.put(PERSONA,
                 WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
 
-        collectorPayloadBean.put(RENDER_MODE, PageMode.get(request).toString().replace("_MODE", StringPool.BLANK));
-
         // Include default value for other boolean fields in the Clickhouse table
-        collectorPayloadBean.put(COME_FROM_VANITY_URL, false);
         collectorPayloadBean.put(IS_EXPERIMENT_PAGE, false);
         collectorPayloadBean.put(IS_TARGET_PAGE, false);
 
@@ -78,7 +78,21 @@ public class BasicProfileCollector implements Collector {
             collectorPayloadBean.put(EVENT_SOURCE, EventSource.DOT_CMS.getName());
         }
 
+        setUserInfo(request, collectorPayloadBean);
+
         return collectorPayloadBean;
+    }
+
+    private void setUserInfo(final HttpServletRequest request, final CollectorPayloadBean collectorPayloadBean) {
+
+        final User user = WebAPILocator.getUserWebAPI().getUser(request);
+        if (Objects.nonNull(user)) {
+
+            final HashMap<String, String> userObject = new HashMap<>();
+            userObject.put(ID, user.getUserId().toString());
+            userObject.put(EMAIL, user.getEmailAddress());
+            collectorPayloadBean.put(USER_OBJECT, userObject);
+        }
     }
 
     @Override

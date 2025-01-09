@@ -8,6 +8,7 @@ import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.TimeMachineUtil;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -36,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -80,7 +82,8 @@ public class ContentUtils {
 	 * @return The requested {@link Contentlet} object.
 	 */
 		public static Contentlet find(final String inodeOrIdentifier, final User user, final boolean EDIT_OR_PREVIEW_MODE, final long sessionLang){
-			return find(inodeOrIdentifier,user,null,EDIT_OR_PREVIEW_MODE, sessionLang);
+			final Optional<String> timeMachineDate = TimeMachineUtil.getTimeMachineDate();
+			return find(inodeOrIdentifier,user,timeMachineDate.orElse(null),EDIT_OR_PREVIEW_MODE, sessionLang);
 		}
 
 	    private static Contentlet fixRecurringDates(Contentlet contentlet, String[] recDates) {
@@ -120,25 +123,19 @@ public class ContentUtils {
                     return fixRecurringDates(contentlet, recDates);
                 }
 
-                // timemachine
+                // time-machine
                 if (tmDate != null) {
-                    // timemachine future dates
+                    // This should take care of the rendering bits for the time machine
                     final Date ffdate = new Date(Long.parseLong(tmDate));
-                    final Identifier ident = APILocator.getIdentifierAPI().find(inodeOrIdentifier);
-                    if (ident == null || !UtilMethods.isSet(ident.getId())) {
-                        return null;
-                    }
-
-                    // timemachine content has expired. return nothing
-                    if (UtilMethods.isSet(ident.getSysExpireDate()) && ffdate.after(ident.getSysExpireDate())) {
-                        return null;
-                    }
-                    
-                    // timemachine content to be published in the future, return the working version
-                    if (UtilMethods.isSet(ident.getSysPublishDate()) && ffdate.after(ident.getSysPublishDate())) {
-                        return conAPI.findContentletByIdentifierOrFallback(inodeOrIdentifier, false, sessionLang, user, true)
-                                        .orElse(null);
-                    }
+					final PageMode pageMode = PageMode.get();
+					final Optional<Contentlet> futureContent = conAPI.findContentletByIdentifierOrFallback(
+								inodeOrIdentifier, sessionLang, VariantAPI.DEFAULT_VARIANT.name(),
+								ffdate, user, pageMode.respectAnonPerms);
+						if (futureContent.isPresent()) {
+							return futureContent.get();
+						}
+						// If the content is not found or has expired
+					    // No need to return null we continue to the next step to try to find the content in the live or working version
                 }
 
 				final ContentletVersionInfo contentletVersionInfoByFallback = WebAPILocator.getVariantWebAPI()

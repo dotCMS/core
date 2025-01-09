@@ -1,11 +1,9 @@
 import { describe, expect } from '@jest/globals';
-import { createMouseEvent } from '@ngneat/spectator';
 import { SpyObject, createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -14,7 +12,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { CLIENT_ACTIONS } from '@dotcms/client';
+import { CLIENT_ACTIONS, UVE_MODE } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotExperimentsService,
@@ -23,6 +21,7 @@ import {
     DotMessageService,
     DotPropertiesService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -116,7 +115,8 @@ const INITIAL_PAGE_PARAMS = {
     language_id: 1,
     url: 'index',
     variantName: 'DEFAULT',
-    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+    editorMode: UVE_MODE.EDIT
 };
 
 const BASIC_OPTIONS = {
@@ -167,7 +167,6 @@ describe('DotEmaShellComponent', () => {
     let activatedRoute: ActivatedRoute;
     let dotLicenseService: DotLicenseService;
     let dotPageApiService: DotPageApiService;
-    let confirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
         component: DotEmaShellComponent,
@@ -211,6 +210,12 @@ describe('DotEmaShellComponent', () => {
             DotWorkflowActionsFireService,
             Router,
             Location,
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
             {
                 provide: DotPropertiesService,
                 useValue: dotPropertiesServiceMock
@@ -298,7 +303,6 @@ describe('DotEmaShellComponent', () => {
         activatedRoute = spectator.inject(ActivatedRoute, true);
         dotPageApiService = spectator.inject(DotPageApiService, true);
         dotLicenseService = spectator.inject(DotLicenseService, true);
-        confirmationService = spectator.inject(ConfirmationService, true);
     });
 
     describe('with queryParams', () => {
@@ -308,16 +312,79 @@ describe('DotEmaShellComponent', () => {
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
+        it('should patch viewParams with empty object when the editorMode is edit', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+            const params = {
+                ...INITIAL_PAGE_PARAMS,
+                editorMode: UVE_MODE.EDIT
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({});
+        });
+
+        it('should patch viewParams with empty params on init', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+
+            const params = {
+                ...INITIAL_PAGE_PARAMS,
+                editorMode: UVE_MODE.PREVIEW
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+                orientation: undefined,
+                seo: undefined,
+                device: undefined
+            });
+        });
+
+        it('should patch viewParams with the correct params on init', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+
+            const withViewParams = {
+                device: 'mobile',
+                orientation: 'landscape',
+                seo: undefined,
+                editorMode: UVE_MODE.PREVIEW
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: withViewParams, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+                orientation: 'landscape',
+                seo: undefined,
+                device: 'mobile'
+            });
+        });
+
         it('should call store.loadPageAsset when the `loadPageAsset` is called', () => {
             const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
             const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-            const spyLocation = jest.spyOn(location, 'replaceState');
+            const spyLocation = jest.spyOn(location, 'go');
 
             spectator.detectChanges();
             expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyLocation).toHaveBeenCalledWith(
-                '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona'
+                '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
             );
         });
 
@@ -360,7 +427,8 @@ describe('DotEmaShellComponent', () => {
                     contentType: undefined,
                     identifier: '123',
                     inode: '123',
-                    title: 'hello world'
+                    title: 'hello world',
+                    angularCurrentPortlet: 'edit-page'
                 });
             });
         });
@@ -373,14 +441,15 @@ describe('DotEmaShellComponent', () => {
                     language_id: 2,
                     url: 'my-awesome-page',
                     variantName: 'DEFAULT',
-                    'com.dotmarketing.persona.id': 'SomeCoolDude'
+                    'com.dotmarketing.persona.id': 'SomeCoolDude',
+                    editorMode: UVE_MODE.EDIT
                 };
 
                 const url = router.createUrlTree([], { queryParams: newParams });
 
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const spyUrlTree = jest.spyOn(router, 'createUrlTree');
-                const spyLocation = jest.spyOn(location, 'replaceState');
+                const spyLocation = jest.spyOn(location, 'go');
 
                 store.loadPageAsset(newParams);
                 spectator.detectChanges();
@@ -527,228 +596,45 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
-        describe('language checking', () => {
-            let confirmationServiceSpy: jest.SpyInstance;
-
-            beforeEach(() => {
+        describe('Editor Mode', () => {
+            it('should set editorMode to EDIT when wrong editorMode is passed', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: 'WRONG'
+                };
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
                 spectator.detectChanges();
-                confirmationServiceSpy = jest.spyOn(confirmationService, 'confirm');
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: UVE_MODE.EDIT
+                });
             });
 
-            it('should not trigger the confirmation service if the page is translated to the current language', () => {
-                expect(confirmationServiceSpy).not.toHaveBeenCalled();
-            });
-
-            it('should not trigger the confirmation service if the page dont have current language', () => {
-                store.loadPageAsset({
-                    language_id: 3,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-
-                spectator.detectChanges();
-
-                expect(confirmationServiceSpy).not.toHaveBeenCalled();
-            });
-
-            it("should trigger the confirmation service if the page isn't translated to the current language", fakeAsync(() => {
-                store.loadPageAsset({
-                    language_id: 2,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-                tick();
-                spectator.detectChanges();
-                expect(confirmationServiceSpy).toHaveBeenCalledWith({
-                    accept: expect.any(Function),
-                    acceptEvent: expect.any(Object),
-                    reject: expect.any(Function),
-                    rejectEvent: expect.any(Object),
-                    rejectIcon: 'hidden',
-                    acceptIcon: 'hidden',
-                    key: 'shell-confirm-dialog',
-                    header: 'editpage.language-change-missing-lang-populate.confirm.header',
-                    message: 'editpage.language-change-missing-lang-populate.confirm.message'
-                });
-            }));
-
-            it('should trigger a navigation to default language when the user rejects the creation', fakeAsync(() => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-
-                store.loadPageAsset({
-                    language_id: 2,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-
-                spectator.detectChanges();
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const clickEvent = createMouseEvent('click');
-
-                confirmDialog.querySelector('.p-confirm-dialog-reject').dispatchEvent(clickEvent);
-
-                spectator.detectChanges();
-
-                expect(spyloadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
-            }));
-
-            it('should open a dialog to create the page in the new language when the user accepts the creation', fakeAsync(() => {
-                store.loadPageAsset({
-                    language_id: 2,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-
-                spectator.detectChanges();
-                const dialog = spectator.component.dialog;
-                const translatePageSpy = jest.spyOn(dialog, 'translatePage');
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                confirmDialog
-                    .querySelector('.p-confirm-dialog-accept')
-                    .dispatchEvent(new MouseEvent('click'));
-
-                expect(translatePageSpy).toHaveBeenCalledWith({
-                    newLanguage: 2,
-                    page: {
-                        canEdit: true,
-                        canRead: true,
-                        identifier: '123',
-                        inode: '123',
-                        live: true,
-                        liveInode: '1234',
-                        pageURI: 'index',
-                        stInode: '12345',
-                        title: 'hello world'
-                    }
-                });
-            }));
-
-            it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving', fakeAsync(() => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-                store.loadPageAsset({
-                    language_id: 2,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-
-                spectator.detectChanges();
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const clickEvent = createMouseEvent('click');
-
-                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
-
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-                        }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        status: FormStatus.DIRTY,
-                        isTranslation: true
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
-
-                expect(spyloadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
-            }));
-
-            it('should open a dialog to create the page and navigate to default language if the user closes the dialog without saving and without editing ', fakeAsync(() => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-                store.loadPageAsset({
-                    language_id: 2,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                });
-
-                spectator.detectChanges();
-
-                tick(1000);
-                spectator.detectChanges();
-
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const clickEvent = createMouseEvent('click');
-
-                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
-
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-                        }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        status: FormStatus.PRISTINE,
-                        isTranslation: true
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
-
-                expect(spyloadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
-            }));
-
-            it('should open a dialog to create the page and do nothing when the user creates the page correctly with SAVE_PAGE and closes the dialog', fakeAsync(() => {
-                const pageParams = {
-                    language_id: 2,
-                    url: 'index',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+            it('should add the current date if preview param is true and publishDate is not present', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: UVE_MODE.PREVIEW
                 };
 
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-                store.loadPageAsset(pageParams);
-                spectator.detectChanges();
+                // override the new Date() to return a fixed date
+                const fixedDate = new Date('2024-01-01');
+                jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
 
-                tick(1000);
-                spectator.detectChanges();
+                const data = UVE_CONFIG_MOCK(BASIC_OPTIONS);
 
-                const confirmDialog = spectator.query(byTestId('confirm-dialog'));
-
-                const clickEvent = createMouseEvent('click');
-
-                confirmDialog.querySelector('.p-confirm-dialog-accept').dispatchEvent(clickEvent);
+                overrideRouteSnashot(activatedRoute, SNAPSHOT_MOCK({ queryParams: params, data }));
 
                 spectator.detectChanges();
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.DIALOG_CLOSED
-                        }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        isTranslation: true,
-                        status: FormStatus.SAVED
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    ...params,
+                    publishDate: fixedDate.toISOString()
                 });
-
-                spectator.detectChanges();
-
-                expect(spyloadPageAsset).toHaveBeenNthCalledWith(1, pageParams);
-            }));
+            });
         });
 
         describe('Site Changes', () => {
@@ -787,9 +673,26 @@ describe('DotEmaShellComponent', () => {
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ url: '/my-awesome-page' });
             });
 
+            it('should get the workflow action when an `UPDATE_WORKFLOW_ACTION` event is received', () => {
+                const spyGetWorkflowActions = jest.spyOn(store, 'getWorkflowActions');
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    DIALOG_ACTION_EVENT({
+                        name: NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(spyGetWorkflowActions).toHaveBeenCalled();
+            });
+
             it('should trigger a store reload if the url is the same', () => {
                 const spyReload = jest.spyOn(store, 'reloadCurrentPage');
-                const spyLocation = jest.spyOn(location, 'replaceState');
+                const spyLocation = jest.spyOn(location, 'go');
                 spectator.detectChanges();
 
                 spectator.triggerEventHandler(
@@ -840,64 +743,6 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
                 expect(reloadSpy).toHaveBeenCalled();
-            });
-
-            it('should trigger a spyStoreLoadPage when url path property is changed', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.URL_IS_CHANGED,
-                            payload: {
-                                htmlPageReferer: '/a-new-url'
-                            }
-                        }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        status: FormStatus.SAVED,
-                        isTranslation: false
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
-                spectator.detectChanges();
-
-                expect(spyStoreLoadPage).toHaveBeenCalledWith({
-                    url: '/a-new-url'
-                });
-            });
-
-            it('should mantain the current URL as queryParam when the URL property is changed and is a URLContentMap', () => {
-                jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
-
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'action', {
-                    event: new CustomEvent('ng-event', {
-                        detail: {
-                            name: NG_CUSTOM_EVENTS.URL_IS_CHANGED,
-                            payload: {
-                                htmlPageReferer: '/a-new-url'
-                            }
-                        }
-                    }),
-                    actionPayload: PAYLOAD_MOCK,
-                    form: {
-                        status: FormStatus.SAVED,
-                        isTranslation: false
-                    },
-                    clientAction: CLIENT_ACTIONS.NOOP
-                });
-                spectator.detectChanges();
-
-                expect(spyStoreLoadPage).toHaveBeenCalledWith({
-                    url: '/test-url'
-                });
             });
         });
     });

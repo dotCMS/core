@@ -45,6 +45,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongConsumer;
+import javax.enterprise.context.Dependent;
 
 /**
  * Processor implementation for handling content import operations in dotCMS. This class provides
@@ -73,6 +74,7 @@ import java.util.function.LongConsumer;
  */
 @Queue("importContentlets")
 @NoRetryPolicy
+@Dependent
 public class ImportContentletsProcessor implements JobProcessor, Validator, Cancellable {
 
     private static final String PARAMETER_LANGUAGE = "language";

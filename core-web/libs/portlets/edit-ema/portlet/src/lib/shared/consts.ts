@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 
-import { DotPersona, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, DotPersona, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -69,3 +69,35 @@ export const DEFAULT_PERSONA: DotPersona = {
 };
 
 export const UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE];
+
+export const DEFAULT_DEVICE: DotDeviceListItem = {
+    icon: 'pi pi-desktop',
+    identifier: 'default-id',
+    name: 'uve.device.selector.default',
+    cssHeight: '100', // This will be used in %
+    inode: 'default',
+    cssWidth: '100', // This will be used in %
+    _isDefault: true
+};
+
+export const DEFAULT_DEVICES: DotDeviceListItem[] = [
+    DEFAULT_DEVICE,
+    {
+        cssWidth: '820',
+        name: 'uve.device.selector.tablet',
+        icon: 'pi pi-tablet',
+        cssHeight: '1180',
+        inode: 'tablet',
+        identifier: 'tablet-id',
+        _isDefault: true
+    },
+    {
+        inode: 'mobile',
+        icon: 'pi pi-mobile',
+        name: 'uve.device.selector.mobile',
+        cssHeight: '844',
+        identifier: 'mobile-id',
+        cssWidth: '390',
+        _isDefault: true
+    }
+];

@@ -139,6 +139,9 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         canActivate: [editContentGuard],
         path: 'content',
+        data: {
+            reuseRoute: false
+        },
         loadChildren: () => import('@dotcms/edit-content').then((m) => m.DotEditContentRoutes)
     },
     {

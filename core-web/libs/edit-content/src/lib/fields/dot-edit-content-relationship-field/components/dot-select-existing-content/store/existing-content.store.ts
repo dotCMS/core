@@ -1,28 +1,26 @@
-import { faker } from '@faker-js/faker';
-import {
-    patchState,
-    signalStore,
-    withComputed,
-    withHooks,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { tapResponse } from '@ngrx/operators';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe } from 'rxjs';
 
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
+
+import { tap, switchMap, filter } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-
-export interface Content {
-    id: string;
-    title: string;
-    step: string;
-    description: string;
-    lastUpdate: string;
-}
+import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
+import {
+    RelationshipFieldItem,
+    SelectionMode
+} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
-    data: Content[];
+    data: RelationshipFieldItem[];
     status: ComponentStatus;
+    selectionMode: SelectionMode | null;
+    errorMessage: string | null;
+    columns: Column[];
     pagination: {
         offset: number;
         currentPage: number;
@@ -32,7 +30,10 @@ export interface ExistingContentState {
 
 const initialState: ExistingContentState = {
     data: [],
+    columns: [],
     status: ComponentStatus.INIT,
+    selectionMode: null,
+    errorMessage: null,
     pagination: {
         offset: 0,
         currentPage: 1,
@@ -50,41 +51,82 @@ export const ExistingContentStore = signalStore(
         isLoading: computed(() => state.status() === ComponentStatus.LOADING),
         totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage))
     })),
-    withMethods((store) => ({
-        loadContent() {
-            const mockData = Array.from({ length: 100 }, () => ({
-                id: faker.string.uuid(),
-                title: faker.lorem.sentence(),
-                step: faker.helpers.arrayElement(['Draft', 'Published', 'Archived']),
-                description: faker.lorem.paragraph(),
-                lastUpdate: faker.date.recent().toISOString()
-            }));
-            patchState(store, {
-                data: mockData
-            });
-        },
-        nextPage() {
-            patchState(store, {
-                pagination: {
-                    ...store.pagination(),
-                    offset: store.pagination().offset + store.pagination().rowsPerPage,
-                    currentPage: store.pagination().currentPage + 1
+    withMethods((store) => {
+        const relationshipFieldService = inject(RelationshipFieldService);
+
+        return {
+            /**
+             * Initiates the loading of content by setting the status to LOADING and fetching content from the service.
+             * @returns {Observable<void>} An observable that completes when the content has been loaded.
+             */
+            initLoad: rxMethod<{
+                contentTypeId: string;
+                selectionMode: SelectionMode;
+            }>(
+                pipe(
+                    tap(({ selectionMode }) =>
+                        patchState(store, { status: ComponentStatus.LOADING, selectionMode })
+                    ),
+                    tap(({ contentTypeId }) => {
+                        if (!contentTypeId) {
+                            patchState(store, {
+                                status: ComponentStatus.ERROR,
+                                errorMessage: 'dot.file.relationship.dialog.content.id.required'
+                            });
+                        }
+                    }),
+                    filter(({ contentTypeId }) => !!contentTypeId),
+                    switchMap(({ contentTypeId }) =>
+                        relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
+                            tapResponse({
+                                next: ([columns, data]) => {
+                                    patchState(store, {
+                                        columns,
+                                        data,
+                                        status: ComponentStatus.LOADED
+                                    });
+                                },
+                                error: () =>
+                                    patchState(store, {
+                                        status: ComponentStatus.ERROR,
+                                        errorMessage:
+                                            'dot.file.relationship.dialog.content.request.failed'
+                                    })
+                            })
+                        )
+                    )
+                )
+            ),
+            /**
+             * Advances the pagination to the next page and updates the state accordingly.
+             */
+            nextPage: () => {
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: store.pagination().offset + store.pagination().rowsPerPage,
+                        currentPage: store.pagination().currentPage + 1
+                    }
+                });
+            },
+            /**
+             * Moves the pagination to the previous page and updates the state accordingly.
+             */
+            previousPage: () => {
+                const { currentPage, offset, rowsPerPage } = store.pagination();
+
+                if (currentPage === 1) {
+                    return;
                 }
-            });
-        },
-        previousPage() {
-            patchState(store, {
-                pagination: {
-                    ...store.pagination(),
-                    offset: store.pagination().offset - store.pagination().rowsPerPage,
-                    currentPage: store.pagination().currentPage - 1
-                }
-            });
-        }
-    })),
-    withHooks({
-        onInit: (store) => {
-            store.loadContent();
-        }
+
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: offset - rowsPerPage,
+                        currentPage: currentPage - 1
+                    }
+                });
+            }
+        };
     })
 );

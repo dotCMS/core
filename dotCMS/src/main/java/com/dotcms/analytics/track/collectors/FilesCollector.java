@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -49,6 +50,7 @@ public class FilesCollector implements Collector {
         final Host site = (Host) collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
         final Long languageId = (Long)collectorContextMap.get(CollectorContextMap.LANG_ID);
         final String language = (String)collectorContextMap.get(CollectorContextMap.LANG);
+
         final HashMap<String, String> fileObject = new HashMap<>();
 
         if (Objects.nonNull(uri) && Objects.nonNull(site) && Objects.nonNull(languageId)) {
@@ -57,14 +59,21 @@ public class FilesCollector implements Collector {
                 fileObject.put(ID, fileAsset.getIdentifier());
                 fileObject.put(TITLE, fileAsset.getTitle());
                 fileObject.put(URL, uri);
+                fileObject.put(CONTENT_TYPE_ID, fileAsset.getContentType().id());
+                fileObject.put(CONTENT_TYPE_NAME, fileAsset.getContentType().name());
+                fileObject.put(CONTENT_TYPE_VAR_NAME, fileAsset.getContentType().variable());
+                fileObject.put(BASE_TYPE, fileAsset.getContentType().baseType().name());
+                fileObject.put(LIVE,    String.valueOf(Try.of(()->fileAsset.isLive()).getOrElse(false)));
+                fileObject.put(WORKING, String.valueOf(Try.of(()->fileAsset.isWorking()).getOrElse(false)));
             });
         }
 
         collectorPayloadBean.put(OBJECT,  fileObject);
         collectorPayloadBean.put(URL, uri);
-        collectorPayloadBean.put(HOST, Objects.nonNull(site)?site.getHostname():host);
+        collectorPayloadBean.put(SITE_NAME, Objects.nonNull(site)?site.getHostname():host);
         collectorPayloadBean.put(LANGUAGE, language);
-        collectorPayloadBean.put(SITE, null != site?site.getIdentifier():StringPool.UNKNOWN);
+        collectorPayloadBean.put(LANGUAGE_ID, languageId);
+        collectorPayloadBean.put(SITE_ID, null != site?site.getIdentifier():StringPool.UNKNOWN);
         collectorPayloadBean.put(EVENT_TYPE, EventType.FILE_REQUEST.getType());
 
         return collectorPayloadBean;

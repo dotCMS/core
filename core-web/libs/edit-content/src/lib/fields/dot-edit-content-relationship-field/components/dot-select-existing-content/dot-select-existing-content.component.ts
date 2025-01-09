@@ -1,8 +1,16 @@
-import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, model } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    model,
+    output,
+    OnInit
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputIconModule } from 'primeng/inputicon';
@@ -14,9 +22,16 @@ import { TableModule } from 'primeng/table';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { PaginationComponent } from './components/pagination/pagination.component';
 import { SearchComponent } from './components/search/search.compoment';
-import { Content, ExistingContentStore } from './store/existing-content.store';
+import { ExistingContentStore } from './store/existing-content.store';
+
+import { RelationshipFieldItem, SelectionMode } from '../../models/relationship.models';
+import { PaginationComponent } from '../pagination/pagination.component';
+
+type DialogData = {
+    contentTypeId: string;
+    selectionMode: SelectionMode;
+};
 
 @Component({
     selector: 'dot-select-existing-content',
@@ -30,7 +45,6 @@ import { Content, ExistingContentStore } from './store/existing-content.store';
         IconFieldModule,
         InputIconModule,
         InputTextModule,
-        DatePipe,
         PaginationComponent,
         InputGroupModule,
         OverlayPanelModule,
@@ -41,7 +55,7 @@ import { Content, ExistingContentStore } from './store/existing-content.store';
     providers: [ExistingContentStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotSelectExistingContentComponent {
+export class DotSelectExistingContentComponent implements OnInit {
     /**
      * A readonly instance of the ExistingContentStore injected into the component.
      * This store is used to manage the state and actions related to the existing content.
@@ -55,44 +69,95 @@ export class DotSelectExistingContentComponent {
     readonly #dotMessage = inject(DotMessageService);
 
     /**
-     * A signal that controls the visibility of the existing content dialog.
-     * When true, the dialog is shown allowing users to select existing content.
-     * When false, the dialog is hidden.
+     * A reference to the dynamic dialog instance.
+     * This is a read-only property that is injected using Angular's dependency injection.
+     * It provides access to the dialog's methods and properties.
      */
-    $visible = model(false, { alias: 'visible' });
+    readonly #dialogRef = inject(DynamicDialogRef);
+
+    /**
+     * A readonly property that injects the `DynamicDialogConfig` service.
+     * This service is used to get the dialog data.
+     */
+    readonly #dialogConfig = inject(DynamicDialogConfig<DialogData>);
 
     /**
      * A signal that holds the selected items.
      * It is used to store the selected content items.
      */
-    $selectedItems = model<Content[]>([]);
+    $selectedItems = model<RelationshipFieldItem[] | RelationshipFieldItem | null>(null);
 
     /**
-     * A computed signal that determines if the apply button is disabled.
-     * It is disabled when no items are selected.
+     * A computed signal that holds the items.
+     * It is used to store the items.
      */
-    $isApplyDisabled = computed(() => this.$selectedItems().length === 0);
+    $items = computed(() => {
+        const selectedItems = this.$selectedItems();
+
+        if (selectedItems) {
+            const isArray = Array.isArray(selectedItems);
+            const items = isArray ? selectedItems : [selectedItems];
+
+            return items;
+        }
+
+        return [];
+    });
 
     /**
      * A computed signal that determines the label for the apply button.
      * It is used to display the appropriate message based on the number of selected items.
      */
     $applyLabel = computed(() => {
-        const selectedItems = this.$selectedItems();
+        const count = this.$items().length;
 
         const messageKey =
-            selectedItems.length === 1
+            count === 1
                 ? 'dot.file.relationship.dialog.apply.one.entry'
                 : 'dot.file.relationship.dialog.apply.entries';
 
-        return this.#dotMessage.get(messageKey, selectedItems.length.toString());
+        return this.#dotMessage.get(messageKey, count.toString());
     });
+
+    /**
+     * A signal that sends the selected items when the dialog is closed.
+     * It is used to notify the parent component that the user has selected content items.
+     */
+    onSelectItems = output<RelationshipFieldItem[]>();
+
+    ngOnInit() {
+        const data: DialogData = this.#dialogConfig.data;
+
+        if (!data.contentTypeId) {
+            throw new Error('Content type id is required');
+        }
+
+        if (!data.selectionMode) {
+            throw new Error('Selection mode is required');
+        }
+
+        this.store.initLoad({
+            contentTypeId: data.contentTypeId,
+            selectionMode: data.selectionMode
+        });
+    }
 
     /**
      * A method that closes the existing content dialog.
      * It sets the visibility signal to false, hiding the dialog.
      */
     closeDialog() {
-        this.$visible.set(false);
+        this.#dialogRef.close(this.$items());
+    }
+
+    /**
+     * Checks if an item is selected.
+     * @param item - The item to check.
+     * @returns True if the item is selected, false otherwise.
+     */
+    checkIfSelected(item: RelationshipFieldItem) {
+        const items = this.$items();
+
+        return items.some((selectedItem) => selectedItem.id === item.id);
     }
 }

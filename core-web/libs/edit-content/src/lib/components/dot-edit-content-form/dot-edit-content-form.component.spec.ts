@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals';
 import {
     byTestId,
     createComponentFactory,
@@ -12,6 +13,7 @@ import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { TabPanel, TabView } from 'primeng/tabview';
 
 import {
@@ -24,6 +26,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
+import { DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
@@ -33,9 +36,9 @@ import {
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
     MOCK_CONTENTTYPE_1_TAB,
@@ -73,6 +76,7 @@ describe('DotFormComponent', () => {
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
             mockProvider(DotContentletService),
+            mockProvider(DialogService),
 
             {
                 provide: ActivatedRoute,
@@ -118,7 +122,10 @@ describe('DotFormComponent', () => {
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
-            store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            }); // called with the inode of the contentlet
 
             spectator.detectChanges();
         });
@@ -196,7 +203,10 @@ describe('DotFormComponent', () => {
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
-            store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            }); // called with the inode of the contentlet
             spectator.detectChanges();
         });
 
@@ -269,7 +279,9 @@ describe('DotFormComponent', () => {
                     component.$hasSingleTab = signal(true);
                     spectator.detectChanges();
 
-                    expect(tabView).toHaveClass('dot-edit-content-tabview--single-tab');
+                    expect(tabView.classList.contains('dot-edit-content-tabview--single-tab')).toBe(
+                        true
+                    );
                 });
             });
         });
@@ -287,7 +299,10 @@ describe('DotFormComponent', () => {
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
-            store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode);
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
             spectator.detectChanges();
         });
 
@@ -301,7 +316,10 @@ describe('DotFormComponent', () => {
                 workflowActionsService.getWorkFlowActions.mockReturnValue(
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS) // Single workflow actions trigger the show
                 );
-                store.initializeExistingContent('inode');
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
                 spectator.detectChanges();
 
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
@@ -314,12 +332,48 @@ describe('DotFormComponent', () => {
                     of(MOCK_MULTIPLE_WORKFLOW_ACTIONS) // Multiple workflow actions trigger the hide
                 );
 
-                store.initializeExistingContent('inode');
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
                 spectator.detectChanges();
 
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
                 expect(store.showWorkflowActions()).toBe(false);
                 expect(workflowActions).toBeFalsy();
+            });
+
+            it('should send the correct parameters when firing an action', () => {
+                const spy = jest.spyOn(store, 'fireWorkflowAction');
+
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+
+                const workflowActions = spectator.query(DotWorkflowActionsComponent);
+                workflowActions.actionFired.emit({ id: '1' } as DotCMSWorkflowAction);
+
+                expect(spy).toHaveBeenCalledWith({
+                    actionId: '1',
+                    inode: 'cc120e84-ae80-49d8-9473-36d183d0c1c9',
+                    identifier: null,
+                    data: {
+                        contentlet: {
+                            contentType: 'TestMock',
+                            text1: 'content text 1',
+                            text11: 'Tab 2 input content',
+                            text2: 'content text 2',
+                            text3: 'default value modified',
+                            multiselect: 'A,B,C',
+                            languageId: null
+                        }
+                    }
+                });
             });
         });
     });
