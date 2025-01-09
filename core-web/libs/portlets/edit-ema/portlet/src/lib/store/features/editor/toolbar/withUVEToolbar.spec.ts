@@ -5,8 +5,9 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
 import { withUVEToolbar } from './withUVEToolbar';
@@ -249,6 +250,48 @@ describe('withEditor', () => {
                     });
 
                     expect(store.$infoDisplayProps()).toBe(null);
+                });
+            });
+
+            describe('$showWorkflowsActions', () => {
+                it('should return false when in preview mode', () => {
+                    patchState(store, {
+                        pageParams: {
+                            ...store.pageParams(),
+                            editorMode: UVE_MODE.PREVIEW
+                        }
+                    });
+                    expect(store.$showWorkflowsActions()).toBe(false);
+                });
+
+                it('should return true when not in preview mode and is default variant', () => {
+                    patchState(store, {
+                        pageParams: {
+                            ...store.pageParams(),
+                            editorMode: UVE_MODE.EDIT
+                        },
+                        pageAPIResponse: {
+                            ...store.pageAPIResponse(),
+                            viewAs: {
+                                ...store.pageAPIResponse().viewAs,
+                                variantId: DEFAULT_VARIANT_ID
+                            }
+                        }
+                    });
+                    expect(store.$showWorkflowsActions()).toBe(true);
+                });
+
+                it('should return false when not in preview mode and is not default variant', () => {
+                    patchState(store, {
+                        pageAPIResponse: {
+                            ...store.pageAPIResponse(),
+                            viewAs: {
+                                ...store.pageAPIResponse().viewAs,
+                                variantId: 'some-other-variant'
+                            }
+                        }
+                    });
+                    expect(store.$showWorkflowsActions()).toBe(false);
                 });
             });
         });
