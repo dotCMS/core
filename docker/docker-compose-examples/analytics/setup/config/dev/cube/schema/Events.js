@@ -185,12 +185,12 @@ cube('request', {
                MAX(object_contenttype) as contentType,
                MAX(object_contenttypename) as contentTypeName,
                MAX(object_contenttypeid) as contentTypeId,
-               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_forward_to ELSE NULL END) as vanity_forward_to,
+               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_forwardto ELSE NULL END) as vanity_forward_to,
                MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_action ELSE NULL END) as vanity_action,
                CASE 
                     WHEN SUM(CASE WHEN event_type = 'URL_MAP' THEN 1 ELSE 0 END) > 0 THEN 'URL_MAP'
                     WHEN SUM(CASE WHEN event_type = 'VANITY_REQUEST' THEN 1 ELSE 0 END) > 0 THEN 'VANITY_URL'
-                    ELSE 'NOTHING'
+                    ELSE 'NORMAL'
                END mappingType,
                MAX(url) AS url,
                MAX(cluster_id) AS cluster_id,
@@ -203,7 +203,7 @@ cube('request', {
     conHostName: { sql: 'conHostName', type: `string` },
     contentTypeName: { sql: 'contentTypeName', type: `string` },
     contentTypeId: { sql: 'contentTypeId', type: `string` },
-    contentType: { sql: 'contentType', type: `string` },
+    contentTypeVariable: { sql: 'contentType', type: `string` },
     live: { sql: 'live', type: `boolean` },
     working: { sql: 'working', type: `boolean` },
     baseType: { sql: 'baseType', type: `string` },
@@ -221,11 +221,9 @@ cube('request', {
     userAgent: { sql: 'user_agent', type: `string` },
     referer: { sql: 'referer', type: `string` },
     persona: { sql: 'persona', type: `string` },
-    host: { sql: 'host', type: `string` },
     url: { sql: 'url', type: `string` },
     forwardTo: { sql: 'vanity_forward_to', type: `string` },
-    action: { sql: 'vanity_action', type: `string` },
-    urlMapWasHit: { sql: 'url_map_match', type: `boolean` },
+    action: { sql: 'vanity_action', type: `string` }
   },
   measures: {
     count: {
