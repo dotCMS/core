@@ -3102,6 +3102,43 @@
 					"name": "Live page cache invalidation",
 					"item": [
 						{
+							"name": "Get default site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"hostname\", jsonData.entity.hostname);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/defaultSite",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"defaultSite"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Create Test Page",
 							"event": [
 								{
@@ -3125,7 +3162,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageInvalidation{{$timestamp}}\",\n        \"url\":\"testPageInvalidation{{$timestamp}}\",\n        \"hostFolder\":\"demo.dotcms.com\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageInvalidation{{$timestamp}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageInvalidation{{$timestamp}}\",\n        \"url\":\"testPageInvalidation{{$timestamp}}\",\n        \"hostFolder\":\"{{hostname}}\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageInvalidation{{$timestamp}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3180,7 +3217,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent1\",\n        \"contentHost\":\"demo.dotcms.com\",\n        \"body\":\"Test1 Content Body\"\n        \n\t}\n}",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent1\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test1 Content Body\"\n        \n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3235,7 +3272,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent2\",\n        \"contentHost\":\"demo.dotcms.com\",\n        \"body\":\"Test2 Content Body\"\n        \n\t}\n}",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent2\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test2 Content Body\"\n        \n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3290,7 +3327,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent3\",\n        \"contentHost\":\"demo.dotcms.com\",\n        \"body\":\"Test3 Content Body\"\n        \n\t}\n}",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent3\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test3 Content Body\"\n        \n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7894,6 +7931,10 @@
 		},
 		{
 			"key": "pagePath",
+			"value": ""
+		},
+		{
+			"key": "hostname",
 			"value": ""
 		}
 	]
