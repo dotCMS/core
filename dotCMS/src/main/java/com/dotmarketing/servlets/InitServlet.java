@@ -95,6 +95,7 @@ public class InitServlet extends HttpServlet {
      * @throws DotDataException
      */
     public void init(ServletConfig config) throws ServletException {
+        Logger.info(this,"InitServlet init Started");
 
         startupDate = new java.util.Date();
         new StartupLogger().log();
@@ -258,6 +259,8 @@ public class InitServlet extends HttpServlet {
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to record startup time :" + e);
         }
+
+        Logger.info(this,"InitServlet init Completed");
 
     }
 
