@@ -1140,6 +1140,46 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 	dojo.xhrPost(xhrArgs);
 
 	},
+
+	saveActionPriority : function(ele, isSecondary) {
+		const actionData = JSON.parse(ele.dataset.wfaction);
+
+		const updatedData = {
+			schemeId: actionData.schemeId,
+			actionName: actionData.name,
+			whoCanUse: actionData.showOn,
+			actionIcon: actionData.icon,
+			actionCommentable: actionData.commentable,
+			showOn: actionData.showOn,
+			actionNextStep: actionData.nextStep,
+			actionNextAssign: actionData.nextAssign,
+			actionCondition: actionData.condition,
+			actionAssignable: actionData.assignable,
+			actionRoleHierarchyForAssign: actionData.roleHierarchyForAssign,
+			metadata: isSecondary 
+				? { secondary: true }
+				: null
+		};
+
+
+		const xhrArgs = {   
+			url: "/api/v1/workflow/actions/" + actionData.id,
+			headers: {
+				"Content-Type": "application/json"
+			},
+			postData: dojo.toJson(updatedData),
+			handle: function (dataOrError, ioArgs) {
+				if (dojo.isString(dataOrError)) {
+					if (dataOrError.indexOf("FAILURE") === 0) {
+						showDotCMSSystemMessage(dataOrError, true);
+					}
+				}
+			}
+		};
+		
+		dojo.xhrPut(xhrArgs);
+	},
+
 	saveAction : function(schemeId) {
 
 		var myForm = dijit.byId("addEditAction");

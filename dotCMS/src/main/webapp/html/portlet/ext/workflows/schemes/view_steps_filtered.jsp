@@ -10,8 +10,12 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.liferay.portal.model.User" %>
-<%@ page import="java.util.List" %>
+
 <%@page import="com.dotmarketing.util.Config"%>
+
+<%@page import="java.util.ArrayList"%>
+<%@page import="java.util.List"%>
+<%@page import="com.dotmarketing.util.json.JSONObject"%>
 
 
 <%
@@ -73,7 +77,25 @@
         mainAdmin.refresh();
     }
 
+    
 </script>
+
+
+<%
+    // Split actions into primary and secondary
+    List<WorkflowAction> primaryActions = new ArrayList<>();
+    List<WorkflowAction> secondaryActions = new ArrayList<>();
+    
+    for(WorkflowAction action : actions) {
+        String isSecondary = action.getMetadata() != null ? String.valueOf(action.getMetadata().get("secondary")) : "false";
+        if("true".equals(isSecondary)) {
+            secondaryActions.add(action);
+        } else {
+            primaryActions.add(action);
+        }
+    }
+
+%>
 
 <div class="list-wrapper wfStepInDrag" id="stepID<%=step.getId()%>" data-first="<%=isFirst%>">
     <div class="list-item"  onmouseout="colorMeNot()">
@@ -86,21 +108,63 @@
             </div>
             <div class="clear"></div>
         </div>
-        <div class="wfActionList" id="jsNode<%=step.getId()  %>"  data-wfstep-id="<%=step.getId()%>">
-            <%for(WorkflowAction action : actions) {
-                String subtype = action.getMetadata() != null ? String.valueOf(action.getMetadata().get("subtype")) : "";
-                boolean isSeparator = "SEPARATOR".equals(subtype);
-            %>
-            <div class="wf-action-wrapper x<%=action.getId()%>" data-wfaction-id="<%=action.getId()%>" onmouseover="colorMe('x<%=action.getId()%>')" onmouseout="colorMeNot('x<%=action.getId()%>')" >
-                <div class="handles"></div>
-                <div class="wf-action <%= isSeparator ? "showDefaultCursor" : "showPointer" %>"">
-                    <div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this, <%=stepIndex%>)"><span class="deleteIcon"></span></div>
-                    <div class="pull-left" <% if(!isSeparator) { %>onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" <% } %>>
-                       <%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
-                   </div>
-                </div>
+        <div class="wfActionList" id="jsNode<%=step.getId()%>" data-wfstep-id="<%=step.getId()%>">
+            <!-- primary actions -->
+            <div class="wf-action-wrapper-title">Primary</div>
+            <div class="wf-pimary-action-wrapper <%= primaryActions.size() == 0 ? "empty" : "" %>">
+                
+                <%for(WorkflowAction action : primaryActions) {  %>
+          
+                    <div class="wf-action-wrapper x<%=action.getId()%>" 
+                        data-wfaction-id="<%=action.getId()%>"
+                        data-wfaction='<%=new JSONObject(action)%>'
+                         onmouseover="colorMe('x<%=action.getId()%>')" 
+                         onmouseout="colorMeNot('x<%=action.getId()%>')" >
+                        <div class="handles"></div>
+                        <div class="wf-action showPointer">
+                            <div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this, <%=stepIndex%>)">
+                                <span class="deleteIcon"></span>
+                            </div>
+                            <div class="pull-left" onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId()%>');">
+                                <%=action.getName()%> 
+                                <span style="color:#a6a6a6">&#8227; 
+                                    <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ? 
+                                        WorkflowAction.CURRENT_STEP : 
+                                        wapi.findStep(action.getNextStep()).getName()%>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <%}%>
             </div>
-            <%} %>
+            <!-- secondary actions -->
+            <div class="wf-action-wrapper-title">Secondary</div>
+            <div class="wf-secondary-action-wrapper <%= secondaryActions.size() == 0 ? "empty" : "" %>"">
+               
+                <%for(WorkflowAction action : secondaryActions) {  %>
+         
+                    <div class="wf-action-wrapper x<%=action.getId()%>" 
+                        data-wfaction='<%=new JSONObject(action)%>'
+                         onmouseover="colorMe('x<%=action.getId()%>')" 
+                         onmouseout="colorMeNot('x<%=action.getId()%>')" >
+                        <div class="handles"></div>
+                        <div class="wf-action showPointer">
+                            <div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this, <%=stepIndex%>)">
+                                <span class="deleteIcon"></span>
+                            </div>
+                            <div class="pull-left" onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId()%>');">
+                                <%=action.getName()%> 
+                                <span style="color:#a6a6a6">&#8227; 
+                                    <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ? 
+                                        WorkflowAction.CURRENT_STEP : 
+                                        wapi.findStep(action.getNextStep()).getName()%>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <%}%>
+            </div>
+
         </div>
 
         <div class="btn-flat-wrapper">
@@ -111,17 +175,10 @@
             <%
                 }
             %>
-            <%
-                String newContentEditorEnabled = Config.getStringProperty("CONTENT_EDITOR2_ENABLED");
-                if (newContentEditorEnabled != null && newContentEditorEnabled.equalsIgnoreCase("true")) {
-            %>
-            <div class="btn-flat btn-primary showPointer" onclick="addSeparator('<%=scheme.getId()%>', '<%=step.getId()%>');">
-                <i class="fa fa-plus" aria-hidden="true"></i> Divider
-            </div>
-            <% } %>
             <div class="btn-flat btn-primary showPointer" onclick="actionAdmin.addOrAssociatedAction('<%=scheme.getId()%>', '<%=step.getId()%>', 'step-action-<%=step.getId()%>');">
                 <i class="fa fa-plus" aria-hidden="true"></i> Add
             </div>
+    
         </div>
     </div>
 </div>
@@ -145,3 +202,16 @@
 </div>
 
 
+<style>
+    .wf-action-wrapper-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        line-height: 42px;
+        text-align: center;
+        border-bottom: 1px solid #ccc;
+    }
+    .wf-secondary-action-wrapper.empty {
+        min-height: 42px;
+        background: var(--color-palette-primary-op-10);
+    }
+</style>
