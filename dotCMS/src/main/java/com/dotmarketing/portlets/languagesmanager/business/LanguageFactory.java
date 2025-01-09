@@ -107,9 +107,9 @@ public abstract class LanguageFactory {
     protected abstract boolean hasLanguage(String id);
 
     /**
-     * 
+     * Returns the language object for a specific language id.
      * @param id
-     * @return
+     * @return true if has language
      */
     protected abstract boolean hasLanguage(long id);
 

@@ -58,6 +58,7 @@
         [pTooltip]="'uve.preview.mode' | dm"
         tooltipPosition="bottom"
         icon="pi pi-eye"
+        [tooltipPosition]="'bottom'"
         styleClass="p-button-text p-button-sm p-button-rounded"
         data-testId="uve-toolbar-preview"
         (click)="triggerPreviewMode()" />
@@ -67,7 +68,7 @@
     <p-button
         [pTooltip]="'editpage.header.copy' | dm"
         tooltipPosition="bottom"
-        icon="pi pi-external-link"
+        icon="pi pi-copy"
         styleClass="p-button-text p-button-sm p-button-rounded"
         (cdkCopyToClipboardCopied)="triggerCopyToast()"
         [cdkCopyToClipboard]="$toolbar().editor.copyUrl"
@@ -75,7 +76,7 @@
 
     <a
         title="Page API URL"
-        [pTooltip]="'uve.preview.page.api.url' | dm"
+        [pTooltip]="'uve.toolbar.page.api.url' | dm"
         tooltipPosition="bottom"
         pButton
         label="API"
@@ -98,6 +99,6 @@
     }
 </ng-template>
 
-@if ($infoDisplayProps()) {
-    <dot-ema-info-display data-testId="info-display" />
+@if ($infoDisplayProps(); as options) {
+    <dot-ema-info-display data-testId="info-display" [options]="options" />
 }
