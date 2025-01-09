@@ -54,12 +54,12 @@
             <td class="max-w-12rem" style="min-width: 13rem">
                 <p class="truncate-text">{{ item.title }}</p>
             </td>
-            <td style="min-width: 8rem">{{ item.language }}</td>
             <td style="min-width: 8rem">
-                {{ item.modDate }}
-                <!--
-                <p-chip [styleClass]="item.state.styleClass" [label]="item.state.label" />
-                -->
+                {{ item.language | language }}
+            </td>
+            <td style="min-width: 8rem">
+                @let status = item | contentletStatus;
+                <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
             </td>
             <td pFrozenColumn alignFrozen="right" [frozen]="true">
                 <p-button
@@ -67,7 +67,7 @@
                     icon="pi pi-times"
                     severity="secondary"
                     [text]="true"
-                    (onClick)="deleteItem(item.id)" />
+                    (onClick)="deleteItem(item.inode)" />
             </td>
         </tr>
     </ng-template>
