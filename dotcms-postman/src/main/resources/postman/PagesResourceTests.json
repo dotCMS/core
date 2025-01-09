@@ -3125,7 +3125,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageInvalidation{{$timestamp}}\",\n        \"url\":\"testPageInvalidation{{$timestamp}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageInvalidation{{$timestamp}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageInvalidation{{$timestamp}}\",\n        \"url\":\"testPageInvalidation{{$timestamp}}\",\n        \"hostFolder\":\"demo.dotcms.com\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageInvalidation{{$timestamp}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3180,7 +3180,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent1\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test1 Content Body\"\n        \n\t}\n}",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent1\",\n        \"contentHost\":\"demo.dotcms.com\",\n        \"body\":\"Test1 Content Body\"\n        \n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3235,7 +3235,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent2\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test2 Content Body\"\n        \n\t}\n}",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent2\",\n        \"contentHost\":\"demo.dotcms.com\",\n        \"body\":\"Test2 Content Body\"\n        \n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3290,7 +3290,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent3\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test3 Content Body\"\n        \n\t}\n}",
+									"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent3\",\n        \"contentHost\":\"demo.dotcms.com\",\n        \"body\":\"Test3 Content Body\"\n        \n\t}\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3424,6 +3424,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
 											"pm.test(\"Body contains <h1>testContent1</h1>\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"<h1>testContent1</h1>\");",
 											"});",
@@ -3570,6 +3574,10 @@
 									"listen": "test",
 									"script": {
 										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
 											"pm.test(\"Body contains <h1>testContent1</h1>\", function () {",
 											"    pm.expect(pm.response.text()).to.include(\"<h1>testContent1</h1>\");",
 											"});",
