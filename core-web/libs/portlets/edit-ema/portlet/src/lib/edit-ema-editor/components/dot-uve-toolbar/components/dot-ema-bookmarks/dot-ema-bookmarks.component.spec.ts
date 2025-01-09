@@ -18,6 +18,7 @@ import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaBookmarksComponent } from './dot-ema-bookmarks.component';
 
+import { mockCurrentUser } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 describe('DotEmaBookmarksComponent', () => {
@@ -29,7 +30,10 @@ describe('DotEmaBookmarksComponent', () => {
         providers: [
             DialogService,
             HttpClient,
-            mockProvider(UVEStore, { $previewMode: signal(false) }),
+            mockProvider(UVEStore, {
+                $previewMode: signal(false),
+                currentUser: signal(mockCurrentUser)
+            }),
             {
                 provide: LoginService,
                 useClass: LoginServiceMock

@@ -5,7 +5,6 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { CurrentUser } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
@@ -14,7 +13,7 @@ import { withUVEToolbar } from './withUVEToolbar';
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
-import { MOCK_RESPONSE_HEADLESS } from '../../../../shared/mocks';
+import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
 
 const pageParams = {
@@ -43,15 +42,6 @@ const initialState: UVEState = {
         seo: undefined,
         device: undefined
     }
-};
-
-const currentUser: CurrentUser = {
-    email: 'test@example.com',
-    givenName: 'Test',
-    loginAs: false,
-    roleId: 'role123',
-    surname: 'User',
-    userId: 'user123'
 };
 
 export const uveStoreMock = signalStore(
@@ -193,7 +183,7 @@ describe('withEditor', () => {
                                 lockedBy: '456'
                             }
                         },
-                        currentUser
+                        currentUser: mockCurrentUser
                     });
                     expect(store.$infoDisplayProps()).toEqual({
                         icon: 'pi pi-lock',
@@ -213,12 +203,12 @@ describe('withEditor', () => {
                                 ...MOCK_RESPONSE_HEADLESS.page,
                                 locked: true,
                                 canLock: false,
-                                lockedByName: currentUser.givenName,
-                                lockedBy: currentUser.userId
+                                lockedByName: mockCurrentUser.givenName,
+                                lockedBy: mockCurrentUser.userId
                             }
                         },
                         currentUser: {
-                            ...currentUser,
+                            ...mockCurrentUser,
                             userId: '123'
                         }
                     });
@@ -241,11 +231,11 @@ describe('withEditor', () => {
                                 ...MOCK_RESPONSE_HEADLESS.page,
                                 locked: true,
                                 canLock: true,
-                                lockedByName: currentUser.givenName,
-                                lockedBy: currentUser.userId
+                                lockedByName: mockCurrentUser.givenName,
+                                lockedBy: mockCurrentUser.userId
                             }
                         },
-                        currentUser
+                        currentUser: mockCurrentUser
                     });
 
                     expect(store.$infoDisplayProps()).toBe(null);
