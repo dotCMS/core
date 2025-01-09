@@ -1,5 +1,6 @@
 import { of } from 'rxjs';
 
+import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotPageContainerStructure,
@@ -985,4 +986,13 @@ export const dotPropertiesServiceMock = {
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false
         })
+};
+
+export const mockCurrentUser: CurrentUser = {
+    email: 'test@example.com',
+    givenName: 'Test',
+    loginAs: false,
+    roleId: 'role123',
+    surname: 'User',
+    userId: 'user123'
 };

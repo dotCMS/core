@@ -105,6 +105,7 @@ const baseUVEState = {
         { id: 2, translated: false },
         { id: 3, translated: true }
     ]),
+    $showWorkflowsActions: signal(true),
     patchViewParams: jest.fn(),
     orientation: signal(''),
     clearDeviceAndSocialMedia: jest.fn(),
@@ -476,6 +477,9 @@ describe('DotUveToolbarComponent', () => {
         });
 
         it('should not have a dot-uve-workflow-actions component', () => {
+            baseUVEState.$showWorkflowsActions.set(false);
+            spectator.detectChanges();
+
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
             expect(workflowActions).toBeNull();

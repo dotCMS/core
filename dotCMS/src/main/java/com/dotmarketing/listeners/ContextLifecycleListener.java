@@ -58,12 +58,13 @@ public class ContextLifecycleListener implements ServletContextListener {
     }
 
 	public void contextInitialized(ServletContextEvent arg0) {
-
+        Logger.info(this,"ContextLifecycleListener contextInitialized called");
         ByteBuddyFactory.init();
 
 		Config.setMyApp(arg0.getServletContext());
 
         installWebSocket(arg0.getServletContext());
+        Logger.info(this,"ContextLifecycleListener contextInitialized completed");
 	}
 
     private void installWebSocket(final ServletContext serverContext) {
