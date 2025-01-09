@@ -10,6 +10,16 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.ReleaseInfo;
 import io.vavr.control.Try;
+import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
@@ -20,26 +30,18 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
-
 
 @Path("/v1/jvm")
 @SuppressWarnings("serial")
 public class JVMInfoResource implements Serializable {
 
-    public static final Pattern obfuscateBasePattern = Pattern.compile("passw|pass|passwd|secret|key|token",
+    private static final String DEFAULT_OBFUSCATE_PATTERN = "passw|pass|passwd|secret|key|token";
+
+    public static final Pattern obfuscateBasePattern = Pattern.compile(DEFAULT_OBFUSCATE_PATTERN,
             Pattern.CASE_INSENSITIVE);
 
     public static final Pattern obfuscatePattern = Pattern.compile(
-            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", ""),
+            Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", DEFAULT_OBFUSCATE_PATTERN),
             Pattern.CASE_INSENSITIVE);
 
     @Path("/")
