@@ -5,6 +5,7 @@ import { getSelectionModeByCardinality, getRelationshipFromContentlet } from './
 import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
 import { RelationshipTypes } from '../models/relationship.models';
 
+
 describe('Relationship Field Utils', () => {
     describe('getSelectionModeByCardinality', () => {
         it('should return "single" for ONE_TO_ONE relationship', () => {
