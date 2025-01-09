@@ -1157,8 +1157,10 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 			actionAssignable: actionData.assignable,
 			actionRoleHierarchyForAssign: actionData.roleHierarchyForAssign,
 			metadata: isSecondary 
-				? { secondary: true }
-				: null
+				? {...actionData.metadata, secondary: true}
+				: (actionData.metadata ? Object.fromEntries(
+					Object.entries(actionData.metadata).filter(([key]) => key !== 'secondary')
+				) : {})
 		};
 
 
