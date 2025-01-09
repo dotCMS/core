@@ -1,4 +1,7 @@
 // Beware while using this type, since we have a [key: string]: any; it can be used to store any kind of data and you can write wrong properties and it will not fail
+
+import { DotLanguage } from './dot-language.model';
+
 // Maybe we need to refactor this to a generic type that extends from unknown when missing the generic type
 export interface DotCMSContentlet {
     archived: boolean;
@@ -18,7 +21,7 @@ export interface DotCMSContentlet {
     inode: string;
     image?: string;
     languageId: number;
-    language?: string;
+    language?: string | DotLanguage;
     live: boolean;
     locked: boolean;
     mimeType?: string;
