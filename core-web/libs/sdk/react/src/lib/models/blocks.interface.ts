@@ -89,6 +89,5 @@ export enum Blocks {
  * @property {string | null} error - Error message if blocks are invalid, null otherwise
  */
 export interface BlockEditorState {
-    isValid: boolean;
-    error: string | null;
+    error?: string ;
 }

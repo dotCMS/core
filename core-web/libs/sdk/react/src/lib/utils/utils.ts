@@ -113,34 +113,29 @@ export const getPositionStyleClasses = (start: number, end: number) => {
 export const isValidBlocks = (blocks: Block): BlockEditorState => {
     if (!blocks || typeof blocks !== 'object') {
         return {
-            isValid: false,
             error: `Error: Blocks must be an object, but received: ${typeof blocks}`
         };
     }
 
     if (blocks.type !== 'doc') {
         return {
-            isValid: false,
             error: 'Error: Blocks must have a doc type'
         };
     }
 
     if (!blocks.content || !Array.isArray(blocks.content)) {
         return {
-            isValid: false,
             error: 'Error: Blocks must have a valid content array'
         };
     }
 
     if (blocks.content.length === 0) {
         return {
-            isValid: false,
             error: 'Error: Blocks content is empty'
         };
     }
 
     return {
-        isValid: true,
         error: null
     };
 };

@@ -58,11 +58,11 @@ describe('BlockEditorRenderer', () => {
             jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
             const consoleSpy = jest.spyOn(console, 'error');
 
-            const { getByText } = render(<BlockEditorRenderer blocks={'' as unknown as Block} />);
+            const { getByTestId } = render(<BlockEditorRenderer blocks={'' as unknown as Block} />);
 
-            expect(
-                getByText('Error: Blocks must be an object, but received: string')
-            ).toBeInTheDocument();
+            expect(getByTestId('invalid-blocks-message')).toHaveTextContent(
+                'Error: Blocks must be an object, but received: string'
+            );
             expect(consoleSpy).toHaveBeenCalledWith(
                 'Error: Blocks must be an object, but received: string'
             );
@@ -72,11 +72,11 @@ describe('BlockEditorRenderer', () => {
             jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
             const consoleSpy = jest.spyOn(console, 'error');
 
-            const { queryByText } = render(
+            const { queryByTestId } = render(
                 <BlockEditorRenderer blocks={{ content: [] } as unknown as Block} />
             );
 
-            expect(queryByText('Error: Blocks must have a doc type')).toBeNull();
+            expect(queryByTestId('invalid-blocks-message')).not.toBeInTheDocument();
             expect(consoleSpy).toHaveBeenCalledWith('Error: Blocks must have a doc type');
         });
 
@@ -84,11 +84,11 @@ describe('BlockEditorRenderer', () => {
             jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
             const consoleSpy = jest.spyOn(console, 'error');
 
-            const { queryByText } = render(
+            const { queryByTestId } = render(
                 <BlockEditorRenderer blocks={{ content: [], type: 'doc' } as unknown as Block} />
             );
 
-            expect(queryByText('Error: Blocks content is empty')).toBeNull();
+            expect(queryByTestId('invalid-blocks-message')).not.toBeInTheDocument();
             expect(consoleSpy).toHaveBeenCalledWith('Error: Blocks content is empty');
         });
     });

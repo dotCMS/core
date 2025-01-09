@@ -55,7 +55,6 @@ export const BlockEditorRenderer = ({
 }: BlockEditorRendererProps) => {
     const ref = useRef<HTMLDivElement>(null);
     const [blockEditorState, setBlockEditorState] = useState<BlockEditorState>({
-        isValid: true,
         error: null
     });
 
@@ -121,15 +120,15 @@ export const BlockEditorRenderer = ({
         const validationResult = isValidBlocks(blocks);
         setBlockEditorState(validationResult);
 
-        if (!validationResult.isValid) {
+        if (validationResult.error) {
             console.error(validationResult.error);
         }
     }, [blocks]);
 
-    if (!blockEditorState.isValid) {
+    if (blockEditorState.error) {
         console.error(blockEditorState.error);
         if (isInsideEditor()) {
-            return <div key="invalid-blocks-message">{blockEditorState.error}</div>;
+            return <div data-testid="invalid-blocks-message">{blockEditorState.error}</div>;
         }
 
         return null;
