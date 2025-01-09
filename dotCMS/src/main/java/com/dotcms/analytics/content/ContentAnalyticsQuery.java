@@ -232,11 +232,14 @@ public class ContentAnalyticsQuery implements Serializable {
             timeDimensionsData.put(TIME_DIMENSIONS_DIMENSION_ATTR, addScheme(timeParams[0].trim()));
             if (timeParams.length > 1) {
                 final String[] granularityAndRange = timeParams[1].split(COLON);
-                if (granularityAndRange.length > 1) {
+
+                if (!granularityAndRange[0].trim().isEmpty()) {
                     timeDimensionsData.put(GRANULARITY_ATTR, granularityAndRange[0].trim());
+                }
+
+                if (granularityAndRange.length > 1 && !granularityAndRange[1].trim().isEmpty()) {
+
                     timeDimensionsData.put(DATE_RANGE_ATTR, granularityAndRange[1].trim());
-                } else {
-                    timeDimensionsData.put(DATE_RANGE_ATTR, granularityAndRange[0].trim());
                 }
             } else {
                 timeDimensionsData.put(DATE_RANGE_ATTR, DEFAULT_DATE_RANGE);
@@ -363,6 +366,7 @@ public class ContentAnalyticsQuery implements Serializable {
          */
         private Set<String> addScheme(final Set<String> terms) {
             return terms.stream()
+                    .filter(UtilMethods::isSet)
                     .map(this::addScheme)
                     .collect(Collectors.toSet());
         }
