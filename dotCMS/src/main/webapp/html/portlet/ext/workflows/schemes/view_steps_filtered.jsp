@@ -210,7 +210,7 @@
         text-align: center;
         border-bottom: 1px solid #ccc;
     }
-    .wf-secondary-action-wrapper.empty {
+    .wf-secondary-action-wrapper.empty, .wf-pimary-action-wrapper.empty {
         min-height: 42px;
         background: var(--color-palette-primary-op-10);
     }
