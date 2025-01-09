@@ -261,9 +261,9 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append(editWrapperDiv);
                 velocityCodeBuilder.append("#end");
             }
-
-            // Evaluate the time-machine block only if the caller is not pageAPI as when called by pageAPI
-            // the contentlets arriving are already filtered by the time-machine date logic.
+            // WARNING: Make no changes to the variable names used here without having checked first its usage
+            // e.g. ContentletDetail.java uses _show_working_
+            
             // This attribute is set on the PageResource
             velocityCodeBuilder.append("#set($_pageAPI=false)")
             .append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\""+ PageResource.PAGE_API_REQUEST +"\"))")
@@ -277,6 +277,11 @@ public class ContainerLoader implements DotLoader {
             velocityCodeBuilder.append("#set($_timeMachineOn=false)")
             .append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\""+PageResource.TM_DATE+"\"))")
                 .append("#set($_timeMachineOn=true)")
+                .append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\""+PageResource.TM_DATE+"\"))))")
+            .append("#end")
+            .append("#if($request.getAttribute(\""+PageResource.TM_DATE+"\"))")
+               .append("#set($_timeMachineOn=true)")
+               .append("#set($_tmdate=$date.toDate($webapi.parseLong($request.getAttribute(\""+PageResource.TM_DATE+"\"))))")
             .append("#end");
 
             // FOR LOOP
@@ -286,33 +291,32 @@ public class ContainerLoader implements DotLoader {
               .append("#set($_show_working_=false)");
 
                 //Time-machine block begin
-                // - This logic applies if the contentlets here are pulled from the $dotcontent.pullPerPage viewTool as the time-machine date is not applied there
-                // - But if the caller is pageAPI, the contentlets are already filtered by the time-machine date logic that was introduced in PageRenderUtil, so we don't need to apply it again
-                  velocityCodeBuilder.append("#if($_timeMachineOn && !$_pageAPI) ");
+                  velocityCodeBuilder.append("#if($_timeMachineOn) ");
 
                       velocityCodeBuilder
-                        .append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\""+PageResource.TM_DATE+"\"))))")
-                        .append("#set($_ident=$webapi.findIdentifierById($contentletId))");
+                      .append("#set($_ident=$webapi.findIdentifierById($contentletId))");
 
                       // if the content has expired we rewrite the identifier, so it isn't loaded
                       velocityCodeBuilder
                       .append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))")
                         .append("#set($contentletId='')")
-                        .append("#end");
+                     .append("#end");
 
                       // if the content should be published then force to show the working version
                       velocityCodeBuilder
                        .append("#if($UtilMethods.isSet($_ident.sysPublishDate) && ($_tmdate.equals($_ident.sysPublishDate) || $_tmdate.after($_ident.sysPublishDate)))")
                         .append("#set($_show_working_=true)")
-                        .append("#end");
+                       .append("#end");
 
-                      velocityCodeBuilder.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
+                      //Only show the working version if the content has a published version except if caller is pageAPI
+                      velocityCodeBuilder
+                      .append("#if(!$webapi.contentHasLiveVersion($contentletId) && ! $_show_working_ && !$_pageAPI)")
                         .append("#set($contentletId='')") // working contentlet still not published
-                        .append("#end");
+                      .append("#end");
 
                       velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
                         .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
-                        .append("#end");
+                      .append("#end");
                   //end of time-machine block
                   velocityCodeBuilder.append("#end");
 
