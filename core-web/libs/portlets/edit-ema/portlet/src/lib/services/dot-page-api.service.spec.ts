@@ -83,10 +83,10 @@ describe('DotPageApiService', () => {
         );
     });
 
-    it('should remove trailing and leading slashes in the url', () => {
+    it('should remove trailing slashes in the url', () => {
         spectator.service
             .get({
-                url: '///test-url///',
+                url: '///test-url',
                 language_id: 'en',
                 'com.dotmarketing.persona.id': 'modes.persona.no.persona'
             })
@@ -130,7 +130,7 @@ describe('DotPageApiService', () => {
 
     describe('getClientPage', () => {
         const baseParams = {
-            url: '///test-url///',
+            url: '///test-url',
             language_id: 'en',
             'com.dotmarketing.persona.id': 'modes.persona.no.persona'
         };

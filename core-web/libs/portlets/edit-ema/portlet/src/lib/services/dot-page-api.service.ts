@@ -104,7 +104,8 @@ export class DotPageApiService {
             experimentId,
             publishDate
         } = params;
-        const url = params.url.replace(/^\/+|\/+$/g, '');
+
+        const url = params.url.replace(/^\/+/, '');
 
         const pageType = clientHost ? 'json' : 'render';
         const isPreview = editorMode === UVE_MODE.PREVIEW;
