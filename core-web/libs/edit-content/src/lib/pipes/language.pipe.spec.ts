@@ -65,7 +65,7 @@ describe('LanguagePipe', () => {
         expect(spectator.element.textContent).toBe('Spanish (es)');
     });
 
-    it('should format language with empty code when neither languageCode nor isoCode has value', () => {
+    it('should format language without code when neither languageCode nor isoCode has value', () => {
         const language: DotLanguage = {
             language: 'French',
             languageCode: '',
@@ -77,6 +77,6 @@ describe('LanguagePipe', () => {
                 prop: language
             }
         });
-        expect(spectator.element.textContent).toBe('French ()');
+        expect(spectator.element.textContent).toBe('French');
     });
 });
