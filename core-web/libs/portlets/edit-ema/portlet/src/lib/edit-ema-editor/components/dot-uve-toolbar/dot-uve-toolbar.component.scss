@@ -15,6 +15,11 @@
         color: var(--color-palette-primary-500);
         cursor: pointer;
     }
+
+    .p-button.unlock-button:disabled {
+        pointer-events: auto;
+        color: $color-palette-primary-500;
+    }
 }
 
 .p-toolbar-group-start,

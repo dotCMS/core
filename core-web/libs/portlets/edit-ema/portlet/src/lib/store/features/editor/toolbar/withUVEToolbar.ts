@@ -14,7 +14,7 @@ import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcm
 
 import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
-import { InfoOptions } from '../../../../shared/models';
+import { InfoOptions, UnlockOptions } from '../../../../shared/models';
 import {
     computePageIsLocked,
     createFavoritePagesURL,
@@ -110,6 +110,30 @@ export function withUVEToolbar() {
                     unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
+
+            $unlockButton: computed<UnlockOptions | null>(() => {
+                const pageAPIResponse = store.pageAPIResponse();
+                const currentUser = store.currentUser();
+                const isPreviewMode = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
+                const isLocked = computePageIsLocked(pageAPIResponse.page, currentUser);
+                const info = {
+                    message: pageAPIResponse.page.canLock
+                        ? 'editpage.toolbar.page.release.lock.locked.by.user'
+                        : 'editpage.locked-by',
+                    args: [pageAPIResponse.page.lockedByName]
+                };
+
+                const disabled = !pageAPIResponse.page.canLock;
+
+                return !isPreviewMode && isLocked
+                    ? {
+                          inode: pageAPIResponse.page.inode,
+                          loading: store.status() === UVE_STATUS.LOADING,
+                          info,
+                          disabled
+                      }
+                    : null;
+            }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
 
@@ -130,21 +154,6 @@ export function withUVEToolbar() {
             $infoDisplayProps: computed<InfoOptions>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
                 const canEditPage = store.canEditPage();
-                const socialMedia = store.socialMedia();
-                const currentUser = store.currentUser();
-                const isPreview = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
-
-                if (socialMedia && !isPreview) {
-                    return {
-                        icon: `pi pi-${socialMedia.toLowerCase()}`,
-                        id: 'socialMedia',
-                        info: {
-                            message: `Viewing <b>${socialMedia}</b> social media preview`,
-                            args: []
-                        },
-                        actionIcon: 'pi pi-times'
-                    };
-                }
 
                 if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
                     const variantId = pageAPIResponse.viewAs.variantId;
@@ -169,24 +178,7 @@ export function withUVEToolbar() {
                     };
                 }
 
-                if (computePageIsLocked(pageAPIResponse.page, currentUser)) {
-                    let message = 'editpage.locked-by';
-
-                    if (!pageAPIResponse.page.canLock) {
-                        message = 'editpage.locked-contact-with';
-                    }
-
-                    return {
-                        icon: 'pi pi-lock',
-                        id: 'locked',
-                        info: {
-                            message,
-                            args: [pageAPIResponse.page.lockedByName]
-                        }
-                    };
-                }
-
-                if (!canEditPage) {
+                if (!pageAPIResponse.page.locked && !canEditPage) {
                     return {
                         icon: 'pi pi-exclamation-circle warning',
                         id: 'no-permission',
