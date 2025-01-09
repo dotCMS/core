@@ -83,7 +83,7 @@ describe('DotPageApiService', () => {
         );
     });
 
-    it('should remove trailing slashes in the url', () => {
+    it('should remove all starting and trailing slashes in the url', () => {
         spectator.service
             .get({
                 url: '///test-url',
@@ -94,6 +94,21 @@ describe('DotPageApiService', () => {
 
         spectator.expectOne(
             '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=EDIT_MODE',
+            HttpMethod.GET
+        );
+    });
+
+    it('should mantain final trailing slash in the url', () => {
+        spectator.service
+            .get({
+                url: '///my-folder///',
+                language_id: 'en',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+            })
+            .subscribe();
+
+        spectator.expectOne(
+            '/api/v1/page/render/my-folder/?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=EDIT_MODE',
             HttpMethod.GET
         );
     });
