@@ -1,4 +1,3 @@
-import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, forkJoin, of, pipe } from 'rxjs';
@@ -7,17 +6,19 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
-import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
+import { DotPageAssetParams } from '../../../shared/models';
 import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
+import { withWorkflow } from '../workflow/withWorkflow';
 
 /**
  * Add load and reload method to the store
@@ -31,6 +32,7 @@ export function withLoad() {
             state: type<UVEState>()
         },
         withClient(),
+        withWorkflow(),
         withMethods((store) => {
             const router = inject(Router);
             const dotPageApiService = inject(DotPageApiService);
@@ -47,11 +49,11 @@ export function withLoad() {
                  * @param {DotPageApiParams} pageParams - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                loadPageAsset: rxMethod<Partial<DotPageApiParams>>(
+                loadPageAsset: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
                             if (!store.pageParams()) {
-                                return params as DotPageApiParams;
+                                return params as DotPageAssetParams;
                             }
 
                             return {
@@ -74,20 +76,15 @@ export function withLoad() {
                                     switchMap((pageAsset) => {
                                         const { vanityUrl } = pageAsset;
 
-                                        // If there is no vanity and is not a redirect we just return the pageAPI response
+                                        // If there is not vanity and is not a redirect we just return the pageAPI response
                                         if (isForwardOrPage(vanityUrl)) {
                                             return of(pageAsset);
                                         }
 
-                                        const queryParams = {
-                                            ...pageParams,
-                                            url: vanityUrl.forwardTo.replace('/', '')
-                                        };
-
-                                        // Will trigger full editor page Reload
+                                        const url = vanityUrl.forwardTo.replace('/', '');
                                         router.navigate([], {
-                                            queryParams,
-                                            queryParamsHandling: 'merge'
+                                            queryParamsHandling: 'merge',
+                                            queryParams: { url }
                                         });
 
                                         // EMPTY is a simple Observable that only emits the complete notification.
@@ -101,13 +98,16 @@ export function withLoad() {
                                     .pipe(take(1), shareReplay()),
                                 currentUser: loginService.getCurrentUser()
                             }).pipe(
-                                tap({
-                                    error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                        patchState(store, {
-                                            errorCode: errorStatus,
-                                            status: UVE_STATUS.ERROR
-                                        });
-                                    }
+                                tap(({ pageAsset }) =>
+                                    store.getWorkflowActions(pageAsset.page.inode)
+                                ),
+                                catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                    patchState(store, {
+                                        errorCode: errorStatus,
+                                        status: UVE_STATUS.ERROR
+                                    });
+
+                                    return EMPTY;
                                 }),
                                 switchMap(({ pageAsset, isEnterprise, currentUser }) => {
                                     const experimentId =
@@ -121,40 +121,39 @@ export function withLoad() {
                                             pageAsset.page.identifier
                                         )
                                     }).pipe(
-                                        tap({
-                                            next: ({ experiment, languages }) => {
-                                                const canEditPage = computeCanEditPage(
-                                                    pageAsset?.page,
-                                                    currentUser,
-                                                    experiment
-                                                );
+                                        catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                            patchState(store, {
+                                                errorCode: errorStatus,
+                                                status: UVE_STATUS.ERROR
+                                            });
 
-                                                const pageIsLocked = computePageIsLocked(
-                                                    pageAsset?.page,
-                                                    currentUser
-                                                );
+                                            return EMPTY;
+                                        }),
+                                        tap(({ experiment, languages }) => {
+                                            const canEditPage = computeCanEditPage(
+                                                pageAsset?.page,
+                                                currentUser,
+                                                experiment
+                                            );
 
-                                                const isTraditionalPage = !pageParams.clientHost; // If we don't send the clientHost we are using as VTL page
+                                            const pageIsLocked = computePageIsLocked(
+                                                pageAsset?.page,
+                                                currentUser
+                                            );
+                                            const isTraditionalPage = !pageParams.clientHost;
 
-                                                patchState(store, {
-                                                    pageAPIResponse: pageAsset,
-                                                    isEnterprise,
-                                                    currentUser,
-                                                    experiment,
-                                                    languages,
-                                                    canEditPage,
-                                                    pageIsLocked,
-                                                    isTraditionalPage,
-                                                    isClientReady: isTraditionalPage, // If is a traditional page we are ready
-                                                    status: UVE_STATUS.LOADED
-                                                });
-                                            },
-                                            error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                                patchState(store, {
-                                                    errorCode: errorStatus,
-                                                    status: UVE_STATUS.ERROR
-                                                });
-                                            }
+                                            patchState(store, {
+                                                pageAPIResponse: pageAsset,
+                                                isEnterprise,
+                                                currentUser,
+                                                experiment,
+                                                languages,
+                                                canEditPage,
+                                                pageIsLocked,
+                                                isClientReady: isTraditionalPage,
+                                                isTraditionalPage,
+                                                status: UVE_STATUS.LOADED
+                                            });
                                         })
                                     );
                                 })
@@ -180,44 +179,45 @@ export function withLoad() {
                             return dotPageApiService
                                 .getClientPage(store.pageParams(), store.clientRequestProps())
                                 .pipe(
-                                    switchMap((pageAPIResponse) =>
-                                        dotLanguagesService
-                                            .getLanguagesUsedPage(pageAPIResponse.page.identifier)
-                                            .pipe(
-                                                map((languages) => ({
-                                                    pageAPIResponse,
-                                                    languages
-                                                }))
+                                    tap((pageAsset) => {
+                                        store.getWorkflowActions(pageAsset.page.inode);
+                                    }),
+                                    switchMap((pageAPIResponse) => {
+                                        return forkJoin({
+                                            pageAPIResponse: of(pageAPIResponse),
+                                            languages: dotLanguagesService.getLanguagesUsedPage(
+                                                pageAPIResponse.page.identifier
                                             )
-                                    ),
-                                    tapResponse({
-                                        next: ({ pageAPIResponse, languages }) => {
-                                            const canEditPage = computeCanEditPage(
-                                                pageAPIResponse?.page,
-                                                store.currentUser(),
-                                                store.experiment()
-                                            );
+                                        });
+                                    }),
+                                    catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                        patchState(store, {
+                                            errorCode: errorStatus,
+                                            status: UVE_STATUS.ERROR
+                                        });
 
-                                            const pageIsLocked = computePageIsLocked(
-                                                pageAPIResponse?.page,
-                                                store.currentUser()
-                                            );
+                                        return EMPTY;
+                                    }),
+                                    tap(({ pageAPIResponse, languages }) => {
+                                        const canEditPage = computeCanEditPage(
+                                            pageAPIResponse?.page,
+                                            store.currentUser(),
+                                            store.experiment()
+                                        );
 
-                                            patchState(store, {
-                                                pageAPIResponse,
-                                                languages,
-                                                canEditPage,
-                                                pageIsLocked,
-                                                status: UVE_STATUS.LOADED,
-                                                isClientReady: partialState?.isClientReady ?? true
-                                            });
-                                        },
-                                        error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                            patchState(store, {
-                                                errorCode: errorStatus,
-                                                status: UVE_STATUS.ERROR
-                                            });
-                                        }
+                                        const pageIsLocked = computePageIsLocked(
+                                            pageAPIResponse?.page,
+                                            store.currentUser()
+                                        );
+
+                                        patchState(store, {
+                                            pageAPIResponse,
+                                            languages,
+                                            canEditPage,
+                                            pageIsLocked,
+                                            status: UVE_STATUS.LOADED,
+                                            isClientReady: partialState?.isClientReady ?? true
+                                        });
                                     })
                                 );
                         })

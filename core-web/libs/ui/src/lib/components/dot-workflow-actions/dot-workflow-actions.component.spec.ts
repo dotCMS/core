@@ -189,6 +189,37 @@ describe('DotWorkflowActionsComponent', () => {
         });
     });
 
+    describe('disabled', () => {
+        beforeEach(() => {
+            spectator.setInput('actions', [
+                ...WORKFLOW_ACTIONS_MOCK,
+                WORKFLOW_ACTIONS_SEPARATOR_MOCK,
+                WORKFLOW_ACTIONS_MOCK[0]
+            ]);
+            spectator.detectChanges();
+        });
+
+        it('should disable the button', () => {
+            const button = spectator.query(Button);
+            expect(button.disabled).toBeFalsy();
+
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(button.disabled).toBeTruthy();
+        });
+
+        it('should disabled split buttons ', () => {
+            const splitButton = spectator.query(SplitButton);
+            expect(splitButton.disabled).toBeFalsy();
+
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(splitButton.disabled).toBeTruthy();
+        });
+    });
+
     describe('size', () => {
         beforeEach(() => {
             spectator.setInput('actions', [

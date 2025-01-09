@@ -1,38 +1,35 @@
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 import * as path from "node:path";
-import { defineConfig, devices } from '@playwright/test';
-import {ReporterDescription} from "playwright/types/test";
+import { defineConfig, devices } from "@playwright/test";
+import { ReporterDescription } from "playwright/types/test";
 
 const resolveEnvs = () => {
-  const envFiles = ['.env'];
+  const envFiles = [".env"];
 
-  if (process.env.CURRENT_ENV === 'local') {
-    envFiles.push('.env.local');
-  } else if (process.env.CURRENT_ENV === 'ci') {
-    envFiles.push('.env.ci');
-  } else if (process.env.CURRENT_ENV === 'dev') {
-    envFiles.push('.env.dev');
+  if (process.env.CURRENT_ENV === "local") {
+    envFiles.push(".env.local");
+  } else if (process.env.CURRENT_ENV === "ci") {
+    envFiles.push(".env.ci");
+  } else if (process.env.CURRENT_ENV === "dev") {
+    envFiles.push(".env.dev");
   }
 
   envFiles.forEach((file) => {
     dotenv.config({
       path: path.resolve(__dirname, file),
-      override: true
+      override: true,
     });
   });
 };
 
 const resolveReporter = () => {
-  const reporter: ReporterDescription[] = [
-    ['junit'],
-    ['github']
-  ];
-  if (!!process.env.INCLUDE_HTML) {
-    reporter.push(['html'])
+  const reporter: ReporterDescription[] = [["junit"], ["github"]];
+  if (!process.env.INCLUDE_HTML) {
+    reporter.push(["html"]);
   }
 
   return reporter;
-}
+};
 
 resolveEnvs();
 const reporter = resolveReporter();
@@ -41,7 +38,7 @@ const reporter = resolveReporter();
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -58,14 +55,14 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: "on-first-retry",
     headless: !!process.env.HEADLESS,
   },
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
 
     /*{
@@ -79,9 +76,9 @@ export default defineConfig({
     },*/
   ],
   webServer: {
-    command: 'nx serve dotcms-ui',
-    cwd: '../../../core-web',
-    url: process.env.BASE_URL + '/dotAdmin',
-    reuseExistingServer: !!process.env.REUSE_SERVER
-  }
+    command: "nx serve dotcms-ui",
+    cwd: "../../../core-web",
+    url: process.env.BASE_URL + "/dotAdmin",
+    reuseExistingServer: !!process.env.REUSE_SERVER,
+  },
 });

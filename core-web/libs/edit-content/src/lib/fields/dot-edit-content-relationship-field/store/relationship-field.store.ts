@@ -1,27 +1,20 @@
-import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStore,
-    withComputed,
-    withHooks,
-    withMethods,
-    withState
-} from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
-import { computed, inject } from '@angular/core';
-
-import { switchMap, tap } from 'rxjs/operators';
+import { computed } from '@angular/core';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { RelationshipFieldItem } from '../models/relationship.models';
-import { RelationshipFieldService } from '../services/relationship-field.service';
+import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
+import {
+    RelationshipFieldItem,
+    RelationshipTypes,
+    SelectionMode
+} from '../models/relationship.models';
 
 export interface RelationshipFieldState {
     data: RelationshipFieldItem[];
     status: ComponentStatus;
+    selectionMode: SelectionMode | null;
     pagination: {
         offset: number;
         currentPage: number;
@@ -32,6 +25,7 @@ export interface RelationshipFieldState {
 const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
+    selectionMode: null,
     pagination: {
         offset: 0,
         currentPage: 1,
@@ -47,11 +41,36 @@ export const RelationshipFieldStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withComputed((state) => ({
-        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage))
+        /**
+         * Computes the total number of pages based on the number of items and the rows per page.
+         * @returns {number} The total number of pages.
+         */
+        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+        /**
+         * Checks if the create new content button is disabled based on the selection mode and the number of items.
+         * @returns {boolean} True if the button is disabled, false otherwise.
+         */
+        isDisabledCreateNewContent: computed(() => {
+            const totalItems = state.data().length;
+            const selectionMode = state.selectionMode();
+
+            if (selectionMode === 'single') {
+                return totalItems >= 1;
+            }
+
+            return false;
+        }),
+        /**
+         * Formats the relationship field data into a string of IDs.
+         * @returns {string} A string of IDs separated by commas.
+         */
+        formattedRelationship: computed(() => {
+            const data = state.data();
+
+            return data.map((item) => item.id).join(',');
+        })
     })),
     withMethods((store) => {
-        const relationshipFieldService = inject(RelationshipFieldService);
-
         return {
             /**
              * Sets the data in the state.
@@ -60,6 +79,24 @@ export const RelationshipFieldStore = signalStore(
             setData(data: RelationshipFieldItem[]) {
                 patchState(store, {
                     data
+                });
+            },
+            /**
+             * Sets the cardinality of the relationship field.
+             * @param {number} cardinality - The cardinality of the relationship field.
+             */
+            setCardinality(cardinality: number) {
+                const relationshipType = RELATIONSHIP_OPTIONS[cardinality];
+
+                if (!relationshipType) {
+                    throw new Error('Invalid relationship type');
+                }
+
+                const selectionMode: SelectionMode =
+                    relationshipType === RelationshipTypes.ONE_TO_ONE ? 'single' : 'multiple';
+
+                patchState(store, {
+                    selectionMode
                 });
             },
             /**
@@ -85,24 +122,6 @@ export const RelationshipFieldStore = signalStore(
                 });
             },
             /**
-             * Loads the data for the relationship field by fetching content from the service.
-             * It updates the state with the loaded data and sets the status to LOADED.
-             */
-            loadData: rxMethod<void>(
-                pipe(
-                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                    switchMap(() =>
-                        relationshipFieldService.getContent(10).pipe(
-                            tapResponse({
-                                next: (data) =>
-                                    patchState(store, { data, status: ComponentStatus.LOADED }),
-                                error: () => patchState(store, { status: ComponentStatus.ERROR })
-                            })
-                        )
-                    )
-                )
-            ),
-            /**
              * Advances the pagination to the next page and updates the state accordingly.
              */
             nextPage: () => {
@@ -127,10 +146,5 @@ export const RelationshipFieldStore = signalStore(
                 });
             }
         };
-    }),
-    withHooks({
-        onInit: (store) => {
-            store.loadData();
-        }
     })
 );

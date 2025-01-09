@@ -6,8 +6,14 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME,
+    DotCMSContentlet,
+    DotDeviceListItem
+} from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
 
 import { withEditor } from './withEditor';
@@ -24,10 +30,8 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
-import { DotDeviceWithIcon } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
-
 const mockCurrentUser: CurrentUser = {
     email: 'admin@dotcms.com',
     givenName: 'Admin',
@@ -66,7 +70,12 @@ const initialState: UVEState = {
     isTraditionalPage: false,
     canEditPage: true,
     pageIsLocked: true,
-    isClientReady: false
+    isClientReady: false,
+    viewParams: {
+        orientation: undefined,
+        seo: undefined,
+        device: undefined
+    }
 };
 
 export const uveStoreMock = signalStore(
@@ -129,6 +138,7 @@ describe('withEditor', () => {
                             value: MOCK_RESPONSE_HEADLESS.viewAs.persona ?? DEFAULT_PERSONA
                         },
                         runningExperiment: null,
+                        isDefaultVariant: true,
                         showInfoDisplay: false,
                         unlockButton: null,
                         urlContentMap: null,
@@ -330,6 +340,35 @@ describe('withEditor', () => {
                         expect(store.$toolbarProps().showInfoDisplay).toBe(false);
                     });
                 });
+
+                describe('isDefaultVariant', () => {
+                    it('should have isDefaultVariant as true if the page variant is default', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                viewAs: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                    variantId: DEFAULT_VARIANT_ID
+                                }
+                            }
+                        });
+
+                        expect(store.$toolbarProps().isDefaultVariant).toBe(true);
+                    });
+                    it('should have isDefaultVariant as false if the page is a variant different from default', () => {
+                        patchState(store, {
+                            pageAPIResponse: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                viewAs: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                    variantId: 'test'
+                                }
+                            }
+                        });
+
+                        expect(store.$toolbarProps().isDefaultVariant).toBe(false);
+                    });
+                });
             });
 
             describe('$infoDisplayOptions', () => {
@@ -339,7 +378,7 @@ describe('withEditor', () => {
                 });
 
                 it('should return info for device', () => {
-                    const device = mockDotDevices[0] as DotDeviceWithIcon;
+                    const device = mockDotDevices[0] as DotDeviceListItem;
 
                     patchState(store, { device });
 
@@ -540,9 +579,7 @@ describe('withEditor', () => {
                         currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
                         urlContentMap: null,
                         runningExperiment: null,
-                        workflowActionsInode: MOCK_RESPONSE_HEADLESS.page.inode,
-                        unlockButton: null,
-                        showInfoDisplay: false
+                        unlockButton: null
                     });
                 });
             });
@@ -642,16 +679,31 @@ describe('withEditor', () => {
             });
         });
 
+        describe('$iframeURL', () => {
+            it("should return the iframe's URL", () => {
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                );
+            });
+
+            it('should contain `about:blanck` in src when the page is traditional', () => {
+                patchState(store, {
+                    pageAPIResponse: MOCK_RESPONSE_VTL,
+                    isTraditionalPage: true
+                });
+
+                expect(store.$iframeURL()).toContain('about:blank');
+            });
+        });
+
         describe('$editorProps', () => {
             it('should return the expected data on init', () => {
                 expect(store.$editorProps()).toEqual({
                     showDialogs: true,
-                    showEditorContent: true,
                     showBlockEditorSidebar: true,
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',
-                        src: 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
                         wrapper: null
                     },
                     progressBar: true,
@@ -673,7 +725,9 @@ describe('withEditor', () => {
             });
 
             it('should not have opacity or progressBar in preview mode', () => {
-                patchState(store, { pageParams: { ...emptyParams, preview: 'true' } });
+                patchState(store, {
+                    pageParams: { ...emptyParams, editorMode: UVE_MODE.PREVIEW }
+                });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
                 expect(store.$editorProps().progressBar).toBe(false);
@@ -693,9 +747,19 @@ describe('withEditor', () => {
                 });
             });
 
-            describe('showEditorContent', () => {
-                it('should have showEditorContent as true when there is no socialMedia', () => {
-                    expect(store.$editorProps().showEditorContent).toBe(true);
+            describe('editorContentStyles', () => {
+                it('should have display block when there is not social media', () => {
+                    expect(store.$editorContentStyles()).toEqual({
+                        display: 'block'
+                    });
+                });
+
+                it('should have display none when there is social media', () => {
+                    patchState(store, { socialMedia: 'facebook' });
+
+                    expect(store.$editorContentStyles()).toEqual({
+                        display: 'none'
+                    });
                 });
             });
 
@@ -718,17 +782,8 @@ describe('withEditor', () => {
                     expect(store.$editorProps().iframe.pointerEvents).toBe('none');
                 });
 
-                it('should have src as empty when the page is traditional', () => {
-                    patchState(store, {
-                        pageAPIResponse: MOCK_RESPONSE_VTL,
-                        isTraditionalPage: true
-                    });
-
-                    expect(store.$editorProps().iframe.src).toBe('');
-                });
-
                 it('should have a wrapper when a device is present', () => {
-                    const device = mockDotDevices[0] as DotDeviceWithIcon;
+                    const device = mockDotDevices[0] as DotDeviceListItem;
 
                     patchState(store, { device });
 
@@ -831,6 +886,20 @@ describe('withEditor', () => {
                     });
 
                     expect(store.$editorProps().contentletTools).toBe(null);
+                });
+
+                it('should have contentletTools when the page can be edited and is in preview mode', () => {
+                    patchState(store, {
+                        isEditState: true,
+                        canEditPage: true,
+                        pageParams: {
+                            ...emptyParams,
+                            editorMode: UVE_MODE.PREVIEW
+                        },
+                        state: EDITOR_STATE.IDLE
+                    });
+
+                    expect(store.$editorProps().contentletTools).toEqual(null);
                 });
             });
             describe('dropzone', () => {

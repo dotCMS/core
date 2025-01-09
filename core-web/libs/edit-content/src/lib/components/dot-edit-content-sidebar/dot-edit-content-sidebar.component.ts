@@ -21,8 +21,8 @@ import { DotEditContentSidebarSectionComponent } from './components/dot-edit-con
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { DotWorkflowState } from '../../models/dot-edit-content.model';
+import { DotEditContentStore } from '../../store/edit-content.store';
 
 /**
  * The DotEditContentSidebarComponent is a component that displays the sidebar for the DotCMS content editing application.

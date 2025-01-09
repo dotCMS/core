@@ -3,7 +3,8 @@ import { CLIENT_ACTIONS, postMessageToEditor } from './lib/editor/models/client.
 import {
     CustomClientParams,
     DotCMSPageEditorConfig,
-    EditorConfig
+    EditorConfig,
+    UVE_MODE
 } from './lib/editor/models/editor.model';
 import {
     InlineEditorData,
@@ -42,5 +43,6 @@ export {
     initInlineEditing,
     InlineEditEventData,
     InlineEditorData,
-    INLINE_EDITING_EVENT_KEY
+    INLINE_EDITING_EVENT_KEY,
+    UVE_MODE
 };

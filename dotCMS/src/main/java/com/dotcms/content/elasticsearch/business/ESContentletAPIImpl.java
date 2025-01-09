@@ -686,6 +686,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Date timeMachineDate, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException{
         final Contentlet contentlet = contentFactory.findContentletByIdentifier(identifier, languageId, variantId, timeMachineDate);
+        if (contentlet == null) {
+            Logger.debug(this, "Contentlet not found for identifier: " + identifier + " lang:" + languageId + " variant:" + variantId + " date:" + timeMachineDate);
+            return null;
+        }
         if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
             return contentlet;
         } else {
@@ -7397,6 +7401,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException("The contentlet must not be null.");
         }
         final String contentTypeId = contentlet.getContentTypeId();
+        final long languageId = contentlet.getLanguageId();
         final String contentIdentifier = (UtilMethods.isSet(contentlet.getIdentifier())
                 ? contentlet.getIdentifier()
                 : "Unknown/New");
@@ -7405,6 +7410,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     "Contentlet [" + contentIdentifier + "] is not associated to " +
                             "any Content Type.");
         }
+        if (languageId > 0 && !this.languageAPI.hasLanguage(languageId)) {
+            throw new DotContentletValidationException(
+                    "Contentlet [" + contentIdentifier + "] is associated to an invalid language id: " + languageId);
+        }
+
         final ContentType contentType = Sneaky.sneak(
                 () -> APILocator.getContentTypeAPI(APILocator.systemUser()).find
                         (contentTypeId));
@@ -7671,6 +7681,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // validate unique
             if (field.isUnique()) {
                 try {
+                    if (!UtilMethods.isSet(contentlet.getHost())) {
+                        populateHost(contentlet);
+                    }
+
                     uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
                             LegacyFieldTransformer.from(field));
                 } catch (final UniqueFieldValueDuplicatedException e) {

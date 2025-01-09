@@ -14,7 +14,6 @@ import com.liferay.portal.model.User;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * This DataFetcher returns the {@link TemplateLayout} associated to the requested {@link HTMLPageAsset}.
@@ -31,8 +30,6 @@ public class ContainersDataFetcher implements DataFetcher<List<ContainerRaw>> {
             final String languageId = (String) context.getParam("languageId");
 
             final PageMode mode = PageMode.get(pageModeAsString);
-            final HttpServletRequest request = context.getHttpServletRequest();
-
             final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
                     .fromContentlet(page);
 

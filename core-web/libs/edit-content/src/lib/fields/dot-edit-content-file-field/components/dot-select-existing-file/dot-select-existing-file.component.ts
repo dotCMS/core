@@ -43,6 +43,10 @@ export class DotSelectExistingFileComponent implements OnInit {
      */
     readonly store = inject(SelectExisingFileStore);
 
+    /**
+     * A readonly property that injects the `DotFileFieldUploadService` service.
+     * This service is used to manage the state and actions related to selecting existing files.
+     */
     readonly #uploadService = inject(DotFileFieldUploadService);
     /**
      * A reference to the dynamic dialog instance.
@@ -59,6 +63,10 @@ export class DotSelectExistingFileComponent implements OnInit {
      */
     $sideBarRef = viewChild.required(DotSideBarComponent);
 
+    /**
+     * A readonly property that injects the `DynamicDialogConfig` service.
+     * This service is used to get the dialog data.
+     */
     readonly #dialogConfig = inject(DynamicDialogConfig<DialogData>);
 
     constructor() {

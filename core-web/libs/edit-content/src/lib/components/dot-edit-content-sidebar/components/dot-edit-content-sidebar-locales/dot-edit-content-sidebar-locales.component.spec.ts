@@ -2,7 +2,6 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Chip, ChipModule } from 'primeng/chip';
 
-import { DotCMSContentlet } from '@dotcms/angular';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
 import { DotEditContentSidebarLocalesComponent } from './dot-edit-content-sidebar-locales.component';
@@ -33,14 +32,13 @@ describe('DotEditContentSidebarLocalesComponent', () => {
         }
     ] as DotLanguage[];
     const defaultLocale: DotLanguage = locales[0];
-    const contentlet: DotCMSContentlet = { languageId: 1 } as DotCMSContentlet;
 
     beforeEach(() => {
         spectator = createComponent({
             props: {
                 locales: locales,
                 defaultLocale: defaultLocale,
-                contentlet: contentlet,
+                currentLocale: defaultLocale,
                 isLoading: false
             } as unknown
         });
@@ -55,7 +53,7 @@ describe('DotEditContentSidebarLocalesComponent', () => {
         expect(chipElements[1].label).toBe('es-es');
         expect(chipElements[2].label).toBe('it-it');
 
-        expect(chipElements[0].styleClass).toBe('p-chip-sm p-chip-primary p-chip-filled default');
+        expect(chipElements[0].styleClass).toBe('p-chip-sm p-chip-filled default');
         expect(chipElements[1].styleClass).toBe('p-chip-sm p-chip-primary');
         expect(chipElements[2].styleClass).toBe('p-chip-sm p-chip-gray p-chip-dashed');
     });
@@ -66,5 +64,23 @@ describe('DotEditContentSidebarLocalesComponent', () => {
 
         const skeleton = spectator.queryAll('p-skeleton');
         expect(skeleton).toExist();
+    });
+
+    it('should emit switchLocale event when a locale chip is clicked', () => {
+        const chipElement = spectator.query('p-chip');
+        const switchLocaleSpy = jest.spyOn(spectator.component.switchLocale, 'emit');
+
+        spectator.click(chipElement);
+
+        expect(switchLocaleSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not emit switchLocale event when the current locale chip is clicked', () => {
+        const chipElements = spectator.queryAll('p-chip');
+        const switchLocaleSpy = jest.spyOn(spectator.component.switchLocale, 'emit');
+
+        spectator.click(chipElements[1]);
+
+        expect(switchLocaleSpy).toHaveBeenCalledWith(locales[1]);
     });
 });
