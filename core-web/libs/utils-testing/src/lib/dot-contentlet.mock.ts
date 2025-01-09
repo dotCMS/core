@@ -1,7 +1,8 @@
 import { faker } from '@faker-js/faker';
 
 import { DotCMSContentlet, StructureType, StructureTypeView } from '@dotcms/dotcms-models';
-import { createFakeLanguage, mockLocales } from './dot-language.mock';
+
+import { createFakeLanguage } from './dot-language.mock';
 
 export const mockDotContentlet: StructureTypeView[] = [
     {

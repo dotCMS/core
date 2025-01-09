@@ -53,8 +53,8 @@ describe('Relationship Field Utils', () => {
 
         it('should return array of relationships when contentlet has array relationship', () => {
             const relationships = [
-                { id: '1', name: 'test1' },
-                { id: '2', name: 'test2' }
+                createFakeContentlet(),
+                createFakeContentlet()
             ];
             const contentlet = {
                 ...mockContentlet,

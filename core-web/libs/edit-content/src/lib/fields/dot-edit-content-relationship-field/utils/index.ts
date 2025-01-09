@@ -13,7 +13,7 @@ export function getSelectionModeByCardinality(cardinality: number) {
     const relationshipType = RELATIONSHIP_OPTIONS[cardinality];
 
     if (!relationshipType) {
-        throw new Error('Invalid relationship type');
+        throw new Error(`Invalid relationship type for cardinality: ${cardinality}`);
     }
 
     return relationshipType === RelationshipTypes.ONE_TO_ONE ? 'single' : 'multiple';
