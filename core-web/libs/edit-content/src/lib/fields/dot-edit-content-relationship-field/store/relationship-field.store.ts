@@ -63,7 +63,7 @@ export const RelationshipFieldStore = signalStore(
         formattedRelationship: computed(() => {
             const data = state.data();
 
-            return data.map((item) => item.id).join(',');
+            return data.map((item) => item.identifier).join(',');
         })
     })),
     withMethods((store) => {
