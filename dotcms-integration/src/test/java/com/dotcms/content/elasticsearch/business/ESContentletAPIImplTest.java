@@ -4581,4 +4581,71 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
     }
+
+    @Test
+    public void aaa() throws DotDataException, DotSecurityException {
+
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+            final ContentType contentType = new ContentTypeDataGen()
+                    .nextPersisted();
+
+            final Field title = new FieldDataGen()
+                    .name("title")
+                    .contentTypeId(contentType.id())
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Field uniqueTextField_1 = new FieldDataGen()
+                    .name("unique_1")
+                    .velocityVarName("unique1" + System.currentTimeMillis())
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Field uniqueTextField_2 = new FieldDataGen()
+                    .name("unique_2")
+                    .velocityVarName("unique2" + System.currentTimeMillis())
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(title.variable(), "A")
+                    .setProperty(uniqueTextField_1.variable(), "unique-value")
+                    .setProperty(uniqueTextField_2.variable(), "111")
+                    .next();
+
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(title.variable(), "B")
+                    .setProperty(uniqueTextField_1.variable(), "unique-value")
+                    .setProperty(uniqueTextField_2.variable(), "555")
+                    .next();
+
+
+
+
+            APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
+
+            try {
+                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+            } catch (Exception e){
+                final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                        + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField_1.name(), uniqueTextField_1.variable());
+
+                assertEquals(expectedMessage, e.getMessage());
+            }
+
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
 }

@@ -7,6 +7,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -144,13 +145,18 @@ public class UniqueFieldDataBaseUtil {
         new DotConnect().setSQL(INSERT_SQL_WIT_HASH).addParam(key).addJSONParam(supportingValues).loadObjectResults();
     }
 
-    @WrapInTransaction
     public void insert(final String key, final Map<String, Object> supportingValues) throws DotDataException {
-        new DotConnect()
-                .setSQL(INSERT_SQL)
-                .addParam(key)
-                .addJSONParam(supportingValues)
-                .loadObjectResults();
+        HibernateUtil.startTransaction();
+
+        try {
+            new DotConnect()
+                    .setSQL(INSERT_SQL)
+                    .addParam(key)
+                    .addJSONParam(supportingValues)
+                    .loadObjectResults();
+        } finally {
+            HibernateUtil.closeAndCommitTransaction();
+        }
     }
 
     /**
