@@ -3709,14 +3709,16 @@ public class UtilMethods {
 
     /**
     *  Check if the given string is a valid Lucene query
-    *
+    *  The method uses the Apache Lucene library to parse the query and check for any syntax error, if it throws an exception that means the query is invalid
+    *  Additionally the method includes a check to ensure that a simple term query (just a simple string) is not considered valid
     *  @param query String to be checked
     */
-    public static boolean isLuceneQuery(String query) {
+    public static final boolean isLuceneQuery(String query) {
         try {
-            QueryParser parser = new QueryParser("defaultField", new StandardAnalyzer());
+            final QueryParser parser = new QueryParser("defaultField", new StandardAnalyzer());
+            // Allow wildcards in the query
             parser.setAllowLeadingWildcard(true);
-            Query parsedQuery = parser.parse(query);
+            final Query parsedQuery = parser.parse(query);
 
             // A valid Lucene query should not be a simple term query that exactly matches the input string
             if (parsedQuery instanceof TermQuery) {
