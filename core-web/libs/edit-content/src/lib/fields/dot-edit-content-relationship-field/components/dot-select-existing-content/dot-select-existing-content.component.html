@@ -28,7 +28,7 @@
             [first]="pagination.offset"
             [rows]="pagination.rowsPerPage"
             [scrollable]="true"
-            [globalFilterFields]="['title', 'step', 'description']"
+            [globalFilterFields]="['title']"
             styleClass="dotTable p-datatable-existing-content w-full">
             <ng-template pTemplate="caption">
                 <div class="flex justify-content-between align-items-center w-full">
@@ -140,7 +140,7 @@
             <p-button
                 [label]="'Cancel' | dm"
                 [outlined]="true"
-                (onClick)="cancel()"
+                (onClick)="closeDialog()"
                 [text]="true"
                 severity="primary"
                 data-testId="cancel-button" />

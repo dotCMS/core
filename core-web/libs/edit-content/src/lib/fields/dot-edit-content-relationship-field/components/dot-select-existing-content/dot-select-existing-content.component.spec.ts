@@ -119,7 +119,7 @@ describe('DotSelectExistingContentComponent', () => {
         });
 
         it('should close dialog when cancel button is clicked', () => {
-            spectator.component.cancel();
+            spectator.component.closeDialog();
 
             expect(dialogRef.close).toHaveBeenCalledWith();
         });

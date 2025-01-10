@@ -2,7 +2,6 @@
 @let attributes = $attributes();
 @let showPagination = store.totalPages() > 1;
 @let data = store.data();
-
 @let hitText = attributes.hitText;
 
 <p-table
@@ -12,7 +11,8 @@
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
     [reorderableColumns]="true"
-    [scrollable]="true">
+    [scrollable]="true"
+    (onRowReorder)="onRowReorder($event)">
     <ng-template pTemplate="header" styleClass="relative">
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
@@ -71,8 +71,9 @@
             </td>
         </tr>
     </ng-template>
-    @if (hitText || showPagination) {
-        <ng-template pTemplate="summary">
+
+    <ng-template pTemplate="summary">
+        @if (hitText || showPagination) {
             <div
                 class="flex align-items-center"
                 [class.justify-content-between]="hitText"
@@ -89,6 +90,6 @@
                         [currentPage]="pagination.currentPage" />
                 }
             </div>
-        </ng-template>
-    }
+        }
+    </ng-template>
 </p-table>

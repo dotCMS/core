@@ -170,7 +170,7 @@ export class DotSelectExistingContentComponent implements OnInit {
      * A method that closes the existing content dialog.
      * It sets the visibility signal to false, hiding the dialog.
      */
-    cancel() {
+    closeDialog() {
         this.#dialogRef.close();
     }
 
