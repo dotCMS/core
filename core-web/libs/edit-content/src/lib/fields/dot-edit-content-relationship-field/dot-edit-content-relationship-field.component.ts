@@ -254,7 +254,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
 
         this.#dialogRef.onClose
             .pipe(
-                filter((file) => !!file),
+                filter((items) => !!items),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((items: DotCMSContentlet[]) => {

@@ -140,13 +140,15 @@
             <p-button
                 [label]="'Cancel' | dm"
                 [outlined]="true"
-                (onClick)="closeDialog()"
+                (onClick)="cancel()"
                 [text]="true"
-                severity="primary" />
+                severity="primary"
+                data-testId="cancel-button" />
             <p-button
                 [disabled]="totalItems === 0"
-                (onClick)="closeDialog()"
-                [label]="$applyLabel()" />
+                (onClick)="applyChanges()"
+                [label]="$applyLabel()"
+                data-testId="apply-button" />
         </div>
     </div>
 </div>

@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -12,6 +12,7 @@ import { ExistingContentStore } from './store/existing-content.store';
 
 import { Column } from '../../models/column.model';
 import { RelationshipFieldService } from '../../services/relationship-field.service';
+import { Button } from 'primeng/button';
 
 const mockColumns: Column[] = [
     { field: 'title', header: 'Title' },
@@ -105,7 +106,7 @@ describe('DotSelectExistingContentComponent', () => {
             ];
             spectator.component.$selectedItems.set(mockItems);
 
-            spectator.component.closeDialog();
+            spectator.component.applyChanges();
 
             expect(dialogRef.close).toHaveBeenCalledWith(mockItems);
         });
@@ -113,9 +114,15 @@ describe('DotSelectExistingContentComponent', () => {
         it('should close dialog with empty array when no items selected', () => {
             spectator.component.$selectedItems.set([]);
 
-            spectator.component.closeDialog();
+            spectator.component.applyChanges();
 
             expect(dialogRef.close).toHaveBeenCalledWith([]);
+        });
+
+        it('should close dialog when cancel button is clicked', () => {
+            spectator.component.cancel();
+
+            expect(dialogRef.close).toHaveBeenCalledWith();
         });
     });
 
