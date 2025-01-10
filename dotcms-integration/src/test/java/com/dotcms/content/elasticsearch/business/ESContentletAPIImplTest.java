@@ -4582,8 +4582,24 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * when:
+     * -Create a Content Type with two unique Text fields: Title and Number
+     * - Create a Contentlet with the following data:
+     * Title = 111
+     * Number = 222
+     * - Now, try to create another Contentlet with the following data:
+     * Title = 111
+     * Number = 555
+     *
+     * Should get a duplicate value error
+     * 
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
-    public void aaa() throws DotDataException, DotSecurityException {
+    public void multiUniqueFieldsCIntentType() throws DotDataException, DotSecurityException {
 
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
