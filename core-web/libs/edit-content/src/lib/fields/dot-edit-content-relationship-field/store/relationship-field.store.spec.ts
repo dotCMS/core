@@ -140,7 +140,7 @@ describe('RelationshipFieldStore', () => {
                 const currentIndex = 1;
                 const newIndex = 0;
                 store.reorderData(currentIndex, newIndex);
-                
+
                 const reorderedData = store.data();
                 expect(reorderedData[0].inode).toBe('inode2');
                 expect(reorderedData[1].inode).toBe('inode1');
@@ -151,7 +151,7 @@ describe('RelationshipFieldStore', () => {
                 const currentIndex = 0;
                 const newIndex = 2;
                 store.reorderData(currentIndex, newIndex);
-                
+
                 const reorderedData = store.data();
                 expect(reorderedData[0].inode).toBe('inode2');
                 expect(reorderedData[1].inode).toBe('inode3');
@@ -162,7 +162,7 @@ describe('RelationshipFieldStore', () => {
                 const currentIndex = 1;
                 const newIndex = 1;
                 store.reorderData(currentIndex, newIndex);
-                
+
                 const reorderedData = store.data();
                 expect(reorderedData[0].inode).toBe('inode1');
                 expect(reorderedData[1].inode).toBe('inode2');
@@ -173,7 +173,7 @@ describe('RelationshipFieldStore', () => {
                 const currentIndex = 0;
                 const newIndex = mockData.length - 1;
                 store.reorderData(currentIndex, newIndex);
-                
+
                 const reorderedData = store.data();
                 expect(reorderedData[0].inode).toBe('inode2');
                 expect(reorderedData[1].inode).toBe('inode3');
@@ -184,7 +184,7 @@ describe('RelationshipFieldStore', () => {
                 const currentIndex = mockData.length - 1;
                 const newIndex = 0;
                 store.reorderData(currentIndex, newIndex);
-                
+
                 const reorderedData = store.data();
                 expect(reorderedData[0].inode).toBe('inode3');
                 expect(reorderedData[1].inode).toBe('inode1');
