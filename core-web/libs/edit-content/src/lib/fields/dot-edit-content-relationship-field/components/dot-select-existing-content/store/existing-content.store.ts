@@ -7,20 +7,18 @@ import { computed, inject } from '@angular/core';
 
 import { tap, switchMap, filter } from 'rxjs/operators';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
-import {
-    RelationshipFieldItem,
-    SelectionMode
-} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import { SelectionMode } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
-    data: RelationshipFieldItem[];
+    data: DotCMSContentlet[];
     status: ComponentStatus;
     selectionMode: SelectionMode | null;
     errorMessage: string | null;
     columns: Column[];
+    currentItemsIds: string[];
     pagination: {
         offset: number;
         currentPage: number;
@@ -38,7 +36,8 @@ const initialState: ExistingContentState = {
         offset: 0,
         currentPage: 1,
         rowsPerPage: 50
-    }
+    },
+    currentItemsIds: []
 };
 
 /**
@@ -48,8 +47,26 @@ const initialState: ExistingContentState = {
 export const ExistingContentStore = signalStore(
     withState(initialState),
     withComputed((state) => ({
+        /**
+         * Computes whether the content is currently loading.
+         * @returns {boolean} True if the content is loading, false otherwise.
+         */
         isLoading: computed(() => state.status() === ComponentStatus.LOADING),
-        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage))
+        /**
+         * Computes the total number of pages based on the data and rows per page.
+         * @returns {number} The total number of pages.
+         */
+        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+        /**
+         * Computes the selected items based on the current items IDs.
+         * @returns {DotCMSContentlet[]} The selected items.
+         */
+        selectedItems: computed(() => {
+            const data = state.data();
+            const currentItemsIds = state.currentItemsIds();
+
+            return data.filter((item) => currentItemsIds.includes(item.inode));
+        })
     })),
     withMethods((store) => {
         const relationshipFieldService = inject(RelationshipFieldService);
@@ -62,6 +79,7 @@ export const ExistingContentStore = signalStore(
             initLoad: rxMethod<{
                 contentTypeId: string;
                 selectionMode: SelectionMode;
+                currentItemsIds: string[];
             }>(
                 pipe(
                     tap(({ selectionMode }) =>
@@ -76,14 +94,15 @@ export const ExistingContentStore = signalStore(
                         }
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
-                    switchMap(({ contentTypeId }) =>
+                    switchMap(({ contentTypeId, currentItemsIds }) =>
                         relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
                                 next: ([columns, data]) => {
                                     patchState(store, {
                                         columns,
                                         data,
-                                        status: ComponentStatus.LOADED
+                                        status: ComponentStatus.LOADED,
+                                        currentItemsIds
                                     });
                                 },
                                 error: () =>

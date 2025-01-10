@@ -85,6 +85,7 @@ export class DotUveToolbarComponent {
     readonly #deviceService = inject(DotDevicesService);
 
     readonly $toolbar = this.#store.$uveToolbar;
+    readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
@@ -97,14 +98,6 @@ export class DotUveToolbarComponent {
     );
 
     protected readonly CURRENT_DATE = new Date();
-
-    readonly $styleToolbarClass = computed(() => {
-        if (!this.$isPreviewMode()) {
-            return 'uve-toolbar';
-        }
-
-        return 'uve-toolbar uve-toolbar-preview';
-    });
 
     protected readonly publishDateParam = this.#store.pageParams().publishDate;
     protected readonly $previewDate = model<Date>(
