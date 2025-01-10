@@ -68,9 +68,18 @@ public class ConfigUtils {
 		return getDynamicContentPath() + File.separator + "dotlucene";
 	}
 
+	/**
+	 * Retrieves the configurable path for the backup directory.
+	 * Defaults to DYNAMIC_CONTENT_PATH/dotsecure/backup if not overridden.
+	 *
+	 * @return the backup directory path
+	 */
 	public static String getBackupPath() {
-		return getDynamicContentPath() + File.separator + "backup";
+		String dynamicContentPath = getDynamicContentPath();
+		return Config.getStringProperty("backup.directory",
+				Paths.get(dynamicContentPath, "dotsecure", "backup").toString());
 	}
+
 
 	public static String getBundlePath() {
 		final Path path = Paths.get(String.format("%s%sbundles",getAbsoluteAssetsRootPath(),File.separator)).normalize();

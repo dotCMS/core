@@ -99,9 +99,10 @@ import org.apache.commons.beanutils.BeanUtils;
 public class ImportStarterUtil {
 
     /**
-     * The path where tmp files are stored. This gets wiped alot
+     * Fully configurable path for the backup directory.
      */
-    private String backupTempFilePath = ConfigUtils.getBackupPath() + File.separator + "temp";
+    private static final String BACKUP_DIRECTORY = ConfigUtils.getBackupPath();
+    private String backupTempFilePath = BACKUP_DIRECTORY + File.separator + "temp";
     private ArrayList<String> classesWithIdentity = new ArrayList<>();
     private Map<String, String> sequences;
     private Map<String, String> tableIDColumns;
