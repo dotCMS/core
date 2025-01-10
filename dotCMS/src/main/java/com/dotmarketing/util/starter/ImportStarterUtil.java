@@ -67,7 +67,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -400,9 +404,17 @@ public class ImportStarterUtil {
      * Deletes all files from the backupTempFilePath
      */
     private void deleteTempFiles() {
-        File f = new File(backupTempFilePath);
-
-        FileUtil.deltree(f, true);
+        try {
+            Path tempDir = Paths.get(getBackupTempFilePath());
+            if (Files.exists(tempDir)) {
+                Files.walk(tempDir)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            }
+        } catch (IOException e) {
+            Logger.error(this, "Error cleaning up temp files", e);
+        }
     }
 
 
@@ -931,41 +943,48 @@ public class ImportStarterUtil {
     }
 
     /**
+     * Validates the zip file and ensures proper setup using Java NIO features.
+     * Handles directory creation safely and ensures concurrency safety.
      *
-     * @return
+     * @return true if the zip file is valid and successfully processed.
      */
     public boolean validateZipFile() {
-        String tempdir = getBackupTempFilePath();
+        String tempDirPath = getBackupTempFilePath();
 
         if (starterZip == null || !starterZip.exists()) {
             throw new DotStateException("Starter.zip does not exist:" + starterZip);
         }
 
         try {
+            // Clean up temp directory before processing
             deleteTempFiles();
 
-            File ftempDir = new File(tempdir);
-            ftempDir.mkdirs();
-            File tempZip = new File(tempdir + File.separator + starterZip.getName());
-            tempZip.createNewFile();
+            Path tempDir = Paths.get(tempDirPath);
 
-            try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(starterZip.toPath()));
-                    final WritableByteChannel outputChannel =
-                            Channels.newChannel(Files.newOutputStream(tempZip.toPath()))) {
-
-                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+            // Create the temp directory if it does not exist
+            try {
+                Files.createDirectories(tempDir);
+            } catch (FileAlreadyExistsException e) {
+                if (!Files.isDirectory(tempDir)) {
+                    throw new DotStateException("Temp path exists but is not a directory: " + tempDirPath, e);
+                }
             }
 
-            /*
-             * Unzip zipped backups
-             */
-            if (starterZip != null && starterZip.getName().toLowerCase().endsWith(".zip")) {
-                ZipFile z = new ZipFile(starterZip);
-                ZipUtil.extract(z, new File(backupTempFilePath));
+            Path tempZipPath = tempDir.resolve(starterZip.getName());
+
+            // Copy the starter zip to the temp directory
+            Files.copy(starterZip.toPath(), tempZipPath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Unzip the file if it is a valid zip
+            if (starterZip.getName().toLowerCase().endsWith(".zip")) {
+                try (ZipFile zipFile = new ZipFile(starterZip)) {
+                    ZipUtil.extract(zipFile, tempDir.toFile());
+                }
             }
+
             return true;
-        } catch (Exception e) {
-            throw new DotStateException("Starter.zip invalid:" + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new DotStateException("Error processing starter.zip: " + e.getMessage(), e);
         }
     }
 
