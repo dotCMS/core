@@ -104,6 +104,21 @@ export const RelationshipFieldStore = signalStore(
                 patchState(store, { data });
             },
             /**
+             * Reorders the data in the store.
+             * @param {number} dragIndex - The index of the item to be dragged.
+             * @param {number} dropIndex - The index of the item to be dropped.
+             */
+            reorderData(dragIndex: number, dropIndex: number) {
+                const currentData = store.data();
+                const newData = [...currentData];
+                const draggedItem = newData[dragIndex];
+
+                newData.splice(dragIndex, 1);
+                newData.splice(dropIndex, 0, draggedItem);
+
+                patchState(store, { data: newData });
+            },
+            /**
              * Deletes an item from the store at the specified index.
              * @param index - The index of the item to delete.
              */

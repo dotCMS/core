@@ -16,7 +16,11 @@ export function getSelectionModeByCardinality(cardinality: number) {
         throw new Error(`Invalid relationship type for cardinality: ${cardinality}`);
     }
 
-    return relationshipType === RelationshipTypes.ONE_TO_ONE ? 'single' : 'multiple';
+    const isSingleMode =
+        relationshipType === RelationshipTypes.ONE_TO_ONE ||
+        relationshipType === RelationshipTypes.MANY_TO_ONE;
+
+    return isSingleMode ? 'single' : 'multiple';
 }
 
 /**
