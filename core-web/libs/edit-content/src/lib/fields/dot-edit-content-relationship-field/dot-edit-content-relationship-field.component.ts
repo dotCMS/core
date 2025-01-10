@@ -105,12 +105,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 command: () => {
                     this.showExistingContentDialog();
                 }
-            },
-            {
-                label: this.#dotMessageService.get('dot.file.relationship.field.table.new.content'),
-                command: () => {
-                    // TODO: Implement new content
-                }
             }
         ];
     });

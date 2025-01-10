@@ -8,7 +8,6 @@ import { RelationshipTypes } from '../models/relationship.models';
 describe('Relationship Field Utils', () => {
     describe('getSelectionModeByCardinality', () => {
         it('should return "single" for ONE_TO_ONE relationship', () => {
-            // Find the cardinality value for ONE_TO_ONE
             const oneToOneCardinality = Object.entries(RELATIONSHIP_OPTIONS).find(
                 ([_, value]) => value === RelationshipTypes.ONE_TO_ONE
             )?.[0];
@@ -17,8 +16,16 @@ describe('Relationship Field Utils', () => {
             expect(result).toBe('single');
         });
 
+        it('should return "single" for MANY_TO_ONE relationship', () => {
+            const manyToOneCardinality = Object.entries(RELATIONSHIP_OPTIONS).find(
+                ([_, value]) => value === RelationshipTypes.MANY_TO_ONE
+            )?.[0];
+
+            const result = getSelectionModeByCardinality(Number(manyToOneCardinality));
+            expect(result).toBe('single');
+        });
+
         it('should return "multiple" for ONE_TO_MANY relationship', () => {
-            // Find the cardinality value for ONE_TO_MANY
             const oneToManyCardinality = Object.entries(RELATIONSHIP_OPTIONS).find(
                 ([_, value]) => value === RelationshipTypes.ONE_TO_MANY
             )?.[0];
@@ -28,7 +35,10 @@ describe('Relationship Field Utils', () => {
         });
 
         it('should throw error for invalid cardinality', () => {
-            expect(() => getSelectionModeByCardinality(999)).toThrow('Invalid relationship type');
+            const invalidCardinality = 999;
+            expect(() => getSelectionModeByCardinality(invalidCardinality)).toThrow(
+                `Invalid relationship type for cardinality: ${invalidCardinality}`
+            );
         });
     });
 
