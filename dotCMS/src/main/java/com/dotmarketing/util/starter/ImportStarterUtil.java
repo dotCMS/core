@@ -1,8 +1,5 @@
 package com.dotmarketing.util.starter;
 
-import static com.dotcms.util.ConversionUtils.toLong;
-import static com.dotmarketing.util.ConfigUtils.getDeclaredDefaultLanguage;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -61,12 +58,11 @@ import com.liferay.util.EncryptorException;
 import com.liferay.util.FileUtil;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,10 +80,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
-import org.apache.commons.beanutils.BeanUtils;
+
+import static com.dotcms.util.ConversionUtils.toLong;
+import static com.dotmarketing.util.ConfigUtils.getDeclaredDefaultLanguage;
 
 
 /**
@@ -106,7 +105,13 @@ public class ImportStarterUtil {
      * Fully configurable path for the backup directory.
      */
     private static final String BACKUP_DIRECTORY = ConfigUtils.getBackupPath();
-    private String backupTempFilePath = BACKUP_DIRECTORY + File.separator + "temp";
+    /*
+    * Unique identifier for the replica. This is used to create a unique directory for the replica.
+    * If the HOSTNAME environment variable is set, it will be used. Otherwise, a random UUID will be used.
+    * */
+    private static final String REPLICA_ID = System.getenv().getOrDefault("HOSTNAME", UUID.randomUUID().toString());
+
+    private String backupTempFilePath = BACKUP_DIRECTORY + File.separator + REPLICA_ID + File.separator + "temp";
     private ArrayList<String> classesWithIdentity = new ArrayList<>();
     private Map<String, String> sequences;
     private Map<String, String> tableIDColumns;
