@@ -227,8 +227,8 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         supportingValues.put(UNIQUE_PER_SITE_ATTR, uniquePerSite);
 
         try {
-            Logger.info(DBUniqueFieldValidationStrategy.class, String.format("Including value of field '%s' value %s in Contentlet " +
-                    "'%s' in the unique_fields table", uniqueFieldCriteria.field().variable(), uniqueFieldCriteria.value(), contentletId));
+            Logger.debug(DBUniqueFieldValidationStrategy.class, String.format("Including value of field '%s' in Contentlet " +
+                    "'%s' in the unique_fields table", uniqueFieldCriteria.field().variable(), contentletId));
             uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
         } catch (final DotDataException e) {
             if (isDuplicatedKeyError(e)) {
