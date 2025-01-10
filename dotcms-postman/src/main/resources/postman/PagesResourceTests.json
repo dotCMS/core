@@ -3102,6 +3102,38 @@
 					"name": "Live page cache invalidation",
 					"item": [
 						{
+							"name": "invalidateSession",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Get default site",
 							"event": [
 								{
@@ -3191,6 +3223,83 @@
 									]
 								},
 								"description": "Creates a test page"
+							},
+							"response": []
+						},
+						{
+							"name": "Waiting page to be live",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"if (!pm.environment.get(\"startTime\")) {",
+											"    pm.environment.set(\"startTime\", Date.now());",
+											"}",
+											"",
+											"if (!pm.environment.get(\"retryCount\")) {",
+											"    pm.environment.set(\"retryCount\", 0);",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const maxTimeout = 30000; // 10 seconds",
+											"const maxRetries = 10;    // Maximum number of retry attempts",
+											"const startTime = parseInt(pm.environment.get(\"startTime\"));",
+											"const retryCount = parseInt(pm.environment.get(\"retryCount\"));",
+											"const elapsedTime = Date.now() - startTime;",
+											"",
+											"console.log(`Attempt ${retryCount + 1}, Elapsed time: ${elapsedTime}ms`);",
+											"",
+											"var responseStatus = pm.response.status;",
+											"console.log(\"Current status:\", pm.response.status);",
+											"    ",
+											"// Check if status is OK",
+											"if (pm.response.status === 'OK') {",
+											"    // Clear environment variables once done",
+											"    pm.environment.unset(\"startTime\");",
+											"    pm.environment.unset(\"retryCount\");",
+											"} else if (elapsedTime < maxTimeout && retryCount < maxRetries) {",
+											"    // Increment retry count",
+											"    pm.environment.set(\"retryCount\", retryCount + 1);",
+											"    ",
+											"    setTimeout(function(){",
+											"        console.log(\"Sleeping for 3 seconds before next request.\");",
+											"    }, 3000);",
+											"    postman.setNextRequest(\"Waiting page to be live\");",
+											"    console.log(`Still waiting for page to be live, retrying... (${maxTimeout - elapsedTime}ms remaining)`);",
+											"} else {",
+											"    // If we exceed the max timeout or max retries, fail the test",
+											"    const timeoutReason = elapsedTime >= maxTimeout ? \"timeout\" : \"max retries\";",
+											"    pm.environment.unset(\"startTime\");",
+											"    pm.environment.unset(\"retryCount\");",
+											"    pm.test(`200 Status check failed due to ${timeoutReason}`, function () {",
+											"        pm.expect.fail(`${timeoutReason} reached after ${elapsedTime}ms. Page with status ${responseStatus} - ${retryCount} attempts`);",
+											"    });",
+											"}",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}{{pagePath}}",
+									"host": [
+										"{{serverURL}}{{pagePath}}"
+									]
+								},
+								"description": "Waits for the page to be live, or timeouts in 10 seconds."
 							},
 							"response": []
 						},
