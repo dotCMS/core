@@ -3113,6 +3113,7 @@
 											"",
 											"    var jsonData = pm.response.json();",
 											"    pm.collectionVariables.set(\"hostname\", jsonData.entity.hostname);",
+											"    pm.collectionVariables.set(\"hostIdentifier\", jsonData.entity.identifier);",
 											"});"
 										],
 										"type": "text/javascript",
@@ -3451,6 +3452,56 @@
 									]
 								},
 								"description": "Validate the content was added properly"
+							},
+							"response": []
+						},
+						{
+							"name": "Switch to default site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200 \", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Valid response\", function () {",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/switch/{{hostIdentifier}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"switch",
+										"{{hostIdentifier}}"
+									]
+								}
 							},
 							"response": []
 						},
@@ -7968,6 +8019,14 @@
 		},
 		{
 			"key": "hostname",
+			"value": ""
+		},
+		{
+			"key": "hostID",
+			"value": ""
+		},
+		{
+			"key": "hostIdentifier",
 			"value": ""
 		}
 	]
