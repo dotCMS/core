@@ -36,6 +36,7 @@ import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -52,7 +53,10 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -101,6 +105,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
@@ -121,7 +126,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchResponse;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -168,10 +172,16 @@ public class PageResourceTest {
     @Before
     public void init()
             throws DotSecurityException, DotDataException, SystemException, PortalException {
+        user = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
+        hostName = "my.host.com" + System.currentTimeMillis();
+        host = new SiteDataGen().name(hostName).nextPersisted();
+        initWith(user, host);
+    }
 
+    private void initWith(User user, Host host)
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
         pageName = "index" + System.currentTimeMillis();
         folderName = "about-us" + System.currentTimeMillis();
-        hostName = "my.host.com" + System.currentTimeMillis();
         pagePath = String.format("/%s/%s", folderName, pageName);
 
         // Collection to store attributes keys/values
@@ -182,7 +192,6 @@ public class PageResourceTest {
 
         final ModuleConfig moduleConfig     = mock(ModuleConfig.class);
         initDataObject = mock(InitDataObject.class);
-        user = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
 
         final PageResourceHelper pageResourceHelper = mock(PageResourceHelper.class);
         final WebResource webResource = mock(WebResource.class);
@@ -195,7 +204,7 @@ public class PageResourceTest {
         when(webResource.init(false, request, true)).thenReturn(initDataObject);
         when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
-        host = new SiteDataGen().name(hostName).nextPersisted();
+
         hostWebAPI = mock(HostWebAPI.class);
         when(hostWebAPI.getCurrentHost(request, user)).thenReturn(host);
         when(hostWebAPI.getCurrentHost(request)).thenReturn(host);
@@ -246,7 +255,6 @@ public class PageResourceTest {
                 }
                 return null;
         }).when(request).setAttribute(anyString(), Mockito.any());
-
 
         Folder aboutUs = APILocator.getFolderAPI().findFolderByPath(String.format("/%s/",folderName), host, APILocator.systemUser(), false);
         if(null == aboutUs || !UtilMethods.isSet(aboutUs.getIdentifier())) {
@@ -1715,6 +1723,152 @@ public class PageResourceTest {
         }
 
         return Optional.empty();  // Node not found
+    }
+
+    /**
+     * Create a page with a container and a blog contentlet that has a publish-date set but isn't published
+     * @param title
+     * @param publishDate
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws WebAssetException
+     */
+    PageInfo createPageWithWorkingContentAndPublishDateSet(String title, Date publishDate) throws DotDataException, DotSecurityException, WebAssetException {
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+        final ContentType blogLikeContentType = TestDataUtils.getBlogLikeContentType();
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container myContainer = new ContainerDataGen()
+                .withStructure(structure, "")
+                .friendlyName("container-friendly-name" + System.currentTimeMillis())
+                .title("container-title")
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(myContainer);
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(myContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(myContainer.getIdentifier())
+                .nextPersisted();
+
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        versionableAPI.setWorking(newTemplate);
+        versionableAPI.setLive(newTemplate);
+
+        final String myFolderName = "folder-" + System.currentTimeMillis();
+        final Folder myFolder = new FolderDataGen().name(myFolderName).site(host).nextPersisted();
+        final String myPageName = "my-future-tm-test-page-working-saved-content-" + System.currentTimeMillis();
+        final HTMLPageAsset myPage = new HTMLPageDataGen(myFolder, newTemplate)
+                .languageId(languageId)
+                .pageURL(myPageName)
+                .title(myPageName)
+                .nextPersisted();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        contentletAPI.publish(myPage, systemUser, false);
+        //  These are the blogs that will be shown in the widget
+        // if it's published then it'll show immediately otherwise it'll show in the future
+        // if it's set to show then we need to pass the time machine date to show it
+        //Our blog content type has to have a publishDate field set otherwise it will never make it properly into the index
+        assertNotNull(blogLikeContentType.publishDateVar());
+        final Contentlet blog = new ContentletDataGen(blogLikeContentType.id())
+                .languageId(languageId)
+                .host(host)
+                .setProperty("title", title)
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .languageId(languageId)
+                .setProperty(Contentlet.IS_TEST_MODE, true)
+                .setProperty("publishDate", publishDate)
+                .nextPersisted();
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(myPage.getIdentifier(),
+                myContainer.getIdentifier(), blog.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+        return new PageInfo(String.format("/%s/%s", myFolderName, myPageName), blog.getIdentifier(), Set.of(blog.getInode()));
+    }
+
+    /**
+     * Initialize the test
+     * @throws SystemException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws PortalException
+     */
+    private void overrideInitWithLimitedUser()
+            throws SystemException, DotDataException, DotSecurityException, PortalException {
+        user = new UserDataGen().roles(TestUserUtils.getFrontendRole()).nextPersisted();
+        hostName = "my.host.com" + System.currentTimeMillis();
+        host = new SiteDataGen().name(hostName).nextPersisted();
+        initWith(user, host);
+    }
+
+    /**
+     * Add permission to a user
+     * @param permissionable
+     * @param limitedUser
+     * @param permissionType
+     * @param permissions
+     * @throws Exception
+     */
+    private static void addPermission(final Permissionable permissionable,
+            final User limitedUser, final String permissionType, final int... permissions) throws Exception {
+        final int permission = Arrays.stream(permissions).sum();
+        final Permission permissionObject = new Permission(permissionType,
+                permissionable.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                permission, true);
+
+        APILocator.getPermissionAPI().save(permissionObject, permissionable,
+                APILocator.systemUser(), false);
+
+    }
+
+    /**
+     *
+     * @throws Exception
+     */
+    @Test
+    public void Test_Rendering_Using_Limited_User() throws Exception{
+        overrideInitWithLimitedUser();
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+            final Instant instant = LocalDateTime.now().plusDays(4).atZone(utc.toZoneId()).toInstant();
+            final String matchingFutureIso8601 = instant.toString();
+            final Date publishDate = Date.from(instant);
+            final PageInfo pageInfo = createPageWithWorkingContentAndPublishDateSet("Blog in working state with a publish-date set", publishDate);
+
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+
+            //This param is required to be live to behave correctly when building the query
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+            addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+            final Response endpointResponse = pageResource
+                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                            "1", null, matchingFutureIso8601);
+
+            RestUtilTest.verifySuccessResponse(endpointResponse);
+            final PageView pageView = (PageView) ((ResponseEntityView<?>) endpointResponse.getEntity()).getEntity();
+            final List<? extends ContainerRaw> containers = (List<? extends ContainerRaw>)pageView.getContainers();
+            assertEquals(0, containers.size());
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+
     }
 
 }
