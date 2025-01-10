@@ -242,7 +242,7 @@ export class ContentUtils {
                 await iframe.locator('#widget_showingSelect div').first().click();
                 const dropDownMenu = iframe.getByRole('option', {name: 'Archived'});
                 await waitForVisibleAndCallback(dropDownMenu, () => dropDownMenu.click());
-                await page.waitForTimeout(1000);
+                await waitForVisibleAndCallback(iframe.locator('#contentWrapper'), async () => {});
             } else if (contentState === 'archived') {
                 await this.performWorkflowAction(page, title, contentProperties.deleteWfAction);
                 return;
