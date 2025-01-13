@@ -195,6 +195,15 @@ export function withUVEToolbar() {
                 }
 
                 return null;
+            }),
+            $showWorkflowsActions: computed<boolean>(() => {
+                const isPreviewMode = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
+
+                const isDefaultVariant = getIsDefaultVariant(
+                    store.pageAPIResponse()?.viewAs.variantId
+                );
+
+                return !isPreviewMode && isDefaultVariant;
             })
         })),
         withMethods((store) => ({
