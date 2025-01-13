@@ -321,14 +321,22 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
         contentlet.languageId === undefined
     ) {
         console.warn('Missing required contentlet attributes to generate preview URL');
-        return ''; // Return an empty string or handle as needed
+
+        return '';
     }
 
     const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
-    const url = encodeURIComponent(contentlet.URL_MAP_FOR_CONTENT);
-    const hostId = contentlet.host;
-    const languageId = contentlet.languageId;
+    const params = new URLSearchParams();
 
+<<<<<<< HEAD
     return `${baseUrl}?url=${url}%3Fhost_id%3D${hostId}&language_id=${languageId}&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit`;
 >>>>>>> 1c803c0496 (fix(edit-content) add preview butto)
+=======
+    params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
+    params.set('language_id', contentlet.languageId.toString());
+    params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
+    params.set('editorMode', 'edit');
+
+    return `${baseUrl}?${params.toString()}`;
+>>>>>>> 303337fee7 (feat(edit-content) fix comments)
 };

@@ -299,6 +299,7 @@ describe('DotFormComponent', () => {
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
 
             store.initializeExistingContent({
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
