@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import {
+    DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotLanguage
@@ -10,6 +11,7 @@ import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-conten
 import * as functionsUtil from './functions.util';
 import {
     createPaths,
+    generatePreviewUrl,
     getFieldVariablesParsed,
     getPersistSidebarState,
     isFilteredType,
@@ -713,6 +715,51 @@ describe('Utils Functions', () => {
             const result = sortLocalesTranslatedFirst(locales);
 
             expect(result).toEqual(locales);
+        });
+    });
+
+    describe('generatePreviewUrl', () => {
+        it('should generate the correct preview URL when all attributes are present', () => {
+            const contentlet = {
+                URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            } as unknown as DotCMSContentlet;
+
+            const expectedUrl =
+                'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Fpost%2F5-snow-sports-to-try-this-winter%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit';
+
+            expect(generatePreviewUrl(contentlet)).toBe(expectedUrl);
+        });
+
+        it('should return an empty string if URL_MAP_FOR_CONTENT is missing', () => {
+            const contentlet = {
+                URL_MAP_FOR_CONTENT: undefined,
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            } as unknown as DotCMSContentlet;
+
+            expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+
+        it('should return an empty string if host is missing', () => {
+            const contentlet = {
+                URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
+                host: undefined,
+                languageId: 1
+            } as unknown as DotCMSContentlet;
+
+            expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+
+        it('should return an empty string if languageId is missing', () => {
+            const contentlet = {
+                URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: undefined
+            } as unknown as DotCMSContentlet;
+
+            expect(generatePreviewUrl(contentlet)).toBe('');
         });
     });
 });

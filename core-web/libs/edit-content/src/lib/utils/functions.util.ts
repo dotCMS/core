@@ -315,6 +315,16 @@ export const sortLocalesTranslatedFirst = (locales: DotLanguage[]): DotLanguage[
  * @returns {string} The generated preview URL.
  */
 export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
+    if (
+        !contentlet.URL_MAP_FOR_CONTENT ||
+        !contentlet.host ||
+        contentlet.languageId === undefined
+    ) {
+        console.warn('Missing required contentlet attributes to generate preview URL');
+
+        return '';
+    }
+
     const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
     const url = encodeURIComponent(contentlet.URL_MAP_FOR_CONTENT);
     const hostId = contentlet.host;
