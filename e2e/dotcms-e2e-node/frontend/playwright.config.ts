@@ -24,11 +24,7 @@ const resolveEnvs = () => {
 
 const resolveReporter = () => {
   const reporter: ReporterDescription[] = [["junit"], ["github"]];
-<<<<<<< HEAD
-  if (!!process.env.INCLUDE_HTML) {
-=======
   if (!process.env.INCLUDE_HTML) {
->>>>>>> main
     reporter.push(["html"]);
   }
 
