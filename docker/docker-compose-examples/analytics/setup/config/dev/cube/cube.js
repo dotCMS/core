@@ -1,14 +1,9 @@
-
-
 // cube.js configuration file
 module.exports = {
-    /*
-    contextToAppId: ({ securityContext }) =>
+    /*contextToAppId: ({ securityContext }) =>
         `CUBEJS_APP_${securityContext.customerId}`,
     preAggregationsSchema: ({ securityContext }) =>
-        `pre_aggregations_${securityContext.customerId}`,
-*/
-
+        `pre_aggregations_${securityContext.customerId}`,*/
 
     queryRewrite: (query, { securityContext }) => {
 
@@ -17,7 +12,6 @@ module.exports = {
         }
 
         const tokenData = securityContext["https://dotcms.com/analytics"];
-
         const isRequestQuery = (query.measures + query.dimensions).includes("request.");
 
         if (isRequestQuery) {
@@ -26,7 +20,6 @@ module.exports = {
                 operator: 'equals',
                 values: [tokenData.clusterId],
             });
-
             query.filters.push({
                 member: 'request.customerId',
                 operator: 'equals',
@@ -34,9 +27,7 @@ module.exports = {
             });
         }
 
-
         return query;
     },
-
 
 };

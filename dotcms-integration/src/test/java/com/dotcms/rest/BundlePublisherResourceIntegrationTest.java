@@ -9,7 +9,6 @@ import org.junit.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
 import static org.mockito.Mockito.mock;
 
 public class BundlePublisherResourceIntegrationTest extends IntegrationTestBase {
@@ -30,7 +29,7 @@ public class BundlePublisherResourceIntegrationTest extends IntegrationTestBase 
             final BundlePublisherResource bundlePublisherResource = new BundlePublisherResource();
 
             try {
-                bundlePublisherResource.publish(null, null, true, request, response);
+                bundlePublisherResource.publish(null, null, true, "", request, response);
                 throw new AssertionError();
             } catch(InvalidLicenseException e) {
                 //expected

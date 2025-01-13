@@ -1,4 +1,7 @@
 // Beware while using this type, since we have a [key: string]: any; it can be used to store any kind of data and you can write wrong properties and it will not fail
+
+import { DotLanguage } from './dot-language.model';
+
 // Maybe we need to refactor this to a generic type that extends from unknown when missing the generic type
 export interface DotCMSContentlet {
     archived: boolean;
@@ -18,7 +21,7 @@ export interface DotCMSContentlet {
     inode: string;
     image?: string;
     languageId: number;
-    language?: string;
+    language?: string | DotLanguage;
     live: boolean;
     locked: boolean;
     mimeType?: string;
@@ -48,3 +51,33 @@ export interface DotContentletPermissions {
     PUBLISH?: string[];
     CAN_ADD_CHILDREN?: string[];
 }
+
+/**
+ * The depth of the contentlet.
+ *
+ * @enum {string}
+ * @property {string} ZERO - Without relationships
+ * @property {string} ONE - Retrieve the id of relationships
+ * @property {string} TWO - Retrieve relationships
+ * @property {string} THREE - Retrieve relationships with their relationships
+ */
+export enum DotContentletDepths {
+    /**
+     * Without relationships
+     */
+    ZERO = '0',
+    /**
+     * Retrieve the id of relationships
+     */
+    ONE = '1',
+    /**
+     * Retrieve relationships
+     */
+    TWO = '2',
+    /**
+     * Retrieve relationships with their relationships
+     */
+    THREE = '3'
+}
+
+export type DotContentletDepth = `${DotContentletDepths}`;

@@ -50,6 +50,7 @@ public class FilesCollector implements Collector {
         final Host site = (Host) collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
         final Long languageId = (Long)collectorContextMap.get(CollectorContextMap.LANG_ID);
         final String language = (String)collectorContextMap.get(CollectorContextMap.LANG);
+
         final HashMap<String, String> fileObject = new HashMap<>();
 
         if (Objects.nonNull(uri) && Objects.nonNull(site) && Objects.nonNull(languageId)) {
@@ -71,6 +72,7 @@ public class FilesCollector implements Collector {
         collectorPayloadBean.put(URL, uri);
         collectorPayloadBean.put(SITE_NAME, Objects.nonNull(site)?site.getHostname():host);
         collectorPayloadBean.put(LANGUAGE, language);
+        collectorPayloadBean.put(LANGUAGE_ID, languageId);
         collectorPayloadBean.put(SITE_ID, null != site?site.getIdentifier():StringPool.UNKNOWN);
         collectorPayloadBean.put(EVENT_TYPE, EventType.FILE_REQUEST.getType());
 

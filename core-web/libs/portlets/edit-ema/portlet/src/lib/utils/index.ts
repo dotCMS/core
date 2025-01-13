@@ -5,6 +5,7 @@ import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
     DotContainerMap,
+    DotDevice,
     DotExperiment,
     DotExperimentStatus,
     DotPageContainerStructure,
@@ -13,7 +14,7 @@ import {
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
-import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
+import { BASE_IFRAME_MEASURE_UNIT, COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
@@ -25,6 +26,7 @@ import {
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
+import { Orientation } from '../store/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
 
@@ -196,8 +198,8 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
  */
 export function sanitizeURL(url?: string): string {
     return url
-        ?.replace(/(^\/)|(\/$)/g, '') // Remove slashes from the beginning and end of the url
-        .replace(/\/index$/, ''); // Remove index from the end of the url
+        ?.replace(/^\/+|\/+$/g, '') // Remove starting and trailing slashes
+        ?.replace(/(?:\/)?index\/?$/, '/'); // Replace 'index' or '/index' at the end with a single slash       // Replace 'index' with a slash if it's not preceded by a slash
 }
 
 /**
@@ -649,4 +651,41 @@ export const getPageURI = ({ urlContentMap, pageURI, url }: DotCMSContentlet): s
     const newUrl = contentMapUrl ?? pageURIUrl;
 
     return sanitizeURL(newUrl);
+};
+
+export const getOrientation = (device: DotDevice): Orientation => {
+    return Number(device?.cssHeight) > Number(device?.cssWidth)
+        ? Orientation.PORTRAIT
+        : Orientation.LANDSCAPE;
+};
+
+export const getWrapperMeasures = (
+    device: DotDevice,
+    orientation?: Orientation
+): { width: string; height: string } => {
+    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
+
+    return orientation === Orientation.LANDSCAPE
+        ? {
+              width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+              height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
+          }
+        : {
+              width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+              height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
+          };
+};
+
+/**
+ * Cleans and normalizes a page URL by:
+ * 1. Removing leading slashes while preserving trailing slash if present
+ * 2. Converting multiple consecutive slashes at end into single slashes
+ *
+ * @param {string} url - The URL to clean
+ * @returns {string} The cleaned URL with normalized slashes
+ */
+export const cleanPageURL = (url: string) => {
+    return url
+        .replace(/^\/*(.*?)(\/+)?$/, '$1$2') // Capture content and optional trailing slash
+        .replace(/\/+/g, '/'); // Clean up any remaining multiple slashes
 };

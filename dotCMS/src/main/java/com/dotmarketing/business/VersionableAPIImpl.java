@@ -15,6 +15,7 @@ import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrateg
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -348,6 +349,24 @@ public class VersionableAPIImpl implements VersionableAPI {
 
             return info.isLocked();
         }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public boolean hasWorkingVersionInAnyOtherLanguage(Versionable versionable, final long versionableLanguageId) throws DotDataException, DotStateException, DotSecurityException {
+
+        if(!UtilMethods.isSet(versionable) || !InodeUtils.isSet(versionable.getVersionId())) {
+            return false;
+        }
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(versionable);
+        if(identifier==null || !UtilMethods.isSet(identifier.getId()) || !UtilMethods.isSet(identifier.getAssetType())) {
+            return false;
+        }
+
+        // only contents are multi language
+        return "contentlet".equals(identifier.getAssetType())?
+                !this.versionableFactory.getWorkingVersionsExcludingLanguage(identifier.getId(), versionableLanguageId).isEmpty():false;
     }
 
     @CloseDBIfOpened

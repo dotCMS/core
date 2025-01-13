@@ -157,70 +157,73 @@ cube('request', {
                MIN(utc_time) as createdAt,
                MAX(source_ip) as source_ip,
                MAX(language) as language,
+               MAX(languageid) as languageId,
+               MAX(object_live) as live,
+               MAX(object_working) as working,
                MAX(useragent) as user_agent,
                MAX(persona) as persona,
-               MAX(rendermode) as rendermode,
                MAX(referer) as referer,
-               MAX(host) as host,
-               MAX(CASE WHEN event_type = 'PAGE_REQUEST' THEN object_id ELSE NULL END) as page_id,
-               MAX(CASE WHEN event_type = 'PAGE_REQUEST' THEN object_title ELSE NULL END) as page_title,
-               MAX(CASE WHEN event_type = 'FILE_REQUEST' THEN object_id ELSE NULL END) as file_id,
-               MAX(CASE WHEN event_type = 'FILE_REQUEST' THEN object_title ELSE NULL END) as file_title,
-               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_id ELSE NULL END) as vanity_id,
-               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_forward_to ELSE NULL END) as vanity_forward_to,
-               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_response ELSE NULL END) as vanity_response,
-               (SUM(CASE WHEN event_type = 'VANITY_REQUEST' THEN 1 ELSE 0 END) > 0)::bool as was_vanity_url_hit,
-               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN comefromvanityurl ELSE NULL END) as come_from_vanity_url,
-               (SUM(CASE WHEN event_type = 'URL_MAP' THEN 1 ELSE 0 END) > 0)::bool as url_map_match,
-               MAX(CASE WHEN event_type = 'URL_MAP' THEN object_id ELSE NULL END) as url_map_content_detail_id,
-               MAX(CASE WHEN event_type = 'URL_MAP' THEN object_title ELSE NULL END) as url_map_content_detail_title,
-               MAX(CASE WHEN event_type = 'URL_MAP' THEN object_content_type_id ELSE NULL END) as url_map_content_type_id,
-               MAX(CASE WHEN event_type = 'URL_MAP' THEN object_content_type_name ELSE NULL END) as url_map_content_type_name,
-               MAX(CASE WHEN event_type = 'URL_MAP' THEN object_content_type_var_name ELSE NULL END) as url_map_content_type_var_name,
-               MAX(object_detail_page_url) as url_map_detail_page_url,
+               MAX(conhost) as conHost,
+               MAX(conhostname) as conHostName,
+              CASE
+                WHEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_identifier END) IS NOT NULL 
+                    THEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_identifier END)
+                WHEN MAX(CASE WHEN event_type = 'URL_MAP' THEN object_identifier END) IS NOT NULL 
+                    THEN MAX(CASE WHEN event_type = 'URL_MAP' THEN object_identifier END)
+                WHEN COUNT(DISTINCT object_identifier) == 1 THEN MAX(object_identifier)
+                ELSE MAX(object_identifier)
+               END AS  identifier,
+               MAX(object_title) as title,
+               CASE
+                  WHEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_basetype END) IS NOT NULL 
+                      THEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_basetype END)
+                  WHEN MAX(CASE WHEN event_type = 'URL_MAP' THEN object_basetype END) IS NOT NULL 
+                      THEN MAX(CASE WHEN event_type = 'URL_MAP' THEN object_basetype END)
+                  WHEN COUNT(DISTINCT object_basetype) == 1 THEN MAX(object_basetype) 
+                  ELSE MAX(object_basetype)
+                END AS  baseType,
+               MAX(object_contenttype) as contentType,
+               MAX(object_contenttypename) as contentTypeName,
+               MAX(object_contenttypeid) as contentTypeId,
+               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_forwardto ELSE NULL END) as vanity_forward_to,
+               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_action ELSE NULL END) as vanity_action,
+               CASE 
+                    WHEN SUM(CASE WHEN event_type = 'URL_MAP' THEN 1 ELSE 0 END) > 0 THEN 'URL_MAP'
+                    WHEN SUM(CASE WHEN event_type = 'VANITY_REQUEST' THEN 1 ELSE 0 END) > 0 THEN 'VANITY_URL'
+                    ELSE 'NORMAL'
+               END mappingType,
                MAX(url) AS url,
                MAX(cluster_id) AS cluster_id,
-               MAX(customer_id) AS customer_id,
-               CASE
-                 WHEN MAX(CASE WHEN event_type = 'FILE_REQUEST' THEN 1 ELSE 0 END) = 1 THEN 'FILE'
-                 WHEN MAX(CASE WHEN event_type = 'PAGE_REQUEST' THEN 1 ELSE 0 END) = 1 THEN 'PAGE'
-                 WHEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' AND object_response != '200' THEN 1 ELSE 0 END) = 1 THEN 'VANITY_REDIRECT'
-                 ELSE 'OTHER'
-               END  AS what_am_i
+               MAX(customer_id) AS customer_id
         FROM events
         GROUP BY request_id`,
   dimensions: {
+    mappingType: { sql: 'mappingType', type: `string` },
+    conHost: { sql: 'conHost', type: `string` },
+    conHostName: { sql: 'conHostName', type: `string` },
+    contentTypeName: { sql: 'contentTypeName', type: `string` },
+    contentTypeId: { sql: 'contentTypeId', type: `string` },
+    contentTypeVariable: { sql: 'contentType', type: `string` },
+    live: { sql: 'live', type: `boolean` },
+    working: { sql: 'working', type: `boolean` },
+    baseType: { sql: 'baseType', type: `string` },
+    identifier: { sql: 'identifier', type: `string` },
+    title: { sql: 'title', type: `string` },
     requestId: { sql: 'request_id', type: `string` },
     clusterId: { sql: 'cluster_id', type: `string` },
     customerId: { sql: 'customer_id', type: `string` },
     sessionId: { sql: 'sessionid', type: `string` },
     isSessionNew: { sql: 'isSessionNew', type: `boolean` },
     createdAt: { sql: 'createdAt', type: `time`, },
-    whatAmI: { sql: 'what_am_i', type: `string` },
     sourceIp: { sql: 'source_ip', type: `string` },
     language: { sql: 'language', type: `string` },
+    languageId: { sql: 'languageid', type: `string` },
     userAgent: { sql: 'user_agent', type: `string` },
     referer: { sql: 'referer', type: `string` },
-    renderMode: { sql: 'rendermode', type: `string` },
     persona: { sql: 'persona', type: `string` },
-    host: { sql: 'host', type: `string` },
     url: { sql: 'url', type: `string` },
-    pageId: { sql: 'page_id', type: `string` },
-    pageTitle: { sql: 'page_title', type: `string` },
-    fileId: { sql: 'file_id', type: `string` },
-    fileTitle: { sql: 'file_title', type: `string` },
-    wasVanityHit: { sql: 'was_vanity_url_hit', type: `boolean` },
-    vanityId: { sql: 'vanity_id', type: `string` },
-    vanityForwardTo: { sql: 'vanity_forward_to', type: `string` },
-    vanityResponse: { sql: 'vanity_response', type: `string` },
-    comeFromVanityURL: { sql: 'come_from_vanity_url', type: `boolean` },
-    urlMapWasHit: { sql: 'url_map_match', type: `boolean` },
-    isDetailPage: { sql: "url_map_detail_page_url is not null and url_map_detail_page_url != ''", type: `boolean` },
-    urlMapContentDetailId: { sql: 'url_map_content_detail_id', type: `string` },
-    urlMapContentDetailTitle: { sql: 'url_map_content_detail_title', type: `string` },
-    urlMapContentId: { sql: 'url_map_content_type_id', type: `string` },
-    urlMapContentTypeName: { sql: 'url_map_content_type_name', type: `string` },
-    urlMapContentTypeVarName: { sql: 'url_map_content_type_var_name', type: `string` }
+    forwardTo: { sql: 'vanity_forward_to', type: `string` },
+    action: { sql: 'vanity_action', type: `string` }
   },
   measures: {
     count: {
@@ -236,36 +239,32 @@ cube('request', {
       type: 'countDistinct',
       title: 'Total Requests'
     },
-    pageRequest: {
-      sql: 'page_id',
-      type: 'count',
-      title: 'Count of Page request'
-    },
-    uniquePageRequest: {
-      sql: 'page_id',
-      type: 'countDistinct',
-      title: 'Unique Page Ids by Session'
-    },
-    pageRequestAverage: {
-      sql: `${fileRequest} / NULLIF(${totalRequest}, 0)`,
-      type: 'number',
-      title: 'FileRequest Average'
-    },
     fileRequest: {
-      sql: 'file_id',
+      sql: `CASE WHEN ${CUBE}.baseType = 'FILEASSET' THEN 1 ELSE NULL END`,
       type: 'count',
-      title: 'Count of File Request'
-    },
-    uniqueFileRequest: {
-      sql: 'file_id',
-      type: 'countDistinct',
-      title: 'Unique Count of File Request'
+      title: 'Count of FileAsset Request'
     },
     fileRequestAverage: {
       sql: `${fileRequest} / NULLIF(${totalRequest}, 0)`,
       type: 'number',
       title: 'FileRequest Average'
+    },
+    pageRequest: {
+      sql: `CASE WHEN ${CUBE}.baseType = 'HTMLPAGE' THEN 1 ELSE NULL END`,
+      type: 'count',
+      title: 'Count of Page request'
+    },
+    pageRequestAverage: {
+      sql: `${pageRequest} / NULLIF(${totalRequest}, 0)`,
+      type: 'number',
+      title: 'Page Request Average'
+    },
+    otherRequestAverage: {
+      sql: `(${totalRequest} - (${fileRequest} + ${pageRequest})) / NULLIF(${totalRequest}, 0)`,
+      type: 'number',
+      title: 'No FIle OR Page Average'
     }
+
   }
 });
 

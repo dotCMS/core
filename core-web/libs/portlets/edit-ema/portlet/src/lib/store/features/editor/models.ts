@@ -1,10 +1,12 @@
 import {
     DotCMSContentlet,
+    DotDeviceListItem,
     DotExperiment,
     DotLanguage,
     DotPageContainerStructure,
     DotPersona,
-    SeoMetaTags
+    SeoMetaTags,
+    SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 
 import {
@@ -13,7 +15,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
-import { DotDeviceWithIcon } from '../../../shared/models';
+import { Orientation } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
@@ -24,10 +26,12 @@ export interface EditorState {
 }
 
 export interface EditorToolbarState {
-    device?: DotDeviceWithIcon;
+    device?: DotDeviceListItem;
     socialMedia?: string;
     isEditState: boolean;
     isPreviewModeActive?: boolean;
+    orientation?: Orientation;
+    ogTagsResults?: SeoMetaTagsResult[];
 }
 
 export interface PageDataContainer {
@@ -45,9 +49,7 @@ export interface PageData {
 }
 
 export interface ReloadEditorContent {
-    code: string;
     isTraditionalPage: boolean;
-    enableInlineEdit: boolean;
     isClientReady: boolean;
 }
 
@@ -81,7 +83,6 @@ export interface EditorProps {
     };
     showDialogs: boolean;
     progressBar: boolean;
-    showEditorContent: boolean;
     showBlockEditorSidebar: boolean;
 }
 
@@ -90,6 +91,7 @@ export interface ToolbarProps {
     bookmarksUrl: string;
     copyUrl: string;
     apiUrl: string;
+    isDefaultVariant: boolean;
     showInfoDisplay: boolean;
     currentLanguage: DotLanguage;
     runningExperiment?: DotExperiment;

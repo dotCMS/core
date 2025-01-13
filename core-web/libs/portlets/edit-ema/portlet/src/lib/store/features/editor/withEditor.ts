@@ -28,7 +28,6 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -42,7 +41,8 @@ import {
     areContainersEquals,
     getEditorStates,
     createPageApiUrlWithQueryParams,
-    sanitizeURL
+    sanitizeURL,
+    getWrapperMeasures
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
@@ -110,6 +110,12 @@ export function withEditor() {
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
+                $pageRender: computed<string>(() => {
+                    return store.pageAPIResponse()?.page?.rendered;
+                }),
+                $enableInlineEdit: computed<boolean>(() => {
+                    return store.isEditState() && untracked(() => store.isEnterprise());
+                }),
                 $editorIsInDraggingState: computed<boolean>(
                     () => store.state() === EDITOR_STATE.DRAGGING
                 ),
@@ -152,19 +158,15 @@ export function withEditor() {
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
 
+                    const wrapper = getWrapperMeasures(device, store.orientation());
+
                     return {
                         showDialogs,
                         showBlockEditorSidebar,
-                        showEditorContent: !socialMedia,
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
-                            wrapper: device
-                                ? {
-                                      width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
-                                      height: `${device.cssHeight}${BASE_IFRAME_MEASURE_UNIT}`
-                                  }
-                                : null
+                            wrapper: device ? wrapper : null
                         },
                         progressBar: isLoading,
                         contentletTools: canUserHaveContentletTools
@@ -198,13 +200,21 @@ export function withEditor() {
                 }),
                 $iframeURL: computed<string>(() => {
                     const page = store.pageAPIResponse().page;
+                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
                     const url = buildIframeURL({
-                        pageURI: page?.pageURI,
+                        pageURI: vanityURL ?? page?.pageURI,
                         params: store.pageParams(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });
 
                     return url;
+                }),
+                $editorContentStyles: computed<Record<string, string>>(() => {
+                    const socialMedia = store.socialMedia();
+
+                    return {
+                        display: socialMedia ? 'none' : 'block'
+                    };
                 })
             };
         }),

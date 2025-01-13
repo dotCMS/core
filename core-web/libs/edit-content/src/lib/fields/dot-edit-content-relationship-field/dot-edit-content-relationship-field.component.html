@@ -1,7 +1,8 @@
 @let pagination = store.pagination();
-@let hitText = $hitText();
+@let attributes = $attributes();
 @let showPagination = store.totalPages() > 1;
 @let data = store.data();
+@let hitText = attributes.hitText;
 
 <p-table
     [value]="data"
@@ -10,7 +11,8 @@
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
     [reorderableColumns]="true"
-    [scrollable]="true">
+    [scrollable]="true"
+    (onRowReorder)="onRowReorder($event)">
     <ng-template pTemplate="header" styleClass="relative">
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
@@ -52,9 +54,12 @@
             <td class="max-w-12rem" style="min-width: 13rem">
                 <p class="truncate-text">{{ item.title }}</p>
             </td>
-            <td style="min-width: 8rem">{{ item.language }}</td>
             <td style="min-width: 8rem">
-                <p-chip [styleClass]="item.state.styleClass" [label]="item.state.label" />
+                {{ item.language | language }}
+            </td>
+            <td style="min-width: 8rem">
+                @let status = item | contentletStatus;
+                <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
             </td>
             <td pFrozenColumn alignFrozen="right" [frozen]="true">
                 <p-button
@@ -62,12 +67,13 @@
                     icon="pi pi-times"
                     severity="secondary"
                     [text]="true"
-                    (onClick)="deleteItem(item.id)" />
+                    (onClick)="deleteItem(item.inode)" />
             </td>
         </tr>
     </ng-template>
-    @if (hitText || showPagination) {
-        <ng-template pTemplate="summary">
+
+    <ng-template pTemplate="summary">
+        @if (hitText || showPagination) {
             <div
                 class="flex align-items-center"
                 [class.justify-content-between]="hitText"
@@ -84,11 +90,6 @@
                         [currentPage]="pagination.currentPage" />
                 }
             </div>
-        </ng-template>
-    }
+        }
+    </ng-template>
 </p-table>
-
-<dot-select-existing-content
-    [contentTypeId]="$contentTypeId()"
-    [(visible)]="$showExistingContentDialog"
-    (onSelectItems)="store.addData($event)" />

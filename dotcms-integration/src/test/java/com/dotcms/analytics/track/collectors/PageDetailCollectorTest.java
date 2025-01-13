@@ -103,6 +103,7 @@ public class PageDetailCollectorTest extends IntegrationTestBase {
         final Map<String, Object> expectedDataMap = Map.of(
                 Collector.EVENT_TYPE, EventType.PAGE_REQUEST.getType(),
                 Collector.SITE_NAME, testSite.getHostname(),
+                Collector.SITE_ID, testSite.getIdentifier(),
                 Collector.LANGUAGE, language.getIsoCode(),
                 Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
                 Collector.OBJECT, Map.of(

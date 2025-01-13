@@ -1,7 +1,7 @@
 import { Params } from '@angular/router';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import {
     deleteContentletFromContainer,
@@ -19,13 +19,16 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
-    getAllowedPageParams
+    getAllowedPageParams,
+    getOrientation,
+    getWrapperMeasures
 } from '.';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { PAGE_MODE } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
+import { Orientation } from '../store/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
     page: {
@@ -317,11 +320,11 @@ describe('utils functions', () => {
         });
 
         it('should remove the index if a nested path', () => {
-            expect(sanitizeURL('i-have-the-high-ground/index')).toEqual('i-have-the-high-ground');
+            expect(sanitizeURL('i-have-the-high-ground/index')).toEqual('i-have-the-high-ground/');
         });
 
         it('should remove the index if a nested path with slash', () => {
-            expect(sanitizeURL('no-index-please/index/')).toEqual('no-index-please');
+            expect(sanitizeURL('no-index-please/index/')).toEqual('no-index-please/');
         });
 
         it('should leave as it is for valid url', () => {
@@ -332,6 +335,10 @@ describe('utils functions', () => {
 
         it('should leave as it is for a nested valid url', () => {
             expect(sanitizeURL('hello-there/general-kenobi')).toEqual('hello-there/general-kenobi');
+        });
+
+        it('should remove index from the end of the url but keep the slash if is a nested path', () => {
+            expect(sanitizeURL('my-nested-path/index/')).toEqual('my-nested-path/');
         });
     });
 
@@ -786,6 +793,63 @@ describe('utils functions', () => {
             const result = getAllowedPageParams(params);
 
             expect(result).toEqual(expected);
+        });
+    });
+
+    describe('getWrapperMeasures', () => {
+        it('should return correct measures for landscape orientation', () => {
+            const device: DotDevice = {
+                cssHeight: '1200',
+                cssWidth: '800',
+                inode: 'some-inode'
+            } as DotDevice;
+
+            const result = getWrapperMeasures(device, Orientation.LANDSCAPE);
+            expect(result).toEqual({ width: '1200px', height: '800px' });
+        });
+
+        it('should return correct measures for portrait orientation', () => {
+            const device: DotDevice = {
+                cssHeight: '800',
+                cssWidth: '1200',
+                inode: 'some-inode'
+            } as DotDevice;
+
+            const result = getWrapperMeasures(device, Orientation.PORTRAIT);
+            expect(result).toEqual({ width: '800px', height: '1200px' });
+        });
+
+        it('should use percentage unit for default inode', () => {
+            const device: DotDevice = {
+                cssHeight: '100',
+                cssWidth: '100',
+                inode: 'default'
+            } as DotDevice;
+
+            const result = getWrapperMeasures(device);
+            expect(result).toEqual({ width: '100%', height: '100%' });
+        });
+    });
+
+    describe('getOrientation', () => {
+        it('should return PORTRAIT for taller devices', () => {
+            const device: DotDevice = {
+                cssHeight: '1200',
+                cssWidth: '800'
+            } as DotDevice;
+
+            const result = getOrientation(device);
+            expect(result).toBe(Orientation.PORTRAIT);
+        });
+
+        it('should return LANDSCAPE for wider devices', () => {
+            const device: DotDevice = {
+                cssHeight: '800',
+                cssWidth: '1200'
+            } as DotDevice;
+
+            const result = getOrientation(device);
+            expect(result).toBe(Orientation.LANDSCAPE);
         });
     });
 });

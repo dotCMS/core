@@ -1,5 +1,6 @@
 import { of } from 'rxjs';
 
+import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotPageContainerStructure,
@@ -972,9 +973,26 @@ export const UVE_PAGE_RESPONSE_MAP = {
     })
 };
 
+export const PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK = {
+    ...MOCK_RESPONSE_VTL,
+    page: {
+        ...MOCK_RESPONSE_VTL.page,
+        rendered: '<h1>Advance template render</h1>'
+    }
+};
+
 export const dotPropertiesServiceMock = {
     getFeatureFlags: () =>
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false
         })
+};
+
+export const mockCurrentUser: CurrentUser = {
+    email: 'test@example.com',
+    givenName: 'Test',
+    loginAs: false,
+    roleId: 'role123',
+    surname: 'User',
+    userId: 'user123'
 };
