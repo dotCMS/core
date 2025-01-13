@@ -1,14 +1,17 @@
 import { RelationshipTypes } from './models/relationship.models';
 
-export const MANDATORY_FIELDS = {
-    title: 'title',
-    language: 'language',
-    modDate: 'modDate'
-};
-
-export const MANDATORY_FIRST_COLUMNS = [MANDATORY_FIELDS.title];
-
-export const MANDATORY_LAST_COLUMNS = [MANDATORY_FIELDS.language, MANDATORY_FIELDS.modDate];
+/**
+ * Maps cardinality numbers to RelationshipTypes enum values.
+ * Used to determine the type of relationship between content types.
+ *
+ * @constant
+ * @type {Record<number, RelationshipTypes>}
+ *
+ * @property {RelationshipTypes} 0 - One-to-Many relationship type
+ * @property {RelationshipTypes} 1 - Many-to-Many relationship type
+ * @property {RelationshipTypes} 2 - One-to-One relationship type
+ * @property {RelationshipTypes} 3 - Many-to-One relationship type
+ */
 
 export const RELATIONSHIP_OPTIONS = {
     0: RelationshipTypes.ONE_TO_MANY,

@@ -10,6 +10,7 @@ import { Block } from '../../models/blocks.interface';
 
 describe('BlockEditorRenderer', () => {
     const blocks = {
+        type: 'doc',
         content: [
             {
                 type: 'paragraph',
@@ -50,6 +51,46 @@ describe('BlockEditorRenderer', () => {
         );
         expect(container.firstChild).toHaveClass('test-class');
         expect(container.firstChild).toHaveStyle('color: red');
+    });
+
+    describe('Error Handling', () => {
+        it('should show error message when blocks object is not valid', () => {
+            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+            const consoleSpy = jest.spyOn(console, 'error');
+
+            const { getByTestId } = render(<BlockEditorRenderer blocks={'' as unknown as Block} />);
+
+            expect(getByTestId('invalid-blocks-message')).toHaveTextContent(
+                'Error: Blocks must be an object, but received: string'
+            );
+            expect(consoleSpy).toHaveBeenCalledWith(
+                'Error: Blocks must be an object, but received: string'
+            );
+        });
+
+        it('should show error message when blocks object dont have a doc type', () => {
+            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+            const consoleSpy = jest.spyOn(console, 'error');
+
+            const { queryByTestId } = render(
+                <BlockEditorRenderer blocks={{ content: [] } as unknown as Block} />
+            );
+
+            expect(queryByTestId('invalid-blocks-message')).not.toBeInTheDocument();
+            expect(consoleSpy).toHaveBeenCalledWith('Error: Blocks must have a doc type');
+        });
+
+        it('should show error message when blocks content array is empty', () => {
+            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+            const consoleSpy = jest.spyOn(console, 'error');
+
+            const { queryByTestId } = render(
+                <BlockEditorRenderer blocks={{ content: [], type: 'doc' } as unknown as Block} />
+            );
+
+            expect(queryByTestId('invalid-blocks-message')).not.toBeInTheDocument();
+            expect(consoleSpy).toHaveBeenCalledWith('Error: Blocks content is empty');
+        });
     });
 
     describe('when the editable prop is true', () => {

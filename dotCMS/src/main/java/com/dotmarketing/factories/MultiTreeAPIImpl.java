@@ -1008,6 +1008,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 pageLoader.invalidate(htmlPage, variantName, PageMode.EDIT_MODE);
                 pageLoader.invalidate(htmlPage, variantName, PageMode.PREVIEW_MODE);
+                pageLoader.invalidate(htmlPage, variantName, PageMode.LIVE);
             }
         } catch (DotStateException | DotSecurityException e) {
 
