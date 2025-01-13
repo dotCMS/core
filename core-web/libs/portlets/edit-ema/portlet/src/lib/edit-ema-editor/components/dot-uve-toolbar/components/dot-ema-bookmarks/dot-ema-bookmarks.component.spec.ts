@@ -125,8 +125,28 @@ describe('DotEmaBookmarksComponent', () => {
         );
     });
 
+    it('should have a label when preview mode is false', () => {
+        const store = spectator.inject(UVEStore, true);
+        jest.spyOn(store, '$previewMode').mockReturnValue(signal(false));
+
+        spectator.detectChanges();
+        const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
+
+        expect(button.componentInstance.textContent).toBe('editpage.toolbar.bookmark');
+    });
+
     describe('preview mode', () => {
         it('should render the bookmark button with new UVE toolbar style when preview mode is true', () => {
+            const store = spectator.inject(UVEStore, true);
+            jest.spyOn(store, '$previewMode').mockReturnValue(signal(true));
+
+            spectator.detectChanges();
+            const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
+
+            expect(button.componentInstance.textContent).toBe(undefined);
+        });
+
+        it('should not have a label when preview mode is true', () => {
             const store = spectator.inject(UVEStore, true);
             jest.spyOn(store, '$previewMode').mockReturnValue(signal(true));
 
