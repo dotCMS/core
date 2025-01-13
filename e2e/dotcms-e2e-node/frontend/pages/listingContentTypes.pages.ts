@@ -19,6 +19,10 @@ export class ListingContentTypesPage {
     this.toolsLocators = new ToolEntriesLocators(this.page);
   }
 
+  async goToUrl() {
+    await this.page.goto("/dotAdmin/#/content-types-angular");
+  }
+
   async goTo() {
     // Get the username and password from the environment variables
     const username = process.env.USERNAME as string;
@@ -49,11 +53,7 @@ export class ListingContentTypesPage {
     await this.page.getByTestId("dotDialogAcceptAction").click();
   }
 
-  async gotToContentTypes() {
-    await this.toolsLocators.CONTENT_TYPES.first().click();
-  }
-
-  async gotToContentType(contentType: string) {
+  async goToAddNewContentType(contentType: string) {
     const capitalized =
       contentType.charAt(0).toUpperCase() + contentType.slice(1);
 
@@ -72,5 +72,17 @@ export class ListingContentTypesPage {
       .getByLabel("▼")
       .getByText("Add New Content")
       .click();
+  }
+
+  async deleteContentType(contentType: string) {
+    const capitalized =
+      contentType.charAt(0).toUpperCase() + contentType.slice(1);
+
+    await this.page
+      .getByTestId(`row-${capitalized}`)
+      .getByTestId("dot-menu-button")
+      .click();
+    await this.page.getByLabel("Delete").locator("a").click();
+    await this.page.getByRole("button", { name: "Delete" }).click();
   }
 }

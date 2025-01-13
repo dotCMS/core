@@ -4,17 +4,22 @@ import { ListingContentTypesPage } from "../../pages/listingContentTypes.pages";
 import { ContentTypeFormPage } from "../../pages/contentTypeForm.page";
 import { NewEditContentFormPage } from "../../pages/newEditContentForm.page";
 
+const contentTypeName = faker.lorem.word().toLocaleLowerCase();
+
 test.beforeEach("Navigate to content types", async ({ page }) => {
   const listingContentTypesPage = new ListingContentTypesPage(page);
   const contentTypeFormPage = new ContentTypeFormPage(page);
   await listingContentTypesPage.goTo();
-
-  const contentTypeName = faker.lorem.word().toLocaleLowerCase();
-
   await listingContentTypesPage.addNewContentType(contentTypeName);
   await contentTypeFormPage.fillNewContentType();
-  await listingContentTypesPage.gotToContentTypes();
-  await listingContentTypesPage.gotToContentType(contentTypeName);
+  await listingContentTypesPage.goToUrl();
+  await listingContentTypesPage.goToAddNewContentType(contentTypeName);
+});
+
+test.afterEach(async ({ page }) => {
+  const listingContentTypesPage = new ListingContentTypesPage(page);
+  await listingContentTypesPage.goToUrl();
+  await listingContentTypesPage.deleteContentType(contentTypeName);
 });
 
 test.describe("text field", () => {
