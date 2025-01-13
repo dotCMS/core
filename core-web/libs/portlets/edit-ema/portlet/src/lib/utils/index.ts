@@ -198,8 +198,8 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
  */
 export function sanitizeURL(url?: string): string {
     return url
-        ?.replace(/(^\/)|(\/$)/g, '') // Remove slashes from the beginning and end of the url
-        .replace(/\/index$/, ''); // Remove index from the end of the url
+        ?.replace(/^\/+|\/+$/g, '') // Remove starting and trailing slashes
+        ?.replace(/(?:\/)?index\/?$/, '/'); // Replace 'index' or '/index' at the end with a single slash       // Replace 'index' with a slash if it's not preceded by a slash
 }
 
 /**
@@ -674,4 +674,18 @@ export const getWrapperMeasures = (
               width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
               height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
           };
+};
+
+/**
+ * Cleans and normalizes a page URL by:
+ * 1. Removing leading slashes while preserving trailing slash if present
+ * 2. Converting multiple consecutive slashes at end into single slashes
+ *
+ * @param {string} url - The URL to clean
+ * @returns {string} The cleaned URL with normalized slashes
+ */
+export const cleanPageURL = (url: string) => {
+    return url
+        .replace(/^\/*(.*?)(\/+)?$/, '$1$2') // Capture content and optional trailing slash
+        .replace(/\/+/g, '/'); // Clean up any remaining multiple slashes
 };

@@ -16,7 +16,7 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
-import { TableModule } from 'primeng/table';
+import { TableRowReorderEvent, TableModule } from 'primeng/table';
 
 import { filter } from 'rxjs/operators';
 
@@ -104,12 +104,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 disabled: isDisabledCreateNewContent,
                 command: () => {
                     this.showExistingContentDialog();
-                }
-            },
-            {
-                label: this.#dotMessageService.get('dot.file.relationship.field.table.new.content'),
-                command: () => {
-                    // TODO: Implement new content
                 }
             }
         ];
@@ -260,11 +254,23 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
 
         this.#dialogRef.onClose
             .pipe(
-                filter((file) => !!file),
+                filter((items) => !!items),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((items: DotCMSContentlet[]) => {
                 this.store.addData(items);
             });
+    }
+
+    /**
+     * Reorders the data in the store.
+     * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
+     */
+    onRowReorder(event: TableRowReorderEvent) {
+        if (event?.dragIndex == null || event?.dropIndex == null) {
+            return;
+        }
+
+        this.store.reorderData(event.dragIndex, event.dropIndex);
     }
 }
