@@ -1,27 +1,15 @@
-import { expect, test } from "@playwright/test";
+import {expect, test} from '@playwright/test';
+import {dotCMSUtils, waitForVisibleAndCallback} from '../../utils/dotCMSUtils';
 import {
-  dotCMSUtils,
-  waitForVisibleAndCallback,
-} from "../../utils/dotCMSUtils";
-import {
-  GroupEntriesLocators,
-  MenuEntriesLocators,
-  ToolEntriesLocators,
-} from "../../locators/navigation/menuLocators";
-import { ContentUtils } from "../../utils/contentUtils";
-import {
-  iFramesLocators,
-  contentGeneric,
-  fileAsset,
-  pageAsset,
-} from "../../locators/globalLocators";
-import {
-  genericContent1,
-  contentProperties,
-  fileAssetContent,
-  pageAssetContent,
-} from "./contentData";
-import { assert } from "console";
+    GroupEntriesLocators,
+    MenuEntriesLocators,
+    ToolEntriesLocators
+} from '../../locators/navigation/menuLocators';
+import {ContentUtils} from "../../utils/contentUtils";
+import {iFramesLocators, contentGeneric, fileAsset, pageAsset} from "../../locators/globalLocators";
+import {genericContent1, contentProperties, fileAssetContent, pageAssetContent} from "./contentData";
+import {assert} from "console";
+
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
@@ -34,80 +22,50 @@ test.beforeEach('Navigate to content portlet', async ({page}) => {
     const groupsLocators = new GroupEntriesLocators(page);
     const toolsLocators = new ToolEntriesLocators(page);
 
-  // Get the username and password from the environment variables
-  const username = process.env.USERNAME as string;
-  const password = process.env.PASSWORD as string;
+    // Get the username and password from the environment variables
+    const username = process.env.USERNAME as string;
+    const password = process.env.PASSWORD as string;
 
-  // Login to dotCMS
-  await cmsUtils.login(page, username, password);
-  await cmsUtils.navigate(
-    menuLocators.EXPAND,
-    groupsLocators.CONTENT,
-    toolsLocators.SEARCH_ALL,
-  );
+    // Login to dotCMS
+    await cmsUtils.login(page, username, password);
+    await cmsUtils.navigate(menuLocators.EXPAND, groupsLocators.CONTENT, toolsLocators.SEARCH_ALL);
 
-  // Validate the portlet title
-  const breadcrumbLocator = page.locator("p-breadcrumb");
-  await waitForVisibleAndCallback(breadcrumbLocator, () =>
-    expect(breadcrumbLocator).toContainText("Search All"),
-  );
+    // Validate the portlet title
+    const breadcrumbLocator = page.locator('p-breadcrumb');
+    await waitForVisibleAndCallback(breadcrumbLocator, () => expect(breadcrumbLocator).toContainText('Search All'));
 });
 
 /**
  * test to add a new piece of content (generic content)
  */
-test("Add a new Generic content", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
-  const iframe = page.frameLocator(iFramesLocators.main_iframe);
+test('Add a new Generic content', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
-  // Adding new rich text content
-  await contentUtils.addNewContentAction(
-    page,
-    contentGeneric.locator,
-    contentGeneric.label,
-  );
-  await contentUtils.fillRichTextForm(
-    page,
-    genericContent1.title,
-    genericContent1.body,
-    contentProperties.publishWfAction,
-  );
-  await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
+    // Adding new rich text content
+    await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
+    await contentUtils.fillRichTextForm(page, genericContent1.title, genericContent1.body, contentProperties.publishWfAction);
+    await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
 
-  await waitForVisibleAndCallback(
-    iframe.locator("#results_table tbody tr").first(),
-    async () => {},
-  );
+    await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr').first(), async () => {});
 
-  await contentUtils
-    .validateContentExist(page, genericContent1.title)
-    .then(assert);
+    await contentUtils.validateContentExist(page, genericContent1.title).then(assert);
 });
 
 /**
  * Test to edit an existing piece of content
  */
-test("Edit a generic content", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
-  const iframe = page.frameLocator(iFramesLocators.main_iframe);
+test('Edit a generic content', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
-  // Edit the content
-  await contentUtils.selectTypeOnFilter(page, contentGeneric.locator);
-  await contentUtils.editContent(
-    page,
-    genericContent1.title,
-    genericContent1.newTitle,
-    genericContent1.newBody,
-    contentProperties.publishWfAction,
-  );
-  await waitForVisibleAndCallback(
-    iframe.locator("#results_table tbody tr").first(),
-    async () => {},
-  );
-  await contentUtils
-    .validateContentExist(page, genericContent1.newTitle)
-    .then(assert);
+    // Edit the content
+    await contentUtils.selectTypeOnFilter(page, contentGeneric.locator);
+    await contentUtils.editContent(page, genericContent1.title, genericContent1.newTitle, genericContent1.newBody, contentProperties.publishWfAction);
+    await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr').first(), async () => {});
+    await contentUtils.validateContentExist(page, genericContent1.newTitle).then(assert);
 });
+
 
 /**
  * Test to delete an existing piece of content
@@ -120,23 +78,14 @@ test('Delete a generic of content', async ({ page }) => {
 /**
  * Test to make sure we are validating the required of text fields on the content creation
  * */
-test("Validate required on text fields", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
-  const iframe = page.frameLocator(iFramesLocators.dot_iframe);
+test('Validate required on text fields', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const iframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-  await contentUtils.addNewContentAction(
-    page,
-    contentGeneric.locator,
-    contentGeneric.label,
-  );
-  await contentUtils.fillRichTextForm(
-    page,
-    "",
-    genericContent1.body,
-    contentProperties.publishWfAction,
-  );
-  await expect(iframe.getByText("Error x")).toBeVisible();
-  await expect(iframe.getByText("The field Title is required.")).toBeVisible();
+    await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
+    await contentUtils.fillRichTextForm(page, '', genericContent1.body, contentProperties.publishWfAction);
+    await expect(iframe.getByText('Error x')).toBeVisible();
+    await expect(iframe.getByText('The field Title is required.')).toBeVisible();
 });
 
 /** Please enable after fixing the issue #30748
@@ -176,10 +125,8 @@ test('Validate adding file assets from URL', async ({page}) => {
 /**
  * Test to validate you are able to add file assets creating a new file
  */
-test("Validate you are able to add file assets creating a new file", async ({
-  page,
-}) => {
-  const contentUtils = new ContentUtils(page);
+test('Validate you are able to add file assets creating a new file', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
 
     await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
     await contentUtils.fillFileAssetForm({
@@ -402,9 +349,9 @@ test('Add a new page', async ({page}) => {
 /**
  * Test to validate the required fields on the page form
  */
-test("Validate required fields on page asset", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
-  const detailFrame = page.frameLocator(iFramesLocators.dot_iframe);
+test('Validate required fields on page asset', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const detailFrame = page.frameLocator(iFramesLocators.dot_iframe);
 
     await contentUtils.addNewContentAction(page, pageAsset.locator, pageAsset.label);
     await contentUtils.fillPageAssetForm({
@@ -417,23 +364,17 @@ test("Validate required fields on page asset", async ({ page }) => {
     });
     await waitForVisibleAndCallback(detailFrame.getByText('Error x'), async () => {});
 
-  await expect(
-    detailFrame.getByText("The field Title is required."),
-  ).toBeVisible();
-  await expect(
-    detailFrame.getByText("The field Url is required."),
-  ).toBeVisible();
-  await expect(
-    detailFrame.getByText("The field Friendly Name is"),
-  ).toBeVisible();
+    await expect(detailFrame.getByText('The field Title is required.')).toBeVisible();
+    await expect(detailFrame.getByText('The field Url is required.')).toBeVisible();
+    await expect(detailFrame.getByText('The field Friendly Name is')).toBeVisible();
 });
 
 /**
  * Test to validate the auto generation of fields on page asset
  */
-test("Validate auto generation of fields on page asset", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
-  const detailFrame = page.frameLocator(iFramesLocators.dot_iframe);
+test('Validate auto generation of fields on page asset', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const detailFrame = page.frameLocator(iFramesLocators.dot_iframe);
 
     await contentUtils.addNewContentAction(page, pageAsset.locator, pageAsset.label);
     await contentUtils.fillPageAssetForm({
@@ -444,12 +385,8 @@ test("Validate auto generation of fields on page asset", async ({ page }) => {
         showOnMenu: pageAssetContent.showOnMenu
     });
 
-  await expect(detailFrame.locator("#url")).toHaveValue(
-    pageAssetContent.title.toLowerCase(),
-  );
-  await expect(detailFrame.locator("#friendlyName")).toHaveValue(
-    pageAssetContent.title,
-  );
+    await expect(detailFrame.locator('#url')).toHaveValue(pageAssetContent.title.toLowerCase());
+    await expect(detailFrame.locator('#friendlyName')).toHaveValue(pageAssetContent.title);
 });
 
 /**
