@@ -6,12 +6,21 @@ import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
 
+export interface MessagePipeOptions {
+    message: string;
+    args: string[];
+}
+
+export interface UnlockOptions {
+    inode: string;
+    loading: boolean;
+    info: MessagePipeOptions;
+    disabled: boolean;
+}
+
 export interface InfoOptions {
     icon: string;
-    info: {
-        message: string;
-        args: string[];
-    };
+    info: MessagePipeOptions;
     id: string;
     actionIcon?: string;
 }
