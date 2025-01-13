@@ -11,7 +11,10 @@ import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.ByPathRequest;
 import com.dotcms.model.asset.FileUploadData;
 import com.dotcms.model.asset.FileUploadDetail;
-import com.google.common.collect.ImmutableList;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -24,10 +27,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.control.ActivateRequestContext;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.testcontainers.shaded.org.awaitility.core.ConditionTimeoutException;
 
@@ -95,7 +94,7 @@ public class FilesTestHelperService {
         final String subfolder2_1_2 = "subFolder2-1-2";
         final String subfolder2_1_3 = "subFolder2-1-3";
 
-        var paths = ImmutableList.of(
+        var paths = List.of(
                 String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_1),
                 String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_2),
                 String.format("/%s/%s/%s", folder1, subfolder1_1, subfolder1_1_3),

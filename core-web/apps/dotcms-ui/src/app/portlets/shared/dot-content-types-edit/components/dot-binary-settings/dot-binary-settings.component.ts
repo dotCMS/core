@@ -1,6 +1,5 @@
 import { forkJoin, of } from 'rxjs';
 
-import { NgFor } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -33,7 +32,6 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
     selector: 'dot-binary-settings',
     standalone: true,
     imports: [
-        NgFor,
         FormsModule,
         ReactiveFormsModule,
         InputTextModule,
@@ -120,6 +118,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     saveSettings(): void {
         const updateActions = Object.keys(this.form.controls).map((key) => {
             const control = this.form.get(key);
+
             const value =
                 control instanceof FormGroup ? JSON.stringify(control.value) : control.value;
             const fieldVariable: DotFieldVariable = {
@@ -128,7 +127,9 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
                 value
             };
 
-            if (!value) {
+            const controlIsEmpty = !value && !this.FIELD_VARIABLES[key]?.value;
+
+            if (controlIsEmpty) {
                 return of({});
             }
 

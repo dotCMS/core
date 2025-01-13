@@ -126,8 +126,11 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'edit-page',
+        data: {
+            reuseRoute: false
+        },
         resolve: {
-            data: (route: ActivatedRouteSnapshot) => {
+            uveConfig: (route: ActivatedRouteSnapshot) => {
                 return inject(EmaAppConfigurationService).get(route.queryParams.url);
             }
         },
@@ -136,6 +139,9 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         canActivate: [editContentGuard],
         path: 'content',
+        data: {
+            reuseRoute: false
+        },
         loadChildren: () => import('@dotcms/edit-content').then((m) => m.DotEditContentRoutes)
     },
     {

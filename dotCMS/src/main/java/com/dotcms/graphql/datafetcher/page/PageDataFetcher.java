@@ -2,6 +2,8 @@ package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
+import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
@@ -15,6 +17,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -22,6 +25,9 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import io.vavr.control.Try;
+import java.time.Instant;
+import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -53,6 +59,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             final boolean fireRules = environment.getArgument("fireRules");
             final String persona = environment.getArgument("persona");
             final String site = environment.getArgument("site");
+            final String publishDate = environment.getArgument("publishDate");
 
             context.addParam("url", url);
             context.addParam("languageId", languageId);
@@ -60,6 +67,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
             context.addParam("fireRules", fireRules);
             context.addParam("persona", persona);
             context.addParam("site", site);
+            context.addParam("publishDate", publishDate);
 
             final PageMode mode = PageMode.get(pageModeAsString);
             PageMode.setPageMode(request, mode);
@@ -75,6 +83,22 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
 
             if(UtilMethods.isSet(site)) {
                 request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
+            }
+
+            Date publishDateObj = null;
+
+            if(UtilMethods.isSet(publishDate)) {
+                publishDateObj = Try.of(()-> DateUtil.convertDate(publishDate)).getOrElse(() -> {
+                    Logger.error(this, "Invalid publish date: " + publishDate);
+                    return null;
+                });
+                if(null != publishDateObj) {
+                    //We get a valid time machine date
+                    final Instant instant = publishDateObj.toInstant();
+                    final long epochMilli = instant.toEpochMilli();
+                    context.addParam(PageResource.TM_DATE, epochMilli);
+                    request.setAttribute(PageResource.TM_DATE, epochMilli);
+                }
             }
 
             Logger.debug(this, ()-> "Fetching page for URL: " + url);

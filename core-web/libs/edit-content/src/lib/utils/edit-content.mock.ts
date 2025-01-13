@@ -16,7 +16,8 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSWorkflowAction
+    DotCMSWorkflowAction,
+    DotCMSWorkflowStatus
 } from '@dotcms/dotcms-models';
 
 export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
@@ -160,6 +161,29 @@ export const MOCK_CONTENTTYPE_1_TAB: DotCMSContentType = {
             sortOrder: 5,
             unique: false,
             variable: 'text3'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+            contentTypeId: 'bec7fa8325253216d9ee23a0693baa17',
+            dataType: 'LONG_TEXT',
+            fieldType: 'Multi-Select',
+            fieldTypeLabel: 'Multi Select',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1729012357000,
+            id: 'c3817bbc0b605578daca363ba752a3a3',
+            indexed: false,
+            listed: false,
+            modDate: 1729012357000,
+            name: 'Multi select',
+            values: 'A\r\nB\r\nC',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 5,
+            unique: false,
+            variable: 'multiselect'
         }
     ],
     fixed: false,
@@ -424,6 +448,7 @@ export const MOCK_CONTENTLET_1_TAB: DotCMSContentlet = {
     text1: 'content text 1',
     text2: 'content text 2',
     text3: 'default value modified',
+    multiselect: 'A,B,C', // stored selected options
     text11: 'Tab 2 input content', // input in the second tab
     // end content of the form
     title: '2978bb3b66e372b1ffffa9376f33c37b',
@@ -691,6 +716,29 @@ export const MOCK_CONTENTTYPE_2_TABS: DotCMSContentType = {
 
             unique: false,
             variable: 'text11'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+            contentTypeId: 'bec7fa8325253216d9ee23a0693baa17',
+            dataType: 'LONG_TEXT',
+            fieldType: 'Multi-Select',
+            fieldTypeLabel: 'Multi Select',
+            fieldVariables: [],
+            fixed: false,
+            forceIncludeInApi: false,
+            iDate: 1735844530000,
+            id: 'c3817bbc0b605578daca363ba752a3a3',
+            indexed: false,
+            listed: false,
+            modDate: 1735844530000,
+            name: 'Multi select',
+            readOnly: false,
+            required: false,
+            searchable: false,
+            sortOrder: 2,
+            unique: false,
+            values: 'A\r\nB\r\nC', // this are the options of the multiselect field
+            variable: 'multiselect'
         }
     ],
     fixed: false,
@@ -1090,5 +1138,190 @@ export const MOCK_FORM_CONTROL_FIELDS: DotCMSContentTypeField[] = [
         sortOrder: 9,
 
         variable: 'text11'
+    },
+
+    {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
+        contentTypeId: 'bec7fa8325253216d9ee23a0693baa17',
+        dataType: 'LONG_TEXT',
+        fieldType: 'Multi-Select',
+        fieldTypeLabel: 'Multi Select',
+        fieldVariables: [],
+        fixed: false,
+        forceIncludeInApi: false,
+        iDate: 1735844530000,
+        id: 'c3817bbc0b605578daca363ba752a3a3',
+        indexed: false,
+        listed: false,
+        modDate: 1735844530000,
+        name: 'Multi select',
+        readOnly: false,
+        required: false,
+        searchable: false,
+        sortOrder: 2,
+        unique: false,
+        values: 'A\r\nB\r\nC', // this are the options of the multiselect field
+        variable: 'multiselect'
     }
 ];
+
+/**
+ * Mock data for workflows.
+ *
+ * @see MOCK_WORKFLOW_DATA
+ */
+export const MOCK_WORKFLOW_DATA = [
+    {
+        action: {
+            assignable: false,
+            commentable: false,
+            condition: '',
+            actionInputs: [],
+            hasArchiveActionlet: false,
+            hasCommentActionlet: false,
+            hasDeleteActionlet: false,
+            hasDestroyActionlet: false,
+            hasMoveActionletActionlet: false,
+            hasMoveActionletHasPathActionlet: false,
+            hasOnlyBatchActionlet: false,
+            hasPublishActionlet: false,
+            hasPushPublishActionlet: false,
+            hasResetActionlet: false,
+            hasSaveActionlet: true,
+            hasUnarchiveActionlet: false,
+            hasUnpublishActionlet: false,
+            icon: 'workflowIcon',
+            id: 'ceca71a0-deee-4999-bd47-b01baa1bcfc8',
+            metadata: null,
+            name: 'Save',
+            nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+            nextStep: 'ee24a4cb-2d15-4c98-b1bd-6327126451f3',
+            nextStepCurrentStep: false,
+            order: 0,
+            owner: null,
+            roleHierarchyForAssign: false,
+            schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+            showOn: ['EDITING', 'UNPUBLISHED', 'NEW', 'LOCKED', 'PUBLISHED']
+        },
+        firstStep: {
+            creationDate: 1731595862064,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+            myOrder: 0,
+            name: 'New',
+            resolved: false,
+            schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
+        },
+        scheme: {
+            archived: false,
+            creationDate: new Date(1731432900580),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+            mandatory: false,
+            modDate: new Date(1730906400422),
+            name: 'System Workflow',
+            system: true,
+            variableName: 'SystemWorkflow'
+        }
+    },
+    {
+        action: {
+            assignable: false,
+            commentable: false,
+            condition: '',
+            actionInputs: [],
+            hasArchiveActionlet: false,
+            hasCommentActionlet: false,
+            hasDeleteActionlet: false,
+            hasDestroyActionlet: false,
+            hasMoveActionletActionlet: false,
+            hasMoveActionletHasPathActionlet: false,
+            hasOnlyBatchActionlet: false,
+            hasPublishActionlet: true,
+            hasPushPublishActionlet: false,
+            hasResetActionlet: false,
+            hasSaveActionlet: true,
+            hasUnarchiveActionlet: true,
+            hasUnpublishActionlet: false,
+            icon: 'workflowIcon',
+            id: '89685558-1449-4928-9cff-adda8648d54d',
+            metadata: null,
+            name: 'Save and Publish',
+            nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+            nextStep: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
+            nextStepCurrentStep: false,
+            order: 0,
+            owner: null,
+            roleHierarchyForAssign: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            showOn: ['EDITING', 'UNPUBLISHED', 'NEW', 'LOCKED', 'LISTING', 'PUBLISHED']
+        },
+        firstStep: {
+            creationDate: 1731595862064,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+            myOrder: 0,
+            name: 'Edit',
+            resolved: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+        },
+        scheme: {
+            archived: false,
+            creationDate: new Date(1731432900580),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            mandatory: false,
+            modDate: new Date(1730906400420),
+            name: 'Blogs',
+            system: false,
+            variableName: 'Blogs'
+        }
+    }
+];
+
+/**
+ * Mock data for workflow status.
+ *
+ * @see MOCK_WORKFLOW_DATA
+ */
+export const MOCK_WORKFLOW_STATUS: DotCMSWorkflowStatus = {
+    scheme: {
+        ...MOCK_WORKFLOW_DATA[1].scheme
+    },
+    firstStep: MOCK_WORKFLOW_DATA[1].firstStep,
+    step: {
+        creationDate: 1731983051341,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
+        myOrder: 2,
+        name: 'Published',
+        resolved: false,
+        schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+    },
+    task: {
+        assignedTo: 'Admin User',
+        belongsTo: null,
+        createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+        creationDate: 1731983076219,
+        description: null,
+        dueDate: null,
+        id: 'ea337da7-25d9-494a-b4ab-03c7bcda39dc',
+        inode: 'ea337da7-25d9-494a-b4ab-03c7bcda39dc',
+        languageId: 1,
+        modDate: 1731983076219,
+        new: false,
+        status: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
+        title: 'asdasd',
+        webasset: '93dda60a-3a10-49e3-bef4-b663d57d86df'
+    }
+};

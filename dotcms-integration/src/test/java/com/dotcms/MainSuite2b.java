@@ -17,9 +17,10 @@ import com.dotcms.analytics.track.collectors.PageDetailCollectorTest;
 import com.dotcms.analytics.track.collectors.PagesCollectorTest;
 import com.dotcms.analytics.track.collectors.SyncVanitiesCollectorTest;
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceImplTest;
+import com.dotcms.api.web.HttpServletRequestImpersonatorTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
-import com.dotcms.bayesian.BayesianAPIImplIT;
+import com.dotcms.analytics.bayesian.BayesianAPIImplIT;
 import com.dotcms.business.SystemAPITest;
 import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -186,7 +187,6 @@ import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTa
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemFieldTest;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTest;
-import com.dotmarketing.startup.runonce.Task241007CreateUniqueFieldsTableTest;
 import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
 import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortletTest;
@@ -206,7 +206,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-        Task241007CreateUniqueFieldsTableTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
@@ -412,7 +411,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PageDetailCollectorTest.class,
         FilesCollectorTest.class,
         SyncVanitiesCollectorTest.class,
-        AsyncVanitiesCollectorTest.class
+        AsyncVanitiesCollectorTest.class,
+        HttpServletRequestImpersonatorTest.class,
 })
 
 public class MainSuite2b {

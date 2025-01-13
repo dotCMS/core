@@ -14,10 +14,18 @@ import javax.sql.DataSource;
  */
 class PgVectorDataSource {
 
+    private static final String AI_DB_BASE_URL_KEY = "AI_DB_BASE_URL";
+    private static final String AI_DB_USERNAME_KEY = "AI_DB_USERNAME";
+    private static final String AI_DB_PASSWORD_KEY = "AI_DB_PASSWORD";
+    private static final String AI_DB_MAX_TOTAL_KEY = "AI_DB_MAX_TOTAL";
+
     /**
      * returns the configured datasource
      */
     public static final Lazy<DataSource> datasource = Lazy.of(PgVectorDataSource::resolveDataSource);
+
+    private PgVectorDataSource() {
+    }
 
     /**
      * Checks if a specific AI datasource is provided, if not, returns the standard dotCMS datasource
@@ -25,7 +33,7 @@ class PgVectorDataSource {
      * @return
      */
     private static DataSource resolveDataSource() {
-        if (UtilMethods.isEmpty(Config.getStringProperty("AI_DB_BASE_URL", null))) {
+        if (UtilMethods.isEmpty(Config.getStringProperty(AI_DB_BASE_URL_KEY, null))) {
             return DbConnectionFactory.getDataSource();
         }
 
@@ -38,10 +46,10 @@ class PgVectorDataSource {
      * @return
      */
     private static DataSource internalDatasource() {
-        final String userName = Config.getStringProperty("AI_DB_USERNAME");
-        final String password = Config.getStringProperty("AI_DB_PASSWORD");
-        final String dbUrl = Config.getStringProperty("AI_DB_BASE_URL");
-        final int maxConnections = Config.getIntProperty("AI_DB_MAX_TOTAL", 50);
+        final String userName = Config.getStringProperty(AI_DB_USERNAME_KEY, null);
+        final String password = Config.getStringProperty(AI_DB_PASSWORD_KEY, null);
+        final String dbUrl = Config.getStringProperty(AI_DB_BASE_URL_KEY, null);
+        final int maxConnections = Config.getIntProperty(AI_DB_MAX_TOTAL_KEY, 50);
 
         final HikariConfig config = new HikariConfig();
         config.setUsername(userName);

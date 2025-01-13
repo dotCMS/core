@@ -132,9 +132,15 @@ public class TransformerLocator {
      * @return
      */
     public static ContentletTransformer createContentletTransformer(
+            List<Map<String, Object>> initList, final boolean ignoreStoryBlock) {
+
+        return new ContentletTransformer(initList, ignoreStoryBlock);
+    }
+
+    public static ContentletTransformer createContentletTransformer(
             List<Map<String, Object>> initList) {
 
-        return new ContentletTransformer(initList);
+        return new ContentletTransformer(initList, false);
     }
 
     /**

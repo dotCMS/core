@@ -21,7 +21,11 @@ import { filter, map } from 'rxjs/operators';
 
 import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotGeneratedAIImage } from '@dotcms/dotcms-models';
-import { INPUT_TYPES, UploadedFile } from '@dotcms/edit-content/models/dot-edit-content-file.model';
+import {
+    INPUT_TYPE,
+    INPUT_TYPES,
+    UploadedFile
+} from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import {
     DotDropZoneComponent,
     DotMessagePipe,
@@ -47,11 +51,9 @@ import { getUiMessage } from './utils/messages';
         ButtonModule,
         DotMessagePipe,
         DotDropZoneComponent,
-        DotAIImagePromptComponent,
         DotSpinnerModule,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        DotFormImportUrlComponent,
         TooltipModule
     ],
     providers: [
@@ -162,7 +164,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
 
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPES
+            inputType: field.fieldType as INPUT_TYPE
         });
     }
 
@@ -284,7 +286,6 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent',
             modal: true,
             resizable: false,
             position: 'center',
@@ -325,7 +326,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
             width: '90%',
@@ -369,7 +370,7 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
             width: '90%',
@@ -389,11 +390,26 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
                 this.store.setPreviewFile(file);
             });
     }
-
+    /**
+     * Shows the select existing file dialog.
+     *
+     * Opens the dialog with the `DotSelectExistingFileComponent` component
+     * and passes the field type and accepted files as data to the component.
+     *
+     * When the dialog is closed, gets the uploaded file from the component
+     * and sets it as the preview file in the store.
+     *
+     * @memberof DotEditContentFileFieldComponent
+     */
     showSelectExistingFileDialog() {
-        const header = this.#dotMessageService.get(
-            'dot.file.field.dialog.select.existing.file.header'
-        );
+        const fieldType = this.$field().fieldType;
+        const title =
+            fieldType === INPUT_TYPES.Image
+                ? 'dot.file.field.dialog.select.existing.image.header'
+                : 'dot.file.field.dialog.select.existing.file.header';
+        const mimeTypes = fieldType === INPUT_TYPES.Image ? ['image'] : [];
+
+        const header = this.#dotMessageService.get(title);
 
         this.#dialogRef = this.#dialogService.open(DotSelectExistingFileComponent, {
             header,
@@ -401,12 +417,14 @@ export class DotEditContentFileFieldComponent implements ControlValueAccessor, O
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            maskStyleClass: 'p-dialog-mask-dynamic',
             resizable: false,
             modal: true,
             width: '90%',
             style: { 'max-width': '1040px' },
-            data: {}
+            data: {
+                mimeTypes
+            }
         });
 
         this.#dialogRef.onClose

@@ -25,6 +25,7 @@ import {
     CustomTreeNode,
     TreeNodeItem
 } from '../models/dot-edit-content-host-folder-field.interface';
+import { DotWorkflowState } from '../models/dot-edit-content.model';
 
 /* FIELDS MOCK BY TYPE */
 export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
@@ -537,6 +538,36 @@ export const FILE_FIELD_MOCK: DotCMSContentTypeField = {
     hint: 'Helper label to be displayed below the field'
 };
 
+export const RELATIONSHIP_FIELD_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+    contentTypeId: 'd68af52828a53805a1716e68cd902560',
+    dataType: 'SYSTEM',
+    fieldType: 'Relationship',
+    fieldTypeLabel: 'Relationships Field',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1732655273000,
+    id: '306fe444c1ae1fd063c02d8812903fc9',
+    indexed: true,
+    listed: false,
+    modDate: 1732660181000,
+    name: 'Relationship Field',
+    readOnly: false,
+    relationships: {
+        cardinality: 0,
+        isParentField: true,
+        velocityVar: 'AllTypes'
+    },
+    required: false,
+    searchable: false,
+    skipRelationshipCreation: false,
+    sortOrder: 6,
+    unique: false,
+    variable: 'relationshipField',
+    hint: 'Helper label to be displayed below the field'
+};
+
 export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
     id: '64d5c84f04df900c79a94e087c6fed05',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableCustomField',
@@ -706,6 +737,29 @@ export const HIDDEN_FIELD_MOCK: DotCMSContentTypeField = {
     variable: 'hidden'
 };
 
+export const LINE_DIVIDER_MOCK: DotCMSContentTypeField = {
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+    contentTypeId: '799f176a-d32e-4844-a07c-1b5fcd107578',
+    dataType: 'SYSTEM',
+    fieldType: 'Line_divider',
+    fieldTypeLabel: 'Line Divider',
+    fieldVariables: [],
+    fixed: false,
+    forceIncludeInApi: false,
+    iDate: 1685464291000,
+    id: '0cc62946e4889894f3fe83a18a8bdffa',
+    indexed: false,
+    listed: false,
+    modDate: 1735915174000,
+    name: 'Open Graph (OG Meta Tags)',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 27,
+    unique: false,
+    variable: 'openGraph'
+};
+
 export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     TEXT_FIELD_MOCK,
     TEXT_AREA_FIELD_MOCK,
@@ -734,7 +788,9 @@ export const FIELDS_MOCK: DotCMSContentTypeField[] = [
     HOST_FOLDER_TEXT_MOCK,
     CATEGORY_MOCK,
     CONSTANT_FIELD_MOCK,
-    HIDDEN_FIELD_MOCK
+    HIDDEN_FIELD_MOCK,
+    RELATIONSHIP_FIELD_MOCK,
+    LINE_DIVIDER_MOCK
 ];
 
 export const FIELD_MOCK: DotCMSContentTypeField = TEXT_FIELD_MOCK;
@@ -1303,7 +1359,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
         data: {
-            identifier: 'demo.dotcms.com',
+            id: 'demo.dotcms.com',
             hostname: 'demo.dotcms.com',
             path: '',
             type: 'site'
@@ -1315,7 +1371,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'nico.dotcms.com',
         label: 'nico.dotcms.com',
         data: {
-            identifier: 'nico.dotcms.com',
+            id: 'nico.dotcms.com',
             hostname: 'nico.dotcms.com',
             path: '',
             type: 'site'
@@ -1327,7 +1383,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
         key: 'System Host',
         label: 'System Host',
         data: {
-            identifier: 'System Host',
+            id: 'System Host',
             hostname: 'System Host',
             path: '',
             type: 'site'
@@ -1342,7 +1398,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
         data: {
-            identifier: 'demo.dotcms.com',
+            id: 'demo.dotcms.com',
             hostname: 'demo.dotcms.com',
             path: '',
             type: 'site'
@@ -1354,7 +1410,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel1',
                 label: 'demo.dotcms.com/level1/',
                 data: {
-                    identifier: 'demo.dotcms.comlevel1',
+                    id: 'demo.dotcms.comlevel1',
                     hostname: 'demo.dotcms.com',
                     path: '/level1/',
                     type: 'folder'
@@ -1366,7 +1422,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                         key: 'demo.dotcms.comlevel1child1',
                         label: 'demo.dotcms.com/level1/child1/',
                         data: {
-                            identifier: 'demo.dotcms.comlevel1child1',
+                            id: 'demo.dotcms.comlevel1child1',
                             hostname: 'demo.dotcms.com',
                             path: '/level1/child1/',
                             type: 'folder'
@@ -1380,7 +1436,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
                 key: 'demo.dotcms.comlevel2',
                 label: 'demo.dotcms.com/level2/',
                 data: {
-                    identifier: 'demo.dotcms.comlevel2',
+                    id: 'demo.dotcms.comlevel2',
                     hostname: 'demo.dotcms.com',
                     path: '/level2/',
                     type: 'folder'
@@ -1394,7 +1450,7 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
         key: 'nico.dotcms.com',
         label: 'nico.dotcms.com',
         data: {
-            identifier: 'nico.dotcms.com',
+            id: 'nico.dotcms.com',
             hostname: 'nico.dotcms.com',
             path: '',
             type: 'site'
@@ -1602,6 +1658,17 @@ export const EXISTING_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
         status: 'd95caaa6-1ece-42b2-8663-fb01e804a149',
         title: '5 Snow Sports to Try This Winter',
         webasset: '0edfee78-2a75-4f3d-bf20-813aae15d4e9'
+    },
+    firstStep: {
+        creationDate: 1731595862064,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+        myOrder: 0,
+        name: 'New',
+        resolved: false,
+        schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
     }
 };
 
@@ -1623,5 +1690,194 @@ export const NEW_WORKFLOW_MOCK: DotCMSWorkflowStatus = {
         variableName: 'Blogs'
     },
     step: null,
-    task: null
+    task: null,
+    firstStep: {
+        creationDate: 1731595862064,
+        enableEscalation: false,
+        escalationAction: null,
+        escalationTime: 0,
+        id: '6cb7e3bd-1710-4eed-8838-d3db60f78f19',
+        myOrder: 0,
+        name: 'New',
+        resolved: false,
+        schemeId: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
+    }
+};
+
+/**
+ * Mock for input of the sidebar workflow component
+ */
+export const WORKFLOW_MOCKS: Record<'EXISTING' | 'NEW' | 'RESET', DotWorkflowState> = {
+    EXISTING: {
+        scheme: {
+            archived: false,
+            creationDate: new Date(1732809856947),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            mandatory: false,
+            modDate: new Date(1732554197546),
+            name: 'Blogs',
+            system: false,
+            variableName: 'Blogs'
+        },
+        step: {
+            creationDate: 1732859987790,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '5865d447-5df7-4fa8-81c8-f8f183f3d1a2',
+            myOrder: 0,
+            name: 'Editing',
+            resolved: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+        },
+        task: {
+            assignedTo: 'Admin User',
+            belongsTo: null,
+            createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+            creationDate: 1732809812333,
+            description: null,
+            dueDate: null,
+            id: '9cc41c12-f72d-431a-9b22-ef9f1067e6d9',
+            inode: '9cc41c12-f72d-431a-9b22-ef9f1067e6d9',
+            languageId: 1,
+            modDate: 1732809830428,
+            new: false,
+            status: 'f43c5d5a-fc51-4c67-a750-cc8f8e4a87f7',
+            title: '6b102831-e96e-459f-aa41-b5b451f8b8e1',
+            webasset: '6b102831-e96e-459f-aa41-b5b451f8b8e1'
+        },
+        contentState: 'existing',
+        resetAction: {
+            actionInputs: [],
+            assignable: false,
+            commentable: false,
+            condition: '',
+            hasArchiveActionlet: false,
+            hasCommentActionlet: false,
+            hasDeleteActionlet: false,
+            hasDestroyActionlet: false,
+            hasMoveActionletActionlet: false,
+            hasMoveActionletHasPathActionlet: false,
+            hasOnlyBatchActionlet: false,
+            hasPublishActionlet: false,
+            hasPushPublishActionlet: false,
+            hasResetActionlet: true,
+            hasSaveActionlet: false,
+            hasUnarchiveActionlet: true,
+            hasUnpublishActionlet: false,
+            icon: 'workflowIcon',
+            id: '2d1dc771-8fda-4b43-9e81-71d43a8c73e4',
+            name: 'Reset Workflow',
+            nextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+            nextStep: '5865d447-5df7-4fa8-81c8-f8f183f3d1a2',
+            nextStepCurrentStep: false,
+            order: 0,
+            owner: null,
+            roleHierarchyForAssign: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            showOn: [
+                'LOCKED',
+                'PUBLISHED',
+                'ARCHIVED',
+                'UNPUBLISHED',
+                'LISTING',
+                'UNLOCKED',
+                'EDITING',
+                'NEW'
+            ]
+        }
+    },
+    NEW: {
+        scheme: {
+            archived: false,
+            creationDate: new Date(1732809856947),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            mandatory: false,
+            modDate: new Date(1732554197546),
+            name: 'Blogs',
+            system: false,
+            variableName: 'Blogs'
+        },
+        step: {
+            creationDate: 1732859904768,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '5865d447-5df7-4fa8-81c8-f8f183f3d1a2',
+            myOrder: 0,
+            name: 'Editing',
+            resolved: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+        },
+        task: null,
+        contentState: 'new',
+        resetAction: null
+    },
+    RESET: {
+        scheme: {
+            archived: false,
+            creationDate: new Date(1732809856947),
+            defaultScheme: false,
+            description: '',
+            entryActionId: null,
+            id: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd',
+            mandatory: false,
+            modDate: new Date(1732554197546),
+            name: 'Blogs',
+            system: false,
+            variableName: 'Blogs'
+        },
+        step: {
+            creationDate: 1732860056894,
+            enableEscalation: false,
+            escalationAction: null,
+            escalationTime: 0,
+            id: '5865d447-5df7-4fa8-81c8-f8f183f3d1a2',
+            myOrder: 0,
+            name: 'Editing',
+            resolved: false,
+            schemeId: '2a4e1d2e-5342-4b46-be3d-80d3a2d9c0dd'
+        },
+        task: {
+            assignedTo: 'Admin User',
+            belongsTo: null,
+            createdBy: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
+            creationDate: 1732854838710,
+            description: null,
+            dueDate: null,
+            id: 'f485675d-9e34-485d-9ec8-39a6e03b0272',
+            inode: 'f485675d-9e34-485d-9ec8-39a6e03b0272',
+            languageId: 1,
+            modDate: 1732854838710,
+            new: false,
+            status: null,
+            title: '74968ffd-7692-47d5-bd3a-44eeb5fbe551',
+            webasset: '74968ffd-7692-47d5-bd3a-44eeb5fbe551'
+        },
+        contentState: 'reset',
+        resetAction: null
+    }
+};
+
+/**
+ * Mock for input of the sidebar workflow component
+ */
+export const WORKFLOW_SELECTION_MOCK = {
+    WITH_OPTIONS: {
+        schemeOptions: [
+            { label: 'System Workflow', value: '1' },
+            { label: 'Marketing Workflow', value: '2' }
+        ],
+        isWorkflowSelected: false
+    },
+    NO_WORKFLOW: {
+        schemeOptions: [],
+        isWorkflowSelected: true
+    }
 };

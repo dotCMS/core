@@ -9,7 +9,7 @@ import {
 
 import { computed } from '@angular/core';
 
-import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperimentStatus } from '@dotcms/dotcms-models';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
@@ -45,7 +45,7 @@ export function withEditorToolbar() {
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
             $toolbarProps: computed<ToolbarProps>(() => {
-                const params = store.params();
+                const params = store.pageParams();
                 const url = sanitizeURL(params?.url);
 
                 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
@@ -67,9 +67,10 @@ export function withEditorToolbar() {
                     inode: pageAPIResponse?.page.inode,
                     loading: store.status() === UVE_STATUS.LOADING
                 };
+                const isDefaultVariant = getIsDefaultVariant(pageAPIResponse?.viewAs.variantId);
 
                 const shouldShowInfoDisplay =
-                    !getIsDefaultVariant(pageAPIResponse?.viewAs.variantId) ||
+                    !isDefaultVariant ||
                     !store.canEditPage() ||
                     isPageLocked ||
                     !!store.device() ||
@@ -94,6 +95,7 @@ export function withEditorToolbar() {
                     runningExperiment: isExperimentRunning ? experiment : null,
                     workflowActionsInode: store.canEditPage() ? pageAPIResponse?.page.inode : null,
                     unlockButton: shouldShowUnlock ? unlockButton : null,
+                    isDefaultVariant,
                     showInfoDisplay: shouldShowInfoDisplay,
                     deviceSelector: {
                         apiLink: `${clientHost}${pageAPI}`,
@@ -184,22 +186,12 @@ export function withEditorToolbar() {
         })),
         withMethods((store) => {
             return {
-                setDevice: (device: DotDevice) => {
-                    patchState(store, {
-                        device,
-                        socialMedia: null,
-                        isEditState: false
-                    });
-                },
                 setSocialMedia: (socialMedia: string) => {
                     patchState(store, {
                         socialMedia,
                         device: null,
                         isEditState: false
                     });
-                },
-                clearDeviceAndSocialMedia: () => {
-                    patchState(store, initialState);
                 }
             };
         })

@@ -276,7 +276,9 @@ public class StartupTasksExecutor {
             } catch (Exception e) {
                 taskFailure(e);
             } finally {
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
 
         }
@@ -344,7 +346,9 @@ public class StartupTasksExecutor {
             } catch (Exception e) {
                 taskFailure(e);
             } finally {
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
 
         }
@@ -367,7 +371,9 @@ public class StartupTasksExecutor {
 
 
             for (Class<?> c : TaskLocatorUtil.getBackportedUpgradeTaskClasses()) {
-                HibernateUtil.startTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.startTransaction();
+                }
                 name = c.getCanonicalName();
                 name = name.substring(name.lastIndexOf(".") + 1);
 		String id = getTaskId(name);

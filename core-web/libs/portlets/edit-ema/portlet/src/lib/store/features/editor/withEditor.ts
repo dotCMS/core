@@ -9,6 +9,7 @@ import {
 
 import { computed, untracked } from '@angular/core';
 
+import { UVE_MODE } from '@dotcms/client';
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
 
 import {
@@ -20,13 +21,13 @@ import {
 } from './models';
 import { withSave } from './save/withSave';
 import { withEditorToolbar } from './toolbar/withEditorToolbar';
+import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
     Container,
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -35,15 +36,29 @@ import {
     PositionPayload
 } from '../../../shared/models';
 import {
-    sanitizeURL,
-    createPageApiUrlWithQueryParams,
     mapContainerStructureToArrayOfContainers,
     getPersonalization,
     areContainersEquals,
-    getEditorStates
+    getEditorStates,
+    createPageApiUrlWithQueryParams,
+    sanitizeURL,
+    getWrapperMeasures
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
+
+const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
+    if (isTraditionalPage) {
+        // Force iframe reload on every page load to avoid caching issues and window dirty state
+        return `about:blank?t=${Date.now()}`;
+    }
+
+    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
+    const origin = params.clientHost || window.location.origin;
+    const url = new URL(pageAPIQueryParams, origin);
+
+    return sanitizeURL(url.toString());
+};
 
 const initialState: EditorState = {
     bounds: [],
@@ -65,6 +80,7 @@ export function withEditor() {
             state: type<UVEState>()
         },
         withState<EditorState>(initialState),
+        withUVEToolbar(),
         withEditorToolbar(),
         withSave(),
         withClient(),
@@ -94,6 +110,12 @@ export function withEditor() {
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
+                $pageRender: computed<string>(() => {
+                    return store.pageAPIResponse()?.page?.rendered;
+                }),
+                $enableInlineEdit: computed<boolean>(() => {
+                    return store.isEditState() && untracked(() => store.isEnterprise());
+                }),
                 $editorIsInDraggingState: computed<boolean>(
                     () => store.state() === EDITOR_STATE.DRAGGING
                 ),
@@ -105,51 +127,46 @@ export function withEditor() {
                     const canEditPage = store.canEditPage();
                     const isEnterprise = store.isEnterprise();
                     const state = store.state();
-                    const params = store.params();
+                    const params = store.pageParams();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
                     const contentletArea = store.contentletArea();
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const isLoading = !isClientReady || store.status() === UVE_STATUS.LOADING;
 
-                    const isPageReady = isTraditionalPage || isClientReady;
+                    const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
+                    const isPageReady = isTraditionalPage || isClientReady || isPreview;
+                    const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
 
-                    const url = sanitizeURL(params?.url);
-
-                    const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
-
                     const showDialogs = canEditPage && isEditState;
+                    const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
                     const canUserHaveContentletTools =
-                        !!contentletArea && canEditPage && isEditState && !isScrolling;
+                        !!contentletArea &&
+                        canEditPage &&
+                        isEditState &&
+                        !isScrolling &&
+                        !isPreview;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-
-                    const showPalette = isEnterprise && canEditPage && isEditState;
+                    const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
-                    const origin = params.clientHost || window.location.origin;
-                    const iframeURL = new URL(pageAPIQueryParams, origin);
+
+                    const wrapper = getWrapperMeasures(device, store.orientation());
 
                     return {
-                        showDialogs: showDialogs,
-                        showEditorContent: !socialMedia,
+                        showDialogs,
+                        showBlockEditorSidebar,
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
-                            src: !isTraditionalPage ? iframeURL.href : '',
-                            wrapper: device
-                                ? {
-                                      width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
-                                      height: `${device.cssHeight}${BASE_IFRAME_MEASURE_UNIT}`
-                                  }
-                                : null
+                            wrapper: device ? wrapper : null
                         },
                         progressBar: isLoading,
                         contentletTools: canUserHaveContentletTools
@@ -179,6 +196,24 @@ export function withEditor() {
                                   socialMedia
                               }
                             : null
+                    };
+                }),
+                $iframeURL: computed<string>(() => {
+                    const page = store.pageAPIResponse().page;
+                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
+                    const url = buildIframeURL({
+                        pageURI: vanityURL ?? page?.pageURI,
+                        params: store.pageParams(),
+                        isTraditionalPage: untracked(() => store.isTraditionalPage())
+                    });
+
+                    return url;
+                }),
+                $editorContentStyles: computed<Record<string, string>>(() => {
+                    const socialMedia = store.socialMedia();
+
+                    return {
+                        display: socialMedia ? 'none' : 'block'
                     };
                 })
             };

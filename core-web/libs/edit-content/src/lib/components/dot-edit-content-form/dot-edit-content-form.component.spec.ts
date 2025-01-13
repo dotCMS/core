@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals';
 import {
     byTestId,
     createComponentFactory,
@@ -5,16 +6,18 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
+import { signal } from '@angular/core';
 import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { TabPanel, TabView } from 'primeng/tabview';
 
 import {
+    DotContentletService,
     DotContentTypeService,
     DotFormatDateService,
     DotHttpErrorManagerService,
@@ -23,20 +26,25 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
-import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
+import {
+    DotFormatDateServiceMock,
+    MOCK_MULTIPLE_WORKFLOW_ACTIONS,
+    MOCK_SINGLE_WORKFLOW_ACTIONS
+} from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     MOCK_CONTENTLET_1_TAB as MOCK_CONTENTLET_1_OR_2_TABS,
     MOCK_CONTENTTYPE_1_TAB,
     MOCK_CONTENTTYPE_2_TABS,
-    MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB
+    MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
+    MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
 import { MockResizeObserver } from '../../utils/mocks';
 
@@ -48,6 +56,7 @@ describe('DotFormComponent', () => {
     let workflowActionsService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
+    let dotWorkflowService: SpyObject<DotWorkflowService>;
     let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
@@ -66,6 +75,9 @@ describe('DotFormComponent', () => {
             mockProvider(Router),
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
+            mockProvider(DotContentletService),
+            mockProvider(DialogService),
+
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -90,6 +102,7 @@ describe('DotFormComponent', () => {
         workflowActionsService = spectator.inject(DotWorkflowsActionsService);
         dotEditContentService = spectator.inject(DotEditContentService);
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
+        dotWorkflowService = spectator.inject(DotWorkflowService);
         router = spectator.inject(Router);
     });
 
@@ -104,8 +117,16 @@ describe('DotFormComponent', () => {
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
             );
             dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
-            store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            }); // called with the inode of the contentlet
+
             spectator.detectChanges();
         });
 
@@ -129,28 +150,16 @@ describe('DotFormComponent', () => {
             expect(component.form.get('modUserName')).toBeFalsy();
             expect(component.form.get('publishDate')).toBeFalsy();
         });
-
-        it('should disable the form when loading and enable it when not loading', () => {
-            spectator.detectChanges();
-
-            // // Initially, the form should be enabled
-            expect(component.form.enabled).toBe(true);
-
-            patchState(store, {
-                state: ComponentStatus.SAVING
-            });
-
-            spectator.flushEffects();
-
-            expect(component.form.enabled).toBe(false);
-        });
     });
 
     describe('New Content', () => {
         beforeEach(() => {
             dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
             workflowActionsService.getDefaultActions.mockReturnValue(
-                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
 
             store.initializeNewContent('TestMock');
@@ -189,8 +198,15 @@ describe('DotFormComponent', () => {
                 of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
             );
             workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
-            store.initializeExistingContent(MOCK_CONTENTLET_1_OR_2_TABS.inode); // called with the inode of the contentlet
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            }); // called with the inode of the contentlet
             spectator.detectChanges();
         });
 
@@ -219,7 +235,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should render workflow actions and sidebar toggle in append area', () => {
-                const sidebarButton = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarButton = spectator.query(byTestId('sidebar-toggle-button'));
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
 
                 expect(workflowActions).toBeTruthy();
@@ -227,7 +243,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
-                const sidebarButton = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarButton = spectator.query(byTestId('sidebar-toggle-button'));
                 expect(sidebarButton).toBeTruthy();
 
                 const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
@@ -237,33 +253,10 @@ describe('DotFormComponent', () => {
                 expect(toggleSidebarSpy).toHaveBeenCalled();
             });
 
-            it('should call fireWorkflowAction when Save action is clicked', () => {
-                const fireWorkflowActionSpy = jest.spyOn(component.$store, 'fireWorkflowAction');
-                const workflowActions = spectator.query(DotWorkflowActionsComponent);
-                expect(workflowActions).toBeTruthy();
-
-                const saveButton = spectator.query('.p-splitbutton-defaultbutton');
-                expect(saveButton).toBeTruthy();
-                expect(saveButton.textContent.trim()).toBe('Save');
-
-                spectator.click(saveButton);
-
-                expect(fireWorkflowActionSpy).toHaveBeenCalledWith({
-                    actionId: MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB[0].id,
-                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
-                    data: {
-                        contentlet: {
-                            ...component.form.value,
-                            contentType: MOCK_CONTENTTYPE_1_TAB.variable
-                        }
-                    }
-                });
-            });
-
             it('should call toggleSidebar when sidebar toggle button is clicked', () => {
                 const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
 
-                const sidebarToggleButton = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarToggleButton = spectator.query(byTestId('sidebar-toggle-button'));
                 expect(sidebarToggleButton).toBeTruthy();
 
                 spectator.click(sidebarToggleButton);
@@ -277,6 +270,109 @@ describe('DotFormComponent', () => {
 
                 expect(router.navigate).toHaveBeenCalledWith([CONTENT_SEARCH_ROUTE], {
                     queryParams: { filter: MOCK_CONTENTTYPE_2_TABS.variable }
+                });
+            });
+
+            describe('TabView Styling', () => {
+                it('should apply single-tab class when only one tab exists', () => {
+                    const tabView = spectator.query('.dot-edit-content-tabview');
+                    component.$hasSingleTab = signal(true);
+                    spectator.detectChanges();
+
+                    expect(tabView.classList.contains('dot-edit-content-tabview--single-tab')).toBe(
+                        true
+                    );
+                });
+            });
+        });
+    });
+
+    describe('Sidebar State', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+        });
+
+        it('should render edit-content-actions element', () => {
+            const editContentActions = spectator.query(byTestId('edit-content-actions'));
+            expect(editContentActions).toBeTruthy();
+        });
+
+        describe('Workflow Actions Component', () => {
+            it('should show DotWorkflowActionsComponent when showWorkflowActions is true', () => {
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS) // Single workflow actions trigger the show
+                );
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+
+                const workflowActions = spectator.query(DotWorkflowActionsComponent);
+                expect(store.showWorkflowActions()).toBe(true);
+                expect(workflowActions).toBeTruthy();
+            });
+
+            it('should hide DotWorkflowActionsComponent when showWorkflowActions is false', () => {
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_MULTIPLE_WORKFLOW_ACTIONS) // Multiple workflow actions trigger the hide
+                );
+
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+
+                const workflowActions = spectator.query(DotWorkflowActionsComponent);
+                expect(store.showWorkflowActions()).toBe(false);
+                expect(workflowActions).toBeFalsy();
+            });
+
+            it('should send the correct parameters when firing an action', () => {
+                const spy = jest.spyOn(store, 'fireWorkflowAction');
+
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+
+                const workflowActions = spectator.query(DotWorkflowActionsComponent);
+                workflowActions.actionFired.emit({ id: '1' } as DotCMSWorkflowAction);
+
+                expect(spy).toHaveBeenCalledWith({
+                    actionId: '1',
+                    inode: 'cc120e84-ae80-49d8-9473-36d183d0c1c9',
+                    identifier: null,
+                    data: {
+                        contentlet: {
+                            contentType: 'TestMock',
+                            text1: 'content text 1',
+                            text11: 'Tab 2 input content',
+                            text2: 'content text 2',
+                            text3: 'default value modified',
+                            multiselect: 'A,B,C',
+                            languageId: null
+                        }
+                    }
                 });
             });
         });

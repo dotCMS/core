@@ -61,9 +61,9 @@ public class ShortyServlet extends HttpServlet {
   private final ShortyIdAPI    shortyIdAPI    = APILocator.getShortyAPI();
 
 
-  private static final String  JPEG                        = "jpeg";
-  private static final String  JPEGP                       = "jpegp";
-  private static final String  WEBP                        = "webp";
+  private static final String  JPEG                        = ".jpeg";
+  private static final String  JPEGP                       = ".jpegp";
+  private static final String  WEBP                        = ".webp";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
   private static final Pattern widthPattern                = Pattern.compile("/(\\d+)w\\b");
@@ -539,10 +539,17 @@ public class ShortyServlet extends HttpServlet {
 
             if (contentletVersionInfo.isPresent()) {
                 Logger.debug(this, "Contentlet version found for identifier: " + relatedImageId);
-                final Contentlet imageContentlet = getImageContentlet(contentletVersionInfo.get(), live);
-                validateContentlet(imageContentlet, live, imageContentlet.getInode());
-                final String fieldVar = imageContentlet.isDotAsset() ? DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
-                return buildFieldPath(imageContentlet, fieldVar);
+                final String inode = live
+                        ? contentletVersionInfo.get().getLiveInode()
+                        : contentletVersionInfo.get().getWorkingInode();
+                try{
+                    final Contentlet imageContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+                    validateContentlet(imageContentlet, live, inode);
+                    final String fieldVar = imageContentlet.isDotAsset() ? DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
+                    return buildFieldPath(imageContentlet, fieldVar);
+                }catch (DotDataException e){
+                    Logger.debug(this.getClass(), e.getMessage());
+                }
             }
             Logger.debug(this, "No contentlet version found for identifier: " + relatedImageId + ", returning path based on original contentlet inode: " + contentlet.getInode());
         }
@@ -560,22 +567,6 @@ public class ShortyServlet extends HttpServlet {
     private boolean shouldFallbackToDefaultLanguage(final Contentlet contentlet) {
         return APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage() &&
                 APILocator.getLanguageAPI().getDefaultLanguage().getId() != contentlet.getLanguageId();
-    }
-
-    /**
-     * Retrieves the appropriate contentlet version (live or working) for an image
-     * based on the provided version info.
-     *
-     * @param versionInfo The version information for the contentlet
-     * @param live Whether to retrieve the live version (true) or working version (false)
-     * @return The requested version of the contentlet
-     * @throws DotDataException If there's an error accessing the data
-     * @throws DotSecurityException If there's a security violation
-     */
-    private Contentlet getImageContentlet(final ContentletVersionInfo versionInfo, final boolean live) 
-            throws DotDataException, DotSecurityException {
-        final String inode = live ? versionInfo.getLiveInode() : versionInfo.getWorkingInode();
-        return APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
     }
 
     /**

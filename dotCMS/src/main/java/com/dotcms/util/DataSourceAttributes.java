@@ -1,6 +1,10 @@
 
 package com.dotcms.util;
 
+import io.vavr.control.Try;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 /**
  * This class holds information fof the datasource connection to be used when exporting the DB as a postgres dump.
  *
@@ -13,8 +17,8 @@ public class DataSourceAttributes {
 
     public DataSourceAttributes(final String username, final String password, final String url) {
         super();
-        this.username = username;
-        this.password = password.toCharArray();
+        this.username = Try.of(()-> URLEncoder.encode(username, StandardCharsets.UTF_8.toString())).getOrNull();
+        this.password = Try.of(()->URLEncoder.encode(password, StandardCharsets.UTF_8.toString()).toCharArray()).getOrElse(new char[]{});
         this.url = url;
     }
 

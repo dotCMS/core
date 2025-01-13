@@ -19,7 +19,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPageLayoutService,
-    DotRouterService
+    DotRouterService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent, TemplateBuilderModule } from '@dotcms/template-builder';
@@ -93,6 +94,9 @@ describe('EditEmaLayoutComponent', () => {
                 get: jest.fn(() => of(PAGE_RESPONSE)),
                 getClientPage: jest.fn(() => of(PAGE_RESPONSE))
             }),
+            mockProvider(DotWorkflowsActionsService, {
+                getByInode: jest.fn(() => of([]))
+            }),
             MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
             MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
             MockProvider(DotLanguagesService, new DotLanguagesServiceMock(), 'useValue'),
@@ -128,7 +132,7 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
-        store.init({
+        store.loadPageAsset({
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',
@@ -150,7 +154,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
             const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
-            const reloadSpy = jest.spyOn(store, 'reload');
+            const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
             templateBuilder.templateChange.emit();
             tick(5000);
@@ -178,6 +182,13 @@ describe('EditEmaLayoutComponent', () => {
             tick(6000);
 
             expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
+        }));
+
+        it('should set isClientReady false after saving', fakeAsync(() => {
+            templateBuilder.templateChange.emit();
+            tick(6000);
+
+            expect(store.isClientReady()).toBe(false);
         }));
 
         it('should save right away if we request page leave before the 5 secs', () => {

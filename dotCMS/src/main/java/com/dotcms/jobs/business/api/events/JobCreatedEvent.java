@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Event fired when a new job is created and added to the queue.
  */
-public class JobCreatedEvent {
+public class JobCreatedEvent implements JobEvent {
 
     private final String jobId;
     private final String queueName;

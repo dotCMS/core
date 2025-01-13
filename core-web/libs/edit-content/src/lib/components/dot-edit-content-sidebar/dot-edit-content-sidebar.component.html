@@ -1,10 +1,8 @@
 @let contentlet = store.contentlet();
 @let contentType = store.contentType();
+<!-- Information Component -->
 @let isLoadingInformation = store.isLoadingInformation();
 @let referencePagesCount = store.information.relatedContent();
-<!-- Workflow -->
-@let workflow = store.workflow;
-@let isLoadingWorkflow = store.isLoadingWorkflow;
 
 <aside class="content-sidebar">
     <p-tabView>
@@ -13,13 +11,13 @@
 
         <p-tabPanel [header]="'Info' | dm">
             <!-- Information section -->
-            <dot-edit-content-sidebar-section [title]="'Information' | dm">
+            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.general.title' | dm">
                 <ng-template #sectionAction>
-                    @if (contentlet?.identifier) {
+                    @if (!store.isNew() && !store.isCopyingLocale()) {
                         <dot-copy-button
                             [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
-                            [tooltipText]="contentlet.identifier"></dot-copy-button>
+                            [tooltipText]="'Identifier' | dm"></dot-copy-button>
                     }
                 </ng-template>
 
@@ -33,13 +31,40 @@
                     data-testId="information" />
             </dot-edit-content-sidebar-section>
 
+            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
+                <dot-edit-content-sidebar-locales
+                    [locales]="store.locales()"
+                    [defaultLocale]="store.systemDefaultLocale()"
+                    [currentLocale]="store.currentLocale()"
+                    [isLoading]="store.isLoadingLocales()"
+                    (switchLocale)="store.switchLocale($event)"
+                    data-testId="locales" />
+            </dot-edit-content-sidebar-section>
+
             <!-- Workflow section -->
+
             <dot-edit-content-sidebar-section [title]="'Workflow' | dm">
                 <dot-edit-content-sidebar-workflow
-                    [workflow]="workflow()"
-                    [isLoading]="isLoadingWorkflow()"
+                    [workflowSelection]="$workflowSelection()"
+                    [(showDialog)]="$showDialog"
+                    (onSelectWorkflow)="store.setSelectedWorkflow($event)"
+                    [resetWorkflowAction]="store.getResetWorkflowAction()"
+                    (onResetWorkflow)="fireWorkflowAction($event)"
+                    [workflow]="$workflow()"
+                    [isLoading]="store.isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
+        </p-tabPanel>
+
+        <p-tabPanel [header]="'History' | dm">
+            <ng-template pTemplate="content">
+                <span class="temporal-content">{{ 'coming.soon' | dm }}</span>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel [header]="'Settings' | dm">
+            <ng-template pTemplate="content">
+                <span class="temporal-content">{{ 'coming.soon' | dm }}</span>
+            </ng-template>
         </p-tabPanel>
     </p-tabView>
 </aside>

@@ -11,11 +11,14 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 import { TabView } from 'primeng/tabview';
 
 import {
+    DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
     DotMessageService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -26,13 +29,15 @@ import { DotEditContentSidebarInformationComponent } from './components/dot-edit
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
+import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotEditContentSidebarComponent', () => {
     let spectator: Spectator<DotEditContentSidebarComponent>;
     let dotEditContentService: SpyObject<DotEditContentService>;
+    let dotWorkflowService: SpyObject<DotWorkflowService>;
 
     const createComponent = createComponentFactory({
         component: DotEditContentSidebarComponent,
@@ -51,6 +56,9 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(Router),
             mockProvider(DotWorkflowService),
             mockProvider(MessageService),
+            mockProvider(DotContentletService),
+            mockProvider(DotLanguagesService),
+            mockProvider(DialogService),
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -67,8 +75,11 @@ describe('DotEditContentSidebarComponent', () => {
     beforeEach(() => {
         window.ResizeObserver = MockResizeObserver;
         spectator = createComponent({ detectChanges: false });
+
         dotEditContentService = spectator.inject(DotEditContentService);
+        dotWorkflowService = spectator.inject(DotWorkflowService);
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
+        dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
         spectator.detectChanges();
     });

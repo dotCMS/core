@@ -1,5 +1,5 @@
-import { CLIENT_ACTIONS } from '@dotcms/client';
-import { DotCMSContentlet, DotDevice } from '@dotcms/dotcms-models';
+import { UVE_MODE, CLIENT_ACTIONS } from '@dotcms/client';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
@@ -170,6 +170,7 @@ export interface DotPage {
     inode: string;
     canEdit: boolean;
     canRead: boolean;
+    canSeeRules: boolean;
     canLock?: boolean;
     locked?: boolean;
     lockedBy?: string;
@@ -182,10 +183,6 @@ export interface DotPage {
     stInode?: string;
     working?: boolean;
     workingInode?: string;
-}
-
-export interface DotDeviceWithIcon extends DotDevice {
-    icon?: string;
 }
 
 export type CommonErrorsInfo = Record<CommonErrors, InfoPage>;
@@ -240,3 +237,10 @@ export interface PostMessage {
     action: CLIENT_ACTIONS;
     payload: unknown;
 }
+
+export interface ReorderMenuPayload {
+    startLevel: number;
+    depth: number;
+}
+
+export type DotPageAssetParams = DotPageApiParams & { editorMode?: UVE_MODE };

@@ -1,5 +1,7 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
+import { UVE_MODE } from '@dotcms/client';
+
 import { DotPageApiService } from './dot-page-api.service';
 
 describe('DotPageApiService', () => {
@@ -81,10 +83,10 @@ describe('DotPageApiService', () => {
         );
     });
 
-    it('should remove trailing and leading slashes in the url', () => {
+    it('should remove all starting and trailing slashes in the url', () => {
         spectator.service
             .get({
-                url: '///test-url///',
+                url: '///test-url',
                 language_id: 'en',
                 'com.dotmarketing.persona.id': 'modes.persona.no.persona'
             })
@@ -92,6 +94,21 @@ describe('DotPageApiService', () => {
 
         spectator.expectOne(
             '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=EDIT_MODE',
+            HttpMethod.GET
+        );
+    });
+
+    it('should mantain final trailing slash in the url', () => {
+        spectator.service
+            .get({
+                url: '///my-folder///',
+                language_id: 'en',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+            })
+            .subscribe();
+
+        spectator.expectOne(
+            '/api/v1/page/render/my-folder/?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=EDIT_MODE',
             HttpMethod.GET
         );
     });
@@ -108,9 +125,27 @@ describe('DotPageApiService', () => {
         expect(requestHeaders.get('Content-Type')).toEqual('application/json');
     });
 
+    describe('preview', () => {
+        it("should request page in preview mode if 'editorMode' is 'preview'", () => {
+            spectator.service
+                .get({
+                    url: 'test-url',
+                    language_id: 'en',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    editorMode: UVE_MODE.PREVIEW
+                })
+                .subscribe();
+
+            spectator.expectOne(
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=LIVE',
+                HttpMethod.GET
+            );
+        });
+    });
+
     describe('getClientPage', () => {
         const baseParams = {
-            url: '///test-url///',
+            url: '///test-url',
             language_id: 'en',
             'com.dotmarketing.persona.id': 'modes.persona.no.persona'
         };

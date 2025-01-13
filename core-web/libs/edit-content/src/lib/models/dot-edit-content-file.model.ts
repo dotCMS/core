@@ -1,6 +1,12 @@
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
-export type INPUT_TYPES = 'File' | 'Image' | 'Binary';
+export enum INPUT_TYPES {
+    File = 'File',
+    Image = 'Image',
+    Binary = 'Binary'
+}
+
+export type INPUT_TYPE = `${INPUT_TYPES}`;
 
 export type FILE_STATUS = 'init' | 'uploading' | 'preview';
 

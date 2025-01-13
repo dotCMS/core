@@ -1,14 +1,13 @@
 package com.dotcms.rest.api.v1.job;
 
-import com.dotcms.jobs.business.api.JobProcessorScanner;
+import static com.dotcms.jobs.business.util.JobUtil.roundedProgress;
+
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
-import com.dotcms.jobs.business.processor.JobProcessor;
-import com.dotcms.jobs.business.processor.Queue;
-import com.dotcms.jobs.business.queue.error.JobQueueDataException;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.business.APILocator;
@@ -17,18 +16,13 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -40,83 +34,15 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 @ApplicationScoped
 public class JobQueueHelper {
 
-    JobQueueManagerAPI jobQueueManagerAPI;
-
-    JobProcessorScanner scanner;
+    private JobQueueManagerAPI jobQueueManagerAPI;
 
     public JobQueueHelper() {
         //default constructor Mandatory for CDI
     }
 
-    @PostConstruct
-    public void onInit() {
-
-        if(!jobQueueManagerAPI.isStarted()){
-            jobQueueManagerAPI.start();
-            Logger.info(this.getClass(), "JobQueueManagerAPI started");
-        }
-        final List<Class<? extends JobProcessor>> processors = scanner.discoverJobProcessors();
-        processors.forEach(processor -> {
-           try {
-                if(!testInstantiation(processor)){
-                     return;
-                }
-               //registering the processor with the jobQueueManagerAPI
-               // lower case it to avoid case
-               if(processor.isAnnotationPresent(Queue.class)){
-                   final Queue queue = processor.getAnnotation(Queue.class);
-                   jobQueueManagerAPI.registerProcessor(queue.value(), processor);
-               } else {
-                   jobQueueManagerAPI.registerProcessor(processor.getName(), processor);
-               }
-           }catch (Exception e){
-               Logger.error(this.getClass(), "Unable to register JobProcessor ", e);
-           }
-        });
-    }
-
-    /**
-     * Test if a processor can be instantiated
-     * @param processor The processor to tested
-     * @return true if the processor can be instantiated, false otherwise
-     */
-    private boolean testInstantiation(Class<? extends JobProcessor> processor)  {
-      try {
-          final Constructor<? extends JobProcessor> declaredConstructor = processor.getDeclaredConstructor();
-          declaredConstructor.newInstance();
-          return true;
-      } catch (Exception e) {
-          Logger.error(this.getClass(), String.format(" JobProcessor [%s] can not be instantiated and will be ignored.",processor.getName()), e);
-      }
-      return false;
-    }
-
-    @PreDestroy
-    public void onDestroy() {
-       if(jobQueueManagerAPI.isStarted()){
-           try {
-               jobQueueManagerAPI.close();
-                Logger.info(this.getClass(), "JobQueueManagerAPI successfully closed");
-           } catch (Exception e) {
-               Logger.error(this.getClass(), e.getMessage(), e);
-           }
-       }
-    }
-
     @Inject
-    public JobQueueHelper(JobQueueManagerAPI jobQueueManagerAPI, JobProcessorScanner scanner) {
+    public JobQueueHelper(JobQueueManagerAPI jobQueueManagerAPI) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;
-        this.scanner = scanner;
-    }
-
-    /**
-     * Registers a processor
-     * @param queueName The name of the queue
-     * @param processor Class of the processor
-     */
-    @VisibleForTesting
-    void registerProcessor(final String queueName, final Class<? extends JobProcessor> processor){
-        jobQueueManagerAPI.registerProcessor(queueName, processor);
     }
 
     /**
@@ -226,9 +152,28 @@ public class JobQueueHelper {
      * @param jobId The ID of the job
      * @param watcher The watcher
      */
-    void watchJob(String jobId, Consumer<Job> watcher) {
+    JobWatcher watchJob(String jobId, Consumer<Job> watcher) {
         // if it does then watch it
-        jobQueueManagerAPI.watchJob(jobId, watcher);
+        return jobQueueManagerAPI.watchJob(jobId, watcher);
+    }
+
+    /**
+     * Removes a watcher from a job
+     *
+     * @param jobId   The ID of the job
+     * @param watcher The watcher to remove
+     */
+    void removeWatcher(final String jobId, final JobWatcher watcher) {
+        jobQueueManagerAPI.removeJobWatcher(jobId, watcher);
+    }
+
+    /**
+     * Removes all watchers from a job
+     *
+     * @param jobId The ID of the job
+     */
+    void removeAllWatchers(final String jobId) {
+        jobQueueManagerAPI.removeAllJobWatchers(jobId);
     }
 
     /**
@@ -241,7 +186,7 @@ public class JobQueueHelper {
     JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getActiveJobs(queueName, page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching active jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -273,7 +218,7 @@ public class JobQueueHelper {
     JobPaginatedResult getActiveJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getActiveJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching active jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -289,8 +234,24 @@ public class JobQueueHelper {
     JobPaginatedResult getCompletedJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getCompletedJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching completed jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of successful jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of successful jobs and pagination information.
+     */
+    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getSuccessfulJobs(page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching successful jobs", e);
         }
         return JobPaginatedResult.builder().build();
     }
@@ -305,7 +266,7 @@ public class JobQueueHelper {
     JobPaginatedResult getCanceledJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getCanceledJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching canceled jobs", e);
         }
         return JobPaginatedResult.builder().build();
@@ -316,13 +277,29 @@ public class JobQueueHelper {
      *
      * @param page     The page number
      * @param pageSize The number of jobs per page
-     * @return A result object containing the list of completed jobs and pagination information.
+     * @return A result object containing the list of failed jobs and pagination information.
      */
     JobPaginatedResult getFailedJobs(int page, int pageSize) {
         try {
             return jobQueueManagerAPI.getFailedJobs(page, pageSize);
-        } catch (JobQueueDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching failed jobs", e);
+        }
+        return JobPaginatedResult.builder().build();
+    }
+
+    /**
+     * Retrieves a list of abandoned jobs
+     *
+     * @param page     The page number
+     * @param pageSize The number of jobs per page
+     * @return A result object containing the list of abandoned jobs and pagination information.
+     */
+    JobPaginatedResult getAbandonedJobs(int page, int pageSize) {
+        try {
+            return jobQueueManagerAPI.getAbandonedJobs(page, pageSize);
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(), "Error fetching abandoned jobs", e);
         }
         return JobPaginatedResult.builder().build();
     }
@@ -363,9 +340,9 @@ public class JobQueueHelper {
      * @param job The job
      * @return true if the job is watchable, false otherwise
      */
-    public boolean isNotWatchable(Job job){
+    boolean isNotWatchable(Job job) {
         return JobState.PENDING != job.state() && JobState.RUNNING != job.state()
-                && JobState.CANCELLING != job.state();
+                && JobState.CANCEL_REQUESTED != job.state() && JobState.CANCELLING != job.state();
     }
 
     /**
@@ -373,14 +350,46 @@ public class JobQueueHelper {
      * @param job The job
      * @return The status info
      */
-    public Map<String, Object> getJobStatusInfo(Job job) {
+    Map<String, Object> getJobStatusInfo(Job job) {
         final DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
         return Map.of(
-                "startedAt", job.startedAt().map(isoFormatter::format).orElse("N/A"),
-                "finishedAt", job.completedAt().map(isoFormatter::format).orElse("N/A"),
                 "state", job.state(),
-                "progress", job.progress()
+                "progress", roundedProgress(job.progress()),
+                "startedAt", job.startedAt().map(isoFormatter::format).orElse("N/A"),
+                "finishedAt", job.completedAt().map(isoFormatter::format).orElse("N/A")
         );
+    }
+
+    /**
+     * Get the job for the given ID
+     *
+     * @param jobId The ID of the job
+     * @return The job or null if it doesn't exist
+     */
+    Job getJobForSSE(final String jobId) throws DotDataException {
+
+        Job job = null;
+
+        try {
+            job = getJob(jobId);
+        } catch (DoesNotExistException e) {
+            // ignore
+        }
+
+        return job;
+    }
+
+    /**
+     * Check if a job is in a terminal state
+     *
+     * @param state The state of the job
+     * @return true if the job is in a terminal state, false otherwise
+     */
+    boolean isTerminalState(final JobState state) {
+        return state == JobState.SUCCESS ||
+                state == JobState.FAILED_PERMANENTLY ||
+                state == JobState.ABANDONED_PERMANENTLY ||
+                state == JobState.CANCELED;
     }
 
 }

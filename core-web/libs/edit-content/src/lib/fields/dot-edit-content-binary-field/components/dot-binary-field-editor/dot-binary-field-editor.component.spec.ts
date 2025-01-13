@@ -290,6 +290,23 @@ describe('DotBinaryFieldEditorComponent', () => {
             expect(component.form.valid).toBe(false);
         }));
 
+        it('should set form as valid when there is no extension', fakeAsync(() => {
+            dotBinaryFieldValidatorService.setAccept([]);
+            spectator.detectChanges();
+
+            const spy = jest.spyOn(component.name, 'setErrors');
+
+            component.form.setValue({
+                name: 'testNoExtension',
+                content: 'test'
+            });
+
+            tick(1000);
+
+            expect(spy).not.toHaveBeenCalled();
+            expect(component.form.valid).toBe(true);
+        }));
+
         afterEach(() => {
             jest.restoreAllMocks();
         });

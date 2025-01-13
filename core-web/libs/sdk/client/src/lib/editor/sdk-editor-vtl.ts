@@ -5,6 +5,7 @@ import {
     scrollHandler
 } from './listeners/listeners';
 import { isInsideEditor, addClassToEmptyContentlets, initDotUVE } from './sdk-editor';
+import { listenBlockEditorInlineEvent } from './utils/traditional-vtl.utils';
 
 /**
  * This is the main entry point for the SDK VTL.
@@ -23,4 +24,5 @@ if (isInsideEditor()) {
     preserveScrollOnIframe();
     listenHoveredContentlet();
     addClassToEmptyContentlets();
+    listenBlockEditorInlineEvent();
 }

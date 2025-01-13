@@ -1,7 +1,7 @@
 @let loading = $loading();
 @let data = $data();
 @let rowsPerPage = $rowsPerPage();
-
+@let errorMessage = $errorMessage();
 <p-table
     #datatable
     [value]="data"
@@ -17,7 +17,11 @@
     <ng-template pTemplate="emptymessage">
         <tr>
             <td colspan="4">
-                {{ 'dot.file.field.dialog.select.existing.file.table.emptymessage' | dm }}
+                @if (errorMessage) {
+                    {{ errorMessage | dm }}
+                } @else {
+                    {{ 'dot.file.field.dialog.select.existing.file.table.emptymessage' | dm }}
+                }
             </td>
         </tr>
     </ng-template>

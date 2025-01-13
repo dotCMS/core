@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotFileFieldUploadService } from '@dotcms/edit-content/fields/dot-edit-content-file-field/services/upload-file/upload-file.service';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -16,6 +16,10 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
 import { SelectExisingFileStore } from './store/select-existing-file.store';
+
+type DialogData = {
+    mimeTypes: string[];
+};
 
 @Component({
     selector: 'dot-select-existing-file',
@@ -39,6 +43,10 @@ export class DotSelectExistingFileComponent implements OnInit {
      */
     readonly store = inject(SelectExisingFileStore);
 
+    /**
+     * A readonly property that injects the `DotFileFieldUploadService` service.
+     * This service is used to manage the state and actions related to selecting existing files.
+     */
     readonly #uploadService = inject(DotFileFieldUploadService);
     /**
      * A reference to the dynamic dialog instance.
@@ -55,6 +63,12 @@ export class DotSelectExistingFileComponent implements OnInit {
      */
     $sideBarRef = viewChild.required(DotSideBarComponent);
 
+    /**
+     * A readonly property that injects the `DynamicDialogConfig` service.
+     * This service is used to get the dialog data.
+     */
+    readonly #dialogConfig = inject(DynamicDialogConfig<DialogData>);
+
     constructor() {
         effect(() => {
             const folders = this.store.folders();
@@ -66,7 +80,9 @@ export class DotSelectExistingFileComponent implements OnInit {
     }
 
     ngOnInit() {
-        this.store.loadFolders();
+        const data = this.#dialogConfig?.data as DialogData;
+        const mimeTypes = data?.mimeTypes ?? [];
+        this.store.setMimeTypes(mimeTypes);
         this.store.loadContent();
     }
 

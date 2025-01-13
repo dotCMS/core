@@ -51,6 +51,7 @@
         }
 
         <dot-edit-ema-language-selector
+            #languageSelector
             (selected)="onLanguageSelected($event)"
             [language]="$toolbarProps().currentLanguage"
             data-testId="language-selector" />
@@ -63,9 +64,10 @@
             #personaSelector
             data-testId="persona-selector" />
 
-        @if ($toolbarProps().workflowActionsInode; as inode) {
-            <dot-edit-ema-workflow-actions (newPage)="handleNewPage($event)" [inode]="inode" />
+        @if ($toolbarProps().isDefaultVariant) {
+            <dot-uve-workflow-actions />
         }
+
         @if ($toolbarProps().unlockButton; as unlockButton) {
             <p-button
                 (click)="unlockPage(unlockButton.inode)"
@@ -78,5 +80,5 @@
 </p-toolbar>
 
 @if ($toolbarProps().showInfoDisplay) {
-    <dot-ema-info-display data-testId="info-display" />
+    <dot-ema-info-display data-testId="info-display" [options]="$infoOptions()" />
 }

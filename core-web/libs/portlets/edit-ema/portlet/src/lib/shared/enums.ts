@@ -11,7 +11,9 @@ export enum NG_CUSTOM_EVENTS {
     CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order',
     OPEN_WIZARD = 'workflow-wizard',
     DIALOG_CLOSED = 'dialog-closed',
-    EDIT_CONTENTLET_UPDATED = 'edit-contentlet-data-updated'
+    EDIT_CONTENTLET_UPDATED = 'edit-contentlet-data-updated',
+    LANGUAGE_IS_CHANGED = 'language-is-changed',
+    UPDATE_WORKFLOW_ACTION = 'update-workflow-action'
 }
 
 // Status of the whole UVE

@@ -5,6 +5,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
 import com.dotcms.util.AsciiArt;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -49,17 +50,21 @@ public class ContextLifecycleListener implements ServletContextListener {
         Try.run(() -> ReindexThread.stopThread())
                         .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
 
+        Try.run(() -> APILocator.getJobQueueManagerAPI().close())
+                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+
         Logger.info(this, "Shutdown : Finished.");
 
     }
 
 	public void contextInitialized(ServletContextEvent arg0) {
-
+        Logger.info(this,"ContextLifecycleListener contextInitialized called");
         ByteBuddyFactory.init();
 
 		Config.setMyApp(arg0.getServletContext());
 
         installWebSocket(arg0.getServletContext());
+        Logger.info(this,"ContextLifecycleListener contextInitialized completed");
 	}
 
     private void installWebSocket(final ServletContext serverContext) {

@@ -15,12 +15,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Map;
 import java.util.Optional;
+import javax.enterprise.context.Dependent;
 
 /**
  * This class reads a large file and prints the content to the log.
  * It is here for the sole purpose of demonstrating the job queue system.
  */
 @Queue("demo")
+@Dependent
 public class LargeFileReader implements JobProcessor, Cancellable {
 
     public static final int LOG_EVERY_LINES = 1;
@@ -45,6 +47,12 @@ public class LargeFileReader implements JobProcessor, Cancellable {
         final DotTempFile dotTempFile = tempFile.get();
 
         doReadLargeFile(dotTempFile, nLines, maxLines, job);
+
+        if (!working) {
+            Logger.info(this.getClass(), "Job cancelled: " + job.id());
+            // Adding some delay to simulate some cancellation processing, this demo is too fast
+            delay(3000);
+        }
     }
 
     /**
@@ -77,7 +85,7 @@ public class LargeFileReader implements JobProcessor, Cancellable {
                     if (lineCount == nLines) {
                         lineCount = 0; // Reset the counter
                         Logger.debug(this.getClass(), line);
-                        delay();
+                        delay(1000);
                     }
                     final float progressPercentage = ((float) readCount / totalCount);
                     progressTracker.ifPresent(tracker -> tracker.updateProgress(progressPercentage));
@@ -112,9 +120,9 @@ public class LargeFileReader implements JobProcessor, Cancellable {
         return totalCount;
     }
 
-    private void delay() {
+    private void delay(final long millis) {
         Try.of(()->{
-            Thread.sleep(1000);
+            Thread.sleep(millis);
             return null;
         }).onFailure(e->Logger.error(this.getClass(), "Error during delay", e));
     }

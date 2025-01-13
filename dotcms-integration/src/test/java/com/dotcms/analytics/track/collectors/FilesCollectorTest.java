@@ -4,31 +4,26 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
-import javax.enterprise.context.ApplicationScoped;
+import io.vavr.control.Try;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -76,15 +71,22 @@ public class FilesCollectorTest extends IntegrationTestBase {
                 APILocator.getUserAPI().getAnonymousUser());
 
         final Map<String, Object> expectedDataMap = Map.of(
-                "host", "localhost:8080",
-                "site", testSite.getIdentifier(),
-                "language", APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
-                "event_type", EventType.FILE_REQUEST.getType(),
-                "url", testFileAsset.getURI(),
-                "object", Map.of(
-                        "id", testFileAsset.getIdentifier(),
-                        "title", testFileAsset.getTitle(),
-                        "url", testFileAsset.getURI())
+                Collector.SITE_NAME, testSite.getHostname(),
+                Collector.SITE_ID, testSite.getIdentifier(),
+                Collector.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
+                Collector.EVENT_TYPE, EventType.FILE_REQUEST.getType(),
+                Collector.URL, testFileAsset.getURI(),
+                Collector.OBJECT, Map.of(
+                        Collector.ID, testFileAsset.getIdentifier(),
+                        Collector.TITLE, testFileAsset.getTitle(),
+                        Collector.URL, testFileAsset.getURI(),
+                        Collector.CONTENT_TYPE_ID, testFileAsset.getContentType().id(),
+                        Collector.CONTENT_TYPE_NAME, testFileAsset.getContentType().name(),
+                        Collector.CONTENT_TYPE_VAR_NAME, testFileAsset.getContentType().variable(),
+                        Collector.BASE_TYPE, testFileAsset.getContentType().baseType().name(),
+                        Collector.LIVE,    String.valueOf(Try.of(()->testFileAsset.isLive()).getOrElse(false)),
+                        Collector.WORKING, String.valueOf(Try.of(()->testFileAsset.isWorking()).getOrElse(false))
+                )
         );
 
         final Collector collector = new FilesCollector();

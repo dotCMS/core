@@ -1,5 +1,9 @@
 package com.dotcms.analytics.track.collectors;
 
+/**
+ * Represents the dotCMS event types for analytics
+ * @author jsanca
+ */
 public enum EventType {
     VANITY_REQUEST("VANITY_REQUEST"),
     FILE_REQUEST("FILE_REQUEST"),

@@ -1,15 +1,12 @@
 package com.dotcms.rest.api.v1.contenttype;
 
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotcms.util.DotPreconditions.checkNotNull;
-import static com.liferay.util.StringPool.COMMA;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.CopyContentTypeBean;
 import com.dotcms.contenttype.business.FieldDiffCommand;
 import com.dotcms.contenttype.business.FieldDiffItemsKey;
+import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -61,14 +58,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -85,8 +77,18 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.JSONP;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static com.liferay.util.StringPool.COMMA;
 
 /**
  * This REST Endpoint provides information related to Content Types in the current dotCMS repository.
@@ -208,6 +210,7 @@ public class ContentTypeResource implements Serializable {
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
@@ -444,6 +447,7 @@ public class ContentTypeResource implements Serializable {
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
@@ -642,6 +646,7 @@ public class ContentTypeResource implements Serializable {
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
 					@ApiResponse(responseCode = "404", description = "Not Found"),
+					@ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)
@@ -772,7 +777,7 @@ public class ContentTypeResource implements Serializable {
 																								   final List<WorkflowFormEntry> workflows,
 																								   final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActionMappings,
 																								   final ContentTypeAPI contentTypeAPI,
-																								   final boolean isNew) throws DotSecurityException, DotDataException {
+																								   final boolean isNew) throws DotSecurityException, DotDataException, UniqueFieldValueDuplicatedException {
 
 		ContentType contentTypeSaved = contentTypeAPI.save(contentType);
 		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
@@ -811,7 +816,7 @@ public class ContentTypeResource implements Serializable {
 	@WrapInTransaction
 	private void handleFields(final String contentTypeId,
 			final Map<String, Field> newContentTypeFieldsMap, final User user,
-			final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException {
+			final ContentTypeAPI contentTypeAPI) throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 
 		final ContentType currentContentType = contentTypeAPI.find(contentTypeId);
 
@@ -850,7 +855,7 @@ public class ContentTypeResource implements Serializable {
 	 */
 	private void handleUpdateFieldAndFieldVariables(
 			final User user, final DiffResult<FieldDiffItemsKey, Field> diffResult)
-			throws DotSecurityException, DotDataException {
+            throws DotSecurityException, DotDataException, UniqueFieldValueDuplicatedException {
 
 		final List<Field> fieldToUpdate = new ArrayList<>();
 		final List<Tuple2<Field, List<DiffItem>>> fieldVariableToUpdate = new ArrayList<>();
@@ -894,7 +899,7 @@ public class ContentTypeResource implements Serializable {
 	 */
 	private void handleUpdateFieldVariables(
 			final User user, final List<Tuple2<Field, List<DiffItem>>> fieldVariableToUpdate)
-			throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 
 		for (final Tuple2<Field, List<DiffItem>> fieldVariableTuple : fieldVariableToUpdate) {
 			handleUpdateFieldVariables(user, fieldVariableTuple);
@@ -911,7 +916,7 @@ public class ContentTypeResource implements Serializable {
 	 */
 	private void handleUpdateFieldVariables(
 			final User user, final Tuple2<Field, List<DiffItem>> fieldVariableTuple)
-			throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 
 		final Map<String, FieldVariable> fieldVariableMap =
 				fieldVariableTuple._1().fieldVariablesMap();
@@ -1234,6 +1239,7 @@ public class ContentTypeResource implements Serializable {
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
+					@ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
 	)

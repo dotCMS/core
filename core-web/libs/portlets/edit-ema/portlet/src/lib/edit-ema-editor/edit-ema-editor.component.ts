@@ -14,10 +14,11 @@ import {
     WritableSignal,
     effect,
     inject,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Params, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -25,7 +26,12 @@ import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
-import { CLIENT_ACTIONS, NOTIFY_CLIENT } from '@dotcms/client';
+import {
+    CLIENT_ACTIONS,
+    NOTIFY_CLIENT,
+    INLINE_EDITING_EVENT_KEY,
+    InlineEditEventData
+} from '@dotcms/client';
 import {
     DotMessageService,
     DotCopyContentService,
@@ -34,25 +40,21 @@ import {
     DotSeoMetaTagsUtilService,
     DotContentletService,
     DotTempFileUploadService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotAlertConfirmService
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSTempFile,
+    DotLanguage,
     DotTreeNode,
-    SeoMetaTags,
-    SeoMetaTagsResult
+    SeoMetaTags
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import {
-    SafeUrlPipe,
-    DotSpinnerModule,
-    DotMessagePipe,
-    DotCopyContentModalService
-} from '@dotcms/ui';
+import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
 
-import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -65,6 +67,7 @@ import {
     UpdatedContentlet
 } from './components/ema-page-dropzone/types';
 
+import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
@@ -78,19 +81,23 @@ import {
     VTLFile,
     DeletePayload,
     InsertPayloadFromDelete,
-    ReorderPayload,
     DialogAction,
-    PostMessage
+    PostMessage,
+    ReorderMenuPayload,
+    DotPage
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
+    createReorderMenuURL,
     compareUrlPaths,
     deleteContentletFromContainer,
     getDragItemData,
-    insertContentletInContainer
+    insertContentletInContainer,
+    getTargetUrl,
+    shouldNavigate
 } from '../utils';
 
 @Component({
@@ -108,13 +115,13 @@ import {
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EditEmaToolbarComponent,
-        DotMessagePipe,
         EmaPageDropzoneComponent,
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
-        DotEmaBookmarksComponent,
         ProgressBarModule,
-        DotResultsSeoToolComponent
+        DotResultsSeoToolComponent,
+        DotUveToolbarComponent,
+        DotBlockEditorSidebarComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -127,10 +134,9 @@ import {
 export class EditEmaEditorComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
 
     protected readonly uveStore = inject(UVEStore);
-
-    private readonly router = inject(Router);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly messageService = inject(MessageService);
@@ -146,69 +152,58 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
+    readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
 
     readonly destroy$ = new Subject<boolean>();
-    protected ogTagsResults$: Observable<SeoMetaTagsResult[]>;
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
     readonly $editorProps = this.uveStore.$editorProps;
 
+    readonly $previewMode = this.uveStore.$previewMode;
+    readonly $isPreviewMode = this.uveStore.$isPreviewMode;
+    readonly $editorContentStyles = this.uveStore.$editorContentStyles;
+    readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
+
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
     }
 
-    readonly $handleReloadContentEffect = effect(
-        () => {
-            const { code, isTraditionalPage, enableInlineEdit, isClientReady } =
-                this.uveStore.$reloadEditorContent();
+    readonly $translatePageEffect = effect(() => {
+        const { page, currentLanguage } = this.uveStore.$translateProps();
 
+        if (currentLanguage && !currentLanguage?.translated) {
+            this.createNewTranslation(currentLanguage, page);
+        }
+    });
+
+    readonly $handleReloadContentEffect = effect(() => {
+        /**
+         * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
+         * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
+         */
+        const { isTraditionalPage, isClientReady } = this.uveStore.$reloadEditorContent();
+
+        untracked(() => {
             this.uveStore.resetEditorProperties();
             this.dialog?.resetDialog();
+        });
 
-            if (!isTraditionalPage) {
-                if (isClientReady) {
-                    // This should have another name.
-                    return this.reloadIframeContent();
-                }
-
-                return;
-            }
-
-            this.setIframeContent(code);
-
-            requestAnimationFrame(() => {
-                const win = this.contentWindow;
-                if (enableInlineEdit) {
-                    this.inlineEditingService.injectInlineEdit(this.iframe);
-                } else {
-                    this.inlineEditingService.removeInlineEdit(this.iframe);
-                }
-
-                fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-                    this.handleInternalNav(e);
-                    this.handleInlineEditing(e); // If inline editing is not active this will do nothing
-                });
-            });
-
+        if (isTraditionalPage || !isClientReady) {
             return;
-        },
-        {
-            allowSignalWrites: true
         }
-    );
+
+        this.reloadIframeContent();
+    });
 
     readonly $handleIsDraggingEffect = effect(() => {
         const isDragging = this.uveStore.$editorIsInDraggingState();
 
-        if (isDragging) {
-            this.contentWindow?.postMessage(
-                {
-                    name: NOTIFY_CLIENT.UVE_REQUEST_BOUNDS
-                },
-                this.host
-            );
+        if (!isDragging) {
+            return;
         }
+
+        this.contentWindow?.postMessage({ name: NOTIFY_CLIENT.UVE_REQUEST_BOUNDS }, this.host);
     });
 
     ngOnInit(): void {
@@ -216,9 +211,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
         fromEvent(this.window, 'message')
             .pipe(takeUntil(this.destroy$))
-            .subscribe(({ data }: MessageEvent) => {
-                this.handlePostMessage(data);
-            });
+            .subscribe(({ data }: MessageEvent) => this.handlePostMessage(data));
     }
 
     /**
@@ -250,7 +243,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            this.updateQueryParams({
+            this.uveStore.loadPageAsset({
                 url: url.pathname
             });
         }
@@ -450,9 +443,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad() {
+        if (!this.uveStore.isTraditionalPage()) {
+            return;
+        }
+
+        this.#insertPageContent();
+        this.#setSeoData();
+
         if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
+
+        this.uveStore.setIsClientReady(true);
     }
 
     /**
@@ -539,7 +541,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
-        this.uveStore.setIsClientReady(false);
+        if (this.uveStore.isTraditionalPage()) {
+            this.uveStore.setIsClientReady(true);
+        }
     }
 
     /**
@@ -550,18 +554,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     onCustomEvent(dialogAction: DialogAction) {
         this.handleNgEvent(dialogAction)?.();
-    }
-
-    /**
-     * Handle the language selection
-     *
-     * @param {number} language_id
-     * @memberof DotEmaComponent
-     */
-    onLanguageSelected(language_id: number) {
-        this.updateQueryParams({
-            language_id
-        });
     }
 
     /**
@@ -671,23 +663,48 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param code - The code to be added to the iframe.
      * @memberof EditEmaEditorComponent
      */
-    setIframeContent(code: string) {
-        requestAnimationFrame(() => {
-            const doc = this.iframe?.nativeElement.contentDocument;
+    #insertPageContent(): void {
+        const iframeElement = this.iframe?.nativeElement;
+        const doc = iframeElement.contentDocument;
 
-            if (doc) {
-                const newFile = this.inyectCodeToVTL(code);
+        const enableInlineEdit = this.uveStore.$enableInlineEdit();
+        const pageRender = this.uveStore.$pageRender();
 
-                doc.open();
-                doc.write(newFile);
-                doc.close();
+        const newDoc = this.inyectCodeToVTL(pageRender);
 
-                this.uveStore.setOgTags(this.dotSeoMetaTagsUtilService.getMetaTags(doc));
-                this.ogTagsResults$ = this.dotSeoMetaTagsService
-                    .getMetaTagsResults(doc)
-                    .pipe(take(1));
-            }
+        if (!doc) {
+            return;
+        }
+
+        doc.open();
+        doc.write(newDoc);
+        doc.close();
+
+        this.handleInlineScripts(enableInlineEdit);
+    }
+
+    /**
+     * Handle the Injection and removal of the inline editing scripts
+     *
+     * @param {boolean} enableInlineEdit
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    handleInlineScripts(enableInlineEdit: boolean) {
+        const win = this.contentWindow;
+
+        fromEvent(win, 'click').subscribe((e: MouseEvent) => {
+            this.handleInternalNav(e);
+            this.handleInlineEditing(e); // If inline editing is not active this will do nothing
         });
+
+        if (enableInlineEdit) {
+            this.inlineEditingService.injectInlineEdit(this.iframe);
+
+            return;
+        }
+
+        this.inlineEditingService.removeInlineEdit(this.iframe);
     }
 
     protected handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {
@@ -702,6 +719,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     ...actionPayload,
                     newContentletId: detail.data.identifier
                 });
+
                 if (!didInsert) {
                     this.handleDuplicatedContentlet();
 
@@ -729,7 +747,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 }
 
                 if (!actionPayload) {
-                    this.uveStore.reload();
+                    this.uveStore.reloadCurrentPage();
 
                     return;
                 }
@@ -794,8 +812,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     life: 2000
                 });
 
-                this.uveStore.reload();
+                this.uveStore.reloadCurrentPage();
                 this.dialog.resetDialog();
+
+                // This is a temporary solution to "reload" the content by reloading the window
+                // we should change this with a new SDK reload strategy
+                this.contentWindow?.postMessage(
+                    {
+                        name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -812,6 +839,26 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
                 this.dialog.resetDialog();
                 this.cd.detectChanges();
+            },
+            [NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED]: () => {
+                const htmlPageReferer = event.detail.payload?.htmlPageReferer;
+                const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
+                const targetUrl = getTargetUrl(
+                    url.pathname,
+                    this.uveStore.pageAPIResponse().urlContentMap
+                );
+                const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+
+                if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+                    // Navigate to the new URL if it's different from the current one
+                    this.uveStore.loadPageAsset({ url: targetUrl, language_id });
+
+                    return;
+                }
+
+                this.uveStore.loadPageAsset({
+                    language_id
+                });
             }
         })[detail.name];
     }
@@ -830,12 +877,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // When we set the url, we trigger in the shell component a load to get the new state of the page
                 // This triggers a rerender that makes nextjs to send the set_url again
                 // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                const isSameUrl = compareUrlPaths(this.uveStore.params()?.url, payload.url);
+                const isSameUrl = compareUrlPaths(this.uveStore.pageParams()?.url, payload.url);
 
                 if (isSameUrl) {
                     this.uveStore.setEditorState(EDITOR_STATE.IDLE);
                 } else {
-                    this.updateQueryParams({
+                    this.uveStore.loadPageAsset({
                         url: payload.url,
                         'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
                     });
@@ -857,12 +904,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             },
             [CLIENT_ACTIONS.IFRAME_SCROLL_END]: () => {
                 this.uveStore.updateEditorOnScrollEnd();
-            },
-            [CLIENT_ACTIONS.INIT_INLINE_EDITING]: () => {
-                // The iframe says that the editor is ready to start inline editing
-                // The dataset of the inline-editing contentlet is ready inside the service.
-                this.inlineEditingService.initEditor();
-                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
             },
             [CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
@@ -892,7 +933,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
 
                             if (res) {
-                                this.uveStore.reload();
+                                this.uveStore.reloadCurrentPage();
                             }
                         })
                     )
@@ -965,7 +1006,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                             }
                         )
                     )
-                    .subscribe(() => this.uveStore.reload());
+                    .subscribe(() => this.uveStore.reloadCurrentPage());
             },
             [CLIENT_ACTIONS.CLIENT_READY]: (clientConfig: ClientRequestProps) => {
                 const { query, params } = clientConfig || {};
@@ -977,25 +1018,27 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                     return;
                 }
 
-                // If there is no client configuration, we just set the client as ready
-                if (!clientConfig) {
-                    this.uveStore.setIsClientReady(true);
-
-                    return;
-                }
-
                 this.uveStore.setClientConfiguration({ query, params });
-                this.uveStore.reload();
+                this.uveStore.reloadCurrentPage();
             },
             [CLIENT_ACTIONS.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
-            [CLIENT_ACTIONS.REORDER_MENU]: ({ reorderUrl }: ReorderPayload) => {
+            [CLIENT_ACTIONS.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
+                const urlObject = createReorderMenuURL({
+                    startLevel,
+                    depth,
+                    pagePath: this.uveStore.pageParams().url,
+                    hostId: this.uveStore.pageAPIResponse().site.identifier
+                });
+
                 this.dialog.openDialogOnUrl(
-                    reorderUrl,
+                    urlObject,
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
             },
+            [CLIENT_ACTIONS.INIT_INLINE_EDITING]: (payload) =>
+                this.#handleInlineEditingEvent(payload),
             [CLIENT_ACTIONS.NOOP]: () => {
                 /* Do Nothing because is not the origin we are expecting */
             }
@@ -1015,20 +1058,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             { name: NOTIFY_CLIENT.UVE_SET_PAGE_DATA, payload: this.uveStore.pageAPIResponse() },
             this.host
         );
-    }
-
-    /**
-     * Update the query params
-     *
-     * @private
-     * @param {Params} params
-     * @memberof EditEmaEditorComponent
-     */
-    private updateQueryParams(params: Params) {
-        this.router.navigate([], {
-            queryParams: params,
-            queryParamsHandling: 'merge'
-        });
     }
 
     private handleDuplicatedContentlet() {
@@ -1055,6 +1084,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet, container } = payload;
         const { onNumberOfPages = '1', title } = contentlet;
+
+        // console.log("LLAMADO", this.$editorProps().showDialogs);
 
         if (Number(onNumberOfPages) <= 1) {
             this.dialog?.editContentlet(contentlet);
@@ -1168,15 +1199,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((contentlet) => !!contentlet)
             )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
-                if (URL_MAP_FOR_CONTENT != this.uveStore.params().url) {
+                if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
                     // If the URL is different, we need to navigate to the new URL
-                    this.updateQueryParams({ url: URL_MAP_FOR_CONTENT });
+                    this.uveStore.loadPageAsset({ url: URL_MAP_FOR_CONTENT });
 
                     return;
                 }
 
                 // If the URL is the same, we need to fetch the new page data
-                this.uveStore.reload();
+                this.uveStore.reloadCurrentPage();
             });
     }
 
@@ -1232,10 +1263,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Reloads the component from the dialog.
+     * Reloads the component from the dialog/sidebar.
      */
-    reloadFromDialog() {
-        this.uveStore.reload();
+    reloadPage() {
+        this.uveStore.reloadCurrentPage();
     }
 
     /**
@@ -1343,5 +1374,90 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                 this.placeItem(payload, dragItem);
             });
+    }
+
+    /**
+     * Handle the inline editing event
+     *
+     * @param {*} { type, data }
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    #handleInlineEditingEvent({
+        type,
+        data
+    }: {
+        type: INLINE_EDITING_EVENT_KEY;
+        data?: InlineEditEventData;
+    }) {
+        if (!this.uveStore.isEnterprise()) {
+            this.#dotAlertConfirmService.alert({
+                header: this.dotMessageService.get('dot.common.license.enterprise.only.error'),
+                message: this.dotMessageService.get('editpage.not.lincese.error')
+            });
+
+            return;
+        }
+
+        switch (type) {
+            case 'BLOCK_EDITOR':
+                this.blockSidebar?.open(data);
+                break;
+
+            case 'WYSIWYG':
+                this.inlineEditingService.initEditor();
+                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
+                break;
+
+            default:
+                console.warn('Unknown block editor type', type);
+
+                break;
+        }
+    }
+
+    private createNewTranslation(language: DotLanguage, page: DotPage): void {
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            key: 'shell-confirm-dialog',
+            accept: () => {
+                this.translatePage({ page, newLanguage: language.id });
+            },
+            reject: () => {
+                // If is rejected, bring back the current language on selector
+                this.#goBackToCurrentLanguage();
+            }
+        });
+    }
+
+    translatePage(event: { page: DotPage; newLanguage: number }) {
+        this.dialog.translatePage(event);
+    }
+
+    /**
+     * Use the Page Language to navigate back to the current language
+     *
+     * @memberof DotEmaShellComponent
+     */
+    #goBackToCurrentLanguage(): void {
+        this.uveStore.loadPageAsset({ language_id: '1' });
+    }
+
+    #setSeoData() {
+        const iframeElement = this.iframe?.nativeElement;
+        const doc = iframeElement.contentDocument;
+        this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
+            const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
+            this.uveStore.setOgTags(ogTags);
+            this.uveStore.setOGTagResults(results);
+        });
     }
 }

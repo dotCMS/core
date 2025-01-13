@@ -38,7 +38,7 @@ import { RowComponent } from '../row/row.component';
     imports: [RowComponent, AsyncPipe],
     template: `
         @if (pageAsset$ | async; as page) {
-            @for (row of this.page?.layout?.body?.rows; track $index) {
+            @for (row of page?.layout?.body?.rows; track $index) {
                 <dotcms-row [row]="row" />
             }
         }

@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
@@ -43,6 +44,7 @@ import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.WireMockTestHelper;
 import com.dotcms.util.network.IPUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
@@ -69,14 +71,18 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import net.bytebuddy.utility.RandomString;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -103,7 +109,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 import static com.dotcms.util.CollectionsUtils.list;
@@ -124,20 +129,34 @@ import static org.mockito.Mockito.when;
 /**
  * Test of {@link ExperimentsAPIImpl}
  */
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
-    private static final String CUBEJS_SERVER_IP = "127.0.0.1";
-    private static final int CUBEJS_SERVER_PORT = 5000;
-    private static final DateTimeFormatter SIMPLE_FORMATTER = DateTimeFormatter
-            .ofPattern("MM/dd/yyyy")
-            .withZone(ZoneId.systemDefault());
+    private static final String MOCK_SERVER_IP = "127.0.0.1";
+    private static final int MOCK_SERVER_PORT = 5000;
     private static final DateTimeFormatter EVENTS_FORMATTER = DateTimeFormatter
             .ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
             .withZone(ZoneId.systemDefault());
+    private static final int PORT = 50505;
+    private static WireMockServer wireMockServer;
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        wireMockServer = prepareWireMock();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        wireMockServer.stop();
+    }
+
+    private static WireMockServer prepareWireMock() {
+        final WireMockServer wireMockServer = WireMockTestHelper.wireMockServer(PORT);
+        wireMockServer.start();
+
+        return wireMockServer;
     }
 
     /**
@@ -471,7 +490,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
-
     private static void assertCachedRunningExperiments(final List<String> experimentIds) {
         final List<Experiment> runningExperimentsCached = CacheLocator.getExperimentsCache()
                 .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
@@ -606,7 +624,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 APILocator.systemUser());
     }
 
-
     private static Experiment createExperimentWithReachPageGoalAndVariant(final HTMLPageAsset experimentPage,
             final HTMLPageAsset reachPage) {
 
@@ -652,7 +669,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .build();
     }
 
-
     /**
      * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When: get the Experiment's Results
@@ -669,7 +685,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageB);
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
         setAnalyticsHelper(mockAnalyticsHelper);
@@ -679,7 +695,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
         addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(Map.of("data", Collections.EMPTY_LIST)));
 
-        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        final String totalSessionsQuery = getExpectedReachPageTotalSessionsQuery(experiment);
         addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(Map.of("data", Collections.EMPTY_LIST)));
 
         try {
@@ -690,7 +706,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     .findFirst()
                     .orElseThrow();
 
-            final ExperimentsAPIImpl experimentsAPI = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPI = new ExperimentsAPIImpl();
 
             mockhttpServer.start();
             IPUtils.disabledIpPrivateSubnet(true);
@@ -773,7 +789,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
         addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
@@ -793,7 +809,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 )
         );
 
-        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        final String totalSessionsQuery = getExpectedReachPageTotalSessionsQuery(experiment);
         addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(Map.of("data", totalSessionsQueryData)));
 
         mockhttpServer.start();
@@ -803,7 +819,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             setAnalyticsHelper(mockAnalyticsHelper);
 
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -950,7 +966,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
         addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
@@ -970,7 +986,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 )
         );
 
-        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        final String totalSessionsQuery = getExpectedReachPageTotalSessionsQuery(experiment);
         addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(Map.of("data", totalSessionsQueryData)));
 
         mockhttpServer.start();
@@ -980,7 +996,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             setAnalyticsHelper(mockAnalyticsHelper);
 
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -1079,7 +1095,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
         final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
-        final HTMLPageAsset targetPage = new HTMLPageDataGen(host, template).nextPersisted();
+        new HTMLPageDataGen(host, template).nextPersisted();
 
         final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(experimentPage);
 
@@ -1127,7 +1143,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
         addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
@@ -1157,7 +1173,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             setAnalyticsHelper(mockAnalyticsHelper);
 
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -1246,45 +1262,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     private static String getNotDefaultVariantName(Experiment experiment) {
-        final String variantName = experiment.trafficProportion().variants().stream()
+        return experiment.trafficProportion().variants().stream()
                 .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
                 .map(experimentVariant -> experimentVariant.id())
                 .limit(1)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
-        return variantName;
-    }
-
-
-
-    private <T> List concat(final Collection<T>... collections) {
-        return Stream.of(collections).flatMap(Collection::stream).collect(Collectors.toList());
-    }
-
-    private String getTotalPageViewsQuery(final String experiment,final String... variants) {
-        return "{"
-                +   "\"measures\": [\"Events.count\"],"
-                +   "\"dimensions\": [\"Events.variant\"],"
-                + "  \"filters\": ["
-                + "    {"
-                + "      \"member\": \"Events.eventType\","
-                + "      \"operator\": \"equals\","
-                + "      \"values\": ["
-                + "        \"pageview\""
-                + "      ]"
-                + "    },"
-                + "    {"
-                + "      \"member\": \"Events.variant\","
-                + "      \"operator\": \"equals\","
-                + "      \"values\": [" + Arrays.stream(variants).map(variant -> "\"" + variant + "\"").collect(Collectors.joining(",")) + "]"
-                + "    },"
-                + "    {"
-                + "      \"member\": \"Events.experiment\","
-                + "      \"operator\": \"equals\","
-                + "      \"values\": [\"" + experiment + "\"]"
-                + "    }"
-                + "  ]"
-                + "}";
     }
 
     /**
@@ -1295,7 +1278,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void savingExperimentWithNoPagePermission() throws DotDataException, DotSecurityException {
+    public void savingExperimentWithNoPagePermission() throws DotDataException {
         final Role role = new RoleDataGen().nextPersisted();
         final User limitedUser = new UserDataGen().roles(role).nextPersisted();
 
@@ -1311,7 +1294,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .addConditions(getUrlCondition(reachPage.getPageUrl()))
                 .build();
         final Experiment experiment = createExperiment(experimentPage, metric,
-                new String[]{RandomString.make(15)});
+                RandomString.make(15));
 
         final Experiment experimentUpdated = Experiment.builder().from(experiment)
                 .description("Updating the Experiment")
@@ -1402,7 +1385,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .addConditions(getUrlCondition(reachPage.getPageUrl()))
                 .build();
         final Experiment experiment = createExperiment(experimentPage, metric,
-                new String[]{RandomString.make(15)});
+                RandomString.make(15));
 
         final Experiment experimentUpdated = Experiment.builder().from(experiment)
                 .description("Updating the Experiment")
@@ -1505,7 +1488,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     private List<Map<String, String>> createPageViewEvents(final Instant firstEventTime,
             final Experiment experiment,
             final String variantName,
-            final HTMLPageAsset... pages) throws DotDataException {
+            final HTMLPageAsset... pages) {
         return createPageViewEvents(firstEventTime, experiment, variantName, Arrays.stream(pages)
                 .map(page -> "/" + page.getPageUrl())
                 .toArray(String[]::new));
@@ -1747,7 +1730,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    private static String getExpectedReachPageTotalSesionsQuery(Experiment experiment) {
+    private static String getExpectedReachPageTotalSessionsQuery(Experiment experiment) {
         try {
             final Experiment experimentFromDB = APILocator.getExperimentsAPI()
                     .find(experiment.getIdentifier(), APILocator.systemUser())
@@ -1787,8 +1770,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
-
-    private static String getExpectedExitRateTotalSesionsQuery(Experiment experiment) {
+    private static String getExpectedExitRateTotalSessionsQuery(Experiment experiment) {
         try {
             final Experiment experimentFromDB = APILocator.getExperimentsAPI()
                     .find(experiment.getIdentifier(), APILocator.systemUser())
@@ -1828,39 +1810,32 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
-
     private static void addContext(final MockHttpServer mockHttpServer,
-            final String expectedQuery, final String responseBody) {
-
-        final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
-                .uri("/cubejs-api/v1/load")
-                .requestCondition((requestContext) ->
-                                String.format( "Cube JS Query is not right, \nExpected: %s \nCurrent %s",
-                                        expectedQuery, requestContext.getRequestParameter("query")
-                                                .orElse(StringPool.BLANK)),
+                                   final String uri,
+                                   final String expectedQuery,
+                                   final String responseBody) {
+        final MockHttpServerContext.Builder serverContextBuilder = new MockHttpServerContext.Builder()
+                .uri(uri)
+                .requestCondition(requestContext ->
+                                String.format(
+                                        "Request is not right, %nExpected: %s%nCurrent %s",
+                                        expectedQuery,
+                                        requestContext.getRequestParameter("query").orElse(StringPool.BLANK)),
                         requestContext -> isEquals(expectedQuery, requestContext))
                 .responseStatus(HttpURLConnection.HTTP_OK)
-                .mustBeCalled()
-                .responseBody(responseBody)
-                .build();
+                .mustBeCalled();
 
-        mockHttpServer.addContext(mockHttpServerContext);
+        if (responseBody != null) {
+            serverContextBuilder.responseBody(responseBody);
+        }
+
+        mockHttpServer.addContext(serverContextBuilder.build());
     }
 
-    private static void addFailedContext(final MockHttpServer mockHttpServer, final String expectedQuery) {
-
-        final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
-                .uri("/cubejs-api/v1/load")
-                .requestCondition((requestContext) ->
-                                String.format( "Cube JS Query is not right, \nExpected: %s \nCurrent %s",
-                                        expectedQuery, requestContext.getRequestParameter("query")
-                                                .orElse(StringPool.BLANK)),
-                        requestContext -> isEquals(expectedQuery, requestContext))
-                .responseStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)
-                .mustBeCalled()
-                .build();
-
-        mockHttpServer.addContext(mockHttpServerContext);
+    private static void addContext(final MockHttpServer mockHttpServer,
+                                   final String expectedQuery,
+                                   final String responseBody) {
+        addContext(mockHttpServer, "/cubejs-api/v1/load", expectedQuery, responseBody);
     }
 
     private static boolean isEquals(final String expectedQuery, final RequestContext context) {
@@ -1871,26 +1846,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         } catch (IOException e) {
             throw new DotRuntimeException(e);
         }
-    }
-
-    private static MockHttpServer createMockHttpServer(final String expectedQuery, final String responseBody) {
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
-
-        final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
-                .uri("/cubejs-api/v1/load")
-                .requestCondition("Cube JS Query is not right",
-                        context -> context.getRequestParameter("query")
-                                .orElse(StringPool.BLANK)
-                                .equals(expectedQuery))
-                .responseStatus(HttpURLConnection.HTTP_OK)
-                .mustBeCalled()
-                .responseBody(responseBody)
-                .build();
-
-
-        mockhttpServer.addContext(mockHttpServerContext);
-
-        return mockhttpServer;
     }
 
     /**
@@ -2001,7 +1956,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final List<Map<String, String>> data = list(
                 Map.of(
@@ -2042,7 +1997,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 )
         );
 
-        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        final String totalSessionsQuery = getExpectedReachPageTotalSessionsQuery(experiment);
         addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(Map.of("data", totalSessionsQueryData)));
 
 
@@ -2050,7 +2005,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
             setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -2101,7 +2056,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final List<Map<String, String>> data = list(
                 Map.of(
@@ -2142,14 +2097,14 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 )
         );
 
-        final String totalSessionsQuery = getExpectedExitRateTotalSesionsQuery(experiment);
+        final String totalSessionsQuery = getExpectedExitRateTotalSessionsQuery(experiment);
         addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(Map.of("data", totalSessionsQueryData)));
 
         mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
             setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -2195,7 +2150,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final List<Map<String, String>> data = list(
                 Map.of(
@@ -2235,14 +2190,14 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 )
         );
 
-        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        final String totalSessionsQuery = getExpectedReachPageTotalSessionsQuery(experiment);
         addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(Map.of("data", totalSessionsQueryData)));
 
         mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
             setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
@@ -2289,7 +2244,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final List<Map<String, String>> data = list(
                 Map.of(
@@ -2329,7 +2284,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 )
         );
 
-        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        final String totalSessionsQuery = getExpectedReachPageTotalSessionsQuery(experiment);
         addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(Map.of("data", totalSessionsQueryData)));
 
         IPUtils.disabledIpPrivateSubnet(true);
@@ -2338,7 +2293,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
             setAnalyticsHelper(mockAnalyticsHelper);
 
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -2391,7 +2346,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        final MockHttpServer mockhttpServer = new MockHttpServer(MOCK_SERVER_IP, MOCK_SERVER_PORT);
 
         final List<Map<String, String>> data = list(
                 Map.of(
@@ -2446,7 +2401,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 )
         );
 
-        final String totalSessionsQuery = getExpectedReachPageTotalSesionsQuery(experiment);
+        final String totalSessionsQuery = getExpectedReachPageTotalSessionsQuery(experiment);
         addContext(mockhttpServer, totalSessionsQuery, JsonUtil.getJsonStringFromObject(Map.of("data", totalSessionsQueryData)));
 
         mockhttpServer.start();
@@ -2454,7 +2409,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         try {
             final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockAnalyticsHelper();
             setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
                     experiment,
                     APILocator.systemUser());
@@ -2489,7 +2444,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC, "variantB", "variantC");
         final AnalyticsHelper mockAnalyticsHelper = AnalyticsTestUtils.mockInvalidAnalyticsHelper();
         setAnalyticsHelper(mockAnalyticsHelper);
-        final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+        final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl();
         experimentsAPIImpl.getResults(experiment, APILocator.systemUser());
     }
 
@@ -4378,12 +4333,10 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Host host = mock(Host.class);
 
-        final AnalyticsHelper analyticsHelper = mock(AnalyticsHelper.class);
-
         final ExperimentsFactory experimentsFactory = mock();
         when(experimentsFactory.listActive(host.getIdentifier())).thenReturn(experiments);
 
-        final ExperimentsAPI experimentsAPI = new ExperimentsAPIImpl(analyticsHelper, experimentsFactory);
+        final ExperimentsAPI experimentsAPI = new ExperimentsAPIImpl(experimentsFactory);
         final Collection<Experiment> activeExperiments = experimentsAPI.listActive(host.getIdentifier());
 
         assertEquals(experiments, activeExperiments);

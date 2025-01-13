@@ -5,8 +5,10 @@ import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.Queue;
 import com.dotmarketing.exception.DotRuntimeException;
 import java.util.Map;
+import javax.enterprise.context.Dependent;
 
 @Queue("failSuccess")
+@Dependent
 public class FailSuccessJob implements JobProcessor {
 
     @Override

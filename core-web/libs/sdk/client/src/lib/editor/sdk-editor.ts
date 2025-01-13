@@ -6,7 +6,8 @@ import {
     subscriptions
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
-import { DotCMSPageEditorConfig } from './models/editor.model';
+import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model';
+import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
 
@@ -44,15 +45,68 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
 }
 
 /**
- * Checks if the code is running inside an editor.
+ * Initializes the inline editing in the editor.
  *
- * @returns {boolean} Returns true if the code is running inside an editor, otherwise false.
+ * @export
+ * @param {INLINE_EDITING_EVENT_KEY} type
+ * @param {InlineEditEventData} eventData
+ * @return {*}
+ *
+ *  * @example
+ * ```html
+ * <div onclick="initInlineEditing('BLOCK_EDITOR', { inode, languageId, contentType, fieldName, content })">
+ *      ${My Content}
+ * </div>
+ * ```
+ */
+export function initInlineEditing(
+    type: INLINE_EDITING_EVENT_KEY,
+    data?: InlineEditEventData
+): void {
+    postMessageToEditor({
+        action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+        payload: {
+            type,
+            data
+        }
+    });
+}
+
+/*
+ * Reorders the menu based on the provided configuration.
+ *
+ * @param {ReorderMenuConfig} [config] - Optional configuration for reordering the menu.
+ * @param {number} [config.startLevel=1] - The starting level of the menu to reorder.
+ * @param {number} [config.depth=2] - The depth of the menu to reorder.
+ *
+ * This function constructs a URL for the reorder menu page with the specified
+ * start level and depth, and sends a message to the editor to perform the reorder action.
+ */
+export function reorderMenu(config?: ReorderMenuConfig): void {
+    const { startLevel = 1, depth = 2 } = config || {};
+
+    postMessageToEditor({
+        action: CLIENT_ACTIONS.REORDER_MENU,
+        payload: { startLevel, depth }
+    });
+}
+
+/**
+ * Checks if the code is running inside the DotCMS Universal Visual Editor (UVE).
+ *
+ * The function checks three conditions:
+ * 1. If window is defined (for SSR environments)
+ * 2. If the page is not in preview mode
+ * 3. If the current window is embedded in a parent frame
+ *
+ * @returns {boolean} Returns true if running inside the UVE editor, false if running standalone or in preview mode
  * @example
  * ```ts
+ * // Check if code is running in editor before initializing editor-specific features
  * if (isInsideEditor()) {
- *     console.log('Running inside the editor');
+ *     initEditor(config);
  * } else {
- *     console.log('Running outside the editor');
+ *     initStandaloneMode();
  * }
  * ```
  */

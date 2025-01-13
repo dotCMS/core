@@ -1,0 +1,15 @@
+@let locales = $locales();
+@let defaultLocale = $defaultLocale();
+@let currentLocale = $currentLocale();
+@let isLoading = $isLoading();
+
+@if (isLoading) {
+    <p-skeleton />
+} @else {
+    @for (locale of locales; track locale.id) {
+        <p-chip
+            [label]="locale.isoCode"
+            (click)="currentLocale?.id !== locale.id ? switchLocale.emit(locale) : null"
+            [styleClass]="getStyleClass(locale)" />
+    }
+}
