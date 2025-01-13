@@ -63,7 +63,7 @@ export const RelationshipFieldStore = signalStore(
         formattedRelationship: computed(() => {
             const data = state.data();
 
-            return data.map((item) => item.id).join(',');
+            return data.map((item) => item.identifier).join(',');
         })
     })),
     withMethods((store) => {
@@ -102,6 +102,21 @@ export const RelationshipFieldStore = signalStore(
              */
             addData(data: DotCMSContentlet[]) {
                 patchState(store, { data });
+            },
+            /**
+             * Reorders the data in the store.
+             * @param {number} dragIndex - The index of the item to be dragged.
+             * @param {number} dropIndex - The index of the item to be dropped.
+             */
+            reorderData(dragIndex: number, dropIndex: number) {
+                const currentData = store.data();
+                const newData = [...currentData];
+                const draggedItem = newData[dragIndex];
+
+                newData.splice(dragIndex, 1);
+                newData.splice(dropIndex, 0, draggedItem);
+
+                patchState(store, { data: newData });
             },
             /**
              * Deletes an item from the store at the specified index.
