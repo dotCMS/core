@@ -4587,11 +4587,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * when:
      * -Create a Content Type with two unique Text fields: Title and Number
      * - Create a Contentlet with the following data:
-     * Title = 111
-     * Number = 222
+     * unique_1 = unique-value
+     * unique_2 = 111
      * - Now, try to create another Contentlet with the following data:
-     * Title = 111
-     * Number = 555
+     * unique_1 = unique-value
+     * unique_2 = 555
      *
      * Should get a duplicate value error
      * 
@@ -4646,19 +4646,117 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                     .setProperty(uniqueTextField_2.variable(), "555")
                     .next();
 
-
-
-
             APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
 
             try {
                 APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+
             } catch (Exception e){
                 final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
                         + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField_1.name(), uniqueTextField_1.variable());
 
                 assertEquals(expectedMessage, e.getMessage());
             }
+
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}  }
+     * when:
+     * -Create a Content Type with two unique Text fields: Title, Number and another_number
+     * - Create a Contentlet with the following data:
+     * unique_1 = 111
+     * unique_2 = 222
+     * unique_3=333
+     * - Now, try to create another Contentlet with the following data:
+     * unique_1 = 444
+     * unique_2 = 222
+     * unique_3=555
+     *
+     * Should get a duplicate value error and should not save anything in the unqiue_fields table
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void multiUniqueFieldsCIntentTypeKeepExtableUnTouch() throws DotDataException, DotSecurityException {
+
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+            final ContentType contentType = new ContentTypeDataGen()
+                    .nextPersisted();
+
+            final Field title = new FieldDataGen()
+                    .name("title")
+                    .contentTypeId(contentType.id())
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Field uniqueTextField_1 = new FieldDataGen()
+                    .name("unique_1")
+                    .velocityVarName("unique1" + System.currentTimeMillis())
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Field uniqueTextField_2 = new FieldDataGen()
+                    .name("unique_2")
+                    .velocityVarName("unique2" + System.currentTimeMillis())
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Field uniqueTextField_3 = new FieldDataGen()
+                    .name("unique_3")
+                    .velocityVarName("unique3" + System.currentTimeMillis())
+                    .contentTypeId(contentType.id())
+                    .unique(true)
+                    .type(TextField.class)
+                    .nextPersisted();
+
+            final Host host = new SiteDataGen().nextPersisted();
+
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(title.variable(), "A")
+                    .setProperty(uniqueTextField_1.variable(), "111")
+                    .setProperty(uniqueTextField_2.variable(), "222")
+                    .setProperty(uniqueTextField_3.variable(), "333")
+                    .next();
+
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                    .host(host)
+                    .setProperty(title.variable(), "B")
+                    .setProperty(uniqueTextField_1.variable(), "444")
+                    .setProperty(uniqueTextField_2.variable(), "222")
+                    .setProperty(uniqueTextField_3.variable(), "555")
+                    .next();
+
+            APILocator.getContentletAPI().checkin(contentlet_1, APILocator.systemUser(), false);
+
+            try {
+                APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
+
+            } catch (Exception e){
+                final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
+                        + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField_1.name(), uniqueTextField_1.variable());
+
+                assertEquals(expectedMessage, e.getMessage());
+            }
+
+            final ArrayList results = new DotConnect().setSQL("SELECT * FROM unique_fields " +
+                    "WHERE supporting_values->>'contentTypeId' = ? " +
+                    "and supporting_values->>'fieldValue' = '444'").loadResults();
+
+            assertTrue(results.isEmpty());
+
 
         } finally {
             ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
