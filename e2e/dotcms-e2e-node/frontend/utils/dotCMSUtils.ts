@@ -2,10 +2,6 @@ import { Page, expect, Locator } from "@playwright/test";
 import { loginLocators } from "../locators/globalLocators";
 
 export class dotCMSUtils {
-<<<<<<< HEAD
-  page: Page;
-=======
->>>>>>> main
 
   /**
    *  Login to dotCMS
@@ -36,19 +32,6 @@ export class dotCMSUtils {
     );
   }
 
-<<<<<<< HEAD
-  /**
-   * Navigate to the content portlet providing the menu, group and tool locators
-   * @param menu
-   * @param group
-   * @param tool
-   */
-  async navigate(menu: Locator, group: Locator, tool: Locator) {
-    await menu.click();
-    await group.click();
-    await tool.click();
-  }
-=======
     /**
      * Navigate to the content portlet providing the menu, group and tool locators
      * @param menu
@@ -60,7 +43,6 @@ export class dotCMSUtils {
         await group.click();
         await tool.click();
     }
->>>>>>> main
 }
 
 /**
