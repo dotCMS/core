@@ -3,6 +3,7 @@ import { Page, Locator } from "@playwright/test";
 export class GroupEntriesLocators {
   readonly SITE: Locator;
   readonly CONTENT: Locator;
+  readonly CONTENT_MODEL: Locator;
   readonly SCHEMA: Locator;
 
   constructor(page: Page) {
@@ -10,6 +11,8 @@ export class GroupEntriesLocators {
     this.CONTENT = page
       .getByRole("complementary")
       .getByText("Content", { exact: true });
+
+    this.CONTENT_MODEL = page.getByText("Content Model");
     this.SCHEMA = page.getByText("Schema");
   }
 }
