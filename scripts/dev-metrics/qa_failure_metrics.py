@@ -80,10 +80,13 @@ def main():
     if not token:
         raise ValueError("Please set GITHUB_TOKEN environment variable")
     
+    team_label = os.getenv('TEAM_LABEL', 'Team : Falcon')
+    
     metrics = QAFailureMetrics(
         token=token,
         owner='dotcms',
-        repo='core'
+        repo='core',
+        team_label=team_label
     )
     
     sprint_end = datetime.now()

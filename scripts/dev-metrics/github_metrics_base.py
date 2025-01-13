@@ -18,10 +18,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class GitHubMetricsBase:
-    def __init__(self, token, owner, repo):
+    def __init__(self, token, owner, repo, team_label="Team : Falcon"):
         self.token = token
         self.owner = owner 
         self.repo = repo
+        self.team_label = team_label
         self.base_url = f"https://api.github.com/repos/{owner}/{repo}"
         self.headers = {
             'Authorization': f'token {token}',
@@ -65,11 +66,11 @@ class GitHubMetricsBase:
         return 'unassigned'
     
     def get_all_falcon_issues(self, sprint_start, sprint_end, page=1):
-        """Base method to get Falcon team issues within a date range"""
+        """Base method to get team issues within a date range"""
         try:
             params = {
                 'state': 'all',
-                'labels': 'Team : Falcon',
+                'labels': self.team_label,
                 'since': sprint_start.isoformat(),
                 'per_page': 100,
                 'page': page
