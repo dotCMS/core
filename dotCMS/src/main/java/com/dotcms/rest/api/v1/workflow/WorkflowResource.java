@@ -213,6 +213,7 @@ public class WorkflowResource {
     private static final String CONTENTLET    = "contentlet";
     private static final int CONTENTLETS_LIMIT = 100000;
     private static final String WORKFLOW_SUBMITTER = "workflow_submitter";
+    public static final String INCLUDE_SEPARATOR = "includeSeparator";
 
 
     private final WorkflowHelper   workflowHelper;
@@ -628,10 +629,11 @@ public class WorkflowResource {
 
             this.workflowHelper.checkRenderMode (renderMode, initDataObject.getUser(), this.validRenderModeSet);
 
-            final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
-                    LISTING.equalsIgnoreCase(renderMode)
-                            ? WorkflowAPI.RenderMode.LISTING
-                            : WorkflowAPI.RenderMode.EDITING);
+            final WorkflowAPI.RenderMode mode = LISTING.equalsIgnoreCase(renderMode)?
+                    WorkflowAPI.RenderMode.LISTING: WorkflowAPI.RenderMode.EDITING;
+            final boolean includeSeparator = ConversionUtils.toBoolean(request.getParameter(INCLUDE_SEPARATOR), false);
+            final List<WorkflowAction> actions = includeSeparator? this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(), mode):
+                    this.workflowHelper.findAvailableActionsSkippingSeparators(inode, initDataObject.getUser(), mode);
             return Response.ok(new ResponseEntityView<>(actions.stream()
                     .map(this::toWorkflowActionView).collect(Collectors.toList()))).build();
         } catch (final Exception e) {
@@ -5221,8 +5223,11 @@ public class WorkflowResource {
         try {
             Logger.debug(this,
                     ()->"Getting the available actions for the contentlet inode: " + contentTypeId);
-            final List<WorkflowDefaultActionView> actions = this.workflowHelper
-                    .findInitialAvailableActionsByContentType(contentTypeId,
+            final boolean includeSeparator = ConversionUtils.toBoolean(request.getParameter(INCLUDE_SEPARATOR), false) ;
+            final List<WorkflowDefaultActionView> actions = includeSeparator?
+                    this.workflowHelper.findInitialAvailableActionsByContentType(contentTypeId,
+                            initDataObject.getUser()):
+                    this.workflowHelper.findInitialAvailableActionsByContentTypeSkippingSeparators(contentTypeId,
                             initDataObject.getUser());
             return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
         } catch (Exception e) {

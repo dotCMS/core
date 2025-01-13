@@ -95,6 +95,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -807,6 +808,31 @@ public class WorkflowHelper {
                throw new DoesNotExistException(String.format("Contentlet identified by inode '%s' was Not found.",inode));
             }
             return this.workflowAPI.findAvailableActions(contentlet, user, renderMode);
+        } catch (DotDataException  | DotSecurityException e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+    } // findAvailableActions.
+
+    @CloseDBIfOpened
+    public List<WorkflowAction> findAvailableActionsSkippingSeparators(final String inode, final User user,
+                                                     final WorkflowAPI.RenderMode renderMode) {
+        try {
+            Logger.debug(this, ()->"Asking for the available actions for the inode: " + inode);
+
+            if (!UtilMethods.isSet(inode)) {
+                throw new IllegalArgumentException("Missing required parameter inode.");
+            }
+
+            final Optional<ShortyId> shortyIdOptional = APILocator.getShortyAPI().getShorty(inode);
+            final String longInode = shortyIdOptional.isPresent()? shortyIdOptional.get().longId:inode;
+
+            final Contentlet contentlet = this.contentletAPI.find(longInode, user, true);
+            if(contentlet == null){
+                throw new DoesNotExistException(String.format("Contentlet identified by inode '%s' was Not found.",inode));
+            }
+            return this.workflowAPI.findAvailableActions(contentlet, user, renderMode).stream().filter(this::isNotWorkflowSeparator).collect(Collectors.toList());
         } catch (DotDataException  | DotSecurityException e) {
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
@@ -1881,6 +1907,38 @@ public class WorkflowHelper {
             throw new DotWorkflowException(errorMsg, e);
         }
     }
+
+    @CloseDBIfOpened
+    public List<WorkflowDefaultActionView> findInitialAvailableActionsByContentTypeSkippingSeparators(
+            final String contentTypeId, final User user) {
+        checkNotEmpty(contentTypeId, InternalServerException.class, "Missing required parameter contentTypeId");
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        try {
+            Logger.debug(this, "Asking for the initial available actions for the content type Id: " + contentTypeId);
+            final ContentType contentType = contentTypeAPI.find(contentTypeId);
+            checkNotNull(contentType, DoesNotExistException.class, "Workflow-does-not-exists-content-type");
+
+            // For brand new/non-existing contents, all we need is the Contentlet instance with
+            // the Content Type ID in it for the API to return the expected information
+            final Contentlet emptyContentlet = new Contentlet();
+            emptyContentlet.setContentType(contentType);
+            final List<WorkflowAction> actions = this.workflowAPI.findAvailableActionsEditing(emptyContentlet, user);
+            return buildDefaultActionsViewObj(actions.stream().filter(this::isNotWorkflowSeparator).collect(Collectors.toList()));
+        } catch (final DotDataException | DotSecurityException e) {
+            final String errorMsg = String.format("Failed to find initial available actions for Content Type " +
+                    "'%s': %s", contentTypeId, ExceptionUtil.getErrorMessage(e));
+            Logger.error(this, errorMsg);
+            Logger.debug(this, errorMsg, e);
+            throw new DotWorkflowException(errorMsg, e);
+        }
+    }
+
+    private boolean isNotWorkflowSeparator(final WorkflowAction workflowAction) {
+        return Objects.isNull(workflowAction) && UtilMethods.isSet(workflowAction.getMetadata())
+                && !workflowAction.getMetadata().containsKey("subtype") && !WorkflowAction.SEPARATOR.equals(workflowAction.getMetadata().get("subtype"));
+    }
+
 
     /**
      * Takes the list of actions associated to a given Workflow Scheme or Content Type and builds
