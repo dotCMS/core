@@ -74,20 +74,6 @@ $tab-min-height: 52px;
     transition: all $basic-speed ease-in-out;
 }
 
-.preview-link {
-    display: inline-flex;
-    align-items: center;
-    gap: $spacing-1;
-}
-
-.preview-link .pi {
-    text-decoration: none;
-}
-
-.preview-link:hover {
-    text-decoration: underline;
-}
-
 // PrimeNG Tabview Overrides
 ::ng-deep {
     .tabview-append-content {
