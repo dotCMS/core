@@ -24,7 +24,7 @@ import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotWorkflowActionsComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { resolutionValue } from './utils';
 
@@ -38,7 +38,11 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
-import { getFinalCastedValue, isFilteredType } from '../../utils/functions.util';
+import {
+    generatePreviewUrl,
+    getFinalCastedValue,
+    isFilteredType
+} from '../../utils/functions.util';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 /**
@@ -75,7 +79,8 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         TabViewModule,
         DotWorkflowActionsComponent,
         TabViewInsertDirective,
-        NgTemplateOutlet
+        NgTemplateOutlet,
+        DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -114,6 +119,17 @@ export class DotEditContentFormComponent implements OnInit {
     $formFields = computed(
         () => this.$store.contentType()?.fields?.filter((field) => !isFilteredType(field)) ?? []
     );
+
+    /**
+     * Computed property that determines if the preview link should be shown.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    $showPreviewLink = computed(() => {
+        const contentlet = this.$store.contentlet();
+
+        return contentlet?.baseType === 'CONTENT' && !!contentlet.URL_MAP_FOR_CONTENT;
+    });
 
     /**
      * FormGroup instance that contains the form controls for the fields in the content type
@@ -381,5 +397,19 @@ export class DotEditContentFormComponent implements OnInit {
         this.#router.navigate([CONTENT_SEARCH_ROUTE], {
             queryParams: { filter: contentTypeVariable }
         });
+    }
+
+    /**
+     * Opens the preview URL in a new browser tab.
+     *
+     * @memberof DotEditContentFormComponent
+     */
+    showPreview(): void {
+        const contentlet = this.$store.contentlet();
+
+        if (contentlet) {
+            const realUrl = generatePreviewUrl(contentlet);
+            window.open(realUrl, '_blank');
+        }
     }
 }

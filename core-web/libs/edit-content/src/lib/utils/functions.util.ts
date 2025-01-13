@@ -1,4 +1,5 @@
 import {
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
@@ -296,6 +297,7 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
 };
 
 /**
+<<<<<<< HEAD
  * Sorts an array of locales, placing translated locales first.
  *
  * @param {DotLanguage[]} locales - The array of locales to be sorted.
@@ -306,4 +308,18 @@ export const sortLocalesTranslatedFirst = (locales: DotLanguage[]): DotLanguage[
     const untranslatedLocales = locales.filter((locale) => !locale.translated);
 
     return [...translatedLocales, ...untranslatedLocales];
+=======
+ * Generates a preview URL for a given contentlet.
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
+ * @returns {string} The generated preview URL.
+ */
+export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
+    const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
+    const url = encodeURIComponent(contentlet.URL_MAP_FOR_CONTENT);
+    const hostId = contentlet.host;
+    const languageId = contentlet.languageId;
+
+    return `${baseUrl}?url=${url}%3Fhost_id%3D${hostId}&language_id=${languageId}&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit`;
+>>>>>>> 1c803c0496 (fix(edit-content) add preview butto)
 };
