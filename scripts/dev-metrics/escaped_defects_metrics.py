@@ -59,7 +59,7 @@ class EscapedDefectsMetrics(GitHubMetricsBase):
                 current_labels = [label['name'] for label in issue['labels']]
                 if 'QA : Passed Internal' in current_labels:
                     qa_performer = self.get_qa_performer(issue['number'])
-                    qa_counts[qa_performer] += 1
+                    if qa_performer != 'unknown':
             
             page += 1
             
