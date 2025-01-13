@@ -7,10 +7,6 @@
     "@eslint/js": "^9.17.0",
     "@playwright/test": "^1.48.2",
     "@types/node": "^22.5.4",
-<<<<<<< HEAD
-    "dotenv": "^16.4.5",
-    "prettier": "3.4.2"
-=======
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "dotenv": "^16.4.5",
     "eslint": "^9.17.0",
@@ -19,7 +15,6 @@
     "prettier": "3.4.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.19.0"
->>>>>>> main
   },
   "dependencies": {
     "jsdom": "^25.0.1",
@@ -32,12 +27,8 @@
     "start-dev": "CURRENT_ENV=dev yarn run start",
     "start-ci": "CURRENT_ENV=ci yarn run start",
     "post-testing": "PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' node index.js",
-<<<<<<< HEAD
-    "format": "prettier --write ."
-=======
     "format": "prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
->>>>>>> main
   }
 }
