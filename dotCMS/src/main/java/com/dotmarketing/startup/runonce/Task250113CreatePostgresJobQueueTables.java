@@ -15,7 +15,7 @@ import java.sql.SQLException;
  * implementation. This task creates the job_queue, job, and job_history tables along with their
  * associated indexes.
  */
-public class Task241220CreatePostgresJobQueueTables implements StartupTask {
+public class Task250113CreatePostgresJobQueueTables implements StartupTask {
 
     @Override
     public boolean forceRun() {

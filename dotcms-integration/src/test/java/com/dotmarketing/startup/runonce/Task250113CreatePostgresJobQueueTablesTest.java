@@ -19,14 +19,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test class for {@link Task241220CreatePostgresJobQueueTables}.
+ * Test class for {@link Task250113CreatePostgresJobQueueTables}.
  * <p>
  * This test class ensures that the job queue tables are properly created by the upgrade task.
  * <p>
  * The test first drops the tables if they exist, then executes the upgrade task and validates that
  * the tables were successfully created.
  */
-public class Task241220CreatePostgresJobQueueTablesTest extends IntegrationTestBase {
+public class Task250113CreatePostgresJobQueueTablesTest extends IntegrationTestBase {
 
     /**
      * Initializes the test environment and ensures the job queue tables do not exist.
@@ -66,8 +66,8 @@ public class Task241220CreatePostgresJobQueueTablesTest extends IntegrationTestB
     }
 
     /**
-     * Method to test {@link Task241220CreatePostgresJobQueueTables#executeUpgrade()} and
-     * {@link Task241220CreatePostgresJobQueueTables#forceRun()}.
+     * Method to test {@link Task250113CreatePostgresJobQueueTables#executeUpgrade()} and
+     * {@link Task250113CreatePostgresJobQueueTables#forceRun()}.
      * <p>
      * Given Scenario: The job queue tables do not exist.
      * <p>
@@ -98,8 +98,8 @@ public class Task241220CreatePostgresJobQueueTablesTest extends IntegrationTestB
     }
 
     /**
-     * Method to test {@link Task241220CreatePostgresJobQueueTables#executeUpgrade()} and
-     * {@link Task241220CreatePostgresJobQueueTables#forceRun()}.
+     * Method to test {@link Task250113CreatePostgresJobQueueTables#executeUpgrade()} and
+     * {@link Task250113CreatePostgresJobQueueTables#forceRun()}.
      * <p>
      * Given Scenario: The job queue tables do not exist, and the upgrade task is run twice.
      * <p>
@@ -130,7 +130,7 @@ public class Task241220CreatePostgresJobQueueTablesTest extends IntegrationTestB
             // Run the upgrade task again, should not fail
             LocalTransaction.wrap(() -> {
                 try {
-                    final var task = new Task241220CreatePostgresJobQueueTables();
+                    final var task = new Task250113CreatePostgresJobQueueTables();
                     task.executeUpgrade();
                 } catch (Exception e) {
                     final var message = "The upgrade task should not fail when the tables already exist";
@@ -149,7 +149,7 @@ public class Task241220CreatePostgresJobQueueTablesTest extends IntegrationTestB
     private static void executeUpgradeAndValidate()
             throws SQLException, DotDataException, DotSecurityException {
 
-        final var task = new Task241220CreatePostgresJobQueueTables();
+        final var task = new Task250113CreatePostgresJobQueueTables();
         final Connection connection = DbConnectionFactory.getConnection();
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
