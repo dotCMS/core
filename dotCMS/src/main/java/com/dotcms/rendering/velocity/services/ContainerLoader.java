@@ -263,15 +263,6 @@ public class ContainerLoader implements DotLoader {
             }
             // WARNING: Make no changes to the variable names used here without having checked first its usage
             // e.g. ContentletDetail.java uses _show_working_
-            
-            // This attribute is set on the PageResource
-            velocityCodeBuilder.append("#set($_pageAPI=false)")
-            .append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\""+ PageResource.PAGE_API_REQUEST +"\"))")
-                 .append("#set($_pageAPI=true)")
-            .append("#end")
-            .append("#if($request.getAttribute(\""+PageResource.PAGE_API_REQUEST+"\"))")
-                .append("#set($_pageAPI=true)")
-            .append("#end");
 
             //Let's find out if the time-machine attribute is set
             velocityCodeBuilder.append("#set($_timeMachineOn=false)")

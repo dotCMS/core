@@ -418,7 +418,8 @@ public class PageRenderUtil implements Serializable {
     }
 
     private Contentlet getContentletByVariantFallback(final String currentVariantId,
-            final PersonalizedContentlet personalizedContentlet, final Date timeMachineDate) {
+            final PersonalizedContentlet personalizedContentlet, final Date timeMachineDate)
+            throws DotSecurityException {
 
         final Contentlet contentlet = this.getContentlet(personalizedContentlet, currentVariantId, timeMachineDate);
 
@@ -545,7 +546,7 @@ public class PageRenderUtil implements Serializable {
      * Personalized Contentlet object.
      */
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet,
-            final String variantName, final Date timeMachineDate) {
+            final String variantName, final Date timeMachineDate) throws DotSecurityException {
 
         try {
             return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false) ?
@@ -557,7 +558,7 @@ public class PageRenderUtil implements Serializable {
                 // Page that is holding it without any problems
                 return limitedUserPermissionFallback(personalizedContentlet.getContentletId());
             }
-            throw new DotStateException(se);
+            throw se;  //new DotStateException(se);
         }
     }
 

@@ -142,7 +142,6 @@ public class PageResource {
     public static final String TM_LANG = "tm_lang";
     public static final String TM_HOST = "tm_host";
     public static final String DOT_CACHE = "dotcache";
-    public static final String PAGE_API_REQUEST = "pageApiRequest";
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -485,13 +484,11 @@ public class PageResource {
                session.setAttribute(TM_LANG, renderParams.languageId());
                session.setAttribute(DOT_CACHE, "refresh");
                session.setAttribute(TM_HOST, host.get());
-               session.setAttribute(PAGE_API_REQUEST, true);
             } else {
                request.setAttribute(TM_DATE, timeMachineEpochMillis);
                request.setAttribute(TM_LANG, renderParams.languageId());
                request.setAttribute(DOT_CACHE, "refresh");
                request.setAttribute(TM_HOST, host.get());
-               request.setAttribute(PAGE_API_REQUEST, true);
             }
         }
     }
@@ -507,7 +504,6 @@ public class PageResource {
             session.removeAttribute(TM_LANG);
             session.removeAttribute(TM_HOST);
             session.removeAttribute(DOT_CACHE);
-            session.removeAttribute(PAGE_API_REQUEST);
         }
     }
 
