@@ -16,14 +16,24 @@ export function getSelectionModeByCardinality(cardinality: number) {
         throw new Error(`Invalid relationship type for cardinality: ${cardinality}`);
     }
 
-    return relationshipType === RelationshipTypes.ONE_TO_ONE ? 'single' : 'multiple';
+    const isSingleMode =
+        relationshipType === RelationshipTypes.ONE_TO_ONE ||
+        relationshipType === RelationshipTypes.MANY_TO_ONE;
+
+    return isSingleMode ? 'single' : 'multiple';
 }
 
 /**
- * Get the relationship from the contentlet.
+ * Extracts relationship data from a contentlet based on the provided variable name.
  *
- * @param contentlet - The contentlet.
- * @returns The relationship.
+ * @param params - The parameters object
+ * @param params.contentlet - The DotCMS contentlet object containing the relationship data
+ * @param params.variable - The variable name that identifies the relationship field in the contentlet
+ * @returns An array of related DotCMS contentlets. Returns empty array if:
+ * - The contentlet is null/undefined
+ * - The variable name is empty
+ * - The relationship field (contentlet[variable]) is null/undefined
+ * - The relationship field is not an array or single contentlet
  */
 export function getRelationshipFromContentlet({
     contentlet,
@@ -32,11 +42,16 @@ export function getRelationshipFromContentlet({
     contentlet: DotCMSContentlet;
     variable: string;
 }): DotCMSContentlet[] {
-    if (!contentlet || !variable) {
+    if (!contentlet || !variable || !contentlet[variable]) {
         return [];
     }
 
-    const relationship = Array.isArray(contentlet[variable]) ? contentlet[variable] : [];
+    const relationship = contentlet[variable];
+    const isArray = Array.isArray(relationship);
 
-    return relationship;
+    if (!isArray && typeof relationship !== 'object') {
+        return [];
+    }
+
+    return isArray ? relationship : [relationship];
 }
