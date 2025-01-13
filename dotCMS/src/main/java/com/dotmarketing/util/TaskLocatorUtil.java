@@ -247,7 +247,7 @@ import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariables
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemField;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayout;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflow;
-import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTables;
+import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTables;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifier;
 import com.dotmarketing.startup.runonce.Task241014AddTemplateValueOnContentletIndex;
 import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortlet;
@@ -573,12 +573,12 @@ public class TaskLocatorUtil {
 		.add(Task240513UpdateContentTypesSystemField.class)
 		.add(Task240530AddDotAIPortletToLayout.class)
 		.add(Task240606AddVariableColumnToWorkflow.class)
-		.add(Task241009CreatePostgresJobQueueTables.class)
 		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
 		.add(Task241014AddTemplateValueOnContentletIndex.class)
 		.add(Task241015ReplaceLanguagesWithLocalesPortlet.class)
     	.add(Task241016AddCustomLanguageVariablesPortletToLayout.class)
 		.add(Task250107RemoveEsReadOnlyMonitorJob.class)
+        .add(Task250113CreatePostgresJobQueueTables.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
