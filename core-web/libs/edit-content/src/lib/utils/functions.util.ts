@@ -321,8 +321,7 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
         contentlet.languageId === undefined
     ) {
         console.warn('Missing required contentlet attributes to generate preview URL');
-
-        return '';
+        return ''; // Return an empty string or handle as needed
     }
 
     const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
