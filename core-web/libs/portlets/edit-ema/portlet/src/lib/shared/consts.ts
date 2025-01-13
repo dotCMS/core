@@ -70,16 +70,18 @@ export const DEFAULT_PERSONA: DotPersona = {
 
 export const UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE];
 
+export const DEFAULT_DEVICE: DotDeviceListItem = {
+    icon: 'pi pi-desktop',
+    identifier: 'default-id',
+    name: 'uve.device.selector.default',
+    cssHeight: '100', // This will be used in %
+    inode: 'default',
+    cssWidth: '100', // This will be used in %
+    _isDefault: true
+};
+
 export const DEFAULT_DEVICES: DotDeviceListItem[] = [
-    {
-        icon: 'pi pi-desktop',
-        identifier: 'default-id',
-        name: 'uve.device.selector.default',
-        cssHeight: '100', // This will be used in %
-        inode: 'default',
-        cssWidth: '100', // This will be used in %
-        _isDefault: true
-    },
+    DEFAULT_DEVICE,
     {
         cssWidth: '820',
         name: 'uve.device.selector.tablet',

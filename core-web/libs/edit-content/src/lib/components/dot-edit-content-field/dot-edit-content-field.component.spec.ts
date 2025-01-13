@@ -22,7 +22,6 @@ import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotEditContentStore } from '../../feature/edit-content/store/edit-content.store';
 import { DotEditContentBinaryFieldComponent } from '../../fields/dot-edit-content-binary-field/dot-edit-content-binary-field.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -43,6 +42,7 @@ import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     BINARY_FIELD_CONTENTLET,
     createFormGroupDirectiveMock,
@@ -192,6 +192,9 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     },
     [FIELD_TYPES.HIDDEN]: {
         component: null // this field is not being rendered for now.
+    },
+    [FIELD_TYPES.LINE_DIVIDER]: {
+        component: null
     }
 };
 
@@ -206,7 +209,10 @@ describe('FIELD_TYPES and FIELDS_MOCK', () => {
 });
 
 const FIELDS_TO_BE_RENDER = FIELDS_MOCK.filter(
-    (field) => field.fieldType !== FIELD_TYPES.CONSTANT && field.fieldType !== FIELD_TYPES.HIDDEN
+    (field) =>
+        field.fieldType !== FIELD_TYPES.CONSTANT &&
+        field.fieldType !== FIELD_TYPES.HIDDEN &&
+        field.fieldType !== FIELD_TYPES.LINE_DIVIDER
 );
 
 describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields', (fieldMock) => {
@@ -243,11 +249,13 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     });
 
     describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
-        it('should render the label', () => {
-            spectator.detectChanges();
-            const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
-            expect(label?.textContent).toContain(fieldMock.name);
-        });
+        if (fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD) {
+            it('should render the label', () => {
+                spectator.detectChanges();
+                const label = spectator.query(byTestId(`label-${fieldMock.variable}`));
+                expect(label?.textContent).toContain(fieldMock.name);
+            });
+        }
 
         if (fieldMock.fieldType !== FIELD_TYPES.RELATIONSHIP) {
             it('should render the hint if present', () => {

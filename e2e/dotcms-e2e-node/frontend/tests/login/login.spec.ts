@@ -1,5 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { admin1, limited1, wrong1, wrong2 } from "./credentialsData";
+import {test, expect} from '@playwright/test';
+import {admin1, wrong1, wrong2} from './credentialsData';
+
 
 const validCredentials = [
   { username: admin1.username, password: admin1.password }, // admin user

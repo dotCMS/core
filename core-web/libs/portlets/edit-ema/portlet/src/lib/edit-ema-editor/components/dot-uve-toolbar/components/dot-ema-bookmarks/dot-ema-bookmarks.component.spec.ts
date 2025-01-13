@@ -18,6 +18,7 @@ import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaBookmarksComponent } from './dot-ema-bookmarks.component';
 
+import { mockCurrentUser } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 describe('DotEmaBookmarksComponent', () => {
@@ -29,7 +30,10 @@ describe('DotEmaBookmarksComponent', () => {
         providers: [
             DialogService,
             HttpClient,
-            mockProvider(UVEStore, { $previewMode: signal(false) }),
+            mockProvider(UVEStore, {
+                $previewMode: signal(false),
+                currentUser: signal(mockCurrentUser)
+            }),
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
@@ -109,7 +113,7 @@ describe('DotEmaBookmarksComponent', () => {
 
         const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
 
-        button.triggerEventHandler('onClick');
+        button.triggerEventHandler('click');
 
         expect(dialogServiceOpenSpy).toHaveBeenCalledWith(
             expect.anything(),

@@ -7,7 +7,6 @@ import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.metrics.timing.TimeMetric;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.Logger;
@@ -22,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * CubeJS Client it allow to send a Request to a Cube JS Server.
+ * CubeJS Client it allows to send a Request to a Cube JS Server.
  * Example:
  *
  * <code>
@@ -40,7 +39,6 @@ import java.util.Map;
  */
 public class CubeJSClient {
 
-    private int PAGE_SIZE = 1000;
     private final String url;
     private final AccessToken accessToken;
 
@@ -148,9 +146,8 @@ public class CubeJSClient {
      */
     private Map<String, String> cubeJsHeaders(final AccessToken accessToken) throws AnalyticsException {
         return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
+            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatToken(accessToken, null))
             .build();
     }
-
 
 }
