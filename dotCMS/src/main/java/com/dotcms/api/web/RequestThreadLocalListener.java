@@ -1,5 +1,6 @@
 package  com.dotcms.api.web;
 
+import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
@@ -13,8 +14,11 @@ public class RequestThreadLocalListener implements ServletRequestListener {
     
     
     public RequestThreadLocalListener() {
-        Logger.info(this.getClass(), "Starting RequestThreadLocalListener");
     }
+
+	public void contextInitialized(ServletContextEvent sce) {
+		Logger.info(this.getClass(), "Starting RequestThreadLocalListener");
+	}
 
 	public void requestDestroyed(ServletRequestEvent requestEvent) {
 	    HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
