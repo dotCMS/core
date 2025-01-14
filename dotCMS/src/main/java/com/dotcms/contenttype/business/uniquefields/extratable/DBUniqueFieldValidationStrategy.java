@@ -281,7 +281,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         return originalMessage != null && originalMessage.startsWith(
                 "ERROR: duplicate key value violates unique constraint \"unique_fields_pkey\"");
     }
-    
+
     @Override
     public void cleanUp(final Contentlet contentlet, final boolean deleteAllVariant) throws DotDataException {
         if (deleteAllVariant) {
