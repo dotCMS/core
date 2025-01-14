@@ -392,7 +392,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
     /**
      * Scenario: Test the validating of the content import process with a list of fields that includes
-     * variable names instead of field IDs.
+     * only variable names instead of field IDs.
      * <p>
      * Expected: A JobValidationException should be thrown.
      *
@@ -445,7 +445,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
     /**
      * Scenario: Test the validating of the content import process with a list of fields that includes
-     * variable names instead of field IDs.
+     * variable names and IDs.
      * <p>
      * Expected: A JobValidationException should be thrown.
      *
@@ -550,7 +550,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
     }
 
     /**
-     * Tests the preview mode of the content import process with invalid key fields.
+     * Tests the preview mode of the content import process with an invalid key field.
      *
      * <p>The test ensures that preview mode properly validates the key fields and throws an
      * exception if the fields are not valid.
@@ -592,6 +592,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
     /**
      * Tests the preview mode of the content import process with invalid key fields.
+     * <p>The test contains in the list of fields an invalid key field, a valid key field by ID
+     * and a valid key field by variable name.
      *
      * <p>The test ensures that preview mode properly validates the key fields and throws an
      * exception if the fields are not valid.
@@ -650,7 +652,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
      * <ul>
      *   <li>Creates a test content type</li>
      *   <li>Generates a test CSV file with sample content</li>
-     *   <li>Processes the import in preview mode using key fields using variable names</li>
+     *   <li>Processes the import in preview mode using key fields with a mix of field IDs and
+     *   variable names</li>
      *   <li>Verifies the preview results and metadata</li>
      *   <li>Verifies there is no content creation in the database</li>
      * </ul>
