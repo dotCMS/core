@@ -408,12 +408,14 @@ export class DotEditContentFormComponent implements OnInit {
         const contentlet = this.$store.contentlet();
         const realUrl = generatePreviewUrl(contentlet);
 
-        if (realUrl) {
-            window.open(realUrl, '_blank');
-        } else {
+        if (!realUrl) {
             console.warn(
                 'Preview URL could not be generated due to missing contentlet attributes.'
             );
+
+            return;
         }
+
+        window.open(realUrl, '_blank');
     }
 }
