@@ -724,7 +724,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
      * <ul>
      *   <li>Creates a test content type</li>
      *   <li>Generates a test CSV file with sample content</li>
-     *   <li>Processes the import in preview mode using key fields using just variable names</li>
+     *   <li>Processes the import in preview mode using key fields with just variable names</li>
      *   <li>Verifies the preview results and metadata</li>
      *   <li>Verifies there is no content creation in the database</li>
      * </ul>
@@ -795,7 +795,7 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
      * <ul>
      *   <li>Creates a test content type</li>
      *   <li>Generates a test CSV file with sample content</li>
-     *   <li>Processes the import in preview mode using key fields using just field ids</li>
+     *   <li>Processes the import in preview mode using key fields with just field ids</li>
      *   <li>Verifies the preview results and metadata</li>
      *   <li>Verifies there is no content creation in the database</li>
      * </ul>
