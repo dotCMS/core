@@ -1,12 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { faker } from "@faker-js/faker";
-import { ListingContentTypesPage } from "../../pages/listingContentTypes.pages";
-import { ContentTypeFormPage } from "../../pages/contentTypeForm.page";
-import { NewEditContentFormPage } from "../../pages/newEditContentForm.page";
+import { ListingContentTypesPage } from "../../../pages/listingContentTypes.pages";
+import { ContentTypeFormPage } from "../../../pages/contentTypeForm.page";
+import { NewEditContentFormPage } from "../../../pages/newEditContentForm.page";
+import { updateFeatureFlag } from "../../../utils/api";
 
 const contentTypeName = faker.lorem.word().toLocaleLowerCase();
 
-test.beforeEach("Navigate to content types", async ({ page }) => {
+test.beforeEach("Navigate to content types", async ({ page, request }) => {
   const listingContentTypesPage = new ListingContentTypesPage(page);
   const contentTypeFormPage = new ContentTypeFormPage(page);
   await listingContentTypesPage.goTo();
@@ -14,12 +15,30 @@ test.beforeEach("Navigate to content types", async ({ page }) => {
   await contentTypeFormPage.fillNewContentType();
   await listingContentTypesPage.goToUrl();
   await listingContentTypesPage.goToAddNewContentType(contentTypeName);
+
+  await updateFeatureFlag(request, {
+    key: "DOT_FEATURE_FLAG_NEW_EDIT_PAGE",
+    value: true,
+  });
+  await updateFeatureFlag(request, {
+    key: "DOT_CONTENT_EDITOR2_ENABLED",
+    value: true,
+  });
 });
 
-test.afterEach(async ({ page }) => {
+test.afterEach(async ({ page, request }) => {
   const listingContentTypesPage = new ListingContentTypesPage(page);
   await listingContentTypesPage.goToUrl();
   await listingContentTypesPage.deleteContentType(contentTypeName);
+
+  await updateFeatureFlag(request, {
+    key: "DOT_FEATURE_FLAG_NEW_EDIT_PAGE",
+    value: false,
+  });
+  await updateFeatureFlag(request, {
+    key: "DOT_CONTENT_EDITOR2_ENABLED",
+    value: false,
+  });
 });
 
 test.describe("text field", () => {
