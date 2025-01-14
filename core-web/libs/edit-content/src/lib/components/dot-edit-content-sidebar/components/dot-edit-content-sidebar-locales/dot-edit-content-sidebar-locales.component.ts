@@ -92,7 +92,7 @@ export class DotEditContentSidebarLocalesComponent {
             return locales;
         }
 
-        return locales.slice(0, this.$maxLocaleChips());
+        return locales?.slice(0, this.$maxLocaleChips());
     });
 
     /**
