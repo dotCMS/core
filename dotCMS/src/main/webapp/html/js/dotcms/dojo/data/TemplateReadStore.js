@@ -10,11 +10,26 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 	includeArchived: false,
 	includeTemplate: null,
 	templateSelected: '',
+	allSiteLabel: false,
+
+	/**
+	 * To Emulate this old Backend Behavion
+	 * https://github.com/dotCMS/core/blob/7bc05d335b98ffb30d909de9ec82dd4557b37078/dotCMS/src/main/java/com/dotmarketing/portlets/templates/ajax/TemplateAjax.java#L72-L76
+	 * 
+	 * @type {*}
+	 * */
+	ALL_SITE_TEMPLATE: {
+		title: "All Sites",
+		fullTitle: "All Sites",
+		htmlTitle: '<div>-- All Sites ---</div>',
+		identifier: "0",
+		inode: "0"
+	},
 
 	constructor: function (options) {
 		this.hostId = options.hostId;
+		this.allSiteLabel = options.allSiteLabel;
 		this.templateSelected = options.templateSelected;
-		window.top._dotTemplateStore = this;
 	},
 
 	getValue: function (item, attribute, defaultValue) {
@@ -95,20 +110,25 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 		} else {
 
+			const hostId = keywordArgs.query.hostId;
+
 			let url = "/api/v1/templates/?filter=" + keywordArgs.query.fullTitle.replace('*','') + "&page=" + keywordArgs.start + "&per_page=" + keywordArgs.count +
 				(keywordArgs.sort == undefined || keywordArgs.sort != ""? "": "&orderby=" + keywordArgs.sort);
 
-			if (keywordArgs.query.hostId != undefined && keywordArgs.query.hostId != "") {
-				url += "&host=" + keywordArgs.query.hostId;
+			if (hostId != undefined && hostId != "") {
+				url += "&host=" + hostId;
 			}
 
 			fetch(url)
 				.then((fetchResp) => fetchResp.json())
 				.then(responseEntity => {
 
-						this.fetchTemplatesCallback(keywordArgs, responseEntity);
-					}
-				);
+					if(this.allSiteLabel) {
+						responseEntity.entity.unshift(this.ALL_SITE_TEMPLATE);
+					};
+
+					this.fetchTemplatesCallback(keywordArgs, responseEntity);
+				});
 
 			this.currentRequest = keywordArgs;
 			this.currentRequest.abort = function () { };
@@ -117,7 +137,6 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 	},
 
 	fetchTemplatesCallback: function (keywordArgs, templatesEntity) {
-
 		var scope = keywordArgs.scope;
 		if(keywordArgs.onBegin) {
 
