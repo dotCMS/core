@@ -105,13 +105,7 @@ public class ImportStarterUtil {
      * Fully configurable path for the backup directory.
      */
     private static final String BACKUP_DIRECTORY = ConfigUtils.getBackupPath();
-    /*
-    * Unique identifier for the replica. This is used to create a unique directory for the replica.
-    * If the HOSTNAME environment variable is set, it will be used. Otherwise, a random UUID will be used.
-    * */
-    private static final String REPLICA_ID = System.getenv().getOrDefault("HOSTNAME", UUID.randomUUID().toString());
-
-    private String backupTempFilePath = BACKUP_DIRECTORY + File.separator + REPLICA_ID + File.separator + "temp";
+    private String backupTempFilePath = BACKUP_DIRECTORY + File.separator + "temp";
     private ArrayList<String> classesWithIdentity = new ArrayList<>();
     private Map<String, String> sequences;
     private Map<String, String> tableIDColumns;
@@ -957,7 +951,7 @@ public class ImportStarterUtil {
         String tempDirPath = getBackupTempFilePath();
 
         if (starterZip == null || !starterZip.exists()) {
-            throw new DotStateException("Starter.zip does not exist:" + starterZip);
+            throw new DotStateException("Starter.zip does not exist: " + starterZip);
         }
 
         try {
@@ -975,17 +969,15 @@ public class ImportStarterUtil {
                 }
             }
 
-            Path tempZipPath = tempDir.resolve(starterZip.getName());
-
-            // Copy the starter zip to the temp directory
-            Files.copy(starterZip.toPath(), tempZipPath, StandardCopyOption.REPLACE_EXISTING);
-
-            // Unzip the file if it is a valid zip
+            // Extract the zip file contents into the temp directory
             if (starterZip.getName().toLowerCase().endsWith(".zip")) {
                 try (ZipFile zipFile = new ZipFile(starterZip)) {
                     ZipUtil.extract(zipFile, tempDir.toFile());
                 }
             }
+
+            // Process the extracted contents (if needed)
+            Logger.info(this, String.format("Successfully processed starter.zip in: %s", tempDir));
 
             return true;
         } catch (IOException e) {
