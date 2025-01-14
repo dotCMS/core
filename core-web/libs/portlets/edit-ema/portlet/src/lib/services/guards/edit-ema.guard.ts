@@ -36,17 +36,26 @@ function confirmQueryParams(queryParams: Params): {
     didQueryParamsGetCompleted: boolean;
 } {
     const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
-        (acc, curr) => {
-            if (!queryParams[curr.key]) {
-                acc[curr.key] = curr.value;
+        (acc, { key, value }) => {
+            if (!queryParams[key]) {
+                acc[key] = value;
                 acc.missing = true;
-            } else if (curr.key === 'url') {
-                if (queryParams[curr.key] !== 'index' && queryParams[curr.key].endsWith('/index')) {
-                    acc[curr.key] = sanitizeURL(queryParams[curr.key]);
+
+                return acc;
+            }
+
+            // Handle URL parameter special cases
+            if (key === 'url') {
+                if (queryParams[key] !== 'index' && queryParams[key].endsWith('/index')) {
+                    acc[key] = sanitizeURL(queryParams[key]);
                     acc.missing = true;
-                } else if (queryParams[curr.key] === '/') {
-                    acc[curr.key] = 'index';
+                }
+
+                if (queryParams[key] === '/') {
+                    acc[key] = 'index';
                     acc.missing = true;
+
+                    return acc;
                 }
             }
 

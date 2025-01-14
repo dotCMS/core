@@ -21,8 +21,7 @@ import {
     createFullURL,
     createPageApiUrlWithQueryParams,
     getIsDefaultVariant,
-    getOrientation,
-    sanitizeURL
+    getOrientation
 } from '../../../../utils';
 import { Orientation, UVEState } from '../../../models';
 import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
@@ -54,7 +53,7 @@ export function withUVEToolbar() {
         withComputed((store) => ({
             $uveToolbar: computed<UVEToolbarProps>(() => {
                 const params = store.pageParams();
-                const url = sanitizeURL(params?.url);
+                const url = params?.url;
 
                 const experiment = store.experiment?.();
                 const pageAPIResponse = store.pageAPIResponse();
@@ -144,8 +143,9 @@ export function withUVEToolbar() {
             }),
             $apiURL: computed<string>(() => {
                 const pageParams = store.pageParams();
-                const url = sanitizeURL(pageParams?.url);
+                const url = pageParams?.url;
                 const params = createPageApiUrlWithQueryParams(url, pageParams);
+
                 const pageType = store.isTraditionalPage() ? 'render' : 'json';
                 const pageAPI = `/api/v1/page/${pageType}/${params}`;
 
