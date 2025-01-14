@@ -1,9 +1,10 @@
+import { faker } from '@faker-js/faker';
+
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn
 } from '@dotcms/dotcms-models';
-import { fa, faker } from '@faker-js/faker';
 
 export const EMPTY_FIELD: DotCMSContentTypeField = {
     contentTypeId: null,
