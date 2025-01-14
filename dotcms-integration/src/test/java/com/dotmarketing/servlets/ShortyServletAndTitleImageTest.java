@@ -99,8 +99,8 @@ public class ShortyServletAndTitleImageTest {
             quality = servlet.getQuality(uri, 0);
             cropWidth = servlet.cropWidth(uri);
             cropHeight = servlet.cropHeight(uri);
-            jpeg    = uri.contains("jpg");
-            webp    = uri.contains("webp");
+            jpeg    = uri.contains(".jpg");
+            webp    = uri.contains(".webp");
             isImage = webp || jpeg || width+height+maxWidth+maxHeight +minHeight+minWidth> 0 || quality>0 || cropHeight>0 || cropWidth>0;
         }
     }
@@ -373,6 +373,18 @@ public class ShortyServletAndTitleImageTest {
         assertEquals(uri.isImage, uri.expectedIsImage);
 
 
+    }
+
+    /**
+     * Method to test: {@link ShortyServlet#doForward(HttpServletRequest, HttpServletResponse, String, String, boolean, Optional)}
+     * Given Scenario: A uri of a file that is called or contains webp is passed to the method
+     * ExpectedResult: The method shouldn't consider the file as an image for containing the word webp, so the result should be false
+     *
+     */
+    @Test
+    public void test_webp_file_name(){
+        Uri uri = new Uri("/data/shared/assets/tmp_upload/temp_2e1056205c/webPageContent.vtl", 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+        assertEquals(uri.isImage, uri.expectedIsImage);
     }
     
 }

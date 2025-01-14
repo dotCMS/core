@@ -1,11 +1,670 @@
 {
 	"info": {
-		"_postman_id": "7a488c87-858e-4edd-8722-c38e4071afdf",
+		"_postman_id": "b4257411-9c4b-433e-9810-7bcc3b845471",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "36473486"
+		"_exporter_id": "31066048"
 	},
 	"item": [
+		{
+			"name": "Live page cache invalidation",
+			"item": [
+				{
+					"name": "Get default site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"hostname\", jsonData.entity.hostname);",
+									"    pm.collectionVariables.set(\"hostIdentifier\", jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/defaultSite",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"defaultSite"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Page created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"pagePath\", jsonData.entity.path);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageInvalidation{{$timestamp}}\",\n        \"url\":\"testPageInvalidation{{$timestamp}}\",\n        \"hostFolder\":\"{{hostname}}\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageInvalidation{{$timestamp}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"description": "Creates a test page"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Rich Text Contentlet 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Rich Text created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"richContentIdentifier1\", jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent1\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test1 Content Body\"\n        \n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"description": "Creates test data"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Rich Text Contentlet 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Rich Text created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"richContentIdentifier2\", jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent2\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test2 Content Body\"\n        \n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"description": "Creates test data"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Rich Text Contentlet 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Rich Text created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"richContentIdentifier3\", jsonData.entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"webPageContent\",\n        \"title\":\"testContent3\",\n        \"contentHost\":\"{{hostname}}\",\n        \"body\":\"Test3 Content Body\"\n        \n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"description": "Creates test data"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Test Content To Test Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Content added to Test Page successfuly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{richContentIdentifier1}}\"\n        ]\n    }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"content"
+							]
+						},
+						"description": "Adds a single content to the created page"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Multi-Tree Data Is Correct",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Retrieving Multi-Tree data for test Contentlet\", function () {",
+									"    var entity = pm.response.json().entity;",
+									"    var testContentId = pm.collectionVariables.get(\"richContentIdentifier1\");",
+									"    var found = false;",
+									"    entity.forEach((treeEntry) => {",
+									"",
+									"        if (testContentId == treeEntry.contentId) {",
+									"            found = true;",
+									"        }",
+									"",
+									"    });",
+									"    if (!found) {",
+									"        pm.expect.fail(\"Expected test Contentlet with ID '\" + testContentId + \"' was not found\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"content",
+								"tree"
+							]
+						},
+						"description": "Validate the content was added properly"
+					},
+					"response": []
+				},
+				{
+					"name": "Switch to default site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    var jsonData = pm.response.json();",
+									"",
+									"    pm.expect(jsonData.entity.hostSwitched).equal(true);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/{{hostIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"{{hostIdentifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render live version and validate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors found\", function () {",
+									"    pm.expect(pm.response.json().errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Body contains <h1>testContent1</h1>\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.page.rendered).to.include(\"<h1>testContent1</h1>\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render{{pagePath}}?mode=LIVE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render{{pagePath}}"
+							],
+							"query": [
+								{
+									"key": "mode",
+									"value": "LIVE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add more test content to test page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Content added to Test Page successfuly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{richContentIdentifier1}}\",\n            \"{{richContentIdentifier2}}\",\n            \"{{richContentIdentifier3}}\"\n        ]\n    }\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"content"
+							]
+						},
+						"description": "Updates the page adding more content"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Multi-Tree Data Is Correct",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Retrieving Multi-Tree data for test Contentlets\", function () {",
+									"    var entity = pm.response.json().entity;",
+									"",
+									"    var testContentId1 = pm.collectionVariables.get(\"richContentIdentifier1\");",
+									"    var testContentId2 = pm.collectionVariables.get(\"richContentIdentifier2\");",
+									"    var testContentId3 = pm.collectionVariables.get(\"richContentIdentifier3\");",
+									"    ",
+									"    var foundContent1 = false;",
+									"    var foundContent2 = false;",
+									"    var foundContent3 = false;",
+									"",
+									"    entity.forEach((treeEntry) => {",
+									"",
+									"        if (testContentId1== treeEntry.contentId) {",
+									"            foundContent1 = true;",
+									"        } else if (testContentId2== treeEntry.contentId) {",
+									"            foundContent2 = true;",
+									"        } else if (testContentId3== treeEntry.contentId) {",
+									"            foundContent3 = true;",
+									"        }",
+									"",
+									"    });",
+									"",
+									"    if (!foundContent1) {",
+									"        pm.expect.fail(\"Expected test Contentlet with ID '\" + testContentId1 + \"' was not found\");",
+									"    }",
+									"",
+									"    if (!foundContent2) {",
+									"        pm.expect.fail(\"Expected test Contentlet with ID '\" + testContentId2 + \"' was not found\");",
+									"    }",
+									"",
+									"    if (!foundContent3) {",
+									"        pm.expect.fail(\"Expected test Contentlet with ID '\" + testContentId3 + \"' was not found\");",
+									"    }",
+									"",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content/tree",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageIdentifier}}",
+								"content",
+								"tree"
+							]
+						},
+						"description": "Validate the content was added properly"
+					},
+					"response": []
+				},
+				{
+					"name": "Render live version and validate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors found\", function () {",
+									"    pm.expect(pm.response.json().errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Body contains <h1>testContent1</h1>\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.page.rendered).to.include(\"<h1>testContent1</h1>\");",
+									"});",
+									"",
+									"pm.test(\"Body contains <h1>testContent2</h1>\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.page.rendered).to.include(\"<h1>testContent2</h1>\");",
+									"});",
+									"",
+									"pm.test(\"Body contains <h1>testContent3</h1>\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.page.rendered).to.include(\"<h1>testContent3</h1>\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render{{pagePath}}?mode=LIVE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render{{pagePath}}"
+							],
+							"query": [
+								{
+									"key": "mode",
+									"value": "LIVE"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This test collection validates the page invalidation for the live version of the page is properly done after some content is added to an existing page.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200 or 404\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+							"});"
+						]
+					}
+				}
+			]
+		},
 		{
 			"name": "CreateTestContext",
 			"item": [
@@ -7336,6 +7995,38 @@
 		},
 		{
 			"key": "page_name",
+			"value": ""
+		},
+		{
+			"key": "pageIdentifier",
+			"value": ""
+		},
+		{
+			"key": "richContentIdentifier1",
+			"value": ""
+		},
+		{
+			"key": "richContentIdentifier2",
+			"value": ""
+		},
+		{
+			"key": "richContentIdentifier3",
+			"value": ""
+		},
+		{
+			"key": "pagePath",
+			"value": ""
+		},
+		{
+			"key": "hostname",
+			"value": ""
+		},
+		{
+			"key": "hostID",
+			"value": ""
+		},
+		{
+			"key": "hostIdentifier",
 			"value": ""
 		}
 	]

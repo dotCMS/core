@@ -6,8 +6,6 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { formatDate } from '@angular/common';
-
 import {
     DotContentSearchService,
     DotFieldService,
@@ -15,13 +13,9 @@ import {
     DotLanguagesService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
 
 import { RelationshipFieldService } from './relationship-field.service';
-
-import {
-    MANDATORY_FIRST_COLUMNS,
-    MANDATORY_LAST_COLUMNS
-} from '../dot-edit-content-relationship-field.constants';
 
 describe('RelationshipFieldService', () => {
     let spectator: SpectatorService<RelationshipFieldService>;
@@ -36,13 +30,7 @@ describe('RelationshipFieldService', () => {
             }),
             mockProvider(DotFieldService),
             mockProvider(DotContentSearchService),
-            mockProvider(DotLanguagesService, {
-                get: () =>
-                    of([
-                        { id: 1, language: 'English', isoCode: 'en' },
-                        { id: 2, language: 'Spanish', isoCode: 'es' }
-                    ])
-            })
+            mockProvider(DotLanguagesService, { get: () => of(mockLocales) })
         ]
     });
 
@@ -69,11 +57,10 @@ describe('RelationshipFieldService', () => {
 
             const contentTypeId = '123';
 
-            const expectedColumns = [
-                ...MANDATORY_FIRST_COLUMNS.map((field) => ({ field, header: field })),
-                ...mockFields.map((field) => ({ field: field.variable, header: field.name })),
-                ...MANDATORY_LAST_COLUMNS.map((field) => ({ field, header: field }))
-            ];
+            const expectedColumns = mockFields.map((field) => ({
+                field: field.variable,
+                header: field.name
+            }));
 
             spectator.service.getColumns(contentTypeId).subscribe((columns) => {
                 expect(dotFieldService.getFields).toHaveBeenCalledWith(
@@ -90,17 +77,12 @@ describe('RelationshipFieldService', () => {
 
             const contentTypeId = '123';
 
-            const expectedColumns = [
-                ...MANDATORY_FIRST_COLUMNS.map((field) => ({ field, header: field })),
-                ...MANDATORY_LAST_COLUMNS.map((field) => ({ field, header: field }))
-            ];
-
             spectator.service.getColumns(contentTypeId).subscribe((columns) => {
                 expect(dotFieldService.getFields).toHaveBeenCalledWith(
                     contentTypeId,
                     'SHOW_IN_LIST'
                 );
-                expect(columns).toEqual(expectedColumns);
+                expect(columns).toEqual([]);
                 done();
             });
         });
@@ -120,11 +102,7 @@ describe('RelationshipFieldService', () => {
 
             const contentTypeId = '123';
 
-            const expectedColumns = [
-                ...MANDATORY_FIRST_COLUMNS.map((field) => ({ field, header: field })),
-                { field: 'field1', header: 'Field 1' },
-                ...MANDATORY_LAST_COLUMNS.map((field) => ({ field, header: field }))
-            ];
+            const expectedColumns = [{ field: 'field1', header: 'Field 1' }];
 
             spectator.service.getColumns(contentTypeId).subscribe((columns) => {
                 expect(dotFieldService.getFields).toHaveBeenCalledWith(
@@ -205,10 +183,8 @@ describe('RelationshipFieldService', () => {
         ] as DotCMSContentTypeField[];
 
         const expectedColumns = [
-            ...MANDATORY_FIRST_COLUMNS.map((field) => ({ field, header: field })),
             { field: 'field', header: 'Field' },
-            { field: 'description', header: 'Description' },
-            ...MANDATORY_LAST_COLUMNS.map((field) => ({ field, header: field }))
+            { field: 'description', header: 'Description' }
         ];
 
         const mockContentlets = [
@@ -252,21 +228,33 @@ describe('RelationshipFieldService', () => {
 
                     // Verify relationship items
                     expect(items.length).toBe(2);
-                    expect(items[0]).toEqual({
-                        id: '123',
+                    const item0 = {
+                        identifier: items[0].identifier,
+                        title: items[0].title,
+                        field: items[0].field,
+                        description: items[0].description,
+                        language: items[0].language
+                    };
+                    const item1 = {
+                        identifier: items[1].identifier,
+                        title: items[1].title,
+                        field: items[1].field,
+                        description: items[1].description,
+                        language: items[1].language
+                    };
+                    expect(item0).toEqual({
+                        identifier: '123',
                         title: 'Test Content 1',
                         field: 'Field 1',
                         description: 'Description 1',
-                        language: 'English (en)',
-                        modDate: formatDate(mockContentlets[0].modDate, 'short', 'en-US')
+                        language: mockLocales[0]
                     });
-                    expect(items[1]).toEqual({
-                        id: '456',
+                    expect(item1).toEqual({
+                        identifier: '456',
                         title: 'Test Content 2',
                         field: 'Field 2',
                         description: 'Description 2',
-                        language: 'Spanish (es)',
-                        modDate: formatDate(mockContentlets[1].modDate, 'short', 'en-US')
+                        language: mockLocales[1]
                     });
 
                     // Verify service calls
@@ -301,49 +289,15 @@ describe('RelationshipFieldService', () => {
                 });
         });
 
-        it('should handle content with missing fields', (done) => {
-            const contentWithMissingFields = [
-                {
-                    identifier: '789',
-                    title: 'Test Content 3',
-                    field: 'Field 3',
-                    languageId: 1,
-                    modDate: '2024-01-03T00:00:00Z'
-                    // description is missing
-                }
-            ] as unknown as DotCMSContentlet[];
-
-            dotContentSearchService.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: contentWithMissingFields
-                    }
-                })
-            );
-
-            spectator.service.getColumnsAndContent(mockContentTypeId).subscribe(([_, items]) => {
-                expect(items[0]).toEqual({
-                    id: '789',
-                    title: 'Test Content 3',
-                    field: 'Field 3',
-                    description: '', // Should be empty string for missing field
-                    language: 'English (en)',
-                    modDate: formatDate(contentWithMissingFields[0].modDate, 'short', 'en-US')
-                });
-                done();
+        it('should handle content without title', () => {
+            const contentWithoutTitle = createFakeContentlet({
+                identifier: '789',
+                title: null,
+                description: 'Description 3',
+                field: 'Field 3',
+                languageId: mockLocales[0].id,
+                modDate: '2024-01-03T00:00:00Z'
             });
-        });
-
-        it('should handle content without title', (done) => {
-            const contentWithoutTitle = [
-                {
-                    identifier: '789',
-                    description: 'Description 3',
-                    field: 'Field 3',
-                    languageId: 1,
-                    modDate: '2024-01-03T00:00:00Z'
-                }
-            ] as unknown as DotCMSContentlet[];
 
             dotContentSearchService.get.mockReturnValue(
                 of({
@@ -354,15 +308,20 @@ describe('RelationshipFieldService', () => {
             );
 
             spectator.service.getColumnsAndContent(mockContentTypeId).subscribe(([_, items]) => {
-                expect(items[0]).toEqual({
-                    id: '789',
+                const item = {
+                    identifier: items[0].identifier,
+                    title: items[0].title,
+                    field: items[0].field,
+                    description: items[0].description,
+                    language: items[0].language
+                };
+                expect(item).toEqual({
+                    identifier: '789',
                     title: '789', // Should use identifier when title is null
                     field: 'Field 3',
                     description: 'Description 3',
-                    language: 'English (en)',
-                    modDate: formatDate(contentWithoutTitle[0].modDate, 'short', 'en-US')
+                    language: mockLocales[0]
                 });
-                done();
             });
         });
     });
