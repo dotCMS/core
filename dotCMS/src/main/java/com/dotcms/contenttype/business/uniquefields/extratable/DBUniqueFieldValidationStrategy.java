@@ -218,6 +218,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
      *
      * @throws UniqueFieldValueDuplicatedException The unique value already exists.
      */
+    @WrapInTransaction
     private void insertUniqueValue(final UniqueFieldCriteria uniqueFieldCriteria, final String contentletId) throws UniqueFieldValueDuplicatedException {
         final boolean uniquePerSite = uniqueFieldCriteria.field().fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
                 .map(Boolean::valueOf).orElse(false);
@@ -248,6 +249,20 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         }
     }
 
+    /**
+     * Utility method to check if the exception's message belongs to a situation in which the
+     * unique key has been violated. In this case, it means that a unique value already exists.
+     *
+     * @param exception The exception to check.
+     *
+     * @return If the exception is related to a duplicated key error, returns {@code true}.
+     */
+    private static boolean isDuplicatedKeyError(final Exception exception) {
+        final String originalMessage = exception.getMessage();
+        return originalMessage != null && originalMessage.startsWith(
+                "ERROR: duplicate key value violates unique constraint \"unique_fields_pkey\"");
+    }
+
     @WrapInTransaction
     @Override
     public void recalculate(final Field field, final boolean uniquePerSite) throws UniqueFieldValueDuplicatedException {
@@ -267,20 +282,6 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
             }
             throw new UniqueFieldValueDuplicatedException(errorMsg);
         }
-    }
-
-    /**
-     * Utility method to check if the exception's message belongs to a situation in which the
-     * unique key has been violated. In this case, it means that a unique value already exists.
-     *
-     * @param exception The exception to check.
-     *
-     * @return If the exception is related to a duplicated key error, returns {@code true}.
-     */
-    private static boolean isDuplicatedKeyError(final Exception exception) {
-        final String originalMessage = exception.getMessage();
-        return originalMessage != null && originalMessage.startsWith(
-                "ERROR: duplicate key value violates unique constraint \"unique_fields_pkey\"");
     }
 
     @Override
