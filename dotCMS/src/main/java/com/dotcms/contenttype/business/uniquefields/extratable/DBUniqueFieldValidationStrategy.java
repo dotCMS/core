@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
@@ -218,7 +217,6 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
      *
      * @throws UniqueFieldValueDuplicatedException The unique value already exists.
      */
-    @WrapInTransaction
     private void insertUniqueValue(final UniqueFieldCriteria uniqueFieldCriteria, final String contentletId) throws UniqueFieldValueDuplicatedException {
         final boolean uniquePerSite = uniqueFieldCriteria.field().fieldVariableValue(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
                 .map(Boolean::valueOf).orElse(false);
@@ -230,9 +228,9 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         try {
             Logger.debug(DBUniqueFieldValidationStrategy.class, String.format("Including value of field '%s' in Contentlet " +
                     "'%s' in the unique_fields table", uniqueFieldCriteria.field().variable(), contentletId));
-            uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
-        } catch (final DotDataException e) {
-            if (isDuplicatedKeyError(e)) {
+            final boolean isUnique = uniqueFieldDataBaseUtil.validateDuplicated(uniqueFieldCriteria.criteria(), supportingValues);
+
+            if (!isUnique) {
                 final String duplicatedValueMessage = String.format("The unique value '%s' for the field '%s'" +
                                 " in the Content Type '%s' already exists",
                         uniqueFieldCriteria.value(), uniqueFieldCriteria.field().variable(),
@@ -240,27 +238,13 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
                 Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
                 throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
-            } else {
-                final String errorMsg = String.format("Failed to insert unique value for Field '%s' in Contentlet " +
-                        "'%s': %s", uniqueFieldCriteria.field().variable(), contentletId, ExceptionUtil.getErrorMessage(e));
-                Logger.error(this, errorMsg, e);
-                throw new DotRuntimeException(errorMsg);
             }
+        } catch (final DotDataException e) {
+            final String errorMsg = String.format("Failed to insert unique value for Field '%s' in Contentlet " +
+                    "'%s': %s", uniqueFieldCriteria.field().variable(), contentletId, ExceptionUtil.getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotRuntimeException(errorMsg);
         }
-    }
-
-    /**
-     * Utility method to check if the exception's message belongs to a situation in which the
-     * unique key has been violated. In this case, it means that a unique value already exists.
-     *
-     * @param exception The exception to check.
-     *
-     * @return If the exception is related to a duplicated key error, returns {@code true}.
-     */
-    private static boolean isDuplicatedKeyError(final Exception exception) {
-        final String originalMessage = exception.getMessage();
-        return originalMessage != null && originalMessage.startsWith(
-                "ERROR: duplicate key value violates unique constraint \"unique_fields_pkey\"");
     }
 
     @WrapInTransaction
@@ -284,6 +268,20 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         }
     }
 
+    /**
+     * Utility method to check if the exception's message belongs to a situation in which the
+     * unique key has been violated. In this case, it means that a unique value already exists.
+     *
+     * @param exception The exception to check.
+     *
+     * @return If the exception is related to a duplicated key error, returns {@code true}.
+     */
+    private static boolean isDuplicatedKeyError(final Exception exception) {
+        final String originalMessage = exception.getMessage();
+        return originalMessage != null && originalMessage.startsWith(
+                "ERROR: duplicate key value violates unique constraint \"unique_fields_pkey\"");
+    }
+    
     @Override
     public void cleanUp(final Contentlet contentlet, final boolean deleteAllVariant) throws DotDataException {
         if (deleteAllVariant) {

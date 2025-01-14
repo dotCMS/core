@@ -11,8 +11,6 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
@@ -148,12 +146,38 @@ public class UniqueFieldDataBaseUtil {
         new DotConnect().setSQL(INSERT_SQL_WIT_HASH).addParam(key).addJSONParam(supportingValues).loadObjectResults();
     }
 
-    public void insert(final String key, final Map<String, Object> supportingValues) throws DotDataException {
-        new DotConnect()
-                .setSQL(INSERT_SQL)
-                .addParam(key)
-                .addJSONParam(supportingValues)
-                .loadObjectResults();
+    public boolean validateDuplicated(final String key, final Map<String, Object> supportingValues) throws DotDataException {
+        try {
+            new DotConnect()
+                    .setSQL(INSERT_SQL)
+                    .addParam(key)
+                    .addJSONParam(supportingValues)
+                    .loadObjectResults();
+
+            return true;
+        } catch (final DotDataException e) {
+            if (isDuplicatedKeyError(e)) {
+                return false;
+            } else {
+                throw e;
+            }
+        }finally {
+            HibernateUtil.closeAndCommitTransaction();
+        }
+    }
+
+    /**
+     * Utility method to check if the exception's message belongs to a situation in which the
+     * unique key has been violated. In this case, it means that a unique value already exists.
+     *
+     * @param exception The exception to check.
+     *
+     * @return If the exception is related to a duplicated key error, returns {@code true}.
+     */
+    private static boolean isDuplicatedKeyError(final Exception exception) {
+        final String originalMessage = exception.getMessage();
+        return originalMessage != null && originalMessage.startsWith(
+                "ERROR: duplicate key value violates unique constraint \"unique_fields_pkey\"");
     }
 
     /**

@@ -4599,7 +4599,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void multiUniqueFieldsCIntentType() throws DotDataException, DotSecurityException {
+    public void multiUniqueFieldsContentType() throws DotDataException, DotSecurityException {
 
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
@@ -4746,7 +4746,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             } catch (Exception e){
                 final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
-                        + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField_1.name(), uniqueTextField_1.variable());
+                        + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField_2.name(), uniqueTextField_2.variable());
 
                 assertEquals(expectedMessage, e.getMessage());
             }
