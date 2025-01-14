@@ -6,7 +6,7 @@
     (click)="toggleBookmark()"
     [icon]="bookmarked() ? 'pi pi-star-fill' : 'pi pi-star'"
     [loading]="loading()"
-    [label]="previewMode ? null : ('editpage.toolbar.bookmark.preview' | dm)"
+    [label]="previewMode ? null : ('editpage.toolbar.bookmark' | dm)"
     styleClass="p-button-text p-button-sm "
     [class.p-button-rounded]="previewMode"
     data-testId="bookmark-button" />
