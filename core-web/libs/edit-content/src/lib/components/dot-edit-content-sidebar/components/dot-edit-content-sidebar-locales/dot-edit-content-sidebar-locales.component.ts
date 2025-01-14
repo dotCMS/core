@@ -25,6 +25,11 @@ enum LOCALE_STATUS {
 }
 
 /**
+ * The maximum number of locales to display without truncation.
+ */
+const MAX_LOCALES = 9;
+
+/**
  * Component representing the locales section in the edit content sidebar.
  *
  * This component displays the available locales and the default locale for the content being edited.
@@ -65,7 +70,7 @@ export class DotEditContentSidebarLocalesComponent {
 
     readonly #dotMessageService = inject(DotMessageService);
 
-    $maxLocaleChips = signal(9);
+    $maxLocaleChips = signal(MAX_LOCALES);
     $showAll = signal(false);
 
     $btnLabel = computed(() => {

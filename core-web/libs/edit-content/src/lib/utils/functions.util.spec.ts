@@ -1,6 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeFieldVariable,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 
 import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
@@ -11,6 +15,7 @@ import {
     isFilteredType,
     isValidJson,
     setPersistSidebarState,
+    sortLocalesTranslatedFirst,
     stringToJson
 } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
@@ -658,6 +663,56 @@ describe('Utils Functions', () => {
                 const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
                 expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
             });
+        });
+    });
+
+    describe('sortLocalesTranslatedFirst', () => {
+        it('sorts locales with translated ones first', () => {
+            const locales = [
+                { languageCode: 'en', translated: true },
+                { languageCode: 'fr', translated: false },
+                { languageCode: 'es', translated: true },
+                { languageCode: 'de', translated: false }
+            ] as DotLanguage[];
+
+            const result = sortLocalesTranslatedFirst(locales);
+
+            expect(result).toEqual([
+                { languageCode: 'en', translated: true },
+                { languageCode: 'es', translated: true },
+                { languageCode: 'fr', translated: false },
+                { languageCode: 'de', translated: false }
+            ]);
+        });
+
+        it('returns an empty array when input is empty', () => {
+            const locales: DotLanguage[] = [];
+
+            const result = sortLocalesTranslatedFirst(locales);
+
+            expect(result).toEqual([]);
+        });
+
+        it('returns the same array when all locales are translated', () => {
+            const locales = [
+                { languageCode: 'en', translated: true },
+                { languageCode: 'es', translated: true }
+            ] as DotLanguage[];
+
+            const result = sortLocalesTranslatedFirst(locales);
+
+            expect(result).toEqual(locales);
+        });
+
+        it('returns the same array when no locales are translated', () => {
+            const locales = [
+                { languageCode: 'fr', translated: false },
+                { languageCode: 'de', translated: false }
+            ] as DotLanguage[];
+
+            const result = sortLocalesTranslatedFirst(locales);
+
+            expect(result).toEqual(locales);
         });
     });
 });
