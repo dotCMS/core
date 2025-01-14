@@ -4650,7 +4650,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             try {
                 APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
-
+                throw new AssertionError("Exception excepted");
             } catch (Exception e){
                 final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
                         + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField_1.name(), uniqueTextField_1.variable());
@@ -4682,7 +4682,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void multiUniqueFieldsCIntentTypeKeepExtableUnTouch() throws DotDataException, DotSecurityException {
+    public void multiUniqueFieldsCIntentTypeKeepExtraTableUnTouch() throws DotDataException, DotSecurityException {
 
         final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
 
@@ -4743,21 +4743,20 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
             try {
                 APILocator.getContentletAPI().checkin(contentlet_2, APILocator.systemUser(), false);
-
+                throw new AssertionError("Exception excepted");
             } catch (Exception e){
                 final String expectedMessage = String.format("Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s)."
                         + " - Fields: [UNIQUE]: %s (%s)", uniqueTextField_2.name(), uniqueTextField_2.variable());
 
                 assertEquals(expectedMessage, e.getMessage());
+
+                final ArrayList results = new DotConnect().setSQL("SELECT * FROM unique_fields " +
+                        "WHERE supporting_values->>'contentTypeId' = ? " +
+                        "and supporting_values->>'fieldValue' = '444'")
+                        .addParam(contentType.id()).loadResults();
+
+                assertTrue(results.isEmpty());
             }
-
-            final ArrayList results = new DotConnect().setSQL("SELECT * FROM unique_fields " +
-                    "WHERE supporting_values->>'contentTypeId' = ? " +
-                    "and supporting_values->>'fieldValue' = '444'").loadResults();
-
-            assertTrue(results.isEmpty());
-
-
         } finally {
             ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
         }
