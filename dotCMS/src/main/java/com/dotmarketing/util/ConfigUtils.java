@@ -75,9 +75,7 @@ public class ConfigUtils {
 	 * @return the backup directory path
 	 */
 	public static String getBackupPath() {
-		String dynamicContentPath = getDynamicContentPath();
-		return Config.getStringProperty("BACKUP_DIRECTORY_PATH",
-				Paths.get(dynamicContentPath, "dotsecure", "backup").toString());
+		return Config.getStringProperty("BACKUP_DIRECTORY_PATH", getDynamicContentPath() + File.separator + "backup");
 	}
 
 

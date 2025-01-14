@@ -63,11 +63,9 @@ import org.apache.commons.beanutils.BeanUtils;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
@@ -961,12 +958,11 @@ public class ImportStarterUtil {
             Path tempDir = Paths.get(tempDirPath);
 
             // Create the temp directory if it does not exist
-            try {
+
+            if (!Files.exists(tempDir)) {
                 Files.createDirectories(tempDir);
-            } catch (FileAlreadyExistsException e) {
-                if (!Files.isDirectory(tempDir)) {
-                    throw new DotStateException("Temp path exists but is not a directory: " + tempDirPath, e);
-                }
+            } else if (!Files.isDirectory(tempDir)) {
+                throw new DotRuntimeException("Backup path exists but is not a directory: " + backupTempFilePath);
             }
 
             // Extract the zip file contents into the temp directory
