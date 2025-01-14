@@ -110,22 +110,6 @@ function resetTemplateSelection() {
     dojo.byId("templateThumbnailHolder").style.border = '0px';
 }
 
-/**
-* Handles the template change event
-*
-*/
-function templateChanged() {
-    const templateSel = dijit.byId("templateSel");
-    const value = templateSel?.get('value');
-
-    if(!value || value == "0") {
-        resetTemplateSelection();
-        return;
-    }
-
-    dojo.byId("template").value=value;
-    fetchTemplateImage(value);
-}
 
 /**
 * Get the template callback
@@ -155,8 +139,9 @@ dojo.ready(function(){
     currentTemplateIdElement.value = templateId;
 
     const templateStore = new dotcms.dojo.data.TemplateReadStore({
-        hostId: '*',
-        templateSelected: templateId
+        hostId: '',
+        templateSelected: templateId,
+        allSiteLabel: true
     });
 
     const templateSelect = new dijit.form.FilteringSelect({
@@ -194,6 +179,34 @@ dojo.ready(function(){
         sort: [],
         onComplete: onTemplateFetchComplete
     };
+
+    function handleAllSiteClick() {
+        templateStore.hostId = "*";
+        templateStore.allSiteLabel=false;
+        resetTemplateSelection();
+    }
+
+    /**
+    * Handles the template change event
+    *
+    */
+    function templateChanged() {
+        const templateSel = dijit.byId("templateSel");
+        const value = templateSel?.get('value');
+
+        if(!value) {
+            resetTemplateSelection();
+            return;
+        }
+
+        if(value == "0") {
+            handleAllSiteClick();
+            return;
+        }
+
+        dojo.byId("template").value=value;
+        fetchTemplateImage(value);
+    }
 
     templateStore.fetch(templateFetchParams);
 });

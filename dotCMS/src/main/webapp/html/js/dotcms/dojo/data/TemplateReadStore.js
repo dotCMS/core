@@ -10,6 +10,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 	includeArchived: false,
 	includeTemplate: null,
 	templateSelected: '',
+	allSiteLabel: false,
 
 	/**
 	 * To Emulate this old Backend Behavion
@@ -27,6 +28,7 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 
 	constructor: function (options) {
 		this.hostId = options.hostId;
+		this.allSiteLabel = options.allSiteLabel;
 		this.templateSelected = options.templateSelected;
 	},
 
@@ -121,10 +123,9 @@ dojo.declare("dotcms.dojo.data.TemplateReadStore", null, {
 				.then((fetchResp) => fetchResp.json())
 				.then(responseEntity => {
 
-					if( hostId === '*') {
+					if(this.allSiteLabel) {
 						responseEntity.entity.unshift(this.ALL_SITE_TEMPLATE);
-					}
-
+					};
 
 					this.fetchTemplatesCallback(keywordArgs, responseEntity);
 				});
