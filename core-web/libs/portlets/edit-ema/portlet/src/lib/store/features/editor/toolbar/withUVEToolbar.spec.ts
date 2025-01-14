@@ -29,7 +29,7 @@ const initialState: UVEState = {
     isEnterprise: true,
     languages: [],
     pageAPIResponse: MOCK_RESPONSE_HEADLESS,
-    currentUser: null,
+    currentUser: mockCurrentUser,
     experiment: null,
     errorCode: null,
     pageParams,
@@ -109,23 +109,6 @@ describe('withEditor', () => {
             it('should return null', () => {
                 expect(store.$infoDisplayProps()).toBe(null);
             });
-
-            describe('socialMedia', () => {
-                it('should text for current social media', () => {
-                    store.setSEO('facebook');
-
-                    expect(store.$infoDisplayProps()).toEqual({
-                        icon: 'pi pi-facebook',
-                        id: 'socialMedia',
-                        info: {
-                            message: 'Viewing <b>facebook</b> social media preview',
-                            args: []
-                        },
-                        actionIcon: 'pi pi-times'
-                    });
-                });
-            });
-
             describe('variant', () => {
                 it('should show have text for variant', () => {
                     const currentExperiment = getRunningExperimentMock();
@@ -172,75 +155,6 @@ describe('withEditor', () => {
                         }
                     });
                 });
-                it('should show label and icon when page is lock for editing and has unlock permission', () => {
-                    patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            page: {
-                                ...MOCK_RESPONSE_HEADLESS.page,
-                                locked: true,
-                                canLock: true,
-                                lockedByName: 'John Doe',
-                                lockedBy: '456'
-                            }
-                        },
-                        currentUser: mockCurrentUser
-                    });
-                    expect(store.$infoDisplayProps()).toEqual({
-                        icon: 'pi pi-lock',
-                        id: 'locked',
-                        info: {
-                            message: 'editpage.locked-by',
-                            args: ['John Doe']
-                        }
-                    });
-                });
-
-                it("should show a different message for that can't be locked", () => {
-                    patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            page: {
-                                ...MOCK_RESPONSE_HEADLESS.page,
-                                locked: true,
-                                canLock: false,
-                                lockedByName: mockCurrentUser.givenName,
-                                lockedBy: mockCurrentUser.userId
-                            }
-                        },
-                        currentUser: {
-                            ...mockCurrentUser,
-                            userId: '123'
-                        }
-                    });
-
-                    expect(store.$infoDisplayProps()).toEqual({
-                        icon: 'pi pi-lock',
-                        id: 'locked',
-                        info: {
-                            message: 'editpage.locked-contact-with',
-                            args: ['Test']
-                        }
-                    });
-                });
-
-                it('should be null when locked by the same user', () => {
-                    patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            page: {
-                                ...MOCK_RESPONSE_HEADLESS.page,
-                                locked: true,
-                                canLock: true,
-                                lockedByName: mockCurrentUser.givenName,
-                                lockedBy: mockCurrentUser.userId
-                            }
-                        },
-                        currentUser: mockCurrentUser
-                    });
-
-                    expect(store.$infoDisplayProps()).toBe(null);
-                });
             });
 
             describe('$showWorkflowsActions', () => {
@@ -282,6 +196,119 @@ describe('withEditor', () => {
                         }
                     });
                     expect(store.$showWorkflowsActions()).toBe(false);
+                });
+            });
+        });
+
+        describe('$unlockButton', () => {
+            it('should be null if the page is not locked', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...store.pageAPIResponse(),
+                        page: {
+                            ...store.pageAPIResponse().page,
+                            locked: false
+                        }
+                    }
+                });
+
+                expect(store.$unlockButton()).toBe(null);
+            });
+
+            it('should be null if the page is locked by the current user', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...store.pageAPIResponse(),
+                        page: {
+                            ...store.pageAPIResponse().page,
+                            locked: true,
+                            lockedBy: mockCurrentUser.userId
+                        }
+                    },
+                    pageParams: {
+                        ...store.pageParams(),
+                        editorMode: UVE_MODE.EDIT
+                    }
+                });
+
+                expect(store.$unlockButton()).toBe(null);
+            });
+
+            it('should be null if the page is locked but mode is preview', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...store.pageAPIResponse(),
+                        page: {
+                            ...store.pageAPIResponse().page,
+                            locked: true,
+                            lockedBy: '123'
+                        }
+                    },
+                    pageParams: {
+                        ...store.pageParams(),
+                        editorMode: UVE_MODE.PREVIEW
+                    }
+                });
+
+                expect(store.$unlockButton()).toBe(null);
+            });
+
+            it('should show label and icon when page is lock for editing and has unlock permission', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            locked: true,
+                            canLock: true,
+                            lockedByName: 'John Doe',
+                            lockedBy: '456'
+                        }
+                    },
+                    pageParams: {
+                        ...store.pageParams(),
+                        editorMode: UVE_MODE.EDIT
+                    },
+                    status: UVE_STATUS.LOADED
+                });
+                expect(store.$unlockButton()).toEqual({
+                    inode: store.pageAPIResponse().page.inode,
+                    disabled: false,
+                    loading: false,
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
+            });
+
+            it('should be disabled if the page is locked by another user and cannot be unlocked', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            locked: true,
+                            lockedBy: '123',
+                            lockedByName: 'John Doe',
+                            canLock: false
+                        }
+                    },
+                    pageParams: {
+                        ...store.pageParams(),
+                        editorMode: UVE_MODE.EDIT
+                    },
+                    status: UVE_STATUS.LOADED
+                });
+
+                expect(store.$unlockButton()).toEqual({
+                    disabled: true,
+                    info: {
+                        message: 'editpage.locked-by',
+                        args: ['John Doe']
+                    },
+                    inode: store.pageAPIResponse().page.inode,
+                    loading: false
                 });
             });
         });
