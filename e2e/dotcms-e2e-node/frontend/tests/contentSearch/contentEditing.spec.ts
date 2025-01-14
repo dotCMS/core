@@ -7,9 +7,14 @@ import {
 } from '../../locators/navigation/menuLocators';
 import {ContentUtils} from "../../utils/contentUtils";
 import {iFramesLocators, contentGeneric, fileAsset, pageAsset} from "../../locators/globalLocators";
-import {genericContent1, contentProperties, fileAssetContent, pageAssetContent} from "./contentData";
+import {
+    genericContent1,
+    contentProperties,
+    fileAssetContent,
+    pageAssetContent,
+    accessibilityReport
+} from "./contentData";
 import {assert} from "console";
-
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
@@ -44,11 +49,34 @@ test('Add a new Generic content', async ({page}) => {
 
     // Adding new rich text content
     await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
-    await contentUtils.fillRichTextForm(page, genericContent1.title, genericContent1.body, contentProperties.publishWfAction);
+    await contentUtils.fillRichTextForm({
+        page,
+        title: genericContent1.title,
+        body:  genericContent1.body,
+        action: contentProperties.publishWfAction,
+    });
     await contentUtils.workflowExecutionValidationAndClose(page, 'Content saved');
-
     await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr').first(), async () => {});
+    await contentUtils.validateContentExist(page, genericContent1.title).then(assert);
+});
 
+/**
+ * Test to edit an existing piece of content and make sure you can discard the changes
+ */
+test('Edit a generic content and discard changes', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+
+    await contentUtils.selectTypeOnFilter(page, contentGeneric.locator);
+    await contentUtils.editContent({
+        page,
+        title: genericContent1.title,
+        newTitle: genericContent1.newTitle,
+        newBody: "genericContent1",
+    });
+    await waitForVisibleAndCallback(page.getByTestId ('close-button'),  () => page.getByTestId('close-button').click());
+    await waitForVisibleAndCallback(page.getByRole('button', { name: 'Close' }),  () =>page.getByRole('button', { name: 'Close' }).click());
+    await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr').first(), async () => {});
     await contentUtils.validateContentExist(page, genericContent1.title).then(assert);
 });
 
@@ -59,9 +87,14 @@ test('Edit a generic content', async ({page}) => {
     const contentUtils = new ContentUtils(page);
     const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
-    // Edit the content
     await contentUtils.selectTypeOnFilter(page, contentGeneric.locator);
-    await contentUtils.editContent(page, genericContent1.title, genericContent1.newTitle, genericContent1.newBody, contentProperties.publishWfAction);
+    await contentUtils.editContent({
+        page,
+        title: genericContent1.title,
+        newTitle: genericContent1.newTitle,
+        newBody: genericContent1.newBody,
+        action: contentProperties.publishWfAction,
+    });
     await waitForVisibleAndCallback(iframe.locator('#results_table tbody tr').first(), async () => {});
     await contentUtils.validateContentExist(page, genericContent1.newTitle).then(assert);
 });
@@ -83,7 +116,12 @@ test('Validate required on text fields', async ({page}) => {
     const iframe = page.frameLocator(iFramesLocators.dot_iframe);
 
     await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
-    await contentUtils.fillRichTextForm(page, '', genericContent1.body, contentProperties.publishWfAction);
+    await contentUtils.fillRichTextForm({
+        page,
+        title: '',
+        body: genericContent1.body,
+        action: contentProperties.publishWfAction,
+    });
     await expect(iframe.getByText('Error x')).toBeVisible();
     await expect(iframe.getByText('The field Title is required.')).toBeVisible();
 });
@@ -347,6 +385,30 @@ test('Add a new page', async ({page}) => {
 });
 
 /**
+ * Test to validate the URL is unique on pages
+ */
+test('Validate URL is unique on pages', async ({page}) => {
+    const contentUtils = new ContentUtils(page);
+
+    await contentUtils.addNewContentAction(page, pageAsset.locator, pageAsset.label);
+    await contentUtils.fillPageAssetForm({
+        page: page,
+        title: pageAssetContent.title,
+        host: pageAssetContent.host,
+        template: pageAssetContent.template,
+        friendlyName: pageAssetContent.friendlyName,
+        showOnMenu: pageAssetContent.showOnMenu,
+        sortOrder: pageAssetContent.sortOrder,
+        cacheTTL: pageAssetContent.cacheTTL,
+        action: contentProperties.publishWfAction,
+    });
+    await page.frameLocator('dot-iframe-dialog iframe[name="detailFrame"]').getByText('Another Page with the same').click();
+
+    const iframe = page.frameLocator(iFramesLocators.dot_iframe);
+    await expect(iframe.getByText('Another Page with the same')).toBeVisible();
+});
+
+/**
  * Test to validate the required fields on the page form
  */
 test('Validate required fields on page asset', async ({page}) => {
@@ -407,3 +469,14 @@ test('Validate you are able to delete pages', async ({page}) => {
     await contentUtils.selectTypeOnFilter(page, pageAsset.locator);
     await contentUtils.deleteContent(page, pageAssetContent.title);
 });
+
+/**
+ * Test to do a regression according the axe-standards on accessibility
+ */
+/**
+test('accessibility test', async ({page}) => {
+    const accessibility = new accessibilityUtils(page);
+    const accessibilityScanResults = await accessibility.generateReport(page, accessibilityReport.name);
+    expect(accessibilityScanResults.violations).toEqual([]); // 5
+});
+ */
