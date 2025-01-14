@@ -19,7 +19,6 @@ import {
     createPageApiUrlWithQueryParams,
     createFullURL,
     getIsDefaultVariant,
-    sanitizeURL,
     computePageIsLocked
 } from '../../../../utils';
 import { UVEState } from '../../../models';
@@ -46,7 +45,7 @@ export function withEditorToolbar() {
         withComputed((store) => ({
             $toolbarProps: computed<ToolbarProps>(() => {
                 const params = store.pageParams();
-                const url = sanitizeURL(params?.url);
+                const url = params?.url;
 
                 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
                 const pageAPIResponse = store.pageAPIResponse();
