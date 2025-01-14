@@ -187,7 +187,7 @@ import com.dotmarketing.startup.runonce.Task240112AddMetadataColumnToStructureTa
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemFieldTest;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayoutTest;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflowTest;
-import com.dotmarketing.startup.runonce.Task241009CreatePostgresJobQueueTablesTest;
+import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTablesTest;
 import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifierTest;
 import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortletTest;
 import com.dotmarketing.startup.runonce.Task241016AddCustomLanguageVariablesPortletToLayoutTest;
@@ -397,8 +397,7 @@ import org.junit.runners.Suite.SuiteClasses;
         SimpleJUnit4InjectionIT.class,
         LegacyJSONObjectRenderTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
-        Task241009CreatePostgresJobQueueTablesTest.class,
-
+        Task250113CreatePostgresJobQueueTablesTest.class,
         UniqueFieldDataBaseUtilTest.class,
         DBUniqueFieldValidationStrategyTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
