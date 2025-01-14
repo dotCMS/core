@@ -2,8 +2,7 @@ Feature: Add pieces of content then Publish the Page
   Background:
 
    * def page_id = __arg.page_id
-   * def content1_id = __arg.content1_id
-   * def content2_id = __arg.content2_id
+   * def content_ids = __arg.content_ids
    * def container_id = __arg.container_id
 
   Scenario: Create a new version of a piece of content
@@ -13,7 +12,7 @@ Feature: Add pieces of content then Publish the Page
       """
       [
         {
-          "contentletsId": ["#(content1_id)", "#(content2_id)"],
+          "contentletsId": "#(content_ids)",
           "identifier": "#(container_id)",
           "uuid": "1"
         }

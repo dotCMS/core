@@ -154,7 +154,6 @@ public class HTMLPageAssetRenderedBuilder {
         // (unless host is specified in the dotParse) github 14624
         final RenderParams params=new RenderParams(user,language, site, mode);
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
-        //final User systemUser = APILocator.getUserAPI().getSystemUser();
         final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
 

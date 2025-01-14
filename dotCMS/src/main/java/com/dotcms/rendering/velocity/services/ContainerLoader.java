@@ -299,12 +299,6 @@ public class ContainerLoader implements DotLoader {
                         .append("#set($_show_working_=true)")
                        .append("#end");
 
-                      //Only show the working version if the content has a published version except if caller is pageAPI
-                      velocityCodeBuilder
-                      .append("#if(!$webapi.contentHasLiveVersion($contentletId) && ! $_show_working_ && !$_pageAPI)")
-                        .append("#set($contentletId='')") // working contentlet still not published
-                      .append("#end");
-
                       velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
                         .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
                       .append("#end");
