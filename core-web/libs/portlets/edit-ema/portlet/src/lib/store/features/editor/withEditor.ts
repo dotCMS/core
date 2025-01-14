@@ -28,6 +28,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
+import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -160,6 +161,15 @@ export function withEditor() {
 
                     const wrapper = getWrapperMeasures(device, store.orientation());
 
+                    const shouldDisableDeleteButton =
+                        pageAPIResponse?.numberContents === 1 && // If there is only one content, we should disable the delete button
+                        pageAPIResponse?.viewAs?.persona && // If there is a persona, we should disable the delete button
+                        pageAPIResponse?.viewAs?.persona?.identifier !== DEFAULT_PERSONA.identifier; // If the persona is not the default persona, we should disable the delete button
+
+                    const message = 'uve.disable.delete.button.on.personalization';
+
+                    const disableDeleteButton = shouldDisableDeleteButton ? message : null;
+
                     return {
                         showDialogs,
                         showBlockEditorSidebar,
@@ -173,7 +183,8 @@ export function withEditor() {
                             ? {
                                   isEnterprise,
                                   contentletArea,
-                                  hide: dragIsActive
+                                  hide: dragIsActive,
+                                  disableDeleteButton
                               }
                             : null,
                         dropzone: showDropzone
