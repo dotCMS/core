@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -34,7 +33,6 @@ export class DotEmaBookmarksComponent implements OnInit {
     @Input() url = '';
 
     private readonly dotFavoritePageService = inject(DotFavoritePageService);
-    private readonly http = inject(HttpClient);
     private readonly dialogService = inject(DialogService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);

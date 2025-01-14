@@ -105,7 +105,7 @@ describe('DotSelectExistingContentComponent', () => {
             ];
             spectator.component.$selectedItems.set(mockItems);
 
-            spectator.component.closeDialog();
+            spectator.component.applyChanges();
 
             expect(dialogRef.close).toHaveBeenCalledWith(mockItems);
         });
@@ -113,9 +113,15 @@ describe('DotSelectExistingContentComponent', () => {
         it('should close dialog with empty array when no items selected', () => {
             spectator.component.$selectedItems.set([]);
 
-            spectator.component.closeDialog();
+            spectator.component.applyChanges();
 
             expect(dialogRef.close).toHaveBeenCalledWith([]);
+        });
+
+        it('should close dialog when cancel button is clicked', () => {
+            spectator.component.closeDialog();
+
+            expect(dialogRef.close).toHaveBeenCalledWith();
         });
     });
 

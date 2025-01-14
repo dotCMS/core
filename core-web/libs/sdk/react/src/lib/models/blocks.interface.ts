@@ -8,6 +8,7 @@ import { ContentNode } from './content-node.interface';
  */
 export interface Block {
     content: ContentNode[];
+    type: string;
 }
 
 /**
@@ -78,4 +79,15 @@ export enum Blocks {
     DOT_VIDEO = 'dotVideo',
     TABLE = 'table',
     DOT_CONTENT = 'dotContent'
+}
+
+/**
+ * Represents the validation state of a Block Editor instance
+ *
+ * @interface BlockEditorState
+ * @property {boolean} isValid - Whether the blocks structure is valid
+ * @property {string | null} error - Error message if blocks are invalid, null otherwise
+ */
+export interface BlockEditorState {
+    error?: string;
 }
