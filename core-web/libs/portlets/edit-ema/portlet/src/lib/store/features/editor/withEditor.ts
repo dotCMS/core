@@ -57,7 +57,7 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
     const origin = params.clientHost || window.location.origin;
     const url = new URL(pageAPIQueryParams, origin);
 
-    return sanitizeURL(url.toString());
+    return url.toString();
 };
 
 const initialState: EditorState = {
@@ -110,6 +110,12 @@ export function withEditor() {
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
+                $pageRender: computed<string>(() => {
+                    return store.pageAPIResponse()?.page?.rendered;
+                }),
+                $enableInlineEdit: computed<boolean>(() => {
+                    return store.isEditState() && untracked(() => store.isEnterprise());
+                }),
                 $editorIsInDraggingState: computed<boolean>(
                     () => store.state() === EDITOR_STATE.DRAGGING
                 ),
@@ -157,7 +163,6 @@ export function withEditor() {
                     return {
                         showDialogs,
                         showBlockEditorSidebar,
-                        showEditorContent: !socialMedia,
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
@@ -195,13 +200,23 @@ export function withEditor() {
                 }),
                 $iframeURL: computed<string>(() => {
                     const page = store.pageAPIResponse().page;
+                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
+
+                    const sanitizedURL = sanitizeURL(vanityURL ?? page?.pageURI);
                     const url = buildIframeURL({
-                        pageURI: page?.pageURI,
+                        pageURI: sanitizedURL,
                         params: store.pageParams(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });
 
                     return url;
+                }),
+                $editorContentStyles: computed<Record<string, string>>(() => {
+                    const socialMedia = store.socialMedia();
+
+                    return {
+                        display: socialMedia ? 'none' : 'block'
+                    };
                 })
             };
         }),

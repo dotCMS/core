@@ -319,22 +319,38 @@ describe('utils functions', () => {
             expect(sanitizeURL('/hello-there/')).toEqual('hello-there');
         });
 
-        it('should remove the index if a nested path', () => {
-            expect(sanitizeURL('i-have-the-high-ground/index')).toEqual('i-have-the-high-ground');
-        });
-
-        it('should remove the index if a nested path with slash', () => {
-            expect(sanitizeURL('no-index-please/index/')).toEqual('no-index-please');
-        });
-
         it('should leave as it is for valid url', () => {
             expect(sanitizeURL('this-is-where-the-fun-begins')).toEqual(
                 'this-is-where-the-fun-begins'
             );
         });
 
-        it('should leave as it is for a nested valid url', () => {
-            expect(sanitizeURL('hello-there/general-kenobi')).toEqual('hello-there/general-kenobi');
+        it('should return index if the url is index without nested path', () => {
+            expect(sanitizeURL('index')).toEqual('index');
+            expect(sanitizeURL('index/')).toEqual('index');
+            expect(sanitizeURL('/index/')).toEqual('index');
+        });
+
+        describe('nested url', () => {
+            it('should leave as it is for a nested valid url', () => {
+                expect(sanitizeURL('hello-there/general-kenobi')).toEqual(
+                    'hello-there/general-kenobi'
+                );
+            });
+
+            it('should remove index from the end of the url but keep the slash if is a nested path', () => {
+                expect(sanitizeURL('my-nested-path/index/')).toEqual('my-nested-path/');
+            });
+
+            it('should remove the index if a nested path', () => {
+                expect(sanitizeURL('i-have-the-high-ground/index')).toEqual(
+                    'i-have-the-high-ground/'
+                );
+            });
+
+            it('should remove the index if a nested path with slash', () => {
+                expect(sanitizeURL('no-index-please/index/')).toEqual('no-index-please/');
+            });
         });
     });
 

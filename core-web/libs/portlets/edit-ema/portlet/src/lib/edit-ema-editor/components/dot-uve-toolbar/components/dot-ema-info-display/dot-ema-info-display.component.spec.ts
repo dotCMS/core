@@ -6,11 +6,11 @@ import {
     createComponentFactory,
     mockProvider
 } from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -25,19 +25,15 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
 import {
-    DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
-    getRunningExperimentMock,
-    mockDotDevices
+    getRunningExperimentMock
 } from '@dotcms/utils-testing';
 
 import { DotEmaInfoDisplayComponent } from './dot-ema-info-display.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../../../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
@@ -50,10 +46,16 @@ describe('DotEmaInfoDisplayComponent', () => {
         component: DotEmaInfoDisplayComponent,
         imports: [CommonModule, HttpClientTestingModule],
         providers: [
-            UVEStore,
             MessageService,
             mockProvider(Router),
             mockProvider(ActivatedRoute),
+            {
+                provide: UVEStore,
+                useValue: {
+                    clearDeviceAndSocialMedia: jest.fn(),
+                    experiment: signal(getRunningExperimentMock())
+                }
+            },
             {
                 provide: DotWorkflowsActionsService,
                 useValue: {
@@ -66,7 +68,7 @@ describe('DotEmaInfoDisplayComponent', () => {
             },
             {
                 provide: DotExperimentsService,
-                useValue: DotExperimentsServiceMock
+                useValue: {}
             },
             {
                 provide: DotPageApiService,
@@ -99,71 +101,40 @@ describe('DotEmaInfoDisplayComponent', () => {
         ]
     });
 
-    describe('device', () => {
-        beforeEach(() => {
-            spectator = createComponent();
+    beforeEach(() => {
+        spectator = createComponent();
 
-            store = spectator.inject(UVEStore);
+        store = spectator.inject(UVEStore);
 
-            store.loadPageAsset({
-                clientHost: 'http://localhost:3000',
-                url: 'index',
-                language_id: '1',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            });
-            store.setDevice({ ...mockDotDevices[0], icon: 'test' });
-        });
-
-        it('should show name, sizes and icon of the selected device', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('info-text')).textContent.trim()).toBe(
-                'iphone 200 x 100'
-            );
-            expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
-        });
-
-        it('should call clearDeviceAndSocialMedia when action button is clicked', () => {
-            spectator.detectChanges();
-
-            const clearDeviceAndSocialMediaSpy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
-
-            const infoAction = spectator.debugElement.query(By.css('[data-testId="info-action"]'));
-
-            spectator.triggerEventHandler(infoAction, 'onClick', store.$infoDisplayOptions());
-
-            expect(clearDeviceAndSocialMediaSpy).toHaveBeenCalled();
+        spectator.setInput('options', {
+            icon: `pi pi-facebook}`,
+            id: 'socialMedia',
+            info: {
+                message: `Viewing <b>facebook</b> social media preview`,
+                args: []
+            },
+            actionIcon: 'pi pi-times'
         });
     });
 
-    describe('socialMedia', () => {
-        beforeEach(() => {
-            spectator = createComponent();
-
-            store = spectator.inject(UVEStore);
-
-            store.loadPageAsset({
-                clientHost: 'http://localhost:3000',
-                url: 'index',
-                language_id: '1',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-            });
-            store.setSocialMedia('facebook');
-        });
-        it('should text for current social media', () => {
-            spectator.detectChanges();
+    describe('DOM', () => {
+        it('should show an icon and a text when passed through options', () => {
+            expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
             expect(spectator.query(byTestId('info-text')).textContent.trim()).toBe(
                 'Viewing facebook social media preview'
             );
-            expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
         });
-        it('should call clearDeviceAndSocialMedia when action button is clicked', () => {
-            spectator.detectChanges();
 
+        it('should have an actionIcon when provided', () => {
+            expect(spectator.query(byTestId('info-action'))).not.toBeNull();
+        });
+
+        it('should call clearDeviceAndSocialMedia when action button is clicked', () => {
             const clearDeviceAndSocialMediaSpy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
 
             const infoAction = spectator.debugElement.query(By.css('[data-testId="info-action"]'));
 
-            spectator.triggerEventHandler(infoAction, 'onClick', store.$infoDisplayOptions());
+            spectator.triggerEventHandler(infoAction, 'onClick', {});
 
             expect(clearDeviceAndSocialMediaSpy).toHaveBeenCalled();
         });
@@ -172,50 +143,24 @@ describe('DotEmaInfoDisplayComponent', () => {
     describe('variant', () => {
         beforeEach(() => {
             spectator = createComponent();
-
-            store = spectator.inject(UVEStore);
             router = spectator.inject(Router);
 
-            store.loadPageAsset({
-                clientHost: 'http://localhost:3000',
-                url: 'index',
-                language_id: '1',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                variantId: '555-5555-5555-5555'
-            });
-
-            const currentExperiment = getRunningExperimentMock();
-
-            const variantID = currentExperiment.trafficProportion.variants.find(
-                (variant) => variant.name !== DEFAULT_VARIANT_NAME
-            ).id;
-
-            patchState(store, {
-                pageAPIResponse: {
-                    ...MOCK_RESPONSE_HEADLESS,
-                    viewAs: {
-                        ...MOCK_RESPONSE_HEADLESS.viewAs,
-                        variantId: variantID
-                    }
+            spectator.setInput('options', {
+                icon: 'pi pi-file-edit',
+                id: 'variant',
+                info: {
+                    message: 'editpage.editing.variant',
+                    args: ['Variant A']
                 },
-                experiment: currentExperiment
+                actionIcon: 'pi pi-arrow-left'
             });
-        });
-        it('should show have text for variant', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('info-text')).textContent.trim()).toBe(
-                'editpage.editing.variant'
-            );
-            expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
         });
         it('should call router when action button is clicked', () => {
-            spectator.detectChanges();
-
             const navigateSpy = jest.spyOn(router, 'navigate');
 
             const infoAction = spectator.debugElement.query(By.css('[data-testId="info-action"]'));
 
-            spectator.triggerEventHandler(infoAction, 'onClick', store.$infoDisplayOptions());
+            spectator.triggerEventHandler(infoAction, 'onClick', {});
 
             expect(navigateSpy).toHaveBeenCalledWith(
                 ['/edit-page/experiments/', '456', '555-5555-5555-5555', 'configuration'],
@@ -224,55 +169,6 @@ describe('DotEmaInfoDisplayComponent', () => {
                     queryParamsHandling: 'merge'
                 }
             );
-        });
-    });
-
-    describe('edit permissions', () => {
-        beforeEach(() => {
-            spectator = createComponent();
-
-            store = spectator.inject(UVEStore);
-
-            patchState(store, {
-                canEditPage: false
-            });
-        });
-        it('should show label and icon for no permissions', () => {
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('info-text')).textContent.trim()).toBe(
-                'editema.dont.have.edit.permission'
-            );
-            expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
-        });
-    });
-
-    describe('edit permissions', () => {
-        beforeEach(() => {
-            spectator = createComponent();
-
-            store = spectator.inject(UVEStore);
-
-            patchState(store, {
-                pageAPIResponse: {
-                    ...MOCK_RESPONSE_HEADLESS,
-                    page: {
-                        ...MOCK_RESPONSE_HEADLESS.page,
-                        locked: true,
-                        canLock: true,
-                        lockedByName: 'John Doe'
-                    }
-                }
-            });
-        });
-
-        it('should show label and icon for no permissions', () => {
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('info-text')).textContent.trim()).toBe(
-                'editpage.locked-by'
-            );
-
-            expect(spectator.query(byTestId('info-icon'))).not.toBeNull();
         });
     });
 });
