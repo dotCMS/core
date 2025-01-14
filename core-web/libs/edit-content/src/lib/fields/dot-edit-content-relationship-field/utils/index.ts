@@ -1,4 +1,4 @@
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
 import { RelationshipTypes } from '../models/relationship.models';
@@ -54,4 +54,21 @@ export function getRelationshipFromContentlet({
     }
 
     return isArray ? relationship : [relationship];
+}
+
+/**
+ * Extracts the content type ID from a relationship field.
+ *
+ * @param field - The DotCMS content type field object containing the relationship data
+ * @returns The content type ID
+ * @throws An error if the content type ID is not found
+ */
+export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField): string {
+    if (!field?.relationships?.velocityVar) {
+        throw new Error('Content type ID not found in relationship field');
+    }
+
+    const [contentTypeId] = field.relationships.velocityVar.split('.');
+
+    return contentTypeId;
 }
