@@ -228,9 +228,10 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
         try {
             Logger.debug(DBUniqueFieldValidationStrategy.class, String.format("Including value of field '%s' in Contentlet " +
                     "'%s' in the unique_fields table", uniqueFieldCriteria.field().variable(), contentletId));
-            final boolean isUnique = uniqueFieldDataBaseUtil.validateDuplicated(uniqueFieldCriteria.criteria(), supportingValues);
+            uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
 
-            if (!isUnique) {
+        } catch (final DotDataException e) {
+            if (isDuplicatedKeyError(e)) {
                 final String duplicatedValueMessage = String.format("The unique value '%s' for the field '%s'" +
                                 " in the Content Type '%s' already exists",
                         uniqueFieldCriteria.value(), uniqueFieldCriteria.field().variable(),
@@ -238,12 +239,12 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
                 Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
                 throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
+            } else {
+                final String errorMsg = String.format("Failed to insert unique value for Field '%s' in Contentlet " +
+                        "'%s': %s", uniqueFieldCriteria.field().variable(), contentletId, ExceptionUtil.getErrorMessage(e));
+                Logger.error(this, errorMsg, e);
+                throw new DotRuntimeException(e);
             }
-        } catch (final DotDataException e) {
-            final String errorMsg = String.format("Failed to insert unique value for Field '%s' in Contentlet " +
-                    "'%s': %s", uniqueFieldCriteria.field().variable(), contentletId, ExceptionUtil.getErrorMessage(e));
-            Logger.error(this, errorMsg, e);
-            throw new DotRuntimeException(errorMsg);
         }
     }
 

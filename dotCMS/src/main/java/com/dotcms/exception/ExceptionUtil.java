@@ -132,6 +132,18 @@ public class ExceptionUtil {
         return false;
     }
 
+    public static Optional<Throwable> get(final Throwable e, final Class <? extends Throwable> exceptionClass) {
+
+        Throwable t = e;
+        while (t != null) {
+            if (t.getClass().equals(exceptionClass)) {
+                return Optional.of(t);
+            }
+            t = t.getCause();
+        }
+        return Optional.empty();
+    }
+
     /**
      * Returns true if the Throwable is instance or contains a cause of the specified on any of the exceptionClasses
      * @param e
