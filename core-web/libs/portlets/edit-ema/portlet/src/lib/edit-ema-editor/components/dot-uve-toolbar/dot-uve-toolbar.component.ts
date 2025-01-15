@@ -1,3 +1,5 @@
+import { tapResponse } from '@ngrx/operators';
+
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
@@ -26,7 +28,12 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { map } from 'rxjs/operators';
 
 import { UVE_MODE } from '@dotcms/client';
-import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotDevicesService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -83,12 +90,16 @@ export class DotUveToolbarComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
+    readonly #dotContentletLockerService = inject(DotContentletLockerService);
 
     readonly $toolbar = this.#store.$uveToolbar;
+    readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
+    readonly $unlockButton = this.#store.$unlockButton;
+
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
         {
@@ -97,14 +108,6 @@ export class DotUveToolbarComponent {
     );
 
     protected readonly CURRENT_DATE = new Date();
-
-    readonly $styleToolbarClass = computed(() => {
-        if (!this.$isPreviewMode()) {
-            return 'uve-toolbar';
-        }
-
-        return 'uve-toolbar uve-toolbar-preview';
-    });
 
     protected readonly publishDateParam = this.#store.pageParams().publishDate;
     protected readonly $previewDate = model<Date>(
@@ -305,5 +308,41 @@ export class DotUveToolbarComponent {
                 this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
             }
         });
+    }
+
+    /**
+     * Unlocks a page with the specified inode.
+     *
+     * @param {string} inode
+     * @memberof EditEmaToolbarComponent
+     */
+    unlockPage(inode: string) {
+        this.#messageService.add({
+            severity: 'info',
+            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+            detail: this.#dotMessageService.get('edit.ema.page.is.being.unlocked')
+        });
+
+        this.#dotContentletLockerService
+            .unlock(inode)
+            .pipe(
+                tapResponse({
+                    next: () => {
+                        this.#messageService.add({
+                            severity: 'success',
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
+                        });
+                    },
+                    error: () => {
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
+                        });
+                    }
+                })
+            )
+            .subscribe(() => this.#store.reloadCurrentPage());
     }
 }

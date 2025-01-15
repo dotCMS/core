@@ -11,6 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { UVE_MODE } from '@dotcms/client';
 import {
+    DotContentletLockerService,
     DotDevicesService,
     DotExperimentsService,
     DotLanguagesService,
@@ -105,10 +106,12 @@ const baseUVEState = {
         { id: 2, translated: false },
         { id: 3, translated: true }
     ]),
+    $showWorkflowsActions: signal(true),
     patchViewParams: jest.fn(),
     orientation: signal(''),
     clearDeviceAndSocialMedia: jest.fn(),
-    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'))
+    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
+    $unlockButton: signal(null)
 };
 
 describe('DotUveToolbarComponent', () => {
@@ -117,6 +120,7 @@ describe('DotUveToolbarComponent', () => {
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
+    let dotContentletLockerService: DotContentletLockerService;
 
     const fixedDate = new Date('2024-01-01');
     jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
@@ -134,6 +138,9 @@ describe('DotUveToolbarComponent', () => {
         providers: [
             UVEStore,
             provideHttpClientTesting(),
+            mockProvider(DotContentletLockerService, {
+                unlock: jest.fn().mockReturnValue(of({}))
+            }),
             mockProvider(ConfirmationService, {
                 confirm: jest.fn()
             }),
@@ -196,6 +203,7 @@ describe('DotUveToolbarComponent', () => {
             messageService = spectator.inject(MessageService, true);
             devicesService = spectator.inject(DotDevicesService);
             confirmationService = spectator.inject(ConfirmationService, true);
+            dotContentletLockerService = spectator.inject(DotContentletLockerService);
         });
 
         it('should have a dot-uve-workflow-actions component', () => {
@@ -213,6 +221,82 @@ describe('DotUveToolbarComponent', () => {
                     ...DEFAULT_DEVICES,
                     ...mockDotDevices
                 ]);
+            });
+        });
+
+        describe('unlock button', () => {
+            it('should be null', () => {
+                expect(spectator.query(byTestId('uve-toolbar-unlock-button'))).toBeNull();
+            });
+
+            it('should be true', () => {
+                baseUVEState.$unlockButton.set({
+                    inode: '123',
+                    disabled: false,
+                    loading: false,
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-unlock-button'))).toBeTruthy();
+            });
+
+            it('should be disabled', () => {
+                baseUVEState.$unlockButton.set({
+                    disabled: true,
+                    loading: false,
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    },
+                    inode: '123'
+                });
+                spectator.detectChanges();
+                expect(
+                    spectator
+                        .query(byTestId('uve-toolbar-unlock-button'))
+                        .getAttribute('ng-reflect-disabled')
+                ).toEqual('true');
+            });
+
+            it('should be loading', () => {
+                baseUVEState.$unlockButton.set({
+                    loading: true,
+                    disabled: false,
+                    inode: '123',
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
+                spectator.detectChanges();
+                expect(
+                    spectator
+                        .query(byTestId('uve-toolbar-unlock-button'))
+                        .getAttribute('ng-reflect-loading')
+                ).toEqual('true');
+            });
+
+            it('should call dotContentletLockerService.unlockPage', () => {
+                const spy = jest.spyOn(dotContentletLockerService, 'unlock');
+
+                baseUVEState.$unlockButton.set({
+                    loading: true,
+                    disabled: false,
+                    inode: '123',
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
+                spectator.detectChanges();
+
+                spectator.click(byTestId('uve-toolbar-unlock-button'));
+
+                expect(spy).toHaveBeenCalledWith('123');
             });
         });
 
@@ -476,6 +560,9 @@ describe('DotUveToolbarComponent', () => {
         });
 
         it('should not have a dot-uve-workflow-actions component', () => {
+            baseUVEState.$showWorkflowsActions.set(false);
+            spectator.detectChanges();
+
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
             expect(workflowActions).toBeNull();

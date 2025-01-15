@@ -18,7 +18,13 @@ import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaBookmarksComponent } from './dot-ema-bookmarks.component';
 
+import { mockCurrentUser } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
+
+const mockStore = {
+    $previewMode: signal(false),
+    currentUser: signal(mockCurrentUser)
+};
 
 describe('DotEmaBookmarksComponent', () => {
     let spectator: Spectator<DotEmaBookmarksComponent>;
@@ -29,7 +35,7 @@ describe('DotEmaBookmarksComponent', () => {
         providers: [
             DialogService,
             HttpClient,
-            mockProvider(UVEStore, { $previewMode: signal(false) }),
+            mockProvider(UVEStore, mockStore),
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
@@ -121,15 +127,21 @@ describe('DotEmaBookmarksComponent', () => {
         );
     });
 
+    it('should have a label when preview mode is false', () => {
+        spectator.detectChanges();
+        const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
+
+        expect(button.nativeElement.textContent).toBe('editpage.toolbar.bookmark');
+    });
+
     describe('preview mode', () => {
         it('should render the bookmark button with new UVE toolbar style when preview mode is true', () => {
-            const store = spectator.inject(UVEStore, true);
-            jest.spyOn(store, '$previewMode').mockReturnValue(signal(true));
+            mockStore.$previewMode.set(true);
 
             spectator.detectChanges();
             const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
 
-            expect(button.componentInstance.textContent).toBe(undefined);
+            expect(button.nativeElement.textContent).toBe('');
         });
     });
 });

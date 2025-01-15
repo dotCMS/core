@@ -108,7 +108,7 @@ describe('EditEmaGuard', () => {
             queryParams: {
                 'com.dotmarketing.persona.id': 'modes.persona.no.persona',
                 language_id: 1,
-                url: 'some-url/with-index'
+                url: 'some-url/with-index/'
             },
             replaceUrl: true
         });

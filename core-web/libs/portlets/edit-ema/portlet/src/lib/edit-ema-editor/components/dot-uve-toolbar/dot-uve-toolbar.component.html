@@ -1,7 +1,7 @@
 @let preview = $isPreviewMode();
 @let runningExperiment = $toolbar().runningExperiment;
 
-<p-toolbar [styleClass]="$styleToolbarClass()">
+<p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview }">
         @if (preview) {
             <ng-container [ngTemplateOutlet]="previewLeftOptionsTemplate"></ng-container>
@@ -28,6 +28,19 @@
     }
 
     <div class="p-toolbar-group-end">
+        @if ($unlockButton(); as unlockButton) {
+            <p-button
+                [disabled]="unlockButton.disabled"
+                [pTooltip]="unlockButton.info.message | dm: unlockButton.info.args"
+                [escape]="false"
+                tooltipPosition="bottom"
+                icon="pi pi-lock"
+                styleClass="p-button-text p-button-sm p-button-rounded unlock-button"
+                [loading]="unlockButton.loading"
+                (click)="unlockPage(unlockButton.inode)"
+                data-testId="uve-toolbar-unlock-button"></p-button>
+        }
+
         @if (runningExperiment) {
             <dot-ema-running-experiment
                 [runningExperiment]="runningExperiment"
@@ -47,7 +60,7 @@
             #personaSelector
             data-testId="uve-toolbar-persona-selector" />
 
-        @if (!preview) {
+        @if ($showWorkflowActions()) {
             <dot-uve-workflow-actions />
         }
     </div>

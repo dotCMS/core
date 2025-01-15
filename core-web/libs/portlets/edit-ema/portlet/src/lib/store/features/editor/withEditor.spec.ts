@@ -694,6 +694,22 @@ describe('withEditor', () => {
 
                 expect(store.$iframeURL()).toContain('about:blank');
             });
+
+            it('should contain the right url when the page is a vanity url  ', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        vanityUrl: {
+                            ...MOCK_RESPONSE_HEADLESS.vanityUrl,
+                            url: 'first'
+                        }
+                    }
+                });
+
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/first?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                );
+            });
         });
 
         describe('$editorProps', () => {

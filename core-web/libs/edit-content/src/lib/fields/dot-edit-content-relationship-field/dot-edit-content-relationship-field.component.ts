@@ -16,19 +16,21 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
-import { TableModule } from 'primeng/table';
+import { TableRowReorderEvent, TableModule } from 'primeng/table';
 
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotSelectExistingContentComponent } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
+import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
+import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { HeaderComponent } from './components/header/header.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
-import { RelationshipFieldItem } from './models/relationship.models';
 import { RelationshipFieldStore } from './store/relationship-field.store';
+import { getContentTypeIdFromRelationship } from './utils';
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
@@ -39,7 +41,9 @@ import { RelationshipFieldStore } from './store/relationship-field.store';
         MenuModule,
         DotMessagePipe,
         ChipModule,
-        PaginationComponent
+        PaginationComponent,
+        ContentletStatusPipe,
+        LanguagePipe
     ],
     providers: [
         RelationshipFieldStore,
@@ -102,12 +106,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 command: () => {
                     this.showExistingContentDialog();
                 }
-            },
-            {
-                label: this.#dotMessageService.get('dot.file.relationship.field.table.new.content'),
-                command: () => {
-                    // TODO: Implement new content
-                }
             }
         ];
     });
@@ -120,6 +118,13 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /**
+     * DotCMS Contentlet
+     *
+     * @memberof DotEditContentRelationshipFieldComponent
+     */
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+
+    /**
      * Creates an instance of DotEditContentRelationshipFieldComponent.
      * It sets the cardinality of the relationship field based on the field's cardinality.
      *
@@ -129,14 +134,19 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
         effect(
             () => {
                 const field = this.$field();
+                const contentlet = this.$contentlet();
 
                 const cardinality = field?.relationships?.cardinality ?? null;
 
-                if (cardinality === null) {
+                if (cardinality === null || !field?.variable) {
                     return;
                 }
 
-                this.store.setCardinality(cardinality);
+                this.store.initialize({
+                    cardinality,
+                    contentlet,
+                    variable: field?.variable
+                });
             },
             {
                 allowSignalWrites: true
@@ -160,7 +170,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
         const field = this.$field();
 
         return {
-            contentTypeId: field?.relationships?.velocityVar || null,
+            contentTypeId: getContentTypeIdFromRelationship(field),
             hitText: field?.hint || null
         };
     });
@@ -213,8 +223,8 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      *
      * @param index - The index of the item to delete.
      */
-    deleteItem(id: string) {
-        this.store.deleteItem(id);
+    deleteItem(inode: string) {
+        this.store.deleteItem(inode);
     }
 
     /**
@@ -235,7 +245,8 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
                 contentTypeId: this.$attributes().contentTypeId,
-                selectionMode: this.store.selectionMode()
+                selectionMode: this.store.selectionMode(),
+                currentItemsIds: this.store.data().map((item) => item.inode)
             },
             templates: {
                 header: HeaderComponent
@@ -244,11 +255,23 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
 
         this.#dialogRef.onClose
             .pipe(
-                filter((file) => !!file),
+                filter((items) => !!items),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((items: RelationshipFieldItem[]) => {
+            .subscribe((items: DotCMSContentlet[]) => {
                 this.store.addData(items);
             });
+    }
+
+    /**
+     * Reorders the data in the store.
+     * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
+     */
+    onRowReorder(event: TableRowReorderEvent) {
+        if (event?.dragIndex == null || event?.dropIndex == null) {
+            return;
+        }
+
+        this.store.reorderData(event.dragIndex, event.dropIndex);
     }
 }

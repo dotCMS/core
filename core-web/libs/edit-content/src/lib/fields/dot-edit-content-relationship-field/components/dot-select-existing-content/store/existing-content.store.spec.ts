@@ -5,13 +5,13 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { delay } from 'rxjs/operators';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
 
 import { ExistingContentStore } from './existing-content.store';
 
 import { Column } from '../../../models/column.model';
-import { RelationshipFieldItem } from '../../../models/relationship.models';
 
 describe('ExistingContentStore', () => {
     let store: InstanceType<typeof ExistingContentStore>;
@@ -22,10 +22,19 @@ describe('ExistingContentStore', () => {
         { field: 'modDate', header: 'Mod Date' }
     ];
 
-    const mockData: RelationshipFieldItem[] = [
-        { id: '1', title: 'Content 1', language: '1', modDate: new Date().toISOString() },
-        { id: '2', title: 'Content 2', language: '1', modDate: new Date().toISOString() },
-        { id: '3', title: 'Content 3', language: '1', modDate: new Date().toISOString() }
+    const mockData: DotCMSContentlet[] = [
+        createFakeContentlet({
+            id: '1',
+            inode: '1',
+            identifier: 'id-1',
+            languageId: mockLocales[0].id
+        }),
+        createFakeContentlet({
+            id: '2',
+            inode: '2',
+            identifier: 'id-2',
+            languageId: mockLocales[1].id
+        })
     ];
 
     beforeEach(() => {
@@ -43,7 +52,7 @@ describe('ExistingContentStore', () => {
 
     describe('State Management', () => {
         it('should handle empty contentTypeId', fakeAsync(() => {
-            store.initLoad({ contentTypeId: null, selectionMode: 'single' });
+            store.initLoad({ contentTypeId: null, selectionMode: 'single', currentItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.ERROR);
@@ -54,7 +63,7 @@ describe('ExistingContentStore', () => {
         it('should load content successfully', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.LOADED);
@@ -68,7 +77,7 @@ describe('ExistingContentStore', () => {
                 throwError(() => new Error('Server Error'))
             );
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.ERROR);
@@ -130,12 +139,12 @@ describe('ExistingContentStore', () => {
     describe('Computed Properties', () => {
         it('should compute loading state correctly', fakeAsync(() => {
             const mockObservable = of([mockColumns, mockData]).pipe(delay(100)) as Observable<
-                [Column[], RelationshipFieldItem[]]
+                [Column[], DotCMSContentlet[]]
             >;
 
             service.getColumnsAndContent.mockReturnValue(mockObservable);
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
             expect(store.isLoading()).toBe(true);
 
             tick(100);
@@ -145,7 +154,7 @@ describe('ExistingContentStore', () => {
         it('should compute total pages correctly', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single' });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
             tick();
 
             expect(store.totalPages()).toBe(1);
