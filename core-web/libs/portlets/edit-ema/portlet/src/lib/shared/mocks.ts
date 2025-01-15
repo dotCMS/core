@@ -161,6 +161,7 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         lockedByName: '',
         live: true
     },
+    numberContents: 6,
     viewAs: {
         language: {
             id: 1,
@@ -225,6 +226,7 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         liveInode: '1234',
         stInode: '12345'
     },
+    numberContents: 6,
     viewAs: {
         language: {
             id: 1,
