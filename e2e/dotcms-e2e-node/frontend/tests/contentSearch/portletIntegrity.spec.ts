@@ -69,12 +69,12 @@ test("Search filter", async ({ page }) => {
     contentGeneric.locator,
     contentGeneric.label,
   );
-  await contentUtils.fillRichTextForm(
+  await contentUtils.fillRichTextForm({
     page,
-    genericContent1.title,
-    genericContent1.body,
-    contentProperties.publishWfAction,
-  );
+    title: genericContent1.title,
+    body:  genericContent1.body,
+    action: contentProperties.publishWfAction,
+  });
   await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
 
   // Validate the content has been created

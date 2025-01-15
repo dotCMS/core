@@ -1,3 +1,5 @@
+import { faker } from '@faker-js/faker';
+
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
@@ -49,6 +51,41 @@ const COLUMN_BREAK_FIELD = {
     clazz: 'contenttype.column.break',
     name: 'Column'
 };
+
+export function createFakeRelationshipField(
+    overrides: Partial<DotCMSContentTypeField> = {}
+): DotCMSContentTypeField {
+    return {
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+        contentTypeId: faker.string.uuid(),
+        dataType: 'SYSTEM',
+        fieldType: 'Relationship',
+        fieldTypeLabel: 'Relationships Field',
+        fieldVariables: [],
+        fixed: faker.datatype.boolean(),
+        forceIncludeInApi: faker.datatype.boolean(),
+        iDate: faker.date.recent().getTime(),
+        id: faker.string.uuid(),
+        indexed: faker.datatype.boolean(),
+        listed: faker.datatype.boolean(),
+        modDate: faker.date.recent().getTime(),
+        name: 'Relationship Field',
+        readOnly: false,
+        relationships: {
+            cardinality: 0,
+            isParentField: true,
+            velocityVar: 'AllTypes'
+        },
+        required: false,
+        searchable: false,
+        skipRelationshipCreation: false,
+        sortOrder: 6,
+        unique: false,
+        variable: 'relationshipField',
+        hint: 'Helper label to be displayed below the field',
+        ...overrides
+    };
+}
 
 export class FieldUtil {
     /**
