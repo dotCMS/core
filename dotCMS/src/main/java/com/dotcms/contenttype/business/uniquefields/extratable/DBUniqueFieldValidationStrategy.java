@@ -243,7 +243,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 final String errorMsg = String.format("Failed to insert unique value for Field '%s' in Contentlet " +
                         "'%s': %s", uniqueFieldCriteria.field().variable(), contentletId, ExceptionUtil.getErrorMessage(e));
                 Logger.error(this, errorMsg, e);
-                throw new DotRuntimeException(e);
+                throw new DotRuntimeException(errorMsg);
             }
         }
     }
