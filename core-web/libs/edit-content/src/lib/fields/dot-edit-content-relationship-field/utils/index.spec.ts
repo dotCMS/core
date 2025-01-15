@@ -1,6 +1,10 @@
-import { createFakeContentlet } from '@dotcms/utils-testing';
+import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
-import { getSelectionModeByCardinality, getRelationshipFromContentlet } from './index';
+import {
+    getSelectionModeByCardinality,
+    getRelationshipFromContentlet,
+    getContentTypeIdFromRelationship
+} from './index';
 
 import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
 import { RelationshipTypes } from '../models/relationship.models';
@@ -137,6 +141,69 @@ describe('Relationship Field Utils', () => {
                 variable: 'testVar'
             });
             expect(result).toEqual([]);
+        });
+    });
+
+    describe('getContentTypeIdFromRelationship', () => {
+        it('should extract content type ID from relationship field with dot notation', () => {
+            const field = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'contentTypeId.fieldName'
+                }
+            });
+
+            const result = getContentTypeIdFromRelationship(field);
+            expect(result).toBe('contentTypeId');
+        });
+
+        it('should extract content type ID from relationship field', () => {
+            const field = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'contentTypeId'
+                }
+            });
+
+            const result = getContentTypeIdFromRelationship(field);
+            expect(result).toBe('contentTypeId');
+        });
+
+        it('should throw error when relationships property is missing', () => {
+            const field = createFakeRelationshipField({
+                contentTypeId: null,
+                relationships: null
+            });
+
+            expect(() => getContentTypeIdFromRelationship(field)).toThrow(
+                'Content type ID not found in relationship field'
+            );
+        });
+
+        it('should throw error when velocityVar is missing', () => {
+            const field = createFakeRelationshipField({
+                relationships: null
+            });
+
+            expect(() => getContentTypeIdFromRelationship(field)).toThrow(
+                'Content type ID not found in relationship field'
+            );
+        });
+
+        it('should throw error when velocityVar has invalid format', () => {
+            const field = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: ''
+                }
+            });
+
+            expect(() => getContentTypeIdFromRelationship(field)).toThrow(
+                'Content type ID not found in relationship field'
+            );
         });
     });
 });
