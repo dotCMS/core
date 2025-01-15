@@ -73,6 +73,11 @@ export class DotEditContentSidebarLocalesComponent {
     $maxLocaleChips = signal(MAX_LOCALES);
     $showAll = signal(false);
 
+    /**
+     * Computes the label for the button based on show all or not and specify  the number of locales.
+     *
+     * @returns {string | null} The label for the button, or null if no label is needed.
+     */
     $btnLabel = computed(() => {
         const size = this.$locales().length;
         const max = this.$maxLocaleChips();
@@ -91,6 +96,11 @@ export class DotEditContentSidebarLocalesComponent {
         return null;
     });
 
+    /**
+     * Computes the list of locales to show based on show all or not.
+     *
+     * @returns {DotLanguage[]} The list of locales to display.
+     */
     $localesToShow = computed(() => {
         const locales = this.$locales();
         if (this.$showAll()) {
