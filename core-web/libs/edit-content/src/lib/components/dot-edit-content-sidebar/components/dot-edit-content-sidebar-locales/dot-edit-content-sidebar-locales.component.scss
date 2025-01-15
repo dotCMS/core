@@ -2,6 +2,7 @@
 
 :host {
     display: flex;
+    flex-wrap: wrap;
     gap: $spacing-1;
     padding-top: 0.15rem;
 
@@ -26,6 +27,10 @@
 
             &:not(:has(.p-chip-filled)) {
                 cursor: pointer;
+            }
+
+            .p-chip-white {
+                color: $color-palette-primary-500;
             }
         }
     }

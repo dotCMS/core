@@ -6,12 +6,19 @@ import { ButtonDirective } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotIsoCodePipe, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-content-sidebar-untranslated-locale',
     standalone: true,
-    imports: [CommonModule, RadioButtonModule, DotMessagePipe, FormsModule, ButtonDirective],
+    imports: [
+        CommonModule,
+        RadioButtonModule,
+        DotMessagePipe,
+        FormsModule,
+        ButtonDirective,
+        DotIsoCodePipe
+    ],
     templateUrl: './dot-edit-content-sidebar-untranslated-locale.component.html',
     styleUrl: './dot-edit-content-sidebar-untranslated-locale.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

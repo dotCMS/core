@@ -25,6 +25,11 @@ import com.dotmarketing.portlets.templates.model.TemplateVersionInfo;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -3700,6 +3705,31 @@ public class UtilMethods {
      */
     public static boolean isVectorImage(String fileExtension) {
         return VECTOR_EXTENSIONS.contains(fileExtension);
+    }
+
+    /**
+    *  Check if the given string is a valid Lucene query
+    *  The method uses the Apache Lucene library to parse the query and check for any syntax error, if it throws an exception that means the query is invalid
+    *  Additionally the method includes a check to ensure that a simple term query (just a simple string) is not considered valid
+    *  @param query String to be checked
+    */
+    public static final boolean isLuceneQuery(String query) {
+        try {
+            final QueryParser parser = new QueryParser("defaultField", new StandardAnalyzer());
+            // Allow wildcards in the query
+            parser.setAllowLeadingWildcard(true);
+            final Query parsedQuery = parser.parse(query);
+
+            // A valid Lucene query should not be a simple term query that exactly matches the input string
+            if (parsedQuery instanceof TermQuery) {
+                Term term = ((TermQuery) parsedQuery).getTerm();
+                return !(term.field().equals("defaultField") && term.text().equalsIgnoreCase(query));
+            }
+            
+            return true;
+        } catch (org.apache.lucene.queryparser.classic.ParseException e) {
+            return false; // If parsing fails, it's not a valid Lucene query
+        }
     }
 
 }
