@@ -231,16 +231,15 @@ export class DotUveToolbarComponent {
                 accept: () => {
                     this.#personalizeService
                         .personalized(persona.pageId, persona.keyTag)
-
-                        .subscribe(
-                            () => {
+                        .subscribe({
+                            next: () => {
                                 this.#store.loadPageAsset({
                                     'com.dotmarketing.persona.id': persona.identifier
                                 });
 
                                 this.$personaSelector().fetchPersonas();
                             },
-                            () => {
+                            error: () => {
                                 this.#messageService.add({
                                     severity: 'error',
                                     summary: this.#dotMessageService.get('error'),
@@ -251,7 +250,7 @@ export class DotUveToolbarComponent {
 
                                 this.$personaSelector().resetValue();
                             }
-                        ); // This does a take 1 under the hood
+                        });
                 },
                 reject: () => {
                     this.$personaSelector().resetValue();
