@@ -21,6 +21,9 @@ export const contentProperties = {
     deleteWfAction: "Delete"
 }
 
+/**
+ * Content to create a file asset
+ */
 export const fileAssetContent = {
     title: "File Asset title",
     body: "This is a sample file asset content",
@@ -31,6 +34,9 @@ export const fileAssetContent = {
     host:"default"
 }
 
+/**
+ * Content to create a page asset
+ */
 export const pageAssetContent = {
     title: "PageAsset1",
     host: "default",
@@ -41,6 +47,9 @@ export const pageAssetContent = {
     cacheTTL: 0,
 }
 
+export const accessibilityReport = {
+    name: 'Content Search'
+}
 
 
 
