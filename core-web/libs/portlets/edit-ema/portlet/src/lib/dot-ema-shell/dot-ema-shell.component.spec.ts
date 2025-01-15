@@ -315,7 +315,6 @@ describe('DotEmaShellComponent', () => {
         describe('Sanitize url when called loadPageAsset', () => {
             it('should sanitize when url is index', () => {
                 const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const spyLocation = jest.spyOn(location, 'go');
 
                 const params = {
@@ -330,7 +329,6 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'index' });
-                expect(spyStoreLoadPage).toHaveBeenCalledWith({ ...params, url: 'index' });
                 expect(spyLocation).toHaveBeenCalledWith(
                     '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
                 );
@@ -338,7 +336,7 @@ describe('DotEmaShellComponent', () => {
 
             it('should sanitize when url is nested', () => {
                 const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+
                 const spyLocation = jest.spyOn(location, 'go');
 
                 const params = {
@@ -356,10 +354,6 @@ describe('DotEmaShellComponent', () => {
                     ...params,
                     url: 'some-url/some-nested-url'
                 });
-                expect(spyStoreLoadPage).toHaveBeenCalledWith({
-                    ...params,
-                    url: 'some-url/some-nested-url'
-                });
                 expect(spyLocation).toHaveBeenCalledWith(
                     '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
                 );
@@ -367,7 +361,6 @@ describe('DotEmaShellComponent', () => {
 
             it('should sanitize when url is nested and ends in index', () => {
                 const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const spyLocation = jest.spyOn(location, 'go');
 
                 const params = {
@@ -382,7 +375,6 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
-                expect(spyStoreLoadPage).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
                 expect(spyLocation).toHaveBeenCalledWith(
                     '/?language_id=1&url=some-url%2F&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
                 );
