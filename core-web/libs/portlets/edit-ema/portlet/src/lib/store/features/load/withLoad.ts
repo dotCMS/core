@@ -81,6 +81,7 @@ export function withLoad() {
                                             return of(pageAsset);
                                         }
 
+                                        // Maybe we can use retryWhen() instead of this navigate.
                                         const url = vanityUrl.forwardTo.replace('/', '');
                                         router.navigate([], {
                                             queryParamsHandling: 'merge',
