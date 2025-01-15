@@ -4,7 +4,6 @@
     .uve-toolbar {
         padding: 0 $spacing-4;
         transition: padding 0.2s ease;
-        border-top: 1px solid transparent; // Avoid jump
     }
 
     .p-button.uve-toolbar-chips,
@@ -15,6 +14,11 @@
         border-color: $color-palette-primary-op-10;
         color: var(--color-palette-primary-500);
         cursor: pointer;
+    }
+
+    .p-button.unlock-button:disabled {
+        pointer-events: auto;
+        color: $color-palette-primary-500;
     }
 }
 

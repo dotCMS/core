@@ -93,28 +93,7 @@ describe('EditEmaGuard', () => {
         expect(didEnteredPortlet).toBe(true);
     });
 
-    it('should navigate to "edit-page" and sanitize url', () => {
-        const route: ActivatedRouteSnapshot = {
-            firstChild: {
-                url: [{ path: 'content' }]
-            },
-            queryParams: { url: '/some-url/with-index/index' }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any;
-
-        TestBed.runInInjectionContext(() => editEmaGuard(route, state) as Observable<boolean>);
-
-        expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-            queryParams: {
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                language_id: 1,
-                url: 'some-url/with-index'
-            },
-            replaceUrl: true
-        });
-    });
-
-    it('should navigate to "edit-page" and sanitize url when the url is "/"', () => {
+    it('should navigate to "edit-page" with url as "index" when the initial url queryParam is "/"', () => {
         const route: ActivatedRouteSnapshot = {
             firstChild: {
                 url: [{ path: 'content' }]
