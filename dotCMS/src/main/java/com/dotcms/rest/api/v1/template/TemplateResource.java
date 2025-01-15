@@ -8,7 +8,6 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
@@ -26,7 +25,6 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
-import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
@@ -136,15 +134,26 @@ public class TemplateResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
         final User user = initData.getUser();
-        final Lazy<String> lazyCurrentHost = Lazy.of(() -> Try.of(() -> Host.class.cast(httpRequest.getSession().getAttribute(WebKeys.CURRENT_HOST)).getIdentifier()).getOrNull());
-        final Optional<String> checkedHostId = Optional.ofNullable(Try.of(()-> APILocator.getHostAPI()
-                .find(hostId, user, false).getIdentifier()).getOrElse(lazyCurrentHost.get()));
+
 
         Logger.debug(this, ()-> "Getting the List of templates");
 
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(ARCHIVE_PARAM, archive);
-        checkedHostId.ifPresent(checkedHostIdentifier -> extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostIdentifier));
+
+        //In case we need to get the list of templates across multiple sites, we don't set the TemplatePaginator.HOST_PARAMETER_ID
+        if (null == hostId || !StringPool.STAR.equals(hostId)) {
+            final Lazy<String> lazyCurrentHost = Lazy.of(() -> Try.of(() -> Host.class.cast(
+                            httpRequest.getSession().getAttribute(WebKeys.CURRENT_HOST)).getIdentifier())
+                    .getOrNull());
+            final Optional<String> checkedHostId = Optional.ofNullable(
+                    Try.of(() -> APILocator.getHostAPI()
+                                    .find(hostId, user, false).getIdentifier())
+                            .getOrElse(lazyCurrentHost.get()));
+            checkedHostId.ifPresent(
+                    checkedHostIdentifier -> extraParams.put(TemplatePaginator.HOST_PARAMETER_ID,
+                            checkedHostIdentifier));
+        }
         return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                 extraParams);
     }
