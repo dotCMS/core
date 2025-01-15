@@ -39,6 +39,7 @@ import {
     checkClientHostAccess,
     getAllowedPageParams,
     getTargetUrl,
+    sanitizeURL,
     shouldNavigate
 } from '../utils';
 
@@ -208,6 +209,9 @@ export class DotEmaShellComponent implements OnInit {
         // Clone queryParams to avoid mutation errors
         const params = getAllowedPageParams(queryParams);
         const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
+
+        //Sanitize the url
+        params.url = sanitizeURL(params.url);
 
         if (!validHost) {
             delete params.clientHost;

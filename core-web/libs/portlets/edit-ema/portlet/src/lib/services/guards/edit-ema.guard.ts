@@ -2,7 +2,6 @@ import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Params, Router } from '@angular/router';
 
 import { DEFAULT_PERSONA } from '../../shared/consts';
-import { sanitizeURL } from '../../utils';
 
 type EmaQueryParams = {
     url: string;
@@ -36,18 +35,19 @@ function confirmQueryParams(queryParams: Params): {
     didQueryParamsGetCompleted: boolean;
 } {
     const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
-        (acc, curr) => {
-            if (!queryParams[curr.key]) {
-                acc[curr.key] = curr.value;
+        (acc, { key, value }) => {
+            if (!queryParams[key]) {
+                acc[key] = value;
                 acc.missing = true;
-            } else if (curr.key === 'url') {
-                if (queryParams[curr.key] !== 'index' && queryParams[curr.key].endsWith('/index')) {
-                    acc[curr.key] = sanitizeURL(queryParams[curr.key]);
-                    acc.missing = true;
-                } else if (queryParams[curr.key] === '/') {
-                    acc[curr.key] = 'index';
-                    acc.missing = true;
-                }
+
+                return acc;
+            }
+
+            if (key === 'url' && queryParams[key] === '/') {
+                acc[key] = 'index';
+                acc.missing = true;
+
+                return acc;
             }
 
             return acc;

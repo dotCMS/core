@@ -3,7 +3,8 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutTab
+    DotCMSContentTypeLayoutTab,
+    DotLanguage
 } from '@dotcms/dotcms-models';
 
 import {
@@ -292,4 +293,17 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
             }))
         }))
     }));
+};
+
+/**
+ * Sorts an array of locales, placing translated locales first.
+ *
+ * @param {DotLanguage[]} locales - The array of locales to be sorted.
+ * @returns {DotLanguage[]} The sorted array with translated locales first, followed by untranslated locales.
+ */
+export const sortLocalesTranslatedFirst = (locales: DotLanguage[]): DotLanguage[] => {
+    const translatedLocales = locales.filter((locale) => locale.translated);
+    const untranslatedLocales = locales.filter((locale) => !locale.translated);
+
+    return [...translatedLocales, ...untranslatedLocales];
 };
