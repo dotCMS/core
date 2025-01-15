@@ -695,6 +695,15 @@ describe('withEditor', () => {
                 expect(store.$iframeURL()).toBeInstanceOf(String);
             });
 
+            it('should be an empty string in src when the page is traditional', () => {
+                patchState(store, {
+                    pageAPIResponse: MOCK_RESPONSE_VTL,
+                    isTraditionalPage: true
+                });
+
+                expect(store.$iframeURL().toString()).toBe('');
+            });
+
             it('should contain the right url when the page is a vanity url  ', () => {
                 patchState(store, {
                     pageAPIResponse: {

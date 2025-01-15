@@ -52,7 +52,7 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
         // Force iframe reload on every page load to avoid caching issues and window dirty state
         // We need a new reference to avoid the iframe to be cached
         // More reference: https://github.com/dotCMS/core/issues/30981
-        return new String('') as string;
+        return new String('');
     }
 
     const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
@@ -200,7 +200,7 @@ export function withEditor() {
                             : null
                     };
                 }),
-                $iframeURL: computed<string>(() => {
+                $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     const page = store.pageAPIResponse().page;
                     const vanityURL = store.pageAPIResponse().vanityUrl?.url;
 
