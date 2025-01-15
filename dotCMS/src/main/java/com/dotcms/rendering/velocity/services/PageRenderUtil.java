@@ -558,7 +558,7 @@ public class PageRenderUtil implements Serializable {
                 // Page that is holding it without any problems
                 return limitedUserPermissionFallback(personalizedContentlet.getContentletId());
             }
-            throw se;  //new DotStateException(se);
+            throw se;
         }
     }
 
