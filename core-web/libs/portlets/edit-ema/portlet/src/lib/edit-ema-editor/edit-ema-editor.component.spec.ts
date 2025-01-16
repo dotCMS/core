@@ -2660,7 +2660,7 @@ describe('EditEmaEditorComponent', () => {
                         iframe.nativeElement.dispatchEvent(new Event('load'));
                         spectator.detectChanges();
 
-                        expect(iframe.nativeElement.src).toContain('about:blank'); //When dont have src, the src is the same as the current page
+                        expect(iframe.nativeElement.src).toContain('http://localhost/'); //When dont have src, the src is the same as the current page
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>New Content - Hello World</div>'
                         );

@@ -39,6 +39,7 @@
                 pointerEvents: $editorProps().iframe.pointerEvents,
                 opacity: $editorProps().iframe.opacity
             }"
+            sandbox="allow-scripts allow-same-origin allow-forms"
             #iframe
             data-testId="iframe"
             width="100%"
@@ -61,6 +62,7 @@
                 [hide]="contentletTools.hide"
                 [contentletArea]="contentletTools.contentletArea"
                 [isEnterprise]="contentletTools.isEnterprise"
+                [disableDeleteButton]="contentletTools.disableDeleteButton"
                 data-testId="contentlet-tools" />
         }
         @if ($editorProps().dropzone; as dropzone) {
