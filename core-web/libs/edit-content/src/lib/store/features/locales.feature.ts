@@ -252,7 +252,6 @@ export function withLocales() {
                                             currentSchemeId: defaultSchemeId,
                                             currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
-                                            currentIdentifier: store.contentlet()?.identifier,
                                             initialContentletState: 'copy',
                                             error: null,
                                             formValues: null,

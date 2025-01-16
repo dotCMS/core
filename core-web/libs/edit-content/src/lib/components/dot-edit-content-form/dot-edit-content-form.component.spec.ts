@@ -363,7 +363,6 @@ describe('DotFormComponent', () => {
                 expect(spy).toHaveBeenCalledWith({
                     actionId: '1',
                     inode: 'cc120e84-ae80-49d8-9473-36d183d0c1c9',
-                    identifier: null,
                     data: {
                         contentlet: {
                             contentType: 'TestMock',
@@ -372,7 +371,8 @@ describe('DotFormComponent', () => {
                             text2: 'content text 2',
                             text3: 'default value modified',
                             multiselect: 'A,B,C',
-                            languageId: null
+                            languageId: null,
+                            identifier: null
                         }
                     }
                 });
