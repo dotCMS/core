@@ -1,7 +1,7 @@
 import { expect, describe, it } from '@jest/globals';
 import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, signal } from '@angular/core';
@@ -114,6 +114,37 @@ const baseUVEState = {
     $unlockButton: signal(null)
 };
 
+const personaEventMock = {
+    identifier: '123',
+    pageId: '123',
+    personalized: true,
+    archived: false,
+    baseType: 'PERSONA',
+    contentType: 'persona',
+    folder: 'SYSTEM_FOLDER',
+    hasLiveVersion: false,
+    hasTitleImage: false,
+    host: 'SYSTEM_HOST',
+    hostFolder: 'SYSTEM_HOST',
+    hostName: 'System Host',
+    inode: '',
+    keyTag: 'dot:persona',
+    languageId: 1,
+    live: false,
+    locked: false,
+    modDate: '0',
+    modUser: 'system',
+    modUserName: 'system user system user',
+    name: 'Test Persona',
+    owner: 'SYSTEM_USER',
+    sortOrder: 0,
+    stInode: 'c938b15f-bcb6-49ef-8651-14d455a97045',
+    title: 'Test Persona',
+    titleImage: 'TITLE_IMAGE_NOT_FOUND',
+    url: 'demo.dotcms.com',
+    working: false
+};
+
 describe('DotUveToolbarComponent', () => {
     let spectator: Spectator<DotUveToolbarComponent>;
     let store: InstanceType<typeof UVEStore>;
@@ -121,6 +152,7 @@ describe('DotUveToolbarComponent', () => {
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
     let dotContentletLockerService: DotContentletLockerService;
+    let personalizeService: DotPersonalizeService;
 
     const fixedDate = new Date('2024-01-01');
     jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
@@ -188,7 +220,8 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: {
-                    getPersonalize: jest.fn()
+                    getPersonalize: jest.fn(),
+                    personalized: jest.fn().mockReturnValue(of({}))
                 }
             }
         ]
@@ -204,6 +237,11 @@ describe('DotUveToolbarComponent', () => {
             devicesService = spectator.inject(DotDevicesService);
             confirmationService = spectator.inject(ConfirmationService, true);
             dotContentletLockerService = spectator.inject(DotContentletLockerService);
+            personalizeService = spectator.inject(DotPersonalizeService, true);
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
         });
 
         it('should have a dot-uve-workflow-actions component', () => {
@@ -415,11 +453,9 @@ describe('DotUveToolbarComponent', () => {
             it('should personalize - no confirmation', () => {
                 const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    identifier: '123',
-                    pageId: '123',
+                    ...personaEventMock,
                     personalized: true
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                });
                 spectator.detectChanges();
 
                 expect(spyloadPageAsset).toHaveBeenCalledWith({
@@ -429,11 +465,9 @@ describe('DotUveToolbarComponent', () => {
 
             it('should personalize - confirmation', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    identifier: '123',
-                    pageId: '123',
+                    ...personaEventMock,
                     personalized: false
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                });
                 spectator.detectChanges();
 
                 expect(confirmationService.confirm).toHaveBeenCalledWith({
@@ -446,13 +480,37 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
+            it('should handle error when personalization confirmation fails', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+
+                spyPersonalized.mockReturnValue(
+                    throwError(new Error('Personalization confirmation failed'))
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
             it('should despersonalize', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: true
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                    ...personaEventMock,
+                    personalized: true,
+                    selected: true
+                });
 
                 spectator.detectChanges();
 
@@ -480,10 +538,10 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
-                const spyConfirmationService = jest.spyOn(baseUVEState, 'loadPageAsset');
+                const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
 
                 spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
-
+                spectator.detectChanges();
                 expect(spyConfirmationService).toHaveBeenCalled();
             });
         });

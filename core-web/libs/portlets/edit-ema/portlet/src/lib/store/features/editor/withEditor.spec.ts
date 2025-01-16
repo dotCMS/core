@@ -851,7 +851,35 @@ describe('withEditor', () => {
                     expect(store.$editorProps().contentletTools).toEqual({
                         isEnterprise: true,
                         contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: false
+                        hide: false,
+                        disableDeleteButton: null
+                    });
+                });
+
+                it('should have disableDeleteButton message when there is only one content and a non-default persona', () => {
+                    patchState(store, {
+                        isEditState: true,
+                        canEditPage: true,
+                        contentletArea: MOCK_CONTENTLET_AREA,
+                        state: EDITOR_STATE.IDLE,
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            numberContents: 1,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                persona: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs.persona,
+                                    identifier: 'non-default-persona'
+                                }
+                            }
+                        }
+                    });
+
+                    expect(store.$editorProps().contentletTools).toEqual({
+                        isEnterprise: true,
+                        contentletArea: MOCK_CONTENTLET_AREA,
+                        hide: false,
+                        disableDeleteButton: 'uve.disable.delete.button.on.personalization'
                     });
                 });
 
@@ -866,7 +894,8 @@ describe('withEditor', () => {
                     expect(store.$editorProps().contentletTools).toEqual({
                         isEnterprise: true,
                         contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: true
+                        hide: true,
+                        disableDeleteButton: null
                     });
                 });
 
