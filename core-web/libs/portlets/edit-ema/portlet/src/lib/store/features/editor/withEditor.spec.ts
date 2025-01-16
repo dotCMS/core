@@ -686,13 +686,22 @@ describe('withEditor', () => {
                 );
             });
 
-            it('should contain `about:blanck` in src when the page is traditional', () => {
+            it('should be an instance of String in src when the page is traditional', () => {
                 patchState(store, {
                     pageAPIResponse: MOCK_RESPONSE_VTL,
                     isTraditionalPage: true
                 });
 
-                expect(store.$iframeURL()).toContain('about:blank');
+                expect(store.$iframeURL()).toBeInstanceOf(String);
+            });
+
+            it('should be an empty string in src when the page is traditional', () => {
+                patchState(store, {
+                    pageAPIResponse: MOCK_RESPONSE_VTL,
+                    isTraditionalPage: true
+                });
+
+                expect(store.$iframeURL().toString()).toBe('');
             });
 
             it('should contain the right url when the page is a vanity url  ', () => {
@@ -842,7 +851,35 @@ describe('withEditor', () => {
                     expect(store.$editorProps().contentletTools).toEqual({
                         isEnterprise: true,
                         contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: false
+                        hide: false,
+                        disableDeleteButton: null
+                    });
+                });
+
+                it('should have disableDeleteButton message when there is only one content and a non-default persona', () => {
+                    patchState(store, {
+                        isEditState: true,
+                        canEditPage: true,
+                        contentletArea: MOCK_CONTENTLET_AREA,
+                        state: EDITOR_STATE.IDLE,
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            numberContents: 1,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                persona: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs.persona,
+                                    identifier: 'non-default-persona'
+                                }
+                            }
+                        }
+                    });
+
+                    expect(store.$editorProps().contentletTools).toEqual({
+                        isEnterprise: true,
+                        contentletArea: MOCK_CONTENTLET_AREA,
+                        hide: false,
+                        disableDeleteButton: 'uve.disable.delete.button.on.personalization'
                     });
                 });
 
@@ -857,7 +894,8 @@ describe('withEditor', () => {
                     expect(store.$editorProps().contentletTools).toEqual({
                         isEnterprise: true,
                         contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: true
+                        hide: true,
+                        disableDeleteButton: null
                     });
                 });
 
