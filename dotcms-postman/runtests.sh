@@ -1,5 +1,7 @@
 #!/bin/bash
 
+alias docker-compose="docker compose --compatibility $@"
+
 wait=2
 echo "Waiting for ${wait} seconds to images be pulled"
 sleep $wait
