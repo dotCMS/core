@@ -4,13 +4,23 @@ import { ListingContentTypesPage } from "../../../pages/listingContentTypes.page
 import { ContentTypeFormPage } from "../../../pages/contentTypeForm.page";
 import { NewEditContentFormPage } from "../../../pages/newEditContentForm.page";
 import { updateFeatureFlag } from "../../../utils/api";
+import { dotCMSUtils } from "../../../utils/dotCMSUtils";
 
 const contentTypeName = faker.lorem.word().toLocaleLowerCase();
 
 test.beforeEach("Navigate to content types", async ({ page, request }) => {
+  const cmsUtils = new dotCMSUtils();
   const listingContentTypesPage = new ListingContentTypesPage(page);
   const contentTypeFormPage = new ContentTypeFormPage(page);
-  await listingContentTypesPage.goTo();
+
+  // Get the username and password from the environment variables
+  const username = process.env.USERNAME as string;
+  const password = process.env.PASSWORD as string;
+
+  // Login to dotCMS
+  await cmsUtils.login(page, username, password);
+  
+  await listingContentTypesPage.goToUrl();
   await listingContentTypesPage.addNewContentType(contentTypeName);
   await contentTypeFormPage.fillNewContentType();
   await listingContentTypesPage.goToUrl();
