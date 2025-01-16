@@ -1,7 +1,6 @@
 import { Page } from "@playwright/test";
 
 export class ListingContentTypesPage {
-
   constructor(private page: Page) {}
 
   async goToUrl() {
