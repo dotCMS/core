@@ -203,7 +203,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Upload build reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: "build-reports-Initial JDK 11 Build" #Should not be picked up for JunitReports
@@ -260,13 +260,13 @@ jobs:
         shell: bash
         run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
       - name: Upload reports Archive (if maven failed)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test-reports-linux-jvm${{matrix.java.name}}
           path: 'test-reports.tgz'
       - name: core-maven-unit-tests
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "build-reports-test-JVM Tests - JDK ${{matrix.java.name}}"
@@ -338,13 +338,13 @@ jobs:
         shell: bash
         run: find . -name 'surefire-reports' -type d | tar -czf test-reports.tgz -T -
       - name: Upload failure Archive (if maven failed)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test-reports-frontend
           path: 'test-reports.tgz'
       - name: frontend-unit-tests
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "build-reports-test-Frontend unit tests"
@@ -405,7 +405,7 @@ jobs:
           java-version: ${{ matrix.java.java-version }}
           distribution: ${{ matrix.java.distribution }}
       #- name: Download Maven Repo
-      #  uses: actions/download-artifact@v3
+      #  uses: actions/download-artifact@v4
       #  with:
       #    name: maven-repo
       #    path: .
@@ -439,13 +439,13 @@ jobs:
         shell: bash
         run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
       - name: Upload failure Archive (if maven failed)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test-reports-linux-jvm${{matrix.java.name}}-${{matrix.suites.pathName}}
           path: 'test-reports.tgz'
       - name: failsafe-it-tests  # Uploads will be merged with same name
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "build-reports-test-IT Tests - JDK ${{matrix.java.name}} - ${{matrix.suites.name}}"
@@ -514,13 +514,13 @@ jobs:
           tree ./dotcms-postman
           find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
       - name: Upload failure Archive (if maven failed)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test-reports-postman-${{ matrix.collection_group }}
           path: 'test-reports.tgz'
       - name: failsafe-postman-tests  # Uploads will be merged with same name
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "build-reports-test-postman - ${{ matrix.collection_group }}"
@@ -556,7 +556,7 @@ jobs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
     steps:
       - name: Download build reports
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: /tmp/build-step-reports
 
@@ -670,7 +670,7 @@ jobs:
 
           echo "aggregate_status=${AGGREGATE_STATUS}" >> $GITHUB_OUTPUT
       - name: Upload workflow data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: workflow-data
           path: ./workflow-data.json

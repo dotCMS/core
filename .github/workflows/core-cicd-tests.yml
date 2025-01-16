@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: tar -czf maven-repo.tgz -C ~ .m2/repository
       - name: Persist Maven Repo
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: maven-repo
           path: maven-repo.tgz
@@ -53,7 +53,7 @@ jobs:
         shell: bash
         run: rm -r ~/.m2/repository/com/dotcms
       - name: Upload build reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: "build-reports-Initial JDK 11 Build" #Should not be picked up for JunitReports
@@ -170,14 +170,14 @@ jobs:
         run: find . -name '*-reports' -type d | tar -czf test-reports.tgz -T -
 
       - name: Upload failure Archive (if maven failed)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test-reports-postman-${{ matrix.collection_group }}
           path: 'test-reports.tgz'
 
       - name: failsafe-postman-tests  # Uploads will be merged with same name
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: "build-reports-postman-tests - ${{ matrix.collection_group }}"
