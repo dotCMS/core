@@ -154,12 +154,11 @@ public class HTMLPageAssetRenderedBuilder {
         // (unless host is specified in the dotParse) github 14624
         final RenderParams params=new RenderParams(user,language, site, mode);
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
         final boolean canEditTemplate = this.permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
 
         final PageRenderUtil pageRenderUtil = new PageRenderUtil(
-                this.htmlPageAsset, systemUser, mode, language.getId(), this.site);
+                this.htmlPageAsset, user, mode, language.getId(), this.site);
 
         final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
 
