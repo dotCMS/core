@@ -297,7 +297,6 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
 };
 
 /**
-<<<<<<< HEAD
  * Sorts an array of locales, placing translated locales first.
  *
  * @param {DotLanguage[]} locales - The array of locales to be sorted.
@@ -308,8 +307,9 @@ export const sortLocalesTranslatedFirst = (locales: DotLanguage[]): DotLanguage[
     const untranslatedLocales = locales.filter((locale) => !locale.translated);
 
     return [...translatedLocales, ...untranslatedLocales];
-=======
- * Generates a preview URL for a given contentlet.
+};
+
+/* Generates a preview URL for a given contentlet.
  *
  * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
  * @returns {string} The generated preview URL.
@@ -328,15 +328,10 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
     const params = new URLSearchParams();
 
-<<<<<<< HEAD
-    return `${baseUrl}?url=${url}%3Fhost_id%3D${hostId}&language_id=${languageId}&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit`;
->>>>>>> 1c803c0496 (fix(edit-content) add preview butto)
-=======
     params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
     params.set('language_id', contentlet.languageId.toString());
     params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
     params.set('editorMode', 'edit');
 
     return `${baseUrl}?${params.toString()}`;
->>>>>>> 303337fee7 (feat(edit-content) fix comments)
 };

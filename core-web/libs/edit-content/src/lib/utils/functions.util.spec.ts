@@ -1,7 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
 import {
-    DotCMSContentlet,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotLanguage
@@ -22,6 +21,7 @@ import {
 } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
+import { createFakeContentlet } from '../../../../utils-testing/src/lib/dot-contentlet.mock';
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
@@ -720,11 +720,11 @@ describe('Utils Functions', () => {
 
     describe('generatePreviewUrl', () => {
         it('should generate the correct preview URL when all attributes are present', () => {
-            const contentlet = {
+            const contentlet = createFakeContentlet({
                 URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
                 host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
                 languageId: 1
-            } as unknown as DotCMSContentlet;
+            });
 
             const expectedUrl =
                 'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Fpost%2F5-snow-sports-to-try-this-winter%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit';
@@ -733,31 +733,31 @@ describe('Utils Functions', () => {
         });
 
         it('should return an empty string if URL_MAP_FOR_CONTENT is missing', () => {
-            const contentlet = {
+            const contentlet = createFakeContentlet({
                 URL_MAP_FOR_CONTENT: undefined,
                 host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
                 languageId: 1
-            } as unknown as DotCMSContentlet;
+            });
 
             expect(generatePreviewUrl(contentlet)).toBe('');
         });
 
         it('should return an empty string if host is missing', () => {
-            const contentlet = {
+            const contentlet = createFakeContentlet({
                 URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
                 host: undefined,
                 languageId: 1
-            } as unknown as DotCMSContentlet;
+            });
 
             expect(generatePreviewUrl(contentlet)).toBe('');
         });
 
         it('should return an empty string if languageId is missing', () => {
-            const contentlet = {
+            const contentlet = createFakeContentlet({
                 URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
                 host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
                 languageId: undefined
-            } as unknown as DotCMSContentlet;
+            });
 
             expect(generatePreviewUrl(contentlet)).toBe('');
         });
