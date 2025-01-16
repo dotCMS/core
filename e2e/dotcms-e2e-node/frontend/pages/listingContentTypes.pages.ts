@@ -1,10 +1,27 @@
-import { Page } from "@playwright/test";
+import { APIRequestContext, Page } from "@playwright/test";
+import { updateFeatureFlag } from "../utils/api";
 
 export class ListingContentTypesPage {
-  constructor(private page: Page) {}
+  constructor(private page: Page, private request: APIRequestContext) {}
 
   async goToUrl() {
     await this.page.goto("/dotAdmin/#/content-types-angular");
+  }
+
+  async toggleNewContentEditor(boolean: boolean) {
+    await updateFeatureFlag(this.request, {
+      key: "DOT_FEATURE_FLAG_NEW_EDIT_PAGE",
+      value: boolean,
+    });
+    await updateFeatureFlag(this.request, {
+      key: "DOT_CONTENT_EDITOR2_ENABLED",
+      value: boolean,
+    });
+    await updateFeatureFlag(this.request, {
+      key: "DOT_CONTENT_EDITOR2_CONTENT_TYPE",
+      value: "*",
+    });
+    await this.page.reload();
   }
 
   async addNewContentType(name: string) {
