@@ -1,4 +1,4 @@
-import { expect, Page } from "@playwright/test";
+import { Page } from "@playwright/test";
 
 export class NewEditContentFormPage {
   constructor(private page: Page) {}
@@ -9,13 +9,6 @@ export class NewEditContentFormPage {
 
   async save() {
     await this.page.getByRole("button", { name: "Save" }).click();
-    const response = await this.page.waitForResponse(
-      "**/api/v1/workflow/actions/**",
-    );
-    const jsonData = await response.json();
-
-    expect(jsonData.entity.inode).not.toBeNull();
-    return jsonData.entity.inode;
   }
 
   async goToContent(id: string) {

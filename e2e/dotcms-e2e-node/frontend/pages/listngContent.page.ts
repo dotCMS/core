@@ -8,17 +8,29 @@ export class ListingContentPage {
   );
 
   async goTo(filter?: string) {
-    const urlPath = new URL("/c/content", this.page.url());
+    const urlPath = "/dotAdmin/#c/content";
+    const urlParams = new URLSearchParams();
 
     if (filter) {
-      urlPath.searchParams.set("filter", filter);
+      urlParams.set("filter", filter);
     }
 
-    await this.page.goto(urlPath.toString());
+    await this.page.goto(`${urlPath}?${urlParams.toString()}`);
   }
 
   async clickAddNewContent() {
     await this.#addBtn.click();
     await this.#addNewContent.click();
+  }
+
+  async clickFirstContentRow() {
+    await this.page
+      .locator('iframe[name="detailFrame"]')
+      .contentFrame()
+      .locator("#results_table")
+      .locator("tr")
+      .nth(1)
+      .getByRole("link")
+      .click();
   }
 }

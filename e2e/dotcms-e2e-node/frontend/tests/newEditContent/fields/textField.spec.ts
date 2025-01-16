@@ -3,6 +3,7 @@ import { faker } from "@faker-js/faker";
 import { ListingContentTypesPage } from "../../../pages/listingContentTypes.pages";
 import { ContentTypeFormPage } from "../../../pages/contentTypeForm.page";
 import { NewEditContentFormPage } from "../../../pages/newEditContentForm.page";
+import { ListingContentPage } from "../../../pages/listngContent.page";
 import { dotCMSUtils } from "../../../utils/dotCMSUtils";
 
 const contentTypeName = faker.lorem.word().toLocaleLowerCase();
@@ -37,7 +38,7 @@ test.afterEach(async ({ page, request }) => {
 test.describe("text field", () => {
   test("should save a text field", async ({ page }) => {
     const newEditContentFormPage = new NewEditContentFormPage(page);
-
+    const listingContentPage = new ListingContentPage(page);
     const locatorField = page.getByTestId("textField");
 
     await expect(locatorField).toBeVisible();
@@ -45,8 +46,9 @@ test.describe("text field", () => {
     const textFieldValue = faker.lorem.word();
 
     await newEditContentFormPage.fillTextField(textFieldValue);
-    const contentId = await newEditContentFormPage.save();
-    await newEditContentFormPage.goToContent(contentId);
+    await newEditContentFormPage.save();
+    await listingContentPage.goTo(contentTypeName);
+    await listingContentPage.clickFirstContentRow();
 
     await expect(locatorField).toHaveValue(textFieldValue);
   });
