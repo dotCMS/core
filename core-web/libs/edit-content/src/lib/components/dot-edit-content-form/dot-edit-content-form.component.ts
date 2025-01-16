@@ -371,12 +371,12 @@ export class DotEditContentFormComponent implements OnInit {
         this.$store.fireWorkflowAction({
             actionId,
             inode,
-            identifier,
             data: {
                 contentlet: {
                     ...this.processFormValue(this.form.value),
                     contentType,
-                    languageId
+                    languageId,
+                    identifier
                 }
             }
         });
