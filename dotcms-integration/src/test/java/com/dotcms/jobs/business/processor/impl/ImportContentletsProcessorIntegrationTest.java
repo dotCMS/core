@@ -1,7 +1,14 @@
 package com.dotcms.jobs.business.processor.impl;
 
+import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
@@ -19,15 +26,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID;
 /**
  * Integration tests for the {@link ImportContentletsProcessor} class. These tests verify the
  * functionality of content import operations in a real database environment. The tests cover both
@@ -292,14 +299,15 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
 
 
     /**
-     * Scenario: Test the preview mode of the content import process with an invalid key field.
+     * Scenario: Test the validating of the content import process with an invalid key field.
      * <p>
      * Expected: A JobValidationException should be thrown.
      *
      * @throws Exception if there's an error during the test execution
      */
     @Test
-    void test_process_preview_invalid_key_field() throws Exception {
+    void test_process_validate_invalid_key_fields() throws Exception {
+
         ContentType testContentType = null;
 
         try {
@@ -319,6 +327,531 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             );
 
             assertThrows(JobValidationException.class, ()-> processor.validate((testJob.parameters())));
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Scenario: Test the validating of the content import process with a list of fields that includes
+     * an invalid key field.
+     * <p>
+     * Expected: A JobValidationException should be thrown.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_validate_invalid_key_fields2() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Prepare test content type fields to use in the job
+            Field titleField = null;
+            Field bodyField = null;
+            for (Field field : testContentType.fields()) {
+                if (field.variable().equals("title")) {
+                    titleField = field;
+                } else if (field.variable().equals("body")) {
+                    bodyField = field;
+                }
+            }
+            assertNotNull(titleField);
+            assertNotNull(bodyField);
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "en-us", testContentType.variable(),
+                    WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of("doesNotExist", titleField.variable(), bodyField.variable())
+            );
+
+            assertThrows(JobValidationException.class,
+                    () -> processor.validate((testJob.parameters())));
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Scenario: Test the validating of the content import process with a list of fields that includes
+     * only variable names instead of field IDs.
+     * <p>
+     * Expected: A JobValidationException should be thrown.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_validate_key_fields_with_variable_names() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Prepare test content type fields to use in the job
+            Field titleField = null;
+            Field bodyField = null;
+            for (Field field : testContentType.fields()) {
+                if (field.variable().equals("title")) {
+                    titleField = field;
+                } else if (field.variable().equals("body")) {
+                    bodyField = field;
+                }
+            }
+            assertNotNull(titleField);
+            assertNotNull(bodyField);
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "en-us", testContentType.variable(),
+                    WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(titleField.variable(), bodyField.variable())
+            );
+
+            // Validate the test job, no exception should be thrown
+            processor.validate(testJob.parameters());
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Scenario: Test the validating of the content import process with a list of fields that includes
+     * variable names and IDs.
+     * <p>
+     * Expected: A JobValidationException should be thrown.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_validate_key_fields_with_variable_names2() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Prepare test content type fields to use in the job
+            Field titleField = null;
+            Field bodyField = null;
+            for (Field field : testContentType.fields()) {
+                if (field.variable().equals("title")) {
+                    titleField = field;
+                } else if (field.variable().equals("body")) {
+                    bodyField = field;
+                }
+            }
+            assertNotNull(titleField);
+            assertNotNull(bodyField);
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "en-us", testContentType.variable(),
+                    WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(titleField.variable(), bodyField.id())
+            );
+
+            // Validate the test job, no exception should be thrown
+            processor.validate(testJob.parameters());
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Scenario: Test the validating of the content import process with a list of fields using field
+     * IDs.
+     * <p>
+     * Expected: A JobValidationException should be thrown.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_validate_key_fields_with_field_ids() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Prepare test content type fields to use in the job
+            Field titleField = null;
+            Field bodyField = null;
+            for (Field field : testContentType.fields()) {
+                if (field.variable().equals("title")) {
+                    titleField = field;
+                } else if (field.variable().equals("body")) {
+                    bodyField = field;
+                }
+            }
+            assertNotNull(titleField);
+            assertNotNull(bodyField);
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "en-us", testContentType.variable(),
+                    WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(titleField.id(), bodyField.id())
+            );
+
+            // Validate the test job, no exception should be thrown
+            processor.validate(testJob.parameters());
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Tests the preview mode of the content import process with an invalid key field.
+     *
+     * <p>The test ensures that preview mode properly validates the key fields and throws an
+     * exception if the fields are not valid.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_with_invalid_key_fields() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "1", testContentType.id(),
+                    WORKFLOW_PUBLISH_ACTION_ID, List.of("doesNotExist")
+            );
+
+            // Process the job in preview mode, an exception should be thrown as the key field
+            // is invalid
+            assertThrows(JobProcessingException.class, () -> processor.process(testJob));
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Tests the preview mode of the content import process with invalid key fields.
+     * <p>The test contains in the list of fields an invalid key field, a valid key field by ID
+     * and a valid key field by variable name.
+     *
+     * <p>The test ensures that preview mode properly validates the key fields and throws an
+     * exception if the fields are not valid.
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_with_invalid_key_fields2() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Prepare test content type fields to use in the job
+            Field titleField = null;
+            Field bodyField = null;
+            for (Field field : testContentType.fields()) {
+                if (field.variable().equals("title")) {
+                    titleField = field;
+                } else if (field.variable().equals("body")) {
+                    bodyField = field;
+                }
+            }
+            assertNotNull(titleField);
+            assertNotNull(bodyField);
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "1", testContentType.id(),
+                    WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of("doesNotExist", titleField.id(), bodyField.variable())
+            );
+
+            // Process the job in preview mode, an exception should be thrown as a key field
+            // is invalid
+            assertThrows(JobProcessingException.class, () -> processor.process(testJob));
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Tests the preview mode of the content import process. This test:
+     * <ul>
+     *   <li>Creates a test content type</li>
+     *   <li>Generates a test CSV file with sample content</li>
+     *   <li>Processes the import in preview mode using key fields with a mix of field IDs and
+     *   variable names</li>
+     *   <li>Verifies the preview results and metadata</li>
+     *   <li>Verifies there is no content creation in the database</li>
+     * </ul>
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_with_key_fields() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Prepare test content type fields to use in the job
+            Field titleField = null;
+            Field bodyField = null;
+            for (Field field : testContentType.fields()) {
+                if (field.variable().equals("title")) {
+                    titleField = field;
+                } else if (field.variable().equals("body")) {
+                    bodyField = field;
+                }
+            }
+            assertNotNull(titleField);
+            assertNotNull(bodyField);
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "1", testContentType.id(),
+                    WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(titleField.id(), bodyField.variable())
+            );
+
+            // Process the job in preview mode
+            processor.process(testJob);
+
+            // Verify preview results
+            Map<String, Object> metadata = processor.getResultMetadata(testJob);
+            assertNotNull(metadata, "Preview metadata should not be null");
+            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
+            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+                    "Preview metadata errors should be empty");
+
+            // Verify no content was created
+            final var importedContent = findImportedContent(testContentType.id());
+            assertNotNull(importedContent, "Imported content should not be null");
+            assertEquals(0, importedContent.size(), "Imported content should have no items");
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Tests the preview mode of the content import process. This test:
+     * <ul>
+     *   <li>Creates a test content type</li>
+     *   <li>Generates a test CSV file with sample content</li>
+     *   <li>Processes the import in preview mode using key fields with just variable names</li>
+     *   <li>Verifies the preview results and metadata</li>
+     *   <li>Verifies there is no content creation in the database</li>
+     * </ul>
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_with_key_fields2() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Prepare test content type fields to use in the job
+            Field titleField = null;
+            Field bodyField = null;
+            for (Field field : testContentType.fields()) {
+                if (field.variable().equals("title")) {
+                    titleField = field;
+                } else if (field.variable().equals("body")) {
+                    bodyField = field;
+                }
+            }
+            assertNotNull(titleField);
+            assertNotNull(bodyField);
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "1", testContentType.id(),
+                    WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(titleField.variable(), bodyField.variable())
+            );
+
+            // Process the job in preview mode
+            processor.process(testJob);
+
+            // Verify preview results
+            Map<String, Object> metadata = processor.getResultMetadata(testJob);
+            assertNotNull(metadata, "Preview metadata should not be null");
+            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
+            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+                    "Preview metadata errors should be empty");
+
+            // Verify no content was created
+            final var importedContent = findImportedContent(testContentType.id());
+            assertNotNull(importedContent, "Imported content should not be null");
+            assertEquals(0, importedContent.size(), "Imported content should have no items");
+
+        } finally {
+            if (testContentType != null) {
+                // Clean up test content type
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Tests the preview mode of the content import process. This test:
+     * <ul>
+     *   <li>Creates a test content type</li>
+     *   <li>Generates a test CSV file with sample content</li>
+     *   <li>Processes the import in preview mode using key fields with just field ids</li>
+     *   <li>Verifies the preview results and metadata</li>
+     *   <li>Verifies there is no content creation in the database</li>
+     * </ul>
+     *
+     * @throws Exception if there's an error during the test execution
+     */
+    @Test
+    void test_process_preview_with_key_fields3() throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            // Initialize processor
+            final var processor = new ImportContentletsProcessor();
+
+            // Create test content type
+            testContentType = createTestContentType();
+
+            // Prepare test content type fields to use in the job
+            Field titleField = null;
+            Field bodyField = null;
+            for (Field field : testContentType.fields()) {
+                if (field.variable().equals("title")) {
+                    titleField = field;
+                } else if (field.variable().equals("body")) {
+                    bodyField = field;
+                }
+            }
+            assertNotNull(titleField);
+            assertNotNull(bodyField);
+
+            // Create test CSV file
+            File csvFile = createTestCsvFile();
+
+            // Create test job
+            final var testJob = createTestJob(
+                    csvFile, "preview", "1", testContentType.id(),
+                    WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(titleField.id(), bodyField.id())
+            );
+
+            // Process the job in preview mode
+            processor.process(testJob);
+
+            // Verify preview results
+            Map<String, Object> metadata = processor.getResultMetadata(testJob);
+            assertNotNull(metadata, "Preview metadata should not be null");
+            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
+            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+                    "Preview metadata errors should be empty");
+
+            // Verify no content was created
+            final var importedContent = findImportedContent(testContentType.id());
+            assertNotNull(importedContent, "Imported content should not be null");
+            assertEquals(0, importedContent.size(), "Imported content should have no items");
 
         } finally {
             if (testContentType != null) {
