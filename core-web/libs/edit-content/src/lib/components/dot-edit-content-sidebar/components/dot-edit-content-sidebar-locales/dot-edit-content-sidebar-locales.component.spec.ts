@@ -1,7 +1,8 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { Chip, ChipModule } from 'primeng/chip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 
 import { DotEditContentSidebarLocalesComponent } from './dot-edit-content-sidebar-locales.component';
@@ -11,7 +12,8 @@ describe('DotEditContentSidebarLocalesComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEditContentSidebarLocalesComponent,
-        imports: [ChipModule]
+        imports: [ChipModule],
+        providers: [mockProvider(DotMessageService)]
     });
 
     const locales: DotLanguage[] = [
@@ -28,6 +30,46 @@ describe('DotEditContentSidebarLocalesComponent', () => {
         {
             id: 3,
             isoCode: 'it-it',
+            translated: false
+        },
+        {
+            id: 4,
+            isoCode: 'it-it',
+            translated: false
+        },
+        {
+            id: 5,
+            isoCode: 'qwert',
+            translated: false
+        },
+        {
+            id: 6,
+            isoCode: 'it-es',
+            translated: false
+        },
+        {
+            id: 7,
+            isoCode: 'en-pa',
+            translated: false
+        },
+        {
+            id: 8,
+            isoCode: 'es-co',
+            translated: false
+        },
+        {
+            id: 9,
+            isoCode: 'it-es',
+            translated: false
+        },
+        {
+            id: 10,
+            isoCode: 'en-co',
+            translated: false
+        },
+        {
+            id: 11,
+            isoCode: 'en-br',
             translated: false
         }
     ] as DotLanguage[];
@@ -47,15 +89,36 @@ describe('DotEditContentSidebarLocalesComponent', () => {
 
     it('should display the list of locales', () => {
         const chipElements = spectator.queryAll(Chip);
-        expect(chipElements.length).toBe(3);
+        expect(chipElements.length).toBe(10); // 9 + 1 of the show more.
 
-        expect(chipElements[0].label).toBe('en-us');
-        expect(chipElements[1].label).toBe('es-es');
-        expect(chipElements[2].label).toBe('it-it');
+        expect(chipElements[0].label).toBe('en-US');
+        expect(chipElements[1].label).toBe('es-ES');
+        expect(chipElements[2].label).toBe('it-IT');
 
         expect(chipElements[0].styleClass).toBe('p-chip-sm p-chip-filled default');
         expect(chipElements[1].styleClass).toBe('p-chip-sm p-chip-primary');
         expect(chipElements[2].styleClass).toBe('p-chip-sm p-chip-gray p-chip-dashed');
+    });
+
+    it('should show all and hide all locales when the show more button is clicked', () => {
+        const showMoreButton = spectator.query(byTestId('show-more-button'));
+        let chipElements = spectator.queryAll(Chip);
+
+        spectator.click(showMoreButton);
+        spectator.detectChanges();
+        chipElements = spectator.queryAll(Chip);
+
+        expect(chipElements.length).toBe(12); // 11 + 1 of the show more.
+
+        spectator.click(showMoreButton);
+        spectator.detectChanges();
+
+        chipElements = spectator.queryAll(Chip);
+
+        spectator.component.$showAll.set(false);
+        spectator.detectChanges();
+
+        expect(chipElements.length).toBe(10); // 9 + 1 of the show less.
     });
 
     it('should show the skeleton on loading', () => {
