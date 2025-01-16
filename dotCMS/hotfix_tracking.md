@@ -188,3 +188,4 @@ This maintenance release includes the following code fixes:
 181. https://github.com/dotCMS/core/issues/28512 : Rename Date Updated Column #28512
 182. https://github.com/dotCMS/core/issues/28780 : Add Hint support for relationship fields #28780
 183. https://github.com/dotCMS/core/issues/30457 : FileAssetContainers not found when using case #30457
+184. https://github.com/dotCMS/core/issues/30969 : SAML: Retrieve the relay state on the SAML Endpoint #30969
