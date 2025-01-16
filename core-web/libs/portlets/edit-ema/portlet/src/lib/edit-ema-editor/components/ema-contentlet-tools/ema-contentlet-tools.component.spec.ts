@@ -288,6 +288,20 @@ describe('EmaContentletToolsComponent', () => {
                 });
             });
         });
+
+        describe('delete button', () => {
+            it('should enable delete button when disableDeleteButton is false', () => {
+                spectator.setInput('disableDeleteButton', null);
+                const deleteButton = spectator.query(byTestId('delete-button'));
+                expect(deleteButton.getAttribute('ng-reflect-disabled')).toBe('false');
+            });
+
+            it('should disable delete button when disableDeleteButton is true', () => {
+                spectator.setInput('disableDeleteButton', 'Cannot delete this contentlet');
+                const deleteButton = spectator.query(byTestId('delete-button'));
+                expect(deleteButton.getAttribute('ng-reflect-disabled')).toBe('true');
+            });
+        });
     });
 
     describe('small contentlet', () => {

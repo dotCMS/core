@@ -71,6 +71,7 @@ export interface EditorProps {
         contentletArea: ContentletArea;
         hide: boolean;
         isEnterprise: boolean;
+        disableDeleteButton?: string;
     };
     dropzone?: {
         bounds: Container[];
