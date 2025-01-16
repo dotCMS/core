@@ -45,7 +45,8 @@ test.describe("text field", () => {
     const textFieldValue = faker.lorem.word();
 
     await newEditContentFormPage.fillTextField(textFieldValue);
-    await newEditContentFormPage.save();
+    const contentId = await newEditContentFormPage.save();
+    await newEditContentFormPage.goToContent(contentId);
 
     await expect(locatorField).toHaveValue(textFieldValue);
   });
