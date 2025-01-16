@@ -7692,9 +7692,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     hasError = true;
                     Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
                             UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown"));
+
+                    throw cve;
                 } catch (final DotDataException | DotSecurityException e) {
                     Logger.warn(this, String.format("Unable to validate unique field '%s' in Content Type '%s': %s",
                             field.getVelocityVarName(), contentlet.getContentType().name(), ExceptionUtil.getErrorMessage(e)), e);
+                    cve.addUniqueField(field);
+                    hasError = true;
                 }
             }
 
