@@ -2,7 +2,10 @@ import { APIRequestContext, Page } from "@playwright/test";
 import { updateFeatureFlag } from "../utils/api";
 
 export class ListingContentTypesPage {
-  constructor(private page: Page, private request: APIRequestContext) {}
+  constructor(
+    private page: Page,
+    private request: APIRequestContext,
+  ) {}
 
   async goToUrl() {
     await this.page.goto("/dotAdmin/#/content-types-angular");

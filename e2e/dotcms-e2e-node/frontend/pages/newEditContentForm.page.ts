@@ -9,7 +9,9 @@ export class NewEditContentFormPage {
 
   async save() {
     await this.page.getByRole("button", { name: "Save" }).click();
-    const response = await this.page.waitForResponse("**/api/v1/workflow/actions/**");
+    const response = await this.page.waitForResponse(
+      "**/api/v1/workflow/actions/**",
+    );
     const jsonData = await response.json();
 
     expect(jsonData.entity.inode).not.toBeNull();

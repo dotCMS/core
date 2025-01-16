@@ -18,7 +18,7 @@ test.beforeEach("Navigate to content types", async ({ page, request }) => {
   // Login to dotCMS
   const cmsUtils = new dotCMSUtils();
   await cmsUtils.login(page, username, password);
- 
+
   await listingContentTypesPage.toggleNewContentEditor(true);
   await listingContentTypesPage.goToUrl();
   await listingContentTypesPage.addNewContentType(contentTypeName);
