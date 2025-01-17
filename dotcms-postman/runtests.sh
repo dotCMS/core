@@ -3,7 +3,7 @@
 wait=2
 echo "Waiting for ${wait} seconds to images be pulled"
 sleep $wait
-docker-compose logs -t -f dotcms-test &
+docker compose --compatibility logs -t -f dotcms-test &
 
 postman_collections="$1"
 dotcms_dir=../dotCMS
