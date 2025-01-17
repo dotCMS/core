@@ -1936,7 +1936,7 @@ public class WorkflowHelper {
 
     private boolean isNotWorkflowSeparator(final WorkflowAction workflowAction) {
 
-        final boolean isSeparator = Objects.nonNull(workflowAction) && UtilMethods.isSet(workflowAction.getMetadata())
+            final boolean isSeparator = Objects.nonNull(workflowAction) && UtilMethods.isSet(workflowAction.getMetadata())
                 && workflowAction.getMetadata().containsKey("subtype") && WorkflowAction.SEPARATOR.equals(workflowAction.getMetadata().get("subtype"));
 
         return !isSeparator;

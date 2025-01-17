@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "5ccc1142-2412-44f1-a682-d9ee757e8ecb",
+		"_postman_id": "c6b0fcb8-b713-4dee-941f-5aba04d2711b",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -18516,6 +18516,229 @@
 				}
 			],
 			"description": "Creates a French language and them creates a rich text in english and finally the french version of the english one previously created\n\nshould has the same id but diff language\n\nSince will use the system working, uses the safe action to creates the contentlets"
+		},
+		{
+			"name": "Metadata",
+			"item": [
+				{
+					"name": "UpdateArchiveActionAsPrimary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionId\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\",\n    \"actionCondition\": \"\",\n    \"metadata\": {\n        \"primary\":true\n    },\n    \"whoCanUse\":[],\n    \"actionName\": \"Archive\",\n    \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n    \"actionNextStep\": \"d6b095b6-b65f-4bdb-bbfd-701d663dfee2\",\n    \"actionRoleHierarchyForAssign\": false,\n    \"schemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n    \"showOn\": [\n        \"ARCHIVED\",\n        \"LISTING\",\n        \"UNLOCKED\",\n        \"UNPUBLISHED\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/4da13a42-5d59-480c-ad8f-94a3adf809fe",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"4da13a42-5d59-480c-ad8f-94a3adf809fe"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WFActionSeparators",
+			"item": [
+				{
+					"name": "Add Separator",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonDataAsText = pm.response.text();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Do not contains a separator\", function () {",
+									"    let textToCheck = \"separator\";",
+									"    pm.expect(jsonDataAsText).to.include(textToCheck);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"schemeId\":\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n    \"stepId\":\"6cb7e3bd-1710-4eed-8838-d3db60f78f19\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/separator",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"separator"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetInitialStepsWithoutSeparators",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonDataAsText = pm.response.text();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Do not contains a separator\", function () {",
+									"    let textToCheck = \"SEPARATOR\";",
+									"    pm.expect(jsonDataAsText).to.not.include(textToCheck);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/webPageContent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"initialactions",
+								"contenttype",
+								"webPageContent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetInitialStepsWithSeparator",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonDataAsText = pm.response.text();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Do not contains a separator\", function () {",
+									"    let textToCheck = \"SEPARATOR\";",
+									"    pm.expect(jsonDataAsText).to.include(textToCheck);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/webPageContent?includeSeparator=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"initialactions",
+								"contenttype",
+								"webPageContent"
+							],
+							"query": [
+								{
+									"key": "includeSeparator",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
