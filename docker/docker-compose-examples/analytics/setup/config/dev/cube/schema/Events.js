@@ -268,7 +268,7 @@ cube('request', {
   }
 });
 
-cube('events', {
+cube('ca_events', {
   sql: `select * from events`,
   dimensions: {
     conHost: { sql: 'conHost', type: `string` },
