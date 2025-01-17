@@ -8100,10 +8100,10 @@
 									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"{{contentTypeVAR}}\",\n\t\t\"title\": \"test\"\n\t}\n}"
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/workflow/actions/default/fire/NEW",
+									"raw": "http://127.0.0.1:8080/api/v1/workflow/actions/default/fire/NEW",
 									"protocol": "http",
 									"host": [
-										"localhost"
+										"127.0.0.1"
 									],
 									"port": "8080",
 									"path": [
@@ -14582,10 +14582,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/v1/permissions/_bycontent?contentletId={{identifier}}&type=ALL",
+							"raw": "http://127.0.0.1:8080/api/v1/permissions/_bycontent?contentletId={{identifier}}&type=ALL",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"127.0.0.1"
 							],
 							"port": "8080",
 							"path": [
@@ -16430,7 +16430,7 @@
 									"mode": "raw",
 									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"{{contentTypeVAR}}\",\n\t\t\"title\": \"test contentlet\"\n\t}\n}"
 								},
-								"url": "http://localhost:8080/api/v1/workflow/actions/default/fire/NEW"
+								"url": "http://127.0.0.1:8080/api/v1/workflow/actions/default/fire/NEW"
 							},
 							"response": []
 						},

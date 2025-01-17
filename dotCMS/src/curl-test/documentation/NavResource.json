@@ -37,10 +37,10 @@
 				"header": [],
 				"body": {},
 				"url": {
-					"raw": "http://localhost:8080/api/v1/nav/about-us?depth=2&languageId=2",
+					"raw": "http://127.0.0.1:8080/api/v1/nav/about-us?depth=2&languageId=2",
 					"protocol": "http",
 					"host": [
-						"localhost"
+						"127.0.0.1"
 					],
 					"port": "8080",
 					"path": [

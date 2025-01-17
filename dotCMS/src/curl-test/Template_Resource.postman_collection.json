@@ -6354,10 +6354,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/workflow/actions/default/fire/NEW",
+							"raw": "http://127.0.0.1:8080/api/v1/workflow/actions/default/fire/NEW",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"127.0.0.1"
 							],
 							"port": "8080",
 							"path": [
@@ -7535,10 +7535,10 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/api/v1/workflow/actions/default/fire/NEW",
+					"raw": "http://127.0.0.1:8080/api/v1/workflow/actions/default/fire/NEW",
 					"protocol": "http",
 					"host": [
-						"localhost"
+						"127.0.0.1"
 					],
 					"port": "8080",
 					"path": [

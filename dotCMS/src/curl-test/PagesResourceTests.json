@@ -4949,10 +4949,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/v1/page/types",
+							"raw": "http://127.0.0.1:8080/api/v1/page/types",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"127.0.0.1"
 							],
 							"port": "8080",
 							"path": [
@@ -5006,10 +5006,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/v1/page/types?filter=test",
+							"raw": "http://127.0.0.1:8080/api/v1/page/types?filter=test",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"127.0.0.1"
 							],
 							"port": "8080",
 							"path": [
@@ -5372,10 +5372,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/page/actions",
+							"raw": "http://127.0.0.1:8080/api/v1/page/actions",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"127.0.0.1"
 							],
 							"port": "8080",
 							"path": [
