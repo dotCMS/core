@@ -384,6 +384,7 @@ public class TaskLocatorUtil {
 		ret.add(Task240131UpdateLanguageVariableContentType.class);
 		ret.add(Task240513UpdateContentTypesSystemField.class);
 		ret.add(Task241013RemoveFullPathLcColumnFromIdentifier.class);
+		ret.add(Task250107RemoveEsReadOnlyMonitorJob.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
