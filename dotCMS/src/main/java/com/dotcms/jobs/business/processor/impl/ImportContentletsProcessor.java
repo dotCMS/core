@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.processor.impl;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.jobs.business.error.JobCancellationException;
 import com.dotcms.jobs.business.error.JobProcessingException;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -205,7 +207,6 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
             // Make sure the fields exist in the content type (will throw an exception if it doesn't)
             validateFields(parameters, contentTypeFound);
 
-
             // Security measure to prevent invalid attempts to import a host.
             final ContentType hostContentType = APILocator.getContentTypeAPI(
                     APILocator.systemUser()).find(Host.HOST_VELOCITY_VAR_NAME);
@@ -232,9 +233,13 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      * @throws JobValidationException if any field specified in the parameters is not found in the content type
      */
     private void validateFields(final Map<String, Object> parameters, final ContentType contentType) {
+
         var contentTypeFields = contentType.fields();
+
         for (String providedField : getFields(parameters)) {
-            if (contentTypeFields.stream().noneMatch(field -> Objects.equals(field.id(), providedField))) {
+            if (contentTypeFields.stream().noneMatch(field ->
+                    Objects.equals(field.id(), providedField)
+                            || Objects.equals(field.variable(), providedField))) {
                 final var errorMessage = String.format(
                         "Field [%s] not found in Content Type [%s].", providedField, contentType.variable()
                 );
@@ -242,6 +247,42 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                 throw new JobValidationException(errorMessage);
             }
         }
+    }
+
+    /**
+     * Maps provided field identifiers to their corresponding field IDs in a content type.
+     *
+     * <p>This method processes fields specified in the job parameters, which can be identified
+     * either by their field ID or field variable name. It matches these against the content type's
+     * field definitions and returns the corresponding field IDs in a one-to-one mapping.</p>
+     *
+     * <p>The method guarantees that the output array will have the same length as the input fields
+     * array. If a field cannot be found in the content type (which should not happen if
+     * validateFields was called first), a JobValidationException is thrown.</p>
+     *
+     * @param parameters  The job parameters containing field identifiers (either IDs or variables)
+     * @param contentType The content type containing the field definitions to match against
+     * @return An array of field IDs with the same length as the input fields array
+     * @throws JobValidationException if any field cannot be found in the content type
+     */
+    private String[] getFieldIds(final Map<String, Object> parameters,
+            final ContentType contentType) {
+
+        final var contentTypeFields = contentType.fields();
+
+        return Arrays.stream(getFields(parameters))
+                .map(providedField -> contentTypeFields.stream()
+                        .filter(field -> Objects.equals(field.id(), providedField)
+                                || Objects.equals(field.variable(), providedField))
+                        .findFirst()
+                        .map(Field::id)
+                        .orElseThrow(() -> new JobValidationException(
+                                String.format(
+                                        "Field [%s] not found in Content Type [%s].",
+                                        providedField, contentType.variable()
+                                ))
+                        )
+                ).toArray(String[]::new);
     }
 
     /**
@@ -343,7 +384,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
         final var currentSiteId = getSiteIdentifier(job);
         final var currentSiteName = getSiteName(job);
         final var contentType = findContentType(job.parameters());
-        final var fields = getFields(job.parameters());
+        final var fields = getFieldIds(job.parameters(), contentType);
         final var language = findLanguage(job.parameters());
         final var workflowActionId = getWorkflowActionId(job.parameters());
         final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);

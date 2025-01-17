@@ -83,7 +83,7 @@ public class ContentUtils {
 	 */
 		public static Contentlet find(final String inodeOrIdentifier, final User user, final boolean EDIT_OR_PREVIEW_MODE, final long sessionLang){
 			final Optional<String> timeMachineDate = TimeMachineUtil.getTimeMachineDate();
-			return find(inodeOrIdentifier,user,timeMachineDate.orElse(null),EDIT_OR_PREVIEW_MODE, sessionLang);
+			return find(inodeOrIdentifier, user, timeMachineDate.orElse(null), EDIT_OR_PREVIEW_MODE, sessionLang);
 		}
 
 	    private static Contentlet fixRecurringDates(Contentlet contentlet, String[] recDates) {

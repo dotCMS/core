@@ -13,23 +13,31 @@ export class ContentUtils {
 
     /**
      * Fill the rich text form
-     * @param page
-     * @param title
-     * @param body
-     * @param action
+     * @param params
      */
-    async fillRichTextForm(page: Page, title: string, body: string, action: string) {
+    async fillRichTextForm(params: RichTextFormParams) {
+        const {page, title, body, action, newBody, newTitle} = params;
         const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-        const headingLocator = page.getByRole('heading');
-        await waitForVisibleAndCallback(headingLocator, () => expect.soft(headingLocator).toContainText(contentGeneric.label));
+        await waitForVisibleAndCallback(page.getByRole('heading'), () =>
+            expect.soft(page.getByRole('heading')).toContainText(contentGeneric.label)
+        );
 
-        //Fill title
-        await dotIframe.locator('#title').fill(title);
-        //Fill body
-        await dotIframe.locator('#block-editor-body div').nth(1).fill(body);
-        //Click on action
-        await dotIframe.getByText(action).first().click();
+        if (newTitle) {
+            await dotIframe.locator('#title').clear();
+            await dotIframe.locator('#title').fill(newTitle);
+        }
+        if (newBody) {
+            await dotIframe.locator('#block-editor-body div').nth(1).clear()
+            await dotIframe.locator('#block-editor-body div').nth(1).fill(newBody);
+        }
+        if (!newTitle && !newBody) {
+            await dotIframe.locator('#title').fill(title);
+            await dotIframe.locator('#block-editor-body div').nth(1).fill(body);
+        }
+        if (action) {
+            await dotIframe.getByText(action).first().click();
+        }
     }
 
     /**
@@ -54,7 +62,7 @@ export class ContentUtils {
                 await editFrame.getByRole('button', {name: 'Save'}).click();
             } else {
                 await waitForVisibleAndCallback(page.getByRole('heading'), async () => {
-                    expect.soft(page.getByRole('heading')).toContainText(fileAsset.label);
+                    await expect.soft(page.getByRole('heading')).toContainText(fileAsset.label);
                 });
                 await dotIframe.locator('#HostSelector-hostFolderSelect').fill(host);
                 await dotIframe.getByRole('button', {name: ' Create New File'}).click();
@@ -128,9 +136,11 @@ export class ContentUtils {
 
         const structureINodeDivLocator = iframe.locator('#widget_structure_inode div').first();
         await waitForVisibleAndCallback(structureINodeDivLocator, () => structureINodeDivLocator.click());
-        const typeLocatorByTextLocator = iframe.getByText(typeLocator);
-        await waitForVisibleAndCallback(typeLocatorByTextLocator, () => typeLocatorByTextLocator.click());
-        await page.waitForLoadState();
+
+        await waitForVisibleAndCallback(iframe.getByLabel('structure_inode_popup'), async () => {});
+
+        const typeLocatorByText = iframe.getByText(typeLocator);
+        await waitForVisibleAndCallback(typeLocatorByText, () => typeLocatorByText.click());
     }
 
     /**
@@ -205,22 +215,20 @@ export class ContentUtils {
 
     /**
      * Edit content on the content portlet
-     * @param page
-     * @param title
-     * @param newTitle
-     * @param newBody
-     * @param action
+     * @param params
      */
-    async editContent(page: Page, title: string, newTitle: string, newBody: string, action: string) {
+    async editContent(params: RichTextFormParams) {
+        const {page, title, action} = params;
         const contentElement = await this.getContentElement(page, title);
-        if (contentElement) {
-            await contentElement.click();
-        } else {
+        if (!contentElement) {
             console.log('Content not found');
             return;
         }
-        await this.fillRichTextForm(page, newTitle, newBody, action);
-        await this.workflowExecutionValidationAndClose(page, 'Content saved');
+        await contentElement.click();
+        await this.fillRichTextForm(params);
+        if(action) {
+            await this.workflowExecutionValidationAndClose(page, 'Content saved');
+        }
     }
 
     /**
@@ -362,6 +370,13 @@ interface BaseFormParams {
     action?: string;
 }
 
+
+interface RichTextFormParams extends BaseFormParams {
+    body?: string,
+    action?: string
+    newTitle?: string,
+    newBody?: string,
+}
 /**
  * Parameter to fill the file asset form params
  */

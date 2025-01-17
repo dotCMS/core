@@ -3,7 +3,7 @@
     <p-radioButton value="populate" name="option" inputId="populate" [(ngModel)]="selectedOption" />
     <label for="populate" data-testId="populate-label">
         {{ 'edit.content.sidebar.locales.untranslated.populate' | dm }}
-        <b>{{ config?.data?.currentLocale?.isoCode }}</b>
+        <b>{{ config?.data?.currentLocale?.isoCode | dotIsoCode }}</b>
     </label>
 </div>
 <p-radioButton

@@ -252,6 +252,12 @@ public class PageRenderUtil implements Serializable {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Date timeMachineDate    = timeMachineDate(request).orElseGet(()->null);
+        if(null != timeMachineDate){
+            Logger.debug(this, "Time Machine date found cache must be evicted: " + timeMachineDate);
+            // for future time machine we need to invalidate the cache for there can be precalculated content
+            // that was loaded before without using time machine date see https://github.com/dotCMS/core/issues/31061
+            new PageLoader().invalidate(htmlPage, mode);
+        }
         final boolean live            = this.isLive(request);
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI
@@ -412,7 +418,8 @@ public class PageRenderUtil implements Serializable {
     }
 
     private Contentlet getContentletByVariantFallback(final String currentVariantId,
-            final PersonalizedContentlet personalizedContentlet, final Date timeMachineDate) {
+            final PersonalizedContentlet personalizedContentlet, final Date timeMachineDate)
+            throws DotSecurityException {
 
         final Contentlet contentlet = this.getContentlet(personalizedContentlet, currentVariantId, timeMachineDate);
 
@@ -539,7 +546,7 @@ public class PageRenderUtil implements Serializable {
      * Personalized Contentlet object.
      */
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet,
-            final String variantName, final Date timeMachineDate) {
+            final String variantName, final Date timeMachineDate) throws DotSecurityException {
 
         try {
             return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false) ?
@@ -551,7 +558,7 @@ public class PageRenderUtil implements Serializable {
                 // Page that is holding it without any problems
                 return limitedUserPermissionFallback(personalizedContentlet.getContentletId());
             }
-            throw new DotStateException(se);
+            throw se;
         }
     }
 

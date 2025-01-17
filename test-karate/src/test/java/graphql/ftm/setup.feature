@@ -36,7 +36,14 @@ Feature: Setting up the Future Time Machine Test
     * def newContentPiceOneVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(contentTypeId)', identifier: '#(contentPieceOneId)', title: 'test 1 v2 (This ver will be publshed in the future)', publishDate: '#(formattedFutureDateTime)' }
     * def newContentPiceTwoVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(contentTypeId)', identifier: '#(contentPieceTwoId)', title: 'test 2 v2' }
 
-    * def pageUrl = 'ftm-test-page' + Math.floor(Math.random() * 10000)
+    # Lets create a new non-published piece of content wiht a publish date in the future
+    * def nonPublishedPieceResult = callonce read('classpath:graphql/ftm/newContent.feature') { contentTypeId: '#(contentTypeId)', title: 'Working version Only! with publish date', publishDate: '#(formattedFutureDateTime)', action: 'NEW' }
+    * def nonPublishedPiece = nonPublishedPieceResult.response.entity.results
+    * def nonPublishedPieceId = nonPublishedPiece.map(result => Object.keys(result)[0])
+    * def nonPublishedPieceId = nonPublishedPieceId[0]
+
+    * def suffix = Math.floor(Math.random() * 10000)
+    * def pageUrl = 'ftm-test-page' + suffix
 
     # Finally lets create a new page
     * def createPageResult = callonce read('classpath:graphql/ftm/newPage.feature') { pageUrl:'#(pageUrl)' ,title: 'Future Time Machine Test page', templateId:'#(templateId)' }
@@ -45,7 +52,8 @@ Feature: Setting up the Future Time Machine Test
     * def pageId = pages.map(result => Object.keys(result)[0])
     * def pageId = pageId[0]
 
-    * def publishPageResult =  callonce read('classpath:graphql/ftm/publishPage.feature') { page_id: '#(pageId)', content1_id: '#(contentPieceOneId)', content2_id: '#(contentPieceTwoId)', container_id: '#(containerId)' }
+    # Now lets add the pieces of content to the page
+    * def publishPageResult = callonce read('classpath:graphql/ftm/publishPage.feature') { page_id: '#(pageId)', content_ids: ['#(contentPieceOneId)', '#(contentPieceTwoId)', '#(nonPublishedPieceId)'], container_id: '#(containerId)' }
 
     * karate.log('Page created and Published ::', pageUrl)
 

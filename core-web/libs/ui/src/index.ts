@@ -59,6 +59,7 @@ export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
 export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 export * from './lib/pipes/dot-diff/dot-diff.pipe';
+export * from './lib/pipes/dot-iso-code/dot-iso-code.pipe';
 
 // Resolvers
 export * from './lib/resolvers/dot-portlet-have-license.resolver';

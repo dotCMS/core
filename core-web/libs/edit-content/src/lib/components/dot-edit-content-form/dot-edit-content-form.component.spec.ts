@@ -46,6 +46,7 @@ import {
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
     MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
+import { generatePreviewUrl } from '../../utils/functions.util';
 import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotFormComponent', () => {
@@ -298,6 +299,7 @@ describe('DotFormComponent', () => {
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
 
             store.initializeExistingContent({
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
@@ -361,7 +363,6 @@ describe('DotFormComponent', () => {
                 expect(spy).toHaveBeenCalledWith({
                     actionId: '1',
                     inode: 'cc120e84-ae80-49d8-9473-36d183d0c1c9',
-                    identifier: null,
                     data: {
                         contentlet: {
                             contentType: 'TestMock',
@@ -370,10 +371,100 @@ describe('DotFormComponent', () => {
                             text2: 'content text 2',
                             text3: 'default value modified',
                             multiselect: 'A,B,C',
-                            languageId: null
+                            languageId: null,
+                            identifier: null
                         }
                     }
                 });
+            });
+        });
+    });
+
+    describe('Preview Button', () => {
+        let windowOpenSpy: jest.SpyInstance;
+
+        afterEach(() => {
+            // Restore the original implementation of window.open
+            windowOpenSpy.mockRestore();
+        });
+
+        describe('With URL Map', () => {
+            beforeEach(() => {
+                // Mock window.open
+                windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+                dotEditContentService.getContentById.mockReturnValue(
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter'
+                    })
+                );
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+            });
+            it('should render the preview button when $showPreviewLink is true', () => {
+                const previewButton = spectator.query(byTestId('preview-button'));
+                expect(previewButton).toBeTruthy();
+            });
+
+            it('should call showPreview when the preview button is clicked', () => {
+                const showPreviewSpy = jest.spyOn(component, 'showPreview');
+                const previewButton = spectator.query(byTestId('preview-button'));
+
+                spectator.click(previewButton);
+
+                expect(showPreviewSpy).toHaveBeenCalled();
+            });
+
+            it('should call window.open when showPreview is executed', () => {
+                const expectedUrl = generatePreviewUrl({
+                    ...MOCK_CONTENTLET_1_OR_2_TABS,
+                    URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter'
+                });
+                component.showPreview();
+                expect(windowOpenSpy).toHaveBeenCalledWith(expectedUrl, '_blank');
+            });
+        });
+
+        describe('Without URL Map', () => {
+            beforeEach(() => {
+                // Mock window.open
+                windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+
+                dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_2_TABS));
+                dotEditContentService.getContentById.mockReturnValue(
+                    of(MOCK_CONTENTLET_1_OR_2_TABS)
+                );
+                workflowActionsService.getByInode.mockReturnValue(
+                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+            });
+
+            it('should not render the preview button when $showPreviewLink is false', () => {
+                const previewButton = spectator.query(byTestId('preview-button'));
+                expect(previewButton).toBeFalsy();
             });
         });
     });

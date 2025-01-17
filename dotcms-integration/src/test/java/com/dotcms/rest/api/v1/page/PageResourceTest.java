@@ -1833,11 +1833,15 @@ public class PageResourceTest {
     }
 
     /**
-     *
-     * @throws Exception
+     * Given scenario: A page with a container and a contentlet is created. The contentlet is set to be published in the future.
+     * But it is saved not published. Therefor it only has a working version.
+     * Now we use a limited user to render the page. The limited user only has READ permissions on the contentlet.
+     * But as this contentlet is in working state we should not allow the user to see it.
+     * Expected result: A Security exception should be thrown resulting in a 403 status code.
+     * @throws Exception a Security exception should be thrown
      */
-    @Test
-    public void Test_Rendering_Using_Limited_User() throws Exception{
+    @Test(expected = DotSecurityException.class)
+    public void Test_Rendering_Working_Content_Using_Limited_User() throws Exception{
         overrideInitWithLimitedUser();
         final TimeZone defaultZone = TimeZone.getDefault();
         try {
@@ -1861,9 +1865,6 @@ public class PageResourceTest {
                             "1", null, matchingFutureIso8601);
 
             RestUtilTest.verifySuccessResponse(endpointResponse);
-            final PageView pageView = (PageView) ((ResponseEntityView<?>) endpointResponse.getEntity()).getEntity();
-            final List<? extends ContainerRaw> containers = (List<? extends ContainerRaw>)pageView.getContainers();
-            assertEquals(0, containers.size());
 
         } finally {
             TimeZone.setDefault(defaultZone);
