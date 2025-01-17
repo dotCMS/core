@@ -34,9 +34,9 @@ services:
       - opensearch-net
 
   dotcms:
-    image: dotcms/dotcms:latest
+    image: dotcms/dotcms:24.04.24_lts_4382670
     environment:
-        CMS_JAVA_OPTS: '-Xmx1g '
+        CMS_JAVA_OPTS: '-Xmx6G '
         LANG: 'C.UTF-8'
         TZ: 'UTC'
         DB_BASE_URL: "jdbc:postgresql://db/dotcms"
@@ -47,11 +47,17 @@ services:
         DOT_INITIAL_ADMIN_PASSWORD: 'admin'
         DOT_DOTCMS_CLUSTER_ID:  'dotcms-production'
         CUSTOM_STARTER_URL: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240213/starter-20240213.zip
+#        DOT_UPDATE_CONTENT_MOD_DATE_BY_TIMEZONE: 'true'
+        #DB_NAME: 'dotcms'
+        #DB_HOST: 'db'
+        #DB_LOAD_DUMP_SQL: '/data/dump/dump.sql'
+
     depends_on:
       - opensearch
       - db
     volumes:
       - cms-shared:/data/shared
+      #- /Users/erickgonzalez/Desktop/DBs/ssc_20241029.sql:/data/dump/dump.sql
       #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
