@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
-import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
@@ -17,7 +16,6 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import java.util.Map;
 
-import graphql.AssertException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -118,9 +116,8 @@ public class ReindexQueueAPITest {
     public void markAsFailed() throws DotDataException {
 
         final ReindexQueueFactory reindexQueueFactory  = mock(ReindexQueueFactory.class);
-        final ElasticReadOnlyCommand esReadOnlyMonitor = mock(ElasticReadOnlyCommand.class);
 
-        final ReindexQueueAPIImpl reindexQueueAPI = new ReindexQueueAPIImpl(reindexQueueFactory, esReadOnlyMonitor);
+        final ReindexQueueAPIImpl reindexQueueAPI = new ReindexQueueAPIImpl(reindexQueueFactory);
 
         final ReindexEntry reindexEntry = mock(ReindexEntry.class);
         final String cause = "Test Cause";

@@ -1,6 +1,5 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotmarketing.util.Logger;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;

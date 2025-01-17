@@ -190,3 +190,4 @@ This maintenance release includes the following code fixes:
 183. https://github.com/dotCMS/core/issues/30457 : FileAssetContainers not found when using case #30457
 184. https://github.com/dotCMS/core/issues/30969 : SAML: Retrieve the relay state on the SAML Endpoint #30969
 185. https://github.com/dotCMS/core/issues/30804 : The file with name of webPageContent.vtl can't GET and throws 404 #30804
+186. https://github.com/dotCMS/core/issues/30993 : Remove calls to ElasticReadOnlyCommand and disable EsReadOnlyMonitorJob  #30468
