@@ -96,3 +96,4 @@ This maintenance release includes the following code fixes:
 90. https://github.com/dotCMS/core/issues/30619 : Run dotCMS with jemalloc #30619
 91. https://github.com/dotCMS/core/issues/30969 : SAML: Retrieve the relay state on the SAML Endpoint #30969
 92. https://github.com/dotCMS/core/issues/31034 : Empty allowed file type not being saved #31034
+93. https://github.com/dotCMS/core/issues/30804 : The file with name of webPageContent.vtl can't GET and throws 404 #30804
