@@ -13,7 +13,6 @@ import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJob;
-import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJob;
