@@ -37,6 +37,7 @@ export interface DotPageApiResponse {
     urlContentMap?: DotCMSContentlet;
     vanityUrl?: VanityUrl;
     runningExperimentId?: string;
+    numberContents: number;
 }
 
 export interface DotPageApiParams {

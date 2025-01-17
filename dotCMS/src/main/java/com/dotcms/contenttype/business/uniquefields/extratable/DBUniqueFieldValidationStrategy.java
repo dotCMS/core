@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
@@ -230,6 +229,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
             Logger.debug(DBUniqueFieldValidationStrategy.class, String.format("Including value of field '%s' in Contentlet " +
                     "'%s' in the unique_fields table", uniqueFieldCriteria.field().variable(), contentletId));
             uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
+
         } catch (final DotDataException e) {
             if (isDuplicatedKeyError(e)) {
                 final String duplicatedValueMessage = String.format("The unique value '%s' for the field '%s'" +

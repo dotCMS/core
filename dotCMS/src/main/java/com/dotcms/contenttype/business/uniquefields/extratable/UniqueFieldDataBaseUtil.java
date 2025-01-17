@@ -4,13 +4,15 @@ package com.dotcms.contenttype.business.uniquefields.extratable;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 
+import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -146,6 +148,7 @@ public class UniqueFieldDataBaseUtil {
 
     @WrapInTransaction
     public void insert(final String key, final Map<String, Object> supportingValues) throws DotDataException {
+
         new DotConnect()
                 .setSQL(INSERT_SQL)
                 .addParam(key)

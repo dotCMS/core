@@ -30,6 +30,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { HeaderComponent } from './components/header/header.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
+import { getContentTypeIdFromRelationship } from './utils';
 
 @Component({
     selector: 'dot-edit-content-relationship-field',
@@ -169,7 +170,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
         const field = this.$field();
 
         return {
-            contentTypeId: field?.relationships?.velocityVar || null,
+            contentTypeId: getContentTypeIdFromRelationship(field),
             hitText: field?.hint || null
         };
     });

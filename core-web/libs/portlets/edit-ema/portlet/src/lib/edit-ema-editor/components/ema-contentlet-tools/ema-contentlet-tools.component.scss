@@ -27,8 +27,12 @@
             box-shadow: $shadow-s;
             transition: all 0.15s ease-in-out;
 
-            &:hover,
-            &:enabled:focus {
+            &:disabled {
+                pointer-events: auto;
+            }
+
+            &:hover:enabled,
+            &:focus:enabled {
                 background-color: $color-palette-primary-100;
                 color: $color-palette-primary-500;
                 box-shadow: $shadow-s;

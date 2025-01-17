@@ -1231,7 +1231,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             throws DotDataException {
 
         final String variant = UtilMethods.isSet(variantId) ? variantId : DEFAULT_VARIANT.name();
-
+        // Perhaps we should exclude here contents with only a working version and no live version whatsoever
+        // To match what we did in the old time machine days
+        // This logic is tied with a fragment of VTL code in ContainerLoader.java check it out
+        // Since it basically iterates over the results of this method checks the sysPublishDate and sysExpireDate
+        // and then adds the contentlet to the container if a live version is found and the dates are correct
+        // But for the new time machine we allow the user to see the working version dropped on the container
         final String query = "SELECT c.*, ci.owner \n"
                 + "FROM contentlet c\n"
                 + "INNER JOIN identifier i ON i.id = c.identifier\n"

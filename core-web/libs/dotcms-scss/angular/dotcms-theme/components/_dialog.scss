@@ -58,7 +58,7 @@
     background: $white;
     color: $black;
     padding: $spacing-4;
-    word-break: break-all;
+    word-break: break-word;
 }
 .p-dialog:has(.p-dialog-header) .p-dialog-content {
     padding-top: 0;
