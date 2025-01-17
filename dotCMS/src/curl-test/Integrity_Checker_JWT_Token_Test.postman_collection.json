@@ -1040,7 +1040,7 @@
 	"variable": [
 		{
 			"key": "serverURL",
-			"value": "http://localhost:8080"
+			"value": "http://127.0.0.1:8080"
 		},
 		{
 			"key": "token",
