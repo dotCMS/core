@@ -79,7 +79,7 @@ Now that we have these packages installed we need to start dotCMS (with its depe
 
 At `e2e/e2e-dotcms-node/frontend/package.json` you can find the available scripts you can call to execute the tests:
 
-```json lines
+```json
   "scripts": {
     "show-report": "if [[ \"$CURRENT_ENV\" != \"ci\" ]]; then  fi",
     "start": "PLAYWRIGHT_JUNIT_SUITE_ID=nodee2etestsuite PLAYWRIGHT_JUNIT_SUITE_NAME='E2E Node Test Suite' PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' yarn playwright test ${PLAYWRIGHT_SPECIFIC} ${PLAYWRIGHT_DEBUG}; yarn run show-report",
@@ -89,12 +89,10 @@ At `e2e/e2e-dotcms-node/frontend/package.json` you can find the available script
     "post-testing": "PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' node index.js"
   }
 ```
+
 All these scripts assume that there is a dotCMS instance running at `8080` port.
 - `start-local`: runs E2E tests against http://localhost:8080
-- `start-dev`: runs E2E tests against http://localhost:4200, that means it runs a
-```shell
-nx serve dotcms-ui
-```
+- `start-dev`: runs E2E tests against http://localhost:4200, that means it runs a `nx serve dotcms-ui`
 command before the tests on top of what is found on http://localhost:8080
 - `start-ci`: runs E2E tests against http://localhost:8080 in `headless` mode which is how it's done in the pipeline
 
