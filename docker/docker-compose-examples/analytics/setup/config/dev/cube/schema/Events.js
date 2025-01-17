@@ -268,3 +268,75 @@ cube('request', {
   }
 });
 
+cube('events', {
+  sql: `select * from events`,
+  dimensions: {
+    conHost: { sql: 'conHost', type: `string` },
+    conHostName: { sql: 'conHostName', type: `string` },
+    contentTypeName: { sql: 'contentTypeName', type: `string` },
+    contentTypeId: { sql: 'contentTypeId', type: `string` },
+    contentTypeVariable: { sql: 'contentType', type: `string` },
+    live: { sql: 'live', type: `boolean` },
+    working: { sql: 'working', type: `boolean` },
+    baseType: { sql: 'baseType', type: `string` },
+    identifier: { sql: 'identifier', type: `string` },
+    title: { sql: 'title', type: `string` },
+    requestId: { sql: 'request_id', type: `string` },
+    clusterId: { sql: 'cluster_id', type: `string` },
+    customerId: { sql: 'customer_id', type: `string` },
+    sessionId: { sql: 'sessionid', type: `string` },
+    isSessionNew: { sql: 'isSessionNew', type: `boolean` },
+    createdAt: { sql: 'createdAt', type: `time`, },
+    sourceIp: { sql: 'source_ip', type: `string` },
+    language: { sql: 'language', type: `string` },
+    languageId: { sql: 'languageid', type: `string` },
+    userAgent: { sql: 'user_agent', type: `string` },
+    referer: { sql: 'referer', type: `string` },
+    persona: { sql: 'persona', type: `string` },
+    url: { sql: 'url', type: `string` },
+    forwardTo: { sql: 'vanity_forward_to', type: `string` },
+    action: { sql: 'vanity_action', type: `string` },
+    eventsType: { sql: 'events_type', type: `string` }
+  },
+  measures: {
+    count: {
+      type: "count"
+    },
+    totalSessions: {
+      sql: 'sessionid',
+      type: 'countDistinct',
+      title: 'Total Sessions'
+    },
+    totalRequest: {
+      sql: 'request_id',
+      type: 'countDistinct',
+      title: 'Total Requests'
+    },
+    fileRequest: {
+      sql: `CASE WHEN ${CUBE}.baseType = 'FILEASSET' THEN 1 ELSE NULL END`,
+      type: 'count',
+      title: 'Count of FileAsset Request'
+    },
+    fileRequestAverage: {
+      sql: `${fileRequest} / NULLIF(${totalRequest}, 0)`,
+      type: 'number',
+      title: 'FileRequest Average'
+    },
+    pageRequest: {
+      sql: `CASE WHEN ${CUBE}.baseType = 'HTMLPAGE' THEN 1 ELSE NULL END`,
+      type: 'count',
+      title: 'Count of Page request'
+    },
+    pageRequestAverage: {
+      sql: `${pageRequest} / NULLIF(${totalRequest}, 0)`,
+      type: 'number',
+      title: 'Page Request Average'
+    },
+    otherRequestAverage: {
+      sql: `(${totalRequest} - (${fileRequest} + ${pageRequest})) / NULLIF(${totalRequest}, 0)`,
+      type: 'number',
+      title: 'No FIle OR Page Average'
+    }
+
+  }
+});
