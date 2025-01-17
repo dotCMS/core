@@ -268,7 +268,7 @@ cube('request', {
   }
 });
 
-cube('ca_events', {
+cube('events', {
   sql: `select * from events`,
   dimensions: {
     conHost: { sql: 'conHost', type: `string` },
@@ -296,7 +296,7 @@ cube('ca_events', {
     url: { sql: 'url', type: `string` },
     forwardTo: { sql: 'vanity_forward_to', type: `string` },
     action: { sql: 'vanity_action', type: `string` },
-    eventsType: { sql: 'events_type', type: `string` }
+    eventType: { sql: 'event_type', type: `string` }
   },
   measures: {
     count: {
