@@ -13,7 +13,6 @@ import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJob;
-import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJob;
@@ -31,7 +30,6 @@ import org.quartz.SchedulerException;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
-import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 
 /**
@@ -319,11 +317,6 @@ public class DotInitScheduler {
 			// Enabling the Delete Old System Events Job
 			addDeleteOldSystemEvents(sched);
 
-			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR, false) ) {
-				// Enabling the Read only monitor
-				addElasticReadyOnlyMonitor(sched);
-			}
-
 			addDeleteOldESIndicesJob(sched);
 
 			AccessTokenRenewJob.AccessTokensRenewJobScheduler.schedule();
@@ -400,37 +393,6 @@ public class DotInitScheduler {
 			}
 		}
 	} // addSystemEventsJob.
-
-	private static void addElasticReadyOnlyMonitor (final Scheduler scheduler) {
-
-		try {
-
-			final String jobName      = "EsReadOnlyMonitorJob";
-			final String triggerName  = "trigger29";
-			final String triggerGroup = "group98";
-
-			if (Config.getBooleanProperty( "ENABLE_ELASTIC_READ_ONLY_MONITOR", false)) {
-
-					final JobBuilder elasticReadOnlyMonitorJob = new JobBuilder().setJobClass(EsReadOnlyMonitorJob.class)
-							.setJobName(jobName)
-							.setJobGroup(DOTCMS_JOB_GROUP_NAME)
-							.setTriggerName(triggerName)
-							.setTriggerGroup(triggerGroup)
-							.setCronExpressionProp("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION")
-							.setCronExpressionPropDefault(Config.getStringProperty("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION", CRON_EXPRESSION_EVERY_5_MINUTES))
-							.setCronMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
-					scheduleJob(elasticReadOnlyMonitorJob);
-			} else {
-
-				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
-					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
-				}
-			}
-		} catch (Exception e) {
-
-			Logger.info(DotInitScheduler.class, e.toString());
-		}
-	} // addElasticReadyOnlyMonitor.
 
 	private static void addDeleteOldESIndicesJob (final Scheduler scheduler) {
 		try {

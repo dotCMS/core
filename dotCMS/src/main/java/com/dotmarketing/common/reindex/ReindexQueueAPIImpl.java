@@ -11,7 +11,6 @@ import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -35,16 +34,14 @@ import io.vavr.control.Try;
 public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     private final ReindexQueueFactory reindexQueueFactory;
-    private final ElasticReadOnlyCommand esReadOnlyMonitor;
 
     public ReindexQueueAPIImpl() {
-        this(FactoryLocator.getReindexQueueFactory(), ElasticReadOnlyCommand.getInstance());
+        this(FactoryLocator.getReindexQueueFactory());
     }
 
     @VisibleForTesting
-    public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory, final ElasticReadOnlyCommand esReadOnlyMonitor) {
+    public ReindexQueueAPIImpl(final ReindexQueueFactory reindexQueueFactory) {
         this.reindexQueueFactory = reindexQueueFactory;
-        this.esReadOnlyMonitor = esReadOnlyMonitor;
     }
 
     @Override
