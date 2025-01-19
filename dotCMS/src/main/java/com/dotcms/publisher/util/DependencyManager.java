@@ -490,7 +490,7 @@ public class DependencyManager {
 
 				// Content dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
-					final String luceneQuery = "+conHost:" + host.getIdentifier();
+					final String luceneQuery = "+deleted:false +conHost:" + host.getIdentifier();
 					final List<Contentlet> contentList = APILocator.getContentletAPI()
 							.search(luceneQuery, 0, 0, null, user, false);
 					Logger.info(this,"Query: " + luceneQuery + " Contentlets Size: " + contentList.size());
