@@ -28,8 +28,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const SYSTEM_OPTIONS = JSON.stringify({
     allowURLImport: false,
-    allowCodeWrite: true,
-    allowGenerateImg: false
+    allowCodeWrite: true
 });
 
 describe('DotBinarySettingsComponent', () => {
@@ -99,8 +98,7 @@ describe('DotBinarySettingsComponent', () => {
             expect(component.form.get('accept').value).toBe('image/*');
             expect(component.form.get('systemOptions').value).toEqual({
                 allowURLImport: false,
-                allowCodeWrite: true,
-                allowGenerateImg: false
+                allowCodeWrite: true
             });
         });
 
@@ -141,9 +139,6 @@ describe('DotBinarySettingsComponent', () => {
             ).not.toBeNull();
             expect(
                 switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowCodeWrite')
-            ).not.toBeNull();
-            expect(
-                switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowGenerateImg')
             ).not.toBeNull();
         });
 
