@@ -35,7 +35,7 @@
     align-self: stretch;
     position: relative;
     &::before {
-        border-left: 1px solid $color-palette-primary-200;
+        border-left: 1px solid $color-palette-gray-200;
         position: absolute;
         display: block;
         top: 0;
