@@ -10,7 +10,6 @@ import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
-import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
@@ -429,7 +428,6 @@ import org.junit.runners.Suite.SuiteClasses;
         UserResourceIntegrationTest.class,
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
-        ElasticsearchUtilTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,

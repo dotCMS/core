@@ -281,13 +281,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     ;
 
     private static final Supplier<String> ND_SUPPLIER = () -> "N/D";
-    private ElasticReadOnlyCommand elasticReadOnlyCommand;
 
     /**
      * Default class constructor.
      */
-    @VisibleForTesting
-    public ESContentletAPIImpl(final ElasticReadOnlyCommand readOnlyCommand) {
+    public ESContentletAPIImpl() {
         indexAPI = new ContentletIndexAPIImpl();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
@@ -301,12 +299,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         tempApi = APILocator.getTempFileAPI();
-        this.elasticReadOnlyCommand = readOnlyCommand;
         fileMetadataAPI = APILocator.getFileMetadataAPI();
-    }
-
-    public ESContentletAPIImpl() {
-        this(ElasticReadOnlyCommand.getInstance());
     }
 
 
@@ -5340,25 +5333,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (!isCheckInSafe(contentRelationships)) {
-
-            if (contentlet.getBoolProperty(Contentlet.IS_TEST_MODE)) {
-                this.elasticReadOnlyCommand.executeCheck();
-            } else {
-                DotConcurrentFactory.getInstance().getSingleSubmitter()
-                        .submit(() -> this.elasticReadOnlyCommand.executeCheck());
-            }
-
-            final String contentletIdentifier =
-                    null != contentlet && null != contentlet.getIdentifier()
-                            ? contentlet.getIdentifier() : StringPool.NULL;
-
-            throw new DotContentletStateException(
-                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode. Contentlet Id: "
-                            +
-                            contentletIdentifier);
-        }
-
         if (categories == null) {
             categories = getExistingContentCategories(contentlet);
         }
@@ -6391,31 +6365,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
             this.throwSecurityException(contentlet, user);
         }
-    }
-
-    /**
-     * Method that verifies if a check in operation can be executed. It is safe to execute a checkin
-     * if write operations can be performed on the ES cluster. Otherwise, check in will be allowed
-     * only if the contentlet to be saved does not have legacy relationships
-     *
-     * @param relationships ContentletRelationships with the records to be saved
-     * @return
-     */
-    @VisibleForTesting
-    boolean isCheckInSafe(final ContentletRelationships relationships) {
-
-        if (relationships != null && relationships.getRelationshipsRecords().size() > 0) {
-            final boolean isClusterReadOnly = ElasticsearchUtil.isClusterInReadOnlyMode();
-            final boolean isEitherLiveOrWorkingIndicesReadOnly = ElasticsearchUtil.isEitherLiveOrWorkingIndicesReadOnly();
-
-            if (
-                    (isEitherLiveOrWorkingIndicesReadOnly || isClusterReadOnly)
-                            && hasLegacyRelationships(relationships)) {
-                return false;
-            }
-        }
-        return true;
-
     }
 
     /**
