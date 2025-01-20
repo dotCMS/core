@@ -18579,7 +18579,7 @@
 									"});",
 									"",
 									"pm.test(\"Do not contains a separator\", function () {",
-									"    let textToCheck = \"separator\";",
+									"    let textToCheck = \"SEPARATOR\";",
 									"    pm.expect(jsonDataAsText).to.include(textToCheck);",
 									"});"
 								],
@@ -18692,7 +18692,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Do not contains a separator\", function () {",
+									"pm.test(\"Do contains a separator\", function () {",
 									"    let textToCheck = \"SEPARATOR\";",
 									"    pm.expect(jsonDataAsText).to.include(textToCheck);",
 									"});"
