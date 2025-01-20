@@ -491,6 +491,10 @@ public class DependencyManager {
 				// Content dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
 					final String luceneQuery = "+deleted:false +conHost:" + host.getIdentifier();
+					//How about we only pull content which modDate is after the last dataset
+					//+modDate:[2024-08-28 TO now]
+					//We would need another query to pull:
+					//1. Contentlet which were unpublished = +working:true +live:false
 					final List<Contentlet> contentList = APILocator.getContentletAPI()
 							.search(luceneQuery, 0, 0, null, user, false);
 					Logger.info(this,"Query: " + luceneQuery + " Contentlets Size: " + contentList.size());

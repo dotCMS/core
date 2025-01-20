@@ -86,7 +86,7 @@ public class ContentBundler implements IBundler {
 	private PublisherAPI pubAPI = null;
 	private PublishAuditAPI pubAuditAPI = PublishAuditAPI.getInstance();
 	final boolean shouldIncludeAssets = Config.getBooleanProperty("INCLUDE_ASSETS_BUNDLE", false);
-	final boolean shouldIncludeArchivedContent =  Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",true);
+	final boolean shouldIncludeArchivedContent =  Config.getBooleanProperty("INCLUDE_ARCHIVED_CONTENT_BUNDLE",false);
 
 	public final static String CONTENT_EXTENSION = ".content.xml" ;
 	public final static String CONTENT_WORKFLOW_EXTENSION = ".contentworkflow.xml";
@@ -147,6 +147,7 @@ public class ContentBundler implements IBundler {
 					excludeDeleted = " +deleted:false";//
 				}
 				Logger.info(this,"Include Archived Content In The Bundle: " + shouldIncludeArchivedContent);
+				Logger.info(this,"Is Same Index Not Incremental: " + config.isSameIndexNotIncremental());
 				Logger.info(this, "Include Assets In The Bundle: " + shouldIncludeAssets);
 				for (String contentIdentifier : contentsIds) {
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +live:true" + excludeDeleted, 0, -1, null, systemUser, false));
