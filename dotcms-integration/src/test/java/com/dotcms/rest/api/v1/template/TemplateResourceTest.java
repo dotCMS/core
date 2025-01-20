@@ -62,6 +62,8 @@ import javax.ws.rs.core.Response.Status;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.liferay.util.StringPool;
+import com.dotmarketing.util.StringUtils;
 
 public class TemplateResourceTest {
 
