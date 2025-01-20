@@ -104,7 +104,7 @@ export class DotUveToolbarComponent {
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
         {
-            initialValue: DEFAULT_DEVICES
+            initialValue: null
         }
     );
 
