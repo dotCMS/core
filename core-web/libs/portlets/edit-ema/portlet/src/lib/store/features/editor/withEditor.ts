@@ -198,8 +198,9 @@ export function withEditor() {
                 }),
                 $iframeURL: computed<string>(() => {
                     const page = store.pageAPIResponse().page;
+                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
                     const url = buildIframeURL({
-                        pageURI: page?.pageURI,
+                        pageURI: vanityURL ?? page?.pageURI,
                         params: store.pageParams(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });
