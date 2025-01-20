@@ -751,13 +751,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 	@CloseDBIfOpened
 	public List<ContentletVersionInfo> findContentletVersionInfos(final String identifier) throws DotDataException, DotStateException {
 
-        Logger.debug(this, "Finding the contentlet version info, for the id: " + identifier);
-        final Identifier identifierBean = APILocator.getIdentifierAPI().find(identifier);
-        if (Objects.isNull(identifierBean) || !InodeUtils.isSet(identifierBean.getId())) {
-
-            throw new DoesNotExistException("Identifier not found for id: " + identifier);
-        }
-
+        Logger.debug(this, "Finding the contentlet version infos, for the id: " + identifier);
 	    return versionableFactory.findAllContentletVersionInfos(identifier);
 	}
 
