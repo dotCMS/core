@@ -374,5 +374,17 @@ public class ShortyServletAndTitleImageTest {
 
 
     }
+
+    /**
+     * Method to test: {@link ShortyServlet#doForward(HttpServletRequest, HttpServletResponse, String, String, boolean, Optional)}
+     * Given Scenario: A uri of a file that is called or contains webp is passed to the method
+     * ExpectedResult: The method shouldn't consider the file as an image for containing the word webp, so the result should be false
+     *
+     */
+    @Test
+    public void test_webp_file_name(){
+        Uri uri = new Uri("/data/shared/assets/tmp_upload/temp_2e1056205c/webPageContent.vtl", 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+        assertEquals(uri.isImage, uri.expectedIsImage);
+    }
     
 }
