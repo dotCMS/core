@@ -388,6 +388,7 @@ public class TaskLocatorUtil {
 		ret.add(Task240530AddDotAIPortletToLayout.class);
 		ret.add(Task241013RemoveFullPathLcColumnFromIdentifier.class);
 		ret.add(Task241014AddTemplateValueOnContentletIndex.class);
+		ret.add(Task250107RemoveEsReadOnlyMonitorJob.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

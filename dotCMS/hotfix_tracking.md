@@ -99,3 +99,4 @@ This maintenance release includes the following code fixes:
 93. https://github.com/dotCMS/core/issues/30804 : The file with name of webPageContent.vtl can't GET and throws 404 #30804
 94. https://github.com/dotCMS/core/issues/30982 : Files without an extension cannot be edited / saved #30982
 95. https://github.com/dotCMS/core/issues/30468 : Remove calls to ElasticReadOnlyCommand and disable EsReadOnlyMonitorJob  #30468
+96. https://github.com/dotCMS/core/issues/30993 : In 24.12.10 the EsReadOnlyMonitorJob still shows error #30993
