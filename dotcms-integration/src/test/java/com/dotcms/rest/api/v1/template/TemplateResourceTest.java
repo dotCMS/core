@@ -1072,6 +1072,49 @@ public class TemplateResourceTest {
 
     /**
      * Method to test: list in the TemplateResource
+     * Given Scenario: Create a template on hostA, and a template on hostB. List templates using the
+     *                  wildcard host as the query param.
+     * ExpectedResult: The endpoint should return 200, and templateA and templateB should be returned
+     */
+    @Test
+    public void test_listTemplate_filterByHost_usingWildcardHost()
+            throws DotSecurityException, DotDataException {
+        final String title = "Template" + System.currentTimeMillis();
+        final Host newHostA = new SiteDataGen().nextPersisted();
+        final Host newHostB = new SiteDataGen().nextPersisted();
+
+        //Create templates in two different sites
+        final Template templateA = APILocator.getTemplateAPI()
+                .saveTemplate(new TemplateDataGen().title(title).next(), newHostA, adminUser,
+                        false);
+        final Template templateB = APILocator.getTemplateAPI()
+                .saveTemplate(new TemplateDataGen().title(title).next(), newHostB, adminUser,
+                        false);
+
+        //Call Resource
+        final Response responseResource = resource.list(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response, title, 0, 40,
+                "mod_date", "DESC",
+                StringPool.STAR, false);
+        //Check that the response is 200, OK
+        Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+        final ResponseEntityView responseEntityView = ResponseEntityView.class.cast(
+                responseResource.getEntity());
+        final PaginatedArrayList paginatedArrayList = PaginatedArrayList.class.cast(
+                responseEntityView.getEntity());
+        final PaginatedArrayList paginatedArrayListWihoutSystemTemplate = removeSystemTemplate(
+                paginatedArrayList);
+        Assert.assertEquals(2, paginatedArrayListWihoutSystemTemplate.size());
+        paginatedArrayListWihoutSystemTemplate.stream().anyMatch(
+                templateView -> ((TemplateView) templateView).getIdentifier()
+                        .equals(templateA.getIdentifier()));
+        paginatedArrayListWihoutSystemTemplate.stream().anyMatch(
+                templateView -> ((TemplateView) templateView).getIdentifier()
+                        .equals(templateB.getIdentifier()));
+    }
+
+    /**
+     * Method to test: list in the TemplateResource
      * Given Scenario: Create 2 templates, and a limited user. Give READ Permissions to one template to
      *                  the limited user. Get All the templates that the user can READ.
      * ExpectedResult: The endpoint should return 200, and the size of the results must be 1.
