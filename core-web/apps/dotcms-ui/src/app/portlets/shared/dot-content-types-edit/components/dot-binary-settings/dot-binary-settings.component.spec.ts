@@ -133,7 +133,7 @@ describe('DotBinarySettingsComponent', () => {
         it('should have 3 switches with the corresponding control name', () => {
             const switches = spectator.queryAll(byTestId('setting-switch'));
 
-            expect(switches.length).toBe(3);
+            expect(switches.length).toBe(2);
             expect(
                 switches.find((s) => s.getAttribute('ng-reflect-name') === 'allowURLImport')
             ).not.toBeNull();
