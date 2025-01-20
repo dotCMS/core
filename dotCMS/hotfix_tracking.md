@@ -10,3 +10,4 @@ This maintenance release includes the following code fixes:
 4. https://github.com/dotCMS/core/issues/30660 : Unable to use Templates across Multiple Sites #30660
 5. https://github.com/dotCMS/core/issues/30984 : UVE: Fix Trailing Slash Issue in dotCMS #30984
 6. https://github.com/dotCMS/core/issues/30982 : Files without an extension cannot be edited / saved #30982
+7. https://github.com/dotCMS/core/issues/31034 : Empty allowed file type not being saved #31034
