@@ -64,7 +64,7 @@ export function createFakeCategoryField(
 ): DotCMSContentTypeField {
     return {
         id: faker.string.uuid(),
-        clazz: 'com.dotcms.contenttype.model.field.ImmutableWYSIWYGField',
+        clazz: 'com.dotcms.contenttype.model.field.ImmutableCategoryField',
         contentTypeId: faker.string.uuid(),
         dataType: 'TEXT',
         fieldType: 'Category',
