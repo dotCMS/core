@@ -149,6 +149,7 @@ public class ContentBundler implements IBundler {
 				Logger.info(this,"Include Archived Content In The Bundle: " + shouldIncludeArchivedContent);
 				Logger.info(this,"Is Same Index Not Incremental: " + config.isSameIndexNotIncremental());
 				Logger.info(this, "Include Assets In The Bundle: " + shouldIncludeAssets);
+				Logger.info(this, "Amount of ContentIDs To Bundle: " + contentsIds.size());
 				for (String contentIdentifier : contentsIds) {
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +live:true" + excludeDeleted, 0, -1, null, systemUser, false));
 					contents.addAll(conAPI.search("+identifier:"+contentIdentifier+" +working:true" + excludeDeleted, 0, -1, null, systemUser, false));
