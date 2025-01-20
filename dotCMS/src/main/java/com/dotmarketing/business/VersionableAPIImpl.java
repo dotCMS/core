@@ -755,7 +755,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         final Identifier identifierBean = APILocator.getIdentifierAPI().find(identifier);
         if (Objects.isNull(identifierBean) || !InodeUtils.isSet(identifierBean.getId())) {
 
-            throw new DoesNotExistException("Identifier not found for identifier: " + identifier);
+            throw new DoesNotExistException("Identifier not found for id: " + identifier);
         }
 
 	    return versionableFactory.findAllContentletVersionInfos(identifier);
