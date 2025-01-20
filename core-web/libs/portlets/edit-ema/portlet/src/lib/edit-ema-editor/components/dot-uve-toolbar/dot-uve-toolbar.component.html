@@ -10,7 +10,7 @@
         }
     </div>
 
-    @if (preview) {
+    @if (preview && !$socialMedia()) {
         <div class="p-toolbar-group-center">
             <p-calendar
                 inputStyleClass="p-inputtext-sm"
