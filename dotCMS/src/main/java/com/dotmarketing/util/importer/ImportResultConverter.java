@@ -1,0 +1,175 @@
+package com.dotmarketing.util.importer;
+
+import com.dotmarketing.util.importer.AbstractImportValidationMessage.ValidationMessageType;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * Converter utility to maintain backward compatibility during the migration from legacy
+ * HashMap-based import results to the new structured ImportResult format. This class handles
+ * converting the new structured format back to the legacy format that existing code expects.
+ * <p>
+ * The legacy format uses a HashMap with standard keys:
+ * <ul>
+ *   <li>"warnings" - List of warning messages</li>
+ *   <li>"errors" - List of error messages</li>
+ *   <li>"messages" - List of informational messages</li>
+ *   <li>"counters" - List of counter values in format "key=value"</li>
+ *   <li>"results" - List of summary messages about the operation</li>
+ *   <li>"validHeaders" - List of valid header names</li>
+ *   <li>"invalidHeaders" - List of invalid header names</li>
+ *   <li>"missingHeaders" - List of required headers that were not found</li>
+ *   <li>"headerValidation" - List of header validation details</li>
+ * </ul>
+ */
+public class ImportResultConverter {
+
+    /**
+     * Converts from the new structured ImportResult format to the legacy HashMap format. This
+     * method ensures backward compatibility by formatting the structured data into the string-based
+     * format expected by legacy code.
+     *
+     * @param result The structured ImportResult to convert
+     * @return A HashMap containing the legacy format results with standard keys for warnings,
+     * errors, messages, counters, and other import-related data
+     * @throws IllegalArgumentException if the result parameter is null
+     */
+    public static Map<String, List<String>> toLegacyFormat(ImportResult result) {
+        Map<String, List<String>> legacyResults = new HashMap<>();
+
+        // Convert messages to legacy format by type
+        Map<ValidationMessageType, List<String>> messagesByType =
+                convertMessagesToLegacyFormat(result.messages());
+
+        legacyResults.put("warnings", messagesByType.get(ValidationMessageType.WARNING));
+        legacyResults.put("errors", messagesByType.get(ValidationMessageType.ERROR));
+        legacyResults.put("messages", messagesByType.get(ValidationMessageType.INFO));
+
+        // Add counters
+        List<String> counters = new ArrayList<>();
+        ImportResultData data = result.data();
+        counters.add("linesread=" + result.fileInfo().totalRows());
+        counters.add("errors=" + messagesByType.get(ValidationMessageType.ERROR).size());
+        counters.add("newContent=" + data.summary().created());
+        counters.add("contentToUpdate=" + data.summary().updated());
+        legacyResults.put("counters", counters);
+
+        // Add results summary
+        List<String> results = new ArrayList<>();
+        results.add(data.summary().created() + " new \"" + data.summary().contentType()
+                + "\" were created");
+        if (data.summary().updated() > 0) {
+            results.add(data.summary().updated() + " \"" + data.summary().contentType() +
+                    "\" contentlets updated");
+        }
+        legacyResults.put("results", results);
+
+        // Add header validation info if present
+        addHeaderValidationToLegacy(result.fileInfo().headerInfo(), legacyResults);
+
+        return legacyResults;
+    }
+
+    /**
+     * Converts validation messages from the structured format to legacy format, organizing them by
+     * message type. Each message is formatted to include line numbers, field names, and invalid
+     * values where applicable.
+     *
+     * @param messages The list of structured validation messages to convert
+     * @return A map where keys are validation message types and values are lists of formatted
+     * message strings
+     */
+    private static Map<ValidationMessageType, List<String>> convertMessagesToLegacyFormat(
+            List<ImportValidationMessage> messages) {
+
+        Map<ValidationMessageType, List<String>> result = Arrays.stream(
+                        ValidationMessageType.values())
+                .collect(Collectors.toMap(
+                        type -> type,
+                        type -> new ArrayList<>()
+                ));
+
+        if (messages != null) {
+            messages.forEach(message ->
+                    result.computeIfAbsent(message.type(), k -> new ArrayList<>())
+                            .add(formatMessage(message)));
+        }
+
+        return result;
+    }
+
+    /**
+     * Formats a single validation message into a human-readable string format. The resulting string
+     * includes:
+     * <ul>
+     *   <li>Line number (if present): "Line X: "</li>
+     *   <li>Field name (if present): "Field 'X': "</li>
+     *   <li>The main message</li>
+     *   <li>Invalid value (if present): " (value: 'X')"</li>
+     * </ul>
+     *
+     * @param message The validation message to format
+     * @return A formatted string representation of the message
+     */
+    private static String formatMessage(ImportValidationMessage message) {
+        StringBuilder sb = new StringBuilder();
+
+        // Add line number if present
+        message.lineNumber().ifPresent(line ->
+                sb.append("Line ").append(line).append(": "));
+
+        // Add field if present
+        message.field().ifPresent(field ->
+                sb.append("Field '").append(field).append("': "));
+
+        // Add main message
+        sb.append(message.message());
+
+        // Add any invalid value
+        message.invalidValue().ifPresent(value ->
+                sb.append(" (value: '").append(value).append("')"));
+
+        return sb.toString();
+    }
+
+    /**
+     * Adds header validation information to the legacy results map. This includes arrays of valid,
+     * invalid, and missing headers, as well as any additional validation details stored in the
+     * headerInfo.
+     *
+     * @param headerInfo    The structured header validation information
+     * @param legacyResults The legacy format results map to update
+     */
+    private static void addHeaderValidationToLegacy(ImportHeaderInfo headerInfo,
+            Map<String, List<String>> legacyResults) {
+
+        if (headerInfo == null || legacyResults == null) {
+            return;
+        }
+
+        // Add header arrays
+        legacyResults.put("validHeaders",
+                Arrays.asList(headerInfo.validHeaders() != null ? headerInfo.validHeaders()
+                        : new String[0]));
+        legacyResults.put("invalidHeaders",
+                Arrays.asList(headerInfo.invalidHeaders() != null ? headerInfo.invalidHeaders()
+                        : new String[0]));
+        legacyResults.put("missingHeaders",
+                Arrays.asList(headerInfo.missingHeaders() != null ? headerInfo.missingHeaders()
+                        : new String[0]));
+
+        // Add validation details
+        List<String> headerValidation = new ArrayList<>();
+        Map<String, String> details = headerInfo.validationDetails();
+        if (details != null) {
+            details.forEach((key, value) ->
+                    headerValidation.add(key + "=" + value));
+        }
+        legacyResults.put("headerValidation", headerValidation);
+    }
+
+}
