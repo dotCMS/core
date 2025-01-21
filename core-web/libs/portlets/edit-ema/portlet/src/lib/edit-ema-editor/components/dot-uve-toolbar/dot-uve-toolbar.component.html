@@ -10,7 +10,7 @@
         }
     </div>
 
-    @if (preview) {
+    @if (preview && !$socialMedia()) {
         <div class="p-toolbar-group-center">
             <p-calendar
                 inputStyleClass="p-inputtext-sm"
@@ -107,7 +107,7 @@
         data-testId="close-preview-mode" />
     <div class="vertical-divider"></div>
     <!-- We want to be sure we have devices -->
-    @if ($devices().length) {
+    @if ($devices()?.length) {
         <dot-uve-device-selector [devices]="$devices()" data-testId="uve-toolbar-device-selector" />
     }
 </ng-template>
