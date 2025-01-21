@@ -296,7 +296,8 @@ cube('events', {
     url: { sql: 'url', type: `string` },
     forwardTo: { sql: 'vanity_forward_to', type: `string` },
     action: { sql: 'vanity_action', type: `string` },
-    eventType: { sql: 'event_type', type: `string` }
+    eventType: { sql: 'event_type', type: `string` },
+    eventSource: { sql: 'event_source', type: `string` }
   },
   measures: {
     count: {
