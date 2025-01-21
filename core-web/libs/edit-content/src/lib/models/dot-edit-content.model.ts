@@ -8,7 +8,6 @@ import { DotCMSWorkflowAction, DotCMSWorkflowStatus } from '@dotcms/dotcms-model
  */
 export interface DotWorkflowActionParams {
     actionId: string;
-    inode: string;
     contentType: string;
     languageId: string;
     identifier: string;

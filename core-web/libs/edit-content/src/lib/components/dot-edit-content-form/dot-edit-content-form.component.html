@@ -5,7 +5,8 @@
 @let showWorkflowActions = $store.showWorkflowActions();
 
 <!--Locales-->
-@let currentLocaleId = $store.currentLocale()?.id;
+@let currentLocale = $store.currentLocale();
+@let currentLocaleId = currentLocale ? currentLocale.id.toString() : '';
 @let currentIdentifier = $store.currentIdentifier();
 
 <!-- TODO: Handle the error, no form -->
@@ -98,7 +99,6 @@
                 (actionFired)="
                     fireWorkflowAction({
                         actionId: $event.id,
-                        inode: contentlet?.inode,
                         contentType: contentType.variable,
                         languageId: currentLocaleId,
                         identifier: currentIdentifier

@@ -362,7 +362,6 @@ describe('DotFormComponent', () => {
 
                 expect(spy).toHaveBeenCalledWith({
                     actionId: '1',
-                    inode: 'cc120e84-ae80-49d8-9473-36d183d0c1c9',
                     data: {
                         contentlet: {
                             contentType: 'TestMock',
