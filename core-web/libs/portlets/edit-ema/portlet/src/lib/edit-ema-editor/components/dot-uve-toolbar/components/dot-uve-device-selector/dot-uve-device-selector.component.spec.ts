@@ -384,6 +384,63 @@ describe('DotUveDeviceSelectorComponent', () => {
                 expect(menuList).toBeDefined();
             });
         });
+
+        describe('More button label', () => {
+            it('should show "more" as default label', () => {
+                // Simulate the default device and social media not being set
+                baseUVEState.device.set(DEFAULT_DEVICE);
+                baseUVEState.socialMedia.set(null);
+
+                baseUVEState.viewParams.set({
+                    device: undefined,
+                    orientation: undefined,
+                    seo: undefined
+                });
+
+                spectator.detectChanges();
+                const moreButton = spectator.query('[data-testid="more-button"]');
+
+                expect(moreButton.textContent.trim()).toBe('more');
+            });
+
+            it('should show custom device name when selected', () => {
+                const customDevice = mockDotDevices[0];
+
+                // Simulate the custom device selection
+
+                baseUVEState.device.set(customDevice);
+                baseUVEState.socialMedia.set(null);
+
+                baseUVEState.viewParams.set({
+                    device: customDevice.inode,
+                    orientation: undefined,
+                    seo: undefined
+                });
+
+                spectator.detectChanges();
+                const moreButton = spectator.query('[data-testid="more-button"]');
+
+                expect(moreButton.textContent.trim()).toBe(customDevice.name);
+            });
+
+            it('should show social media name when selected', () => {
+                // Simulate the social media selection
+                const socialMedia = 'Facebook';
+                baseUVEState.socialMedia.set(socialMedia);
+                baseUVEState.device.set(DEFAULT_DEVICE);
+
+                baseUVEState.viewParams.set({
+                    device: undefined,
+                    orientation: undefined,
+                    seo: socialMedia
+                });
+
+                spectator.detectChanges();
+                const moreButton = spectator.query('[data-testid="more-button"]');
+
+                expect(moreButton.textContent.trim()).toBe(socialMedia);
+            });
+        });
     });
 
     afterEach(() => jest.clearAllMocks());
