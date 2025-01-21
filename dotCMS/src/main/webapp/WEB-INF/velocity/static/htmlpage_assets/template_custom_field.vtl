@@ -74,11 +74,9 @@ function fetchTemplateImage(templateId) {
 * Callback function to handle the template fetch
 *
 */
-const onTemplateFetchComplete = function(templates, currentRequest){
+const onTemplateFetchComplete = function(templates, currentRequest) {
     const templateId = dojo.byId("template").value;
     const isTemplateValid  = templateId && templateId != "0";
-
-    console.log("templateId", templateId);
 
     if(!templates || templates.length === 0){
         return;
@@ -93,35 +91,25 @@ const onTemplateFetchComplete = function(templates, currentRequest){
     }
 
     const { identifier, fullTitle } = template;
-    // We set the values directly into the components because setting it direcrtly into`templateSel` fires another load operation.
+
+    // We set the values directly into the components because setting it directly into`templateSelect` fires another load operation.
     dojo.byId("currentTemplateId").value = identifier;
     dojo.byId("template").value = identifier;
     dijit.byId('templateSel').set("displayedValue", fullTitle);
     fetchTemplateImage(identifier);
 };
 
-/**
-* Handles the template change event
-*
-*/
-function templateChanged() {
-    const templateSel=dijit.byId("templateSel");
-    const value=templateSel.get('value');
-
-    if(!value) {
-        return;
-    }
-
-    if(value == "0") {
-        templateSel.set("value","");
-        templateSel.filter();
-
-        return;
-    }
-
-    dojo.byId("template").value=value;
-    fetchTemplateImage(value);
+function resetTemplateSelection() {
+    const templateSel = dijit.byId("templateSel");
+    templateSel.set("value","");
+    templateSel.filter();
+    dojo.byId("template").value= '';
+    dojo.byId("templateSel").value = "";
+    dojo.byId("currentTemplateId").value = "";
+    dojo.byId("templateThumbnailHolder").src = "/html/images/shim.gif";
+    dojo.byId("templateThumbnailHolder").style.border = '0px';
 }
+
 
 /**
 * Get the template callback
@@ -151,11 +139,12 @@ dojo.ready(function(){
     currentTemplateIdElement.value = templateId;
 
     const templateStore = new dotcms.dojo.data.TemplateReadStore({
-        hostId: hostId,
-        templateSelected: templateId
+        hostId: '',
+        templateSelected: templateId,
+        allSiteLabel: true
     });
 
-    const templateSelect=new dijit.form.FilteringSelect({
+    const templateSelect = new dijit.form.FilteringSelect({
         id:"templateSel",
         name:"templateSel",
         style:"width:350px;",
@@ -170,7 +159,7 @@ dojo.ready(function(){
         labelAttr: "htmlTitle",
         searchAttr: "fullTitle",
         value: templateId,
-        invalidMessage: '$text.get("Invalid-option-selected")'
+        invalidMessage: '$text.get("Invalid-option-selected")',
     },"templateHolder");
 
     if (isTemplateValid){
@@ -182,8 +171,7 @@ dojo.ready(function(){
 
     const templateFetchParams = {
         query: {
-            fullTitle: '*',
-            hostId: hostId
+            fullTitle: '*'
         },
         queryOptions: {},
         start: 0,
@@ -191,6 +179,34 @@ dojo.ready(function(){
         sort: [],
         onComplete: onTemplateFetchComplete
     };
+
+    function handleAllSiteClick() {
+        templateStore.hostId = "*";
+        templateStore.allSiteLabel=false;
+        resetTemplateSelection();
+    }
+
+    /**
+    * Handles the template change event
+    *
+    */
+    function templateChanged() {
+        const templateSel = dijit.byId("templateSel");
+        const value = templateSel?.get('value');
+
+        if(!value) {
+            resetTemplateSelection();
+            return;
+        }
+
+        if(value == "0") {
+            handleAllSiteClick();
+            return;
+        }
+
+        dojo.byId("template").value=value;
+        fetchTemplateImage(value);
+    }
 
     templateStore.fetch(templateFetchParams);
 });

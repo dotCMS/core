@@ -686,13 +686,38 @@ describe('withEditor', () => {
                 );
             });
 
-            it('should contain `about:blanck` in src when the page is traditional', () => {
+            it('should be an instance of String in src when the page is traditional', () => {
                 patchState(store, {
                     pageAPIResponse: MOCK_RESPONSE_VTL,
                     isTraditionalPage: true
                 });
 
-                expect(store.$iframeURL()).toContain('about:blank');
+                expect(store.$iframeURL()).toBeInstanceOf(String);
+            });
+
+            it('should be an empty string in src when the page is traditional', () => {
+                patchState(store, {
+                    pageAPIResponse: MOCK_RESPONSE_VTL,
+                    isTraditionalPage: true
+                });
+
+                expect(store.$iframeURL().toString()).toBe('');
+            });
+
+            it('should contain the right url when the page is a vanity url  ', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        vanityUrl: {
+                            ...MOCK_RESPONSE_HEADLESS.vanityUrl,
+                            url: 'first'
+                        }
+                    }
+                });
+
+                expect(store.$iframeURL()).toBe(
+                    'http://localhost:3000/first?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                );
             });
         });
 
@@ -700,7 +725,6 @@ describe('withEditor', () => {
             it('should return the expected data on init', () => {
                 expect(store.$editorProps()).toEqual({
                     showDialogs: true,
-                    showEditorContent: true,
                     showBlockEditorSidebar: true,
                     iframe: {
                         opacity: '0.5',
@@ -748,9 +772,19 @@ describe('withEditor', () => {
                 });
             });
 
-            describe('showEditorContent', () => {
-                it('should have showEditorContent as true when there is no socialMedia', () => {
-                    expect(store.$editorProps().showEditorContent).toBe(true);
+            describe('editorContentStyles', () => {
+                it('should have display block when there is not social media', () => {
+                    expect(store.$editorContentStyles()).toEqual({
+                        display: 'block'
+                    });
+                });
+
+                it('should have display none when there is social media', () => {
+                    patchState(store, { socialMedia: 'facebook' });
+
+                    expect(store.$editorContentStyles()).toEqual({
+                        display: 'none'
+                    });
                 });
             });
 
@@ -817,7 +851,35 @@ describe('withEditor', () => {
                     expect(store.$editorProps().contentletTools).toEqual({
                         isEnterprise: true,
                         contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: false
+                        hide: false,
+                        disableDeleteButton: null
+                    });
+                });
+
+                it('should have disableDeleteButton message when there is only one content and a non-default persona', () => {
+                    patchState(store, {
+                        isEditState: true,
+                        canEditPage: true,
+                        contentletArea: MOCK_CONTENTLET_AREA,
+                        state: EDITOR_STATE.IDLE,
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            numberContents: 1,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                persona: {
+                                    ...MOCK_RESPONSE_HEADLESS.viewAs.persona,
+                                    identifier: 'non-default-persona'
+                                }
+                            }
+                        }
+                    });
+
+                    expect(store.$editorProps().contentletTools).toEqual({
+                        isEnterprise: true,
+                        contentletArea: MOCK_CONTENTLET_AREA,
+                        hide: false,
+                        disableDeleteButton: 'uve.disable.delete.button.on.personalization'
                     });
                 });
 
@@ -832,7 +894,8 @@ describe('withEditor', () => {
                     expect(store.$editorProps().contentletTools).toEqual({
                         isEnterprise: true,
                         contentletArea: MOCK_CONTENTLET_AREA,
-                        hide: true
+                        hide: true,
+                        disableDeleteButton: null
                     });
                 });
 

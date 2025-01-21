@@ -1,3 +1,5 @@
+import { tapResponse } from '@ngrx/operators';
+
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
@@ -7,14 +9,13 @@ import {
     effect,
     EventEmitter,
     inject,
-    OnInit,
     Output,
-    signal,
     viewChild,
-    WritableSignal,
     model,
-    untracked
+    untracked,
+    Signal
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -24,10 +25,15 @@ import { ChipModule } from 'primeng/chip';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { UVE_MODE } from '@dotcms/client';
-import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotDevicesService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -72,7 +78,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     styleUrl: './dot-uve-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUveToolbarComponent implements OnInit {
+export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
@@ -84,23 +90,24 @@ export class DotUveToolbarComponent implements OnInit {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
+    readonly #dotContentletLockerService = inject(DotContentletLockerService);
 
     readonly $toolbar = this.#store.$uveToolbar;
+    readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
-    readonly $devices: WritableSignal<DotDeviceListItem[]> = signal([]);
+    readonly $unlockButton = this.#store.$unlockButton;
+
+    readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
+        this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
+        {
+            initialValue: DEFAULT_DEVICES
+        }
+    );
 
     protected readonly CURRENT_DATE = new Date();
-
-    readonly $styleToolbarClass = computed(() => {
-        if (!this.$isPreviewMode()) {
-            return 'uve-toolbar';
-        }
-
-        return 'uve-toolbar uve-toolbar-preview';
-    });
 
     protected readonly publishDateParam = this.#store.pageParams().publishDate;
     protected readonly $previewDate = model<Date>(
@@ -141,15 +148,6 @@ export class DotUveToolbarComponent implements OnInit {
     protected readonly date = new Date();
 
     defaultDevices = DEFAULT_DEVICES;
-
-    ngOnInit(): void {
-        this.#deviceService
-            .get()
-            .pipe(take(1))
-            .subscribe((devices: DotDeviceListItem[] = []) => {
-                this.$devices.set([...DEFAULT_DEVICES, ...devices]);
-            });
-    }
 
     /**
      * Initialize the preview mode
@@ -233,13 +231,26 @@ export class DotUveToolbarComponent implements OnInit {
                 accept: () => {
                     this.#personalizeService
                         .personalized(persona.pageId, persona.keyTag)
-                        .subscribe(() => {
-                            this.#store.loadPageAsset({
-                                'com.dotmarketing.persona.id': persona.identifier
-                            });
+                        .subscribe({
+                            next: () => {
+                                this.#store.loadPageAsset({
+                                    'com.dotmarketing.persona.id': persona.identifier
+                                });
 
-                            this.$personaSelector().fetchPersonas();
-                        }); // This does a take 1 under the hood
+                                this.$personaSelector().fetchPersonas();
+                            },
+                            error: () => {
+                                this.#messageService.add({
+                                    severity: 'error',
+                                    summary: this.#dotMessageService.get('error'),
+                                    detail: this.#dotMessageService.get(
+                                        'uve.personalize.empty.page.error'
+                                    )
+                                });
+
+                                this.$personaSelector().resetValue();
+                            }
+                        });
                 },
                 reject: () => {
                     this.$personaSelector().resetValue();
@@ -310,5 +321,41 @@ export class DotUveToolbarComponent implements OnInit {
                 this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
             }
         });
+    }
+
+    /**
+     * Unlocks a page with the specified inode.
+     *
+     * @param {string} inode
+     * @memberof EditEmaToolbarComponent
+     */
+    unlockPage(inode: string) {
+        this.#messageService.add({
+            severity: 'info',
+            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+            detail: this.#dotMessageService.get('edit.ema.page.is.being.unlocked')
+        });
+
+        this.#dotContentletLockerService
+            .unlock(inode)
+            .pipe(
+                tapResponse({
+                    next: () => {
+                        this.#messageService.add({
+                            severity: 'success',
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
+                        });
+                    },
+                    error: () => {
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
+                        });
+                    }
+                })
+            )
+            .subscribe(() => this.#store.reloadCurrentPage());
     }
 }

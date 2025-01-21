@@ -483,6 +483,7 @@ public class PageResource {
                session.setAttribute(TM_DATE, timeMachineEpochMillis);
                session.setAttribute(TM_LANG, renderParams.languageId());
                session.setAttribute(DOT_CACHE, "refresh");
+               session.setAttribute(TM_HOST, host.get());
             } else {
                request.setAttribute(TM_DATE, timeMachineEpochMillis);
                request.setAttribute(TM_LANG, renderParams.languageId());

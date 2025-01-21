@@ -100,7 +100,9 @@ import {
     PAYLOAD_MOCK,
     UVE_PAGE_RESPONSE_MAP,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
-    dotPropertiesServiceMock
+    dotPropertiesServiceMock,
+    MOCK_RESPONSE_VTL,
+    PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -121,31 +123,6 @@ const messagesMock = {
     'editpage.not.lincese.error':
         'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.',
     'dot.common.license.enterprise.only.error': 'Enterprise Only'
-};
-
-const IFRAME_MOCK = {
-    nativeElement: {
-        addEventListener: function (_event, cb) {
-            this.registerListener.push(cb);
-        },
-        dispatchEvent: function (event) {
-            this.registerListener.forEach((cb) => cb(event));
-        },
-        registerListener: [],
-        contentWindow: document.defaultView,
-        contentDocument: {
-            getElementsByTagName: () => [],
-            querySelectorAll: () => [],
-            write: function (html) {
-                this.body.innerHTML = html;
-            },
-            body: {
-                innerHTML: ''
-            },
-            open: jest.fn(),
-            close: jest.fn()
-        }
-    }
 };
 
 const createRouting = () =>
@@ -2683,7 +2660,7 @@ describe('EditEmaEditorComponent', () => {
                         iframe.nativeElement.dispatchEvent(new Event('load'));
                         spectator.detectChanges();
 
-                        expect(iframe.nativeElement.src).toContain('about:blank'); //When dont have src, the src is the same as the current page
+                        expect(iframe.nativeElement.src).toContain('http://localhost/'); //When dont have src, the src is the same as the current page
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>New Content - Hello World</div>'
                         );
@@ -2822,53 +2799,68 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('script and styles injection', () => {
-                    let iframeDocument: Document;
-                    let iframeElement: HTMLIFrameElement;
-                    let spy: jest.SpyInstance;
+                    describe('designer templates', () => {
+                        beforeEach(() => {
+                            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                                of(MOCK_RESPONSE_VTL)
+                            );
+                            store.loadPageAsset({ url: 'index', clientHost: null });
+                        });
 
-                    beforeEach(() => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        spectator.component.iframe = IFRAME_MOCK as any;
-                        iframeElement = spectator.component.iframe.nativeElement;
-                        iframeDocument = iframeElement.contentDocument;
-                        spy = jest.spyOn(iframeDocument, 'write');
+                        it('should add script and styles to iframe', () => {
+                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                            const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
+                            iframe.dispatchEvent(new Event('load'));
+
+                            spectator.detectChanges();
+
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(
+                                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                                )
+                            );
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(`[data-dot-object="container"]:empty`)
+                            );
+
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(
+                                    '[data-dot-object="contentlet"].empty-contentlet'
+                                )
+                            );
+                        });
                     });
 
-                    it('should add script and styles to iframe', () => {
-                        spectator.component.setIframeContent(`<head></head></body></body>`);
+                    describe('advance templates', () => {
+                        beforeEach(() => {
+                            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                                of(PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK)
+                            );
+                            store.loadPageAsset({ url: 'index', clientHost: null });
+                        });
 
-                        iframeElement.dispatchEvent(new Event('load'));
-                        spectator.detectChanges();
+                        it('should add script and styles to iframe for advance templates', () => {
+                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                            const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
 
-                        expect(spy).toHaveBeenCalled();
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                        );
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="container"]:empty'
-                        );
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"].empty-contentlet'
-                        );
-                    });
+                            iframe.dispatchEvent(new Event('load'));
 
-                    it('should add script and styles to iframe for advance templates', () => {
-                        spectator.component.setIframeContent(`<div>Advanced Template</div>`);
+                            spectator.detectChanges();
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(
+                                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                                )
+                            );
 
-                        iframeElement.dispatchEvent(new Event('load'));
-                        spectator.detectChanges();
-
-                        expect(spy).toHaveBeenCalled();
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                        );
-
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="container"]:empty'
-                        );
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"].empty-contentlet'
-                        );
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining('[data-dot-object="container"]:empty')
+                            );
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(
+                                    '[data-dot-object="contentlet"].empty-contentlet'
+                                )
+                            );
+                        });
                     });
                 });
             });
@@ -3082,6 +3074,24 @@ describe('EditEmaEditorComponent', () => {
                     expect(loadPageAssetSpy).toHaveBeenCalledWith({
                         language_id: '2'
                     });
+                });
+            });
+
+            describe('Editor content', () => {
+                it('should have display block when there is not SEO view', () => {
+                    const editorContent = spectator.query(
+                        byTestId('editor-content')
+                    ) as HTMLElement;
+                    expect(editorContent.style.display).toBe('block');
+                });
+
+                it('should have display none when there is SEO view', () => {
+                    store.setSEO('test');
+                    spectator.detectChanges();
+                    const editorContent = spectator.query(
+                        byTestId('editor-content')
+                    ) as HTMLElement;
+                    expect(editorContent.style.display).toBe('none');
                 });
             });
         });

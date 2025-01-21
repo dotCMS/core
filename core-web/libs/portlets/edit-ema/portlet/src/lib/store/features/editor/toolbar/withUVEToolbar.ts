@@ -10,19 +10,18 @@ import {
 import { computed } from '@angular/core';
 
 import { UVE_MODE } from '@dotcms/client';
-import { DotDevice, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 
-import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../../shared/consts';
+import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
-import { InfoOptions } from '../../../../shared/models';
+import { InfoOptions, UnlockOptions } from '../../../../shared/models';
 import {
     computePageIsLocked,
     createFavoritePagesURL,
     createFullURL,
     createPageApiUrlWithQueryParams,
     getIsDefaultVariant,
-    getOrientation,
-    sanitizeURL
+    getOrientation
 } from '../../../../utils';
 import { Orientation, UVEState } from '../../../models';
 import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
@@ -37,11 +36,12 @@ import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../mo
  * @property {boolean} initialState.isPreviewModeActive - Flag indicating whether the preview mode is active.
  */
 const initialState: EditorToolbarState = {
-    device: DEFAULT_DEVICES.find((device) => device.inode === 'default'),
+    device: DEFAULT_DEVICE,
     socialMedia: null,
     isEditState: true,
     isPreviewModeActive: false,
-    orientation: Orientation.LANDSCAPE
+    orientation: Orientation.LANDSCAPE,
+    ogTagsResults: null
 };
 
 export function withUVEToolbar() {
@@ -53,7 +53,7 @@ export function withUVEToolbar() {
         withComputed((store) => ({
             $uveToolbar: computed<UVEToolbarProps>(() => {
                 const params = store.pageParams();
-                const url = sanitizeURL(params?.url);
+                const url = params?.url;
 
                 const experiment = store.experiment?.();
                 const pageAPIResponse = store.pageAPIResponse();
@@ -109,6 +109,30 @@ export function withUVEToolbar() {
                     unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
+
+            $unlockButton: computed<UnlockOptions | null>(() => {
+                const pageAPIResponse = store.pageAPIResponse();
+                const currentUser = store.currentUser();
+                const isPreviewMode = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
+                const isLocked = computePageIsLocked(pageAPIResponse.page, currentUser);
+                const info = {
+                    message: pageAPIResponse.page.canLock
+                        ? 'editpage.toolbar.page.release.lock.locked.by.user'
+                        : 'editpage.locked-by',
+                    args: [pageAPIResponse.page.lockedByName]
+                };
+
+                const disabled = !pageAPIResponse.page.canLock;
+
+                return !isPreviewMode && isLocked
+                    ? {
+                          inode: pageAPIResponse.page.inode,
+                          loading: store.status() === UVE_STATUS.LOADING,
+                          info,
+                          disabled
+                      }
+                    : null;
+            }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
 
@@ -119,8 +143,9 @@ export function withUVEToolbar() {
             }),
             $apiURL: computed<string>(() => {
                 const pageParams = store.pageParams();
-                const url = sanitizeURL(pageParams?.url);
+                const url = pageParams?.url;
                 const params = createPageApiUrlWithQueryParams(url, pageParams);
+
                 const pageType = store.isTraditionalPage() ? 'render' : 'json';
                 const pageAPI = `/api/v1/page/${pageType}/${params}`;
 
@@ -129,19 +154,6 @@ export function withUVEToolbar() {
             $infoDisplayProps: computed<InfoOptions>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
                 const canEditPage = store.canEditPage();
-                const socialMedia = store.socialMedia();
-
-                if (socialMedia) {
-                    return {
-                        icon: `pi pi-${socialMedia.toLowerCase()}`,
-                        id: 'socialMedia',
-                        info: {
-                            message: `Viewing <b>${socialMedia}</b> social media preview`,
-                            args: []
-                        },
-                        actionIcon: 'pi pi-times'
-                    };
-                }
 
                 if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
                     const variantId = pageAPIResponse.viewAs.variantId;
@@ -166,24 +178,7 @@ export function withUVEToolbar() {
                     };
                 }
 
-                if (pageAPIResponse?.page.locked) {
-                    let message = 'editpage.locked-by';
-
-                    if (!pageAPIResponse.page.canLock) {
-                        message = 'editpage.locked-contact-with';
-                    }
-
-                    return {
-                        icon: 'pi pi-lock',
-                        id: 'locked',
-                        info: {
-                            message,
-                            args: [pageAPIResponse.page.lockedByName]
-                        }
-                    };
-                }
-
-                if (!canEditPage) {
+                if (!pageAPIResponse.page.locked && !canEditPage) {
                     return {
                         icon: 'pi pi-exclamation-circle warning',
                         id: 'no-permission',
@@ -192,6 +187,15 @@ export function withUVEToolbar() {
                 }
 
                 return null;
+            }),
+            $showWorkflowsActions: computed<boolean>(() => {
+                const isPreviewMode = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
+
+                const isDefaultVariant = getIsDefaultVariant(
+                    store.pageAPIResponse()?.viewAs.variantId
+                );
+
+                return !isPreviewMode && isDefaultVariant;
             })
         })),
         withMethods((store) => ({
@@ -199,7 +203,6 @@ export function withUVEToolbar() {
                 const isValidOrientation = Object.values(Orientation).includes(orientation);
 
                 const newOrientation = isValidOrientation ? orientation : getOrientation(device);
-
                 patchState(store, {
                     device,
                     viewParams: {
@@ -221,6 +224,20 @@ export function withUVEToolbar() {
                     }
                 });
             },
+            setSEO: (socialMedia: string | null) => {
+                patchState(store, {
+                    device: null,
+                    orientation: null,
+                    socialMedia,
+                    viewParams: {
+                        ...store.viewParams(),
+                        device: null,
+                        orientation: null,
+                        seo: socialMedia
+                    },
+                    isEditState: false
+                });
+            },
             clearDeviceAndSocialMedia: () => {
                 patchState(store, {
                     device: null,
@@ -234,6 +251,9 @@ export function withUVEToolbar() {
                         seo: undefined
                     }
                 });
+            },
+            setOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
+                patchState(store, { ogTagsResults });
             }
         }))
     );

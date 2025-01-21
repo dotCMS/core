@@ -2,8 +2,6 @@ import { Page, expect, Locator } from "@playwright/test";
 import { loginLocators } from "../locators/globalLocators";
 
 export class dotCMSUtils {
-  page: Page;
-
   /**
    *  Login to dotCMS
    * @param page
@@ -61,6 +59,8 @@ export const waitFor = async (
 /**
  * Wait for the locator to be visible
  * @param locator
+ * @param state
+ * @param callback
  */
 export const waitForAndCallback = async (
   locator: Locator,

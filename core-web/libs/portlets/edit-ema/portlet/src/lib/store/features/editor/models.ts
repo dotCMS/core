@@ -5,7 +5,8 @@ import {
     DotLanguage,
     DotPageContainerStructure,
     DotPersona,
-    SeoMetaTags
+    SeoMetaTags,
+    SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 
 import {
@@ -30,6 +31,7 @@ export interface EditorToolbarState {
     isEditState: boolean;
     isPreviewModeActive?: boolean;
     orientation?: Orientation;
+    ogTagsResults?: SeoMetaTagsResult[];
 }
 
 export interface PageDataContainer {
@@ -47,9 +49,7 @@ export interface PageData {
 }
 
 export interface ReloadEditorContent {
-    code: string;
     isTraditionalPage: boolean;
-    enableInlineEdit: boolean;
     isClientReady: boolean;
 }
 
@@ -71,6 +71,7 @@ export interface EditorProps {
         contentletArea: ContentletArea;
         hide: boolean;
         isEnterprise: boolean;
+        disableDeleteButton?: string;
     };
     dropzone?: {
         bounds: Container[];
@@ -83,7 +84,6 @@ export interface EditorProps {
     };
     showDialogs: boolean;
     progressBar: boolean;
-    showEditorContent: boolean;
     showBlockEditorSidebar: boolean;
 }
 

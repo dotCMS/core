@@ -6,7 +6,10 @@ import {
   pageAsset,
 } from "../locators/globalLocators";
 import { waitForVisibleAndCallback } from "./dotCMSUtils";
-import { contentProperties } from "../tests/contentSearch/contentData";
+import {
+  contentProperties,
+  fileAssetContent,
+} from "../tests/contentSearch/contentData";
 
 export class ContentUtils {
   page: Page;
@@ -17,30 +20,33 @@ export class ContentUtils {
 
   /**
    * Fill the rich text form
-   * @param page
-   * @param title
-   * @param body
-   * @param action
+   * @param params
    */
-  async fillRichTextForm(
-    page: Page,
-    title: string,
-    body: string,
-    action: string,
-  ) {
+  async fillRichTextForm(params: RichTextFormParams) {
+    const { page, title, body, action, newBody, newTitle } = params;
     const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-    const headingLocator = page.getByRole("heading");
-    await waitForVisibleAndCallback(headingLocator, () =>
-      expect.soft(headingLocator).toContainText(contentGeneric.label),
+    await waitForVisibleAndCallback(page.getByRole("heading"), () =>
+      expect
+        .soft(page.getByRole("heading"))
+        .toContainText(contentGeneric.label),
     );
 
-    //Fill title
-    await dotIframe.locator("#title").fill(title);
-    //Fill body
-    await dotIframe.locator("#block-editor-body div").nth(1).fill(body);
-    //Click on action
-    await dotIframe.getByText(action).first().click();
+    if (newTitle) {
+      await dotIframe.locator("#title").clear();
+      await dotIframe.locator("#title").fill(newTitle);
+    }
+    if (newBody) {
+      await dotIframe.locator("#block-editor-body div").nth(1).clear();
+      await dotIframe.locator("#block-editor-body div").nth(1).fill(newBody);
+    }
+    if (!newTitle && !newBody) {
+      await dotIframe.locator("#title").fill(title);
+      await dotIframe.locator("#block-editor-body div").nth(1).fill(body);
+    }
+    if (action) {
+      await dotIframe.getByText(action).first().click();
+    }
   }
 
   /**
@@ -48,26 +54,53 @@ export class ContentUtils {
    * @param params
    */
   async fillFileAssetForm(params: FileAssetFormParams) {
-    const { page, host, title, action, fromURL, newFileName, newFileText } =
-      params;
+    const {
+      page,
+      host,
+      editContent,
+      title,
+      action,
+      fromURL,
+      binaryFileName,
+      binaryFileText,
+    } = params;
     const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-    await waitForVisibleAndCallback(page.getByRole("heading"), () =>
-      expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
-    );
+    if (binaryFileName && binaryFileText) {
+      if (editContent) {
+        const editFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
+        await editFrame.getByRole("button", { name: " Edit" }).click();
+        await waitForVisibleAndCallback(
+          editFrame.getByLabel("Editor content;Press Alt+F1"),
+          async () => {},
+        );
+        const editor = editFrame.getByLabel("Editor content;Press Alt+F1");
+        await editor.click(); // Focus on the editor
+        await page.keyboard.press("Control+A"); // Select all text (Cmd+A for Mac)
+        await page.keyboard.press("Backspace");
+        await editFrame
+          .getByLabel("Editor content;Press Alt+F1")
+          .fill(fileAssetContent.newFileTextEdited);
+        await editFrame.getByRole("button", { name: "Save" }).click();
+      } else {
+        await waitForVisibleAndCallback(page.getByRole("heading"), async () => {
+          await expect
+            .soft(page.getByRole("heading"))
+            .toContainText(fileAsset.label);
+        });
+        await dotIframe.locator("#HostSelector-hostFolderSelect").fill(host);
+        await dotIframe
+          .getByRole("button", { name: " Create New File" })
+          .click();
+        await dotIframe.getByTestId("editor-file-name").fill(binaryFileName);
+        await dotIframe
+          .getByLabel("Editor content;Press Alt+F1")
+          .fill(binaryFileText);
+        await dotIframe.getByRole("button", { name: "Save" }).click();
+      }
+    }
 
-    await dotIframe.locator("#HostSelector-hostFolderSelect").fill(host);
-
-    if (newFileName && newFileText) {
-      await dotIframe
-        .getByRole("button", { name: " Create New File" })
-        .click();
-      await dotIframe.getByTestId("editor-file-name").fill(newFileName);
-      await dotIframe
-        .getByLabel("Editor content;Press Alt+F1")
-        .fill(newFileText);
-      await dotIframe.getByRole("button", { name: "Save" }).click();
-    } else if (fromURL) {
+    if (fromURL) {
       await dotIframe
         .getByRole("button", { name: " Import from URL" })
         .click();
@@ -79,9 +112,9 @@ export class ContentUtils {
       );
     }
 
-    await waitForVisibleAndCallback(dotIframe.locator("#title"), () =>
-      dotIframe.locator("#title").fill(title),
-    );
+    await waitForVisibleAndCallback(dotIframe.locator("#title"), async () => {
+      await dotIframe.locator("#title").fill(title);
+    });
 
     if (action) {
       await dotIframe.getByText(action).first().click();
@@ -158,9 +191,15 @@ export class ContentUtils {
     await waitForVisibleAndCallback(structureINodeDivLocator, () =>
       structureINodeDivLocator.click(),
     );
-    const typeLocatorByTextLocator = iframe.getByText(typeLocator);
-    await waitForVisibleAndCallback(typeLocatorByTextLocator, () =>
-      typeLocatorByTextLocator.click(),
+
+    await waitForVisibleAndCallback(
+      iframe.getByLabel("structure_inode_popup"),
+      async () => {},
+    );
+
+    const typeLocatorByText = iframe.getByText(typeLocator);
+    await waitForVisibleAndCallback(typeLocatorByText, () =>
+      typeLocatorByText.click(),
     );
   }
 
@@ -246,29 +285,20 @@ export class ContentUtils {
 
   /**
    * Edit content on the content portlet
-   * @param page
-   * @param title
-   * @param newTitle
-   * @param newBody
-   * @param action
+   * @param params
    */
-  async editContent(
-    page: Page,
-    title: string,
-    newTitle: string,
-    newBody: string,
-    action: string,
-  ) {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+  async editContent(params: RichTextFormParams) {
+    const { page, title, action } = params;
     const contentElement = await this.getContentElement(page, title);
-    if (contentElement) {
-      await contentElement.click();
-    } else {
+    if (!contentElement) {
       console.log("Content not found");
       return;
     }
-    await this.fillRichTextForm(page, newTitle, newBody, action);
-    await this.workflowExecutionValidationAndClose(page, "Content saved");
+    await contentElement.click();
+    await this.fillRichTextForm(params);
+    if (action) {
+      await this.workflowExecutionValidationAndClose(page, "Content saved");
+    }
   }
 
   /**
@@ -300,7 +330,10 @@ export class ContentUtils {
         await waitForVisibleAndCallback(dropDownMenu, () =>
           dropDownMenu.click(),
         );
-        await page.waitForTimeout(1000);
+        await waitForVisibleAndCallback(
+          iframe.locator("#contentWrapper"),
+          async () => {},
+        );
       } else if (contentState === "archived") {
         await this.performWorkflowAction(
           page,
@@ -416,6 +449,27 @@ export class ContentUtils {
       await dotIframe.locator("#cachettlbox").fill(cacheTTL.toString());
     if (action) await dotIframe.getByText(action).first().click();
   }
+
+  /**
+   * Validate the download of a file
+   * @param page
+   * @param downloadTriggerSelector
+   */
+  async validateDownload(page: Page, downloadTriggerSelector: Locator) {
+    // Start waiting for the download event
+    const downloadPromise = page.waitForEvent("download");
+
+    // Trigger the download
+    await downloadTriggerSelector.click();
+
+    // Wait for the download to complete
+    const download = await downloadPromise;
+
+    // Assert the download was successful
+    const fileName = download.suggestedFilename();
+    console.log(`Downloaded file: ${fileName}`);
+    expect(fileName).toBeTruthy();
+  }
 }
 
 /**
@@ -427,15 +481,22 @@ interface BaseFormParams {
   action?: string;
 }
 
+interface RichTextFormParams extends BaseFormParams {
+  body?: string;
+  action?: string;
+  newTitle?: string;
+  newBody?: string;
+}
 /**
  * Parameter to fill the file asset form params
  */
 interface FileAssetFormParams extends BaseFormParams {
   host: string;
+  editContent: boolean;
   fileName?: string;
   fromURL?: string;
-  newFileName?: string;
-  newFileText?: string;
+  binaryFileName?: string;
+  binaryFileText?: string;
 }
 
 /**

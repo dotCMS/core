@@ -1,7 +1,7 @@
 import { expect, describe, it } from '@jest/globals';
 import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, signal } from '@angular/core';
@@ -11,6 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { UVE_MODE } from '@dotcms/client';
 import {
+    DotContentletLockerService,
     DotDevicesService,
     DotExperimentsService,
     DotLanguagesService,
@@ -20,7 +21,6 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
-    DotDevicesServiceMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
@@ -106,10 +106,43 @@ const baseUVEState = {
         { id: 2, translated: false },
         { id: 3, translated: true }
     ]),
+    $showWorkflowsActions: signal(true),
     patchViewParams: jest.fn(),
     orientation: signal(''),
     clearDeviceAndSocialMedia: jest.fn(),
-    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'))
+    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
+    $unlockButton: signal(null)
+};
+
+const personaEventMock = {
+    identifier: '123',
+    pageId: '123',
+    personalized: true,
+    archived: false,
+    baseType: 'PERSONA',
+    contentType: 'persona',
+    folder: 'SYSTEM_FOLDER',
+    hasLiveVersion: false,
+    hasTitleImage: false,
+    host: 'SYSTEM_HOST',
+    hostFolder: 'SYSTEM_HOST',
+    hostName: 'System Host',
+    inode: '',
+    keyTag: 'dot:persona',
+    languageId: 1,
+    live: false,
+    locked: false,
+    modDate: '0',
+    modUser: 'system',
+    modUserName: 'system user system user',
+    name: 'Test Persona',
+    owner: 'SYSTEM_USER',
+    sortOrder: 0,
+    stInode: 'c938b15f-bcb6-49ef-8651-14d455a97045',
+    title: 'Test Persona',
+    titleImage: 'TITLE_IMAGE_NOT_FOUND',
+    url: 'demo.dotcms.com',
+    working: false
 };
 
 describe('DotUveToolbarComponent', () => {
@@ -117,8 +150,9 @@ describe('DotUveToolbarComponent', () => {
     let store: InstanceType<typeof UVEStore>;
     let messageService: MessageService;
     let confirmationService: ConfirmationService;
-
     let devicesService: DotDevicesService;
+    let dotContentletLockerService: DotContentletLockerService;
+    let personalizeService: DotPersonalizeService;
 
     const fixedDate = new Date('2024-01-01');
     jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
@@ -136,10 +170,12 @@ describe('DotUveToolbarComponent', () => {
         providers: [
             UVEStore,
             provideHttpClientTesting(),
+            mockProvider(DotContentletLockerService, {
+                unlock: jest.fn().mockReturnValue(of({}))
+            }),
             mockProvider(ConfirmationService, {
                 confirm: jest.fn()
             }),
-
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: () => of([])
             }),
@@ -175,14 +211,17 @@ describe('DotUveToolbarComponent', () => {
             },
             {
                 provide: DotDevicesService,
-                useValue: new DotDevicesServiceMock()
+                useValue: {
+                    get: jest.fn().mockReturnValue(of(mockDotDevices))
+                }
             }
         ],
         componentProviders: [
             {
                 provide: DotPersonalizeService,
                 useValue: {
-                    getPersonalize: jest.fn()
+                    getPersonalize: jest.fn(),
+                    personalized: jest.fn().mockReturnValue(of({}))
                 }
             }
         ]
@@ -191,14 +230,112 @@ describe('DotUveToolbarComponent', () => {
     describe('base state', () => {
         beforeEach(() => {
             spectator = createComponent({
-                providers: [mockProvider(UVEStore, { ...baseUVEState })]
+                providers: [mockProvider(UVEStore, baseUVEState)]
             });
-
             store = spectator.inject(UVEStore, true);
             messageService = spectator.inject(MessageService, true);
-            confirmationService = spectator.inject(ConfirmationService);
+            devicesService = spectator.inject(DotDevicesService);
+            confirmationService = spectator.inject(ConfirmationService, true);
+            dotContentletLockerService = spectator.inject(DotContentletLockerService);
+            personalizeService = spectator.inject(DotPersonalizeService, true);
+        });
 
-            devicesService = spectator.inject(DotDevicesService, true);
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should have a dot-uve-workflow-actions component', () => {
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
+            expect(workflowActions).toBeTruthy();
+        });
+
+        describe('custom devices', () => {
+            it('should get custom devices', () => {
+                expect(devicesService.get).toHaveBeenCalled();
+            });
+
+            it('should set default devices and custom devices', () => {
+                expect(spectator.component.$devices()).toEqual([
+                    ...DEFAULT_DEVICES,
+                    ...mockDotDevices
+                ]);
+            });
+        });
+
+        describe('unlock button', () => {
+            it('should be null', () => {
+                expect(spectator.query(byTestId('uve-toolbar-unlock-button'))).toBeNull();
+            });
+
+            it('should be true', () => {
+                baseUVEState.$unlockButton.set({
+                    inode: '123',
+                    disabled: false,
+                    loading: false,
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-unlock-button'))).toBeTruthy();
+            });
+
+            it('should be disabled', () => {
+                baseUVEState.$unlockButton.set({
+                    disabled: true,
+                    loading: false,
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    },
+                    inode: '123'
+                });
+                spectator.detectChanges();
+                expect(
+                    spectator
+                        .query(byTestId('uve-toolbar-unlock-button'))
+                        .getAttribute('ng-reflect-disabled')
+                ).toEqual('true');
+            });
+
+            it('should be loading', () => {
+                baseUVEState.$unlockButton.set({
+                    loading: true,
+                    disabled: false,
+                    inode: '123',
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
+                spectator.detectChanges();
+                expect(
+                    spectator
+                        .query(byTestId('uve-toolbar-unlock-button'))
+                        .getAttribute('ng-reflect-loading')
+                ).toEqual('true');
+            });
+
+            it('should call dotContentletLockerService.unlockPage', () => {
+                const spy = jest.spyOn(dotContentletLockerService, 'unlock');
+
+                baseUVEState.$unlockButton.set({
+                    loading: true,
+                    disabled: false,
+                    inode: '123',
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
+                spectator.detectChanges();
+
+                spectator.click(byTestId('uve-toolbar-unlock-button'));
+
+                expect(spy).toHaveBeenCalledWith('123');
+            });
         });
 
         describe('dot-ema-bookmarks', () => {
@@ -215,12 +352,6 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        it('should have a dot-uve-workflow-actions component', () => {
-            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
-
-            expect(workflowActions).toBeTruthy();
-        });
-
         describe('copy-url', () => {
             let button: DebugElement;
 
@@ -233,13 +364,13 @@ describe('DotUveToolbarComponent', () => {
             it('should have attrs', () => {
                 expect(button.attributes).toEqual({
                     class: 'ng-star-inserted',
-                    icon: 'pi pi-external-link',
-                    pTooltip: 'Copy URL',
+                    icon: 'pi pi-copy',
                     'data-testId': 'uve-toolbar-copy-url',
                     'ng-reflect-style-class': 'p-button-text p-button-sm p-bu',
-                    'ng-reflect-content': 'Copy URL',
-                    'ng-reflect-icon': 'pi pi-external-link',
+                    'ng-reflect-icon': 'pi pi-copy',
                     'ng-reflect-text': 'http://localhost:3000/test-url',
+                    'ng-reflect-tooltip-position': 'bottom',
+                    tooltipPosition: 'bottom',
                     styleClass: 'p-button-text p-button-sm p-button-rounded'
                 });
             });
@@ -322,11 +453,9 @@ describe('DotUveToolbarComponent', () => {
             it('should personalize - no confirmation', () => {
                 const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    identifier: '123',
-                    pageId: '123',
+                    ...personaEventMock,
                     personalized: true
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                });
                 spectator.detectChanges();
 
                 expect(spyloadPageAsset).toHaveBeenCalledWith({
@@ -336,11 +465,9 @@ describe('DotUveToolbarComponent', () => {
 
             it('should personalize - confirmation', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    identifier: '123',
-                    pageId: '123',
+                    ...personaEventMock,
                     personalized: false
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                });
                 spectator.detectChanges();
 
                 expect(confirmationService.confirm).toHaveBeenCalledWith({
@@ -353,13 +480,37 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
+            it('should handle error when personalization confirmation fails', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+
+                spyPersonalized.mockReturnValue(
+                    throwError(new Error('Personalization confirmation failed'))
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
             it('should despersonalize', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: true
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                    ...personaEventMock,
+                    personalized: true,
+                    selected: true
+                });
 
                 spectator.detectChanges();
 
@@ -387,10 +538,10 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
-                const spyConfirmationService = jest.spyOn(baseUVEState, 'loadPageAsset');
+                const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
 
                 spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
-
+                spectator.detectChanges();
                 expect(spyConfirmationService).toHaveBeenCalled();
             });
         });
@@ -467,23 +618,12 @@ describe('DotUveToolbarComponent', () => {
         });
 
         it('should not have a dot-uve-workflow-actions component', () => {
+            baseUVEState.$showWorkflowsActions.set(false);
+            spectator.detectChanges();
+
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
             expect(workflowActions).toBeNull();
-        });
-    });
-
-    describe('onInit', () => {
-        it('should fetch devices', () => {
-            const spy = jest.spyOn(devicesService, 'get');
-
-            spectator.component.ngOnInit(); // At this point the component already has initializated so we need to call the method directly
-
-            expect(spy).toHaveBeenCalled();
-        });
-
-        it("should fill the devices with the devices that don't have a default device", () => {
-            expect(spectator.component.$devices()).toEqual([...DEFAULT_DEVICES, ...mockDotDevices]);
         });
     });
 

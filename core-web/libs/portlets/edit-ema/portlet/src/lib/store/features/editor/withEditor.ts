@@ -28,6 +28,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
+import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -50,14 +51,16 @@ import { withClient } from '../client/withClient';
 const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
         // Force iframe reload on every page load to avoid caching issues and window dirty state
-        return `about:blank?t=${Date.now()}`;
+        // We need a new reference to avoid the iframe to be cached
+        // More reference: https://github.com/dotCMS/core/issues/30981
+        return new String('');
     }
 
     const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
     const origin = params.clientHost || window.location.origin;
     const url = new URL(pageAPIQueryParams, origin);
 
-    return sanitizeURL(url.toString());
+    return url.toString();
 };
 
 const initialState: EditorState = {
@@ -110,6 +113,12 @@ export function withEditor() {
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
+                $pageRender: computed<string>(() => {
+                    return store.pageAPIResponse()?.page?.rendered;
+                }),
+                $enableInlineEdit: computed<boolean>(() => {
+                    return store.isEditState() && untracked(() => store.isEnterprise());
+                }),
                 $editorIsInDraggingState: computed<boolean>(
                     () => store.state() === EDITOR_STATE.DRAGGING
                 ),
@@ -154,10 +163,18 @@ export function withEditor() {
 
                     const wrapper = getWrapperMeasures(device, store.orientation());
 
+                    const shouldDisableDeleteButton =
+                        pageAPIResponse?.numberContents === 1 && // If there is only one content, we should disable the delete button
+                        pageAPIResponse?.viewAs?.persona && // If there is a persona, we should disable the delete button
+                        pageAPIResponse?.viewAs?.persona?.identifier !== DEFAULT_PERSONA.identifier; // If the persona is not the default persona, we should disable the delete button
+
+                    const message = 'uve.disable.delete.button.on.personalization';
+
+                    const disableDeleteButton = shouldDisableDeleteButton ? message : null;
+
                     return {
                         showDialogs,
                         showBlockEditorSidebar,
-                        showEditorContent: !socialMedia,
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
@@ -168,7 +185,8 @@ export function withEditor() {
                             ? {
                                   isEnterprise,
                                   contentletArea,
-                                  hide: dragIsActive
+                                  hide: dragIsActive,
+                                  disableDeleteButton
                               }
                             : null,
                         dropzone: showDropzone
@@ -193,15 +211,25 @@ export function withEditor() {
                             : null
                     };
                 }),
-                $iframeURL: computed<string>(() => {
+                $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     const page = store.pageAPIResponse().page;
+                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
+
+                    const sanitizedURL = sanitizeURL(vanityURL ?? page?.pageURI);
                     const url = buildIframeURL({
-                        pageURI: page?.pageURI,
+                        pageURI: sanitizedURL,
                         params: store.pageParams(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });
 
                     return url;
+                }),
+                $editorContentStyles: computed<Record<string, string>>(() => {
+                    const socialMedia = store.socialMedia();
+
+                    return {
+                        display: socialMedia ? 'none' : 'block'
+                    };
                 })
             };
         }),

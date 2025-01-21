@@ -312,6 +312,75 @@ describe('DotEmaShellComponent', () => {
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
+        describe('Sanitize url when called loadPageAsset', () => {
+            it('should sanitize when url is index', () => {
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/index'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+
+                spectator.detectChanges();
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'index' });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                );
+            });
+
+            it('should sanitize when url is nested', () => {
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/some-url/some-nested-url/'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+
+                spectator.detectChanges();
+                expect(spyloadPageAsset).toHaveBeenCalledWith({
+                    ...params,
+                    url: 'some-url/some-nested-url'
+                });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                );
+            });
+
+            it('should sanitize when url is nested and ends in index', () => {
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/some-url/index'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+
+                spectator.detectChanges();
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                );
+            });
+        });
+
         it('should patch viewParams with empty object when the editorMode is edit', () => {
             const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
             const params = {

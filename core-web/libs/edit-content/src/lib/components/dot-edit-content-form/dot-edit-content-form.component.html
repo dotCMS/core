@@ -81,6 +81,17 @@
         class="dot-edit-content-actions"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
+        @if ($showPreviewLink()) {
+            <button
+                pButton
+                icon="pi pi-external-link"
+                class="p-button-link p-button-md"
+                data-testId="preview-button"
+                (click)="showPreview()">
+                {{ 'edit.content.preview-link' | dm }}
+            </button>
+        }
+
         @if (showWorkflowActions) {
             <dot-workflow-actions
                 data-testId="workflow-actions"
