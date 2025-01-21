@@ -65,7 +65,7 @@ export const RelationshipFieldStore = signalStore(
 
             const identifiers = data.map((item) => item.identifier).join(',');
 
-            return `+identifier:${identifiers}`;
+            return `${identifiers}`;
         })
     })),
     withMethods((store) => {

@@ -52,11 +52,15 @@ export class DotWorkflowActionsFireService {
     fireTo<T = Record<string, string>>(
         options: DotFireActionOptions<T>
     ): Observable<DotCMSContentlet> {
-        const { actionId, inode, data } = options;
+        const { actionId, inode, data, identifier } = options;
         let urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
 
         if (inode) {
             urlParams = urlParams.set('inode', inode);
+        }
+
+        if (identifier) {
+            urlParams = urlParams.set('identifier', identifier);
         }
 
         const url = `${this.BASE_URL}/actions/${actionId}/fire`;
