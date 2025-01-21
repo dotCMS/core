@@ -3810,6 +3810,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .getFieldVar(HTMLPageAssetAPI.TEMPLATE_FIELD);
             final String identifier = contentlet.getIdentifier();
             final String newTemplate = contentlet.get(HTMLPageAssetAPI.TEMPLATE_FIELD).toString();
+            final Contentlet matchingContent = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+            if (null == matchingContent) {
+                return;
+            }
             final String existingTemplate = loadField(
                     findContentletByIdentifierAnyLanguage(contentlet.getIdentifier())
                             .getInode(), fieldVar).toString();

@@ -624,8 +624,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 		final ContentletVersionInfo contentletVersionInfoInDB = versionableFactory
                 .findContentletVersionInfoInDB(contentletVersionInfo.getIdentifier(), contentletVersionInfo.getLang());
 
-		if(contentletVersionInfoInDB == null) {
-
+		if (contentletVersionInfoInDB == null || UtilMethods.isNotSet(contentletVersionInfoInDB.getIdentifier())) {
 			versionableFactory.saveContentletVersionInfo(contentletVersionInfo, true);
 		} else {
 
