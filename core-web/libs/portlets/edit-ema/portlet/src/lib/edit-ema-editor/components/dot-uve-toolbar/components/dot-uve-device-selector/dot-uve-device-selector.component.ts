@@ -78,14 +78,15 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     });
 
     readonly $moreButtonLabel = computed(() => {
-        const defaultLabel = 'more';
+        const DEFAULT_LABEL = 'more';
 
-        const customDeviceOrSocialMedia =
-            this.$devices().find(
-                (device) => !device._isDefault && device.inode === this.$currentDevice()?.inode
-            )?.name || this.$currentSocialMedia();
+        const customDevice = this.$devices().find(
+            (device) => !device._isDefault && device.inode === this.$currentDevice()?.inode
+        );
 
-        return customDeviceOrSocialMedia || defaultLabel;
+        const label = customDevice?.name || this.$currentSocialMedia();
+
+        return label || DEFAULT_LABEL;
     });
 
     readonly activeMenuItemId = computed(() => {
