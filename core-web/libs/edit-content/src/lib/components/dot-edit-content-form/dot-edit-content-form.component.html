@@ -99,6 +99,7 @@
                 (actionFired)="
                     fireWorkflowAction({
                         actionId: $event.id,
+                        inode: contentlet?.inode,
                         contentType: contentType.variable,
                         languageId: currentLocaleId,
                         identifier: currentIdentifier
