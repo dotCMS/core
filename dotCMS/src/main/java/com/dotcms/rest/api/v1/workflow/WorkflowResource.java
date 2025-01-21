@@ -213,6 +213,7 @@ public class WorkflowResource {
     private static final String CONTENTLET    = "contentlet";
     private static final int CONTENTLETS_LIMIT = 100000;
     private static final String WORKFLOW_SUBMITTER = "workflow_submitter";
+    public static final String INCLUDE_SEPARATOR = "includeSeparator";
 
 
     private final WorkflowHelper   workflowHelper;
@@ -628,10 +629,11 @@ public class WorkflowResource {
 
             this.workflowHelper.checkRenderMode (renderMode, initDataObject.getUser(), this.validRenderModeSet);
 
-            final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
-                    LISTING.equalsIgnoreCase(renderMode)
-                            ? WorkflowAPI.RenderMode.LISTING
-                            : WorkflowAPI.RenderMode.EDITING);
+            final WorkflowAPI.RenderMode mode = LISTING.equalsIgnoreCase(renderMode)?
+                    WorkflowAPI.RenderMode.LISTING: WorkflowAPI.RenderMode.EDITING;
+            final boolean includeSeparator = ConversionUtils.toBoolean(request.getParameter(INCLUDE_SEPARATOR), false);
+            final List<WorkflowAction> actions = includeSeparator? this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(), mode):
+                    this.workflowHelper.findAvailableActionsSkippingSeparators(inode, initDataObject.getUser(), mode);
             return Response.ok(new ResponseEntityView<>(actions.stream()
                     .map(this::toWorkflowActionView).collect(Collectors.toList()))).build();
         } catch (final Exception e) {
@@ -1673,6 +1675,63 @@ public class WorkflowResource {
         }
 
     } // save
+
+    /**
+     * Saves an action separator to a schema and step.
+     * @param request               {@link HttpServletRequest}
+     * @param response              {@link HttpServletResponse}
+     * @param workflowActionForm    {@link WorkflowActionSeparatorForm}
+     * @return Response
+     */
+    @POST
+    @Path("/actions/separator")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "addSeparatorAction", summary = "Creates workflow action separator",
+            description = "Creates a [workflow action] separator(https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
+                    "from the properties specified in the payload. Returns the created workflow action.",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Workflow action created successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = WorkflowAction.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+            }
+    )
+    public final WorkflowActionView addSeparatorAction(@Context final HttpServletRequest request,
+                                     @Context final HttpServletResponse response,
+                                     @RequestBody(
+                                             description = "Body consists of a JSON object containing " +
+                                                     "a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
+                                                     "form. This includes the following properties:\n\n" +
+                                                     "| Property | Type | Description |\n" +
+                                                     "|-|-|-|\n" +
+                                                     "| `schemeId` | String | The [workflow scheme](https://www.dotcms.com/docs/latest" +
+                                                     "/managing-workflows#Schemes) under which the action will be created. |\n" +
+                                                     "| `stepId` | String |  The [workflow step](https://www.dotcms.com/docs/latest",
+                                             required = true,
+                                             content = @Content(
+                                                     schema = @Schema(implementation = WorkflowActionSeparatorForm.class)
+                                             )
+                                     ) final WorkflowActionSeparatorForm workflowActionForm) throws NotFoundException {
+
+        final InitDataObject initDataObject = this.webResource.init
+                (null, request, response, true, null);
+
+        Logger.debug(this, ()-> "Saving new workflow action separator to the scheme id: " + workflowActionForm.getSchemeId() +
+                " and step id: " + workflowActionForm.getStepId());
+        DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
+        final WorkflowActionForm.Builder builder = new WorkflowActionForm.Builder();
+        builder.separator(workflowActionForm.getSchemeId(), workflowActionForm.getStepId());
+        builder.whoCanUse(Collections.emptyList());
+        final WorkflowAction newAction = this.workflowHelper.saveAction(builder.build(), initDataObject.getUser());
+        return toWorkflowActionView(newAction);
+    } // addSeparatorAction
 
     /**
      * Updates an existing action
@@ -5188,7 +5247,7 @@ public class WorkflowResource {
      * @return Response
      */
     @GET
-    @Path("/initialactions/contenttype/{contentTypeId}")
+        @Path("/initialactions/contenttype/{contentTypeId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -5221,8 +5280,11 @@ public class WorkflowResource {
         try {
             Logger.debug(this,
                     ()->"Getting the available actions for the contentlet inode: " + contentTypeId);
-            final List<WorkflowDefaultActionView> actions = this.workflowHelper
-                    .findInitialAvailableActionsByContentType(contentTypeId,
+            final boolean includeSeparator = ConversionUtils.toBoolean(request.getParameter(INCLUDE_SEPARATOR), false) ;
+            final List<WorkflowDefaultActionView> actions = includeSeparator?
+                    this.workflowHelper.findInitialAvailableActionsByContentType(contentTypeId,
+                            initDataObject.getUser()):
+                    this.workflowHelper.findInitialAvailableActionsByContentTypeSkippingSeparators(contentTypeId,
                             initDataObject.getUser());
             return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
         } catch (Exception e) {
