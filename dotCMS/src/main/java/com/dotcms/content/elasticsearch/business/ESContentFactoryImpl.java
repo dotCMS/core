@@ -51,10 +51,9 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.*;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -63,6 +62,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.script.Script;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -81,6 +81,7 @@ import java.util.Calendar;
 import java.util.*;
 import java.util.function.Consumer;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 
@@ -1423,10 +1424,46 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
+    private SearchSourceBuilder createSearchSourceBuilder(final String query, final String sortBy) {
+
+        final SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource();
+
+        QueryBuilder queryBuilder;
+        QueryBuilder postFilter = null;
+
+        searchSourceBuilder.fetchSource(ES_FIELDS, null);
+
+        if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)
+                && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {
+
+            if("random".equals(sortBy)){
+                queryBuilder = QueryBuilders.functionScoreQuery(QueryBuilders.matchAllQuery()
+                        , new RandomScoreFunctionBuilder());
+            } else {
+                queryBuilder = QueryBuilders.matchAllQuery();
+            }
+
+            postFilter = QueryBuilders.queryStringQuery(query);
+
+        } else {
+            queryBuilder = QueryBuilders.queryStringQuery(query);
+        }
+
+        searchSourceBuilder.query(queryBuilder);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchSourceBuilder.trackTotalHits(true);
+
+        if(UtilMethods.isSet(postFilter)) {
+            searchSourceBuilder.postFilter(postFilter);
+        }
+
+        return searchSourceBuilder;
+    }
+
 	@Override
 	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
 
-	    String qq=findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
+	    final String formattedQuery = findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
 	    // we check the query to figure out wich indexes to hit
 	    String indexToHit;
@@ -1443,116 +1480,274 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    else
 	        indexToHit=info.working;
 
-	    Client client=new ESClient().getClient();
+        final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 
-        SearchResponse resp = null;
-        try {
+        if(limit>0) {
+            searchSourceBuilder.size(limit);
+        }
+        if(offset>0) {
+            searchSourceBuilder.from(offset);
+        }
 
-        	SearchRequestBuilder srb = createRequest(client, qq, sortBy);
-        	srb.setIndices(indexToHit);
+        if(UtilMethods.isSet(sortBy) ) {
+            sortBy = sortBy.toLowerCase();
+            if(sortBy.endsWith(ESMappingConstants.SUFFIX_ORDER)) {
+                // related content ordering
+                // relationships typically have a format stname1-stname2(legacy relationships) or relationType (one-sided relationships)
+                if(sortBy.indexOf('-')>0) {
 
-            if(limit>0)
-                srb.setSize(limit);
-            if(offset>0)
-                srb.setFrom(offset);
+                    String identifier = sortBy
+                            .substring(sortBy.indexOf(StringPool.DASH) + 1,
+                                    sortBy.lastIndexOf(StringPool.DASH));
 
-            if(UtilMethods.isSet(sortBy) ) {
-            	sortBy = sortBy.toLowerCase();
-            	if(sortBy.endsWith(ESMappingConstants.SUFFIX_ORDER)) {
-            	    // related content ordering
-            	    // relationships typically have a format stname1-stname2(legacy relationships) or relationType (one-sided relationships)
-            	    if(sortBy.indexOf('-')>0) {
+                    if (UtilMethods.isSet(identifier)) {
 
-                        String identifier = sortBy
-                                .substring(sortBy.indexOf(StringPool.DASH) + 1,
-                                        sortBy.lastIndexOf(StringPool.DASH));
-
-                        if (UtilMethods.isSet(identifier)) {
-
-                            //Support for one-sided relationships
-                            String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
-                            if (UtilMethods.isSet(identifier) && !relName.contains(StringPool.PERIOD)) {
-                                //Support for legacy relationships
-                                relName += StringPool.DASH + identifier
-                                        .substring(0, identifier.indexOf(StringPool.DASH));
-                                identifier = identifier
-                                        .substring(identifier.indexOf(StringPool.DASH) + 1);
-                            }
-
-                            final Script script = new Script(
-                                Script.DEFAULT_SCRIPT_TYPE,
-                                "expert_scripts",
-                                "related",
-                                Collections.emptyMap(),
-                                ImmutableMap.of("relName", relName, "identifier", identifier));
-
-                            srb.addSort(
-                                SortBuilders
-                                    .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
-                                    .order(SortOrder.ASC));
+                        //Support for one-sided relationships
+                        String relName = sortBy.substring(0, sortBy.indexOf(StringPool.DASH));
+                        if (UtilMethods.isSet(identifier) && !relName.contains(StringPool.PERIOD)) {
+                            //Support for legacy relationships
+                            relName += StringPool.DASH + identifier
+                                    .substring(0, identifier.indexOf(StringPool.DASH));
+                            identifier = identifier
+                                    .substring(identifier.indexOf(StringPool.DASH) + 1);
                         }
 
-            	    }
-            	}
-            	else if(sortBy.startsWith("score")){
-            		String[] test = sortBy.split("\\s+");
-            		String defaultSecondarySort = "moddate";
-            		SortOrder defaultSecondardOrder = SortOrder.DESC;
+                        final Script script = new Script(
+                            Script.DEFAULT_SCRIPT_TYPE,
+                            "expert_scripts",
+                            "related",
+                            Collections.emptyMap(),
+                            ImmutableMap.of("relName", relName, "identifier", identifier));
 
-            		if(test.length>2){
-            			if(test[2].equalsIgnoreCase("desc"))
-            				defaultSecondardOrder = SortOrder.DESC;
-            			else
-            				defaultSecondardOrder = SortOrder.ASC;
-            		}
-            		if(test.length>1){
-            			defaultSecondarySort= test[1];
-            		}
+                        searchSourceBuilder.sort(
+                            SortBuilders
+                                .scriptSort(script, ScriptSortBuilder.ScriptSortType.NUMBER)
+                                .order(SortOrder.ASC));
+                    }
 
-            		srb.addSort("_score", SortOrder.DESC);
-            		srb.addSort(defaultSecondarySort, defaultSecondardOrder);
-            	}
-            	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
-            		String[] sortbyArr=sortBy.split(",");
-	            	for (String sort : sortbyArr) {
-	            		String[] x=sort.trim().split(" ");
-	            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-	                                SortOrder.DESC : SortOrder.ASC));
+                }
+            }
+            else if(sortBy.startsWith("score")){
+                String[] test = sortBy.split("\\s+");
+                String defaultSecondarySort = "moddate";
+                SortOrder defaultSecondardOrder = SortOrder.DESC;
 
-					}
-            	}
-            }else{
-                srb.addSort("moddate", SortOrder.DESC);
+                if(test.length>2){
+                    if(test[2].equalsIgnoreCase("desc"))
+                        defaultSecondardOrder = SortOrder.DESC;
+                    else
+                        defaultSecondardOrder = SortOrder.ASC;
+                }
+                if(test.length>1){
+                    defaultSecondarySort= test[1];
+                }
+
+                searchSourceBuilder.sort("_score", SortOrder.DESC);
+                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
+            }
+            else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+                String[] sortbyArr=sortBy.split(",");
+                for (String sort : sortbyArr) {
+                    String[] x=sort.trim().split(" ");
+                    searchSourceBuilder.sort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
+                                SortOrder.DESC : SortOrder.ASC));
+
+                }
+            }
+        }else{
+            searchSourceBuilder.sort("moddate", SortOrder.DESC);
+        }
+
+        try {
+            SearchResponse searchResponse = client.getClient()
+                    .prepareSearch(indexToHit)
+                    .setSource(searchSourceBuilder)
+                    .setRequestCache(true)
+                    .execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+
+            return searchResponse.getHits();
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'",
+                    (indexToHit!=null) ? String.join(",", indexToHit): "unknown"));
+            Logger.warn(this.getClass(), String.format("ES Query: %s", searchSourceBuilder));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            return new SearchHits(new SearchHit[] {}, 0, 0);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    searchSourceBuilder, e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+
+	}
+
+    PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, int limit, int offset, String sortBy) {
+
+        final String formattedQuery = findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
+
+        // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return null;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+            indexToHit = info.live;
+        } else {
+            indexToHit = info.working;
+        }
+
+        final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
+        if(UtilMethods.isSet(sortBy) ) {
+            sortBy = sortBy.toLowerCase();
+
+            if(sortBy.startsWith("score")){
+                String[] sortByCriteria = sortBy.split("[,|\\s+]");
+                String defaultSecondarySort = "moddate";
+                SortOrder defaultSecondardOrder = SortOrder.DESC;
+
+                if(sortByCriteria.length>2){
+                    if(sortByCriteria[2].equalsIgnoreCase("desc")) {
+                        defaultSecondardOrder = SortOrder.DESC;
+                    } else {
+                        defaultSecondardOrder = SortOrder.ASC;
+                    }
+                }
+                if(sortByCriteria.length>1){
+                    defaultSecondarySort= sortByCriteria[1];
+                }
+
+                searchSourceBuilder.sort("_score", SortOrder.DESC);
+                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
+            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+                addBuilderSort(sortBy, searchSourceBuilder);
+            }
+        }else{
+            searchSourceBuilder.sort("moddate", SortOrder.DESC);
+        }
+
+        searchSourceBuilder.size(MAX_LIMIT);
+        final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
+        PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+
+        try {
+            SearchResponse searchResponse = client.getClient()
+                    .prepareSearch(indexToHit)
+                    .setScroll(scroll)
+                    .setSource(searchSourceBuilder)
+                    .execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+
+            String scrollId = searchResponse.getScrollId();
+            SearchHits searchHits = searchResponse.getHits();
+
+            contentletSearchList.addAll(getContentletSearchFromSearchHits(searchHits));
+            contentletSearchList.setTotalResults(searchHits.getTotalHits());
+
+            while (searchHits.getHits() != null && searchHits.getHits().length > 0) {
+
+                searchResponse = client.getClient()
+                        .prepareSearchScroll(scrollId)
+                        .setScroll(scroll)
+                        .execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+                scrollId = searchResponse.getScrollId();
+                searchHits = searchResponse.getHits();
+
+                contentletSearchList.addAll(getContentletSearchFromSearchHits(searchHits));
             }
 
+            ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+            clearScrollRequest.addScrollId(scrollId);
+            ClearScrollResponse clearScrollResponse = client.getClient()
+                    .prepareClearScroll()
+                    .addScrollId(scrollId)
+                    .execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+            boolean succeeded = clearScrollResponse.isSucceeded();
 
-
-            try{
-            	resp = srb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-            }catch (SearchPhaseExecutionException e) {
-				if(e.getMessage().contains("dotraw] in order to sort on")){
-					return new SearchHits(SearchHits.EMPTY,0,0);
-				}else{
-					throw e;
-				}
-			}
-            
-            
-        } catch (IndexNotFoundException | SearchPhaseExecutionException infe ) {
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
-            Logger.warn(this.getClass(), "Elasticsearch Index Error : " + indexToHit);
-            Logger.warnAndDebug(this.getClass(), infe.getMessage(), infe);
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'",
+                    (indexToHit != null) ? String.join(",", indexToHit): "unknown"));
+            Logger.warn(this.getClass(), String.format("ES Query: %s", searchSourceBuilder));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
-            
-            return new SearchHits(new SearchHit[] {}, 0, 0);
-
-
-        } catch (Exception e) {
-            Logger.debug(this, e.getMessage(), e); 
-            throw new DotRuntimeException(e);
+            return new PaginatedArrayList<>();
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    searchSourceBuilder, e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
-	    return resp.getHits();
-	}
+
+        int startIndex = 0;
+        if (offset > 0) {
+            if (offset >= contentletSearchList.size()) {
+                return new PaginatedArrayList<>();
+            } else {
+                startIndex = offset;
+            }
+        }
+
+        int endIndex = contentletSearchList.size();
+        if (limit > 0 && limit <= MAX_LIMIT) {
+            endIndex = Math.min(startIndex + limit, contentletSearchList.size());
+        }
+        if (startIndex > 0) {
+            PaginatedArrayList<ContentletSearch> subList = new PaginatedArrayList<>();
+            subList.addAll(contentletSearchList.subList(startIndex, endIndex));
+            return subList;
+        }
+
+        return contentletSearchList;
+
+
+    }
+
+    private List<ContentletSearch> getContentletSearchFromSearchHits(final SearchHits searchHits) {
+        PaginatedArrayList<ContentletSearch> list=new PaginatedArrayList<>();
+        list.setTotalResults(searchHits.getTotalHits());
+
+        for (SearchHit sh : searchHits.getHits()) {
+            try{
+                Map<String, Object> sourceMap = sh.getSourceAsMap();
+                ContentletSearch conwrapper= new ContentletSearch();
+                conwrapper.setId(sh.getId());
+                conwrapper.setIndex(sh.getIndex());
+                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
+                conwrapper.setInode(sourceMap.get("inode").toString());
+                conwrapper.setScore(sh.getScore());
+
+                list.add(conwrapper);
+            }
+            catch(Exception e){
+                Logger.error(this,e.getMessage(),e);
+                throw e;
+            }
+
+        }
+        return list;
+    }
+
+    public static void addBuilderSort(String sortBy, SearchSourceBuilder srb) {
+        String[] sortbyArr = sortBy.split(",");
+        for (String sort : sortbyArr) {
+            String[] x = sort.trim().split(" ");
+            srb.sort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw")
+                    .order(x.length > 1 && x[1].equalsIgnoreCase("desc") ?
+                            SortOrder.DESC : SortOrder.ASC));
+
+        }
+    }
 
 	@Override
 	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {

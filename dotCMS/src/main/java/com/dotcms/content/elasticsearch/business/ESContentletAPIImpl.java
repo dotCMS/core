@@ -204,7 +204,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
 
-    private static final int MAX_LIMIT = 10000;
+    static final int MAX_LIMIT = 10000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
@@ -867,31 +867,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")){
             sortBy="random";
         }
-        if(limit>MAX_LIMIT || limit <=0){
+        if(limit <=0){
             limit = MAX_LIMIT;
         }
-        SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
-        PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-        list.setTotalResults(lc.getTotalHits());
+        final int maxContentToReturn = offset >= 0 ? offset + limit : limit;
+        if(maxContentToReturn<=MAX_LIMIT) {
+            SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
+            PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
+            list.setTotalResults(lc.getTotalHits());
 
-        for (SearchHit sh : lc.getHits()) {
-            try{
-                Map<String, Object> sourceMap = sh.getSourceAsMap();
-                ContentletSearch conwrapper= new ContentletSearch();
-                conwrapper.setId(sh.getId());
-                conwrapper.setIndex(sh.getIndex());
-                conwrapper.setIdentifier(sourceMap.get("identifier").toString());
-                conwrapper.setInode(sourceMap.get("inode").toString());
-                conwrapper.setScore(sh.getScore());
+            for (SearchHit sh : lc.getHits()) {
+                try {
+                    Map<String, Object> sourceMap = sh.getSourceAsMap();
+                    ContentletSearch conwrapper = new ContentletSearch();
+                    conwrapper.setId(sh.getId());
+                    conwrapper.setIndex(sh.getIndex());
+                    conwrapper.setIdentifier(sourceMap.get("identifier").toString());
+                    conwrapper.setInode(sourceMap.get("inode").toString());
+                    conwrapper.setScore(sh.getScore());
 
-                list.add(conwrapper);
+                    list.add(conwrapper);
+                } catch (Exception e) {
+                    Logger.error(this, e.getMessage(), e);
+                }
+
             }
-            catch(Exception e){
-                Logger.error(this,e.getMessage(),e);
-            }
-
+            return list;
+        } else {
+            return contentFactory.indexSearchScroll(buffy.toString(), limit, offset, sortBy);
         }
-        return list;
     }
 
     @CloseDBIfOpened

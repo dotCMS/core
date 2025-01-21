@@ -495,8 +495,10 @@ public class DependencyManager {
 					//+modDate:[2024-08-28 TO now]
 					//We would need another query to pull:
 					//1. Contentlet which were unpublished = +working:true +live:false
+					final long totalContentlets = APILocator.getContentletAPI().indexCount(luceneQuery, user, false);
+					Logger.info(this,"Total Content Count = " + totalContentlets);
 					final List<Contentlet> contentList = APILocator.getContentletAPI()
-							.search(luceneQuery, 0, 0, null, user, false);
+							.search(luceneQuery, (int) totalContentlets, 0, null, user, false);
 					Logger.info(this,"Query: " + luceneQuery + " Contentlets Size: " + contentList.size());
 					for (final Contentlet contentlet : contentList) {
 						if(UtilMethods.isSet(contentlet.getIdentifier()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
