@@ -208,7 +208,8 @@ export function withUVEToolbar() {
                     viewParams: {
                         ...store.viewParams(),
                         device: device.inode,
-                        orientation: newOrientation
+                        orientation: newOrientation,
+                        seo: null
                     },
                     socialMedia: null,
                     isEditState: false,
@@ -246,9 +247,9 @@ export function withUVEToolbar() {
                     orientation: null,
                     viewParams: {
                         ...store.viewParams(),
-                        device: undefined,
-                        orientation: undefined,
-                        seo: undefined
+                        device: null,
+                        orientation: null,
+                        seo: null
                     }
                 });
             },

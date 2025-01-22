@@ -28,6 +28,7 @@
 
         ::ng-deep {
             .p-button {
+                max-width: 124px; // To avoid overflow on the more button
                 use {
                     color: $color-palette-primary;
                 }
@@ -55,10 +56,11 @@
     ::ng-deep {
         .more-menu {
             padding: $spacing-1;
+            max-width: 15.625rem; // To avoid overflow on the more menu
         }
 
         .p-submenu-header {
-            border-bottom: 1px solid $color-palette-gray-300;
+            border-bottom: 0.0625rem solid $color-palette-gray-300;
         }
     }
 }
