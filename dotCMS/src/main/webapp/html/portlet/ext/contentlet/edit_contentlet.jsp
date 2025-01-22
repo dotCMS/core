@@ -85,6 +85,10 @@
 	<script src="/dotcms-block-editor/main.js" type="module"></script>
 <!--   End dotCMS Block Editor -->
 
+<!--  dotCMS Custom Field Bridge -->
+<script src="/edit-content-bridge/edit-content-bridge.js"></script>
+<!--   End dotCMS Custom Field Bridge -->
+   
 <style>
 .dijitTree {
     width: 100% !important;
