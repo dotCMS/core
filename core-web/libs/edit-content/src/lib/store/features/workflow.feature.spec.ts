@@ -17,6 +17,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
 import { contentInitialState, ContentState } from './content.feature';
 import { withWorkflow } from './workflow.feature';
@@ -47,12 +48,15 @@ describe('WorkflowFeature', () => {
     let messageService: SpyObject<MessageService>;
     let dotMessageService: SpyObject<DotMessageService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
+    let dotEditContentService: SpyObject<DotEditContentService>;
+
     const createStore = createServiceFactory({
         service: signalStore(
             withState({ ...initialRootState, ...mockInitialStateWithContent }),
             withWorkflow()
         ),
         mocks: [
+            DotEditContentService,
             DotWorkflowsActionsService,
             DotWorkflowActionsFireService,
             DotHttpErrorManagerService,
@@ -72,6 +76,7 @@ describe('WorkflowFeature', () => {
         messageService = spectator.inject(MessageService);
         dotMessageService = spectator.inject(DotMessageService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
+        dotEditContentService = spectator.inject(DotEditContentService);
         dotMessageService.get.mockReturnValue('Success Message');
     });
 
@@ -85,6 +90,7 @@ describe('WorkflowFeature', () => {
 
             it('should fire workflow action successfully', fakeAsync(() => {
                 const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
+                dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));
                 workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
                 workflowActionService.getByInode.mockReturnValue(
                     of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
@@ -196,6 +202,7 @@ describe('WorkflowFeature', () => {
             it('should return current step for existing content', fakeAsync(() => {
                 // Mock a workflow action that would update the current step
                 const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
+                dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));
                 workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
                 workflowActionService.getByInode.mockReturnValue(
                     of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)

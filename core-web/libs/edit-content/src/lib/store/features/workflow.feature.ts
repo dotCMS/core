@@ -31,9 +31,11 @@ import {
     ComponentStatus,
     DotCMSWorkflow,
     DotCMSWorkflowAction,
+    DotContentletDepths,
     WorkflowStep,
     WorkflowTask
 } from '@dotcms/dotcms-models';
+import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
 import { ContentState } from './content.feature';
 
@@ -196,6 +198,7 @@ export function withWorkflow() {
         withMethods(
             (
                 store,
+                dotEditContentService = inject(DotEditContentService),
                 workflowActionService = inject(DotWorkflowsActionsService),
                 workflowActionsFireService = inject(DotWorkflowActionsFireService),
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
@@ -283,7 +286,10 @@ export function withWorkflow() {
                                             inode,
                                             DotRenderMode.EDITING
                                         ),
-                                        contentlet: of(contentlet),
+                                        contentlet: dotEditContentService.getContentById({
+                                            id: inode,
+                                            depth: DotContentletDepths.TWO
+                                        }),
                                         isReset: of(isReset),
                                         // Workflow status for this inode
                                         workflowStatus: dotWorkflowService.getWorkflowStatus(inode)
