@@ -70,6 +70,10 @@ public class PublisherFilterImpl implements PublisherFilter{
         return this.excludeDependencyClassesSet.contains(pusheableAssetType.toLowerCase());
     }
 
+    public int getExcludeDependencyQueryAssetIdSetSize() {
+        return excludeDependencyQueryAssetIdSet.size();
+    }
+
     public String toString(){
         return "PublisherFilter {" +
                 " excludeClassesSet = " + this.excludeClassesSet.toString() +

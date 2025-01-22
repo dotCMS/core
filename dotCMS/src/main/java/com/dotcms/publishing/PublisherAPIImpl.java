@@ -193,6 +193,9 @@ public class PublisherAPIImpl implements PublisherAPI {
     public PublisherFilter createPublisherFilter(final String bundleId)
             throws DotDataException, DotSecurityException {
 
+        long startTime = System.currentTimeMillis();
+        Logger.info(this, "createPublisherFilter started at: " + startTime);
+
         final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
         final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
 
@@ -234,10 +237,14 @@ public class PublisherAPIImpl implements PublisherAPI {
                 Logger.info(this,"Part: " + part);
                 APILocator.getContentletAPI().search("+"+part, 0, 0, "moddate", APILocator.systemUser(), false)
                         .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
-                Logger.info(this,"Done with part: " + part);
+                Logger.info(this,"Done with part: " + part + " New list size: " + publisherFilter.getExcludeDependencyQueryAssetIdSetSize());
             }
             Logger.info(this,"Done with all parts for excludeDependencyQuery");
         }
+
+        long endTime = System.currentTimeMillis();
+        Logger.info(this, "createPublisherFilter ended at: " + endTime);
+        Logger.info(this, "createPublisherFilter took: " + (endTime - startTime) + " ms");
 
         return publisherFilter;
     }

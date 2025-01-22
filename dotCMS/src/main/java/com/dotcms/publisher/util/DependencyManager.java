@@ -490,7 +490,7 @@ public class DependencyManager {
 
 				// Content dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
-					final String luceneQuery = "+deleted:false +conHost:" + host.getIdentifier();
+					final String luceneQuery = "+conHost:" + host.getIdentifier();
 					//How about we only pull content which modDate is after the last dataset
 					//+modDate:[2024-08-28 TO now]
 					//We would need another query to pull:
