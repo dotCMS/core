@@ -13,7 +13,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { delay, map, retryWhen, takeWhile } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotFavoritePageService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -84,16 +84,6 @@ export class DotEmaBookmarksComponent implements OnInit {
             })
             .pipe(
                 takeUntilDestroyed(this.destroyRef),
-                retryWhen((errors) =>
-                    errors.pipe(
-                        delay(500),
-                        takeWhile((error) => {
-                            // This request is returning null in some cases and we need to retry
-                            return error instanceof TypeError;
-                        })
-                    )
-                ),
-
                 map((res) => res.jsonObjectView.contentlets[0])
             )
             .subscribe((favoritePage) => {
