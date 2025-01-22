@@ -3,6 +3,7 @@ package com.dotmarketing.util.importer;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import org.immutables.value.Value;
 
@@ -40,4 +41,10 @@ public interface AbstractImportHeaderInfo extends Serializable {
      * @return Additional validation details and metadata about the headers
      */
     Map<String, String> validationDetails();
+
+    /**
+     * @return Special header types found in the import file
+     */
+    List<SpecialHeaderInfo> specialHeaders();
+
 }

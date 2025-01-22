@@ -1,6 +1,9 @@
 package com.dotmarketing.util.importer;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.importer.AbstractImportValidationMessage.ValidationMessageType;
+import com.dotmarketing.util.importer.AbstractSpecialHeaderInfo.SpecialHeaderType;
+import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -72,6 +75,49 @@ public class ImportResultConverter {
         addHeaderValidationToLegacy(result.fileInfo().headerInfo(), legacyResults);
 
         return legacyResults;
+    }
+
+    /**
+     * Converts the structured ImportHeaderValidationResult to the legacy HashMap format. This
+     * method ensures backward compatibility by formatting the structured data into the string-based
+     * format expected by legacy code.
+     *
+     * @param validationResult The structured ImportHeaderValidationResult to convert
+     * @param legacyResults    The legacy format results map to update
+     */
+    public static void addValidationResultsToLegacyMap(
+            final ImportHeaderValidationResult validationResult,
+            final Map<String, List<String>> legacyResults) {
+
+        // Convert validation messages
+        for (ImportValidationMessage message : validationResult.messages()) {
+            String messageText = message.message();
+            switch (message.type()) {
+                case ERROR:
+                    legacyResults.get("errors").add(messageText);
+                    break;
+                case WARNING:
+                    legacyResults.get("warnings").add(messageText);
+                    break;
+                case INFO:
+                    legacyResults.get("messages").add(messageText);
+                    break;
+            }
+        }
+
+        // Convert special headers info
+        for (SpecialHeaderInfo specialHeader : validationResult.headerInfo()
+                .specialHeaders()) {
+            if (specialHeader.type() == SpecialHeaderType.IDENTIFIER) {
+                legacyResults.get("identifiers").add(
+                        StringPool.BLANK + specialHeader.columnIndex()
+                );
+            } else if (specialHeader.type() == SpecialHeaderType.WORKFLOW_ACTION) {
+                legacyResults.get(Contentlet.WORKFLOW_ACTION_KEY).add(
+                        StringPool.BLANK + specialHeader.columnIndex()
+                );
+            }
+        }
     }
 
     /**

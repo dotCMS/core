@@ -51,15 +51,18 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.importer.AbstractImportValidationMessage.ValidationMessageType;
+import com.dotmarketing.util.importer.AbstractSpecialHeaderInfo.SpecialHeaderType;
 import com.dotmarketing.util.importer.ContentSummary;
 import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportFileInfo;
 import com.dotmarketing.util.importer.ImportHeaderInfo;
 import com.dotmarketing.util.importer.ImportHeaderValidationResult;
 import com.dotmarketing.util.importer.ImportResult;
+import com.dotmarketing.util.importer.ImportResultConverter;
 import com.dotmarketing.util.importer.ImportResultData;
 import com.dotmarketing.util.importer.ImportValidationMessage;
 import com.dotmarketing.util.importer.ProcessedData;
+import com.dotmarketing.util.importer.SpecialHeaderInfo;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -322,22 +325,11 @@ public class ImportUtil {
                             onlyChild, onlyParent);
                 }
 
+                // ---
                 // Convert validation result to legacy format
-                for (ImportValidationMessage message : headerValidation.messages()) {
-                    String messageText = message.message();
-                    switch (message.type()) {
-                        case ERROR:
-                            results.get("errors").add(messageText);
-                            errors++;
-                            break;
-                        case WARNING:
-                            results.get("warnings").add(messageText);
-                            break;
-                        case INFO:
-                            results.get("messages").add(messageText);
-                            break;
-                    }
-                }
+                ImportResultConverter.addValidationResultsToLegacyMap(headerValidation, results);
+                errors += results.get("errors").size();
+                // ---
 
                 lineNumber++;
 
@@ -574,6 +566,7 @@ public class ImportUtil {
 
         List<String> validHeaders = new ArrayList<>();
         List<String> invalidHeaders = new ArrayList<>();
+        List<SpecialHeaderInfo> specialHeaders = new ArrayList<>();
 
         // Process each header
         for (int i = 0; i < headerLine.length; i++) {
@@ -581,8 +574,10 @@ public class ImportUtil {
             headerFields.add(header);
 
             // Handle special headers first
-            if (isSpecialHeader(header, i, user, validationBuilder)) {
+            final var specialHeaderInfo = isSpecialHeader(header, i, user, validationBuilder);
+            if (specialHeaderInfo.type() != SpecialHeaderType.NONE) {
                 validHeaders.add(header);
+                specialHeaders.add(specialHeaderInfo);
                 continue;
             }
 
@@ -604,6 +599,7 @@ public class ImportUtil {
                 .invalidHeaders(invalidHeaders.toArray(new String[0]))
                 .missingHeaders(missingHeaders.toArray(new String[0]))
                 .validationDetails(new HashMap<>())  // Add validation details if needed
+                .specialHeaders(specialHeaders)
                 .build();
         validationBuilder.headerInfo(headerInfo);
     }
@@ -808,10 +804,10 @@ public class ImportUtil {
      * @param columnIndex       Index of the header in the CSV file
      * @param user              User performing the import
      * @param validationBuilder Builder to accumulate validation messages
-     * @return true if header is a special system header, false otherwise
+     * @return SpecialHeaderInfo containing type and column index if header is special, NONE otherwise
      * @throws LanguageException If language key lookup fails
      */
-    private static boolean isSpecialHeader(final String header, final int columnIndex,
+    private static SpecialHeaderInfo isSpecialHeader(final String header, final int columnIndex,
             final User user,
             final ImportHeaderValidationResult.Builder validationBuilder) throws LanguageException {
 
@@ -827,7 +823,11 @@ public class ImportUtil {
                             .context(Map.of("columnIndex", columnIndex))
                             .build()
             );
-            return true;
+
+            return SpecialHeaderInfo.builder()
+                    .type(SpecialHeaderType.IDENTIFIER)
+                    .columnIndex(columnIndex)
+                    .build();
         }
 
         if (header.equalsIgnoreCase(Contentlet.WORKFLOW_ACTION_KEY)) {
@@ -842,10 +842,17 @@ public class ImportUtil {
                             .context(Map.of("columnIndex", columnIndex))
                             .build()
             );
-            return true;
+
+            return SpecialHeaderInfo.builder()
+                    .type(SpecialHeaderType.WORKFLOW_ACTION)
+                    .columnIndex(columnIndex)
+                    .build();
         }
 
-        return false;
+        return SpecialHeaderInfo.builder()
+                .type(SpecialHeaderType.NONE)
+                .columnIndex(-1)
+                .build();
     }
 
     /**
