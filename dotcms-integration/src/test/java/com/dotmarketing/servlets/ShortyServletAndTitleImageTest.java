@@ -1,28 +1,16 @@
 package com.dotmarketing.servlets;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Base64;
-
-import java.util.Optional;
-
-import com.dotcms.contenttype.model.type.DotAssetContentType;
-import com.dotcms.datagen.*;
-import com.dotcms.junit.CustomDataProviderRunner;
-
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableImageField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -32,15 +20,29 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @ApplicationScoped
-@RunWith(CustomDataProviderRunner.class)
+@RunWith(DataProviderWeldRunner.class)
 public class ShortyServletAndTitleImageTest {
     
 
@@ -371,8 +373,6 @@ public class ShortyServletAndTitleImageTest {
         assertEquals(uri.cropWidth, uri.expectedCopWidth);
         assertEquals(uri.cropHeight, uri.expectedCropHeight);
         assertEquals(uri.isImage, uri.expectedIsImage);
-
-
     }
 
     /**
@@ -386,5 +386,21 @@ public class ShortyServletAndTitleImageTest {
         Uri uri = new Uri("/data/shared/assets/tmp_upload/temp_2e1056205c/webPageContent.vtl", 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
         assertEquals(uri.isImage, uri.expectedIsImage);
     }
-    
+
+    /**
+     * Method to test: {@link ShortyServlet#serve(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: A shorty URL is requested by an authenticated user
+     * ExpectedResult: The method should forward the request for an authenticated user
+     * For a non-authenticated user, the method should return a 401 status code
+     */
+    @Test
+    public void test_ShortyServlet_With_AuthenticatedUser() throws Exception {
+
+        final HttpServlet servlet = new ShortyServlet();
+        ServletTestUtils.testServletWithAuthenticatedUser(
+                servlet, assetId -> "/dA/"
+                        + APILocator.getShortyAPI().shortify(assetId) + "/image/test.jpg");
+
+    }
+
 }

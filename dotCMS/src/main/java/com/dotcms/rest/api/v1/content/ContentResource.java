@@ -18,6 +18,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
@@ -629,6 +630,11 @@ public class ContentResource {
                 .requiredBackendUser(false)
                 .init()
                 .getUser();
+        final Identifier identifierBean = APILocator.getIdentifierAPI().find(identifier);
+        if (Objects.isNull(identifierBean) || !InodeUtils.isSet(identifierBean.getId())) {
+
+            throw new DoesNotExistException("Identifier not found for id: " + identifier);
+        }
         final List<ExistingLanguagesForContentletView> languagesForContent =
                 this.getExistingLanguagesForContent(identifier, user);
         return new ResponseEntityView<>(languagesForContent);
