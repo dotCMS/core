@@ -153,7 +153,6 @@ export class HostFieldService {
 
         return forkJoin(requests).pipe(
             map((response) => {
-
                 const [mainNode] = response;
 
                 return response.reduce(

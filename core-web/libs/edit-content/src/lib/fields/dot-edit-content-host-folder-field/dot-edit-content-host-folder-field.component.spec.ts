@@ -9,6 +9,7 @@ import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-co
 import { mockMatchMedia } from '@dotcms/utils-testing';
 
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
+import { HostFieldService } from './services/host-field.service';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
 import {
@@ -30,8 +31,8 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         componentProviders: [HostFolderFiledStore],
         providers: [
             FormGroupDirective,
-            mockProvider(DotEditContentService, {
-                getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK))
+            mockProvider(HostFieldService, {
+                getSites: jest.fn(() => of(TREE_SELECT_SITES_MOCK))
             })
         ],
         detectChanges: false

@@ -140,7 +140,6 @@ export const HostFolderFiledStore = signalStore(
                         return hostFieldService.buildTreeByPaths(path);
                     }),
                     tap(({ node, tree }) => {
-
                         const changes: Partial<HostFolderFiledState> = {};
                         if (node) {
                             changes.nodeSelected = node;
@@ -151,7 +150,6 @@ export const HostFolderFiledStore = signalStore(
 
                             const newTree = currentTree.map((item) => {
                                 if (item.data.hostname === tree.parent.hostName) {
-
                                     return {
                                         ...item,
                                         children: [...tree.folders]
