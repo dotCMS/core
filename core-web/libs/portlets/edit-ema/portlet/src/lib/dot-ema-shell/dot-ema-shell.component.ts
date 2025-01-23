@@ -221,7 +221,10 @@ export class DotEmaShellComponent implements OnInit {
             params.clientHost = uveConfig.url;
         }
 
-        if (!params.editorMode) {
+        // If the editor mode is not valid, set it to edit mode
+        const UVE_MODES = Object.values(UVE_MODE);
+
+        if (!params.editorMode || !UVE_MODES.includes(params.editorMode)) {
             params.editorMode = UVE_MODE.EDIT;
         }
 
