@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
-import { graphqlToPageEntity, UVE_MODE } from '@dotcms/client';
+import { graphqlToPageEntity } from '@dotcms/client';
 import { Site } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -18,7 +18,7 @@ import {
     VanityUrl
 } from '@dotcms/dotcms-models';
 
-import { PAGE_MODE } from '../shared/enums';
+import { UVE_MODE_TO_PAGE_MODE } from '../shared/consts';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import { cleanPageURL, createPageApiUrlWithQueryParams } from '../utils';
@@ -109,8 +109,7 @@ export class DotPageApiService {
         const url = cleanPageURL(params.url);
 
         const pageType = clientHost ? 'json' : 'render';
-        const isPreview = editorMode === UVE_MODE.PREVIEW;
-        const mode = isPreview ? PAGE_MODE.LIVE : PAGE_MODE.EDIT;
+        const mode = UVE_MODE_TO_PAGE_MODE[editorMode];
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id,

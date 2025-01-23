@@ -69,5 +69,6 @@ export interface ReorderMenuConfig {
 
 export enum UVE_MODE {
     EDIT = 'edit',
-    PREVIEW = 'preview'
+    PREVIEW = 'preview',
+    LIVE = 'live'
 }
