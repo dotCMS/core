@@ -3,6 +3,15 @@ import { Subscription } from 'rxjs';
 import { NgZone } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
+type FormFieldValue = string | number | boolean | null;
+
+interface BridgeApi {
+    get: (fieldId: string) => FormFieldValue;
+    set: (fieldId: string, value: FormFieldValue) => void;
+    onChangeField: (fieldId: string, callback: (value: FormFieldValue) => void) => void;
+    ready: (callback: (api: BridgeApi) => void) => void;
+}
+
 interface AngularConfig {
     type: 'angular';
     form: FormGroup;
@@ -56,31 +65,31 @@ export class DotFormBridge {
      *
      * @returns An object with methods for getting, setting, and subscribing to field changes.
      */
-    createPublicApi() {
+    createPublicApi(): BridgeApi {
         if (this.environment === 'dojo') {
             document.addEventListener('beforeunload', () => this.destroy());
         }
 
         return {
-            get: (fieldId: string): string => {
+            get: (fieldId: string): FormFieldValue => {
                 return this.environment === 'dojo'
                     ? this.getDojoFieldValue(fieldId)
                     : this.getAngularFieldValue(fieldId);
             },
 
-            set: (fieldId: string, value: string): void => {
+            set: (fieldId: string, value: FormFieldValue): void => {
                 this.environment === 'dojo'
                     ? this.setDojoFieldValue(fieldId, value)
                     : this.setAngularFieldValue(fieldId, value);
             },
 
-            onChangeField: (fieldId: string, callback: (value: string) => void): void => {
+            onChangeField: (fieldId: string, callback: (value: FormFieldValue) => void): void => {
                 this.environment === 'dojo'
                     ? this.watchDojoField(fieldId, callback)
                     : this.watchAngularField(fieldId, callback);
             },
 
-            ready: (callback: (api: any) => void): void => {
+            ready: (callback: (api: BridgeApi) => void): void => {
                 if (this.environment === 'dojo') {
                     // Wait for iframe to be fully loaded
                     this.loadHandler = () => {
@@ -99,7 +108,7 @@ export class DotFormBridge {
      * @param fieldId - The ID of the field to retrieve the value from.
      * @returns The value of the field, or null if the field is not found or an error occurs.
      */
-    private getDojoFieldValue(fieldId: string): any {
+    private getDojoFieldValue(fieldId: string): FormFieldValue {
         try {
             const element = document.getElementById(fieldId);
 
@@ -117,7 +126,7 @@ export class DotFormBridge {
      * @param fieldId - The ID of the field to retrieve the value from.
      * @returns The value of the field, or null if the field is not found or an error occurs.
      */
-    private getAngularFieldValue(fieldId: string): any {
+    private getAngularFieldValue(fieldId: string): FormFieldValue {
         return this.form?.get(fieldId)?.value;
     }
 
@@ -127,11 +136,11 @@ export class DotFormBridge {
      * @param fieldId - The ID of the field to set the value for.
      * @param value - The value to set for the field.
      */
-    private setDojoFieldValue(fieldId: string, value: any): void {
+    private setDojoFieldValue(fieldId: string, value: FormFieldValue): void {
         try {
             const element = document.getElementById(fieldId);
             if (element instanceof HTMLInputElement) {
-                element.value = value;
+                element.value = String(value ?? '');
                 element.dispatchEvent(new Event('change', { bubbles: true }));
             }
         } catch (error) {
@@ -145,7 +154,7 @@ export class DotFormBridge {
      * @param fieldId - The ID of the field to set the value for.
      * @param value - The value to set for the field.
      */
-    private setAngularFieldValue(fieldId: string, value: any): void {
+    private setAngularFieldValue(fieldId: string, value: FormFieldValue): void {
         this.zone?.run(() => {
             const control = this.form?.get(fieldId);
             if (control && control.value !== value) {
@@ -162,7 +171,7 @@ export class DotFormBridge {
      * @param fieldId - The ID of the field to subscribe to.
      * @param callback - The callback function to execute when the field changes.
      */
-    private watchDojoField(fieldId: string, callback: (value: any) => void): void {
+    private watchDojoField(fieldId: string, callback: (value: FormFieldValue) => void): void {
         try {
             // Clean up previous listeners if they exist
             this.cleanupDojoFieldListeners(fieldId);
@@ -215,7 +224,7 @@ export class DotFormBridge {
      * @param fieldId - The ID of the field to subscribe to.
      * @param callback - The callback function to execute when the field changes.
      */
-    private watchAngularField(fieldId: string, callback: (value: any) => void): void {
+    private watchAngularField(fieldId: string, callback: (value: FormFieldValue) => void): void {
         const existingSubscription = this.subscriptions.get(fieldId);
         if (existingSubscription) {
             existingSubscription.unsubscribe();
