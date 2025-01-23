@@ -79,6 +79,8 @@ export class DotEditorModeSelectorComponent {
     );
 
     onModeChange(mode: UVE_MODE) {
+        if (mode === this.$currentMode()) return;
+
         if (mode === UVE_MODE.EDIT) {
             this.#store.clearDeviceAndSocialMedia();
         }
