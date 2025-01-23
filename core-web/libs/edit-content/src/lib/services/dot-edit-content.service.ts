@@ -1,4 +1,4 @@
-import { Observable, forkJoin } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -12,12 +12,7 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet, DotContentletDepth } from '@dotcms/dotcms-models';
 
-import {
-    CustomTreeNode,
-    DotFolder,
-    TreeNodeItem
-} from '../models/dot-edit-content-host-folder-field.interface';
-import { createPaths } from '../utils/functions.util';
+import { DotFolder } from '../fields/dot-edit-content-host-folder-field/models/tree-item.model';
 
 @Injectable()
 export class DotEditContentService {
@@ -90,38 +85,6 @@ export class DotEditContentService {
     }
 
     /**
-     * Get data for site/folder field and tranform into TreeNode
-     *
-     * @return {*}  {Observable<TreeNodeItem[]>}
-     * @memberof DotEditContentService
-     */
-    getSitesTreePath(data: {
-        filter: string;
-        perPage?: number;
-        page?: number;
-    }): Observable<TreeNodeItem[]> {
-        const { filter, perPage, page } = data;
-
-        return this.#siteService.getSites(filter, perPage, page).pipe(
-            map((sites) => {
-                return sites.map((site) => ({
-                    key: site.hostname,
-                    label: `//${site.hostname}`,
-                    data: {
-                        id: site.identifier,
-                        hostname: `//${site.hostname}`,
-                        path: '',
-                        type: 'site'
-                    },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
-                    leaf: false
-                }));
-            })
-        );
-    }
-
-    /**
      *
      *
      * @param {string} path
@@ -130,110 +93,6 @@ export class DotEditContentService {
      */
     getFolders(path: string): Observable<DotFolder[]> {
         return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
-    }
-
-    /**
-     *
-     *
-     * @param {string} hostName
-     * @param {string} path
-     * @return {*}  {Observable<TreeNodeItem[]>}
-     * @memberof DotEditContentService
-     */
-    getFoldersTreeNode(hostName: string, path: string): Observable<TreeNodeItem[]> {
-        return this.getFolders(`${hostName}${path}`).pipe(
-            map((folders) => {
-                return folders
-                    .filter((folder) => {
-                        const checkPath = path === '' ? '/' : path;
-
-                        return folder.path !== checkPath;
-                    })
-                    .map((folder) => ({
-                        key: `${folder.hostName}${folder.path}`.replace(/[/]/g, ''),
-                        label: `//${folder.hostName}${folder.path}`,
-                        data: {
-                            id: folder.id,
-                            hostname: `//${folder.hostName}`,
-                            path: folder.path,
-                            type: 'folder'
-                        },
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder',
-                        leaf: false
-                    }));
-            })
-        );
-    }
-
-    /**
-     *
-     *
-     * @param {string} fullPath
-     * @return {*}  {Observable<CustomTreeNode>}
-     * @memberof DotEditContentService
-     */
-    buildTreeByPaths(fullPath: string): Observable<CustomTreeNode> {
-        const paths = createPaths(fullPath);
-        const requests = paths.reverse().map((path) => {
-            const split = path.split('/');
-            const [hostName] = split;
-            const subPath = split.slice(1).join('/');
-
-            return this.getFoldersTreeNode(`//${hostName}`, `/${subPath}`).pipe(
-                map((folders) => ({ path: path.replace(/[/]/g, ''), folders }))
-            );
-        });
-
-        return forkJoin(requests).pipe(
-            map((response) => {
-                const [mainNode] = response;
-
-                return response.reduce(
-                    (rta, node, index, array) => {
-                        const next = array[index + 1];
-                        if (next) {
-                            const folder = next.folders.find((item) => item.key === node.path);
-                            if (folder) {
-                                folder.children = node.folders;
-                                if (mainNode.path === folder.key) {
-                                    rta.node = folder;
-                                }
-                            }
-                        }
-
-                        rta.tree = node;
-
-                        return rta;
-                    },
-                    { tree: null, node: null }
-                );
-            })
-        );
-    }
-
-    /**
-     *
-     *
-     * @return {*}  {Observable<TreeNodeItem>}
-     * @memberof DotEditContentService
-     */
-    getCurrentSiteAsTreeNodeItem(): Observable<TreeNodeItem> {
-        return this.#siteService.getCurrentSite().pipe(
-            map((site) => ({
-                key: site.hostname,
-                label: `//${site.hostname}`,
-                data: {
-                    id: site.identifier,
-                    hostname: `//${site.hostname}`,
-                    path: '',
-                    type: 'site'
-                },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
-                leaf: false
-            }))
-        );
     }
 
     /**
