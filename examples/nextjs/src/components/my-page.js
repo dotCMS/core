@@ -78,7 +78,12 @@ export function MyPage({ pageAsset, nav }) {
                         components: componentsMap
                     }}
                     config={{
-                        pathname
+                        pathname,
+                        editor: {
+                            params: {
+                                depth: 3
+                            }
+                        }
                     }}
                 />
             </main>
