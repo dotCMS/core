@@ -50,7 +50,7 @@ export class DotEditContentCustomFieldComponent implements OnInit, OnDestroy {
     #window = inject(WINDOW);
     private readonly ALLOWED_ORIGINS = [this.#window.location.origin];
 
-    isFullscreen = signal(false);
+    $isFullscreen = signal(false);
     $variables = signal<Record<string, string>>({});
 
     $src = computed(() => this.buildIframeSrc());
@@ -76,7 +76,7 @@ export class DotEditContentCustomFieldComponent implements OnInit, OnDestroy {
 
         switch (data.type) {
             case 'toggleFullscreen':
-                this.isFullscreen.update((value) => !value);
+                this.$isFullscreen.update((value) => !value);
                 break;
         }
     }

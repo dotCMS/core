@@ -41,21 +41,21 @@ Inside the ready handler, you can use these methods:
 
 ```javascript
 // Get value from any field
-const value = DotCustomFieldApi.get('fieldId');
+const value = DotCustomFieldApi.get('variableField');
 ```
 
 ### 2. Set Field Value
 
 ```javascript
 // Update any field value
-DotCustomFieldApi.set('fieldId', 'newValue');
+DotCustomFieldApi.set('variableField', 'newValue');
 ```
 
 ### 3. Watch Field Changes
 
 ```javascript
 // React to changes in any field
-DotCustomFieldApi.onChangeField('fieldId', (value) => {
+DotCustomFieldApi.onChangeField('variableField', (value) => {
     console.log('Field changed to:', value);
 });
 ```
