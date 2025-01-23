@@ -19,6 +19,15 @@
         "lint": {
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/edit-content-bridge/jest.config.ts",
+                "verbose": false
+            }
         }
-    }
+    },
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:edit-content"]
 }
