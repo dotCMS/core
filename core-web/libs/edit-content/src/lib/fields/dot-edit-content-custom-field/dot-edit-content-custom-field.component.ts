@@ -6,7 +6,6 @@ import {
     HostListener,
     NgZone,
     OnDestroy,
-    OnInit,
     computed,
     inject,
     input,
@@ -42,9 +41,9 @@ import { WINDOW } from '@dotcms/utils';
         }
     ]
 })
-export class DotEditContentCustomFieldComponent implements OnInit, OnDestroy {
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-    $contentType = input.required<string>({ alias: 'contentType' });
+export class DotEditContentCustomFieldComponent implements OnDestroy {
+    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    $contentType = input<string>(null, { alias: 'contentType' });
     iframe = viewChild.required<ElementRef<HTMLIFrameElement>>('iframe');
 
     #window = inject(WINDOW);
@@ -53,18 +52,27 @@ export class DotEditContentCustomFieldComponent implements OnInit, OnDestroy {
     $isFullscreen = signal(false);
     $variables = signal<Record<string, string>>({});
 
-    $src = computed(() => this.buildIframeSrc());
+    $src = computed(() => {
+        const field = this.$field();
+        const contentType = this.$contentType();
+
+        if (!field || !contentType) {
+            return '';
+        }
+
+        const params = new URLSearchParams({
+            variable: contentType,
+            field: field.variable
+        });
+
+        return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
+    });
 
     #formBridge?: DotFormBridge;
     #controlContainer = inject(ControlContainer);
     #zone = inject(NgZone);
 
     $form = computed(() => (this.#controlContainer as FormGroupDirective).form);
-
-    ngOnInit() {
-        this.$variables.set(this.initializeVariables());
-        this.initializeFormBridge();
-    }
 
     @HostListener('window:message', ['$event'])
     onMessageFromCustomField({ data, origin }: MessageEvent) {
@@ -82,19 +90,13 @@ export class DotEditContentCustomFieldComponent implements OnInit, OnDestroy {
     }
 
     onIframeLoad() {
+        this.initializeFormBridge();
+        this.$variables.set(this.initializeVariables());
+
         const iframeWindow = this.getIframeWindow();
         if (!iframeWindow) return;
 
         this.#zone.run(() => this.initializeCustomFieldApi(iframeWindow));
-    }
-
-    private buildIframeSrc(): string {
-        const params = new URLSearchParams({
-            variable: this.$contentType(),
-            field: this.$field().variable
-        });
-
-        return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
     }
 
     private initializeVariables(): Record<string, string> {
