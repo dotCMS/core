@@ -648,7 +648,7 @@ public class ContentletLoader implements DotLoader {
 
         //if time machine is running, we need to force get the latest working version to guarantee the correct rendered content matching the json portion of the response
         final ContentletVersionInfo contentletVersionInfo = info.get();
-        final String inode = (key.mode.showLive && !TimeMachineUtil.isRunning() )
+        final String inode = (key.mode.showLive && TimeMachineUtil.isNotRunning() )
                 ? contentletVersionInfo.getLiveInode()
                 : contentletVersionInfo.getWorkingInode();
 
