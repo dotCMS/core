@@ -1,5 +1,12 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    untracked
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
@@ -59,7 +66,7 @@ export class DotEditorModeSelectorComponent {
 
     readonly $modeGuardEffect = effect(
         () => {
-            const currentMode = this.$currentMode();
+            const currentMode = untracked(() => this.$currentMode());
             const canEditPage = this.#store.canEditPage();
             const hasLiveVersion = this.#store.pageAPIResponse().page.live;
 
