@@ -281,7 +281,7 @@
                     HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
                 }
 %>
-                    <body>
+                    <body id="legacy-custom-field-body">
                         <%= HTMLString %>
                     </body>
 <%
