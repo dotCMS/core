@@ -297,7 +297,8 @@ public class ResourceManagerImpl
 
         final String resourceKey = resourceType + resourceName;
 
-        Resource resource =  !TimeMachineUtil.isRunning() ? globalCache.get(resourceKey) : null;
+        //Do not cache content resources when TimeMachine is running
+        Resource resource = TimeMachineUtil.isNotRunning() ? globalCache.get(resourceKey) : null;
 
         if (resource != null)
         {
