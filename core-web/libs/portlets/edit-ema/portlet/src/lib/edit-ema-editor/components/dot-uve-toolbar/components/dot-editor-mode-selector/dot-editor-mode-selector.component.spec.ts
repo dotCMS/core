@@ -216,56 +216,47 @@ describe('DotEditorModeSelectorComponent', () => {
             );
         });
 
-        it('should show correct label and description for each menu item', () => {
-            const button = spectator.query('[data-testId="more-button"]');
-            spectator.click(button);
-            spectator.detectChanges();
+        test.each([
+            {
+                mode: UVE_MODE.EDIT,
+                label: 'uve.editor.mode.edit',
+                description: 'uve.editor.mode.edit.description'
+            },
+            {
+                mode: UVE_MODE.PREVIEW,
+                label: 'uve.editor.mode.preview',
+                description: 'uve.editor.mode.preview.description'
+            },
+            {
+                mode: UVE_MODE.LIVE,
+                label: 'uve.editor.mode.live',
+                description: 'uve.editor.mode.live.description'
+            }
+        ])(
+            'should show correct label and description for $mode menu item',
+            ({ label, description, mode }) => {
+                const button = spectator.query('[data-testId="more-button"]');
+                spectator.click(button);
+                spectator.detectChanges();
 
-            const menuItems = spectator.queryAll('.menu-item');
+                const menuItem = spectator.query(`[data-testId="${mode}-menu-item"]`);
 
-            // Check Edit mode item
-            expect(menuItems[0].querySelector('.menu-item__label')).toHaveText(
-                'uve.editor.mode.edit'
-            );
-            expect(menuItems[0].querySelector('.menu-item__description')).toHaveText(
-                'uve.editor.mode.edit.description'
-            );
+                expect(menuItem.querySelector('.menu-item__label')).toHaveText(label);
+                expect(menuItem.querySelector('.menu-item__description')).toHaveText(description);
+            }
+        );
 
-            // Check Preview mode item
-            expect(menuItems[1].querySelector('.menu-item__label')).toHaveText(
-                'uve.editor.mode.preview'
-            );
-            expect(menuItems[1].querySelector('.menu-item__description')).toHaveText(
-                'uve.editor.mode.preview.description'
-            );
-
-            // Check Live mode item
-            expect(menuItems[2].querySelector('.menu-item__label')).toHaveText(
-                'uve.editor.mode.live'
-            );
-            expect(menuItems[2].querySelector('.menu-item__description')).toHaveText(
-                'uve.editor.mode.live.description'
-            );
-        });
-
-        it('should update button label when mode changes', () => {
+        test.each([
+            { mode: UVE_MODE.EDIT, label: 'uve.editor.mode.edit' },
+            { mode: UVE_MODE.PREVIEW, label: 'uve.editor.mode.preview' },
+            { mode: UVE_MODE.LIVE, label: 'uve.editor.mode.live' }
+        ])('should update button label when mode changes - $mode', ({ mode, label }) => {
             // Start with Edit mode
-            mockStore.pageParams.set({ ...pageParams, editorMode: UVE_MODE.EDIT });
+            mockStore.pageParams.set({ ...pageParams, editorMode: mode });
             spectator.detectChanges();
 
             const button = spectator.query('[data-testId="more-button"]');
-            expect(button).toHaveText('uve.editor.mode.edit');
-
-            // Change to Preview mode
-            mockStore.pageParams.set({ ...pageParams, editorMode: UVE_MODE.PREVIEW });
-            spectator.detectChanges();
-
-            expect(button).toHaveText('uve.editor.mode.preview');
-
-            // Change to Live mode
-            mockStore.pageParams.set({ ...pageParams, editorMode: UVE_MODE.LIVE });
-            spectator.detectChanges();
-            expect(button).toHaveText('uve.editor.mode.live');
+            expect(button).toHaveText(label);
         });
     });
 });

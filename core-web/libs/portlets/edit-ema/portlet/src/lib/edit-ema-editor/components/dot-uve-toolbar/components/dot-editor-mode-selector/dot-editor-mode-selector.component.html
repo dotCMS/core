@@ -12,7 +12,8 @@
             pRipple
             class="flex flex-column p-menuitem-link menu-item align-items-start"
             [ngClass]="{ 'menu-item--active': item.id === $currentMode() }"
-            (click)="onModeChange(item.id)">
+            (click)="onModeChange(item.id)"
+            [attr.data-testId]="item.id + '-menu-item'">
             <span class="menu-item__label">{{ item.label | dm }}</span>
             <span class="menu-item__description">{{ item.description | dm }}</span>
         </a>
