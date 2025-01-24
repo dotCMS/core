@@ -19,8 +19,6 @@ import {
 } from '../models/dot-edit-content-host-folder-field.interface';
 import { createPaths } from '../utils/functions.util';
 
-export const SYSTEM_HOST_NAME = 'System Host';
-
 @Injectable()
 export class DotEditContentService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
