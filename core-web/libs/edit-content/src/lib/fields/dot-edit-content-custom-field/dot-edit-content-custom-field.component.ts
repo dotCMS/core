@@ -2,13 +2,13 @@ import { JsonPipe, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     ElementRef,
     HostListener,
-    NgZone,
-    OnDestroy,
-    computed,
     inject,
     input,
+    NgZone,
+    OnDestroy,
     signal,
     viewChild
 } from '@angular/core';
@@ -17,7 +17,7 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFormBridge } from '@dotcms/edit-content/bridge';
+import { createFormBridge, FormBridge } from '@dotcms/edit-content/bridge';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
@@ -68,7 +68,7 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
     });
 
-    #formBridge?: DotFormBridge;
+    #formBridge?: FormBridge;
     #controlContainer = inject(ControlContainer);
     #zone = inject(NgZone);
 
@@ -96,7 +96,9 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         const iframeWindow = this.getIframeWindow();
         if (!iframeWindow) return;
 
-        this.#zone.run(() => this.initializeCustomFieldApi(iframeWindow));
+        this.#zone.run(() => {
+            this.initializeCustomFieldApi(iframeWindow);
+        });
     }
 
     private initializeVariables(): Record<string, string> {
@@ -113,10 +115,9 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
     private initializeFormBridge(): void {
         const form = (this.#controlContainer as FormGroupDirective).form;
 
-        this.#formBridge = new DotFormBridge({
+        this.#formBridge = createFormBridge({
             type: 'angular',
             form,
-            iframe: this.iframe().nativeElement,
             zone: this.#zone
         });
     }
@@ -140,11 +141,10 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
 
     private initializeCustomFieldApi(iframeWindow: Window): void {
         try {
-            const api = this.#formBridge?.createPublicApi();
-            if (!api) throw new Error('Form bridge not initialized');
+            if (!this.#formBridge) throw new Error('Form bridge not initialized');
 
             // Assign API only to iframe
-            iframeWindow['DotCustomFieldApi'] = api;
+            iframeWindow['DotCustomFieldApi'] = this.#formBridge;
 
             // Notify that the API is ready
             iframeWindow.postMessage({ type: 'dotcms:form:loaded' }, this.#window.location.origin);
