@@ -1,8 +1,19 @@
 @use "variables" as *;
 
 iframe {
+    height: 0;
+    min-height: 0;
+    border: none;
+    overflow: hidden;
     display: block;
     width: 100%;
+    opacity: 0;
+    transition:
+        height $basic-speed ease-in-out,
+        opacity $basic-speed ease-in;
+    &.loaded {
+        opacity: 1;
+    }
 }
 
 .legacy-custom-field--fullscreen {

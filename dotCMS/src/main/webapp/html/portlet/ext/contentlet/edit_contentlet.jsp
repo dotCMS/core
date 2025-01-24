@@ -86,7 +86,7 @@
 <!--   End dotCMS Block Editor -->
 
 <!--  dotCMS Custom Field Bridge -->
-<script src="/edit-content-bridge/edit-content-bridge.js"></script>
+<script src="/html/js/legacy_custom_field_bridge/edit-content-bridge.js"></script>
 <!--   End dotCMS Custom Field Bridge -->
    
 <style>

@@ -232,7 +232,7 @@
                         <resource>
                             <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
                             <filtering>false</filtering>
-                            <targetPath>edit-content-bridge</targetPath>
+                            <targetPath>html/js/legacy_custom_field_bridge</targetPath>
                         </resource>
                     </webResources>
                 </configuration>

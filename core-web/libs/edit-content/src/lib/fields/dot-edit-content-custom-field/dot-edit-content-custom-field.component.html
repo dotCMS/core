@@ -4,7 +4,7 @@
         [src]="src | safeUrl"
         [class.legacy-custom-field--fullscreen]="$isFullscreen()"
         [ngStyle]="!$isFullscreen() && { height: $variables()?.height, width: $variables()?.width }"
-        [title]="'Content Type ' + $field().variable + ' and field ' + $field().name"
+        [title]="$iframeTitle()"
         class="legacy-custom-field"
         #iframe
         data-testId="custom-field-iframe"

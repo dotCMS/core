@@ -1,5 +1,6 @@
 import { JsonPipe, NgStyle } from '@angular/common';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
@@ -21,6 +22,10 @@ import { createFormBridge, FormBridge } from '@dotcms/edit-content/bridge';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
+/**
+ * This component is used to render a custom field in the DotCMS content editor.
+ * It uses an iframe to render the custom field and provides a form bridge to communicate with the custom field.
+ */
 @Component({
     selector: 'dot-edit-content-custom-field',
     standalone: true,
@@ -41,17 +46,41 @@ import { WINDOW } from '@dotcms/utils';
         }
     ]
 })
-export class DotEditContentCustomFieldComponent implements OnDestroy {
+export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewInit {
+    /**
+     * The field to render.
+     */
     $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    /**
+     * The content type to render the field for.
+     */
     $contentType = input<string>(null, { alias: 'contentType' });
+    /**
+     * The iframe element to render the custom field in.
+     */
     iframe = viewChild.required<ElementRef<HTMLIFrameElement>>('iframe');
 
+    /**
+     * The window object.
+     */
     #window = inject(WINDOW);
+    /**
+     * The allowed origins to receive messages from.
+     */
     private readonly ALLOWED_ORIGINS = [this.#window.location.origin];
 
+    /**
+     * Whether the iframe is in fullscreen mode.
+     */
     $isFullscreen = signal(false);
+    /**
+     * The variables to pass to the custom field.
+     */
     $variables = signal<Record<string, string>>({});
 
+    /**
+     * The source URL for the custom field.
+     */
     $src = computed(() => {
         const field = this.$field();
         const contentType = this.$contentType();
@@ -68,12 +97,42 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
     });
 
-    #formBridge?: FormBridge;
+    /**
+     * The title for the iframe.
+     */
+    $iframeTitle = computed(() => {
+        const field = this.$field();
+
+        return field ? `Content Type ${field.variable} and field ${field.name}` : '';
+    });
+
+    /**
+     * The form bridge to communicate with the custom field.
+     */
+    #formBridge: FormBridge;
+    /**
+     * The control container to get the form.
+     */
     #controlContainer = inject(ControlContainer);
+    /**
+     * The zone to run the code in.
+     */
     #zone = inject(NgZone);
 
+    /**
+     * The form to get the form.
+     */
     $form = computed(() => (this.#controlContainer as FormGroupDirective).form);
 
+    /**
+     * The cleanup function for the resize observer.
+     */
+    private resizeCleanup?: () => void;
+
+    /**
+     * Handles messages from the custom field and toggles fullscreen mode.
+     * @param event - The message event.
+     */
     @HostListener('window:message', ['$event'])
     onMessageFromCustomField({ data, origin }: MessageEvent) {
         if (!this.ALLOWED_ORIGINS.includes(origin)) {
@@ -89,7 +148,11 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         }
     }
 
+    /**
+     * Handles the iframe load event.
+     */
     onIframeLoad() {
+        this.iframe().nativeElement.classList.add('loaded');
         this.initializeFormBridge();
         this.$variables.set(this.initializeVariables());
 
@@ -101,6 +164,10 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         });
     }
 
+    /**
+     * Initializes the variables for the custom field.
+     * @returns The variables for the custom field.
+     */
     private initializeVariables(): Record<string, string> {
         return this.$field().fieldVariables.reduce(
             (acc, { key, value }) => {
@@ -112,6 +179,9 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         );
     }
 
+    /**
+     * Initializes the form bridge.
+     */
     private initializeFormBridge(): void {
         const form = (this.#controlContainer as FormGroupDirective).form;
 
@@ -122,6 +192,10 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         });
     }
 
+    /**
+     * Gets the iframe window.
+     * @returns The iframe window or null if it is not initialized.
+     */
     private getIframeWindow(): Window | null {
         if (!this.iframe()) {
             console.warn('Iframe not initialized');
@@ -139,6 +213,10 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         return iframeWindow;
     }
 
+    /**
+     * Initializes the custom field API.
+     * @param iframeWindow - The iframe window.
+     */
     private initializeCustomFieldApi(iframeWindow: Window): void {
         try {
             if (!this.#formBridge) throw new Error('Form bridge not initialized');
@@ -153,7 +231,59 @@ export class DotEditContentCustomFieldComponent implements OnDestroy {
         }
     }
 
+    /**
+     * Cleans up the custom field API and the resize observer.
+     */
     ngOnDestroy(): void {
         this.#formBridge?.destroy();
+        // Cleanup resize observer if it exists
+        if (this.resizeCleanup) {
+            this.resizeCleanup();
+        }
+    }
+
+    /**
+     * Adjusts the iframe height and sets up the resize observer.
+     */
+    ngAfterViewInit() {
+        this.resizeCleanup = this.adjustIframeHeight();
+    }
+
+    /**
+     * Adjusts the iframe height and sets up the resize observer.
+     */
+    private adjustIframeHeight() {
+        const iframe = this.iframe().nativeElement;
+
+        // Set initial height to 0 to prevent the 150px default
+        iframe.style.height = '0px';
+
+        const resizeObserver = new ResizeObserver(() => {
+            try {
+                const contentHeight = iframe.contentWindow?.document.documentElement.scrollHeight;
+                if (contentHeight) {
+                    iframe.style.height = `${contentHeight}px`;
+                }
+            } catch (error) {
+                console.warn('Error adjusting iframe height:', error);
+            }
+        });
+
+        iframe.onload = () => {
+            try {
+                // Observe iframe content for size changes
+                resizeObserver.observe(iframe.contentWindow?.document.body as Element);
+
+                // Initial height adjustment
+                const contentHeight = iframe.contentWindow?.document.documentElement.scrollHeight;
+                if (contentHeight) {
+                    iframe.style.height = `${contentHeight}px`;
+                }
+            } catch (error) {
+                console.warn('Error setting up iframe resize observer:', error);
+            }
+        };
+
+        return () => resizeObserver.disconnect();
     }
 }
