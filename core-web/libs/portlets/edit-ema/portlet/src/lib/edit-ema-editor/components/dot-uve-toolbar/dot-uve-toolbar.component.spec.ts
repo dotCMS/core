@@ -111,7 +111,8 @@ const baseUVEState = {
     orientation: signal(''),
     clearDeviceAndSocialMedia: jest.fn(),
     device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
-    $unlockButton: signal(null)
+    $unlockButton: signal(null),
+    socialMedia: signal(null)
 };
 
 const personaEventMock = {
@@ -624,6 +625,29 @@ describe('DotUveToolbarComponent', () => {
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
             expect(workflowActions).toBeNull();
+        });
+
+        describe('calendar', () => {
+            it('should show calendar when in preview mode and socialMedia is false', () => {
+                baseUVEState.socialMedia.set(null);
+                spectator.detectChanges();
+
+                expect(spectator.query('p-calendar')).toBeTruthy();
+            });
+
+            it('should not show calendar when socialMedia has a value', () => {
+                baseUVEState.socialMedia.set('faceboook');
+                spectator.detectChanges();
+
+                expect(spectator.query('p-calendar')).toBeFalsy();
+            });
+
+            it('should not show calendar when not in preview mode', () => {
+                baseUVEState.$isPreviewMode.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query('p-calendar')).toBeFalsy();
+            });
         });
     });
 

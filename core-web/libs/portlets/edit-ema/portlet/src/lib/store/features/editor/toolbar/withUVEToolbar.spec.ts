@@ -326,7 +326,7 @@ describe('withEditor', () => {
                 expect(store.viewParams()).toEqual({
                     device: iphone.inode,
                     orientation: Orientation.LANDSCAPE,
-                    seo: undefined
+                    seo: null
                 });
             });
 
@@ -340,7 +340,7 @@ describe('withEditor', () => {
                 expect(store.viewParams()).toEqual({
                     device: iphone.inode,
                     orientation: Orientation.PORTRAIT,
-                    seo: undefined
+                    seo: null
                 });
             });
         });
@@ -369,9 +369,9 @@ describe('withEditor', () => {
                     expect(store.isEditState()).toBe(true);
                     expect(store.orientation()).toBe(null);
                     expect(store.viewParams()).toEqual({
-                        device: undefined,
-                        orientation: undefined,
-                        seo: undefined
+                        device: null,
+                        orientation: null,
+                        seo: null
                     });
                 });
             });

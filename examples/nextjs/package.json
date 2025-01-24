@@ -9,9 +9,9 @@
         "lint": "next lint"
     },
     "dependencies": {
-        "@dotcms/client": "0.0.1-alpha.54",
-        "@dotcms/experiments": "0.0.1-alpha.54",
-        "@dotcms/react": "0.0.1-alpha.54",
+        "@dotcms/client": "latest",
+        "@dotcms/experiments": "latest",
+        "@dotcms/react": "latest",
         "next": "^14.2.16",
         "react": "^18",
         "react-dom": "^18"

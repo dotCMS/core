@@ -16,6 +16,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -35,6 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -748,7 +750,9 @@ public class VersionableAPIImpl implements VersionableAPI {
 	@Override
 	@CloseDBIfOpened
 	public List<ContentletVersionInfo> findContentletVersionInfos(final String identifier) throws DotDataException, DotStateException {
-	  return versionableFactory.findAllContentletVersionInfos(identifier);
+
+        Logger.debug(this, "Finding the contentlet version infos, for the id: " + identifier);
+	    return versionableFactory.findAllContentletVersionInfos(identifier);
 	}
 
     @Override
