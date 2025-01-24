@@ -19,6 +19,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { UVE_MODE_TO_PAGE_MODE } from '../shared/consts';
+import { PAGE_MODE } from '../shared/enums';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
 import { cleanPageURL, createPageApiUrlWithQueryParams } from '../utils';
@@ -109,7 +110,7 @@ export class DotPageApiService {
         const url = cleanPageURL(params.url);
 
         const pageType = clientHost ? 'json' : 'render';
-        const mode = UVE_MODE_TO_PAGE_MODE[editorMode];
+        const mode = UVE_MODE_TO_PAGE_MODE[editorMode] ?? PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id,

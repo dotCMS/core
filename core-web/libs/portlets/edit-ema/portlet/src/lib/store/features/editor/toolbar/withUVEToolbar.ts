@@ -185,12 +185,13 @@ export function withUVEToolbar() {
             }),
             $showWorkflowsActions: computed<boolean>(() => {
                 const isPreviewMode = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
+                const isLiveMode = store.pageParams()?.editorMode === UVE_MODE.LIVE;
 
                 const isDefaultVariant = getIsDefaultVariant(
                     store.pageAPIResponse()?.viewAs.variantId
                 );
 
-                return !isPreviewMode && isDefaultVariant;
+                return !isPreviewMode && !isLiveMode && isDefaultVariant;
             })
         })),
         withMethods((store) => ({

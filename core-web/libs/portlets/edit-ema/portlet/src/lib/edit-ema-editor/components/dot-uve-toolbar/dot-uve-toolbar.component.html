@@ -4,7 +4,7 @@
 
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
-        <dot-editor-mode-selector />
+        <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
         @if (preview || live) {
             <ng-container [ngTemplateOutlet]="previewLeftOptionsTemplate"></ng-container>
         } @else {
