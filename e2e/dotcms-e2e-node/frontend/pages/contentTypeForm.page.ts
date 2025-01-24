@@ -3,6 +3,12 @@ import { Page } from "@playwright/test";
 export class ContentTypeFormPage {
   private dropZone = this.page.locator('div[dragula="fields-bag"]');
   private dotDialogInput = this.page.locator("input#name");
+  private textFieldItem = this.page.locator(
+    "[data-clazz='com.dotcms.contenttype.model.field.ImmutableTextField']",
+  );
+  private siteOrFolderFieldItem = this.page.locator(
+    "[data-clazz='com.dotcms.contenttype.model.field.ImmutableHostFolderField']",
+  );
   private dotDialogAcceptAction = this.page.getByTestId(
     "dotDialogAcceptAction",
   );
@@ -15,19 +21,13 @@ export class ContentTypeFormPage {
   }
 
   async addTextField() {
-    await this.page
-      .locator("li")
-      .getByText("Text", { exact: true })
-      .dragTo(this.dropZone);
+    await this.textFieldItem.dragTo(this.dropZone);
     await this.dotDialogInput.fill("Text Field");
     await this.dotDialogAcceptAction.click();
   }
 
   async addSiteOrFolderField() {
-    await this.page
-      .locator("li")
-      .getByText("Site or Folder", { exact: true })
-      .dragTo(this.dropZone);
+    await this.siteOrFolderFieldItem.dragTo(this.dropZone);
     await this.dotDialogInput.fill("Site or Folder Field");
     await this.dotDialogAcceptAction.click();
   }
