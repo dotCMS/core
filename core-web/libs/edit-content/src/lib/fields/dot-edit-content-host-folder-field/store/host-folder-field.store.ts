@@ -74,7 +74,7 @@ export const HostFolderFiledStore = signalStore(
                             .getSitesTreePath({
                                 perPage: PEER_PAGE_LIMIT,
                                 filter: '*',
-                                page: 1,
+                                page: 1
                             })
                             .pipe(
                                 map((sites) => {

@@ -10,7 +10,6 @@ import { SYSTEM_HOST_NAME, HostFolderFiledStore } from './host-folder-field.stor
 
 import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK } from '../../../utils/mocks';
 
-
 describe('HostFolderFiledStore', () => {
     let store: InstanceType<typeof HostFolderFiledStore>;
     let service: SpyObject<DotEditContentService>;

@@ -91,7 +91,7 @@ export class DotEditContentService {
         return this.#dotWorkflowActionsFireService.saveContentlet(data);
     }
 
-     /**
+    /**
      * Retrieves and transforms site data into TreeNode format for the site/folder field.
      * Optionally filters out the System Host based on the isRequired parameter.
      *
@@ -102,7 +102,7 @@ export class DotEditContentService {
      * @param {boolean} data.isRequired - If true, excludes System Host from results
      * @returns {Observable<TreeNodeItem[]>} Observable that emits an array of TreeNodeItems
      */
-     getSitesTreePath(data: {
+    getSitesTreePath(data: {
         filter: string;
         perPage?: number;
         page?: number;
