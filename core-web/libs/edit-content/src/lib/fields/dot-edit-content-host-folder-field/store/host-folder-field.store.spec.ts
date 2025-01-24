@@ -4,34 +4,36 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
+import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
+
 import { SYSTEM_HOST_NAME, HostFolderFiledStore } from './host-folder-field.store';
 
 import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK } from '../../../utils/mocks';
-import { HostFieldService } from '../services/host-field.service';
+
 
 describe('HostFolderFiledStore', () => {
     let store: InstanceType<typeof HostFolderFiledStore>;
-    let service: SpyObject<HostFieldService>;
+    let service: SpyObject<DotEditContentService>;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 HostFolderFiledStore,
-                mockProvider(HostFieldService, {
-                    getSites: jest.fn(() => of(TREE_SELECT_SITES_MOCK))
+                mockProvider(DotEditContentService, {
+                    getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK))
                 })
             ]
         });
 
         store = TestBed.inject(HostFolderFiledStore);
 
-        service = TestBed.inject(HostFieldService) as SpyObject<HostFieldService>;
+        service = TestBed.inject(DotEditContentService) as SpyObject<DotEditContentService>;
     });
 
     describe('Method: loadSites', () => {
         describe('System Host isRequired', () => {
             it('should include System Host when isRequired is false.', () => {
-                service.getSites.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
                 const props = {
                     path: null,
                     isRequired: false
@@ -45,7 +47,7 @@ describe('HostFolderFiledStore', () => {
         describe('when path is not empty', () => {
             it('should select the node if the path is not empty and not required', () => {
                 const node = TREE_SELECT_SITES_MOCK[0];
-                service.getSites.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
                 const props = {
                     path: node.label,
                     isRequired: false
@@ -57,7 +59,7 @@ describe('HostFolderFiledStore', () => {
 
             it('should select the node if the path is not empty and is required', () => {
                 const node = TREE_SELECT_SITES_MOCK[0];
-                service.getSites.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
                 const props = {
                     path: node.label,
                     isRequired: true
@@ -70,7 +72,7 @@ describe('HostFolderFiledStore', () => {
 
         describe('when path is empty', () => {
             it('should select System Host if the path is not empty and not required', () => {
-                service.getSites.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
                 const props = {
                     path: null,
                     isRequired: false
@@ -82,7 +84,7 @@ describe('HostFolderFiledStore', () => {
 
             it('should select current site if the path is not empty and is required', () => {
                 const hostNode = TREE_SELECT_SITES_MOCK[1];
-                service.getSites.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
                 service.getCurrentSiteAsTreeNodeItem.mockReturnValue(of(hostNode));
                 const props = {
                     path: null,

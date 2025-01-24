@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 
-import { Site } from '@dotcms/dotcms-js';;
+import { Site } from '@dotcms/dotcms-js';
 
 /**
  * Create a fake Site object.

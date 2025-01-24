@@ -8,9 +8,12 @@ import { computed, inject } from '@angular/core';
 import { tap, exhaustMap, switchMap, map, filter } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
-import { TreeNodeItem, TreeNodeSelectItem } from '../models/tree-item.model';
-import { HostFieldService } from '../services/host-field.service';
+import {
+    TreeNodeItem,
+    TreeNodeSelectItem
+} from '../../../models/dot-edit-content-host-folder-field.interface';
 
 export const PEER_PAGE_LIMIT = 7000;
 
@@ -57,7 +60,7 @@ export const HostFolderFiledStore = signalStore(
         })
     })),
     withMethods((store) => {
-        const hostFieldService = inject(HostFieldService);
+        const dotEditContentService = inject(DotEditContentService);
 
         return {
             /**
@@ -67,14 +70,22 @@ export const HostFolderFiledStore = signalStore(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(({ path, isRequired }) => {
-                        return hostFieldService
-                            .getSites({
+                        return dotEditContentService
+                            .getSitesTreePath({
                                 perPage: PEER_PAGE_LIMIT,
                                 filter: '*',
                                 page: 1,
-                                isRequired
                             })
                             .pipe(
+                                map((sites) => {
+                                    if (isRequired) {
+                                        return sites.filter(
+                                            (site) => site.label !== SYSTEM_HOST_NAME
+                                        );
+                                    }
+
+                                    return sites;
+                                }),
                                 tapResponse({
                                     next: (sites) =>
                                         patchState(store, {
@@ -100,7 +111,7 @@ export const HostFolderFiledStore = signalStore(
                         }
 
                         if (isRequired) {
-                            return hostFieldService.getCurrentSiteAsTreeNodeItem().pipe(
+                            return dotEditContentService.getCurrentSiteAsTreeNodeItem().pipe(
                                 switchMap((currentSite) => {
                                     const node = sites.find(
                                         (item) => item.label === currentSite.label
@@ -134,7 +145,7 @@ export const HostFolderFiledStore = signalStore(
                             return of(response);
                         }
 
-                        return hostFieldService.buildTreeByPaths(path);
+                        return dotEditContentService.buildTreeByPaths(path);
                     }),
                     tap(({ node, tree }) => {
                         const changes: Partial<HostFolderFiledState> = {};
@@ -173,7 +184,7 @@ export const HostFolderFiledStore = signalStore(
 
                         const fullPath = `${hostname}/${path}`;
 
-                        return hostFieldService.getFoldersTreeNode(fullPath).pipe(
+                        return dotEditContentService.getFoldersTreeNode(fullPath).pipe(
                             tap(({ folders }) => {
                                 node.leaf = true;
                                 node.icon = 'pi pi-folder-open';
