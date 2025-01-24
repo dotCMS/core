@@ -15,6 +15,22 @@ describe('DotEditContentCustomFieldComponent', () => {
         custom: new FormControl('')
     });
 
+    const FIELD_VARIABLES = {
+        height: '300px',
+        width: '100%'
+    };
+
+    const CUSTOM_FIELD_WITH_VARIABLES = {
+        ...CUSTOM_FIELD_MOCK,
+        fieldVariables: Object.entries(FIELD_VARIABLES).map(([key, value]) => ({
+            key,
+            value,
+            id: key,
+            fieldId: '123',
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
+        }))
+    };
+
     const createComponent = createComponentFactory({
         component: DotEditContentCustomFieldComponent,
         detectChanges: false,
@@ -30,7 +46,7 @@ describe('DotEditContentCustomFieldComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                $field: CUSTOM_FIELD_MOCK,
+                $field: CUSTOM_FIELD_WITH_VARIABLES,
                 $contentType: MOCK_CONTENT_TYPE_NAME
             }
         });

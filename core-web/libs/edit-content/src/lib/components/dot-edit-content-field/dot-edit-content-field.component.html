@@ -1,11 +1,18 @@
+@let field = $field();
+@let contentlet = $contentlet();
+@let contentType = $contentType();
+@let showLabel = $showLabel();
+
 <ng-template #labelTemplate>
-    <label
-        [attr.data-testId]="'label-' + field.variable"
-        [checkIsRequiredControl]="field.variable"
-        [for]="field.variable"
-        dotFieldRequired>
-        {{ field.name }}
-    </label>
+    @if (showLabel) {
+        <label
+            [attr.data-testId]="'label-' + field.variable"
+            [checkIsRequiredControl]="field.variable"
+            [for]="field.variable"
+            dotFieldRequired>
+            {{ field.name }}
+        </label>
+    }
 </ng-template>
 
 @switch (field.fieldType) {

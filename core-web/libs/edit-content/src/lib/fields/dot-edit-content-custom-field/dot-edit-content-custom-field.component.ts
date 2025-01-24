@@ -1,4 +1,4 @@
-import { JsonPipe, NgStyle } from '@angular/common';
+import { NgStyle } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -29,7 +29,7 @@ import { WINDOW } from '@dotcms/utils';
 @Component({
     selector: 'dot-edit-content-custom-field',
     standalone: true,
-    imports: [SafeUrlPipe, NgStyle, DotIconModule, ButtonModule, JsonPipe],
+    imports: [SafeUrlPipe, NgStyle, DotIconModule, ButtonModule],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,7 +58,7 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     /**
      * The iframe element to render the custom field in.
      */
-    iframe = viewChild.required<ElementRef<HTMLIFrameElement>>('iframe');
+    iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
 
     /**
      * The window object.
@@ -152,7 +152,10 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      * Handles the iframe load event.
      */
     onIframeLoad() {
-        this.iframe().nativeElement.classList.add('loaded');
+        const iframeEl = this.iframe()?.nativeElement;
+        if (!iframeEl) return;
+
+        iframeEl.classList.add('loaded');
         this.initializeFormBridge();
         this.$variables.set(this.initializeVariables());
 
@@ -194,16 +197,16 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
 
     /**
      * Gets the iframe window.
-     * @returns The iframe window or null if it is not initialized.
      */
     private getIframeWindow(): Window | null {
-        if (!this.iframe()) {
+        const iframeEl = this.iframe()?.nativeElement;
+        if (!iframeEl) {
             console.warn('Iframe not initialized');
 
             return null;
         }
 
-        const iframeWindow = this.iframe().nativeElement.contentWindow;
+        const iframeWindow = iframeEl.contentWindow;
         if (!iframeWindow) {
             console.warn('Iframe window not available');
 
@@ -253,37 +256,50 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      * Adjusts the iframe height and sets up the resize observer.
      */
     private adjustIframeHeight() {
-        const iframe = this.iframe().nativeElement;
+        const iframeEl = this.iframe()?.nativeElement;
+        if (!iframeEl) {
+            console.warn('Iframe not initialized');
+
+            return () => {
+                // nothing to do
+            };
+        }
 
         // Set initial height to 0 to prevent the 150px default
-        iframe.style.height = '0px';
+        iframeEl.style.height = '0px';
 
         const resizeObserver = new ResizeObserver(() => {
             try {
-                const contentHeight = iframe.contentWindow?.document.documentElement.scrollHeight;
+                const contentHeight = iframeEl.contentWindow?.document.documentElement.scrollHeight;
                 if (contentHeight) {
-                    iframe.style.height = `${contentHeight}px`;
+                    iframeEl.style.height = `${contentHeight}px`;
                 }
             } catch (error) {
                 console.warn('Error adjusting iframe height:', error);
             }
         });
 
-        iframe.onload = () => {
+        const handleIframeLoad = () => {
             try {
-                // Observe iframe content for size changes
-                resizeObserver.observe(iframe.contentWindow?.document.body as Element);
-
-                // Initial height adjustment
-                const contentHeight = iframe.contentWindow?.document.documentElement.scrollHeight;
-                if (contentHeight) {
-                    iframe.style.height = `${contentHeight}px`;
+                const body = iframeEl.contentWindow?.document.body;
+                if (body) {
+                    resizeObserver.observe(body);
+                    const contentHeight =
+                        iframeEl.contentWindow?.document.documentElement.scrollHeight;
+                    if (contentHeight) {
+                        iframeEl.style.height = `${contentHeight}px`;
+                    }
                 }
             } catch (error) {
                 console.warn('Error setting up iframe resize observer:', error);
             }
         };
 
-        return () => resizeObserver.disconnect();
+        iframeEl.addEventListener('load', handleIframeLoad);
+
+        return () => {
+            resizeObserver.disconnect();
+            iframeEl.removeEventListener('load', handleIframeLoad);
+        };
     }
 }

@@ -1,5 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostBinding, inject, Input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    HostBinding,
+    inject,
+    input
+} from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
@@ -68,10 +75,32 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 })
 export class DotEditContentFieldComponent {
     @HostBinding('class') class = 'field';
-    @Input() field!: DotCMSContentTypeField;
-    @Input() contentlet: DotCMSContentlet | undefined;
-    @Input() contentType!: string;
+
+    /**
+     * The field.
+     */
+    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+
+    /**
+     * The contentlet.
+     */
+    $contentlet = input<DotCMSContentlet | undefined>(null, { alias: 'contentlet' });
+
+    /**
+     * The content type.
+     */
+    $contentType = input<string>(null, { alias: 'contentType' });
 
     readonly fieldTypes = FIELD_TYPES;
     readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
+
+    /**
+     * Whether to show the label.
+     */
+    $showLabel = computed(() => {
+        const field = this.$field();
+        if (!field) return true;
+
+        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
+    });
 }
