@@ -48,8 +48,7 @@ test.describe("site or folder field", () => {
     await newEditContentFormPage.save();
     await listingContentPage.goTo(contentTypeName);
     await listingContentPage.clickFirstContentRow();
-
-    console.log('selectedFolder', selectedFolder);
+    
     await expect(locatorField).toHaveText(`//${selectedFolder}`);
   });
 });
