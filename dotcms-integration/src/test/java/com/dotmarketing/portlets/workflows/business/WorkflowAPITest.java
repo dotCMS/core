@@ -4293,12 +4293,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
         permissionsToSave = new ArrayList<>();
         permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, testContentTypeStruct.getPermissionId(), role.getId(),
                 (PermissionAPI.PERMISSION_EDIT), false));
-            /*permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(), role.getId(),
-                    (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT), true));
-            permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(), role.getId(),
-                    (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_WRITE), true));
-            permissionsToSave.add(new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(), role.getId(),
-                    (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH), true));*/
         permissionAPI.assignPermissions(permissionsToSave, testContentTypeStruct, user, false);
 
         // Create a test contentlet
