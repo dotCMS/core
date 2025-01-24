@@ -43,14 +43,14 @@ describe('HostFolderFiledStore', () => {
             });
 
             it('should not include System Host when isRequired is true.', () => {
-                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));	
-                const props = {	
-                    path: null,	
-                    isRequired: true	
-                };	
-                store.loadSites(props);	
-                const hasSystemHost = store.tree().some((item) => item.label === SYSTEM_HOST_NAME);	
-                expect(hasSystemHost).toBe(false);	
+                service.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
+                const props = {
+                    path: null,
+                    isRequired: true
+                };
+                store.loadSites(props);
+                const hasSystemHost = store.tree().some((item) => item.label === SYSTEM_HOST_NAME);
+                expect(hasSystemHost).toBe(false);
             });
         });
 
