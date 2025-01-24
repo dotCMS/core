@@ -56,6 +56,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang3.BooleanUtils;
@@ -1007,10 +1008,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 *
+	 * We need this to be unique when telling apart contentlets with the same identifier but different status like live and working
+	 * Using the identifier as the hashcode is not enough because the identifier is the same for both live and working contentlets
 	 */
 	public String getPermissionId() {
-		return getIdentifier();
+		return getInode();
 	}
 
 	/**
