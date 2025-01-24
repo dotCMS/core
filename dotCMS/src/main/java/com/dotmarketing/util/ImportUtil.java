@@ -16,6 +16,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -49,6 +50,19 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.util.importer.AbstractImportValidationMessage.ValidationMessageType;
+import com.dotmarketing.util.importer.AbstractSpecialHeaderInfo.SpecialHeaderType;
+import com.dotmarketing.util.importer.ContentSummary;
+import com.dotmarketing.util.importer.HeaderValidationCodes;
+import com.dotmarketing.util.importer.ImportFileInfo;
+import com.dotmarketing.util.importer.ImportHeaderInfo;
+import com.dotmarketing.util.importer.ImportHeaderValidationResult;
+import com.dotmarketing.util.importer.ImportResult;
+import com.dotmarketing.util.importer.ImportResultConverter;
+import com.dotmarketing.util.importer.ImportResultData;
+import com.dotmarketing.util.importer.ImportValidationMessage;
+import com.dotmarketing.util.importer.ProcessedData;
+import com.dotmarketing.util.importer.SpecialHeaderInfo;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -68,6 +82,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -280,9 +295,12 @@ public class ImportUtil {
         HashSet<String> keyContentUpdated = new HashSet<>();
         StringBuffer choosenKeyField = new StringBuffer();
 
+        // Data structures to be populated by header validation
         HashMap<Integer, Field> headers = new HashMap<>();
         HashMap<Integer, Field> keyFields = new HashMap<>();
         HashMap<Integer, Relationship> relationships = new HashMap<>();
+        HashMap<Integer, Boolean> onlyParent = new HashMap<>();
+        HashMap<Integer, Boolean> onlyChild = new HashMap<>();
 
         //Get unique fields for structure
         for(Field field : FieldsCache.getFieldsByStructureInode(contentType.getInode())){
@@ -294,15 +312,27 @@ public class ImportUtil {
         //Parsing the file line per line
         try {
             if ((csvHeaders != null) || (csvreader.readHeaders())) {
-                //Importing headers from the first file line
-                HashMap<Integer,Boolean> onlyParent=new HashMap<>();
-                HashMap<Integer,Boolean> onlyChild=new HashMap<>();
+
+                // Process headers and get validation result
+                ImportHeaderValidationResult headerValidation;
                 if (csvHeaders != null) {
-                    importHeaders(csvHeaders, contentType, keyfields, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
+                    headerValidation = importHeaders(csvHeaders, contentType, keyfields,
+                            isMultilingual, user, headers, keyFields, uniqueFields, relationships,
+                            onlyChild, onlyParent);
                 } else {
-                    importHeaders(csvreader.getHeaders(), contentType, keyfields, isMultilingual, user, results, headers, keyFields, uniqueFields,relationships,onlyChild,onlyParent);
+                    headerValidation = importHeaders(csvreader.getHeaders(), contentType, keyfields,
+                            isMultilingual, user, headers, keyFields, uniqueFields, relationships,
+                            onlyChild, onlyParent);
                 }
+
+                // ---
+                // Convert validation result to legacy format
+                ImportResultConverter.addValidationResultsToLegacyMap(headerValidation, results);
+                errors += results.get("errors").size();
+                // ---
+
                 lineNumber++;
+
                 // Log preview/import status every 100 processed records
                 //Reading the whole file
                 if (headers.size() > 0) {
@@ -429,281 +459,805 @@ public class ImportUtil {
         return results;
     }
 
-	/**
-	 * Reads the CSV file headers in order to find inconsistencies or errors.
-	 * Such situations will be saved in the {@code results} list.
-	 *
-	 * @param headerLine
-	 *            - The line in the CSV file containing the data headers.
-	 * @param contentType
-	 *            - The Content Type that the data in this file is associated
-	 *            to.
-	 * @param keyFieldsInodes
-	 *            - The Inodes of the fields used to associated existing dotCMS
-	 *            contentlets with the information in this file. Can be empty.
-	 * @param isMultilingual
-	 *            - If set to {@code true}, the CSV file will import contents in
-	 *            more than one language. Otherwise, set to {@code false}.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param results
-	 *            - The status object that keeps track of potential errors,
-	 *            inconsistencies, or warnings.
-	 * @param headers
-	 * @param keyFields
-	 *            - The fields used to associated existing dotCMS contentlets
-	 *            with the information in this file. Can be empty.
-	 * @param uniqueFields
-	 *            - The list of fields that are unique (if any).
-	 * @param relationships
-	 *            - Content relationships (if any).
-	 * @param onlyChild
-	 *            - Contains content relationships that are only child
-	 *            relationships (header name ends with {@code "-RELCHILD"}).
-	 * @param onlyParent
-	 *            - Contains content relationships that are only parent
-	 *            relationships (header name ends with {@code "-RELPARENT"}).
-	 * @throws Exception
-	 *             An error occurred when validating the CSV data.
-	 */
-    private static void importHeaders(String[] headerLine, Structure contentType, String[] keyFieldsInodes, boolean isMultilingual, User user, HashMap<String, List<String>> results, HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships,HashMap<Integer,Boolean> onlyChild, HashMap<Integer,Boolean> onlyParent) throws Exception  {
+    /**
+     * Validates and processes the headers from a CSV import file. This method performs
+     * comprehensive validation of the header line including:
+     * <ul>
+     *   <li>Basic format validation</li>
+     *   <li>Content type field matching</li>
+     *   <li>Relationship field processing</li>
+     *   <li>Multilingual requirements</li>
+     *   <li>Key fields validation</li>
+     *   <li>Unique fields processing</li>
+     * </ul>
+     *
+     * @param headerLine      CSV file header line to validate
+     * @param contentType     Content Type structure to validate against
+     * @param keyFieldsInodes Array of field inodes used as keys for content matching
+     * @param isMultilingual  Whether the import supports multiple languages
+     * @param user            User performing the import
+     * @param headers         Map to store validated header-to-field mappings
+     * @param keyFields       Map to store validated key field mappings
+     * @param uniqueFields    List of fields marked as unique in the content type
+     * @param relationships   Map to store relationship field mappings
+     * @param onlyChild       Map tracking child-only relationships
+     * @param onlyParent      Map tracking parent-only relationships
+     * @return Validation result containing header information and validation messages
+     * @throws Exception if validation fails or processing encounters errors
+     */
+    private static ImportHeaderValidationResult importHeaders(final String[] headerLine,
+            final Structure contentType, final String[] keyFieldsInodes,
+            final boolean isMultilingual, final User user, final HashMap<Integer, Field> headers,
+            final HashMap<Integer, Field> keyFields, final List<Field> uniqueFields,
+            final HashMap<Integer, Relationship> relationships,
+            final HashMap<Integer, Boolean> onlyChild, final HashMap<Integer, Boolean> onlyParent)
+            throws Exception {
 
-        int importableFields = 0;
-
-        //Importing headers and storing them in a hashmap to be reused later in the whole import process
-        final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
-        final List<Relationship> contentTypeRelationships = APILocator.getRelationshipAPI()
-                .byContentType(contentType);
-        final Map<String, Relationship> contentTypeRelationshipsMap = new LowerKeyMap<>();
-        final List<String> requiredFields = new ArrayList<>();
+        // Create structured results for validation tracking
+        final var validationBuilder = ImportHeaderValidationResult.builder();
         final List<String> headerFields = new ArrayList<>();
 
-        //Saves relationships as map for efficient search in getRelationships method
-        contentTypeRelationshipsMap.putAll(contentTypeRelationships.stream().collect(
-                Collectors.toMap(Relationship::getRelationTypeValue, Function.identity())));
+        // Validate basic header format
+        validateHeaderLineFormat(headerLine, user, validationBuilder);
 
-        for(Field field:fields){
-            if(field.isRequired()){
-            	requiredFields.add(field.getVelocityVarName());
-            }
-        }
+        // Get content type info and create relationship map
+        final ContentTypeInfo typeInfo = getContentTypeInfo(contentType);
+        final Map<String, Relationship> relationshipsMap = createRelationshipMap(
+                typeInfo.relationships
+        );
+
+        // Process and validate headers
+        processHeaders(
+                headerLine, contentType, keyFieldsInodes, isMultilingual,
+                relationshipsMap, headerFields, headers, keyFields,
+                relationships, onlyChild, onlyParent, user, validationBuilder);
+
+        // Validate multilingual requirements if needed
+        validateMultilingualHeaders(isMultilingual, headerFields, validationBuilder);
+
+        // Validate key fields and unique fields
+        validateKeyFields(keyFieldsInodes, headers, user, validationBuilder);
+        processUniqueFields(uniqueFields, user, validationBuilder);
+
+        // Generate summary messages
+        addSummaryMessages(headers.size(), typeInfo.importableFields,
+                relationships.size(), user, validationBuilder);
+
+        // Add context information
+        Map<String, Object> context = new HashMap<>();
+        context.put("headers", headers);
+        context.put("keyFields", keyFields);
+        context.put("relationships", relationships);
+        context.put("onlyChild", onlyChild);
+        context.put("onlyParent", onlyParent);
+        validationBuilder.context(context);
+
+        return validationBuilder.build();
+    }
+
+    /**
+     * Processes and validates header entries from the CSV file. This method handles the detailed
+     * validation of each header column and populates various data structures with the results.
+     *
+     * @param headerLine        Array of header strings to process
+     * @param contentType       Content Type structure to validate against
+     * @param keyFieldsInodes   Array of field inodes used as keys
+     * @param isMultilingual    Whether import is multilingual
+     * @param relationshipsMap  Map of available relationships
+     * @param headerFields      List to store processed header names
+     * @param headers           Map to store header-to-field mappings
+     * @param keyFields         Map to store key field mappings
+     * @param relationships     Map to store relationship mappings
+     * @param onlyChild         Map for child-only relationships
+     * @param onlyParent        Map for parent-only relationships
+     * @param user              User performing the import
+     * @param validationBuilder Builder for validation result
+     * @throws Exception if processing encounters errors
+     */
+    private static void processHeaders(final String[] headerLine,
+            final Structure contentType,
+            final String[] keyFieldsInodes, boolean isMultilingual,
+            final Map<String, Relationship> relationshipsMap, final List<String> headerFields,
+            final HashMap<Integer, Field> headers, final HashMap<Integer, Field> keyFields,
+            final HashMap<Integer, Relationship> relationships,
+            final HashMap<Integer, Boolean> onlyChild, final HashMap<Integer, Boolean> onlyParent,
+            final User user, final ImportHeaderValidationResult.Builder validationBuilder)
+            throws Exception {
+
+        List<String> validHeaders = new ArrayList<>();
+        List<String> invalidHeaders = new ArrayList<>();
+        List<SpecialHeaderInfo> specialHeaders = new ArrayList<>();
+
+        // Process each header
         for (int i = 0; i < headerLine.length; i++) {
-            boolean found = false;
             String header = headerLine[i].replaceAll("'", "");
-
-            if (header.equalsIgnoreCase("Identifier")) {
-                results.get("messages").add(LanguageUtil.get(user, "identifier-field-found-in-import-contentlet-csv-file"));
-                results.get("identifiers").add("" + i);
-                continue;
-            }
-            if (header.equalsIgnoreCase(Contentlet.WORKFLOW_ACTION_KEY)) {
-                results.get("messages").add(LanguageUtil.get(user, "workflow-action-id-field-found-in-import-contentlet-csv-file"));
-                results.get(Contentlet.WORKFLOW_ACTION_KEY).add(StringPool.BLANK + i);
-                continue;
-            }
-
             headerFields.add(header);
 
-            for (Field field : fields) {
-                if (field.getVelocityVarName().equalsIgnoreCase(header)) {
-                    if (field.getFieldType().equals(Field.FieldType.BUTTON.toString())){
-                        found = true;
-                        results.get("warnings").add(
-                                LanguageUtil.get(user, "Header")+" \"" + header
-
-                                +"\" "+ LanguageUtil.get(user, "matches-a-field-of-type-button-this-column-of-data-will-be-ignored"));
-                    }
-                    else if (field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())){
-                        found = true;
-                        results.get("warnings").add(
-                                LanguageUtil.get(user, "Header")+" \"" + header
-                                + "\" "+LanguageUtil.get(user, "matches-a-field-of-type-line-divider-this-column-of-data-will-be-ignored"));
-                    }
-                    else if (field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString())){
-                        found = true;
-                        results.get("warnings").add(
-                                LanguageUtil.get(user, "Header")+" \"" + header
-                                + "\" "+LanguageUtil.get(user, "matches-a-field-of-type-tab-divider-this-column-of-data-will-be-ignored"));
-                    }
-                    else {
-                        found = true;
-                        headers.put(i, field);
-                        for (String fieldInode : keyFieldsInodes) {
-                            if (fieldInode.equals(field.getInode()))
-                                keyFields.put(i, field);
-                        }
-
-                        if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
-
-                            final Relationship fieldRelationship = APILocator.getRelationshipAPI()
-                                    .getRelationshipFromField(field, user);
-                            contentTypeRelationshipsMap
-                                    .put(field.getVelocityVarName().toLowerCase(),
-                                            fieldRelationship);
-                            contentTypeRelationshipsMap
-                                    .remove(fieldRelationship.getRelationTypeValue().toLowerCase());
-
-                            //considering case when importing self-related content
-                            if (fieldRelationship.getChildStructureInode()
-                                    .equals(fieldRelationship.getParentStructureInode())) {
-                                if (fieldRelationship.getParentRelationName() != null
-                                        && fieldRelationship.getParentRelationName()
-                                        .equals(field.getVelocityVarName())) {
-                                    onlyParent.put(i, true);
-                                    onlyChild.put(i, false);
-                                } else if (fieldRelationship.getChildRelationName() != null
-                                        && fieldRelationship.getChildRelationName()
-                                        .equals(field.getVelocityVarName())) {
-                                    onlyParent.put(i, false);
-                                    onlyChild.put(i, true);
-                                }
-                            }
-                        }
-                        break;
-                    }
-                }
+            // Handle special headers first
+            final var specialHeaderInfo = isSpecialHeader(header, i, user, validationBuilder);
+            if (specialHeaderInfo.type() != SpecialHeaderType.NONE) {
+                validHeaders.add(header);
+                specialHeaders.add(specialHeaderInfo);
+                continue;
             }
 
-            /*
-             * We gonna delete -RELPARENT -RELCHILD so we can
-             * search for the relation name. No problem as
-             * we put relationships.put(i,relationship) instead
-             * of header.
-             */
-            boolean onlyP=false;
-            if(header.endsWith("-RELPARENT")) {
-                header = header.substring(0,header.lastIndexOf("-RELPARENT"));
-                onlyP=true;
-            }
-
-            boolean onlyCh=false;
-            if(header.endsWith("-RELCHILD")) {
-                header = header.substring(0,header.lastIndexOf("-RELCHILD"));
-                onlyCh=true;
-            }
-
-            found = getRelationships(relationships, onlyChild, onlyParent, i, found,
-                    header, onlyP, onlyCh, contentTypeRelationshipsMap);
-
-            if ((!found) && !(isMultilingual && (header.equals(languageCodeHeader) || header.equals(countryCodeHeader)))) {
-                results.get("warnings").add(
-                        LanguageUtil.get(user, "Header")+" \"" + header
-                        + "\""+ " "+ LanguageUtil.get(user, "doesn-t-match-any-structure-field-this-column-of-data-will-be-ignored"));
-            }
+            // Process and validate header
+            processAndValidateHeader(
+                    header, i, contentType, headers, keyFieldsInodes, keyFields,
+                    onlyChild, onlyParent, relationshipsMap, relationships,
+                    validHeaders, invalidHeaders, isMultilingual, user, validationBuilder);
         }
 
-        requiredFields.removeAll(headerFields);
+        // Validate required fields
+        List<String> missingHeaders = validateRequiredFields(headerFields, user, contentType,
+                validationBuilder);
 
-        for(String requiredField: requiredFields){
-            results.get("errors").add(LanguageUtil.get(user, "Field")+": \"" + requiredField+ "\" "+LanguageUtil.get(user, "required-field-not-found-in-header"));
+        // Create headerInfo
+        final var headerInfo = ImportHeaderInfo.builder()
+                .totalHeaders(headerLine.length)
+                .validHeaders(validHeaders.toArray(new String[0]))
+                .invalidHeaders(invalidHeaders.toArray(new String[0]))
+                .missingHeaders(missingHeaders.toArray(new String[0]))
+                .validationDetails(new HashMap<>())  // Add validation details if needed
+                .specialHeaders(specialHeaders)
+                .build();
+        validationBuilder.headerInfo(headerInfo);
+    }
+
+    /**
+     * Validates the basic format of header lines from the CSV file. Checks for:
+     * <ul>
+     *   <li>Non-empty header line</li>
+     *   <li>No duplicate header names</li>
+     * </ul>
+     *
+     * @param headerLine        Array of header strings to validate
+     * @param user              User performing the import
+     * @param validationBuilder Builder to accumulate validation messages
+     * @throws LanguageException      If language key lookup fails
+     * @throws DotValidationException If headers are invalid or empty
+     */
+    private static void validateHeaderLineFormat(final String[] headerLine, final User user,
+            final ImportHeaderValidationResult.Builder validationBuilder) throws LanguageException {
+
+        if (headerLine == null || headerLine.length == 0) {
+            validationBuilder.addMessages(ImportValidationMessage.builder()
+                    .type(ValidationMessageType.ERROR)
+                    .code(HeaderValidationCodes.INVALID_HEADER_FORMAT.name())
+                    .message(LanguageUtil.get(user,
+                            "No-headers-found-on-the-file-nothing-will-be-imported"))
+                    .build());
+            throw new DotValidationException("Invalid header format");
         }
 
-        for (Field field : fields) {
-            if (isImportableField(field)){
-                importableFields++;
+        // Validate no duplicate headers
+        Set<String> uniqueHeaders = new HashSet<>();
+        for (int i = 0; i < headerLine.length; i++) {
+            String header = headerLine[i].replaceAll("'", "").toLowerCase();
+            if (!uniqueHeaders.add(header)) {
+                validationBuilder.addMessages(ImportValidationMessage.builder()
+                        .type(ValidationMessageType.ERROR)
+                        .code(HeaderValidationCodes.DUPLICATE_HEADER.name())
+                        .field(headerLine[i])
+                        .lineNumber(1)
+                        .message(LanguageUtil.get(user, "Duplicate-header-found") + ": "
+                                + headerLine[i])
+                        .build());
             }
-        }
-
-        //Checking keyField selected by the user against the headers
-        for (String keyField : keyFieldsInodes) {
-            boolean found = false;
-            for (Field headerField : headers.values()) {
-                if (headerField.getInode().equals(keyField)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                results.get("errors").add(
-                        LanguageUtil.get(user, "Key-field")+": \"" + FieldFactory.getFieldByInode(keyField).getVelocityVarName()
-                        + "\" "+LanguageUtil.get(user, "choosen-doesn-t-match-any-of-theh-eaders-found-in-the-file"));
-            }
-        }
-
-        if (keyFieldsInodes.length == 0) {
-            Logger.debug(ImportUtil.class, ()->"Warning: No-key-fields-were-choosen-it-could-give-to-you-duplicated-content");
-            results.get("warnings").add(
-                    LanguageUtil.get(user,
-                            "No-key-fields-were-choosen-it-could-give-to-you-duplicated-content"));
-        }
-
-        if(!uniqueFields.isEmpty()){
-            for(Field f : uniqueFields){
-
-                Logger.debug(ImportUtil.class, ()->"the-structure-field" + " " + f.getVelocityVarName() +  " " + "is-unique");
-                results.get("warnings").add(LanguageUtil.get(user, "the-structure-field")+ " " + f.getVelocityVarName() +  " " +LanguageUtil.get(user, "is-unique"));
-            }
-        }
-
-        //Adding some messages to the results
-        if (importableFields == headers.size()) {
-            results.get("messages").add(
-                    LanguageUtil.get(user,  headers.size() + " "+LanguageUtil.get(user, "headers-match-these-will-be-imported")));
-        } else {
-            if (headers.size() > 0) {
-                results.get("messages").add(headers.size() + " " + LanguageUtil.get(user, "headers-found-on-the-file-matches-all-the-structure-fields"));
-            } else {
-                results
-                .get("messages")
-                .add(
-                        LanguageUtil.get(user, "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"));
-            }
-
-            Logger.debug(ImportUtil.class, ()->"Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty");
-            results
-            .get("warnings")
-            .add(LanguageUtil.get(user, "Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty"));
-        }
-        //Adding the relationship messages
-        if(relationships.size() > 0)
-        {
-            results.get("messages").add(LanguageUtil.get(user,  relationships.size() + " "+LanguageUtil.get(user, "relationship-match-these-will-be-imported")));
         }
     }
 
     /**
+     * Processes and validates an individual header entry. This method attempts to match the header
+     * with content type fields or relationships and records the validation result.
      *
-     * @param relationships
-     * @param onlyChild
-     * @param onlyParent
-     * @param i
-     * @param found
-     * @param header
-     * @param onlyP
-     * @param onlyCh
-     * @param contentTypeRelationshipsMap
-     * @return
+     * @param header            Header string to process
+     * @param columnIndex       Index of the header in the CSV file
+     * @param contentType       Content Type structure to validate against
+     * @param headers           Map to populate with validated header-to-field mappings
+     * @param keyFieldsInodes   Array of field inodes used as keys
+     * @param keyFields         Map to populate with key field mappings
+     * @param relationships     Map to populate with relationship mappings
+     * @param onlyChild         Map tracking child-only relationships
+     * @param onlyParent        Map tracking parent-only relationships
+     * @param relationshipsMap  Map of available relationships
+     * @param validHeaders      List to store valid header names
+     * @param invalidHeaders    List to store invalid header names
+     * @param isMultilingual    Whether import supports multiple languages
+     * @param user              User performing the import
+     * @param validationBuilder Builder to accumulate validation messages
+     * @throws LanguageException If language key lookup fails
      */
-    private static boolean getRelationships(
-            final HashMap<Integer, Relationship> relationships,
+    private static void processAndValidateHeader(
+            final String header, final int columnIndex, final Structure contentType,
+            final HashMap<Integer, Field> headers, final String[] keyFieldsInodes,
+            final HashMap<Integer, Field> keyFields,
             final HashMap<Integer, Boolean> onlyChild,
-            final HashMap<Integer, Boolean> onlyParent, final int i, boolean found,
-            final String header,
-            final boolean onlyP, final boolean onlyCh,
-            final Map<String, Relationship> contentTypeRelationshipsMap) {
+            final HashMap<Integer, Boolean> onlyParent,
+            final Map<String, Relationship> relationshipsMap,
+            final HashMap<Integer, Relationship> relationships,
+            final List<String> validHeaders, final List<String> invalidHeaders,
+            final boolean isMultilingual, final User user,
+            final ImportHeaderValidationResult.Builder validationBuilder)
+            throws LanguageException, DotDataException, DotSecurityException {
 
-        final Relationship relationship = contentTypeRelationshipsMap.get(header.toLowerCase());
+        // First try content type fields
+        boolean found = processContentTypeField(header, columnIndex, contentType, headers,
+                keyFieldsInodes, keyFields, onlyChild, onlyParent, relationshipsMap, relationships,
+                user, validationBuilder);
+        if (found) {
+            validHeaders.add(header);
+        }
 
-        //Check if the header is a relationship
-        if (relationship != null) {
-            found = true;
-            relationships.put(i, relationship);
+        // Validate if the header is a relationship header
+        boolean foundAsRelationship = processRelationshipHeader(header, columnIndex,
+                relationshipsMap, relationships,
+                onlyChild, onlyParent);
+        if (foundAsRelationship) {
+            validHeaders.add(header);
+        }
 
-            if (!onlyParent.containsKey(i)){
-                onlyParent.put(i, onlyP);
-            }
+        // If not found and not a language header, mark as invalid
+        if (!(found || foundAsRelationship) && !(isMultilingual && isLanguageHeader(header))) {
+            invalidHeaders.add(header);
+            validationBuilder.addMessages(ImportValidationMessage.builder()
+                    .type(ValidationMessageType.WARNING)
+                    .code(HeaderValidationCodes.INVALID_HEADER.name())
+                    .field(header)
+                    .lineNumber(1)
+                    .context(Map.of("columnIndex", columnIndex))
+                    .message(LanguageUtil.get(user, "Header") + " \"" + header + "\" " +
+                            LanguageUtil.get(user,
+                                    "doesn-t-match-any-structure-field-this-column-of-data-will-be-ignored"))
+                    .build());
+        }
+    }
 
-            if (!onlyChild.containsKey(i)) {
-                // special case when the relationship has the same structure for parent and child, set only as child
-                if (relationship.getChildStructureInode().equals(relationship.getParentStructureInode())
-                        && !onlyCh && !onlyP) {
-                    onlyChild.put(i, true);
-                }else{
-                    onlyChild.put(i, onlyCh);
-                }
+    /**
+     * Validates headers required for multilingual imports. Checks for presence of language code and
+     * country code headers when multilingual import is enabled.
+     *
+     * @param isMultilingual    Whether multilingual import is enabled
+     * @param headerFields      List of processed header fields
+     * @param validationBuilder Builder to accumulate validation messages
+     */
+    private static void validateMultilingualHeaders(final boolean isMultilingual,
+            final List<String> headerFields,
+            final ImportHeaderValidationResult.Builder validationBuilder) {
+
+        if (!isMultilingual) {
+            return;
+        }
+
+        boolean hasLanguageCode = headerFields.contains(languageCodeHeader);
+        boolean hasCountryCode = headerFields.contains(countryCodeHeader);
+
+        if (!hasLanguageCode || !hasCountryCode) {
+            validationBuilder.addMessages(ImportValidationMessage.builder()
+                    .type(ValidationMessageType.ERROR)
+                    .code(HeaderValidationCodes.INVALID_LANGUAGE.name())
+                    .message("languageCode and countryCode fields are mandatory in the CSV file" +
+                            " when importing multilingual content")
+                    .lineNumber(1)
+                    .build());
+        }
+    }
+
+    /**
+     * Retrieves and processes Content Type information including fields and relationships.
+     *
+     * @param contentType Content Type structure to process
+     * @return ContentTypeInfo containing fields, relationships and count of importable fields
+     */
+    private static ContentTypeInfo getContentTypeInfo(final Structure contentType) {
+        final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
+        final List<Relationship> relationships = APILocator.getRelationshipAPI()
+                .byContentType(contentType);
+
+        int importableFields = 0;
+        for (Field field : fields) {
+            if (isImportableField(field)) {
+                importableFields++;
             }
         }
-        return found;
+
+        return new ContentTypeInfo(fields, relationships, importableFields);
+    }
+
+    /**
+     * Creates a map of relationships for efficient lookup during header validation. Uses the
+     * relationship type value as the key for quick access.
+     *
+     * @param relationships List of relationships to map
+     * @return Map of relationships keyed by their type value
+     */
+    private static Map<String, Relationship> createRelationshipMap(
+            final List<Relationship> relationships) {
+        final Map<String, Relationship> relationshipsMap = new LowerKeyMap<>();
+        relationshipsMap.putAll(relationships.stream()
+                .collect(
+                        Collectors.toMap(
+                                Relationship::getRelationTypeValue,
+                                Function.identity()
+                        )));
+        return relationshipsMap;
+    }
+
+    /**
+     * Collects all required fields from a list of content type fields.
+     *
+     * @param fields List of fields to process
+     * @return List of velocity variable names for required fields
+     */
+    private static List<String> collectRequiredFields(final List<Field> fields) {
+        return fields.stream()
+                .filter(Field::isRequired)
+                .map(Field::getVelocityVarName)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if a header represents a special system field like Identifier or Workflow Action. Adds
+     * appropriate validation messages for recognized system headers.
+     *
+     * @param header            Header to check
+     * @param columnIndex       Index of the header in the CSV file
+     * @param user              User performing the import
+     * @param validationBuilder Builder to accumulate validation messages
+     * @return SpecialHeaderInfo containing type and column index if header is special, NONE otherwise
+     * @throws LanguageException If language key lookup fails
+     */
+    private static SpecialHeaderInfo isSpecialHeader(final String header, final int columnIndex,
+            final User user,
+            final ImportHeaderValidationResult.Builder validationBuilder) throws LanguageException {
+
+        if (header.equalsIgnoreCase("Identifier")) {
+            validationBuilder.addMessages(
+                    ImportValidationMessage.builder()
+                            .type(ValidationMessageType.INFO)
+                            .code(HeaderValidationCodes.SYSTEM_HEADER.name())
+                            .field("Identifier")
+                            .lineNumber(1)
+                            .message(LanguageUtil.get(user,
+                                    "identifier-field-found-in-import-contentlet-csv-file"))
+                            .context(Map.of("columnIndex", columnIndex))
+                            .build()
+            );
+
+            return SpecialHeaderInfo.builder()
+                    .type(SpecialHeaderType.IDENTIFIER)
+                    .columnIndex(columnIndex)
+                    .build();
+        }
+
+        if (header.equalsIgnoreCase(Contentlet.WORKFLOW_ACTION_KEY)) {
+            validationBuilder.addMessages(
+                    ImportValidationMessage.builder()
+                            .type(ValidationMessageType.INFO)
+                            .code(HeaderValidationCodes.SYSTEM_HEADER.name())
+                            .field(Contentlet.WORKFLOW_ACTION_KEY)
+                            .lineNumber(1)
+                            .message(LanguageUtil.get(user,
+                                    "workflow-action-id-field-found-in-import-contentlet-csv-file"))
+                            .context(Map.of("columnIndex", columnIndex))
+                            .build()
+            );
+
+            return SpecialHeaderInfo.builder()
+                    .type(SpecialHeaderType.WORKFLOW_ACTION)
+                    .columnIndex(columnIndex)
+                    .build();
+        }
+
+        return SpecialHeaderInfo.builder()
+                .type(SpecialHeaderType.NONE)
+                .columnIndex(-1)
+                .build();
+    }
+
+    /**
+     * Processes and validates a header against content type fields. Handles field mapping, key
+     * field identification, and relationship setup.
+     *
+     * @param header            Header to process
+     * @param columnIndex       Index of the header in the CSV file
+     * @param contentType       Content Type structure to validate against
+     * @param headers           Map to populate with header-to-field mappings
+     * @param keyFieldsInodes   Array of field inodes used as keys
+     * @param keyFields         Map to populate with key field mappings
+     * @param relationships     Map to populate with relationship mappings
+     * @param onlyChild         Map tracking child-only relationships
+     * @param onlyParent        Map tracking parent-only relationships
+     * @param relationshipsMap  Map of available relationships
+     * @param user              User performing the import
+     * @param validationBuilder Builder to accumulate validation messages
+     * @return true if header was successfully processed as a content type field
+     * @throws LanguageException If language key lookup fails
+     */
+    private static boolean processContentTypeField(final String header, final int columnIndex,
+            final Structure contentType, final HashMap<Integer, Field> headers,
+            final String[] keyFieldsInodes, final HashMap<Integer, Field> keyFields,
+            final HashMap<Integer, Boolean> onlyChild, final HashMap<Integer, Boolean> onlyParent,
+            final Map<String, Relationship> relationshipsMap,
+            final HashMap<Integer, Relationship> relationships, final User user,
+            final ImportHeaderValidationResult.Builder validationBuilder)
+            throws LanguageException, DotDataException, DotSecurityException {
+
+        for (Field field : FieldsCache.getFieldsByStructureInode(contentType.getInode())) {
+            if (!field.getVelocityVarName().equalsIgnoreCase(header)) {
+                continue;
+            }
+
+            if (isNonImportableField(field)) {
+                validationBuilder.addMessages(ImportValidationMessage.builder()
+                        .type(ValidationMessageType.WARNING)
+                        .code(HeaderValidationCodes.INVALID_HEADER.name())
+                        .field(header)
+                        .lineNumber(1)
+                        .message(formatNonImportableFieldMessage(field, header, user))
+                        .context(Map.of("columnIndex", columnIndex))
+                        .build());
+                return true;
+            }
+
+            // Add field to headers
+            headers.put(columnIndex, field);
+
+            // Check if field matches any key field inodes and add to keyFields if it does
+            for (String fieldInode : keyFieldsInodes) {
+                if (fieldInode.equals(field.getInode())) {
+                    keyFields.put(columnIndex, field);
+                }
+            }
+
+            // Add relationships if field is relationship type
+            if (field.getFieldType().equals(FieldType.RELATIONSHIP.toString())) {
+                processRelationshipField(field, columnIndex, user, relationshipsMap, relationships,
+                        onlyParent, onlyChild);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if a field is non-importable based on its type. Non-importable fields include buttons,
+     * line dividers, and tab dividers.
+     *
+     * @param field Field to check
+     * @return true if field is non-importable, false otherwise
+     */
+    private static boolean isNonImportableField(final Field field) {
+        return field.getFieldType().equals(Field.FieldType.BUTTON.toString()) ||
+                field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString()) ||
+                field.getFieldType().equals(Field.FieldType.TAB_DIVIDER.toString());
+    }
+
+    /**
+     * Formats an error message for non-importable field types.
+     *
+     * @param field  Field that is non-importable
+     * @param header Header name from CSV
+     * @param user   User performing the import
+     * @return Formatted error message
+     * @throws LanguageException If language key lookup fails
+     */
+    private static String formatNonImportableFieldMessage(final Field field, final String header,
+            final User user) throws LanguageException {
+        return LanguageUtil.get(user, "Header") + " \"" + header + "\" " +
+                LanguageUtil.get(user, "matches-a-field-of-type-" +
+                        field.getFieldType().toLowerCase() +
+                        "-this-column-of-data-will-be-ignored");
+    }
+
+    /**
+     * Processes relationship headers that explicitly define relationships through suffixes
+     * like -RELPARENT or -RELCHILD.
+     *
+     * @param header Header string to process
+     * @param columnIndex Index of the header in CSV
+     * @param relationshipsMap Map containing available relationships keyed by type value
+     * @param relationships Stores relationships found in headers keyed by column index
+     * @param onlyChild Tracks which columns contain child-only relationships
+     * @param onlyParent Tracks which columns contain parent-only relationships
+     * @return true if header was processed as a relationship, false otherwise
+     */
+    private static boolean processRelationshipHeader(final String header, final int columnIndex,
+            final Map<String, Relationship> relationshipsMap,
+            final HashMap<Integer, Relationship> relationships,
+            final HashMap<Integer, Boolean> onlyChild, final HashMap<Integer, Boolean> onlyParent) {
+
+        String relationshipHeader = header;
+        boolean onlyP = false;
+        boolean onlyCh = false;
+
+        if (header.endsWith("-RELPARENT")) {
+            relationshipHeader = header.substring(0, header.lastIndexOf("-RELPARENT"));
+            onlyP = true;
+        } else if (header.endsWith("-RELCHILD")) {
+            relationshipHeader = header.substring(0, header.lastIndexOf("-RELCHILD"));
+            onlyCh = true;
+        }
+
+        //Check if the header is a relationship
+        final Relationship relationship = relationshipsMap.get(relationshipHeader.toLowerCase());
+        if (relationship == null) {
+            return false;
+        }
+
+        relationships.put(columnIndex, relationship);
+
+        if (!onlyParent.containsKey(columnIndex)) {
+            onlyParent.put(columnIndex, onlyP);
+        }
+
+        if (!onlyChild.containsKey(columnIndex)) {
+            // special case when the relationship has the same structure for parent and child, set only as child
+            if (relationship.getChildStructureInode().equals(relationship.getParentStructureInode())
+                    && !onlyCh && !onlyP) {
+                onlyChild.put(columnIndex, true);
+            } else {
+                onlyChild.put(columnIndex, onlyCh);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Processes fields that are relationship type fields and sets up their relationship mappings.
+     * Unlike relationship headers, these are fields that are defined as relationships in the
+     * content type.
+     *
+     * @param field The field to process
+     * @param columnIndex Index of the field in CSV
+     * @param user Current user
+     * @param relationshipsMap Map storing relationships by type value
+     * @param relationships Stores relationships found in fields by column index
+     * @param onlyParent Tracks which columns contain parent-only relationships
+     * @param onlyChild Tracks which columns contain child-only relationships
+     * @throws DotDataException If error accessing relationships
+     * @throws DotSecurityException If user lacks permissions
+     */
+    private static void processRelationshipField(
+            final Field field, final int columnIndex, final User user,
+            final Map<String, Relationship> relationshipsMap,
+            final HashMap<Integer, Relationship> relationships,
+            final HashMap<Integer, Boolean> onlyParent,
+            final HashMap<Integer, Boolean> onlyChild)
+            throws DotDataException, DotSecurityException {
+
+        final Relationship fieldRelationship = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(field, user);
+        relationships.put(columnIndex, fieldRelationship);
+        relationshipsMap.put(field.getVelocityVarName().toLowerCase(), fieldRelationship);
+        relationshipsMap.remove(fieldRelationship.getRelationTypeValue().toLowerCase());
+
+        // Considering case when importing self-related content
+        if (fieldRelationship.getChildStructureInode()
+                .equals(fieldRelationship.getParentStructureInode())) {
+            if (fieldRelationship.getParentRelationName() != null &&
+                    fieldRelationship.getParentRelationName().equals(field.getVelocityVarName())) {
+                onlyParent.put(columnIndex, true);
+                onlyChild.put(columnIndex, false);
+            } else if (fieldRelationship.getChildRelationName() != null &&
+                    fieldRelationship.getChildRelationName().equals(field.getVelocityVarName())) {
+                onlyParent.put(columnIndex, false);
+                onlyChild.put(columnIndex, true);
+            }
+        }
+    }
+
+    /**
+     * Checks if a header is one of the special language-related fields.
+     *
+     * @param header Header to check
+     * @return true if header is a language or country code field
+     */
+    private static boolean isLanguageHeader(final String header) {
+        return header.equals(languageCodeHeader) || header.equals(countryCodeHeader);
+    }
+
+    /**
+     * Validates required fields against the headers found in the CSV. Identifies missing required
+     * fields and adds appropriate error messages.
+     *
+     * @param headerFields      List of headers found in CSV
+     * @param user              User performing the import
+     * @param contentType       Content Type structure to validate against
+     * @param validationBuilder Builder to accumulate validation messages
+     * @return List of required fields that were not found in headers
+     * @throws LanguageException If language key lookup fails
+     */
+    private static List<String> validateRequiredFields(final List<String> headerFields,
+            final User user, final Structure contentType,
+            final ImportHeaderValidationResult.Builder validationBuilder) throws LanguageException {
+
+        // Get required fields
+        List<String> requiredFields = collectRequiredFields(
+                FieldsCache.getFieldsByStructureInode(contentType.getInode()));
+
+        // Find missing required fields
+        List<String> missingRequired = new ArrayList<>(requiredFields);
+        missingRequired.removeAll(headerFields);
+
+        // Add errors for missing required fields
+        for (String requiredField : missingRequired) {
+            validationBuilder.addMessages(
+                    ImportValidationMessage.builder()
+                            .type(ValidationMessageType.ERROR)
+                            .code(HeaderValidationCodes.REQUIRED_FIELD_MISSING.name())
+                            .field(requiredField)
+                            .lineNumber(1)
+                            .message(
+                                    LanguageUtil.get(user, "Field") +
+                                            ": \"" + requiredField + "\" " +
+                                            LanguageUtil.get(user,
+                                                    "required-field-not-found-in-header"))
+                            .build()
+            );
+        }
+
+        return missingRequired;
+    }
+
+    /**
+     * Validates key fields specified for the import. Ensures all specified key fields are present
+     * in the headers.
+     *
+     * @param keyFieldsInodes   Array of field inodes used as keys
+     * @param headers           Map of validated header-to-field mappings
+     * @param user              User performing the import
+     * @param validationBuilder Builder to accumulate validation messages
+     * @throws LanguageException If language key lookup fails
+     */
+    private static void validateKeyFields(final String[] keyFieldsInodes,
+            final HashMap<Integer, Field> headers, final User user,
+            final ImportHeaderValidationResult.Builder validationBuilder) throws LanguageException {
+
+        if (keyFieldsInodes.length == 0) {
+
+            validationBuilder.addMessages(
+                    ImportValidationMessage.builder()
+                            .type(ValidationMessageType.WARNING)
+                            .code(HeaderValidationCodes.NO_KEY_FIELDS.name())
+                            .lineNumber(1)
+                            .message(LanguageUtil.get(user,
+                                    "No-key-fields-were-choosen-it-could-give-to-you-duplicated-content"))
+                            .build()
+            );
+            return;
+        }
+
+        for (String keyFieldInode : keyFieldsInodes) {
+            boolean found = false;
+            for (Field headerField : headers.values()) {
+                if (headerField.getInode().equals(keyFieldInode)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                Field keyField = FieldFactory.getFieldByInode(keyFieldInode);
+                validationBuilder.addMessages(
+                        ImportValidationMessage.builder()
+                                .type(ValidationMessageType.ERROR)
+                                .code(HeaderValidationCodes.INVALID_KEY_FIELD.name())
+                                .field(keyField.getVelocityVarName())
+                                .lineNumber(1)
+                                .message(LanguageUtil.get(user, "Key-field") + ": \"" +
+                                        keyField.getVelocityVarName() + "\" " +
+                                        LanguageUtil.get(user,
+                                                "choosen-doesn-t-match-any-of-theh-eaders-found-in-the-file"))
+                                .build()
+                );
+            }
+        }
+    }
+
+    /**
+     * Processes unique fields and adds appropriate warning messages. Alerts users about fields that
+     * require unique values.
+     *
+     * @param uniqueFields      List of fields marked as unique
+     * @param user              User performing the import
+     * @param validationBuilder Builder to accumulate validation messages
+     * @throws LanguageException If language key lookup fails
+     */
+    private static void processUniqueFields(final List<Field> uniqueFields, final User user,
+            final ImportHeaderValidationResult.Builder validationBuilder) throws LanguageException {
+        if (uniqueFields.isEmpty()) {
+            return;
+        }
+
+        for (Field uniqueField : uniqueFields) {
+            validationBuilder.addMessages(
+                    ImportValidationMessage.builder()
+                            .type(ValidationMessageType.WARNING)
+                            .code(HeaderValidationCodes.UNIQUE_FIELD.name())
+                            .field(uniqueField.getVelocityVarName())
+                            .message(LanguageUtil.get(user, "the-structure-field") + " " +
+                                    uniqueField.getVelocityVarName() + " " +
+                                    LanguageUtil.get(user, "is-unique"))
+                            .build()
+            );
+        }
+    }
+
+    /**
+     * Adds summary messages about the header validation process. Provides information about:
+     * <ul>
+     *   <li>Number of matched headers</li>
+     *   <li>Completeness of field coverage</li>
+     *   <li>Relationship matches</li>
+     * </ul>
+     *
+     * @param headerCount          Number of valid headers found
+     * @param importableFieldCount Number of fields that can be imported
+     * @param relationshipCount    Number of relationships found
+     * @param user                 User performing the import
+     * @param validationBuilder    Builder to accumulate validation messages
+     * @throws LanguageException If language key lookup fails
+     */
+    private static void addSummaryMessages(final int headerCount, final int importableFieldCount,
+            final int relationshipCount, final User user,
+            final ImportHeaderValidationResult.Builder validationBuilder) throws LanguageException {
+
+        if (headerCount == importableFieldCount) {
+
+            validationBuilder.addMessages(
+                    ImportValidationMessage.builder()
+                            .type(ValidationMessageType.INFO)
+                            .message(LanguageUtil.get(user, headerCount + " " +
+                                    LanguageUtil.get(user, "headers-match-these-will-be-imported")))
+                            .build()
+            );
+        } else {
+            if (headerCount > 0) {
+                validationBuilder.addMessages(
+                        ImportValidationMessage.builder()
+                                .type(ValidationMessageType.INFO)
+                                .message(headerCount + " " +
+                                        LanguageUtil.get(user,
+                                                "headers-found-on-the-file-matches-all-the-structure-fields"))
+                                .build()
+                );
+            } else {
+                validationBuilder.addMessages(
+                        ImportValidationMessage.builder()
+                                .type(ValidationMessageType.INFO)
+                                .message(LanguageUtil.get(user,
+                                        "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"))
+                                .build()
+                );
+            }
+
+            validationBuilder.addMessages(
+                    ImportValidationMessage.builder()
+                            .type(ValidationMessageType.WARNING)
+                            .code(HeaderValidationCodes.INCOMPLETE_HEADERS.name())
+                            .message(LanguageUtil.get(user,
+                                    "Not-all-the-structure-fields-were-matched-against-the-file-headers"
+                                            +
+                                            "-Some-content-fields-could-be-left-empty"))
+                            .lineNumber(1)
+                            .build()
+            );
+        }
+
+        if (relationshipCount > 0) {
+            validationBuilder.addMessages(
+                    ImportValidationMessage.builder()
+                            .type(ValidationMessageType.INFO)
+                            .message(LanguageUtil.get(user, relationshipCount + " " +
+                                    LanguageUtil.get(user,
+                                            "relationship-match-these-will-be-imported")))
+                            .build()
+            );
+        }
     }
 
     /**
@@ -2428,6 +2982,264 @@ public class ImportUtil {
             return exception.getCause().getClass().getSimpleName();
         } else {
             return LanguageUtil.get(user, exception.getMessage());
+        }
+    }
+
+    /**
+     * Container class holding content type information needed for header validation. This includes
+     * fields, relationships, and a count of importable fields.
+     */
+    private static class ContentTypeInfo {
+
+        /**
+         * List of fields defined in the content type
+         */
+        final List<Field> fields;
+
+        /**
+         * List of relationships associated with the content type
+         */
+        final List<Relationship> relationships;
+
+        /**
+         * Count of fields that can be imported
+         */
+        final int importableFields;
+
+        /**
+         * Creates a new ContentTypeInfo instance.
+         *
+         * @param fields           List of fields in the content type
+         * @param relationships    List of relationships for the content type
+         * @param importableFields Count of fields that can be imported
+         */
+        ContentTypeInfo(final List<Field> fields, final List<Relationship> relationships,
+                final int importableFields) {
+            this.fields = fields;
+            this.relationships = relationships;
+            this.importableFields = importableFields;
+        }
+    }
+
+    /**
+     * Container class for managing structured import results during the validation process. This
+     * class handles building and updating the structured result format.
+     */
+    private static class ImportResults {
+
+        /**
+         * Builder for the structured results
+         */
+        private final ImportResult.Builder structuredResults;
+
+        /**
+         * Creates a new ImportResults instance with initialized data structures.
+         */
+        ImportResults() {
+            this.structuredResults = initializeStructuredResults();
+        }
+
+        /**
+         * Initializes the base structure for import results.
+         *
+         * @return Builder configured with default values
+         */
+        private static ImportResult.Builder initializeStructuredResults() {
+            return ImportResult.builder()
+                    .fileInfo(ImportFileInfo.builder()
+                            .totalRows(0)
+                            .parsedRows(0)
+                            .headerInfo(initializeHeaderInfo())
+                            .build())
+                    .data(initializeResultData());
+        }
+
+        /**
+         * Initializes header information with empty arrays.
+         *
+         * @return HeaderInfo builder with default values
+         */
+        private static ImportHeaderInfo initializeHeaderInfo() {
+            return ImportHeaderInfo.builder()
+                    .validHeaders(new String[0])
+                    .invalidHeaders(new String[0])
+                    .missingHeaders(new String[0])
+                    .validationDetails(new HashMap<>())
+                    .build();
+        }
+
+        /**
+         * Initializes result data with zero counters.
+         *
+         * @return ResultData builder with default values
+         */
+        private static ImportResultData initializeResultData() {
+            return ImportResultData.builder()
+                    .processed(ProcessedData.builder()
+                            .valid(0)
+                            .invalid(0)
+                            .build())
+                    .summary(ContentSummary.builder()
+                            .created(0)
+                            .updated(0)
+                            .contentType("")
+                            .build())
+                    .build();
+        }
+
+        /**
+         * Adds multiple validation messages to the results.
+         *
+         * @param validationMessages List of messages to add
+         */
+        void addMessages(List<ImportValidationMessage> validationMessages) {
+            if (validationMessages != null) {
+                validationMessages.forEach(structuredResults::addMessages);
+            }
+        }
+
+        /**
+         * Adds a single validation message to the results.
+         *
+         * @param message Message to add
+         */
+        void addMessage(ImportValidationMessage message) {
+            structuredResults.addMessages(message);
+        }
+
+        /**
+         * Updates file processing information.
+         *
+         * @param fileInfo Updated file information
+         */
+        void updateFileInfo(final ImportFileInfo fileInfo) {
+            structuredResults.fileInfo(fileInfo);
+        }
+
+        /**
+         * Updates header validation information.
+         *
+         * @param headerInfo Updated header information
+         */
+        void updateHeaderInfo(final ImportHeaderInfo headerInfo) {
+            ImportFileInfo currentFileInfo = structuredResults.build().fileInfo();
+            structuredResults.fileInfo(currentFileInfo.withHeaderInfo(headerInfo));
+        }
+
+        /**
+         * Updates the content type name in the results.
+         *
+         * @param contentType Name of the content type
+         */
+        void updateContentType(String contentType) {
+            ImportResultData currentData = structuredResults.build().data();
+            structuredResults.data(currentData.withSummary(
+                    currentData.summary().withContentType(contentType)
+            ));
+        }
+
+        /**
+         * Updates processing counters in the results.
+         *
+         * @param counts Updated counter values
+         */
+        void updateCounters(ImportCounts counts) {
+            structuredResults.data(ImportResultData.builder()
+                    .processed(ProcessedData.builder()
+                            .valid(counts.getValid())
+                            .invalid(counts.getInvalid())
+                            .build())
+                    .summary(ContentSummary.builder()
+                            .created(counts.getCreated())
+                            .updated(counts.getUpdated())
+                            .contentType(structuredResults.build().data().summary().contentType())
+                            .build())
+                    .build());
+        }
+
+        /**
+         * Builds and returns the final structured results.
+         *
+         * @return Complete structured import results
+         */
+        ImportResult getResults() {
+            return structuredResults.build();
+        }
+    }
+
+    /**
+     * Value object holding count information for import processing. Tracks valid/invalid records
+     * and created/updated content counts.
+     */
+    private static class ImportCounts {
+
+        private final int valid;
+        private final int invalid;
+        private final int created;
+        private final int updated;
+
+        /**
+         * Creates a new ImportCounts instance.
+         *
+         * @param valid   Count of valid records
+         * @param invalid Count of invalid records
+         * @param created Count of newly created content
+         * @param updated Count of updated content
+         */
+        private ImportCounts(int valid, int invalid, int created, int updated) {
+            this.valid = valid;
+            this.invalid = invalid;
+            this.created = created;
+            this.updated = updated;
+        }
+
+        /**
+         * Factory method to create an ImportCounts instance.
+         *
+         * @param valid   Count of valid records
+         * @param invalid Count of invalid records
+         * @param created Count of newly created content
+         * @param updated Count of updated content
+         * @return New ImportCounts instance
+         */
+        static ImportCounts of(int valid, int invalid, int created, int updated) {
+            return new ImportCounts(valid, invalid, created, updated);
+        }
+
+        public int getValid() {
+            return valid;
+        }
+
+        public int getInvalid() {
+            return invalid;
+        }
+
+        public int getCreated() {
+            return created;
+        }
+
+        public int getUpdated() {
+            return updated;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ImportCounts that = (ImportCounts) o;
+            return valid == that.valid &&
+                    invalid == that.invalid &&
+                    created == that.created &&
+                    updated == that.updated;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(valid, invalid, created, updated);
         }
     }
 
