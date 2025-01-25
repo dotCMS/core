@@ -37,6 +37,7 @@
             "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"],
             "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
             "@dotcms/edit-content/*": ["libs/edit-content/src/lib/*"],
+            "@dotcms/edit-content/bridge": ["libs/edit-content-bridge/src/index.ts"],
             "@dotcms/experiments": ["libs/sdk/experiments/src/index.ts"],
             "@dotcms/portlets/dot-analytics-search/portlet": [
                 "libs/portlets/dot-analytics-search/portlet/src/index.ts"
