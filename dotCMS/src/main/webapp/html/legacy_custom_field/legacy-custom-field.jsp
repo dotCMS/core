@@ -199,6 +199,51 @@
 
   </style>
 
+<script>
+  (function() {
+      /**
+       * @namespace DotCustomFieldApi
+       * @description Bridge API for DotCMS Custom Fields that enables communication between the custom field iframe and the parent form.
+       * This API allows custom fields to get/set values and listen to changes in the parent form.
+       * 
+       * @example
+       * // Wait for API to be ready and use it
+       * DotCustomFieldApi.ready(() => {
+       *     // Get field value
+       *     const value = DotCustomFieldApi.get('fieldId');
+       * 
+       *     // Set field value
+       *     DotCustomFieldApi.set('fieldId', 'new value');
+       * 
+       *     // Listen to field changes
+       *     DotCustomFieldApi.onChangeField('fieldId', (newValue) => {
+       *         console.log('Field changed:', newValue);
+       *     });
+       * });
+       * 
+       * @property {Function} ready - Callback executed when the API is ready to use
+       * @property {Function} get - Get a field value by ID
+       * @property {Function} set - Set a field value by ID
+       * @property {Function} onChangeField - Listen to field changes
+       */
+       window.DotCustomFieldApi = {
+        ready(callback) {
+            if (window.DotCustomFieldApi.get) {
+                callback(window.DotCustomFieldApi);
+                return;
+            }
+
+            window.addEventListener('message', function onMessage(event) {
+                if (event.data.type === 'dotcms:form:loaded') {
+                    window.removeEventListener('message', onMessage);
+                    callback(window.DotCustomFieldApi);
+                }
+            });
+        }
+    };
+  })();
+</script>
+
 </head>
 
 <%
@@ -236,7 +281,7 @@
                     HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
                 }
 %>
-                    <body>
+                    <body id="legacy-custom-field-body">
                         <%= HTMLString %>
                     </body>
 <%
