@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.List;
 
 import com.dotmarketing.beans.Permission;
@@ -149,7 +150,18 @@ public class PermissionCacheImpl extends PermissionCache {
 			return Optional.empty();
 		}
 
-		return Optional.of(permissionable.getPermissionId() + permissionType + userIn.getUserId() + respectFrontendRoles + (
+		String permissionableKey =  permissionable.getPermissionId();
+		if(permissionable instanceof Contentlet){
+			//We need a bit more dispersion for contentlets since they rely only on the identifier
+			//There can be cases on which the same contentlet is being checked for different permissions like for live and working content
+			//We need to be able to tell them apart
+			//change directly the contentlet permissionable-id on the contentlet implementation seems to be quite risky
+			//Changing the cache key is safer change see https://github.com/dotCMS/core/issues/30991
+		   final Contentlet contentlet = (Contentlet)permissionable;
+		   permissionableKey = contentlet.getPermissionId() + StringPool.COLON + contentlet.getInode();
+		}
+
+		return Optional.of(permissionableKey + permissionType + userIn.getUserId() + respectFrontendRoles + (
 				nullableContent != null ? nullableContent.getIdentifier() : ""));
 
 

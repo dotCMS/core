@@ -1006,11 +1006,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
-	 * We need this to be unique when telling apart contentlets with the same identifier but different status like live and working
-	 * Using the identifier as the hashcode is not enough because the identifier is the same for both live and working contentlets
+	 *
 	 */
 	public String getPermissionId() {
-		return getInode();
+		return getIdentifier();
 	}
 
 	/**

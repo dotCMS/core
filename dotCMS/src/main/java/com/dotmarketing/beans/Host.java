@@ -62,15 +62,6 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
     
     public static final String EMBEDDED_DASHBOARD = "embeddedDashboard";
 
-	/**
-	 * For the host, the identifier is the right permission id
-	 * @return the identifier
-	 */
-	@Override
-	public String getPermissionId() {
-		return getIdentifier();
-	}
-
 	@Override
 	public String getInode() {
 		return super.getInode();
