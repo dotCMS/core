@@ -6,6 +6,7 @@
  */
 package com.dotmarketing.business;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -151,14 +152,14 @@ public class PermissionCacheImpl extends PermissionCache {
 		}
 
 		String permissionableKey =  permissionable.getPermissionId();
-		if(permissionable instanceof Contentlet){
+		if(permissionable instanceof Contentlet && !(permissionable instanceof Host)){
 			//We need a bit more dispersion for contentlets since they rely only on the identifier
 			//There can be cases on which the same contentlet is being checked for different permissions like for live and working content
-			//We need to be able to tell them apart
-			//change directly the contentlet permissionable-id on the contentlet implementation seems to be quite risky
-			//Changing the cache key is safer change see https://github.com/dotCMS/core/issues/30991
-		   final Contentlet contentlet = (Contentlet)permissionable;
-		   permissionableKey = contentlet.getPermissionId() + StringPool.COLON + contentlet.getInode();
+			//We need to be able to tell these cases apart
+			//Change directly the contentlet permissionable-id on the contentlet implementation seems to be quite risky
+			//Changing only the cache key here is safer see https://github.com/dotCMS/core/issues/30991
+		    final Contentlet contentlet = (Contentlet)permissionable;
+		    permissionableKey = contentlet.getPermissionId() + StringPool.COLON + contentlet.getInode();
 		}
 
 		return Optional.of(permissionableKey + permissionType + userIn.getUserId() + respectFrontendRoles + (

@@ -1359,7 +1359,7 @@ public class PermissionAPITest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void Test_Working_And_Live_Can_Different_Permissions()
+    public void Test_Working_And_Live_Can_Have_Different_Permissions()
             throws DotDataException, DotSecurityException {
 
         final RoleAPI roleAPI = APILocator.getRoleAPI();
