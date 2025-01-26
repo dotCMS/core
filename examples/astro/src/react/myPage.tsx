@@ -20,8 +20,8 @@ export type MyPageProps = {
 export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
   pageAsset = usePageAsset(pageAsset);
 
-  if(!pageAsset) {
-    return <NotFound />
+  if (!pageAsset) {
+    return <NotFound />;
   }
 
   return (
@@ -32,7 +32,7 @@ export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
         </Header>
       )}
 
-      <main className="container flex flex-col gap-8 m-auto">
+      <main className="container m-auto">
         <DotcmsLayout
           pageContext={{
             components: componentsMap,
