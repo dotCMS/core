@@ -1,4 +1,5 @@
-import { ContainerData, DotCMSPageContext } from '../models';
+import { DotCMSContainer, DotCMSPageAssetContainer } from '@dotcms/types';
+
 import { Block, BlockEditorState } from '../models/blocks.interface';
 
 const endClassMap: Record<number, string> = {
@@ -40,8 +41,8 @@ const startClassMap: Record<number, string> = {
  * @returns {Object} Container with all the data it has.
  */
 export const getContainersData = (
-    containers: ContainerData,
-    containerRef: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0]['containers'][0]
+    containers: DotCMSPageAssetContainer,
+    containerRef: DotCMSContainer
 ) => {
     const { identifier, uuid } = containerRef;
 

@@ -9,6 +9,9 @@
   "scripts": {
     "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
   },
+  "peerDependencies": {
+    "@dotcms/types": "latest"
+  },
   "keywords": [
     "dotCMS",
     "CMS",

@@ -1,5 +1,7 @@
 import { useContext } from 'react';
 
+import { DotCMSContainer } from '@dotcms/types';
+
 import { PageContext } from '../../contexts/PageContext';
 import { useCheckHaveContent } from '../../hooks/useCheckHaveContent';
 import { DotCMSPageContext } from '../../models';
@@ -31,7 +33,7 @@ function EmptyContent() {
  * @interface ContainerProps
  */
 export interface ContainerProps {
-    readonly containerRef: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0]['containers'][0];
+    readonly containerRef: DotCMSContainer;
 }
 
 /**
@@ -108,6 +110,7 @@ export function Container({ containerRef }: ContainerProps) {
             <Component {...contentlet} key={contentlet.identifier} />
         );
     });
+
 
     return isInsideEditor ? (
         <div

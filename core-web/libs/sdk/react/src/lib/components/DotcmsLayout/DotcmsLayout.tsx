@@ -40,6 +40,8 @@ export type DotcmsPageProps = {
 export function DotcmsLayout(dotPageProps: DotcmsPageProps): JSX.Element {
     const pageContext = useDotcmsEditor(dotPageProps);
 
+    console.log('Using local lib, with types!');
+    
     return (
         <PageProvider pageContext={pageContext}>
             {pageContext.pageAsset?.layout?.body.rows.map((row, index) => (

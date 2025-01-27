@@ -6,13 +6,15 @@
     "module": "es2020",
     "baseUrl": "./",
     "paths": {
+      "@dotcms/client": ["../../core-web/dist/libs/sdk/client"],
+      "@dotcms/react": ["../../core-web/dist/libs/sdk/react"],
       "@utils/*": ["src/utils/*"],
       "@react/*": ["src/react/*"],
       "@react/shared/*": ["src/react/shared/*"],
       "@react/hooks/*": ["src/react/hooks/*"],
       "@react/contentTypes/*": ["src/react/content-types/*"],
       "@react/layout/*": ["src/react/layout/*"],
-      "@dotcms/types": ["src/types/index.ts"]
+      "@dotcms/types": ["../../core-web/dist/libs/types"],
     }
   }
 }

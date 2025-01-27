@@ -39,10 +39,10 @@ export const getPageData = async (
 
 const fetchPageData = async (params: any) => {
   try {
-    const pageAsset = (await client.page.get({
+    const pageAsset = await client.page.get({
       ...params,
       depth: 3,
-    })) as DotCMSPageAsset;
+    });
 
     return { pageAsset };
   } catch (error: any) {
@@ -56,11 +56,11 @@ const fetchPageData = async (params: any) => {
 
 const fetchNavData = async (languageId = 1) => {
   try {
-    const { entity } = (await client.nav.get({
+    const { entity } = await client.nav.get({
       path: "/",
       depth: 2,
       languageId,
-    })) as { entity: DotcmsNavigationItem };
+    })
 
     return { nav: entity };
   } catch (error) {

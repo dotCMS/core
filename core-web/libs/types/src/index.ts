@@ -1,0 +1,1 @@
+export  * from './page/interfaces/page.interface';

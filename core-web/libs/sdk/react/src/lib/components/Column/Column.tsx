@@ -1,5 +1,7 @@
 import { useContext } from 'react';
 
+import { DotPageAssetLayoutColumn } from '@dotcms/types';
+
 import styles from './Column.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
@@ -14,7 +16,7 @@ import { Container } from '../Container/Container';
  * @interface ColumnProps
  */
 export interface ColumnProps {
-    readonly column: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0]['columns'][0];
+    readonly column: DotPageAssetLayoutColumn;
 }
 
 /**

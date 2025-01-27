@@ -1,3 +1,5 @@
+import { DotCmsNavigationAsset, DotCMSPageAsset } from "@dotcms/types"
+
 import { Content } from './content/content-api';
 import { ErrorMessages } from './models';
 import { DotcmsClientListener } from './models/types';
@@ -248,7 +250,7 @@ export class DotCmsClient {
          * client.page.get({ path: '/about-us' }).then(response => console.log(response));
          * ```
          */
-        get: async (options: PageApiOptions): Promise<unknown> => {
+        get: async (options: PageApiOptions): Promise<DotCMSPageAsset> => {
             this.validatePageOptions(options);
 
             const queryParamsObj: Record<string, string> = {};
@@ -363,7 +365,7 @@ export class DotCmsClient {
          */
         get: async (
             options: NavApiOptions = { depth: 0, path: '/', languageId: 1 }
-        ): Promise<unknown> => {
+        ): Promise<DotCmsNavigationAsset> => {
             this.validateNavOptions(options);
 
             // Extract the 'path' from the options and prepare the rest as query parameters

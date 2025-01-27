@@ -1,5 +1,7 @@
 import { forwardRef, useContext } from 'react';
 
+import { DotPageAssetLayoutRow } from '@dotcms/types';
+
 import styles from './Row.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
@@ -19,7 +21,8 @@ export interface RowProps {
      * @type {DotCMSPageContext['layout']['body']['rows'][0]}
      * @memberof RowProps
      */
-    row: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0];
+
+    row: DotPageAssetLayoutRow;
 }
 
 /**

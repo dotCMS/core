@@ -59,6 +59,7 @@
             "@dotcms/react": ["libs/sdk/react/src/index.ts"],
             "@dotcms/react/mocks": ["libs/sdk/react/src/lib/mocks/index.ts"],
             "@dotcms/template-builder": ["libs/template-builder/src/index.ts"],
+            "@dotcms/types": ["libs/types/src/index.ts"],
             "@dotcms/ui": ["libs/ui/src/index.ts"],
             "@dotcms/utils": ["libs/utils/src"],
             "@dotcms/utils-testing": ["libs/utils-testing/src/index.ts"],

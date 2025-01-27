@@ -1,3 +1,5 @@
+import { DotCMSPageAsset } from '@dotcms/types';
+
 import { PageProvider } from '../components/PageProvider/PageProvider';
 import { DotCMSPageContext, DotCMSContentlet } from '../models';
 
@@ -26,6 +28,7 @@ export const dotcmsContentletMock: DotCMSContentlet = {
     working: false
 };
 
+// We need to fix this mock
 export const mockPageContext: DotCMSPageContext = {
     pageAsset: {
         layout: {
@@ -44,7 +47,7 @@ export const mockPageContext: DotCMSPageContext = {
                                     {
                                         identifier: 'container-1',
                                         uuid: 'uuid-1'
-                                    }
+                                    } 
                                 ]
                             }
                         ]
@@ -97,7 +100,7 @@ export const mockPageContext: DotCMSPageContext = {
         },
         page: { identifier: 'page-1', title: 'Hello Page' },
         viewAs: { language: { id: 'en' }, persona: { keyTag: 'persona-1' }, variantId: 'variant-1' }
-    },
+    } as unknown as DotCMSPageAsset,
     components: {},
     isInsideEditor: false
 };

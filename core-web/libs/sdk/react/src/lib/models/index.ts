@@ -1,27 +1,29 @@
-export interface ContainerData {
-    [key: string]: {
-        container: {
-            path: string;
-            identifier: string;
-            maxContentlets: number;
-            parentPermissionable: Record<string, string>;
-        };
-        containerStructures: {
-            contentTypeVar: string;
-        }[];
-        contentlets: {
-            [key: string]: {
-                contentType: string;
-                identifier: string;
-                title: string;
-                inode: string;
-                onNumberOfPages: number;
-                widgetTitle?: string;
-                baseType: string;
-            }[];
-        };
-    };
-}
+import { DotCMSPageAsset } from "@dotcms/types";
+
+// export interface ContainerData {
+//     [key: string]: {
+//         container: {
+//             path: string;
+//             identifier: string;
+//             maxContentlets: number;
+//             parentPermissionable: Record<string, string>;
+//         };
+//         containerStructures: {
+//             contentTypeVar: string;
+//         }[];
+//         contentlets: {
+//             [key: string]: {
+//                 contentType: string;
+//                 identifier: string;
+//                 title: string;
+//                 inode: string;
+//                 onNumberOfPages: number;
+//                 widgetTitle?: string;
+//                 baseType: string;
+//             }[];
+//         };
+//     };
+// }
 
 export interface DotCMSPageContext {
     /**
@@ -37,54 +39,7 @@ export interface DotCMSPageContext {
     components: {
         [contentTypeVariable: string]: React.ElementType;
     };
-    pageAsset: {
-        containers: ContainerData;
-        layout: {
-            header: boolean;
-            footer: boolean;
-            body: {
-                rows: {
-                    styleClass: string;
-                    columns: {
-                        styleClass: string;
-                        width: number;
-                        leftOffset: number;
-                        containers: {
-                            identifier: string;
-                            uuid: string;
-                        }[];
-                    }[];
-                }[];
-            };
-        };
-        page: {
-            title: string;
-            identifier: string;
-        };
-        viewAs: {
-            language: {
-                id: string;
-            };
-            persona: {
-                keyTag: string;
-            };
-            // variant requested
-            variantId: string;
-        };
-        vanityUrl?: {
-            pattern: string;
-            vanityUrlId: string;
-            url: string;
-            siteId: string;
-            languageId: number;
-            forwardTo: string;
-            response: number;
-            order: number;
-            temporaryRedirect: boolean;
-            permanentRedirect: boolean;
-            forward: boolean;
-        };
-    };
+    pageAsset: DotCMSPageAsset;
     isInsideEditor: boolean;
 }
 
