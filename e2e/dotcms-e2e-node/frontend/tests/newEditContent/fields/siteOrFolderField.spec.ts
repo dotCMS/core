@@ -43,11 +43,11 @@ test.describe("site or folder field", () => {
 
     const newEditContentFormPage = new NewEditContentFormPage(page);
     const listingContentPage = new ListingContentPage(page);
-    
+
     const selectedFolder =
       await newEditContentFormPage.selectSiteOrFolderField();
     await newEditContentFormPage.save();
-    await listingContentPage.goTo(contentTypeName);
+    await newEditContentFormPage.goToBack();
     await listingContentPage.clickFirstContentRow();
 
     await expect(locatorField).toHaveText(`//${selectedFolder}`);

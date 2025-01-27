@@ -48,7 +48,7 @@ test.describe("text field", () => {
 
     await newEditContentFormPage.fillTextField(textFieldValue);
     await newEditContentFormPage.save();
-    await listingContentPage.goTo(contentTypeName);
+    await newEditContentFormPage.goToBack();
     await listingContentPage.clickFirstContentRow();
 
     await expect(locatorField).toHaveValue(textFieldValue);

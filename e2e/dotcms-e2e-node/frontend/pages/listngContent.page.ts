@@ -19,7 +19,8 @@ export class ListingContentPage {
     const urlParams = new URLSearchParams();
 
     if (filter) {
-      urlParams.set("filter", filter);
+      const filterCapitalize = filter.charAt(0).toUpperCase() + filter.slice(1);
+      urlParams.set("filter", filterCapitalize);
     }
 
     await this.page.goto(`${urlPath}?${urlParams.toString()}`);

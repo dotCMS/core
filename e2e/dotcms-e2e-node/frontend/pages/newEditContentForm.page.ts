@@ -24,6 +24,13 @@ export class NewEditContentFormPage {
 
   async save() {
     await this.page.getByRole("button", { name: "Save" }).click();
+    await this.page.waitForResponse(response => {
+      return response.status() === 200 && response.url().includes('/api/v1/workflow/actions/')
+    });
+  }
+  
+  async goToBack() {
+    await this.page.getByTestId("back-button").click();
   }
 
   async goToContent(id: string) {
