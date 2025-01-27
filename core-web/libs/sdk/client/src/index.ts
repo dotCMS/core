@@ -4,7 +4,8 @@ import {
     CustomClientParams,
     DotCMSPageEditorConfig,
     EditorConfig,
-    UVE_MODE
+    UVE_MODE,
+    UVEState
 } from './lib/editor/models/editor.model';
 import {
     InlineEditorData,
@@ -19,30 +20,40 @@ import {
     initEditor,
     isInsideEditor,
     updateNavigation,
-    initInlineEditing
+    initInlineEditing,
+    getUVEState
 } from './lib/editor/sdk-editor';
 import { getPageRequestParams, graphqlToPageEntity } from './lib/utils';
 
 export {
-    graphqlToPageEntity,
-    getPageRequestParams,
-    isInsideEditor,
-    editContentlet,
-    reorderMenu,
-    DotCmsClient,
-    DotCMSPageEditorConfig,
-    CLIENT_ACTIONS,
-    NOTIFY_CLIENT,
-    CustomClientParams,
-    postMessageToEditor,
-    EditorConfig,
-    initEditor,
-    updateNavigation,
+    // Functions
     destroyEditor,
-    ClientConfig,
+    editContentlet,
+    getPageRequestParams,
+    getUVEState,
+    graphqlToPageEntity,
+    initEditor,
     initInlineEditing,
+    isInsideEditor,
+    postMessageToEditor,
+    reorderMenu,
+    updateNavigation,
+
+    // Classes
+    DotCmsClient,
+
+    // Interfaces & Types
+    ClientConfig,
+    CustomClientParams,
+    DotCMSPageEditorConfig,
+    EditorConfig,
     InlineEditEventData,
     InlineEditorData,
+    UVEState,
+
+    // Constants
+    CLIENT_ACTIONS,
     INLINE_EDITING_EVENT_KEY,
+    NOTIFY_CLIENT,
     UVE_MODE
 };

@@ -72,3 +72,7 @@ export enum UVE_MODE {
     PREVIEW = 'preview',
     LIVE = 'live'
 }
+
+export interface UVEState {
+    mode: UVE_MODE;
+}

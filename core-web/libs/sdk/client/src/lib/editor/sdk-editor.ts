@@ -6,7 +6,12 @@ import {
     subscriptions
 } from './listeners/listeners';
 import { CLIENT_ACTIONS, INITIAL_DOT_UVE, postMessageToEditor } from './models/client.model';
-import { DotCMSPageEditorConfig, ReorderMenuConfig } from './models/editor.model';
+import {
+    DotCMSPageEditorConfig,
+    ReorderMenuConfig,
+    UVE_MODE,
+    UVEState
+} from './models/editor.model';
 import { INLINE_EDITING_EVENT_KEY, InlineEditEventData } from './models/inline-event.model';
 
 import { Contentlet } from '../client/content/shared/types';
@@ -92,6 +97,8 @@ export function reorderMenu(config?: ReorderMenuConfig): void {
 }
 
 /**
+ * @deprecated Use `getUVEState` function instead, this function will be removed on future versions.
+ *
  * Checks if the code is running inside the DotCMS Universal Visual Editor (UVE).
  *
  * The function checks three conditions:
@@ -116,6 +123,39 @@ export function isInsideEditor(): boolean {
     }
 
     return window.parent !== window;
+}
+
+/**
+ * Gets the current state of the Universal Visual Editor (UVE).
+ *
+ * This function checks if the code is running inside the DotCMS Universal Visual Editor
+ * and returns information about its current state, including the editor mode.
+ *
+ * @export
+ * @return {UVEState | undefined} Returns the UVE state object if running inside the editor,
+ * undefined otherwise. The state includes:
+ * - mode: The current editor mode (preview, edit, live)
+ *
+ * @example
+ * ```ts
+ * const editorState = getUVEState();
+ * if (editorState?.mode === 'edit') {
+ *   // Enable editing features
+ * }
+ * ```
+ */
+export function getUVEState(): UVEState | undefined {
+    if (typeof window === 'undefined' || window.parent === window || !window.dotUVE) {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+
+    const mode = url.searchParams.get('editorMode') as UVE_MODE;
+
+    return {
+        mode
+    };
 }
 
 export function initDotUVE() {
