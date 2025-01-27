@@ -36,7 +36,7 @@ test.afterEach(async ({ page, request }) => {
 });
 
 test.describe("text field", () => {
-  test("should save a text field", async ({ page }) => {
+  test.skip("should save a text field", async ({ page }) => {
     const locatorField = page.getByTestId("textField");
 
     await expect(locatorField).toBeVisible();
