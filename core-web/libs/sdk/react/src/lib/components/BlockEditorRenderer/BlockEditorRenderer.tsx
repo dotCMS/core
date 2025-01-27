@@ -136,7 +136,7 @@ export const BlockEditorRenderer = ({
 
     return (
         <div className={className} style={style} ref={ref} data-testid="dot-block-editor-container">
-            <BlockEditorBlock content={blocks.content} customRenderers={customRenderers} />
+            <BlockEditorBlock content={blocks?.content} customRenderers={customRenderers} />
         </div>
     );
 };
