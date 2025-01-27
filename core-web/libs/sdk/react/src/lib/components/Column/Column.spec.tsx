@@ -30,7 +30,9 @@ describe('Column', () => {
 
     describe('Column is inside editor', () => {
         beforeEach(() => {
-            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
+            jest.spyOn(dotcmsClient, 'getUVEState').mockReturnValue({
+                mode: dotcmsClient.UVE_MODE.EDIT
+            });
             render(
                 <MockContextRender mockContext={{ isInsideEditor: true }}>
                     <Column column={mockColumnData} />
@@ -62,7 +64,7 @@ describe('Column', () => {
 
     describe('Column is not inside editor', () => {
         beforeEach(() => {
-            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
+            jest.spyOn(dotcmsClient, 'getUVEState').mockReturnValue(undefined);
             render(
                 <MockContextRender mockContext={{ isInsideEditor: false }}>
                     <Column column={mockColumnData} />

@@ -27,7 +27,9 @@ const getContainer = ({ containerRef, containers }: { containerRef: any; contain
 
 describe('Container', () => {
     // Mock data for your context and container
-    jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
+    jest.spyOn(dotcmsClient, 'getUVEState').mockReturnValue({
+        mode: dotcmsClient.UVE_MODE.EDIT
+    });
 
     describe('with contentlets', () => {
         const mockContainerRef = {
@@ -133,7 +135,7 @@ describe('Container', () => {
             });
 
             it('dont render EmptyContainer component outside editor mode', () => {
-                jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
+                jest.spyOn(dotcmsClient, 'getUVEState').mockReturnValue(undefined);
 
                 const updatedContext = {
                     ...mockPageContext,

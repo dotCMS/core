@@ -5,7 +5,7 @@ import {
     DotCmsClient,
     destroyEditor,
     initEditor,
-    isInsideEditor as isInsideEditorFn,
+    getUVEState,
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
@@ -34,7 +34,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
      * Initializes the DotCMS editor.
      */
     useEffect(() => {
-        if (!isInsideEditorFn()) {
+        if (!getUVEState()) {
             return;
         }
 
@@ -49,7 +49,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
      * Reloads the page when changes are made in the editor.
      */
     useEffect(() => {
-        const insideEditor = isInsideEditorFn();
+        const insideEditor = !!getUVEState();
         const client = DotCmsClient.instance;
 
         if (!insideEditor || !onReload) {
@@ -65,7 +65,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
      * Sends a message to the editor when the client is ready.
      */
     useEffect(() => {
-        if (!isInsideEditorFn()) {
+        if (!getUVEState()) {
             return;
         }
 
@@ -76,7 +76,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
      * Updates the page asset when changes are made in the editor.
      */
     useEffect(() => {
-        if (!isInsideEditorFn()) {
+        if (!getUVEState()) {
             return;
         }
 

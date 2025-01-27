@@ -35,6 +35,9 @@ jest.mock('@tinymce/tinymce-react', () => ({
 jest.mock('@dotcms/client', () => ({
     ...jest.requireActual('@dotcms/client'),
     isInsideEditor: jest.fn().mockImplementation(() => true),
+    getUVEState: jest.fn().mockImplementation(() => ({
+        mode: 'edit'
+    })),
     postMessageToEditor: jest.fn(),
     DotCmsClient: {
         dotcmsUrl: 'http://localhost:8080'
@@ -47,7 +50,7 @@ const { Editor } = tinymceReact as jest.Mocked<typeof tinymceReact>;
 describe('DotEditableText', () => {
     describe('Outside editor', () => {
         beforeEach(() => {
-            mockedDotcmsClient.isInsideEditor.mockReturnValue(false);
+            mockedDotcmsClient.getUVEState.mockReturnValue(undefined);
             render(<DotEditableText contentlet={dotcmsContentletMock} fieldName="title" />);
         });
 
@@ -62,7 +65,9 @@ describe('DotEditableText', () => {
         let rerenderFn: (ui: React.ReactNode) => void;
 
         beforeEach(() => {
-            mockedDotcmsClient.isInsideEditor.mockReturnValue(true);
+            mockedDotcmsClient.getUVEState.mockReturnValue({
+                mode: dotcmsClient.UVE_MODE.EDIT
+            });
             const { rerender } = render(
                 <DotEditableText contentlet={dotcmsContentletMock} fieldName="title" />
             );

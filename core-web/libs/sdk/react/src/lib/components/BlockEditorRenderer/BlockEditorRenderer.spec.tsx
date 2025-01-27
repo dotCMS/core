@@ -55,7 +55,9 @@ describe('BlockEditorRenderer', () => {
 
     describe('Error Handling', () => {
         it('should show error message when blocks object is not provided', () => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+            jest.spyOn(client, 'getUVEState').mockImplementation(() => ({
+                mode: client.UVE_MODE.EDIT
+            }));
             const consoleSpy = jest.spyOn(console, 'error');
 
             const { getByTestId } = render(
@@ -69,7 +71,9 @@ describe('BlockEditorRenderer', () => {
         });
 
         it('should show error message when blocks object is not valid', () => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+            jest.spyOn(client, 'getUVEState').mockImplementation(() => ({
+                mode: client.UVE_MODE.EDIT
+            }));
             const consoleSpy = jest.spyOn(console, 'error');
 
             const { getByTestId } = render(
@@ -85,7 +89,7 @@ describe('BlockEditorRenderer', () => {
         });
 
         it('should show error message when blocks object dont have a doc type', () => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+            jest.spyOn(client, 'getUVEState').mockImplementation(() => undefined);
             const consoleSpy = jest.spyOn(console, 'error');
 
             const { queryByTestId } = render(
@@ -97,7 +101,7 @@ describe('BlockEditorRenderer', () => {
         });
 
         it('should show error message when blocks content array is empty', () => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => false);
+            jest.spyOn(client, 'getUVEState').mockImplementation(() => undefined);
             const consoleSpy = jest.spyOn(console, 'error');
 
             const { queryByTestId } = render(
@@ -111,7 +115,9 @@ describe('BlockEditorRenderer', () => {
 
     describe('when the editable prop is true', () => {
         beforeEach(() => {
-            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+            jest.spyOn(client, 'getUVEState').mockImplementation(() => ({
+                mode: client.UVE_MODE.EDIT
+            }));
         });
 
         it("should receive the 'editable' prop and render the BlockEditorBlock component", () => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { initInlineEditing, isInsideEditor } from '@dotcms/client';
+import { getUVEState, initInlineEditing, UVE_MODE } from '@dotcms/client';
 
 import { BlockEditorBlock } from './item/BlockEditorBlock';
 
@@ -74,7 +74,7 @@ export const BlockEditorRenderer = ({
      * @dependency {string} fieldName - Name of the field being edited
      */
     useEffect(() => {
-        if (!editable || !ref.current || !isInsideEditor()) {
+        if (!editable || !ref.current || getUVEState()?.mode !== UVE_MODE.EDIT) {
             return;
         }
 
@@ -127,7 +127,7 @@ export const BlockEditorRenderer = ({
 
     if (blockEditorState.error) {
         console.error(blockEditorState.error);
-        if (isInsideEditor()) {
+        if (getUVEState()?.mode === UVE_MODE.EDIT) {
             return <div data-testid="invalid-blocks-message">{blockEditorState.error}</div>;
         }
 

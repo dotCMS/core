@@ -2,11 +2,12 @@ import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useRef, useState } from 'react';
 
 import {
-    isInsideEditor as isInsideEditorFn,
     postMessageToEditor,
     CLIENT_ACTIONS,
     DotCmsClient,
-    NOTIFY_CLIENT
+    NOTIFY_CLIENT,
+    getUVEState,
+    UVE_MODE
 } from '@dotcms/client';
 
 import { DotEditableTextProps, TINYMCE_CONFIG } from './utils';
@@ -52,7 +53,7 @@ export function DotEditableText({
     const [content, setContent] = useState(contentlet?.[fieldName] || '');
 
     useEffect(() => {
-        setIsInsideEditor(isInsideEditorFn());
+        setIsInsideEditor(getUVEState()?.mode === UVE_MODE.EDIT);
 
         if (!contentlet || !fieldName) {
             console.error('DotEditableText: contentlet or fieldName is missing');
@@ -61,7 +62,7 @@ export function DotEditableText({
             return;
         }
 
-        if (!isInsideEditorFn()) {
+        if (!getUVEState()) {
             return;
         }
 
@@ -74,7 +75,7 @@ export function DotEditableText({
     }, [format, fieldName, contentlet]);
 
     useEffect(() => {
-        if (!isInsideEditorFn()) {
+        if (!getUVEState()) {
             return;
         }
 
