@@ -2,9 +2,30 @@
   "name": "@dotcms/client",
   "version": "0.0.1-alpha.38",
   "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": ["./dist/index.d.ts"],
+      "editor": ["./dist/editor.d.ts"]
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./editor": {
+      "types": "./dist/editor.d.ts",
+      "import": "./dist/editor.js",
+      "require": "./dist/editor.cjs"
+    }
   },
   "scripts": {
     "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"

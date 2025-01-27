@@ -14,6 +14,7 @@
                 "assets": [{ "input": "libs/sdk/client", "output": ".", "glob": "*.md" }],
                 "outputPath": "dist/libs/sdk/client",
                 "main": "libs/sdk/client/src/index.ts",
+                "additionalEntryPoints": ["libs/sdk/client/src/editor.ts"],
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json"
             }
         },
