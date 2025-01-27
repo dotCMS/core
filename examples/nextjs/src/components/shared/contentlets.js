@@ -1,7 +1,8 @@
 'use client';
 import { useMemo } from 'react';
 import Image from 'next/image';
-import { editContentlet, isInsideEditor } from '@dotcms/client';
+import { editContentlet } from '@dotcms/client';
+import { isEditing } from '@/utils/isEditing';
 
 const dateFormatOptions = {
     year: 'numeric',
@@ -10,7 +11,7 @@ const dateFormatOptions = {
 };
 
 function Contentlets({ contentlets }) {
-    const insideEditor = useMemo(isInsideEditor, []);
+    const insideEditor = useMemo(isEditing, []);
 
     return (
         <ul className="flex flex-col gap-7">
