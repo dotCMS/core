@@ -54,11 +54,27 @@ describe('BlockEditorRenderer', () => {
     });
 
     describe('Error Handling', () => {
+        it('should show error message when blocks object is not provided', () => {
+            jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
+            const consoleSpy = jest.spyOn(console, 'error');
+
+            const { getByTestId } = render(
+                <BlockEditorRenderer blocks={undefined as unknown as Block} />
+            );
+
+            expect(getByTestId('invalid-blocks-message')).toHaveTextContent(
+                'Error: Blocks object is not defined'
+            );
+            expect(consoleSpy).toHaveBeenCalledWith('Error: Blocks object is not defined');
+        });
+
         it('should show error message when blocks object is not valid', () => {
             jest.spyOn(client, 'isInsideEditor').mockImplementation(() => true);
             const consoleSpy = jest.spyOn(console, 'error');
 
-            const { getByTestId } = render(<BlockEditorRenderer blocks={'' as unknown as Block} />);
+            const { getByTestId } = render(
+                <BlockEditorRenderer blocks={'Testing' as unknown as Block} />
+            );
 
             expect(getByTestId('invalid-blocks-message')).toHaveTextContent(
                 'Error: Blocks must be an object, but received: string'

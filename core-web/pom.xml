@@ -168,6 +168,20 @@
                     </execution>
 
                     <execution>
+                        <id>build edit-content-bridge</id>
+                        <goals>
+                            <goal>yarn</goal>
+                        </goals>
+
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>compile</phase>
+
+                        <configuration>
+                            <arguments>run nx run edit-content-bridge:build</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
                         <id>test</id>
                         <goals>
                             <goal>yarn</goal>
@@ -213,6 +227,12 @@
                             <directory>${project.basedir}/dist/apps/dotcms-block-editor</directory>
                             <filtering>false</filtering>
                             <targetPath>dotcms-block-editor</targetPath>
+                        </resource>
+
+                        <resource>
+                            <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
+                            <filtering>false</filtering>
+                            <targetPath>html/js/legacy_custom_field_bridge</targetPath>
                         </resource>
                     </webResources>
                 </configuration>
