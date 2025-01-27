@@ -145,7 +145,7 @@ export function isInsideEditor(): boolean {
  * ```
  */
 export function getUVEState(): UVEState | undefined {
-    if (typeof window === 'undefined' || window.parent === window || !window.dotUVE) {
+    if (typeof window === 'undefined' || window.parent === window) {
         return;
     }
 

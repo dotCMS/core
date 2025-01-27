@@ -247,23 +247,6 @@ describe('DotCMSPageEditor', () => {
             expect(getUVEState()).toBe(undefined);
         });
 
-        it('should return undefined when dotUVE object is not present', () => {
-            const mockWindow = {
-                ...window,
-                parent: {
-                    ...window
-                },
-                location: {
-                    href: 'https://test.com/hello?editorMode=edit'
-                }
-            };
-
-            const spy = jest.spyOn(global, 'window', 'get');
-            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
-
-            expect(getUVEState()).toBe(undefined);
-        });
-
         it('should return edit mode when in editor with edit parameter', () => {
             const mockWindow = {
                 ...window,
@@ -272,9 +255,6 @@ describe('DotCMSPageEditor', () => {
                 },
                 location: {
                     href: 'https://test.com/hello?editorMode=edit'
-                },
-                dotUVE: {
-                    lastScrollPosition: 0
                 }
             };
 
@@ -294,9 +274,6 @@ describe('DotCMSPageEditor', () => {
                 },
                 location: {
                     href: 'https://test.com/hello?editorMode=preview'
-                },
-                dotUVE: {
-                    lastScrollPosition: 0
                 }
             };
 
@@ -316,9 +293,6 @@ describe('DotCMSPageEditor', () => {
                 },
                 location: {
                     href: 'https://test.com/hello?editorMode=live'
-                },
-                dotUVE: {
-                    lastScrollPosition: 0
                 }
             };
 
@@ -338,9 +312,6 @@ describe('DotCMSPageEditor', () => {
                 },
                 location: {
                     href: 'https://test.com/hello'
-                },
-                dotUVE: {
-                    lastScrollPosition: 0
                 }
             };
 
@@ -361,9 +332,6 @@ describe('DotCMSPageEditor', () => {
                 },
                 location: {
                     href: 'https://test.com/hello'
-                },
-                dotUVE: {
-                    lastScrollPosition: 0
                 }
             };
 

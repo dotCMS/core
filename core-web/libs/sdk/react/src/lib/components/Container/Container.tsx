@@ -1,5 +1,7 @@
 import { useContext } from 'react';
 
+import { UVE_MODE } from '@dotcms/client';
+
 import { PageContext } from '../../contexts/PageContext';
 import { useCheckHaveContent } from '../../hooks/useCheckHaveContent';
 import { DotCMSPageContext } from '../../models';
@@ -43,7 +45,7 @@ export interface ContainerProps {
  * @return {JSX.Element} Rendered container with content
  */
 export function Container({ containerRef }: ContainerProps) {
-    const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
+    const { UVEState } = useContext(PageContext) as DotCMSPageContext;
 
     const { identifier, uuid } = containerRef;
 
@@ -84,11 +86,12 @@ export function Container({ containerRef }: ContainerProps) {
         const ContentTypeComponent = components[contentlet.contentType];
         const DefaultComponent = components['CustomNoComponent'] || NoComponent;
 
-        const Component = isInsideEditor
-            ? ContentTypeComponent || DefaultComponent
-            : ContentTypeComponent || EmptyContent;
+        const Component =
+            UVEState?.mode === UVE_MODE.EDIT
+                ? ContentTypeComponent || DefaultComponent
+                : ContentTypeComponent || EmptyContent;
 
-        return isInsideEditor ? (
+        return UVEState?.mode === UVE_MODE.EDIT ? (
             <div
                 data-testid="dot-contentlet"
                 data-dot-object="contentlet"
@@ -109,7 +112,7 @@ export function Container({ containerRef }: ContainerProps) {
         );
     });
 
-    return isInsideEditor ? (
+    return UVEState?.mode === UVE_MODE.EDIT ? (
         <div
             data-testid="dot-container"
             data-dot-object="container"

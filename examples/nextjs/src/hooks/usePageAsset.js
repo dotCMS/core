@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 
 import { client } from '@/utils/dotcmsClient';
 import { CLIENT_ACTIONS, getUVEState, postMessageToEditor } from '@dotcms/client';
-import { isEditing } from '@/utils/isEditing';
 
 export const usePageAsset = (currentPageAsset) => {
     const [pageAsset, setPageAsset] = useState(null);
     useEffect(() => {
-        if (!isEditing()) {
+        if (!getUVEState()) {
             return;
         }
 

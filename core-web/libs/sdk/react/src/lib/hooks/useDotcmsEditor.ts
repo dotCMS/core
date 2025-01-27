@@ -27,20 +27,24 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
     const { pathname, onReload, editor } = config;
     const [state, setState] = useState<DotCMSPageContext>({
         ...pageContext,
-        isInsideEditor: false
+        UVEState: undefined
     });
+
+    // THIS CHANGES ARE BREAKING CHANGES USER WILL HAVE TO MIGRATE TO UVESTATE FUNCTION
 
     /**
      * Initializes the DotCMS editor.
      */
     useEffect(() => {
-        if (!getUVEState()) {
+        const UVEState = getUVEState();
+
+        if (!UVEState) {
             return;
         }
 
         initEditor({ pathname });
         updateNavigation(pathname || '/');
-        setState((prevState) => ({ ...prevState, isInsideEditor: true }));
+        setState((prevState) => ({ ...prevState, UVEState }));
 
         return () => destroyEditor();
     }, [pathname]);
