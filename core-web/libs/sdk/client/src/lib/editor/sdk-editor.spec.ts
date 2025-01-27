@@ -7,9 +7,9 @@ import {
 import { postMessageToEditor, CLIENT_ACTIONS } from './models/client.model';
 import {
     addClassToEmptyContentlets,
+    getUVEState,
     initEditor,
     initInlineEditing,
-    isInsideEditor,
     updateNavigation
 } from './sdk-editor';
 
@@ -45,25 +45,73 @@ jest.mock('./listeners/listeners', () => ({
 
 describe('DotCMSPageEditor', () => {
     describe('is NOT inside editor', () => {
-        beforeEach(() => {
-            const mockWindow = {
-                ...window,
-                parent: window
-            };
+        describe('same window parent', () => {
+            beforeEach(() => {
+                const mockWindow = {
+                    ...window,
+                    parent: window
+                };
 
-            const spy = jest.spyOn(global, 'window', 'get');
-            spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
+                const spy = jest.spyOn(global, 'window', 'get');
+                spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
+            });
+
+            afterEach(() => {
+                jest.clearAllMocks();
+            });
+
+            it('should initialize without any listener', () => {
+                const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+
+                expect(addEventListenerSpy).not.toHaveBeenCalled();
+            });
+
+            it('should initialize UVEState as undefined', () => {
+                expect(getUVEState()).toBe(undefined);
+            });
         });
 
-        afterEach(() => {
-            jest.clearAllMocks();
+        describe('No window', () => {
+            beforeEach(() => {
+                const mockWindow = undefined;
+
+                const spy = jest.spyOn(global, 'window', 'get');
+                spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
+            });
+
+            afterEach(() => {
+                jest.clearAllMocks();
+            });
+
+            it('should initialize UVEState as undefined', () => {
+                expect(getUVEState()).toBe(undefined);
+            });
         });
 
-        it('should initialize without any listener', () => {
-            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+        describe('No dotUVE', () => {
+            beforeEach(() => {
+                const mockWindow = {
+                    ...window,
+                    parent: {
+                        ...window //Another reference
+                    }
+                };
+                const spy = jest.spyOn(global, 'window', 'get');
+                spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
+            });
 
-            expect(isInsideEditor()).toBe(false);
-            expect(addEventListenerSpy).not.toHaveBeenCalled();
+            afterEach(() => {
+                jest.clearAllMocks();
+            });
+
+            it('should initialize without any listener', () => {
+                const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+
+                expect(addEventListenerSpy).not.toHaveBeenCalled();
+            });
+            it('should initialize UVEState as undefined', () => {
+                expect(getUVEState()).toBe(undefined);
+            });
         });
     });
 
@@ -71,7 +119,15 @@ describe('DotCMSPageEditor', () => {
         beforeEach(() => {
             const mockWindow = {
                 ...window,
-                parent: null
+                parent: {
+                    ...window
+                },
+                location: {
+                    href: 'https://test.com/hello?editorMode=edit'
+                },
+                dotUVE: {
+                    lastScrollPosition: 0
+                }
             };
 
             const spy = jest.spyOn(global, 'window', 'get');
@@ -83,7 +139,9 @@ describe('DotCMSPageEditor', () => {
         });
 
         it('should initialize properly', () => {
-            expect(isInsideEditor()).toBe(true);
+            expect(getUVEState()).toEqual({
+                mode: 'edit'
+            });
         });
 
         it('should update navigation', () => {
@@ -162,6 +220,161 @@ describe('DotCMSPageEditor', () => {
                     data: undefined
                 }
             });
+        });
+    });
+
+    describe('getUVEStatus', () => {
+        beforeAll(() => {
+            jest.spyOn(global, 'window', 'get').mockReset();
+        });
+
+        it('should return undefined when not in editor', () => {
+            const mockWindow = {
+                ...window,
+                parent: window
+            };
+
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+            expect(getUVEState()).toBe(undefined);
+        });
+
+        it('should return undefined when window is undefined', () => {
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(undefined as unknown as Window & typeof globalThis);
+
+            expect(getUVEState()).toBe(undefined);
+        });
+
+        it('should return undefined when dotUVE object is not present', () => {
+            const mockWindow = {
+                ...window,
+                parent: {
+                    ...window
+                },
+                location: {
+                    href: 'https://test.com/hello?editorMode=edit'
+                }
+            };
+
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+            expect(getUVEState()).toBe(undefined);
+        });
+
+        it('should return edit mode when in editor with edit parameter', () => {
+            const mockWindow = {
+                ...window,
+                parent: {
+                    ...window
+                },
+                location: {
+                    href: 'https://test.com/hello?editorMode=edit'
+                },
+                dotUVE: {
+                    lastScrollPosition: 0
+                }
+            };
+
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+            expect(getUVEState()).toEqual({
+                mode: 'edit'
+            });
+        });
+
+        it('should return preview mode when in editor with preview parameter', () => {
+            const mockWindow = {
+                ...window,
+                parent: {
+                    ...window
+                },
+                location: {
+                    href: 'https://test.com/hello?editorMode=preview'
+                },
+                dotUVE: {
+                    lastScrollPosition: 0
+                }
+            };
+
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+            expect(getUVEState()).toEqual({
+                mode: 'preview'
+            });
+        });
+
+        it('should return live mode when in editor with live parameter', () => {
+            const mockWindow = {
+                ...window,
+                parent: {
+                    ...window
+                },
+                location: {
+                    href: 'https://test.com/hello?editorMode=live'
+                },
+                dotUVE: {
+                    lastScrollPosition: 0
+                }
+            };
+
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+            expect(getUVEState()).toEqual({
+                mode: 'live'
+            });
+        });
+
+        it('should return mode as unknown when the editorMode parameter is missing', () => {
+            const mockWindow = {
+                ...window,
+                parent: {
+                    ...window
+                },
+                location: {
+                    href: 'https://test.com/hello'
+                },
+                dotUVE: {
+                    lastScrollPosition: 0
+                }
+            };
+
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+            expect(getUVEState()).toEqual({
+                mode: 'unknown'
+            });
+        });
+
+        it('should warn the user when the editorMode is unknown', () => {
+            const consoleSpy = jest.spyOn(console, 'warn');
+            const mockWindow = {
+                ...window,
+                parent: {
+                    ...window
+                },
+                location: {
+                    href: 'https://test.com/hello'
+                },
+                dotUVE: {
+                    lastScrollPosition: 0
+                }
+            };
+
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+            getUVEState();
+
+            expect(consoleSpy).toHaveBeenCalledWith(
+                "Couldn't identify the current mode of UVE, please contact customer support."
+            );
         });
     });
 });

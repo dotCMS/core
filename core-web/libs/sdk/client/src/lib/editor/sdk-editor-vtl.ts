@@ -4,7 +4,7 @@ import {
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { isInsideEditor, addClassToEmptyContentlets, initDotUVE } from './sdk-editor';
+import { addClassToEmptyContentlets, initDotUVE, getUVEState } from './sdk-editor';
 import { listenBlockEditorInlineEvent } from './utils/traditional-vtl.utils';
 
 /**
@@ -17,7 +17,7 @@ import { listenBlockEditorInlineEvent } from './utils/traditional-vtl.utils';
  * listening for editor messages, hovered contentlet changes, and content changes.
  *
  */
-if (isInsideEditor()) {
+if (getUVEState()) {
     initDotUVE();
     listenEditorMessages();
     scrollHandler();

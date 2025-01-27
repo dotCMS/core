@@ -151,7 +151,11 @@ export function getUVEState(): UVEState | undefined {
 
     const url = new URL(window.location.href);
 
-    const mode = url.searchParams.get('editorMode') as UVE_MODE;
+    const mode = (url.searchParams.get('editorMode') as UVE_MODE) ?? UVE_MODE.UNKNOWN;
+
+    if (mode === UVE_MODE.UNKNOWN) {
+        console.warn("Couldn't identify the current mode of UVE, please contact customer support.");
+    }
 
     return {
         mode

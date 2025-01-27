@@ -3,6 +3,7 @@
 import { Content } from './content/content-api';
 import { ClientConfig, DotCmsClient } from './sdk-js-client';
 
+import { UVE_MODE, UVEState } from '../editor/models/editor.model';
 import { NOTIFY_CLIENT } from '../editor/models/listeners.model';
 import * as dotcmsEditor from '../editor/sdk-editor';
 
@@ -37,7 +38,7 @@ const mockFetchResponse = (body: any, ok = true, status = 200) => {
 describe('DotCmsClient', () => {
     describe('with full configuration', () => {
         let client: TestDotCmsClient;
-        let isInsideEditorSpy: jest.SpyInstance<boolean>;
+        let getUVEStateSpy: jest.SpyInstance<UVEState | undefined>;
 
         beforeEach(() => {
             (fetch as jest.Mock).mockClear();
@@ -48,7 +49,7 @@ describe('DotCmsClient', () => {
                 authToken: 'ABC'
             });
 
-            isInsideEditorSpy = jest.spyOn(dotcmsEditor, 'isInsideEditor');
+            getUVEStateSpy = jest.spyOn(dotcmsEditor, 'getUVEState');
         });
 
         describe('init', () => {
@@ -266,7 +267,7 @@ describe('DotCmsClient', () => {
 
         describe('editor.on', () => {
             it('should listen to FETCH_PAGE_ASSET_FROM_UVE event', () => {
-                isInsideEditorSpy.mockReturnValue(true);
+                getUVEStateSpy.mockReturnValue({ mode: UVE_MODE.LIVE });
 
                 const callback = jest.fn();
                 client.editor.on('changes', callback);
@@ -284,7 +285,7 @@ describe('DotCmsClient', () => {
             });
 
             it('should do nothing if is outside editor', () => {
-                isInsideEditorSpy.mockReturnValue(false);
+                getUVEStateSpy.mockReturnValue(undefined);
 
                 const callback = jest.fn();
                 client.editor.on('FETCH_PAGE_ASSET_FROM_UVE', callback);
@@ -304,7 +305,9 @@ describe('DotCmsClient', () => {
 
         describe('editor.off', () => {
             it('should remove a page event listener', () => {
-                isInsideEditorSpy.mockReturnValue(true);
+                getUVEStateSpy.mockReturnValue({
+                    mode: UVE_MODE.PREVIEW
+                });
 
                 const windowSpy = jest.spyOn(window, 'removeEventListener');
                 const callback = jest.fn();

@@ -70,7 +70,8 @@ export interface ReorderMenuConfig {
 export enum UVE_MODE {
     EDIT = 'edit',
     PREVIEW = 'preview',
-    LIVE = 'live'
+    LIVE = 'live',
+    UNKNOWN = 'unknown'
 }
 
 export interface UVEState {
