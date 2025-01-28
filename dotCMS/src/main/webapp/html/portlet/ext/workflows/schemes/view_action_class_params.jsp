@@ -26,6 +26,7 @@
 <%@ page import="com.dotmarketing.portlets.workflows.model.MultiSelectionWorkflowActionletParameter" %>
 <%@ page import="com.dotmarketing.portlets.workflows.model.MultiKeyValue" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="com.dotmarketing.portlets.workflows.model.CheckboxWorkflowActionletParameter" %>
 
 <%
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -75,6 +76,15 @@
 
 					<% } %>
 				</select>
+			</td>
+		</tr>
+		<% } else if (workflowActionletParameter instanceof CheckboxWorkflowActionletParameter) { %>
+		<tr>
+			<td nowrap="true" valign="top" style="text-align: right;"><%if(workflowActionletParameter.isRequired()){ %><span class="required"></span><%} %><%=workflowActionletParameter.getDisplayName() %>:</td>
+			<td>
+				<input  id="acp-<%=workflowActionletParameter.getKey() %>" name="acp-<%=workflowActionletParameter.getKey() %>" value="true"
+						type="checkbox"
+						<%=!workflowActionletParameter.getDefaultValue().equals(value)? "checked":""%>  dojoType="dijit.form.CheckBox" />
 			</td>
 		</tr>
 		<% } else { %>
