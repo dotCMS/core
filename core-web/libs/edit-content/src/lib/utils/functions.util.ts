@@ -1,9 +1,11 @@
 import {
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutTab
+    DotCMSContentTypeLayoutTab,
+    DotLanguage
 } from '@dotcms/dotcms-models';
 
 import {
@@ -292,4 +294,44 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
             }))
         }))
     }));
+};
+
+/**
+ * Sorts an array of locales, placing translated locales first.
+ *
+ * @param {DotLanguage[]} locales - The array of locales to be sorted.
+ * @returns {DotLanguage[]} The sorted array with translated locales first, followed by untranslated locales.
+ */
+export const sortLocalesTranslatedFirst = (locales: DotLanguage[]): DotLanguage[] => {
+    const translatedLocales = locales.filter((locale) => locale.translated);
+    const untranslatedLocales = locales.filter((locale) => !locale.translated);
+
+    return [...translatedLocales, ...untranslatedLocales];
+};
+
+/* Generates a preview URL for a given contentlet.
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
+ * @returns {string} The generated preview URL.
+ */
+export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
+    if (
+        !contentlet.URL_MAP_FOR_CONTENT ||
+        !contentlet.host ||
+        contentlet.languageId === undefined
+    ) {
+        console.warn('Missing required contentlet attributes to generate preview URL');
+
+        return '';
+    }
+
+    const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
+    const params = new URLSearchParams();
+
+    params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
+    params.set('language_id', contentlet.languageId.toString());
+    params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
+    params.set('editorMode', 'edit');
+
+    return `${baseUrl}?${params.toString()}`;
 };

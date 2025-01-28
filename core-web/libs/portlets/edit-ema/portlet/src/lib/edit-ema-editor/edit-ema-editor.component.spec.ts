@@ -414,13 +414,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should hide components when the store changes', () => {
-                const componentsToHide = [
-                    'palette',
-                    'dropzone',
-                    'contentlet-tools',
-                    'dialog',
-                    'confirm-dialog'
-                ]; // Test id of components that should hide when entering preview modes
+                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools', 'dialog']; // Test id of components that should hide when entering preview modes
 
                 const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
@@ -452,13 +446,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should hide components when the store changes for a variant', () => {
-                const componentsToHide = [
-                    'palette',
-                    'dropzone',
-                    'contentlet-tools',
-                    'dialog',
-                    'confirm-dialog'
-                ]; // Test id of components that should hide when entering preview modes
+                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools', 'dialog']; // Test id of components that should hide when entering preview modes
 
                 spectator.detectChanges();
 
@@ -2660,7 +2648,7 @@ describe('EditEmaEditorComponent', () => {
                         iframe.nativeElement.dispatchEvent(new Event('load'));
                         spectator.detectChanges();
 
-                        expect(iframe.nativeElement.src).toContain('about:blank'); //When dont have src, the src is the same as the current page
+                        expect(iframe.nativeElement.src).toContain('http://localhost/'); //When dont have src, the src is the same as the current page
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>New Content - Hello World</div>'
                         );

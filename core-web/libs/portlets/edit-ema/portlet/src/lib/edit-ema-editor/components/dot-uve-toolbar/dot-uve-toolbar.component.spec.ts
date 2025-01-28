@@ -1,7 +1,7 @@
 import { expect, describe, it } from '@jest/globals';
 import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, signal } from '@angular/core';
@@ -9,7 +9,6 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotDevicesService,
@@ -28,6 +27,7 @@ import {
     mockDotDevices
 } from '@dotcms/utils-testing';
 
+import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
@@ -91,6 +91,7 @@ const baseUVEState = {
     reloadCurrentPage: jest.fn(),
     loadPageAsset: jest.fn(),
     $isPreviewMode: signal(false),
+    $isLiveMode: signal(false),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
@@ -111,7 +112,39 @@ const baseUVEState = {
     orientation: signal(''),
     clearDeviceAndSocialMedia: jest.fn(),
     device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
-    $unlockButton: signal(null)
+    $unlockButton: signal(null),
+    socialMedia: signal(null)
+};
+
+const personaEventMock = {
+    identifier: '123',
+    pageId: '123',
+    personalized: true,
+    archived: false,
+    baseType: 'PERSONA',
+    contentType: 'persona',
+    folder: 'SYSTEM_FOLDER',
+    hasLiveVersion: false,
+    hasTitleImage: false,
+    host: 'SYSTEM_HOST',
+    hostFolder: 'SYSTEM_HOST',
+    hostName: 'System Host',
+    inode: '',
+    keyTag: 'dot:persona',
+    languageId: 1,
+    live: false,
+    locked: false,
+    modDate: '0',
+    modUser: 'system',
+    modUserName: 'system user system user',
+    name: 'Test Persona',
+    owner: 'SYSTEM_USER',
+    sortOrder: 0,
+    stInode: 'c938b15f-bcb6-49ef-8651-14d455a97045',
+    title: 'Test Persona',
+    titleImage: 'TITLE_IMAGE_NOT_FOUND',
+    url: 'demo.dotcms.com',
+    working: false
 };
 
 describe('DotUveToolbarComponent', () => {
@@ -121,6 +154,7 @@ describe('DotUveToolbarComponent', () => {
     let confirmationService: ConfirmationService;
     let devicesService: DotDevicesService;
     let dotContentletLockerService: DotContentletLockerService;
+    let personalizeService: DotPersonalizeService;
 
     const fixedDate = new Date('2024-01-01');
     jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
@@ -133,7 +167,8 @@ describe('DotUveToolbarComponent', () => {
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaPersonaSelectorComponent),
             MockComponent(DotUveWorkflowActionsComponent),
-            MockComponent(DotUveDeviceSelectorComponent)
+            MockComponent(DotUveDeviceSelectorComponent),
+            MockComponent(DotEditorModeSelectorComponent)
         ],
         providers: [
             UVEStore,
@@ -188,7 +223,8 @@ describe('DotUveToolbarComponent', () => {
             {
                 provide: DotPersonalizeService,
                 useValue: {
-                    getPersonalize: jest.fn()
+                    getPersonalize: jest.fn(),
+                    personalized: jest.fn().mockReturnValue(of({}))
                 }
             }
         ]
@@ -204,6 +240,11 @@ describe('DotUveToolbarComponent', () => {
             devicesService = spectator.inject(DotDevicesService);
             confirmationService = spectator.inject(ConfirmationService, true);
             dotContentletLockerService = spectator.inject(DotContentletLockerService);
+            personalizeService = spectator.inject(DotPersonalizeService, true);
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
         });
 
         it('should have a dot-uve-workflow-actions component', () => {
@@ -221,6 +262,12 @@ describe('DotUveToolbarComponent', () => {
                     ...DEFAULT_DEVICES,
                     ...mockDotDevices
                 ]);
+            });
+        });
+
+        describe('editor mode selector', () => {
+            it('should have editor mode selector', () => {
+                expect(spectator.query(byTestId('uve-toolbar-editor-mode-selector'))).toBeTruthy();
             });
         });
 
@@ -359,23 +406,6 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
-        describe('Preview', () => {
-            it('should have preview button', () => {
-                expect(spectator.query(byTestId('uve-toolbar-preview'))).toBeTruthy();
-            });
-
-            it('should call store.loadPageAsset with preview true', () => {
-                const spy = jest.spyOn(store, 'loadPageAsset');
-
-                spectator.click(byTestId('uve-toolbar-preview'));
-
-                expect(spy).toHaveBeenCalledWith({
-                    editorMode: UVE_MODE.PREVIEW,
-                    publishDate: fixedDate.toISOString()
-                });
-            });
-        });
-
         describe('dot-edit-ema-persona-selector', () => {
             it('should have attr', () => {
                 const personaSelector = spectator.query(EditEmaPersonaSelectorComponent);
@@ -415,11 +445,9 @@ describe('DotUveToolbarComponent', () => {
             it('should personalize - no confirmation', () => {
                 const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    identifier: '123',
-                    pageId: '123',
+                    ...personaEventMock,
                     personalized: true
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                });
                 spectator.detectChanges();
 
                 expect(spyloadPageAsset).toHaveBeenCalledWith({
@@ -429,11 +457,9 @@ describe('DotUveToolbarComponent', () => {
 
             it('should personalize - confirmation', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
-                    identifier: '123',
-                    pageId: '123',
+                    ...personaEventMock,
                     personalized: false
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                });
                 spectator.detectChanges();
 
                 expect(confirmationService.confirm).toHaveBeenCalledWith({
@@ -446,13 +472,37 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
+            it('should handle error when personalization confirmation fails', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+
+                spyPersonalized.mockReturnValue(
+                    throwError(new Error('Personalization confirmation failed'))
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
             it('should despersonalize', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
-                    identifier: '123',
-                    pageId: '123',
-                    personalized: true
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
+                    ...personaEventMock,
+                    personalized: true,
+                    selected: true
+                });
 
                 spectator.detectChanges();
 
@@ -480,10 +530,10 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
-                const spyConfirmationService = jest.spyOn(baseUVEState, 'loadPageAsset');
+                const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
 
                 spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
-
+                spectator.detectChanges();
                 expect(spyConfirmationService).toHaveBeenCalled();
             });
         });
@@ -511,43 +561,45 @@ describe('DotUveToolbarComponent', () => {
             store = spectator.inject(UVEStore, true);
         });
 
-        describe('Close Preview Mode', () => {
-            it('should have api link button', () => {
-                expect(spectator.query(byTestId('close-preview-mode'))).toBeTruthy();
-            });
+        it('should have a device selector', () => {
+            expect(spectator.query(byTestId('uve-toolbar-device-selector'))).toBeTruthy();
+        });
 
-            it('should call store.loadPageAsset without editorMode and publishDate', () => {
-                const spy = jest.spyOn(store, 'loadPageAsset');
+        it('should not have experiments', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
+        });
 
-                spectator.click(byTestId('close-preview-mode'));
+        it('should not have a dot-uve-workflow-actions component', () => {
+            baseUVEState.$showWorkflowsActions.set(false);
+            spectator.detectChanges();
 
-                spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith({ editorMode: undefined, publishDate: undefined });
-            });
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
-            it('should call store.loadPageAsset when datePreview model is updated', () => {
-                const spy = jest.spyOn(store, 'loadPageAsset');
+            expect(workflowActions).toBeNull();
+        });
 
-                spectator.debugElement.componentInstance.$previewDate.set(new Date('2024-02-01'));
-                spectator.detectChanges();
-
-                expect(spy).toHaveBeenCalledWith({
-                    editorMode: UVE_MODE.PREVIEW,
-                    publishDate: new Date('2024-02-01').toISOString()
-                });
-            });
-
-            it('should call store.loadPageAsset with currentDate when datePreview model is updated with a past date', () => {
-                const spy = jest.spyOn(store, 'loadPageAsset');
-
-                spectator.debugElement.componentInstance.$previewDate.set(new Date('2023-02-01'));
+        describe('calendar', () => {
+            it('should not show calendar when in preview mode', () => {
                 spectator.detectChanges();
 
-                expect(spy).toHaveBeenCalledWith({
-                    editorMode: UVE_MODE.PREVIEW,
-                    publishDate: fixedDate.toISOString()
-                });
+                expect(spectator.query('p-calendar')).toBeFalsy();
             });
+        });
+    });
+    describe('live', () => {
+        const previewBaseUveState = {
+            ...baseUVEState,
+            $isPreviewMode: signal(false),
+            $isLiveMode: signal(true)
+        };
+
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [mockProvider(UVEStore, previewBaseUveState)]
+            });
+
+            store = spectator.inject(UVEStore, true);
         });
 
         it('should have a device selector', () => {
@@ -566,6 +618,34 @@ describe('DotUveToolbarComponent', () => {
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
             expect(workflowActions).toBeNull();
+        });
+
+        describe('calendar', () => {
+            it('should show calendar when in live mode', () => {
+                expect(spectator.query('p-calendar')).toBeTruthy();
+            });
+
+            it('should show calendar when in live mode and socialMedia is false', () => {
+                baseUVEState.socialMedia.set(null);
+                spectator.detectChanges();
+
+                expect(spectator.query('p-calendar')).toBeTruthy();
+            });
+
+            it('should not show calendar when socialMedia has a value', () => {
+                baseUVEState.socialMedia.set('faceboook');
+                spectator.detectChanges();
+
+                expect(spectator.query('p-calendar')).toBeFalsy();
+            });
+
+            it('should not show calendar when not in live mode', () => {
+                baseUVEState.$isPreviewMode.set(false);
+                baseUVEState.$isLiveMode.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query('p-calendar')).toBeFalsy();
+            });
         });
     });
 

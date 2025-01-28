@@ -39,6 +39,7 @@ import {
     checkClientHostAccess,
     getAllowedPageParams,
     getTargetUrl,
+    sanitizeURL,
     shouldNavigate
 } from '../utils';
 
@@ -209,6 +210,9 @@ export class DotEmaShellComponent implements OnInit {
         const params = getAllowedPageParams(queryParams);
         const validHost = checkClientHostAccess(params.clientHost, allowedDevURLs);
 
+        //Sanitize the url
+        params.url = sanitizeURL(params.url);
+
         if (!validHost) {
             delete params.clientHost;
         }
@@ -217,11 +221,14 @@ export class DotEmaShellComponent implements OnInit {
             params.clientHost = uveConfig.url;
         }
 
-        if (params.editorMode !== UVE_MODE.EDIT && params.editorMode !== UVE_MODE.PREVIEW) {
+        // If the editor mode is not valid, set it to edit mode
+        const UVE_MODES = Object.values(UVE_MODE);
+
+        if (!params.editorMode || !UVE_MODES.includes(params.editorMode)) {
             params.editorMode = UVE_MODE.EDIT;
         }
 
-        if (params.editorMode === UVE_MODE.PREVIEW && !params.publishDate) {
+        if (params.editorMode === UVE_MODE.LIVE && !params.publishDate) {
             params.publishDate = new Date().toISOString();
         }
 
@@ -231,7 +238,7 @@ export class DotEmaShellComponent implements OnInit {
     #getViewParams(uveMode: UVE_MODE): DotUveViewParams {
         const { queryParams } = this.#activatedRoute.snapshot;
 
-        const isPreviewMode = uveMode === UVE_MODE.PREVIEW;
+        const isPreviewMode = uveMode === UVE_MODE.PREVIEW || uveMode === UVE_MODE.LIVE;
 
         const viewParams: DotUveViewParams = {
             device: queryParams.device,

@@ -13,6 +13,7 @@ export default [
             '/assets',
             '/dotcms-block-editor',
             '/dotcms-binary-field-builder',
+            '/edit-content-bridge',
             '/categoriesServlet',
             '/JSONTags',
             '/api/vtl',

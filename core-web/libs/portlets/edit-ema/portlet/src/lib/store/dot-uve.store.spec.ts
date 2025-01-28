@@ -374,6 +374,20 @@ describe('UVEStore', () => {
                 expect(store.$isPreviewMode()).toBe(false);
             });
         });
+
+        describe('$isLiveMode', () => {
+            it("should return true when the live is 'true'", () => {
+                store.loadPageAsset({ editorMode: UVE_MODE.LIVE });
+
+                expect(store.$isLiveMode()).toBe(true);
+            });
+
+            it("should return false when the live is not 'true'", () => {
+                store.loadPageAsset({ editorMode: null });
+
+                expect(store.$isLiveMode()).toBe(false);
+            });
+        });
     });
 
     describe('withMethods', () => {

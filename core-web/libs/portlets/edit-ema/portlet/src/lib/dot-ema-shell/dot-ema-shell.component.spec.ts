@@ -312,6 +312,75 @@ describe('DotEmaShellComponent', () => {
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
+        describe('Sanitize url when called loadPageAsset', () => {
+            it('should sanitize when url is index', () => {
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/index'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+
+                spectator.detectChanges();
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'index' });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                );
+            });
+
+            it('should sanitize when url is nested', () => {
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/some-url/some-nested-url/'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+
+                spectator.detectChanges();
+                expect(spyloadPageAsset).toHaveBeenCalledWith({
+                    ...params,
+                    url: 'some-url/some-nested-url'
+                });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                );
+            });
+
+            it('should sanitize when url is nested and ends in index', () => {
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/some-url/index'
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+
+                spectator.detectChanges();
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                );
+            });
+        });
+
         it('should patch viewParams with empty object when the editorMode is edit', () => {
             const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
             const params = {
@@ -359,6 +428,30 @@ describe('DotEmaShellComponent', () => {
                 orientation: 'landscape',
                 seo: undefined,
                 editorMode: UVE_MODE.PREVIEW
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: withViewParams, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+                orientation: 'landscape',
+                seo: undefined,
+                device: 'mobile'
+            });
+        });
+
+        it('should patch viewParams with the correct params on init with live mode', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+
+            const withViewParams = {
+                device: 'mobile',
+                orientation: 'landscape',
+                seo: undefined,
+                editorMode: UVE_MODE.LIVE
             };
 
             overrideRouteSnashot(
@@ -614,11 +707,28 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
+            it('should set editorMode to EDIT when wrong editorMode is not passed', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: undefined
+                };
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: UVE_MODE.EDIT
+                });
+            });
+
             it('should add the current date if preview param is true and publishDate is not present', () => {
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: UVE_MODE.PREVIEW
+                    editorMode: UVE_MODE.LIVE
                 };
 
                 // override the new Date() to return a fixed date

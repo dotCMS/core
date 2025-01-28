@@ -6,13 +6,10 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    effect,
     EventEmitter,
     inject,
     Output,
     viewChild,
-    model,
-    untracked,
     Signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -37,6 +34,7 @@ import {
 import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
@@ -71,7 +69,8 @@ import { UVEStore } from '../../../store/dot-uve.store';
         DotUveDeviceSelectorComponent,
         DotMessagePipe,
         DotUveWorkflowActionsComponent,
-        ChipModule
+        ChipModule,
+        DotEditorModeSelectorComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -95,49 +94,25 @@ export class DotUveToolbarComponent {
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
+    readonly $isLiveMode = this.#store.$isLiveMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $unlockButton = this.#store.$unlockButton;
+    readonly $socialMedia = this.#store.socialMedia;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
         {
-            initialValue: DEFAULT_DEVICES
+            initialValue: null
         }
     );
 
-    protected readonly CURRENT_DATE = new Date();
-
-    protected readonly publishDateParam = this.#store.pageParams().publishDate;
-    protected readonly $previewDate = model<Date>(
-        this.publishDateParam ? new Date(this.publishDateParam) : null
+    protected readonly $pageParams = this.#store.pageParams;
+    protected readonly $previewDate = computed<Date>(() =>
+        this.$pageParams().publishDate ? new Date(this.$pageParams().publishDate) : new Date()
     );
 
-    readonly $previewDateEffect = effect(
-        () => {
-            const previewDate = this.$previewDate();
-
-            if (!previewDate) {
-                return;
-            }
-
-            // If previewDate is minor that the CURRENT DATE, set previewDate to CURRENT DATE
-            if (previewDate < this.CURRENT_DATE) {
-                this.$previewDate.set(this.CURRENT_DATE);
-
-                return;
-            }
-
-            untracked(() => {
-                this.#store.loadPageAsset({
-                    editorMode: UVE_MODE.PREVIEW,
-                    publishDate: previewDate?.toISOString()
-                });
-            });
-        },
-        { allowSignalWrites: true }
-    );
     readonly $pageInode = computed(() => {
         return this.#store.pageAPIResponse()?.page.inode;
     });
@@ -145,28 +120,19 @@ export class DotUveToolbarComponent {
     readonly $actions = this.#store.workflowLoading;
     readonly $workflowLoding = this.#store.workflowLoading;
 
-    protected readonly date = new Date();
-
     defaultDevices = DEFAULT_DEVICES;
+    CURRENT_DATE = new Date();
 
     /**
-     * Initialize the preview mode
-     *
+     * Fetch the page on a given date
      * @param {Date} publishDate
      * @memberof DotUveToolbarComponent
      */
-    protected triggerPreviewMode(publishDate: Date = new Date()) {
-        this.$previewDate.set(publishDate);
-    }
-
-    /**
-     * Initialize the edit mode
-     *
-     * @memberof DotUveToolbarComponent
-     */
-    protected triggerEditMode() {
-        this.#store.clearDeviceAndSocialMedia();
-        this.#store.loadPageAsset({ editorMode: undefined, publishDate: undefined });
+    protected fetchPageOnDate(publishDate: Date = new Date()) {
+        this.#store.loadPageAsset({
+            editorMode: UVE_MODE.LIVE,
+            publishDate: publishDate?.toISOString()
+        });
     }
 
     /**
@@ -231,13 +197,26 @@ export class DotUveToolbarComponent {
                 accept: () => {
                     this.#personalizeService
                         .personalized(persona.pageId, persona.keyTag)
-                        .subscribe(() => {
-                            this.#store.loadPageAsset({
-                                'com.dotmarketing.persona.id': persona.identifier
-                            });
+                        .subscribe({
+                            next: () => {
+                                this.#store.loadPageAsset({
+                                    'com.dotmarketing.persona.id': persona.identifier
+                                });
 
-                            this.$personaSelector().fetchPersonas();
-                        }); // This does a take 1 under the hood
+                                this.$personaSelector().fetchPersonas();
+                            },
+                            error: () => {
+                                this.#messageService.add({
+                                    severity: 'error',
+                                    summary: this.#dotMessageService.get('error'),
+                                    detail: this.#dotMessageService.get(
+                                        'uve.personalize.empty.page.error'
+                                    )
+                                });
+
+                                this.$personaSelector().resetValue();
+                            }
+                        });
                 },
                 reject: () => {
                     this.$personaSelector().resetValue();

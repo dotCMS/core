@@ -27,6 +27,7 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import { DotEditContentSidebarUntranslatedLocaleComponent } from '@dotcms/edit-content/components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
+import { sortLocalesTranslatedFirst } from '@dotcms/edit-content/utils/functions.util';
 
 import { ContentState } from './content.feature';
 import { FormState } from './form.feature';
@@ -106,7 +107,7 @@ export function withLocales() {
                                 tapResponse({
                                     next: ({ locales, systemDefaultLocale }) => {
                                         patchState(store, {
-                                            locales,
+                                            locales: sortLocalesTranslatedFirst(locales),
                                             systemDefaultLocale,
                                             currentLocale: locales.find(
                                                 (x) => x.id === contentlet?.languageId
@@ -152,6 +153,7 @@ export function withLocales() {
                                         const defaultLocale = locales.find(
                                             (locale) => locale.defaultLanguage
                                         );
+
                                         patchState(store, {
                                             locales,
                                             systemDefaultLocale: defaultLocale,
@@ -250,7 +252,6 @@ export function withLocales() {
                                             currentSchemeId: defaultSchemeId,
                                             currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
-                                            currentIdentifier: store.contentlet()?.identifier,
                                             initialContentletState: 'copy',
                                             error: null,
                                             formValues: null,
