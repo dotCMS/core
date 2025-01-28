@@ -37,6 +37,7 @@ export function Column({ column }: ColumnProps) {
 
     const combinedClasses = combineClasses([styles[endClass], styles[startClass]]);
 
+    // THIS CHANGES ARE BREAKING CHANGES USER WILL HAVE TO MIGRATE TO UVESTATE FUNCTION
     const columnProps =
         UVEState?.mode === UVE_MODE.EDIT
             ? {

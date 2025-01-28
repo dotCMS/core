@@ -37,6 +37,7 @@ export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) =
 
     const { row } = props;
 
+    // THIS CHANGES ARE BREAKING CHANGES USER WILL HAVE TO MIGRATE TO UVESTATE FUNCTION
     const rowProps =
         UVEState?.mode === UVE_MODE.EDIT ? { 'data-dot': 'row', 'data-testid': 'row', ref } : {};
 
