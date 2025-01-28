@@ -129,6 +129,9 @@ export const UVEStore = signalStore(
                 }),
                 $isPreviewMode: computed<boolean>(() => {
                     return pageParams()?.editorMode === UVE_MODE.PREVIEW;
+                }),
+                $isLiveMode: computed<boolean>(() => {
+                    return pageParams()?.editorMode === UVE_MODE.LIVE;
                 })
             };
         }
