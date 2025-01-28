@@ -14,7 +14,7 @@ describe('Utils', () => {
     describe('resolutionValue', () => {
         // Host Folder Tests
         describe('Host Folder Resolution', () => {
-            it('should return formatted path when hostName and url exist', () => {
+            it('should return hostName when hostName and url exist', () => {
                 const contentlet = createFakeContentlet({
                     hostName: 'demo.dotcms.com',
                     url: '/content/generic/index'
@@ -22,7 +22,7 @@ describe('Utils', () => {
                 const field = createFakeHostFolderField({ defaultValue: '' });
 
                 expect(resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field)).toBe(
-                    '//demo.dotcms.com'
+                    'demo.dotcms.com'
                 );
             });
 

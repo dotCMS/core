@@ -40,7 +40,7 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
             const path = `${contentlet?.hostName}${contentlet?.url}`;
             const finalPath = path.slice(0, path.indexOf('/content'));
 
-            return `//${finalPath}`;
+            return `${finalPath}`;
         }
 
         return field.defaultValue ?? '';

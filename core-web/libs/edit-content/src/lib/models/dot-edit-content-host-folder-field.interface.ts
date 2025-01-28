@@ -9,8 +9,6 @@ export type TreeNodeData = {
 
 export type TreeNodeItem = TreeNode<TreeNodeData>;
 
-export type StatusRequest = 'init' | 'loading' | 'success' | 'failed';
-
 export type TreeNodeSelectItem = TreeNodeSelectEvent<TreeNodeData>;
 
 export type CustomTreeNode = {
