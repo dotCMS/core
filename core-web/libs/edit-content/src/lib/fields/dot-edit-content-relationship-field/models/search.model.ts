@@ -5,4 +5,3 @@ export interface SearchParams {
     siteId: string;
     query: string;
 }
-

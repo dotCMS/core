@@ -1,10 +1,18 @@
-<label for="language-field" class="mb-2 inline-block">Language</label>
+<label for="language-field" class="mb-2 inline-block">
+    {{ 'dot.file.relationship.dialog.search.language.label' | dm }}
+</label>
 <p-dropdown
     inputId="language-field"
     [options]="store.languages()"
     [formControl]="languageControl"
     [loading]="store.isLoading()"
-    optionLabel="language"
     styleClass="w-full"
-    placeholder="Select Language"
-    (onChange)="handleLanguageChange()" />
+    [placeholder]="'dot.file.relationship.dialog.search.language.placeholder' | dm"
+    (onChange)="handleLanguageChange()">
+    <ng-template let-item pTemplate="item">
+        {{ item | language }}
+    </ng-template>
+    <ng-template pTemplate="selectedItem">
+        {{ languageControl.value | language }}
+    </ng-template>
+</p-dropdown>

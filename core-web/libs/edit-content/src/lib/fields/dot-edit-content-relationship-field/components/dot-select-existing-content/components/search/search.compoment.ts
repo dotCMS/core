@@ -5,13 +5,22 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
-import {OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 
+/**
+ * A standalone component that provides search functionality with language and site filtering.
+ * This component includes a search input field and advanced filtering options through an overlay panel.
+ *
+ * @example
+ * ```html
+ * <dot-search (onSearch)="handleSearch($event)"></dot-search>
+ * ```
+ */
 @Component({
     selector: 'dot-search',
     standalone: true,
@@ -28,19 +37,28 @@ import { LanguageFieldComponent } from './components/language-field/language-fie
     templateUrl: './search.compoment.html'
 })
 export class SearchComponent {
-    $overlayPanel = viewChild(OverlayPanel);
     /**
-     * An output signal that emits when the search input is changed.
+     * Reference to the OverlayPanel component used for advanced search options.
+     */
+    $overlayPanel = viewChild(OverlayPanel);
+
+    /**
+     * Output signal that emits search parameters when the search is performed.
+     * Emits an object containing query string, language ID, and site ID.
      */
     onSearch = output<SearchParams>();
 
     /**
-     * Injects FormBuilder to create form control groups.
+     * FormBuilder instance for creating reactive forms.
+     * @private
      */
     readonly #formBuilder = inject(FormBuilder);
 
     /**
-     * Initializes the form group with default values for language and site.
+     * Reactive form group containing search parameters:
+     * - query: The search text
+     * - languageId: Selected language ID (-1 for all languages)
+     * - siteId: Selected site ID
      */
     readonly form = this.#formBuilder.nonNullable.group({
         query: [''],
@@ -48,6 +66,11 @@ export class SearchComponent {
         siteId: ['']
     });
 
+    /**
+     * Resets the search form to its initial state and optionally toggles the overlay panel.
+     *
+     * @param event - Optional mouse event that triggered the clear action
+     */
     clearForm(event?: MouseEvent) {
         this.form.reset();
         if (event) {
@@ -55,11 +78,12 @@ export class SearchComponent {
         }
     }
 
-    doSearch(event?: MouseEvent) {
-        if (event) {
-            this.$overlayPanel().toggle(event);
-        }
-
+    /**
+     * Performs the search by emitting the current form values and hiding the overlay panel.
+     * This method is triggered when the user submits the search form.
+     */
+    doSearch() {
+        this.$overlayPanel().hide();
         this.onSearch.emit(this.form.getRawValue());
     }
 }

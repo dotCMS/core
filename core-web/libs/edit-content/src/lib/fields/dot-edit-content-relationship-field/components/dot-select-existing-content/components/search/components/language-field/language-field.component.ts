@@ -1,4 +1,11 @@
-import { Component, output, inject, OnInit, forwardRef, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    output,
+    inject,
+    OnInit,
+    forwardRef,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     ControlValueAccessor,
     FormControl,
@@ -9,19 +16,21 @@ import {
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldStore } from './language-field.store';
 
 @Component({
     selector: 'dot-language-field',
     standalone: true,
-    imports: [DropdownModule, ReactiveFormsModule],
+    imports: [DropdownModule, ReactiveFormsModule, LanguagePipe, DotMessagePipe],
     providers: [
         LanguageFieldStore,
         {
-          multi: true,
-          provide: NG_VALUE_ACCESSOR,
-          useExisting: forwardRef(() => LanguageFieldComponent)
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => LanguageFieldComponent)
         }
     ],
     templateUrl: './language-field.component.html',

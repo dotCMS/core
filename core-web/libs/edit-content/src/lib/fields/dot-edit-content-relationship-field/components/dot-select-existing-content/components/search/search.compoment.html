@@ -1,11 +1,11 @@
-<form  [formGroup]="form" #formElement>
+<form [formGroup]="form" #formElement>
     <p-inputGroup size="small">
         <input
             pInputText
             type="search"
             class="w-18rem"
             (keydown.enter)="doSearch()"
-            [placeholder]="'dot.file.relationship.dialog.search' | dm"
+            [placeholder]="'dot.file.relationship.dialog.search.title' | dm"
             formControlName="query" />
         <p-button
             (onClick)="popover.toggle($event, formElement)"
@@ -19,26 +19,20 @@
         <div class="flex flex-column gap-2">
             <div class="flex flex-column gap-2">
                 <dot-language-field formControlName="languageId" />
-
-                <p-dropdown
-                    styleClass="w-full"
-                    [options]="[]"
-                    formControlName="siteId"
-                    optionLabel="Site or Host" />
             </div>
 
             <div class="flex justify-content-end gap-2">
                 <p-button
                     (onClick)="clearForm($event)"
-                    label="Clear all"
+                    [label]="'dot.file.relationship.dialog.search.btn.clear' | dm"
                     type="button"
                     text="true"
                     severity="primary"
                     outline="true" />
 
                 <p-button
-                    (onClick)="doSearch($event)"
-                    label="Search"
+                    (onClick)="doSearch()"
+                    [label]="'dot.file.relationship.dialog.search.btn.search' | dm"
                     type="button"
                     severity="primary" />
             </div>

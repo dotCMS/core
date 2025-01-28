@@ -147,8 +147,8 @@ export const ExistingContentStore = signalStore(
                     }
                 });
             },
-            search: (search: SearchParams) => {
-                console.log(search);
+            search: (_search: SearchParams) => {
+                // TODO: Implement search
             }
         };
     })
