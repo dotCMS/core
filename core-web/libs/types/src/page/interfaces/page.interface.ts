@@ -166,7 +166,7 @@ export interface DotCMSPageAssetContainer {
     };
 }
 
-interface DotCMSTemplate {
+export interface DotCMSTemplate {
     iDate: number;
     type: string;
     owner: string;
@@ -201,7 +201,7 @@ interface DotCMSTemplate {
     canEdit: boolean;
 }
 
-interface DotCMSPage {
+export interface DotCMSPage {
     template: string;
     modDate: number;
     metadata: string;
@@ -247,7 +247,7 @@ interface DotCMSPage {
     shortyLive: string;
 }
 
-interface DotCMSViewAs {
+export interface DotCMSViewAs {
     language: {
         id: number;
         languageCode: string;
@@ -258,7 +258,7 @@ interface DotCMSViewAs {
     mode: string;
 }
 
-interface DotCMSLayout {
+export interface DotCMSLayout {
     pageWidth: string;
     width: string;
     layout: string;
@@ -269,7 +269,7 @@ interface DotCMSLayout {
     sidebar: DotPageAssetLayoutSidebar;
 }
 
-interface DotCMSContainerStructure {
+export interface DotCMSContainerStructure {
     id: string;
     structureId: string;
     containerInode: string;
@@ -278,7 +278,7 @@ interface DotCMSContainerStructure {
     contentTypeVar: string;
 }
 
-interface DotPageAssetLayoutSidebar {
+export interface DotPageAssetLayoutSidebar {
     preview: boolean;
     containers: DotCMSContainer[];
     location: string;
@@ -286,11 +286,11 @@ interface DotPageAssetLayoutSidebar {
     width: string;
 }
 
-interface DotPageAssetLayoutBody {
+export interface DotPageAssetLayoutBody {
     rows: DotPageAssetLayoutRow[];
 }
 
-interface DotCMSSite {
+export interface DotCMSSite {
     lowIndexPriority: boolean;
     name: string;
     default: boolean;
@@ -341,7 +341,7 @@ interface DotCMSSite {
     contentType: DotCMSSiteContentType;
 }
 
-interface DotCMSSiteContentType {
+export interface DotCMSSiteContentType {
     owner?: any;
     parentPermissionable: DotCMSSiteParentPermissionable;
     permissionId: string;
@@ -363,7 +363,7 @@ export interface DotCMSSiteParentPermissionable {
     variantId?: string;
 }
 
-interface DotCMSSiteStructure {
+export interface DotCMSSiteStructure {
     iDate: number;
     type: string;
     owner?: any;
@@ -409,7 +409,7 @@ interface DotCMSSiteStructure {
     versionType: string;
 }
 
-interface DotCMSSiteField {
+export interface DotCMSSiteField {
     iDate: number;
     type: string;
     owner?: any;
