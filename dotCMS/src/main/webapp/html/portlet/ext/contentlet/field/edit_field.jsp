@@ -117,33 +117,37 @@
     }
 </style>
 
-<div class="fieldWrapper" >
-    <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
-        <% if (hint != null) {%>
-        <a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
-        <span dojoType="dijit.Tooltip" connectId="tip-<%=field.getVelocityVarName()%>" position="above" style="width:100px;">
-				<span class="contentHint"><%=hint%></span>
-			</span>
-        <%}%>
+<div class="fieldWrapper" > 
+    <% 
+    final com.dotcms.contenttype.model.field.Field newField2 = new LegacyFieldTransformer(field).from(); 
+    final com.dotcms.contenttype.model.field.FieldVariable hideLabelFieldVar = newField2.fieldVariablesMap().get("hideLabel");
+    if (hideLabelFieldVar == null || !Boolean.parseBoolean(hideLabelFieldVar.value())) { %>
+        <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
+            <% if (hint != null) {%>
+            <a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
+            <span dojoType="dijit.Tooltip" connectId="tip-<%=field.getVelocityVarName()%>" position="above" style="width:100px;">
+                    <span class="contentHint"><%=hint%></span>
+                </span>
+            <%}%>
 
-        <% if(field.isRequired()) {%>
-        <label for="<%=field.getVelocityVarName()%>_field" class="required">
-		<%} else {%>
-			<label for="<%=field.getVelocityVarName()%>_field">
-		<% } %>
-		<%
-            if(!field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())&&
-                    !field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.HIDDEN.toString()) &&
-                    ! "constant".equals(field.getFieldType())
-
-                    ) {
-        %>
-     		<%=field.getFieldName()%></label>
-		<% } %>
-    </div>
+            <% if(field.isRequired()) {%>
+            <label for="<%=field.getVelocityVarName()%>_field" class="required">
+            <%} else {%>
+                <label for="<%=field.getVelocityVarName()%>_field">
+            <% } %>
+            <%
+                if(!field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())&&
+                        !field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) &&
+                        !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
+                        !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
+                        !field.getFieldType().equals(Field.FieldType.HIDDEN.toString()) &&
+                        ! "constant".equals(field.getFieldType())
+                        ) {
+            %>
+                <%=field.getFieldName()%></label>
+            <% } %>
+        </div>
+    <% } %>
 
     <div class="fieldValue field__<%=field.getFieldType()%> <%= fullScreenClass%>" id="<%=field.getVelocityVarName()%>_field">
         <%
