@@ -92,7 +92,7 @@ export function reorderMenu(config?: ReorderMenuConfig): void {
 }
 
 /**
- * @deprecated Use `getUVEState` function instead, this function will be removed on future versions.
+ * @deprecated Use `getUVEState` function on @dotcms/uve instead, this function will be removed on future versions.
  *
  * Checks if the code is running inside the DotCMS Universal Visual Editor (UVE).
  *
