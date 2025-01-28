@@ -1,0 +1,10 @@
+<label for="language-field" class="mb-2 inline-block">Language</label>
+<p-dropdown
+    inputId="language-field"
+    [options]="store.languages()"
+    [formControl]="languageControl"
+    [loading]="store.isLoading()"
+    optionLabel="language"
+    styleClass="w-full"
+    placeholder="Select Language"
+    (onChange)="handleLanguageChange()" />

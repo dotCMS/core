@@ -10,6 +10,7 @@ import { tap, switchMap, filter } from 'rxjs/operators';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
 import { SelectionMode } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
+import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
 import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
@@ -145,6 +146,9 @@ export const ExistingContentStore = signalStore(
                         currentPage: currentPage - 1
                     }
                 });
+            },
+            search: (search: SearchParams) => {
+                console.log(search);
             }
         };
     })

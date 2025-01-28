@@ -1,38 +1,35 @@
-<p-inputGroup size="small">
-    <input
-        #searchInput
-        pInputText
-        type="search"
-        [placeholder]="'dot.file.relationship.dialog.search' | dm"
-        (input)="onSearch.emit(searchInput.value)" />
-    <p-button
-        (onClick)="op.toggle($event)"
-        size="small"
-        type="button"
-        icon="pi pi-sliders-h"
-        [text]="true" />
-</p-inputGroup>
+<form  [formGroup]="form" #formElement>
+    <p-inputGroup size="small">
+        <input
+            pInputText
+            type="search"
+            class="w-18rem"
+            (keydown.enter)="doSearch()"
+            [placeholder]="'dot.file.relationship.dialog.search' | dm"
+            formControlName="query" />
+        <p-button
+            (onClick)="popover.toggle($event, formElement)"
+            size="small"
+            type="button"
+            icon="pi pi-sliders-h"
+            [text]="true" />
+    </p-inputGroup>
 
-<p-overlayPanel #op>
-    <form class="w-11rem" [formGroup]="form">
+    <p-overlayPanel #popover styleClass="w-20rem">
         <div class="flex flex-column gap-2">
             <div class="flex flex-column gap-2">
-                <p-dropdown
-                    styleClass="w-full"
-                    [options]="[]"
-                    formControlName="language"
-                    optionLabel="language" />
+                <dot-language-field formControlName="languageId" />
 
                 <p-dropdown
                     styleClass="w-full"
                     [options]="[]"
-                    formControlName="site"
+                    formControlName="siteId"
                     optionLabel="Site or Host" />
             </div>
 
             <div class="flex justify-content-end gap-2">
                 <p-button
-                    (onClick)="op.toggle($event)"
+                    (onClick)="clearForm($event)"
                     label="Clear all"
                     type="button"
                     text="true"
@@ -40,11 +37,11 @@
                     outline="true" />
 
                 <p-button
-                    (onClick)="op.toggle($event)"
+                    (onClick)="doSearch($event)"
                     label="Search"
                     type="button"
                     severity="primary" />
             </div>
         </div>
-    </form>
-</p-overlayPanel>
+    </p-overlayPanel>
+</form>
