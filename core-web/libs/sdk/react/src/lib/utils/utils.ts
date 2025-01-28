@@ -111,7 +111,13 @@ export const getPositionStyleClasses = (start: number, end: number) => {
  * @property {string | null} BlockEditorState.error - Error message if invalid, null if valid
  */
 export const isValidBlocks = (blocks: Block): BlockEditorState => {
-    if (!blocks || typeof blocks !== 'object') {
+    if (!blocks) {
+        return {
+            error: `Error: Blocks object is not defined`
+        };
+    }
+
+    if (typeof blocks !== 'object') {
         return {
             error: `Error: Blocks must be an object, but received: ${typeof blocks}`
         };

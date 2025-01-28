@@ -444,6 +444,30 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
+        it('should patch viewParams with the correct params on init with live mode', () => {
+            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
+
+            const withViewParams = {
+                device: 'mobile',
+                orientation: 'landscape',
+                seo: undefined,
+                editorMode: UVE_MODE.LIVE
+            };
+
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({ queryParams: withViewParams, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+            );
+
+            spectator.detectChanges();
+
+            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+                orientation: 'landscape',
+                seo: undefined,
+                device: 'mobile'
+            });
+        });
+
         it('should call store.loadPageAsset when the `loadPageAsset` is called', () => {
             const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
             const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
@@ -683,11 +707,28 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
+            it('should set editorMode to EDIT when wrong editorMode is not passed', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: undefined
+                };
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams: params, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    ...INITIAL_PAGE_PARAMS,
+                    editorMode: UVE_MODE.EDIT
+                });
+            });
+
             it('should add the current date if preview param is true and publishDate is not present', () => {
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: UVE_MODE.PREVIEW
+                    editorMode: UVE_MODE.LIVE
                 };
 
                 // override the new Date() to return a fixed date
