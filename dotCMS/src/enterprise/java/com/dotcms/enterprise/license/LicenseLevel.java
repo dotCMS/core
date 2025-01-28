@@ -20,6 +20,10 @@ public enum LicenseLevel {
     PRIME("PRIME EDITION", 400), 
     PLATFORM("PLATFORM EDITION", 500);
 
+    public static LicenseLevel DEFAULT_LEVEL = PLATFORM;
+
+
+
     public final String name;
     public final int level;
     

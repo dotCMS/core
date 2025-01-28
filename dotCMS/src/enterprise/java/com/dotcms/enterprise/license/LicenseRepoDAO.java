@@ -38,8 +38,7 @@ final class LicenseRepoDAO {
         
     }
     
-    
-    
+
     
     @WrapInTransaction
     protected static Optional<DotLicenseRepoEntry> requestLicense() throws DotDataException {
@@ -184,10 +183,10 @@ final class LicenseRepoDAO {
 
         DotConnect dc=new DotConnect();
         if(!isLicenseOnRepo(serial)){
-            dc.setSQL("INSERT INTO sitelic(id,license,lastping) VALUES(?,?,?)");
+            dc.setSQL("INSERT INTO sitelic(id,license,lastping,startup_time) VALUES(?,?,now(),?)");
             dc.addParam(serial);
             dc.addParam(licenseRaw);
-            dc.addParam(new Date(0));
+            dc.addParam(System.currentTimeMillis());
             dc.loadResult();
         }
         else{
@@ -200,28 +199,7 @@ final class LicenseRepoDAO {
     
     protected static void insertAvailableLicensesFromZipFile(final InputStream zipfile) throws IOException, DotDataException {
 
-        ZipInputStream in= null;
-        ZipEntry entry = null;
 
-        try {
-
-            in = new ZipInputStream(zipfile);
-
-            while((entry = in.getNextEntry())!=null) {
-                try {
-                    String license=IOUtils.toString(in);
-                    String serial= new LicenseTransformer(license).dotLicense.serial;
-                    Logger.info(LicenseUtil.class, "found license serial: " + serial);
-                    upsertLicenseToRepo(serial, license);
-                } finally {
-                    in.closeEntry();
-                }
-            }
-        } catch(Exception ex) {
-            Logger.error(System.class, "Can't process license zip file", ex);
-        } finally {
-            CloseUtils.closeQuietly(in);
-        }
     }
 
     @WrapInTransaction
@@ -402,20 +380,7 @@ final class LicenseRepoDAO {
     public static boolean isServerDuplicated(final String serverId,
                                              final String license,
                                              final long startTime) throws DotDataException {
-        String sql = "SELECT id FROM sitelic WHERE (serverid = ? OR license = ?) AND startup_time != ?";
-
-        //LOBs are not supported in comparison conditions.
-        // However, you can use PL/SQL programs for comparisons on CLOB data.
-        if(DbConnectionFactory.isOracle()) {
-            sql = "SELECT id FROM sitelic WHERE (serverid = ? OR to_char(license) = ?) AND startup_time != ?";
-        }
-        return !new DotConnect()
-                .setSQL(sql)
-                .addParam(serverId)
-                .addParam(license)
-                .addParam(startTime)
-                .loadObjectResults()
-                .isEmpty();
+        return false;
     }
 
     /**

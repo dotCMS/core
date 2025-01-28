@@ -85,7 +85,7 @@ public class FreeServerFromClusterJob implements StatefulJob {
                 .format("Server %s with license %s was Removed", server.getServerId(), server.getLicenseSerial()));
             APILocator.getServerAPI().removeServerFromClusterTable(server.getServerId());
 
-            LicenseUtil.freeLicenseOnRepo(server.getLicenseSerial(), server.getServerId());
+            LicenseUtil.deleteLicense(server.getLicenseSerial());
         } catch(DotDataException e) {
             throw new DotRuntimeException(e.getMessage(), e);
         }

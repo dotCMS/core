@@ -10,38 +10,22 @@
 package com.dotcms.enterprise.license;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.cluster.ClusterUtils;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.enterprise.license.bouncycastle.crypto.CryptoException;
-import com.dotcms.enterprise.license.bouncycastle.crypto.engines.AESEngine;
-import com.dotcms.enterprise.license.bouncycastle.crypto.modes.CBCBlockCipher;
-import com.dotcms.enterprise.license.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
-import com.dotcms.enterprise.license.bouncycastle.crypto.params.KeyParameter;
-import com.dotcms.enterprise.license.bouncycastle.util.encoders.Base64;
-import com.dotcms.enterprise.license.bouncycastle.util.encoders.Hex;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.InitServlet;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -67,9 +51,8 @@ public final class LicenseManager {
 
     @WrapInTransaction
     private String init() {
-        String serverId;
-        serverId = APILocator.getServerAPI().readServerId();
-        this.license = readLicenseFile();
+
+        this.license = insertDefaultLicense();
         licenseMessage();
         return serverId;
     }
@@ -84,25 +67,9 @@ public final class LicenseManager {
      * @throws Exception
      */
     public void takeLicenseFromRepoIfNeeded(final boolean addToCluster) throws Exception {
-        final String currSerial = license.serial;
-        final int currentLevel = license.level;
-        if (license.level > LicenseLevel.COMMUNITY.level) {
-            checkServerDuplicity();
-            return;
-        }
 
-        final Optional<DotLicenseRepoEntry> newLicense = LicenseRepoDAO.requestLicense();
-        if (newLicense.isPresent()) {
-            writeLicenseFile(newLicense.get().license.getBytes());
-            if (currSerial.equals(this.license.serial) || currentLevel < this.license.level) {
-                // when manual pick of license fire the cluster check
-                if (addToCluster) {
-                    onLicenseApplied();
-                }
-            }
-        }
         licenseMessage();
-        checkServerDuplicity();
+
     }
 
     /**
@@ -113,89 +80,31 @@ public final class LicenseManager {
      */
     public void forceLicenseFromRepo(String serial) throws Exception {
         
-        String currSerial = license.serial;
-        int currentLevel=license.level;
-        
-        
-        Optional<DotLicenseRepoEntry> newLicense = LicenseRepoDAO.forceLicenseFromRepo(serial);
-        if (newLicense.isPresent()) {
+            init();
+            onLicenseApplied();
 
-            writeLicenseFile(newLicense.get().license.getBytes());
 
-            if (currSerial.equals(this.license.serial) || currentLevel<this.license.level) {
-                // when manual pick of license fire the cluster check
-                onLicenseApplied();
-            }
-        }
     }
 
     /**
      * Reads the license information from the dotCMS license file in order to check its validity and
      * expiration days.
      */
-    private DotLicense readLicenseFile() {
-        final File licenseFile = new File(getLicensePath());
-        try (final InputStream is = Files.newInputStream(licenseFile.toPath())) {
-            final String licenseRaw = IOUtils.toString(is, StandardCharsets.UTF_8);
-            final DotLicense dl = new LicenseTransformer(licenseRaw).dotLicense;
-            try {
-                LicenseRepoDAO.upsertLicenseToRepo( dl.serial, licenseRaw);
-            } catch (final Exception e) {
-                Logger.warnEveryAndDebug(this.getClass(), "Cannot upsert License to db", e,120000);
-            }
-            return dl;
-        } catch (final Throwable e) {
+    private DotLicense insertDefaultLicense() {
+
+        DotLicense license = new DotLicense();
+        try {
+
+            LicenseRepoDAO.upsertLicenseToRepo(license.serial, "BSL-" + APILocator.getServerAPI().readServerId());
+        }catch (final Throwable e) {
             // Eat Me
-            Logger.debug(System.class, String.format("No valid license was found: %s",
+            Logger.warnAndDebug(LicenseManager.class, String.format("No valid license was found: %s",
                     ExceptionUtil.getErrorMessage(e)), e);
         }
-        return setupDefaultLicense(false);
+        return license;
     }
 
 
-
-    /**
-     * Sets a default license for the current dotCMS instance in case no license is found. Any
-     * existing license data will be removed by default.
-     */
-    public DotLicense setupDefaultLicense() {
-        return setupDefaultLicense(true);
-    }
-
-    /**
-     * Sets a default license for the current dotCMS instance in case no license is found.
-     * 
-     * @param cleanup - Set to {@code true} if any existing license data must be removed before
-     *        setting up the license. Otherwise, set to {@code false}.
-     */
-    private DotLicense setupDefaultLicense(boolean cleanup) {
-        Logger.info(LicenseUtil.class, "Setting up default license");
-
-        if (cleanup) {
-            File f = new File(getLicensePath());
-            f.delete();
-            
-        }
-
-        Logger.debug(LicenseUtil.class, "Was existing license cleaned up? " + cleanup
-                        + " and stack trace is " + ExceptionUtils.getStackTrace(new Throwable()));
-
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    LocalTransaction.wrap(() -> {
-                        ClusterFactory.removeNodeFromCluster();
-
-                    });
-                } catch (Exception ex) {
-                    Logger.error(ClusterFactory.class, "can't remove from cluster", ex);
-                }
-
-            }
-        }).start();
-        this.license=new DotLicense();
-        return this.license;
-    }
 
     /**
      * Returns the name of the client that the current license belongs to.
@@ -237,7 +146,7 @@ public final class LicenseManager {
     }
 
     public static void reloadInstance() {
-        getInstance().readLicenseFile();
+        getInstance().init();
     }
 
     /**
@@ -247,8 +156,7 @@ public final class LicenseManager {
      *         {@code false}.
      */
     private boolean checkValidity() {
-        // license expired
-        return license.perpetual || !new Date().after(license.validUntil);
+        return true;
     }
 
     /**
@@ -260,44 +168,12 @@ public final class LicenseManager {
      *         {@code false}.
      */
     public boolean isAuthorized(int[] levels) {
-        if (levels == null) {
-            return false;
-        }
-        if (!checkValidity()) {
-            // license expired
-            return false;
-        }
-        for (int level : levels) {
-            if (level <= license.level) {
-                return true;
-            }
-        }
-        return false;
+        return true;
     }
 
     // /UTILITY METHODS
 
-    /**
-     * Determines what application server can run dotCMS based on the current license. Some servers
-     * require an enterprise license in order to run the application.
-     * 
-     * @param level - The current license level.
-     * @return Returns {@code true} if the current AS can run dotCMS. Otherwise, returns
-     *         {@code false}.
-     */
-    private boolean isASEnabled(int level) {
-        if (ServerDetector.isTomcat()) {
-            // Tomcat always works
-            return true;
-        }
-        if (level >= LicenseLevel.PRIME.level) {
-            // Prime, can run anything
-            return true;
-        }
-        // Glassfish and JBoss only in professional
-        return (ServerDetector.isGlassfish() || ServerDetector.isJBoss())
-                && level >= LicenseLevel.PROFESSIONAL.level;
-    }
+
 
     /**
      * Verifies if dotCMS can run in the current application server.
@@ -305,7 +181,7 @@ public final class LicenseManager {
      * @return Returns {@code true} if dotCMS is able to start up. Otherwise, returns {@code false}.
      */
     public boolean isASEnabled() {
-        return isASEnabled(license.level); 
+        return true;
     }
 
 
@@ -328,31 +204,7 @@ public final class LicenseManager {
         return license.level;
     }
 
-    /**
-     * Writes information to the license data file.
-     * 
-     * @param data - The information to write.
-     * @throws IOException An error occurred when writing the data.
-     */
-    private void writeLicenseFile(byte[] data) throws IOException {
-        
-        DotLicense newOne = new LicenseTransformer(data).dotLicense;
-        if(newOne.expired){
-            return;
-        }
-        //make sure we hava a license
-        this.license = newOne;
-        
-        
-        File licenseFile = new File(getLicensePath());
-        if (!licenseFile.getParentFile().exists()) {
-            licenseFile.getParentFile().mkdirs();
-        }
-        try(OutputStream os = Files.newOutputStream(licenseFile.toPath())){
-            os.write(data);
-        }
 
-    }
 
     /**
      * Uploads a license file to the current instance.
@@ -363,11 +215,7 @@ public final class LicenseManager {
      */
     public void uploadLicense(String data) throws IOException, DotDataException {
         
-        writeLicenseFile(data.getBytes());
-        DotLicense dl = new LicenseTransformer(data).dotLicense;
-        LicenseRepoDAO.upsertLicenseToRepo(dl.serial,data);
-        LicenseRepoDAO.setServerIdToCurrentLicense(this.license.serial);
-        onLicenseApplied();
+
     }
 
     /**
@@ -377,57 +225,15 @@ public final class LicenseManager {
         ChainableCacheAdministratorImpl cacheAdm = (ChainableCacheAdministratorImpl) CacheLocator
                         .getCacheAdministrator().getImplementationObject();
 
-        // check if clustering is enabled but didn't start when there wasn't any license
-        if (license.level > LicenseLevel.COMMUNITY.level && ClusterUtils.isAutoScaleConfigured()
-                        && !cacheAdm.getTransport().isInitialized()) {
 
            ClusterFactory.initialize();
-        }
+
     }
 
-    /**
-     * Returns the location of the license data file in the file system.
-     * 
-     * @return The location of the license file.
-     */
-    private static String getLicensePath() {
-        return ConfigUtils.getDynamicContentPath() 
-                        + File.separator 
-                        + "license"  
-                        + File.separator 
-                        + "license.dat";
-    }
 
-    /**
-     * 
-     * @param data
-     * @param key
-     * @param encrypt
-     * @return
-     * @throws CryptoException
-     * @throws IllegalStateException
-     */
-    private byte[] processAES(byte[] data, byte[] key, boolean encrypt)
-                    throws CryptoException, IllegalStateException {
-        PaddedBufferedBlockCipher cypher =
-                        new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
-        byte[] out = new byte[cypher.getOutputSize(data.length) + 32];
-        cypher.init(encrypt, new KeyParameter(key));
-        int count = cypher.processBytes(data, 0, data.length, out, 0);
-        count += cypher.doFinal(out, count);
-        byte[] result = new byte[count];
-        System.arraycopy(out, 0, result, 0, count);
-        return result;
-    }
 
-    /**
-     * 
-     * @return
-     * @throws IOException
-     */
-    private String[] getLicData() {
-        return LicenseTransformer.publicDatFile;
-    }
+
+
 
 
     /**
@@ -474,32 +280,7 @@ public final class LicenseManager {
     }
 
 
-    /**
-     * 
-     * @return
-     * @throws IOException
-     */
-    private byte[] getRequestCodeAESKey() {
-        return Hex.decode(getLicData()[3]);
-    }
 
-    /**
-     *
-
-     * @return
-     * @throws Exception
-     */
-    public String createTrialLicenseRequestCode()  throws Exception {
-    	
-    	final int level = LicenseLevel.PLATFORM.level;
-    	final int version = 400;
-    	final LicenseType type = LicenseType.TRIAL;
-        return new String(Base64.encode(processAES(
-                        ("level=" + level + ",version=" + version + ",serverid=" + serverId
-                                        + ",licensetype=" + type.type + ",serverid_display="
-                                        + getDisplayServerId()).getBytes(),
-                        getRequestCodeAESKey(), true)), StandardCharsets.UTF_8);
-    }
 
     /**
      * Returns the type of the current license.
@@ -593,8 +374,8 @@ public final class LicenseManager {
      * @throws DotDataException An error occurred when setting up the default license.
      */
     public void freeLicenseOnRepo() throws DotDataException {
-        LicenseRepoDAO.freeLicense();
-        this. license = setupDefaultLicense();
+        //LicenseRepoDAO.freeLicense();
+        //this. license = setupDefaultLicense();
         
     }
 
@@ -644,81 +425,24 @@ public final class LicenseManager {
 
     
     private void licenseMessage() {
-        if (license.level ==  LicenseLevel.COMMUNITY.level || LICENSE_INITED.get()) {
-            return;
-        }
-        
+
         if(LICENSE_INITED.compareAndSet(false, true)) {
             Logger.info(InitServlet.class,
-                            "");
+                    "");
             Logger.info(InitServlet.class,
-                            " * Copyright (c) 2023 dotCMS Inc. ");
+                    " * Copyright (c) " + ZonedDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()).getYear()
+                            + " dotCMS LLC ");
             Logger.info(InitServlet.class,
-                            " * This software, code and any modifications to the code are licensed under the terms of the dotCMS Enterprise License ");
+                    " * This software, code and any modifications to the code are licensed under the terms of the dotCMS BSL License ");
             Logger.info(InitServlet.class,
-                            " * which can be found here : https://www.github.com/dotCMS/core/LICENSE ");
+                    " * which can be found here : https://www.github.com/dotCMS/core/LICENSE ");
             Logger.info(InitServlet.class,
-                            "");
+                    "");
         }
         
-        
-    }
-    
-    
-    
-    /**
-     * Check for server duplication and if so log an error
-     */
-    public boolean checkServerDuplicity() {
-        if (license.level ==  LicenseLevel.COMMUNITY.level) {
-            // This means there is no license set yet (community license), nothing to check
-            return false;
-        }
-
-        
-        final String serverId = APILocator.getServerAPI().readServerId();
-        try {
-            final boolean serverDuplicated = LicenseRepoDAO.isServerDuplicated(
-                    serverId,
-                    license.raw,
-                    APILocator.getServerAPI().getServerStartTime());
-            if (serverDuplicated) {
-                Logger.error(
-                        this,
-                        String.format(
-                                "DETECTED more than one server with same id %s or license, this can cause inconsistent behavior",
-                                serverId));
-            }
-
-            return serverDuplicated;
-        } catch (DotDataException e) {
-            Logger.error(this, String.format("Could not detect if server %s is duplicated", serverId), e);
-            return false;
-        }
     }
 
-    /**
-     * Meant to be executed at start up time to update the server startup time.
-     */
-    public void updateServerStartTime() {
-        if (license.level ==  LicenseLevel.COMMUNITY.level) {
-            // This means there is no license set yet (community license), nothing to update
-            return;
-        }
 
-        final String serverId = APILocator.getServerAPI().readServerId();
-        final long startTime = APILocator.getServerAPI().getServerStartTime();
-        Logger.info(this, String.format("Updating server %s start time to %s", serverId, startTime));
-
-        try {
-            LicenseRepoDAO.updateLicenseStartTime(serverId, license.raw, startTime);
-        } catch (DotDataException e) {
-            Logger.error(
-                    LicenseManager.class,
-                    String.format("Could not update startup time for server %s", serverId),
-                    e);
-        }
-    }
 
     private static class LicenceManagerHolder {
         static final LicenseManager INSTANCE = new LicenseManager();

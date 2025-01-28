@@ -320,7 +320,7 @@
                         + "<th width='7%'>&nbsp;</th>"
                         + "<th width='7%'>&nbsp;</th>"
                         + "<th width='15%'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
-                        + "<th width='15%'><%= LanguageUtil.get(pageContext, "license-serial") %></th>"
+
                         + "<th width='20%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
                         + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
                         + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
@@ -358,8 +358,8 @@
                         + "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
                             + "<td align='center'><img src='/html/images/skin/icon-server.png' class='icon network__listing-icon' /></td>"
                             + "<td align='center' style='color:#8c9ca9;'>" + (item.serverId==actionPanelTable.myServerId?"<i class='userIcon'></i>":"")+"</td>"
-                            + "<td>" + item.displayServerId + "</td>"
                             + "<td>" + item.licenseId + "</td>"
+
                             + "<td>" + item.friendlyName + "</td>"
                             + "<td align='left'>"+item.ipAddress+"</td>"
                             + "<td align='left'>"+item.contacted+"</td>"

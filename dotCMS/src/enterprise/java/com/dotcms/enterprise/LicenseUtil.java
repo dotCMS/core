@@ -9,8 +9,15 @@
 
 package com.dotcms.enterprise;
 
+import com.dotmarketing.util.Config;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
@@ -41,6 +48,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.apache.commons.io.IOUtils;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
@@ -463,6 +471,17 @@ public class LicenseUtil {
 						Logger.info(LicenseUtil.class,message.create().getMessage().toString());
 					},
 					3000, TimeUnit.MILLISECONDS);
+		}
+	}
+
+	public static String getLicenseText() {
+
+		Path path = Paths.get(Config.CONTEXT.getRealPath("/WEB-INF/LICENSE"));
+		try (InputStream fis = Files.newInputStream(path)) {
+			return IOUtils.toString(fis, StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			Logger.error(LicenseUtil.class, "Error reading LICENSE file", e);
+			return "Please see the LICENSE file in the root directory of the dotCMS git hub repo: https://github.com/dotCMS/core/blob/main/LICENSE";
 		}
 	}
 

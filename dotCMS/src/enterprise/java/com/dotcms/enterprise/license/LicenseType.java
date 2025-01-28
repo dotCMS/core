@@ -18,6 +18,7 @@ public enum LicenseType {
     DEV("dev"), 
     PROD("prod");
 
+    public static LicenseType DEFAULT_TYPE = PROD;
 
     public final String type;
 

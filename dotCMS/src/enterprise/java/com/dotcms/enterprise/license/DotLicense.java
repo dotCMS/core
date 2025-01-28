@@ -9,17 +9,20 @@
 
 package com.dotcms.enterprise.license;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 
+import com.dotmarketing.util.UUIDGenerator;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Date;
 
 
 public class DotLicense implements Serializable {
 
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 1L;
     public final String clientName, licenseType, serial;
     public final Date validUntil;
@@ -27,21 +30,25 @@ public class DotLicense implements Serializable {
     public final boolean perpetual;
     public final boolean expired;
     public final String raw;
-    public static final String DEFAULT_CLIENT_NAME= "dotCMS Community License";
-    public static final String DEFAULT_SERIAL= "dotCMS Community License";
-    public static final LicenseLevel DEFAULT_LEVEL= LicenseLevel.COMMUNITY;
-    
+    public static final Lazy<String> DEFAULT_CLIENT_NAME= Lazy.of(()-> Config.getStringProperty("CUSTOMER_LICENSE_NAME","dotCMS BSL License"));
+
+    public static final Lazy<String>  DEFAULT_SERIAL= Lazy.of(()->
+            Try.of(()-> APILocator.getServerAPI().readServerId() )
+            .getOrElse("BSL-" + UUIDGenerator.shorty()));
+
+
     
     public DotLicense() {
-        this(DEFAULT_CLIENT_NAME,  
-                        DEFAULT_LEVEL.COMMUNITY.name,
-                        DEFAULT_LEVEL.COMMUNITY.name,
-                        new Date(System.currentTimeMillis() + (100 * 356 * DateUtil.daysToMillis(24))),
-                        400,
-                        DEFAULT_LEVEL.level,
-                        true);
+        this.licenseType = LicenseType.DEFAULT_TYPE.type;
+        this.serial = DEFAULT_SERIAL.get();
+        this.clientName = DEFAULT_CLIENT_NAME.get();
+        this.validUntil = new Date(System.currentTimeMillis() + (100 * 356 * DateUtil.daysToMillis(24)));
+        this.licenseVersion = 400;
+        this.level = LicenseLevel.DEFAULT_LEVEL.level;
+        this.perpetual = true;
+        this.expired = false;
+        this.raw = null;
 
-        
     }
 
 
@@ -50,11 +57,11 @@ public class DotLicense implements Serializable {
     }
         
 
-    public DotLicense(String clientName, String licenseType, String serial, Date validUntil,
+    public DotLicense(String clientName, LicenseType licenseType, String serial, Date validUntil,
                     int licenseVersion, int level, boolean perpetual, String raw) {
         super();
         this.clientName = clientName;
-        this.licenseType = licenseType;
+        this.licenseType = licenseType.type;
         this.serial = serial;
         this.validUntil = validUntil;
         this.licenseVersion = licenseVersion;
@@ -66,7 +73,7 @@ public class DotLicense implements Serializable {
 
     public DotLicense(String clientName, String licenseType, String serial, Date validUntil,
                       int licenseVersion, int level, boolean perpetual) {
-        this(clientName, licenseType, serial, validUntil, licenseVersion, level, perpetual, null);
+        this(clientName, LicenseType.valueOf(licenseType), serial, validUntil, licenseVersion, level, perpetual, null);
     }
 
 
@@ -104,7 +111,7 @@ public class DotLicense implements Serializable {
                         this.licenseVersion, this.level, this.perpetual);
     }
     DotLicense raw(String value) {
-        return new DotLicense(this.clientName, this.licenseType, this.serial, this.validUntil,
+        return new DotLicense(this.clientName, LicenseType.valueOf(licenseType), this.serial, this.validUntil,
                 this.licenseVersion, this.level, this.perpetual, value);
     }
 
