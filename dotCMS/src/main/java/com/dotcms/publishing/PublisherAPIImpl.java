@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
+
 public class PublisherAPIImpl implements PublisherAPI {
 
     private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
@@ -223,7 +225,7 @@ public class PublisherAPIImpl implements PublisherAPI {
             String[] parts = queryOriginal.split(" ");
             for(String part : parts) {
                 Logger.info(this,"Part: " + part);
-                APILocator.getContentletAPI().search("+"+part, 0, 0, "moddate", APILocator.systemUser(), false)
+                APILocator.getContentletAPI().searchIndex("+"+part, MAX_LIMIT + 1, 0, "moddate", APILocator.systemUser(), false)
                         .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
                 Logger.info(this,"Done with part: " + part);
             }
@@ -235,7 +237,7 @@ public class PublisherAPIImpl implements PublisherAPI {
             String[] parts = queryOriginal.split(" ");
             for(String part : parts) {
                 Logger.info(this,"Part: " + part);
-                APILocator.getContentletAPI().search("+"+part, 0, 0, "moddate", APILocator.systemUser(), false)
+                APILocator.getContentletAPI().searchIndex("+"+part, MAX_LIMIT + 1, 0, "moddate", APILocator.systemUser(), false)
                         .stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
                 Logger.info(this,"Done with part: " + part + " New list size: " + publisherFilter.getExcludeDependencyQueryAssetIdSetSize());
             }

@@ -204,7 +204,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final TagAPI                tagAPI;
     private final IdentifierStripedLock lockManager;
 
-    static final int MAX_LIMIT = 10000;
+    public static final int MAX_LIMIT = 10000;
 
     private static final String backupPath = ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
