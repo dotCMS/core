@@ -1,15 +1,11 @@
-/**
- * @fileoverview Store for managing language selection and state in the language field component.
- * Handles loading languages, selection state, and error handling using NgRx Signals.
- */
-
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, of } from 'rxjs';
+import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { tap, switchMap, catchError } from 'rxjs/operators';
+import { tap, switchMap } from 'rxjs/operators';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { ComponentStatus, DotLanguage } from '@dotcms/dotcms-models';
@@ -97,20 +93,20 @@ export const LanguageFieldStore = signalStore(
                 }),
                 switchMap(() =>
                     languagesService.get().pipe(
-                        tap((languages) => {
-                            patchState(store, {
-                                languages,
-                                status: ComponentStatus.LOADED,
-                                error: null
-                            });
-                        }),
-                        catchError((error) => {
-                            patchState(store, {
-                                error: error.message,
-                                status: ComponentStatus.ERROR
-                            });
-
-                            return of([]); // Return empty array on error
+                        tapResponse({
+                            next: (languages) => {
+                                patchState(store, {
+                                    languages,
+                                    status: ComponentStatus.LOADED,
+                                    error: null
+                                });
+                            },
+                            error: () => {
+                                patchState(store, {
+                                    error: 'dot.file.relationship.dialog.search.language.failed',
+                                    status: ComponentStatus.ERROR
+                                });
+                            }
                         })
                     )
                 )

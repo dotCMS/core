@@ -1,4 +1,3 @@
-
 import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -14,21 +13,20 @@ import { LanguageFieldStore } from './language-field.store';
 
 describe('LanguageFieldStore', () => {
     let store: InstanceType<typeof LanguageFieldStore>;
-    let service: SpyObject<DotLanguagesService>;
-
+    let languageService: SpyObject<DotLanguagesService>;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 LanguageFieldStore,
                 mockProvider(DotLanguagesService, {
-                    get: () => of(mockLocales)
+                    get: jest.fn().mockReturnValue(of(mockLocales))
                 })
             ]
         });
 
         store = TestBed.inject(LanguageFieldStore);
-        service = TestBed.inject(DotLanguagesService) as SpyObject<DotLanguagesService>;
+        languageService = TestBed.inject(DotLanguagesService) as SpyObject<DotLanguagesService>;
     });
 
     it('should be created', () => {
@@ -59,8 +57,8 @@ describe('LanguageFieldStore', () => {
         }));
 
         it('should handle error when loading languages', fakeAsync(() => {
-            const errorMessage = 'Failed to load languages';
-            service.get.mockReturnValue(throwError(() => new Error(errorMessage)));
+            const errorMessage = 'dot.file.relationship.dialog.search.language.failed';
+            languageService.get.mockReturnValue(throwError(() => new Error(errorMessage)));
 
             store.loadLanguages();
             tick();
@@ -73,7 +71,7 @@ describe('LanguageFieldStore', () => {
 
         it('should set loading state while fetching languages', fakeAsync(() => {
             const mockObservable = of(mockLocales).pipe(delay(100)) as Observable<DotLanguage[]>;
-            service.get.mockReturnValue(mockObservable);
+            languageService.get.mockReturnValue(mockObservable);
 
             store.loadLanguages();
             expect(store.isLoading()).toBeTruthy();
@@ -87,7 +85,6 @@ describe('LanguageFieldStore', () => {
 
     describe('Language Selection', () => {
         beforeEach(fakeAsync(() => {
-            service.get.mockReturnValue(of(mockLocales));
             store.loadLanguages();
             tick();
         }));
@@ -130,14 +127,13 @@ describe('LanguageFieldStore', () => {
     describe('Reset Functionality', () => {
         it('should reset store to initial state', fakeAsync(() => {
             // Setup some state
-            service.get.mockReturnValue(of(mockLocales));
             store.loadLanguages();
             tick();
             store.setSelectedLanguage(1);
-            
+
             // Reset
             store.reset();
-            
+
             // Verify initial state
             expect(store.languages()).toEqual([]);
             expect(store.selectedLanguageId()).toBeNull();
@@ -148,4 +144,4 @@ describe('LanguageFieldStore', () => {
             expect(store.selectedLanguage()).toBeUndefined();
         }));
     });
-}); 
+});

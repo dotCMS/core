@@ -16,3 +16,10 @@
         {{ languageControl.value | language }}
     </ng-template>
 </p-dropdown>
+
+@let error = store.error();
+@if (error) {
+    <div class="text-red-500 text-sm mt-2">
+        {{ error | dm }}
+    </div>
+}
