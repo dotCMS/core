@@ -1,14 +1,8 @@
 import { Editor } from '@tinymce/tinymce-react';
 import { useEffect, useRef, useState } from 'react';
 
-import {
-    postMessageToEditor,
-    CLIENT_ACTIONS,
-    DotCmsClient,
-    NOTIFY_CLIENT,
-    getUVEState,
-    UVE_MODE
-} from '@dotcms/client';
+import { postMessageToEditor, CLIENT_ACTIONS, DotCmsClient, NOTIFY_CLIENT } from '@dotcms/client';
+import { getUVEState, UVE_MODE } from '@dotcms/uve';
 
 import { DotEditableTextProps, TINYMCE_CONFIG } from './utils';
 

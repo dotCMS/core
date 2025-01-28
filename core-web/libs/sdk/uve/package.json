@@ -1,23 +1,17 @@
 {
-  "name": "@dotcms/client",
+  "name": "@dotcms/uve",
   "version": "0.0.1-alpha.38",
-  "description": "Official JavaScript library for interacting with DotCMS REST APIs.",
-  "peerDependencies": {
-    "@dotcms/uve": "latest"
-  },
+  "description": "Official JavaScript library for interacting with Universal Visual Editor (UVE)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
-  },
-  "scripts": {
-    "build": "nx run sdk-client:build:js; cd ../../../../dotCMS/src/main/webapp/html/js/editor-js; rm -rf src package.json *.esm.d.ts"
   },
   "keywords": [
     "dotCMS",
     "CMS",
     "Content Management",
-    "API Client",
-    "REST API"
+    "UVE",
+    "Universal Visual Editor"
   ],
   "author": "dotcms <dev@dotcms.com>",
   "license": "MIT",

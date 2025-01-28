@@ -12,8 +12,8 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DotMessagePipe } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 

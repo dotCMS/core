@@ -9,7 +9,6 @@ import { ToastModule } from 'primeng/toast';
 
 import { skip } from 'rxjs/operators';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotESContentService,
     DotExperimentsService,
@@ -24,6 +23,7 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 

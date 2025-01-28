@@ -1,11 +1,12 @@
 /// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { UVE_MODE, UVEState } from '@dotcms/uve';
+import * as uve from '@dotcms/uve';
+
 import { Content } from './content/content-api';
 import { ClientConfig, DotCmsClient } from './sdk-js-client';
 
-import { UVE_MODE, UVEState } from '../editor/models/editor.model';
 import { NOTIFY_CLIENT } from '../editor/models/listeners.model';
-import * as dotcmsEditor from '../editor/sdk-editor';
 
 global.fetch = jest.fn();
 
@@ -49,7 +50,7 @@ describe('DotCmsClient', () => {
                 authToken: 'ABC'
             });
 
-            getUVEStateSpy = jest.spyOn(dotcmsEditor, 'getUVEState');
+            getUVEStateSpy = jest.spyOn(uve, 'getUVEState');
         });
 
         describe('init', () => {

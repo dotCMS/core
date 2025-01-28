@@ -12,7 +12,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotExperimentsService,
     DotLanguagesService,
@@ -31,6 +30,7 @@ import {
     CurrentUserDataMock,
     mockLanguageArray
 } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { UVEStore } from './dot-uve.store';
 

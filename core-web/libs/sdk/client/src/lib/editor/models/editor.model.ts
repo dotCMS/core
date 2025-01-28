@@ -66,14 +66,3 @@ export interface ReorderMenuConfig {
      */
     depth: number;
 }
-
-export enum UVE_MODE {
-    EDIT = 'edit',
-    PREVIEW = 'preview',
-    LIVE = 'live',
-    UNKNOWN = 'unknown'
-}
-
-export interface UVEState {
-    mode: UVE_MODE;
-}

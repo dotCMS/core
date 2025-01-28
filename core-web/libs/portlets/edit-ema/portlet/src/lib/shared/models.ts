@@ -1,6 +1,7 @@
-import { UVE_MODE, CLIENT_ACTIONS } from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
 

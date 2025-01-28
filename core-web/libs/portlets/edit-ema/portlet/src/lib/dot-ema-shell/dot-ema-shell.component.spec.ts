@@ -12,7 +12,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { CLIENT_ACTIONS, UVE_MODE } from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotExperimentsService,
@@ -39,6 +39,7 @@ import {
     DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';

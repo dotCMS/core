@@ -1,6 +1,7 @@
 import { renderHook } from '@testing-library/react-hooks';
 
 import * as sdkClient from '@dotcms/client';
+import * as uve from '@dotcms/uve';
 
 import { useDotcmsEditor } from './useDotcmsEditor';
 
@@ -28,12 +29,12 @@ jest.mock('@dotcms/client', () => ({
 const { DotCmsClient } = sdkClient as jest.Mocked<typeof sdkClient>;
 
 describe('useDotcmsEditor', () => {
-    let getUVEStateSpy: jest.SpyInstance<sdkClient.UVEState | undefined>;
+    let getUVEStateSpy: jest.SpyInstance<uve.UVEState | undefined>;
     let initEditorSpy: jest.SpyInstance<void>;
     let destroyEditorSpy: jest.SpyInstance<void>;
 
     beforeEach(() => {
-        getUVEStateSpy = jest.spyOn(sdkClient, 'getUVEState');
+        getUVEStateSpy = jest.spyOn(uve, 'getUVEState');
         initEditorSpy = jest.spyOn(sdkClient, 'initEditor');
         destroyEditorSpy = jest.spyOn(sdkClient, 'destroyEditor');
     });
@@ -61,7 +62,7 @@ describe('useDotcmsEditor', () => {
     describe('when inside editor', () => {
         it('should call initEditor when inside editor', () => {
             getUVEStateSpy.mockReturnValueOnce({
-                mode: sdkClient.UVE_MODE.EDIT
+                mode: uve.UVE_MODE.EDIT
             });
 
             renderHook(() =>
@@ -76,7 +77,7 @@ describe('useDotcmsEditor', () => {
 
         it('should call destroyEditor on unmount when inside editor', () => {
             getUVEStateSpy.mockReturnValueOnce({
-                mode: sdkClient.UVE_MODE.EDIT
+                mode: uve.UVE_MODE.EDIT
             });
 
             const { unmount } = renderHook(() =>
@@ -104,7 +105,7 @@ describe('useDotcmsEditor', () => {
 
             beforeEach(() => {
                 getUVEStateSpy.mockReturnValueOnce({
-                    mode: sdkClient.UVE_MODE.LIVE
+                    mode: uve.UVE_MODE.LIVE
                 });
             });
 

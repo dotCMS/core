@@ -2,8 +2,8 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
 

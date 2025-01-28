@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import * as dotcmsClient from '@dotcms/client';
+import * as uve from '@dotcms/uve';
 
 import { Column } from './Column';
 
@@ -30,8 +30,8 @@ describe('Column', () => {
 
     describe('Column is inside editor', () => {
         beforeEach(() => {
-            jest.spyOn(dotcmsClient, 'getUVEState').mockReturnValue({
-                mode: dotcmsClient.UVE_MODE.EDIT
+            jest.spyOn(uve, 'getUVEState').mockReturnValue({
+                mode: uve.UVE_MODE.EDIT
             });
             render(
                 <MockContextRender mockContext={{ isInsideEditor: true }}>
@@ -64,7 +64,7 @@ describe('Column', () => {
 
     describe('Column is not inside editor', () => {
         beforeEach(() => {
-            jest.spyOn(dotcmsClient, 'getUVEState').mockReturnValue(undefined);
+            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
             render(
                 <MockContextRender mockContext={{ isInsideEditor: false }}>
                     <Column column={mockColumnData} />

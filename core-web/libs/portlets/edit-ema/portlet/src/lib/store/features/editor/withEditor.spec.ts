@@ -6,7 +6,6 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { UVE_MODE } from '@dotcms/client';
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -15,6 +14,7 @@ import {
     DotDeviceListItem
 } from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { withEditor } from './withEditor';
 

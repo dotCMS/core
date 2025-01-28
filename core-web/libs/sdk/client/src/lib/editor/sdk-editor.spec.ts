@@ -1,3 +1,5 @@
+import { getUVEState } from '@dotcms/uve';
+
 import {
     listenEditorMessages,
     listenHoveredContentlet,
@@ -7,7 +9,6 @@ import {
 import { postMessageToEditor, CLIENT_ACTIONS } from './models/client.model';
 import {
     addClassToEmptyContentlets,
-    getUVEState,
     initEditor,
     initInlineEditing,
     updateNavigation

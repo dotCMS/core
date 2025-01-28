@@ -24,7 +24,6 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { map } from 'rxjs/operators';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotDevicesService,
@@ -33,6 +32,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';

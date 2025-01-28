@@ -1,9 +1,10 @@
+import { getUVEState } from '@dotcms/uve';
+
 import { Content } from './content/content-api';
 import { ErrorMessages } from './models';
 import { DotcmsClientListener } from './models/types';
 
 import { NOTIFY_CLIENT } from '../editor/models/listeners.model';
-import { getUVEState } from '../editor/sdk-editor';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
@@ -67,7 +68,7 @@ export type PageApiOptions = {
      * @type {string}
      * @optional
      */
-    mode?: 'EDIT_MODE' | 'PREVIEW_MODE' | 'LIVE_MODE';
+    mode?: 'EDIT' | 'PREVIEW_MODE' | 'LIVE';
     /**
      * The language id of the page you want to retrieve. If not provided, will use the default language of the site.
      * @type {number}

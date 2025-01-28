@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import { UVE_MODE } from '@dotcms/client';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { PageContext } from '../../contexts/PageContext';
 import { useCheckHaveContent } from '../../hooks/useCheckHaveContent';
@@ -86,13 +86,11 @@ export function Container({ containerRef }: ContainerProps) {
         const ContentTypeComponent = components[contentlet.contentType];
         const DefaultComponent = components['CustomNoComponent'] || NoComponent;
 
-        // THIS CHANGES ARE BREAKING CHANGES USER WILL HAVE TO MIGRATE TO UVESTATE FUNCTION
         const Component =
             UVEState?.mode === UVE_MODE.EDIT
                 ? ContentTypeComponent || DefaultComponent
                 : ContentTypeComponent || EmptyContent;
 
-        // THIS CHANGES ARE BREAKING CHANGES USER WILL HAVE TO MIGRATE TO UVESTATE FUNCTION
         return UVEState?.mode === UVE_MODE.EDIT ? (
             <div
                 data-testid="dot-contentlet"
@@ -114,7 +112,6 @@ export function Container({ containerRef }: ContainerProps) {
         );
     });
 
-    // THIS CHANGES ARE BREAKING CHANGES USER WILL HAVE TO MIGRATE TO UVESTATE FUNCTION
     return UVEState?.mode === UVE_MODE.EDIT ? (
         <div
             data-testid="dot-container"

@@ -1,10 +1,12 @@
+import { getUVEState } from '@dotcms/uve';
+
 import {
     listenEditorMessages,
     listenHoveredContentlet,
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { addClassToEmptyContentlets, initDotUVE, getUVEState } from './sdk-editor';
+import { addClassToEmptyContentlets, initDotUVE } from './sdk-editor';
 import { listenBlockEditorInlineEvent } from './utils/traditional-vtl.utils';
 
 /**

@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import * as dotcmsClient from '@dotcms/client';
+import * as uve from '@dotcms/uve';
 
 import { Container } from './Container';
 
@@ -27,8 +27,8 @@ const getContainer = ({ containerRef, containers }: { containerRef: any; contain
 
 describe('Container', () => {
     // Mock data for your context and container
-    jest.spyOn(dotcmsClient, 'getUVEState').mockReturnValue({
-        mode: dotcmsClient.UVE_MODE.EDIT
+    jest.spyOn(uve, 'getUVEState').mockReturnValue({
+        mode: uve.UVE_MODE.EDIT
     });
 
     describe('with contentlets', () => {
@@ -135,7 +135,7 @@ describe('Container', () => {
             });
 
             it('dont render EmptyContainer component outside editor mode', () => {
-                jest.spyOn(dotcmsClient, 'getUVEState').mockReturnValue(undefined);
+                jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
                 const updatedContext = {
                     ...mockPageContext,

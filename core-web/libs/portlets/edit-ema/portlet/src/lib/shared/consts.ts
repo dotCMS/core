@@ -1,7 +1,7 @@
 import { InjectionToken } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DotDeviceListItem, DotPersona, FeaturedFlags } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { CommonErrors, PAGE_MODE } from './enums';
 import { CommonErrorsInfo } from './models';

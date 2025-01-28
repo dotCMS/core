@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { getUVEState, initInlineEditing, UVE_MODE } from '@dotcms/client';
+import { initInlineEditing } from '@dotcms/client';
+import { getUVEState, UVE_MODE } from '@dotcms/uve';
 
 import { BlockEditorBlock } from './item/BlockEditorBlock';
 

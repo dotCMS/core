@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 
-import { UVE_MODE } from '@dotcms/client';
+import { UVE_MODE } from '@dotcms/uve';
 
 import styles from './Column.module.css';
 
@@ -37,7 +37,6 @@ export function Column({ column }: ColumnProps) {
 
     const combinedClasses = combineClasses([styles[endClass], styles[startClass]]);
 
-    // THIS CHANGES ARE BREAKING CHANGES USER WILL HAVE TO MIGRATE TO UVESTATE FUNCTION
     const columnProps =
         UVEState?.mode === UVE_MODE.EDIT
             ? {

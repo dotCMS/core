@@ -3,9 +3,7 @@ import { CLIENT_ACTIONS, postMessageToEditor } from './lib/editor/models/client.
 import {
     CustomClientParams,
     DotCMSPageEditorConfig,
-    EditorConfig,
-    UVE_MODE,
-    UVEState
+    EditorConfig
 } from './lib/editor/models/editor.model';
 import {
     InlineEditorData,
@@ -20,8 +18,7 @@ import {
     initEditor,
     isInsideEditor,
     updateNavigation,
-    initInlineEditing,
-    getUVEState
+    initInlineEditing
 } from './lib/editor/sdk-editor';
 import { getPageRequestParams, graphqlToPageEntity } from './lib/utils';
 
@@ -30,7 +27,6 @@ export {
     destroyEditor,
     editContentlet,
     getPageRequestParams,
-    getUVEState,
     graphqlToPageEntity,
     initEditor,
     initInlineEditing,
@@ -49,11 +45,9 @@ export {
     EditorConfig,
     InlineEditEventData,
     InlineEditorData,
-    UVEState,
 
     // Constants
     CLIENT_ACTIONS,
     INLINE_EDITING_EVENT_KEY,
-    NOTIFY_CLIENT,
-    UVE_MODE
+    NOTIFY_CLIENT
 };

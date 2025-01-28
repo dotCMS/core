@@ -5,10 +5,10 @@ import {
     DotCmsClient,
     destroyEditor,
     initEditor,
-    getUVEState,
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
+import { getUVEState } from '@dotcms/uve';
 
 import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
 import { DotCMSPageContext } from '../models';
@@ -29,8 +29,6 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
         ...pageContext,
         UVEState: undefined
     });
-
-    // THIS CHANGES ARE BREAKING CHANGES USER WILL HAVE TO MIGRATE TO UVESTATE FUNCTION
 
     /**
      * Initializes the DotCMS editor.
