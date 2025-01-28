@@ -18,7 +18,6 @@
         </div>
     } @else {
         <p-table
-            #datatable
             [columns]="columns"
             [value]="data"
             [selectionMode]="selectionMode"
@@ -28,7 +27,6 @@
             [first]="pagination.offset"
             [rows]="pagination.rowsPerPage"
             [scrollable]="true"
-            [globalFilterFields]="['title']"
             styleClass="dotTable p-datatable-existing-content w-full">
             <ng-template pTemplate="caption">
                 <div class="flex justify-content-between align-items-center w-full">
