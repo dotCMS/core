@@ -71,11 +71,9 @@ export class SearchComponent {
      *
      * @param event - Optional mouse event that triggered the clear action
      */
-    clearForm(event?: MouseEvent) {
+    clearForm() {
         this.form.reset();
-        if (event) {
-            this.$overlayPanel().toggle(event);
-        }
+        this.$overlayPanel().hide();
     }
 
     /**
