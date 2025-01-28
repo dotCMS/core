@@ -39,9 +39,10 @@ export class AngularFormBridge implements FormBridge {
         this.zone.run(() => {
             const control = this.form.get(fieldId);
             if (control && control.value !== value) {
-                control.setValue(value, { emitEvent: false });
+                control.setValue(value, { emitEvent: true });
                 control.markAsTouched();
-                control.updateValueAndValidity({ emitEvent: false });
+                control.markAsDirty();
+                control.updateValueAndValidity({ emitEvent: true });
             }
         });
     }
