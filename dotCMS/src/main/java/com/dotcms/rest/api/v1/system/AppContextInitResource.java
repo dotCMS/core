@@ -40,6 +40,9 @@ import java.util.Map;
 @SuppressWarnings("serial")
 public class AppContextInitResource implements Serializable {
 
+	private static final String USER_AGENT_HEADER = "User-Agent";
+	private static final String KUBE_PROBE_PREFIX = "kube-probe";
+
 	private static final String CONFIG = "config";
 
 	private final AppConfigurationHelper helper;
@@ -71,27 +74,14 @@ public class AppContextInitResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response list(@Context final HttpServletRequest request) {
 		try {
-			// If the request is from a Kubernetes probe (User-Agent starts with kube-probe),
-			// respond with a 200 OK and skip the body to reduce unnecessary payloads.
-			//
-			// This is a temporary solution to efficiently handle Kubernetes probes
-			// without introducing additional endpoints or modifying the deployment configuration.
-			// Probes like liveness and readiness do not require the complete configuration payload
-			// returned by this endpoint. Instead, a lightweight response is sufficient.
-			//
-			// NOTE: Once a dedicated endpoint for probes is implemented, this logic
-			// should be reviewed and potentially removed.
-			// Retrieve the User-Agent header from the incoming request
-			String userAgentHeader = "User-Agent";
-			String kubeProbePrefix = "kube-probe";
-			String userAgent = request.getHeader(userAgentHeader);
-
-			if (userAgent != null && userAgent.startsWith(kubeProbePrefix)) {
-				return Response.ok().build();
-			}
-
 			// Return all configuration parameters in one response
 			final Object configData = this.helper.getConfigurationData(request);
+
+			// If the request is from a Kubernetes probe, we return a 200 OK and skip the body.
+	        if (isKubernetesProbe(request)) {
+                return Response.ok().build();
+            }
+
 			final Map<String, Object> configMap = Map.of(CONFIG, configData);
 
 			return Response.ok(new ResponseEntityView(configMap)).build();
@@ -101,4 +91,25 @@ public class AppContextInitResource implements Serializable {
 		}
 	}
 
+	/**
+	 * Checks if the incoming request is from a Kubernetes probe based on the User-Agent header.
+	 * <p>
+	 * If the request is from a Kubernetes probe (User-Agent starts with "kube-probe"),
+	 * the endpoint responds with a 200 OK and skips the body to reduce unnecessary payloads.
+	 * <p>
+	 * <b>Temporary Solution:</b> This logic is a temporary measure to efficiently handle
+	 * Kubernetes probes (e.g., liveness and readiness) without introducing additional endpoints
+	 * or modifying the deployment configuration. These probes do not require the complete
+	 * configuration payload returned by this endpoint, and a lightweight response is sufficient.
+	 * <p>
+	 * <b>Note:</b> Once a dedicated endpoint for probes is implemented, this logic should be reviewed
+	 * and potentially removed.
+	 *
+	 * @param request The incoming {@link HttpServletRequest}.
+	 * @return {@code true} if the request is from a Kubernetes probe; {@code false} otherwise.
+	 */
+	private boolean isKubernetesProbe(final HttpServletRequest request) {
+		final String userAgent = request.getHeader(USER_AGENT_HEADER);
+		return userAgent != null && userAgent.startsWith(KUBE_PROBE_PREFIX);
+	}
 }
