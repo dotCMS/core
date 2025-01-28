@@ -62,7 +62,16 @@ describe('SelectExisingFileStore', () => {
 
     describe('Method: loadChildren', () => {
         it('should load children for a node', fakeAsync(() => {
-            const mockChildren = [...TREE_SELECT_SITES_MOCK];
+            const mockChildren = {
+                parent: {
+                    id: 'demo.dotcms.com',
+                    hostName: 'demo.dotcms.com',
+                    path: '',
+                    type: 'site',
+                    addChildrenAllowed: true
+                },
+                folders: [...TREE_SELECT_SITES_MOCK]
+            };
 
             editContentService.getFoldersTreeNode.mockReturnValue(of(mockChildren));
 
@@ -76,7 +85,7 @@ describe('SelectExisingFileStore', () => {
 
             tick(50);
 
-            expect(node.children).toEqual(mockChildren);
+            expect(node.children).toEqual(mockChildren.folders);
             expect(node.loading).toBe(false);
             expect(node.leaf).toBe(true);
             expect(node.icon).toBe('pi pi-folder-open');
