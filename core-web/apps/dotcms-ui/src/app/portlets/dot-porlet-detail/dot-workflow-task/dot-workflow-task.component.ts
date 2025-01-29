@@ -48,7 +48,6 @@ export class DotWorkflowTaskComponent implements OnInit {
         if (['edit-task-executed-workflow', 'close'].includes($event.detail.name)) {
             this.onCloseWorkflowTaskEditor();
         } else {
-            $event.detail.data.callback = 'fileActionCallbackFromAngular';
             this.dotCustomEventHandlerService.handle($event);
         }
     }

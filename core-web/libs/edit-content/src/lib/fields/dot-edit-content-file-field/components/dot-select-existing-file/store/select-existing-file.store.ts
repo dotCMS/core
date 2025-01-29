@@ -181,9 +181,11 @@ export const SelectExisingFileStore = signalStore(
 
                         node.loading = true;
 
-                        return dotEditContentService.getFoldersTreeNode(hostname, path).pipe(
+                        const fullPath = `${hostname}/${path}`;
+
+                        return dotEditContentService.getFoldersTreeNode(fullPath).pipe(
                             tapResponse({
-                                next: (children) => {
+                                next: ({ folders: children }) => {
                                     node.loading = false;
                                     node.leaf = true;
                                     node.icon = 'pi pi-folder-open';
