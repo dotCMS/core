@@ -29,7 +29,9 @@ export class DojoFormBridge implements FormBridge {
         try {
             const element = document.getElementById(fieldId);
 
-            return element instanceof HTMLInputElement ? element.value : null;
+            return element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement
+                ? element.value
+                : null;
         } catch (error) {
             console.warn('Unable to get field value:', error);
 
@@ -49,6 +51,9 @@ export class DojoFormBridge implements FormBridge {
             if (element instanceof HTMLInputElement) {
                 element.value = String(value ?? '');
                 element.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (element instanceof HTMLTextAreaElement) {
+                element.textContent = String(value ?? '');
+                element.dispatchEvent(new Event('change', { bubbles: true }));
             }
         } catch (error) {
             console.warn('Error setting field value:', error);
@@ -66,15 +71,17 @@ export class DojoFormBridge implements FormBridge {
             this.cleanupFieldListeners(fieldId);
 
             const element = document.getElementById(fieldId);
-            if (element instanceof HTMLInputElement) {
+            if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
                 const handlers = [
                     {
                         event: 'keyup',
-                        handler: (e: Event) => callback((e.target as HTMLInputElement).value)
+                        handler: (e: Event) =>
+                            callback((e.target as HTMLInputElement | HTMLTextAreaElement).value)
                     },
                     {
                         event: 'change',
-                        handler: (e: Event) => callback((e.target as HTMLInputElement).value)
+                        handler: (e: Event) =>
+                            callback((e.target as HTMLInputElement | HTMLTextAreaElement).value)
                     }
                 ];
 
