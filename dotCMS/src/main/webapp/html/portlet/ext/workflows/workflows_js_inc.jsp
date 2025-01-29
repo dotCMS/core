@@ -189,11 +189,6 @@
 		dijit.byId('savingContentDialog').hide();
 	}
 
-	function fileActionCallbackFromAngular() {
-		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
-		executeEditTaskExecutedWorkflowEvent();
-	}
-
 	function executeEditTaskExecutedWorkflowEvent() {
 		var customEvent = document.createEvent("CustomEvent");
 		customEvent.initCustomEvent("ng-event", false, false,  {
