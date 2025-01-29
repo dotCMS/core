@@ -2,17 +2,7 @@ import { expect, test } from "@playwright/test";
 import { waitForVisibleAndCallback } from "@utils/dotCMSUtils";
 import { ContentPage, LoginPage, SideMenuPage } from "@pages/index";
 
-import {
-  GroupEntriesLocators,
-  MenuEntriesLocators,
-  ToolEntriesLocators,
-} from "@locators/navigation/menuLocators";
-import {
-  iFramesLocators,
-  contentGeneric,
-  fileAsset,
-  pageAsset,
-} from "@locators/globalLocators";
+
 import {
   genericContent1,
   contentProperties,
@@ -20,6 +10,12 @@ import {
   pageAssetContent,
 } from "@data/contentData";
 import { assert } from "console";
+import {
+  iFramesLocators,
+  contentGeneric,
+  fileAsset,
+  pageAsset,
+} from "../../locators/globalLocators";
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
@@ -29,21 +25,12 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const loginPage = new LoginPage(page);
   const sideMenuPage = new SideMenuPage(page);
 
-  const menuLocators = new MenuEntriesLocators(page);
-  const groupsLocators = new GroupEntriesLocators(page);
-  const toolsLocators = new ToolEntriesLocators(page);
-
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;
   const password = process.env.PASSWORD as string;
 
-  // Login to dotCMS
   await loginPage.login(username, password);
-  await sideMenuPage.navigate(
-    menuLocators.EXPAND,
-    groupsLocators.CONTENT,
-    toolsLocators.SEARCH_ALL,
-  );
+  await sideMenuPage.navigate("Content", "Search All");
 
   // Validate the portlet title
   const breadcrumbLocator = page.locator("p-breadcrumb");
