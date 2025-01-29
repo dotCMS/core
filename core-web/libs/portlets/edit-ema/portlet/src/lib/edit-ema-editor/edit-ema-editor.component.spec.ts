@@ -2586,7 +2586,7 @@ describe('EditEmaEditorComponent', () => {
                             url: 'index',
                             language_id: '3',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                            clientHost: ''
+                            clientHost: undefined
                         });
                     });
 
