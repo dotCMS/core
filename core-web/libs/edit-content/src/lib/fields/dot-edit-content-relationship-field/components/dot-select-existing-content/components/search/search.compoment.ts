@@ -1,4 +1,4 @@
-import { Component, inject, output, viewChild } from '@angular/core';
+import { Component, inject, input, output, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -47,6 +47,11 @@ export class SearchComponent {
      * Emits an object containing query string, language ID, and site ID.
      */
     onSearch = output<SearchParams>();
+
+    /**
+     * Input signal that indicates if the search is loading.
+     */
+    $isLoading = input.required<boolean>({ alias: 'isLoading' });
 
     /**
      * FormBuilder instance for creating reactive forms.

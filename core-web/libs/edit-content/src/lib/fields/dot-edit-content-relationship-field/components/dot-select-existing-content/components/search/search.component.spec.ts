@@ -35,7 +35,11 @@ describe('SearchComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            props: {
+                isLoading: false
+            } as unknown
+        });
         component = spectator.component;
     });
 
@@ -118,6 +122,22 @@ describe('SearchComponent', () => {
                 languageId: -1,
                 siteId: ''
             });
+        });
+
+        it('should set isLoading to true when search is performed', () => {
+            const openFiltersButton = spectator.query(
+                'p-button[data-testid="open-filters-button"] button'
+            );
+            spectator.click(openFiltersButton);
+
+            spectator.setInput('isLoading', true);
+            spectator.detectChanges();
+
+            const searchButton = spectator.query<HTMLButtonElement>(
+                'p-button[data-testid="search-button"] button'
+            );
+
+            expect(searchButton.disabled).toBeTruthy();
         });
     });
 

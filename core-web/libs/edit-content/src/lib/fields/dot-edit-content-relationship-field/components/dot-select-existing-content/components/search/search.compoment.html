@@ -33,6 +33,7 @@
                     outline="true" />
 
                 <p-button
+                    [loading]="$isLoading()"
                     (onClick)="doSearch()"
                     data-testid="search-button"
                     [label]="'dot.file.relationship.dialog.search.btn.search' | dm"

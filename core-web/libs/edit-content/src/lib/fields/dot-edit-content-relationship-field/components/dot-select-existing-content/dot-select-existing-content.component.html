@@ -32,7 +32,9 @@
                 <div class="flex justify-content-between align-items-center w-full">
                     <div class="flex align-items-center gap-2">
                         <div class="flex-none">
-                            <dot-search (onSearch)="store.search($event)" />
+                            <dot-search
+                                (onSearch)="store.search($event)"
+                                [isLoading]="store.isLoading()" />
                         </div>
                         <div class="flex-grow-1">
                             <p class="text-primary-500">
