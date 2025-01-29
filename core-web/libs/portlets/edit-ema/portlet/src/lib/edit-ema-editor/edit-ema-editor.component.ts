@@ -56,7 +56,6 @@ import { isEqual } from '@dotcms/utils';
 
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
-import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
@@ -114,7 +113,6 @@ import {
         DotSpinnerModule,
         DotEmaDialogComponent,
         ConfirmDialogModule,
-        EditEmaToolbarComponent,
         EmaPageDropzoneComponent,
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
@@ -160,7 +158,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
     readonly $editorProps = this.uveStore.$editorProps;
 
-    readonly $previewMode = this.uveStore.$previewMode;
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
