@@ -70,6 +70,15 @@
 </p-toolbar>
 
 <ng-template #editLeftOptionsTemplate>
+    @if ($urlContentMap(); as urlContentMap) {
+        <p-button
+            (click)="editUrlContentMap.emit(urlContentMap)"
+            [pTooltip]="'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]"
+            tooltipPosition="bottom"
+            icon="pi pi-pencil"
+            styleClass="p-button-text p-button-sm p-button-rounded"
+            data-testId="edit-url-content-map" />
+    }
     <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
 
     <p-button

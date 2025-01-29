@@ -81,7 +81,6 @@ import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/com
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
-import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
@@ -104,7 +103,7 @@ import {
     MOCK_RESPONSE_VTL,
     PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK
 } from '../shared/mocks';
-import { ActionPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
+import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
 
@@ -132,8 +131,7 @@ const createRouting = () =>
         declarations: [
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
-            MockComponent(DotEmaRunningExperimentComponent),
-            MockComponent(EditEmaToolbarComponent)
+            MockComponent(DotEmaRunningExperimentComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -427,19 +425,7 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should show the old toolbar when FEATURE_FLAG_UVE_PREVIEW_MODE is false', () => {
-                const toolbar = spectator.query(EditEmaToolbarComponent);
-
-                expect(toolbar).not.toBeNull();
-            });
-
-            it('should show the new toolbar when FEATURE_FLAG_UVE_PREVIEW_MODE is true', () => {
-                store.setFlags({
-                    FEATURE_FLAG_UVE_PREVIEW_MODE: true
-                });
-
-                spectator.detectChanges();
-
+            it('should have a toolbar', () => {
                 const toolbar = spectator.query(DotUveToolbarComponent);
 
                 expect(toolbar).not.toBeNull();
@@ -573,7 +559,7 @@ describe('EditEmaEditorComponent', () => {
 
                     jest.spyOn(dialog, 'editUrlContentMapContentlet');
 
-                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'editUrlContentMap', {
+                    spectator.triggerEventHandler(DotUveToolbarComponent, 'editUrlContentMap', {
                         identifier: '123',
                         inode: '456',
                         title: 'Hello World'
@@ -2600,7 +2586,7 @@ describe('EditEmaEditorComponent', () => {
                             url: 'index',
                             language_id: '3',
                             'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                            clientHost: ''
+                            clientHost: undefined
                         });
                     });
 
@@ -2967,30 +2953,6 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('language selected', () => {
-                it('should call translatePage when language is emitted from toolbar', () => {
-                    const spyTranslatePage = jest.spyOn(spectator.component, 'translatePage');
-
-                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'translatePage', {
-                        page: {} as DotPage,
-                        newLanguage: 1
-                    });
-
-                    expect(spyTranslatePage).toHaveBeenCalled();
-                });
-
-                it('should open a dialog to create the page in the new language when the user accepts the creation', () => {
-                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'translatePage', {
-                        page: {} as DotPage,
-                        newLanguage: 2
-                    });
-
-                    spectator.detectChanges();
-
-                    const dialog = spectator.component.dialog;
-
-                    expect(dialog).not.toBeNull();
-                });
-
                 it('should update the URL and language when the user create a new translation changing the URL', () => {
                     store.loadPageAsset({
                         clientHost: 'http://localhost:3000',
