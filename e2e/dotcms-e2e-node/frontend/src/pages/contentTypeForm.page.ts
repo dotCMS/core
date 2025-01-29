@@ -11,7 +11,9 @@ export class ContentTypeFormPage {
   async addTextField() {
     const dropZone = this.page.locator('div[dragula="fields-bag"]');
     const dotDialogInput = this.page.locator("input#name");
-    const dotDialogAcceptAction = this.page.getByTestId("dotDialogAcceptAction");
+    const dotDialogAcceptAction = this.page.getByTestId(
+      "dotDialogAcceptAction",
+    );
 
     const textFieldItem = this.page.locator(
       "[data-clazz='com.dotcms.contenttype.model.field.ImmutableTextField']",
@@ -25,7 +27,9 @@ export class ContentTypeFormPage {
   async addSiteOrFolderField() {
     const dropZone = this.page.locator('div[dragula="fields-bag"]');
     const dotDialogInput = this.page.locator("input#name");
-    const dotDialogAcceptAction = this.page.getByTestId("dotDialogAcceptAction");
+    const dotDialogAcceptAction = this.page.getByTestId(
+      "dotDialogAcceptAction",
+    );
 
     const siteOrFolderFieldItem = this.page.locator(
       "[data-clazz='com.dotcms.contenttype.model.field.ImmutableHostFolderField']",

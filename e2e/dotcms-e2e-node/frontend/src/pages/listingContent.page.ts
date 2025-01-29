@@ -1,7 +1,6 @@
 import { expect, Page } from "@playwright/test";
 
 export class ListingContentPage {
-
   constructor(private page: Page) {}
 
   async goTo(filter?: string) {
@@ -30,9 +29,9 @@ export class ListingContentPage {
 
   async clickFirstContentRow() {
     const resultsTable = this.page
-    .locator('iframe[name="detailFrame"]')
-    .contentFrame()
-    .locator("#results_table");
+      .locator('iframe[name="detailFrame"]')
+      .contentFrame()
+      .locator("#results_table");
 
     await expect(resultsTable).toBeVisible();
 

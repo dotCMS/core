@@ -2,7 +2,6 @@ import { expect, test } from "@playwright/test";
 import { waitForVisibleAndCallback } from "@utils/dotCMSUtils";
 import { ContentPage, LoginPage, SideMenuPage } from "@pages/index";
 
-
 import {
   genericContent1,
   contentProperties,
@@ -267,10 +266,7 @@ test("Validate you are able to delete file on binary fields", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentPage.selectTypeOnFilter(page, fileAsset.locator);
-  await waitForVisibleAndCallback(
-    mainFrame.locator("#contentWrapper"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
   const contentElement = await contentPage.getContentElement(
     page,
     fileAssetContent.newFileName,
@@ -284,7 +280,6 @@ test("Validate you are able to delete file on binary fields", async ({
   await detailFrame.getByRole("button", { name: " Remove" }).click();
   await waitForVisibleAndCallback(
     detailFrame.getByTestId("ui-message-icon-container"),
-    async () => {},
   );
   await detailFrame.getByText("Publish", { exact: true }).click();
   await expect(detailFrame.getByText("The field File Asset is")).toBeVisible();
@@ -300,10 +295,7 @@ test("Validate file assets show corresponding information", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentPage.selectTypeOnFilter(page, fileAsset.locator);
-  await waitForVisibleAndCallback(
-    mainFrame.locator("#contentWrapper"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
   await (
     await contentPage.getContentElement(page, fileAssetContent.newFileName)
   ).click();
@@ -313,10 +305,7 @@ test("Validate file assets show corresponding information", async ({
 
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await detailFrame.getByTestId("info-btn").click();
-  await waitForVisibleAndCallback(
-    detailFrame.getByText("Bytes"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(detailFrame.getByText("Bytes"));
   await expect(detailFrame.getByText("Bytes")).toBeVisible();
   await expect(detailFrame.getByTestId("resource-link-FileLink")).toContainText(
     "http",
@@ -338,10 +327,7 @@ test("Validate the download of binary fields on file assets", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentPage.selectTypeOnFilter(page, fileAsset.locator);
-  await waitForVisibleAndCallback(
-    mainFrame.locator("#contentWrapper"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
   await (
     await contentPage.getContentElement(page, fileAssetContent.newFileName)
   ).click();
@@ -372,10 +358,7 @@ test("Validate the required on file asset fields", async ({ page }) => {
     title: fileAssetContent.title,
     action: contentProperties.publishWfAction,
   });
-  await waitForVisibleAndCallback(
-    detailsFrame.getByText("Error x"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(detailsFrame.getByText("Error x"));
   const errorMessage = detailsFrame.getByText("The field File Asset is");
   await waitForVisibleAndCallback(errorMessage, () =>
     expect(errorMessage).toBeVisible(),
@@ -492,10 +475,7 @@ test("Add a new page", async ({ page }) => {
     action: contentProperties.publishWfAction,
   });
   const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
-  await waitForVisibleAndCallback(
-    dataFrame.getByRole("banner"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(dataFrame.getByRole("banner"));
   await expect(page.locator("ol")).toContainText(
     "Pages" + pageAssetContent.title,
   );
@@ -552,10 +532,7 @@ test("Validate required fields on page asset", async ({ page }) => {
     showOnMenu: pageAssetContent.showOnMenu,
     action: contentProperties.publishWfAction,
   });
-  await waitForVisibleAndCallback(
-    detailFrame.getByText("Error x"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(detailFrame.getByText("Error x"));
 
   await expect(
     detailFrame.getByText("The field Title is required."),

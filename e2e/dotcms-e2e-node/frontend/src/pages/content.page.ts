@@ -4,9 +4,9 @@ import {
   iFramesLocators,
   fileAsset,
   pageAsset,
-} from "@locators/globalLocators";
-import { waitForVisibleAndCallback } from "@utils/dotCMSUtils";
-import { contentProperties, fileAssetContent } from "@data/contentData";
+} from "../locators/globalLocators";
+import { waitForVisibleAndCallback } from "../utils/dotCMSUtils";
+import { contentProperties, fileAssetContent } from "../data/contentData";
 
 export class ContentPage {
   constructor(private page: Page) {}

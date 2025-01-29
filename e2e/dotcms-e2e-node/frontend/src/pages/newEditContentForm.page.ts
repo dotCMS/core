@@ -1,7 +1,6 @@
 import { expect, Page } from "@playwright/test";
 
 export class NewEditContentFormPage {
-
   constructor(private page: Page) {}
 
   async fillTextField(text: string) {

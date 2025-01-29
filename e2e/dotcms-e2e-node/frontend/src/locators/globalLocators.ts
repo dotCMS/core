@@ -45,5 +45,3 @@ export const pageAsset = {
   locator: "descriptionPage",
   label: "Page",
 };
-
-export {} from "./navigation/menuLocators";

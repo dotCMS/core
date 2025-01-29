@@ -7,7 +7,9 @@ export class AccessibilityPage {
   constructor(private page: Page) {}
 
   async generateReport(description: string) {
-    const accessibilityScanResults = await new AxeBuilder({ page: this.page }).analyze();
+    const accessibilityScanResults = await new AxeBuilder({
+      page: this.page,
+    }).analyze();
     const reportHTML = createHtmlReport({
       results: accessibilityScanResults,
       options: {

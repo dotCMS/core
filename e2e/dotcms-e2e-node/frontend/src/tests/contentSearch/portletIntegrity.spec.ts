@@ -5,12 +5,8 @@ import {
   addContent,
   iFramesLocators,
   contentGeneric,
-} from "@locators/globalLocators";
-import {
-  GroupEntriesLocators,
-  MenuEntriesLocators,
-  ToolEntriesLocators,
-} from "@locators/navigation/menuLocators";
+} from "../../locators/globalLocators";
+
 import { contentProperties, genericContent1 } from "../../data/contentData";
 
 /**
@@ -22,21 +18,13 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const loginPage = new LoginPage(page);
   const sideMenuPage = new SideMenuPage(page);
 
-  const menuLocators = new MenuEntriesLocators(page);
-  const groupsLocators = new GroupEntriesLocators(page);
-  const toolsLocators = new ToolEntriesLocators(page);
-
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;
   const password = process.env.PASSWORD as string;
 
   // Login to dotCMS
   await loginPage.login(username, password);
-  await sideMenuPage.navigate(
-    menuLocators.EXPAND,
-    groupsLocators.CONTENT,
-    toolsLocators.SEARCH_ALL,
-  );
+  await sideMenuPage.navigate("Content", "Search All");
 
   // Validate the portlet title
   const breadcrumbLocator = page.locator("p-breadcrumb");
