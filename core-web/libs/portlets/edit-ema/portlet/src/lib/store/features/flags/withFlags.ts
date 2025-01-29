@@ -2,13 +2,12 @@ import {
     patchState,
     signalStoreFeature,
     type,
-    withComputed,
     withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
 
-import { computed, inject } from '@angular/core';
+import { inject } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -31,16 +30,6 @@ export function withFlags(flags: FeaturedFlags[]) {
             state: type<UVEState>()
         },
         withState<WithFlagsState>({ flags: {} }),
-        withComputed(({ flags }) => {
-            return {
-                // You can add here more computed properties if needed
-                $previewMode: computed(() => {
-                    const currentFlags = flags();
-
-                    return Boolean(currentFlags[FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]);
-                })
-            };
-        }),
         withMethods((store) => ({
             setFlags: (flags: UVEFlags) => {
                 patchState(store, { flags: { ...flags } });

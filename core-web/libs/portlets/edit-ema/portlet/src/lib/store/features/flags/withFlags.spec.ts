@@ -9,7 +9,6 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { withFlags } from './withFlags';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
-import { UVE_FEATURE_FLAGS } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import { UVEState } from '../../models';
 
@@ -28,12 +27,14 @@ const initialState: UVEState = {
     isClientReady: false
 };
 
+const MOCK_UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE];
+
 export const uveStoreMock = signalStore(
     withState<UVEState>(initialState),
-    withFlags(UVE_FEATURE_FLAGS)
+    withFlags(MOCK_UVE_FEATURE_FLAGS)
 );
 
-const MOCK_RESPONSE = UVE_FEATURE_FLAGS.reduce((acc, flag) => {
+const MOCK_RESPONSE = MOCK_UVE_FEATURE_FLAGS.reduce((acc, flag) => {
     acc[flag] = true;
 
     return acc;
@@ -64,7 +65,7 @@ describe('withFlags', () => {
         it('should call propertiesService.getFeatureFlags with flags', () => {
             const propertiesService = spectator.inject(DotPropertiesService);
 
-            expect(propertiesService.getFeatureFlags).toHaveBeenCalledWith(UVE_FEATURE_FLAGS);
+            expect(propertiesService.getFeatureFlags).toHaveBeenCalledWith(MOCK_UVE_FEATURE_FLAGS);
         });
 
         it('should patch state with flags', () => {
@@ -78,13 +79,6 @@ describe('withFlags', () => {
 
                 expect(store.flags()).toEqual(MOCK_RESPONSE);
             });
-        });
-    });
-    describe('computed', () => {
-        it('should return $previewMode', () => {
-            expect(store.$previewMode()).toEqual(
-                MOCK_RESPONSE[FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]
-            );
         });
     });
 });
