@@ -18,7 +18,7 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { createFormBridge, FormBridge } from '@dotcms/edit-content/bridge';
+import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
@@ -44,7 +44,10 @@ import { WINDOW } from '@dotcms/utils';
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    host: {
+        '[class.no-label]': '!$showLabel()'
+    }
 })
 export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewInit {
     /**
@@ -98,6 +101,16 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     });
 
     /**
+     * Whether to show the label.
+     */
+    $showLabel = computed(() => {
+        const field = this.$field();
+        if (!field) return true;
+
+        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
+    });
+
+    /**
      * The title for the iframe.
      */
     $iframeTitle = computed(() => {
@@ -123,11 +136,6 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      * The form to get the form.
      */
     $form = computed(() => (this.#controlContainer as FormGroupDirective).form);
-
-    /**
-     * The cleanup function for the resize observer.
-     */
-    private resizeCleanup?: () => void;
 
     /**
      * Handles messages from the custom field and toggles fullscreen mode.
@@ -239,17 +247,13 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      */
     ngOnDestroy(): void {
         this.#formBridge?.destroy();
-        // Cleanup resize observer if it exists
-        if (this.resizeCleanup) {
-            this.resizeCleanup();
-        }
     }
 
     /**
      * Adjusts the iframe height and sets up the resize observer.
      */
     ngAfterViewInit() {
-        this.resizeCleanup = this.adjustIframeHeight();
+        this.adjustIframeHeight();
     }
 
     /**
@@ -260,33 +264,49 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
         if (!iframeEl) {
             console.warn('Iframe not initialized');
 
-            return () => {
-                // nothing to do
-            };
+            return () => void 0;
         }
 
         // Set initial height to 0 to prevent the 150px default
         iframeEl.style.height = '0px';
 
         const resizeObserver = new ResizeObserver(() => {
-            try {
-                const contentHeight = iframeEl.contentWindow?.document.documentElement.scrollHeight;
-                if (contentHeight) {
-                    iframeEl.style.height = `${contentHeight}px`;
+            this.#zone.run(() => {
+                try {
+                    const iframeWindow = iframeEl.contentWindow;
+                    const documentElement = iframeWindow?.document.documentElement;
+                    const body = iframeWindow?.document.body;
+
+                    if (documentElement && body) {
+                        body.style.margin = '0';
+                        const contentHeight = Math.max(
+                            documentElement.scrollHeight,
+                            body.scrollHeight
+                        );
+
+                        if (contentHeight > 0) {
+                            iframeEl.style.height = `${contentHeight}px`;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Error adjusting iframe height:', error);
                 }
-            } catch (error) {
-                console.warn('Error adjusting iframe height:', error);
-            }
+            });
         });
 
         const handleIframeLoad = () => {
             try {
                 const body = iframeEl.contentWindow?.document.body;
-                if (body) {
+                const documentElement = iframeEl.contentWindow?.document.documentElement;
+
+                if (body && documentElement) {
+                    body.style.margin = '0';
                     resizeObserver.observe(body);
-                    const contentHeight =
-                        iframeEl.contentWindow?.document.documentElement.scrollHeight;
-                    if (contentHeight) {
+                    resizeObserver.observe(documentElement);
+
+                    const contentHeight = Math.max(documentElement.scrollHeight, body.scrollHeight);
+
+                    if (contentHeight > 0) {
                         iframeEl.style.height = `${contentHeight}px`;
                     }
                 }
