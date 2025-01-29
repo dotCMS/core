@@ -1,27 +1,24 @@
 import { expect, test } from "@playwright/test";
-import {
-  dotCMSUtils,
-  waitForVisibleAndCallback,
-} from "../../utils/dotCMSUtils";
+import { waitForVisibleAndCallback } from "@utils/dotCMSUtils";
+import { ContentPage, LoginPage, SideMenuPage } from "@pages/index";
+
 import {
   GroupEntriesLocators,
   MenuEntriesLocators,
   ToolEntriesLocators,
-} from "../../locators/navigation/menuLocators";
-import { ContentUtils } from "../../utils/contentUtils";
+} from "@locators/navigation/menuLocators";
 import {
   iFramesLocators,
   contentGeneric,
   fileAsset,
   pageAsset,
-} from "../../locators/globalLocators";
+} from "@locators/globalLocators";
 import {
   genericContent1,
   contentProperties,
   fileAssetContent,
   pageAssetContent,
-  accessibilityReport,
-} from "./contentData";
+} from "@data/contentData";
 import { assert } from "console";
 
 /**
@@ -29,7 +26,8 @@ import { assert } from "console";
  * @param page
  */
 test.beforeEach("Navigate to content portlet", async ({ page }) => {
-  const cmsUtils = new dotCMSUtils();
+  const loginPage = new LoginPage(page);
+  const sideMenuPage = new SideMenuPage(page);
 
   const menuLocators = new MenuEntriesLocators(page);
   const groupsLocators = new GroupEntriesLocators(page);
@@ -40,8 +38,8 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const password = process.env.PASSWORD as string;
 
   // Login to dotCMS
-  await cmsUtils.login(page, username, password);
-  await cmsUtils.navigate(
+  await loginPage.login(username, password);
+  await sideMenuPage.navigate(
     menuLocators.EXPAND,
     groupsLocators.CONTENT,
     toolsLocators.SEARCH_ALL,
@@ -58,27 +56,27 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
  * test to add a new piece of content (generic content)
  */
 test("Add a new Generic content", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
   // Adding new rich text content
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     contentGeneric.locator,
     contentGeneric.label,
   );
-  await contentUtils.fillRichTextForm({
+  await contentPage.fillRichTextForm({
     page,
     title: genericContent1.title,
     body: genericContent1.body,
     action: contentProperties.publishWfAction,
   });
-  await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
+  await contentPage.workflowExecutionValidationAndClose(page, "Content saved");
   await waitForVisibleAndCallback(
     iframe.locator("#results_table tbody tr").first(),
     async () => {},
   );
-  await contentUtils
+  await contentPage
     .validateContentExist(page, genericContent1.title)
     .then(assert);
 });
@@ -87,11 +85,11 @@ test("Add a new Generic content", async ({ page }) => {
  * Test to edit an existing piece of content and make sure you can discard the changes
  */
 test("Edit a generic content and discard changes", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
-  await contentUtils.selectTypeOnFilter(page, contentGeneric.locator);
-  await contentUtils.editContent({
+  await contentPage.selectTypeOnFilter(page, contentGeneric.locator);
+  await contentPage.editContent({
     page,
     title: genericContent1.title,
     newTitle: genericContent1.newTitle,
@@ -108,7 +106,7 @@ test("Edit a generic content and discard changes", async ({ page }) => {
     iframe.locator("#results_table tbody tr").first(),
     async () => {},
   );
-  await contentUtils
+  await contentPage
     .validateContentExist(page, genericContent1.title)
     .then(assert);
 });
@@ -117,11 +115,11 @@ test("Edit a generic content and discard changes", async ({ page }) => {
  * Test to edit an existing piece of content
  */
 test("Edit a generic content", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
-  await contentUtils.selectTypeOnFilter(page, contentGeneric.locator);
-  await contentUtils.editContent({
+  await contentPage.selectTypeOnFilter(page, contentGeneric.locator);
+  await contentPage.editContent({
     page,
     title: genericContent1.title,
     newTitle: genericContent1.newTitle,
@@ -132,7 +130,7 @@ test("Edit a generic content", async ({ page }) => {
     iframe.locator("#results_table tbody tr").first(),
     async () => {},
   );
-  await contentUtils
+  await contentPage
     .validateContentExist(page, genericContent1.newTitle)
     .then(assert);
 });
@@ -141,23 +139,23 @@ test("Edit a generic content", async ({ page }) => {
  * Test to delete an existing piece of content
  */
 test("Delete a generic of content", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
-  await contentUtils.deleteContent(page, genericContent1.newTitle);
+  const contentPage = new ContentPage(page);
+  await contentPage.deleteContent(page, genericContent1.newTitle);
 });
 
 /**
  * Test to make sure we are validating the required of text fields on the content creation
  * */
 test("Validate required on text fields", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const iframe = page.frameLocator(iFramesLocators.dot_iframe);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     contentGeneric.locator,
     contentGeneric.label,
   );
-  await contentUtils.fillRichTextForm({
+  await contentPage.fillRichTextForm({
     page,
     title: "",
     body: genericContent1.body,
@@ -172,11 +170,11 @@ test("Validate required on text fields", async ({ page }) => {
  */
 /**
  test('Validate required on blockContent fields', async ({page}) => {
- const contentUtils = new ContentUtils(page);
+ const contentPage = new contentPage(page);
  const iframe = page.frameLocator(iFramesLocators.main_iframe).first();
 
- await contentUtils.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
- await contentUtils.fillRichTextForm(page, genericContent1.title, '', contentProperties.publishWfAction);
+ await contentPage.addNewContentAction(page, contentGeneric.locator, contentGeneric.label);
+ await contentPage.fillRichTextForm(page, genericContent1.title, '', contentProperties.publishWfAction);
  await expect(iframe.getByText('Error x')).toBeVisible();
  await expect(iframe.getByText('The field Title is required.')).toBeVisible();
  });
@@ -186,14 +184,14 @@ test("Validate required on text fields", async ({ page }) => {
  * Test to validate you are able to add file assets importing from url
  */
 test("Validate adding file assets from URL", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     fileAsset.locator,
     fileAsset.label,
   );
-  await contentUtils.fillFileAssetForm({
+  await contentPage.fillFileAssetForm({
     page,
     host: fileAssetContent.host,
     title: fileAssetContent.title,
@@ -201,9 +199,9 @@ test("Validate adding file assets from URL", async ({ page }) => {
     action: contentProperties.publishWfAction,
     fromURL: fileAssetContent.fromURL,
   });
-  await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
+  await contentPage.workflowExecutionValidationAndClose(page, "Content saved");
   await expect(
-    contentUtils.validateContentExist(page, "DotCMS-logo.svg"),
+    contentPage.validateContentExist(page, "DotCMS-logo.svg"),
   ).resolves.toBeTruthy();
 });
 
@@ -213,14 +211,14 @@ test("Validate adding file assets from URL", async ({ page }) => {
 test("Validate you are able to add file assets creating a new file", async ({
   page,
 }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     fileAsset.locator,
     fileAsset.label,
   );
-  await contentUtils.fillFileAssetForm({
+  await contentPage.fillFileAssetForm({
     page,
     host: fileAssetContent.host,
     editContent: false,
@@ -229,8 +227,8 @@ test("Validate you are able to add file assets creating a new file", async ({
     binaryFileName: fileAssetContent.newFileName,
     binaryFileText: fileAssetContent.newFileText,
   });
-  await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
-  await contentUtils
+  await contentPage.workflowExecutionValidationAndClose(page, "Content saved");
+  await contentPage
     .validateContentExist(page, fileAssetContent.newFileName)
     .then(assert);
 });
@@ -239,10 +237,10 @@ test("Validate you are able to add file assets creating a new file", async ({
  * Test to validate you are able to edit file assets text
  */
 test("Validate you can edit text on binary fields", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
 
-  await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
-  const contentElement = await contentUtils.getContentElement(
+  await contentPage.selectTypeOnFilter(page, fileAsset.locator);
+  const contentElement = await contentPage.getContentElement(
     page,
     fileAssetContent.newFileName,
   );
@@ -251,7 +249,7 @@ test("Validate you can edit text on binary fields", async ({ page }) => {
     expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
   );
 
-  await contentUtils.fillFileAssetForm({
+  await contentPage.fillFileAssetForm({
     page,
     host: fileAssetContent.host,
     editContent: true,
@@ -260,11 +258,11 @@ test("Validate you can edit text on binary fields", async ({ page }) => {
     binaryFileName: fileAssetContent.newFileName,
     binaryFileText: fileAssetContent.newFileTextEdited,
   });
-  await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
+  await contentPage.workflowExecutionValidationAndClose(page, "Content saved");
 
-  await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
+  await contentPage.selectTypeOnFilter(page, fileAsset.locator);
   await (
-    await contentUtils.getContentElement(page, fileAssetContent.newFileName)
+    await contentPage.getContentElement(page, fileAssetContent.newFileName)
   ).click();
   const editIframe = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await expect(editIframe.getByRole("code")).toHaveText(
@@ -278,15 +276,15 @@ test("Validate you can edit text on binary fields", async ({ page }) => {
 test("Validate you are able to delete file on binary fields", async ({
   page,
 }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
-  await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
+  await contentPage.selectTypeOnFilter(page, fileAsset.locator);
   await waitForVisibleAndCallback(
     mainFrame.locator("#contentWrapper"),
     async () => {},
   );
-  const contentElement = await contentUtils.getContentElement(
+  const contentElement = await contentPage.getContentElement(
     page,
     fileAssetContent.newFileName,
   );
@@ -311,16 +309,16 @@ test("Validate you are able to delete file on binary fields", async ({
 test("Validate file assets show corresponding information", async ({
   page,
 }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
-  await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
+  await contentPage.selectTypeOnFilter(page, fileAsset.locator);
   await waitForVisibleAndCallback(
     mainFrame.locator("#contentWrapper"),
     async () => {},
   );
   await (
-    await contentUtils.getContentElement(page, fileAssetContent.newFileName)
+    await contentPage.getContentElement(page, fileAssetContent.newFileName)
   ).click();
   await waitForVisibleAndCallback(page.getByRole("heading"), () =>
     expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
@@ -349,38 +347,38 @@ test("Validate file assets show corresponding information", async ({
 test("Validate the download of binary fields on file assets", async ({
   page,
 }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
-  await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
+  await contentPage.selectTypeOnFilter(page, fileAsset.locator);
   await waitForVisibleAndCallback(
     mainFrame.locator("#contentWrapper"),
     async () => {},
   );
   await (
-    await contentUtils.getContentElement(page, fileAssetContent.newFileName)
+    await contentPage.getContentElement(page, fileAssetContent.newFileName)
   ).click();
   await waitForVisibleAndCallback(page.getByRole("heading"), () =>
     expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
   );
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   const downloadLink = detailFrame.getByTestId("download-btn");
-  await contentUtils.validateDownload(page, downloadLink);
+  await contentPage.validateDownload(page, downloadLink);
 });
 
 /**
  * Test to validate the required on file asset fields
  */
 test("Validate the required on file asset fields", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     fileAsset.locator,
     fileAsset.label,
   );
-  await contentUtils.fillFileAssetForm({
+  await contentPage.fillFileAssetForm({
     page,
     host: fileAssetContent.host,
     editContent: false,
@@ -403,16 +401,16 @@ test("Validate the required on file asset fields", async ({ page }) => {
 test("Validate the auto complete on FileName field accepting change", async ({
   page,
 }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     fileAsset.locator,
     fileAsset.label,
   );
   await detailsFrame.locator("#fileName").fill("test");
-  await contentUtils.fillFileAssetForm({
+  await contentPage.fillFileAssetForm({
     page,
     host: fileAssetContent.host,
     editContent: false,
@@ -436,16 +434,16 @@ test("Validate the auto complete on FileName field accepting change", async ({
 test("Validate the auto complete on FileName field rejecting change", async ({
   page,
 }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     fileAsset.locator,
     fileAsset.label,
   );
   await detailsFrame.locator("#fileName").fill("test");
-  await contentUtils.fillFileAssetForm({
+  await contentPage.fillFileAssetForm({
     page,
     host: fileAssetContent.host,
     editContent: false,
@@ -467,11 +465,11 @@ test("Validate the auto complete on FileName field rejecting change", async ({
 /** ENABLE AS SOON WE FIXED THE ISSUE #30945
  test('Validate the title field is not changing in the file asset auto complete', async ({page}) => {
  const detailsFrame = page.frameLocator(iFramesLocators.dot_iframe);
- const contentUtils = new ContentUtils(page);
+ const contentPage = new contentPage(page);
 
- await contentUtils.addNewContentAction(page, fileAsset.locator, fileAsset.label);
+ await contentPage.addNewContentAction(page, fileAsset.locator, fileAsset.label);
  await detailsFrame.locator('#title').fill('test');
- await contentUtils.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
+ await contentPage.fillFileAssetForm(page, fileAssetContent.host, fileAssetContent.title, null, null, null, fileAssetContent.newFileName, fileAssetContent.newFileText);
 
  await expect(detailsFrame.locator('#title')).toHaveValue('test');
  });
@@ -481,21 +479,21 @@ test("Validate the auto complete on FileName field rejecting change", async ({
  * Test to validate you are able to delete a file asset content
  */
 test("Delete a file asset content", async ({ page }) => {
-  await new ContentUtils(page).deleteContent(page, fileAssetContent.title);
+  await new ContentPage(page).deleteContent(page, fileAssetContent.title);
 });
 
 /**
  * Test to validate you are able to add new pages
  */
 test("Add a new page", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     pageAsset.locator,
     pageAsset.label,
   );
-  await contentUtils.fillPageAssetForm({
+  await contentPage.fillPageAssetForm({
     page: page,
     title: pageAssetContent.title,
     host: pageAssetContent.host,
@@ -520,14 +518,14 @@ test("Add a new page", async ({ page }) => {
  * Test to validate the URL is unique on pages
  */
 test("Validate URL is unique on pages", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     pageAsset.locator,
     pageAsset.label,
   );
-  await contentUtils.fillPageAssetForm({
+  await contentPage.fillPageAssetForm({
     page: page,
     title: pageAssetContent.title,
     host: pageAssetContent.host,
@@ -551,15 +549,15 @@ test("Validate URL is unique on pages", async ({ page }) => {
  * Test to validate the required fields on the page form
  */
 test("Validate required fields on page asset", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const detailFrame = page.frameLocator(iFramesLocators.dot_iframe);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     pageAsset.locator,
     pageAsset.label,
   );
-  await contentUtils.fillPageAssetForm({
+  await contentPage.fillPageAssetForm({
     page,
     title: "",
     host: pageAssetContent.host,
@@ -587,15 +585,15 @@ test("Validate required fields on page asset", async ({ page }) => {
  * Test to validate the auto generation of fields on page asset
  */
 test("Validate auto generation of fields on page asset", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const detailFrame = page.frameLocator(iFramesLocators.dot_iframe);
 
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     pageAsset.locator,
     pageAsset.label,
   );
-  await contentUtils.fillPageAssetForm({
+  await contentPage.fillPageAssetForm({
     page,
     title: pageAssetContent.title,
     host: pageAssetContent.host,
@@ -615,23 +613,23 @@ test("Validate auto generation of fields on page asset", async ({ page }) => {
  * Test to validate you are able to unpublish a page asset
  */
 test("Validate you are able to unpublish pages", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
-  await contentUtils.selectTypeOnFilter(page, pageAsset.locator);
-  await contentUtils.performWorkflowAction(
+  const contentPage = new ContentPage(page);
+  await contentPage.selectTypeOnFilter(page, pageAsset.locator);
+  await contentPage.performWorkflowAction(
     page,
     pageAssetContent.title,
     contentProperties.unpublishWfAction,
   );
-  await contentUtils.getContentState(page, pageAssetContent.title).then(assert);
+  await contentPage.getContentState(page, pageAssetContent.title).then(assert);
 });
 
 /**
  * Test to validate you are able to delete pages
  */
 test("Validate you are able to delete pages", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
-  await contentUtils.selectTypeOnFilter(page, pageAsset.locator);
-  await contentUtils.deleteContent(page, pageAssetContent.title);
+  const contentPage = new ContentPage(page);
+  await contentPage.selectTypeOnFilter(page, pageAsset.locator);
+  await contentPage.deleteContent(page, pageAssetContent.title);
 });
 
 /**

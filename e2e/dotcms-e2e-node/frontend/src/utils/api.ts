@@ -1,5 +1,5 @@
 import { APIRequestContext, expect } from "@playwright/test";
-import { admin1 } from "../tests/login/credentialsData";
+import { admin1 } from "../data/credentialsData";
 
 export async function updateFeatureFlag(
   request: APIRequestContext,

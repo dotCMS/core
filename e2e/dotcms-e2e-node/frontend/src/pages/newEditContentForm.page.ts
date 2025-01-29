@@ -1,17 +1,19 @@
 import { expect, Page } from "@playwright/test";
 
 export class NewEditContentFormPage {
-  private textField = this.page.getByTestId("textField");
-  private siteOrFolderField = this.page.getByTestId("field-siteOrFolderField");
 
   constructor(private page: Page) {}
 
   async fillTextField(text: string) {
-    await this.textField.fill(text);
+    const textField = this.page.getByTestId("textField");
+
+    await textField.fill(text);
   }
 
   async selectSiteOrFolderField() {
-    await this.siteOrFolderField.click();
+    const siteOrFolderField = this.page.getByTestId("field-siteOrFolderField");
+
+    await siteOrFolderField.click();
 
     const treeNode = this.page.locator(".p-treenode");
     const textContent = await treeNode.first().textContent();
@@ -24,11 +26,14 @@ export class NewEditContentFormPage {
 
   async save() {
     await this.page.getByRole("button", { name: "Save" }).click();
-    await this.page.waitForResponse(response => {
-      return response.status() === 200 && response.url().includes('/api/v1/workflow/actions/')
+    await this.page.waitForResponse((response) => {
+      return (
+        response.status() === 200 &&
+        response.url().includes("/api/v1/workflow/actions/")
+      );
     });
   }
-  
+
   async goToBack() {
     await this.page.getByTestId("back-button").click();
   }

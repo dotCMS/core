@@ -1,22 +1,17 @@
 import { expect, test } from "@playwright/test";
-import {
-  dotCMSUtils,
-  waitForVisibleAndCallback,
-} from "../../utils/dotCMSUtils";
-import { ContentUtils } from "../../utils/contentUtils";
+import { waitForVisibleAndCallback } from "@utils/dotCMSUtils";
+import { ContentPage, LoginPage, SideMenuPage } from "@pages/index";
 import {
   addContent,
   iFramesLocators,
   contentGeneric,
-} from "../../locators/globalLocators";
+} from "@locators/globalLocators";
 import {
   GroupEntriesLocators,
   MenuEntriesLocators,
   ToolEntriesLocators,
-} from "../../locators/navigation/menuLocators";
-import { contentProperties, genericContent1 } from "./contentData";
-
-const cmsUtils = new dotCMSUtils();
+} from "@locators/navigation/menuLocators";
+import { contentProperties, genericContent1 } from "../../data/contentData";
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
@@ -24,6 +19,9 @@ const cmsUtils = new dotCMSUtils();
  */
 test.beforeEach("Navigate to content portlet", async ({ page }) => {
   // Instance the menu Navigation locators
+  const loginPage = new LoginPage(page);
+  const sideMenuPage = new SideMenuPage(page);
+
   const menuLocators = new MenuEntriesLocators(page);
   const groupsLocators = new GroupEntriesLocators(page);
   const toolsLocators = new ToolEntriesLocators(page);
@@ -33,8 +31,8 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   const password = process.env.PASSWORD as string;
 
   // Login to dotCMS
-  await cmsUtils.login(page, username, password);
-  await cmsUtils.navigate(
+  await loginPage.login(username, password);
+  await sideMenuPage.navigate(
     menuLocators.EXPAND,
     groupsLocators.CONTENT,
     toolsLocators.SEARCH_ALL,
@@ -60,22 +58,22 @@ test("Validate portlet title", async ({ page }) => {
  * @param page
  */
 test("Search filter", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentPage = new ContentPage(page);
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
   // Adding new rich text content
-  await contentUtils.addNewContentAction(
+  await contentPage.addNewContentAction(
     page,
     contentGeneric.locator,
     contentGeneric.label,
   );
-  await contentUtils.fillRichTextForm({
+  await contentPage.fillRichTextForm({
     page,
     title: genericContent1.title,
     body: genericContent1.body,
     action: contentProperties.publishWfAction,
   });
-  await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
+  await contentPage.workflowExecutionValidationAndClose(page, "Content saved");
 
   // Validate the content has been created
   await expect
@@ -155,7 +153,7 @@ test("Validate bulk Workflow actions", async ({ page }) => {
  */
 test("Validate the search query", async ({ page }) => {
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
-  await new ContentUtils(page).showQuery(iframe);
+  await new ContentPage(page).showQuery(iframe);
   await expect(iframe.locator("#queryResults")).toBeVisible();
 });
 
@@ -167,7 +165,7 @@ test("Validate the API link in search query modal is working", async ({
   page,
 }) => {
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
-  await new ContentUtils(page).showQuery(iframe);
+  await new ContentPage(page).showQuery(iframe);
 
   // Wait for the new tab to open
   const queryModal = page.waitForEvent("popup");

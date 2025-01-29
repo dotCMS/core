@@ -4,19 +4,12 @@ import {
   iFramesLocators,
   fileAsset,
   pageAsset,
-} from "../locators/globalLocators";
-import { waitForVisibleAndCallback } from "./dotCMSUtils";
-import {
-  contentProperties,
-  fileAssetContent,
-} from "../tests/contentSearch/contentData";
+} from "@locators/globalLocators";
+import { waitForVisibleAndCallback } from "@utils/dotCMSUtils";
+import { contentProperties, fileAssetContent } from "@data/contentData";
 
-export class ContentUtils {
-  page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
-  }
+export class ContentPage {
+  constructor(private page: Page) {}
 
   /**
    * Fill the rich text form

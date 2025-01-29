@@ -1,16 +1,6 @@
 import { expect, Page } from "@playwright/test";
 
 export class ListingContentPage {
-  private addBtn = this.page.locator(
-    "span[widgetid='dijit_form_DropDownButton_0']",
-  );
-  private addNewContent = this.page.locator(
-    ".dijitPopup tr[aria-label='Add New Content']",
-  );
-  private resultsTable = this.page
-    .locator('iframe[name="detailFrame"]')
-    .contentFrame()
-    .locator("#results_table");
 
   constructor(private page: Page) {}
 
@@ -27,13 +17,25 @@ export class ListingContentPage {
   }
 
   async clickAddNewContent() {
-    await this.addBtn.click();
-    await this.addNewContent.click();
+    const addBtn = this.page.locator(
+      "span[widgetid='dijit_form_DropDownButton_0']",
+    );
+    const addNewContent = this.page.locator(
+      ".dijitPopup tr[aria-label='Add New Content']",
+    );
+
+    await addBtn.click();
+    await addNewContent.click();
   }
 
   async clickFirstContentRow() {
-    await expect(this.resultsTable).toBeVisible();
+    const resultsTable = this.page
+    .locator('iframe[name="detailFrame"]')
+    .contentFrame()
+    .locator("#results_table");
 
-    await this.resultsTable.locator("tr").nth(1).getByRole("link").click();
+    await expect(resultsTable).toBeVisible();
+
+    await resultsTable.locator("tr").nth(1).getByRole("link").click();
   }
 }
