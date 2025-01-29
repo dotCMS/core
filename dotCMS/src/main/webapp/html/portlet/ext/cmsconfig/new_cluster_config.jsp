@@ -188,11 +188,7 @@
                               canWrite: nodeStatus.assetsCanWrite,
                               path: nodeStatus.assetsPath
                           },
-	
-                          licenseRepo: {
-                              total: actionPanelTable.licenseData.total,
-                              available: actionPanelTable.licenseData.available
-                          },
+
 
                           server: {
                               serverID: nodeStatus.serverId.substring(0,8),

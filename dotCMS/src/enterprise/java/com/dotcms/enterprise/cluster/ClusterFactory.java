@@ -363,10 +363,7 @@ public class ClusterFactory {
     }
     
     public static void rewireCluster() throws Exception {
-        if(!isEnterprise()) {
-            CacheLocator.getCacheAdministrator().getTransport().shutdown(); 
-        }
-        
+
         
         if(clusterReady()) {
             Logger.info(ClusterFactory.class, "Cluster Active. Rewiring");

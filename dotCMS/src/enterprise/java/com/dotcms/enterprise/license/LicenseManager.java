@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class LicenseManager {
 
     public DotLicense license = new DotLicense();
-    final String serverId;
+
 
 
     /**
@@ -46,15 +46,15 @@ public final class LicenseManager {
      */
 
     private LicenseManager() {
-        serverId = init();
+        init();
     }
 
     @WrapInTransaction
-    private String init() {
+    private void init() {
 
         this.license = insertDefaultLicense();
         licenseMessage();
-        return serverId;
+
     }
 
 
@@ -243,7 +243,7 @@ public final class LicenseManager {
     public String getDisplayServerId() {
 
 
-        return getDisplayServerId(this.serverId) ;
+        return getDisplayServerId(APILocator.getServerAPI().readServerId()) ;
 
     }
 
@@ -253,8 +253,11 @@ public final class LicenseManager {
      * @return
      */
     public String getDisplayServerId(String serverId) {
-        if(serverId==null) return "";
-        return serverId.split("-")[0];
+        if(serverId==null) return "unknown";
+        if(serverId.indexOf("-")>0){
+            return APILocator.getShortyAPI().shortify(serverId.split("-")[0]);
+        }
+        return APILocator.getShortyAPI().shortify(serverId);
     }
 
     /**

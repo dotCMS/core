@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-final class LicenseRepoDAO {
+final public class LicenseRepoDAO {
 
     
     private static Date licenseTimeout(){
@@ -273,7 +273,20 @@ final class LicenseRepoDAO {
         return Optional.of(entry);
 
     }
-    
+
+    /**
+     * This deletes unused licenses that have not been pinged in the timeout peroid
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    public static void deleteOldLicenses() throws DotDataException {
+
+        DotConnect dc=new DotConnect();
+        dc.setSQL("DELETE FROM sitelic WHERE lastping < ?");
+        dc.addParam(licenseTimeout());
+
+        dc.loadResult();
+    }
 
     @WrapInTransaction
     protected static void deleteLicense(String id) throws DotDataException {

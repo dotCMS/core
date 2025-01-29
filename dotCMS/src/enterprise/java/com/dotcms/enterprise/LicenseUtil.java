@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise;
 
+import com.dotcms.enterprise.license.LicenseRepoDAO;
 import com.dotmarketing.util.Config;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -151,6 +152,16 @@ public class LicenseUtil {
 	    return LicenseManager.getInstance().getDisplayServerId();
 	}
 
+
+
+
+	public static void deleteOldLicenses() {
+		try {
+			LicenseRepoDAO.deleteOldLicenses();
+		}catch(Exception e){
+			Logger.warn(LicenseUtil.class, "Error deleting old licenses", e);
+		}
+	}
 	/**
 	 * 
 	 * @param serverId
