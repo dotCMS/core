@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import static com.dotcms.util.FunctionUtils.getOrDefault;
 import com.dotcms.util.JsonUtil;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -638,15 +639,16 @@ public class ContentletLoader implements DotLoader {
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
                 .getRenderContext(language, key.id1, key.mode, APILocator.systemUser());
 
-        Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1,
+        final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1,
                 renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey());
 
         if(info.isEmpty()){
             throw new ResourceNotFoundException("cannot find content version info for key: " + key);
         }
 
+        //if time machine is running, we need to force get the latest working version to guarantee the correct rendered content matching the json portion of the response
         final ContentletVersionInfo contentletVersionInfo = info.get();
-        final String inode = (key.mode.showLive)
+        final String inode = (key.mode.showLive && TimeMachineUtil.isNotRunning() )
                 ? contentletVersionInfo.getLiveInode()
                 : contentletVersionInfo.getWorkingInode();
 
