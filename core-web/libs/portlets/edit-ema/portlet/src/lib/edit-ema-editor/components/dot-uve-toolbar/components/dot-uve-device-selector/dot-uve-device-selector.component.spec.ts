@@ -59,7 +59,6 @@ const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
     setSEO: jest.fn(),
-    setSocialMedia: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     $apiURL: signal($apiURL),
