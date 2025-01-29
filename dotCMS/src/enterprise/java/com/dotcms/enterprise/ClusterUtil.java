@@ -90,6 +90,9 @@ class ClusterUtil {
         dotCMSNodeStatus.put("host", server.getHost());
         dotCMSNodeStatus.put("friendlyName", server.getName());
         dotCMSNodeStatus.put("startup", server.getName());
+        dotCMSNodeStatus.put("key", server.getKey());
+
+
         long jvmUpTime = ManagementFactory.getRuntimeMXBean().getUptime();
         
        
@@ -180,6 +183,7 @@ class ClusterUtil {
         badMap.put("licenseId", StringUtils.shortify(server.getLicenseSerial(),8));
         badMap.put("ipAddress", server.getIpAddress());
         badMap.put("host", server.getHost());
+        badMap.put("key", server.getKey());
         badMap.put("friendlyName", server.getName());
         // Setting if the node has heart beat.
 

@@ -346,10 +346,6 @@ public class ClusterFactory {
             if (!aliveServers.equals(KNOWN_SERVERS) || !aliveServers
                     .contains(APILocator.getServerAPI().getCurrentServer()) ) {
 
-				Logger.info(ClusterFactory.class, "Cluster topography has changed. This might force a rewire");
-				Logger.info(ClusterFactory.class, "Expecting Servers:" + KNOWN_SERVERS);
-				Logger.info(ClusterFactory.class, "Found Servers:" + aliveServers);
-				
 				rewireCluster();
 			}
 		}
@@ -364,9 +360,7 @@ public class ClusterFactory {
     
     public static void rewireCluster() throws Exception {
 
-        
         if(clusterReady()) {
-            Logger.info(ClusterFactory.class, "Cluster Active. Rewiring");
             addMeToCacheIfNeeded();
             KNOWN_SERVERS  = APILocator.getServerAPI().getAliveServers();
         }else {

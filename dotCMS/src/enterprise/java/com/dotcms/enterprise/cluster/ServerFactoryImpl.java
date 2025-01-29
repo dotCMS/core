@@ -10,6 +10,7 @@
 package com.dotcms.enterprise.cluster;
 
 import com.dotcms.util.ConversionUtils;
+import com.liferay.portal.util.ReleaseInfo;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public class ServerFactoryImpl extends ServerFactory {
         dc.addParam(server.getClusterId());
         dc.addParam(server.getName());
         dc.addParam(server.getIpAddress());
-        dc.addParam("n/a");
+        dc.addParam(ReleaseInfo.getReleaseInfo());
         dc.loadResult();
         updateServer(server);
     }
@@ -85,7 +86,7 @@ public class ServerFactoryImpl extends ServerFactory {
 		serverBuilder.withIpAddress((String)row.get("ip_address"));
 		serverBuilder.withName((String)row.get("name"));
 		serverBuilder.withHost((String)row.get("host"));
-
+        serverBuilder.withKey((String)row.get("key_"));
 		serverBuilder.withLicenseSerial((String)row.get("license_id"));
 
         if ( row.get( "cache_port" ) != null ) {
@@ -248,7 +249,7 @@ public class ServerFactoryImpl extends ServerFactory {
             dc.addParam(server.getCachePort());
             dc.addParam(server.getEsTransportTcpPort());
             dc.addParam(server.getEsHttpPort());
-            dc.addParam("n/a");
+            dc.addParam(ReleaseInfo.getVersion());
             dc.addParam(server.getEsNetworkPort());
             dc.addParam(server.getServerId());
             dc.loadResult();
