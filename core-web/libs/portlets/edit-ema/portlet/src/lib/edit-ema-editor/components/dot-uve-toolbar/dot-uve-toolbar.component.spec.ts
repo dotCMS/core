@@ -84,7 +84,6 @@ const baseUVEToolbarState = {
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
-    setSocialMedia: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     $apiURL: signal($apiURL),
@@ -102,6 +101,7 @@ const baseUVEState = {
         device: undefined,
         orientation: undefined
     }),
+    $urlContentMap: signal(undefined),
     languages: signal([
         { id: 1, translated: true },
         { id: 2, translated: false },
@@ -250,6 +250,26 @@ describe('DotUveToolbarComponent', () => {
         it('should have a dot-uve-workflow-actions component', () => {
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
             expect(workflowActions).toBeTruthy();
+        });
+
+        describe('Events', () => {
+            it('should emit editUrlContentMap', () => {
+                const contentlet = {
+                    identifier: '123',
+                    inode: '456',
+                    title: 'My super awesome blog post'
+                };
+                const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
+
+                baseUVEState.$urlContentMap.set(contentlet);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('edit-url-content-map'));
+
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(contentlet);
+            });
         });
 
         describe('custom devices', () => {

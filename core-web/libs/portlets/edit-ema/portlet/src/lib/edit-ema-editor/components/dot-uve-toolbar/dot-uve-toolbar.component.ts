@@ -31,7 +31,12 @@ import {
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
+import {
+    DotPersona,
+    DotLanguage,
+    DotDeviceListItem,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
@@ -82,6 +87,7 @@ export class DotUveToolbarComponent {
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
     @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+    @Output() editUrlContentMap = new EventEmitter<DotCMSContentlet>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -100,6 +106,7 @@ export class DotUveToolbarComponent {
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
+    readonly $urlContentMap = this.#store.$urlContentMap;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
