@@ -90,19 +90,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     }
 
-    /**
-     * Runs a delegate on non-license mode
-     *
-     * @param delegate
-     * @throws Exception
-     */
-    protected static void runNoLicense(final VoidDelegate delegate) throws Exception {
 
-
-            Logger.info(IntegrationTestBase.class, "Skipping test due to BSL license");
-
-
-    } // runNoLicense.
 
     @Before
     public void beforeBase() {

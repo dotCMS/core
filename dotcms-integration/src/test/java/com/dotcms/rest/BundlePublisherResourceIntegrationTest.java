@@ -19,24 +19,5 @@ public class BundlePublisherResourceIntegrationTest extends IntegrationTestBase 
         IntegrationTestInitService.getInstance().init();
     }
 
-    @Test()
-    public void publishShouldReturnLicenseException() throws Exception {
 
-        runNoLicense(()-> {
-            final HttpServletRequest request = mock(HttpServletRequest.class);
-            final HttpServletResponse response= mock(HttpServletResponse.class);
-
-            final BundlePublisherResource bundlePublisherResource = new BundlePublisherResource();
-
-            try {
-                bundlePublisherResource.publish(null, null, true, "", request, response);
-                throw new AssertionError();
-            } catch(InvalidLicenseException e) {
-                //expected
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-    }
 }

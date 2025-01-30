@@ -135,20 +135,6 @@ public class WorkflowFactoryTest extends BaseWorkflowIntegrationTest {
         Assert.assertNotNull(workflowSchemesBeforeDelete);
         Assert.assertTrue(workflowSchemesBeforeDelete.size() > 0);
 
-        runNoLicense(()-> {
-
-            try {
-
-                workFlowFactory.deleteSchemeForStruct(type.id()); // does not delete anything
-                final List<WorkflowScheme> workflowSchemesAfterDelete = workflowAPI.findSchemesForContentType(type);
-                Assert.assertNotNull(workflowSchemesAfterDelete);
-                Assert.assertTrue(workflowSchemesAfterDelete.size() > 0);
-            } catch (Exception e) {
-                // quiet
-            }
-
-            workFlowFactory.forceDeleteSchemeForContentType(type.id());
-        });
 
 
         final List<WorkflowScheme> workflowSchemesAfterForceDelete = workflowAPI.findSchemesForContentType(type);
