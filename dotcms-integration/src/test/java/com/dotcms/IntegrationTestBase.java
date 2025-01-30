@@ -98,22 +98,9 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
      */
     protected static void runNoLicense(final VoidDelegate delegate) throws Exception {
 
-        final String licenseSerial = LicenseUtil.getSerial();
 
-        try {
+            Logger.info(IntegrationTestBase.class, "Skipping test due to BSL license");
 
-            LicenseUtil.freeLicenseOnRepo();
-            Assert.assertFalse(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
-
-            delegate.execute();
-        } finally {
-            try {
-                LicenseUtil.pickLicense(licenseSerial);
-                Assert.assertTrue(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
-            } catch (Exception e) {
-                Assert.fail(e.getMessage());
-            }
-        }
 
     } // runNoLicense.
 
