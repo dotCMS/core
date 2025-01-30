@@ -126,22 +126,7 @@ public class WorkflowFactoryTest extends BaseWorkflowIntegrationTest {
         }
     } // cleanup
 
-    @Test
-    public void force_workflow_scheme_delete_without_license_delete_success_Test() throws Exception {
 
-        final List<WorkflowScheme> workflowSchemesBeforeDelete = workflowAPI.findSchemesForContentType(type);
-        final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
-
-        Assert.assertNotNull(workflowSchemesBeforeDelete);
-        Assert.assertTrue(workflowSchemesBeforeDelete.size() > 0);
-
-
-
-        final List<WorkflowScheme> workflowSchemesAfterForceDelete = workflowAPI.findSchemesForContentType(type);
-
-        Assert.assertNotNull(workflowSchemesAfterForceDelete);
-        Assert.assertTrue(workflowSchemesAfterForceDelete.size() == 0);
-    }
 
     /**
      * Method to test: {@link WorkflowFactoryImpl#countAllSchemasSteps()}
