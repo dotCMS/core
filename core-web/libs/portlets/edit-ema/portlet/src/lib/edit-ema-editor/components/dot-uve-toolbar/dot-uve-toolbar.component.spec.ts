@@ -666,6 +666,24 @@ describe('DotUveToolbarComponent', () => {
 
                 expect(spectator.query('p-calendar')).toBeFalsy();
             });
+
+            it('should have a minDate of current date on 0h 0min 0s 0ms', () => {
+                baseUVEState.$isPreviewMode.set(false);
+                baseUVEState.$isLiveMode.set(true);
+                baseUVEState.socialMedia.set(null);
+                spectator.detectChanges();
+
+                const calendar = spectator.query('p-calendar');
+
+                const expectedMinDate = new Date(fixedDate);
+
+                expectedMinDate.setHours(0, 0, 0, 0);
+
+                expect(calendar.getAttribute('ng-reflect-min-date')).toBeDefined();
+                expect(new Date(calendar.getAttribute('ng-reflect-min-date'))).toEqual(
+                    expectedMinDate
+                );
+            });
         });
     });
 
