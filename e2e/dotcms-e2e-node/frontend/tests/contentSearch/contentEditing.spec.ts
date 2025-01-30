@@ -93,8 +93,8 @@ test("Edit a generic content and discard changes", async ({ page }) => {
     newBody: "genericContent1",
   });
   await page.getByTestId("close-button").click();
-  await expect(page.getByRole("button", { name: "Close" })).toBeVisible();
   await page.getByRole("button", { name: "Close" }).click();
+
   await expect(iframe.locator("#results_table tbody tr").first()).toBeVisible();
   await contentUtils
     .validateContentExist(page, genericContent1.title)
