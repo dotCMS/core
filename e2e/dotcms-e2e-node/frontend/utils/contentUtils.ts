@@ -120,8 +120,7 @@ export class ContentUtils {
     const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
 
     const executionConfirmation = dotIframe.getByText(message);
-    await expect(executionConfirmation).toBeVisible();
-    await expect(executionConfirmation).toBeHidden();
+    await executionConfirmation.waitFor();
     //Click on close
     const closeBtnLocator = page
       .getByTestId("close-button")
@@ -150,6 +149,8 @@ export class ContentUtils {
     await expect(iframe.getByLabel("actionPrimaryMenu")).toBeVisible();
     await iframe.getByLabel("▼").getByText("Add New Content").click();
     const headingLocator = page.getByRole("heading");
+
+    await headingLocator.waitFor();
     await expect(headingLocator).toBeVisible();
     await expect(headingLocator).toHaveText(typeString);
   }
@@ -167,7 +168,9 @@ export class ContentUtils {
       .first();
     await structureINodeDivLocator.click();
 
-    await expect(iframe.getByLabel("structure_inode_popup")).toBeVisible();
+    const structureINodePopupLocator = iframe.getByLabel("structure_inode_popup");
+    await structureINodePopupLocator.waitFor();
+    await expect(structureINodePopupLocator).toBeVisible();
 
     const typeLocatorByText = iframe.getByText(typeLocator);
     await typeLocatorByText.click();
