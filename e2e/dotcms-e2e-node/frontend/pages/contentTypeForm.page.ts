@@ -21,14 +21,24 @@ export class ContentTypeFormPage {
   }
 
   async addTextField() {
+    await this.textFieldItem.waitFor();
     await this.textFieldItem.dragTo(this.dropZone);
+
+    await this.dotDialogInput.waitFor();
     await this.dotDialogInput.fill("Text Field");
+
+    await this.dotDialogAcceptAction.waitFor();
     await this.dotDialogAcceptAction.click();
   }
 
   async addSiteOrFolderField() {
+    await this.siteOrFolderFieldItem.waitFor();
     await this.siteOrFolderFieldItem.dragTo(this.dropZone);
+
+    await this.dotDialogInput.waitFor();
     await this.dotDialogInput.fill("Site or Folder Field");
+
+    await this.dotDialogAcceptAction.waitFor();
     await this.dotDialogAcceptAction.click();
   }
 }
