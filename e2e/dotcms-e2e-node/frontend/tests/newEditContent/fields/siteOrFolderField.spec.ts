@@ -35,21 +35,20 @@ test.afterEach(async ({ page, request }) => {
   await listingContentTypesPage.toggleNewContentEditor(false);
 });
 
-test.describe("site or folder field", () => {
-  test.skip("should save a site or folder field", async ({ page }) => {
-    const locatorField = page.getByTestId("field-siteOrFolderField");
+test("should save a site or folder field", async ({ page }) => {
+  const locatorField = page.getByTestId("field-siteOrFolderField");
 
-    await expect(locatorField).toBeVisible();
+  await locatorField.waitFor();
+  await expect(locatorField).toBeVisible();
 
-    const newEditContentFormPage = new NewEditContentFormPage(page);
-    const listingContentPage = new ListingContentPage(page);
+  const newEditContentFormPage = new NewEditContentFormPage(page);
+  const listingContentPage = new ListingContentPage(page);
 
-    const selectedFolder =
-      await newEditContentFormPage.selectSiteOrFolderField();
-    await newEditContentFormPage.save();
-    await newEditContentFormPage.goToBack();
-    await listingContentPage.clickFirstContentRow();
+  const selectedFolder =
+    await newEditContentFormPage.selectSiteOrFolderField();
+  await newEditContentFormPage.save();
+  await newEditContentFormPage.goToBack();
+  await listingContentPage.clickFirstContentRow();
 
-    await expect(locatorField).toHaveText(`//${selectedFolder}`);
-  });
+  await expect(locatorField).toHaveText(`//${selectedFolder}`);
 });

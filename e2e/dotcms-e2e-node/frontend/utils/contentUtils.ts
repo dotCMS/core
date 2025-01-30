@@ -98,9 +98,10 @@ export class ContentUtils {
         .click();
       await dotIframe.getByTestId("url-input").fill(fromURL);
       await dotIframe.getByRole("button", { name: " Import" }).click();
-      await expect(
-        dotIframe.getByRole("button", { name: " Remove" }),
-      ).toBeVisible();
+
+      const removeBtnLocator = dotIframe.getByRole("button", { name: " Remove" });
+      await removeBtnLocator.waitFor();
+      await expect(removeBtnLocator).toBeVisible();
     }
 
     await dotIframe.locator("#title").fill(title);
@@ -231,7 +232,7 @@ export class ContentUtils {
     await iframe
       .locator("#results_table tbody tr")
       .first()
-      .waitFor({ state: "visible" });
+      .waitFor();
     const rows = iframe.locator("#results_table tbody tr");
     const rowCount = await rows.count();
 
@@ -320,8 +321,8 @@ export class ContentUtils {
         button: "right",
       });
     }
-    const actionBtnLocator = iframe.getByRole("menuitem", { name: action });
-    await actionBtnLocator.getByText(action).click();
+    await iframe.getByRole("menuitem", { name: action }).click();
+
     const executionConfirmation = iframe.getByText("Workflow executed");
     await expect(executionConfirmation).toBeVisible();
     await expect(executionConfirmation).toBeHidden();

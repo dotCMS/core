@@ -35,22 +35,22 @@ test.afterEach(async ({ page, request }) => {
   await listingContentTypesPage.toggleNewContentEditor(false);
 });
 
-test.describe("text field", () => {
-  test.skip("should save a text field", async ({ page }) => {
-    const locatorField = page.getByTestId("textField");
 
-    await expect(locatorField).toBeVisible();
+test("should save a text field", async ({ page }) => {
+  const locatorField = page.getByTestId("textField");
 
-    const newEditContentFormPage = new NewEditContentFormPage(page);
-    const listingContentPage = new ListingContentPage(page);
+  await locatorField.waitFor();
+  await expect(locatorField).toBeVisible();
 
-    const textFieldValue = faker.lorem.word();
+  const newEditContentFormPage = new NewEditContentFormPage(page);
+  const listingContentPage = new ListingContentPage(page);
 
-    await newEditContentFormPage.fillTextField(textFieldValue);
-    await newEditContentFormPage.save();
-    await newEditContentFormPage.goToBack();
-    await listingContentPage.clickFirstContentRow();
+  const textFieldValue = faker.lorem.word();
 
-    await expect(locatorField).toHaveValue(textFieldValue);
-  });
+  await newEditContentFormPage.fillTextField(textFieldValue);
+  await newEditContentFormPage.save();
+  await newEditContentFormPage.goToBack();
+  await listingContentPage.clickFirstContentRow();
+
+  await expect(locatorField).toHaveValue(textFieldValue);
 });

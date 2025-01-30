@@ -48,7 +48,7 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
   // Validate the portlet title
   const breadcrumbLocator = page.locator("p-breadcrumb");
 
-  await expect(breadcrumbLocator).toBeVisible();
+  await breadcrumbLocator.waitFor();
   await expect(breadcrumbLocator).toContainText("Search All");
 });
 
@@ -72,7 +72,11 @@ test("Add a new Generic content", async ({ page }) => {
     action: contentProperties.publishWfAction,
   });
   await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
-  await expect(iframe.locator("#results_table tbody tr").first()).toBeVisible();
+
+  const resultsTableLocator = iframe.locator("#results_table tbody tr").first();
+  await resultsTableLocator.waitFor();
+  await expect(resultsTableLocator).toBeVisible();
+
   await contentUtils
     .validateContentExist(page, genericContent1.title)
     .then(assert);
@@ -95,7 +99,10 @@ test("Edit a generic content and discard changes", async ({ page }) => {
   await page.getByTestId("close-button").click();
   await page.getByRole("button", { name: "Close" }).click();
 
-  await expect(iframe.locator("#results_table tbody tr").first()).toBeVisible();
+  const resultsTableLocator = iframe.locator("#results_table tbody tr").first();
+  await resultsTableLocator.waitFor();
+  await expect(resultsTableLocator).toBeVisible();
+
   await contentUtils
     .validateContentExist(page, genericContent1.title)
     .then(assert);
@@ -116,7 +123,11 @@ test("Edit a generic content", async ({ page }) => {
     newBody: genericContent1.newBody,
     action: contentProperties.publishWfAction,
   });
-  await expect(iframe.locator("#results_table tbody tr").first()).toBeVisible();
+
+  const resultsTableLocator = iframe.locator("#results_table tbody tr").first();
+  await resultsTableLocator.waitFor();
+  await expect(resultsTableLocator).toBeVisible();
+
   await contentUtils
     .validateContentExist(page, genericContent1.newTitle)
     .then(assert);
@@ -148,8 +159,14 @@ test("Validate required on text fields", async ({ page }) => {
     body: genericContent1.body,
     action: contentProperties.publishWfAction,
   });
-  await expect(iframe.getByText("Error x")).toBeVisible();
-  await expect(iframe.getByText("The field Title is required.")).toBeVisible();
+
+  const errorMessageLocator = iframe.getByText("Error x");
+  await errorMessageLocator.waitFor();
+  await expect(errorMessageLocator).toBeVisible();
+
+  const requiredFieldMessageLocator = iframe.getByText("The field Title is required.");
+  await requiredFieldMessageLocator.waitFor();
+  await expect(requiredFieldMessageLocator).toBeVisible();
 });
 
 /** Please enable after fixing the issue #30748
@@ -232,6 +249,7 @@ test("Validate you can edit text on binary fields", async ({ page }) => {
     fileAssetContent.newFileName,
   );
   await contentElement.click();
+  await expect(page.getByRole("heading")).toBeVisible();
   await expect(page.getByRole("heading")).toContainText(fileAsset.label);
 
   await contentUtils.fillFileAssetForm({
@@ -246,9 +264,9 @@ test("Validate you can edit text on binary fields", async ({ page }) => {
   await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
 
   await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
-  await (
-    await contentUtils.getContentElement(page, fileAssetContent.newFileName)
-  ).click();
+
+  const contentElementTwo = await contentUtils.getContentElement(page, fileAssetContent.newFileName);
+  await contentElementTwo.click();
   const editIframe = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await expect(editIframe.getByRole("code")).toHaveText(
     fileAssetContent.newFileTextEdited,
@@ -265,19 +283,30 @@ test("Validate you are able to delete file on binary fields", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
-  await expect(mainFrame.locator("#contentWrapper")).toBeVisible();
+
+  const contentWrapperLocator = mainFrame.locator("#contentWrapper");
+  await contentWrapperLocator.waitFor();
+  await expect(contentWrapperLocator).toBeVisible();
   const contentElement = await contentUtils.getContentElement(
     page,
     fileAssetContent.newFileName,
   );
   await contentElement.click();
+  await expect(page.getByRole("heading")).toBeVisible();
   await expect.soft(page.getByRole("heading")).toContainText(fileAsset.label);
 
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await detailFrame.getByRole("button", { name: " Remove" }).click();
-  await expect(detailFrame.getByTestId("ui-message-icon-container")).toBeVisible();
+
+  const uiMessageIconContainerLocator = detailFrame.getByTestId("ui-message-icon-container");
+  await uiMessageIconContainerLocator.waitFor();
+  await expect(uiMessageIconContainerLocator).toBeVisible();
+
   await detailFrame.getByText("Publish", { exact: true }).click();
-  await expect(detailFrame.getByText("The field File Asset is")).toBeVisible();
+
+  const requiredFieldMessageLocator = detailFrame.getByText("The field File Asset is");
+  await requiredFieldMessageLocator.waitFor();
+  await expect(requiredFieldMessageLocator).toBeVisible();
 });
 
 /**
@@ -290,26 +319,40 @@ test("Validate file assets show corresponding information", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
-  await expect(mainFrame.locator("#contentWrapper")).toBeVisible();
+
+  const contentWrapperLocator = mainFrame.locator("#contentWrapper");
+  await contentWrapperLocator.waitFor();
+  await expect(contentWrapperLocator).toBeVisible();
   await (
     await contentUtils.getContentElement(page, fileAssetContent.newFileName)
   ).click();
-  await expect.soft(page.getByRole("heading")).toContainText(fileAsset.label);
+
+  const headingLocator = page.getByRole("heading");
+  await headingLocator.waitFor();
+  await expect.soft(headingLocator).toContainText(fileAsset.label);
 
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await detailFrame.getByTestId("info-btn").click();
-  await expect(detailFrame.getByText("Bytes")).toBeVisible();
-  await expect(detailFrame.getByText("Bytes")).toBeVisible();
-  await expect(detailFrame.getByTestId("resource-link-FileLink")).toContainText(
-    "http",
-  );
-  await expect(
-    detailFrame.getByTestId("resource-link-Resource-Link"),
-  ).not.toBeEmpty();
-  await expect(
-    detailFrame.getByTestId("resource-link-VersionPath"),
-  ).not.toBeEmpty();
-  await expect(detailFrame.getByTestId("resource-link-IdPath")).not.toBeEmpty();
+
+  const bytesLocator = detailFrame.getByText("Bytes");
+  await bytesLocator.waitFor();
+  await expect(bytesLocator).toBeVisible();
+
+  const resourceLinkFileLinkLocator = detailFrame.getByTestId("resource-link-FileLink");
+  await resourceLinkFileLinkLocator.waitFor();
+  await expect(resourceLinkFileLinkLocator).toContainText("http");
+
+  const resourceLinkResourceLinkLocator = detailFrame.getByTestId("resource-link-Resource-Link");
+  await resourceLinkResourceLinkLocator.waitFor();
+  await expect(resourceLinkResourceLinkLocator).not.toBeEmpty();
+
+  const resourceLinkVersionPathLocator = detailFrame.getByTestId("resource-link-VersionPath");
+  await resourceLinkVersionPathLocator.waitFor();
+  await expect(resourceLinkVersionPathLocator).not.toBeEmpty();
+
+  const resourceLinkIdPathLocator = detailFrame.getByTestId("resource-link-IdPath");
+  await resourceLinkIdPathLocator.waitFor();
+  await expect(resourceLinkIdPathLocator).not.toBeEmpty();
 });
 
 //* Test to validate the download of binary fields on file assets
@@ -320,11 +363,18 @@ test("Validate the download of binary fields on file assets", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
-  await expect(mainFrame.locator("#contentWrapper")).toBeVisible();
+
+  const contentWrapperLocator = mainFrame.locator("#contentWrapper");
+  await contentWrapperLocator.waitFor();
+  await expect(contentWrapperLocator).toBeVisible();
   await (
     await contentUtils.getContentElement(page, fileAssetContent.newFileName)
   ).click();
-  await expect.soft(page.getByRole("heading")).toContainText(fileAsset.label);
+
+  const headingLocator = page.getByRole("heading");
+  await headingLocator.waitFor();
+  await expect.soft(headingLocator).toContainText(fileAsset.label);
+
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   const downloadLink = detailFrame.getByTestId("download-btn");
   await contentUtils.validateDownload(page, downloadLink);
@@ -378,11 +428,14 @@ test("Validate the auto complete on FileName field accepting change", async ({
     binaryFileText: fileAssetContent.newFileText,
   });
   const replaceText = detailsFrame.getByText("Do you want to replace the");
+  await replaceText.waitFor();
   await expect(replaceText).toBeVisible();
+
   await detailsFrame.getByLabel("Yes").click();
-  await expect(detailsFrame.locator("#fileName")).toHaveValue(
-    fileAssetContent.newFileName,
-  );
+
+  const fileNameLocator = detailsFrame.locator("#fileName");
+  await fileNameLocator.waitFor();
+  await expect(fileNameLocator).toHaveValue(fileAssetContent.newFileName);
 });
 
 /**
@@ -460,8 +513,14 @@ test("Add a new page", async ({ page }) => {
     action: contentProperties.publishWfAction,
   });
   const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
-  await expect(dataFrame.getByRole("banner")).toBeVisible();
-  await expect(page.locator("ol")).toContainText(
+
+  const bannerLocator = dataFrame.getByRole("banner");
+  await bannerLocator.waitFor();
+  await expect(bannerLocator).toBeVisible();
+
+  const olLocator = page.locator("ol");
+  await olLocator.waitFor();
+  await expect(olLocator).toContainText(
     "Pages" + pageAssetContent.title,
   );
 });
@@ -517,17 +576,22 @@ test("Validate required fields on page asset", async ({ page }) => {
     showOnMenu: pageAssetContent.showOnMenu,
     action: contentProperties.publishWfAction,
   });
-  await expect(detailFrame.getByText("Error x")).toBeVisible();
 
-  await expect(
-    detailFrame.getByText("The field Title is required."),
-  ).toBeVisible();
-  await expect(
-    detailFrame.getByText("The field Url is required."),
-  ).toBeVisible();
-  await expect(
-    detailFrame.getByText("The field Friendly Name is"),
-  ).toBeVisible();
+  const errorXLocator = detailFrame.getByText("Error x");
+  await errorXLocator.waitFor();
+  await expect(errorXLocator).toBeVisible();
+
+  const requiredFieldMessageLocator = detailFrame.getByText("The field Title is required.");
+  await requiredFieldMessageLocator.waitFor();
+  await expect(requiredFieldMessageLocator).toBeVisible();
+
+  const urlRequiredFieldMessageLocator = detailFrame.getByText("The field Url is required.");
+  await urlRequiredFieldMessageLocator.waitFor();
+  await expect(urlRequiredFieldMessageLocator).toBeVisible();
+
+  const friendlyNameRequiredFieldMessageLocator = detailFrame.getByText("The field Friendly Name is");
+  await friendlyNameRequiredFieldMessageLocator.waitFor();
+  await expect(friendlyNameRequiredFieldMessageLocator).toBeVisible();
 });
 
 /**

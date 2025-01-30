@@ -13,9 +13,10 @@ export class NewEditContentFormPage {
   async selectSiteOrFolderField() {
     await this.siteOrFolderField.click();
 
-    const treeNode = this.page.locator(".p-treenode");
-    const textContent = await treeNode.first().textContent();
-    await treeNode.first().click();
+    const treeNode = this.page.locator(".p-treenode").first();
+    await treeNode.waitFor();
+    const textContent = await treeNode.textContent();
+    await treeNode.click();
 
     const label = this.page.locator(".p-treeselect-label");
     await expect(label).toHaveText(`//${textContent}`);
