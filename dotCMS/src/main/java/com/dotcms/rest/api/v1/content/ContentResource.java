@@ -5,15 +5,20 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.CountView;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.rest.RESTParams;
+import com.dotcms.rest.ResourceResponse;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -48,6 +53,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
@@ -394,13 +400,51 @@ public class ContentResource {
         return new ResponseEntityView<>(contentReferenceViews);
     }
 
+    /**
+     * Checks whether a given contentlet can be locked by the current user.
+     *
+     * @param request            the HTTP servlet request, containing information about the client request.
+     * @param response           the HTTP servlet response, used for setting response parameters.
+     * @param inodeOrIdentifier  the inode or identifier of the contentlet to be checked.
+     * @param language           the language ID of the contentlet (optional, defaults to -1 for fallback).
+     * @return a ResponseEntityView containing:
+     *         <ul>
+     *             <li>"canLock": boolean indicating if the contentlet can be locked by the user.</li>
+     *             <li>"locked": boolean indicating if the contentlet is currently locked.</li>
+     *             <li>"lockedBy": (optional) user ID of the user who locked the contentlet, if locked.</li>
+     *             <li>"lockedOn": (optional) timestamp when the contentlet was locked, if locked.</li>
+     *             <li>"lockedByName": (optional) name of the user who locked the contentlet, if locked.</li>
+     *             <li>"inode": the inode of the contentlet.</li>
+     *             <li>"id": the identifier of the contentlet.</li>
+     *         </ul>
+     * @throws DotDataException        if there is a data access issue.
+     * @throws DotSecurityException    if the user does not have the required permissions.
+     * @throws DoesNotExistException   if the contentlet does not exist.
+     */
     @GET
     @Path("/_canlock/{inodeOrIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response canLockContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
-                                   @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
-                                   @DefaultValue("-1") @QueryParam("language") final String language)
-            throws DotDataException, JSONException, DotSecurityException {
+    @Operation(operationId = "canLockContent", summary = "Check if a contentlet can be locked",
+            description = "Checks if the contentlet specified by its inode or identifier can be locked by the current user.",
+            tags = {"Content"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved lock status",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public ResponseEntityView<Map<String, Object>> canLockContent(@Context HttpServletRequest request,
+                                                                  @Context final HttpServletResponse response,
+                                                                   @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
+                                                                   @DefaultValue("-1") @QueryParam("language") final String language)
+            throws DotDataException, DotSecurityException {
 
         final User user =
                 new WebResource.InitBuilder(this.webResource)
@@ -408,13 +452,11 @@ public class ContentResource {
                         .requiredAnonAccess(AnonymousAccess.READ)
                         .init().getUser();
 
+        Logger.debug(this, () -> "Checking if the contentlet can be locked: " + inodeOrIdentifier);
         final PageMode mode   = PageMode.get(request);
         final long testLangId = LanguageUtil.getLanguageId(language);
         final long languageId = testLangId <=0 ? this.languageWebAPI.getLanguage(request).getId() : testLangId;
-
         final Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
-
-
         final Map<String, Object> resultMap = new HashMap<>();
 
         if(UtilMethods.isEmpty(contentlet::getIdentifier)) {
@@ -438,7 +480,118 @@ public class ContentResource {
         resultMap.put("inode", contentlet.getInode());
         resultMap.put("id",    contentlet.getIdentifier());
 
-        return Response.ok(new ResponseEntityView<>(resultMap)).build();
+        return new ResponseEntityView<>(resultMap);
+    }
+
+    /**
+     * Unlock a given contentlet by the current user.
+     *
+     * @param request            the HTTP servlet request, containing information about the client request.
+     * @param response           the HTTP servlet response, used for setting response parameters.
+     * @param inodeOrIdentifier  the inode or identifier of the contentlet to be checked.
+     * @param language           the language ID of the contentlet (optional, defaults to -1 for fallback).
+     * @return a ResponseEntityBooleanView true if the unlock was sucessful.
+     *
+     * @throws DotDataException        if there is a data access issue.
+     * @throws DotSecurityException    if the user does not have the required permissions.
+     * @throws DoesNotExistException   if the contentlet does not exist.
+     */
+    @PUT
+    @Path("/_unlock/{inodeOrIdentifier}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "unlockContent", summary = "Unlock a given contentlet by the current user",
+            description = "If the user is allowed to unlock the contentlet specified by its inode or identifier, " +
+                    "the contentlet will be unlocked.",
+            tags = {"Content"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully unlocked contentlet",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityBooleanView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public ResponseEntityBooleanView unlockContent(@Context HttpServletRequest request,
+                                  @Context final HttpServletResponse response,
+                                  @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
+                                  @DefaultValue("-1") @QueryParam("language") final String language)
+            throws DotDataException, DotSecurityException {
+
+        final User user =
+                new WebResource.InitBuilder(this.webResource)
+                        .requestAndResponse(request, response)
+                        .requiredAnonAccess(AnonymousAccess.WRITE)
+                        .init().getUser();
+
+        Logger.debug(this, () -> "Unlocking the contentlet: " + inodeOrIdentifier);
+        final PageMode mode   = PageMode.get(request);
+        final long testLangId = LanguageUtil.getLanguageId(language);
+        final long languageId = testLangId <=0 ? this.languageWebAPI.getLanguage(request).getId() : testLangId;
+        final Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
+
+        APILocator.getContentletAPI().unlock(contentlet, user, mode.respectAnonPerms);
+
+        return new ResponseEntityBooleanView(true);
+    }
+
+    /**
+     * Lock a given contentlet by the current user.
+     *
+     * @param request            the HTTP servlet request, containing information about the client request.
+     * @param response           the HTTP servlet response, used for setting response parameters.
+     * @param inodeOrIdentifier  the inode or identifier of the contentlet to be checked.
+     * @param language           the language ID of the contentlet (optional, defaults to -1 for fallback).
+     * @return a ResponseEntityBooleanView true if the lock was sucessful.
+     *
+     * @throws DotDataException        if there is a data access issue.
+     * @throws DotSecurityException    if the user does not have the required permissions.
+     * @throws DoesNotExistException   if the contentlet does not exist.
+     */
+    @PUT
+    @Path("/_lock/{inodeOrIdentifier}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "lockContent", summary = "Lock a given contentlet by the current user",
+            description = "If the user is allowed to lock the contentlet specified by its inode or identifier, " +
+                    "the contentlet will be locked.",
+            tags = {"Content"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully locked contentlet",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityBooleanView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public ResponseEntityBooleanView lockContent(@Context HttpServletRequest request,
+                                                @Context HttpServletResponse response,
+                                                 @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
+                                                 @DefaultValue("-1") @QueryParam("language") final String language)
+            throws DotDataException, DotSecurityException {
+
+        final User user =
+                new WebResource.InitBuilder(this.webResource)
+                        .requestAndResponse(request, response)
+                        .requiredAnonAccess(AnonymousAccess.WRITE)
+                        .init().getUser();
+
+        Logger.debug(this, () -> "Locking the contentlet: " + inodeOrIdentifier);
+        final PageMode mode   = PageMode.get(request);
+        final long testLangId = LanguageUtil.getLanguageId(language);
+        final long languageId = testLangId <=0 ? this.languageWebAPI.getLanguage(request).getId() : testLangId;
+        final Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
+
+        APILocator.getContentletAPI().lock(contentlet, user, mode.respectAnonPerms);
+        return new ResponseEntityBooleanView(true);
     }
 
     /**

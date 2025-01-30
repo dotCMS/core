@@ -1,5 +1,12 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
+/**
+ * This pipe is used to truncate the path to the last folder name
+ *
+ * @export
+ * @class TruncatePathPipe
+ * @implements {PipeTransform}
+ */
 @Pipe({
     name: 'truncatePath',
     standalone: true,

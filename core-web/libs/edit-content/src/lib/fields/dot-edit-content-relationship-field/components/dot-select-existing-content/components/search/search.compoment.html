@@ -1,50 +1,45 @@
-<p-inputGroup size="small">
-    <input
-        #searchInput
-        pInputText
-        type="search"
-        [placeholder]="'dot.file.relationship.dialog.search' | dm"
-        (input)="onSearch.emit(searchInput.value)" />
-    <p-button
-        (onClick)="op.toggle($event)"
-        size="small"
-        type="button"
-        icon="pi pi-sliders-h"
-        [text]="true" />
-</p-inputGroup>
+<form [formGroup]="form" #formElement>
+    <p-inputGroup size="small">
+        <input
+            pInputText
+            type="search"
+            class="w-18rem"
+            (keydown.enter)="doSearch()"
+            [placeholder]="'dot.file.relationship.dialog.search.title' | dm"
+            formControlName="query" />
+        <p-button
+            (onClick)="popover.toggle($event, formElement)"
+            data-testid="open-filters-button"
+            size="small"
+            type="button"
+            icon="pi pi-sliders-h"
+            [text]="true" />
+    </p-inputGroup>
 
-<p-overlayPanel #op>
-    <form class="w-11rem" [formGroup]="form">
+    <p-overlayPanel #popover styleClass="w-20rem">
         <div class="flex flex-column gap-2">
             <div class="flex flex-column gap-2">
-                <p-dropdown
-                    styleClass="w-full"
-                    [options]="[]"
-                    formControlName="language"
-                    optionLabel="language" />
-
-                <p-dropdown
-                    styleClass="w-full"
-                    [options]="[]"
-                    formControlName="site"
-                    optionLabel="Site or Host" />
+                <dot-language-field formControlName="languageId" />
             </div>
 
             <div class="flex justify-content-end gap-2">
                 <p-button
-                    (onClick)="op.toggle($event)"
-                    label="Clear all"
+                    (onClick)="clearForm()"
+                    data-testid="clear-button"
+                    [label]="'dot.file.relationship.dialog.search.btn.clear' | dm"
                     type="button"
                     text="true"
                     severity="primary"
                     outline="true" />
 
                 <p-button
-                    (onClick)="op.toggle($event)"
-                    label="Search"
-                    type="button"
+                    [loading]="$isLoading()"
+                    (onClick)="doSearch()"
+                    data-testid="search-button"
+                    [label]="'dot.file.relationship.dialog.search.btn.search' | dm"
+                    type="submit"
                     severity="primary" />
             </div>
         </div>
-    </form>
-</p-overlayPanel>
+    </p-overlayPanel>
+</form>
