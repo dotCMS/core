@@ -9,34 +9,30 @@ export class ContentTypeFormPage {
   }
 
   async addTextField() {
-    const dropZone = this.page.locator('div[dragula="fields-bag"]');
-    const dotDialogInput = this.page.locator("input#name");
-    const dotDialogAcceptAction = this.page.getByTestId(
-      "dotDialogAcceptAction",
-    );
-
-    const textFieldItem = this.page.locator(
+    const dropZoneLocator = this.page.locator('div[dragula="fields-bag"]');
+    const textFieldItemLocator = this.page.locator(
       "[data-clazz='com.dotcms.contenttype.model.field.ImmutableTextField']",
     );
+    await textFieldItemLocator.dragTo(dropZoneLocator);
 
-    await textFieldItem.dragTo(dropZone);
-    await dotDialogInput.fill("Text Field");
-    await dotDialogAcceptAction.click();
+    const dialogInputLocator = this.page.locator("input#name");
+    await dialogInputLocator.fill("Text Field");
+
+    const btnDialogLocator = this.page.getByTestId("dotDialogAcceptAction");
+    await btnDialogLocator.click();
   }
 
   async addSiteOrFolderField() {
-    const dropZone = this.page.locator('div[dragula="fields-bag"]');
-    const dotDialogInput = this.page.locator("input#name");
-    const dotDialogAcceptAction = this.page.getByTestId(
-      "dotDialogAcceptAction",
-    );
-
-    const siteOrFolderFieldItem = this.page.locator(
+    const dropZoneLocator = this.page.locator('div[dragula="fields-bag"]');
+    const siteOrFolderFieldItemLocator = this.page.locator(
       "[data-clazz='com.dotcms.contenttype.model.field.ImmutableHostFolderField']",
     );
+    await siteOrFolderFieldItemLocator.dragTo(dropZoneLocator);
 
-    await siteOrFolderFieldItem.dragTo(dropZone);
-    await dotDialogInput.fill("Site or Folder Field");
-    await dotDialogAcceptAction.click();
+    const dialogInputLocator = this.page.locator("input#name");
+    await dialogInputLocator.fill("Site or Folder Field");
+
+    const btnDialogLocator = this.page.getByTestId("dotDialogAcceptAction");
+    await btnDialogLocator.click();
   }
 }

@@ -1,4 +1,4 @@
-import { APIRequestContext, Page } from "@playwright/test";
+import { APIRequestContext, expect, Page } from "@playwright/test";
 import { updateFeatureFlag } from "../utils/api";
 
 export class ListingContentTypesPage {
@@ -28,12 +28,15 @@ export class ListingContentTypesPage {
   }
 
   async addNewContentType(name: string) {
-    await this.page.getByRole("button", { name: "" }).click();
-    await this.page.getByLabel("Content").locator("a").click();
-    await this.page
-      .locator('[data-test-id="content-type__new-content-banner"] div')
-      .nth(2)
-      .click();
+    await this.page.getByTestId("dotActionButton").click();
+    await this.page.locator(".p-menu-overlay").getByLabel("Content").click();
+
+    const newContentBanner = this.page.locator(
+      'div[data-test-id="content-type__new-content-banner"]',
+    );
+    await expect(newContentBanner).toBeVisible();
+
+    await newContentBanner.locator("p-checkbox").click();
 
     await this.page.getByLabel("Content Name").fill(name);
     await this.page.getByTestId("dotDialogAcceptAction").click();

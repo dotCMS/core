@@ -28,9 +28,9 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
 
   // Validate the portlet title
   const breadcrumbLocator = page.locator("p-breadcrumb");
-  await waitForVisibleAndCallback(breadcrumbLocator, () =>
-    expect(breadcrumbLocator).toContainText("Search All"),
-  );
+
+  await expect(breadcrumbLocator).toBeHidden();
+  await expect(breadcrumbLocator).toContainText("Search All");
 });
 
 /**

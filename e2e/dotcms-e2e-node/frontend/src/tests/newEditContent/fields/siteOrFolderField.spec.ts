@@ -49,8 +49,7 @@ test("should save a site or folder field", async ({ page }) => {
   const newEditContentFormPage = new NewEditContentFormPage(page);
   const listingContentPage = new ListingContentPage(page);
 
-  const selectedFolder =
-    await newEditContentFormPage.selectSiteOrFolderField();
+  const selectedFolder = await newEditContentFormPage.selectSiteOrFolderField();
   await newEditContentFormPage.save();
   await newEditContentFormPage.goToBack();
   await listingContentPage.clickFirstContentRow();
