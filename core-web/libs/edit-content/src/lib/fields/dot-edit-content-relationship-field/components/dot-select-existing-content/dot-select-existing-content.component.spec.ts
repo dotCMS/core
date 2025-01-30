@@ -1,4 +1,5 @@
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -7,6 +8,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
+import { SearchComponent } from './components/search/search.compoment';
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
@@ -68,6 +70,7 @@ describe('DotSelectExistingContentComponent', () => {
             { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
             { provide: DynamicDialogConfig, useValue: mockDialogConfig }
         ],
+        declarations: [MockComponent(SearchComponent)],
         detectChanges: false
     });
 

@@ -4,7 +4,9 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
@@ -14,6 +16,8 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
@@ -58,6 +62,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.xbill.DNS.dnssec.R;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1342,6 +1347,61 @@ public class PermissionAPITest extends IntegrationTestBase {
 
         //Ww're testing here we're getting null here. instead of an empty list
         assertNull(permissionCache.getPermissionsFromCache(folder.getPermissionId()));
+
+    }
+
+    /**
+     * Given scenario: We create two contentlets of the same type, one is live and the other is not
+     * Expected Results:  The permissions should be different for the working and live content
+     * Ultimately, We want to corroborate that permissions are different for working and live content, even if they are the same contentlet
+     * First we test the live content, then the working content to ensure the permissions stored in cache are different
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Working_And_Live_Can_Have_Different_Permissions()
+            throws DotDataException, DotSecurityException {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User frontEndUser = new UserDataGen().nextPersisted();
+        final Role frontEndUserRole = roleAPI.loadFrontEndUserRole();
+        roleAPI.addRoleToUser(frontEndUserRole, frontEndUser);
+        assertTrue(frontEndUser.isFrontendUser());
+        assertFalse(frontEndUser.isBackendUser());
+        final Role anonymousRole = roleAPI.loadCMSAnonymousRole();
+
+        final ContentType contentType = new ContentTypeDataGen().fields(List.of(
+                new FieldDataGen()
+                        .name("title")
+                        .velocityVarName("title")
+                        .next()
+        )).nextPersisted();
+
+        Permission p1 = new Permission();
+        p1.setPermission(PermissionAPI.PERMISSION_READ);
+        p1.setRoleId(anonymousRole.getId());
+        p1.setInode(contentType.inode());
+        permissionAPI.save(p1, contentType, sysuser, false);
+
+        final Contentlet working = ContentletDataGen.checkin(
+            new ContentletDataGen(contentType)
+                    .languageId(1)
+                    .host(host)
+                    .setProperty("title", "working")
+                    .next()
+        );
+
+        final Contentlet newVersion = ContentletDataGen.createNewVersion(working,
+                VariantAPI.DEFAULT_VARIANT, Map.of("title", "live"));
+        Contentlet live = ContentletDataGen.publish(newVersion);
+        assertTrue(live.isLive());
+        assertFalse(working.isLive());
+
+        final boolean respectFrontEndRoles = true;
+        //Make sure we have the working piece of content loaded up
+
+        assertTrue(permissionAPI.doesUserHavePermission(live, PermissionAPI.PERMISSION_READ, frontEndUser, respectFrontEndRoles));
+        assertFalse(permissionAPI.doesUserHavePermission(working, PermissionAPI.PERMISSION_READ, frontEndUser, respectFrontEndRoles));
 
     }
 
