@@ -13,7 +13,8 @@ public final class TimeMachineUtil {
 
     /**
      * If Time Machine is running return the timestamp of the Time Machine date
-     * @return
+     * Running Time Machine is determined by the presence of the attribute PageResource.TM_DATE in the request or session
+     * @return Optional<String>
      */
     public static Optional<String> getTimeMachineDate() {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -31,10 +32,18 @@ public final class TimeMachineUtil {
 
     /**
      * Return true if Time Machine is running, otherwise return false
-     * @return
+     * @return boolean
      */
     public static boolean isRunning(){
         final Optional<String> timeMachine = getTimeMachineDate();
         return timeMachine.isPresent();
+    }
+
+    /**
+     * Return true if Time Machine is not running, otherwise return false
+     * @return boolean
+     */
+    public static boolean isNotRunning(){
+        return !isRunning();
     }
 }

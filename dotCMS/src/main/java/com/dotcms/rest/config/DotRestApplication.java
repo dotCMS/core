@@ -1,6 +1,5 @@
 package com.dotcms.rest.config;
 
-import com.dotcms.cdi.CDIUtils;
 import com.dotcms.telemetry.rest.TelemetryResource;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -10,16 +9,13 @@ import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
-import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
-import org.glassfish.jersey.server.ResourceConfig;
-
-import javax.ws.rs.ApplicationPath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.ws.rs.ApplicationPath;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.server.ResourceConfig;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -69,8 +65,7 @@ public class DotRestApplication extends ResourceConfig {
 		register(MultiPartFeature.class).
 		register(JacksonJaxbJsonProvider.class).
 		registerClasses(customClasses.keySet()).
-		packages(packages.toArray(new String[0])).
-		register(CdiComponentProvider.class);
+		packages(packages.toArray(new String[0]));
 	}
 
 	/**
@@ -92,8 +87,7 @@ public class DotRestApplication extends ResourceConfig {
 			return;
 		}
 		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
-			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
-            reloader.ifPresent(ContainerReloader::reload);
+			ContainerReloader.getInstance().reload();
 		}
 	}
 
@@ -106,8 +100,7 @@ public class DotRestApplication extends ResourceConfig {
 			return;
 		}
 		if(customClasses.remove(clazz) != null){
-			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
-			reloader.ifPresent(ContainerReloader::reload);
+			ContainerReloader.getInstance().reload();
 		}
 	}
 
