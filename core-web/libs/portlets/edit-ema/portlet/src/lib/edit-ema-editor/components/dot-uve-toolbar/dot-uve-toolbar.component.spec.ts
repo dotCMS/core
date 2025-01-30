@@ -84,7 +84,6 @@ const baseUVEToolbarState = {
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
-    setSocialMedia: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     $apiURL: signal($apiURL),
@@ -102,6 +101,7 @@ const baseUVEState = {
         device: undefined,
         orientation: undefined
     }),
+    $urlContentMap: signal(undefined),
     languages: signal([
         { id: 1, translated: true },
         { id: 2, translated: false },
@@ -250,6 +250,26 @@ describe('DotUveToolbarComponent', () => {
         it('should have a dot-uve-workflow-actions component', () => {
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
             expect(workflowActions).toBeTruthy();
+        });
+
+        describe('Events', () => {
+            it('should emit editUrlContentMap', () => {
+                const contentlet = {
+                    identifier: '123',
+                    inode: '456',
+                    title: 'My super awesome blog post'
+                };
+                const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
+
+                baseUVEState.$urlContentMap.set(contentlet);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('edit-url-content-map'));
+
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(contentlet);
+            });
         });
 
         describe('custom devices', () => {
@@ -645,6 +665,24 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.query('p-calendar')).toBeFalsy();
+            });
+
+            it('should have a minDate of current date on 0h 0min 0s 0ms', () => {
+                baseUVEState.$isPreviewMode.set(false);
+                baseUVEState.$isLiveMode.set(true);
+                baseUVEState.socialMedia.set(null);
+                spectator.detectChanges();
+
+                const calendar = spectator.query('p-calendar');
+
+                const expectedMinDate = new Date(fixedDate);
+
+                expectedMinDate.setHours(0, 0, 0, 0);
+
+                expect(calendar.getAttribute('ng-reflect-min-date')).toBeDefined();
+                expect(new Date(calendar.getAttribute('ng-reflect-min-date'))).toEqual(
+                    expectedMinDate
+                );
             });
         });
     });

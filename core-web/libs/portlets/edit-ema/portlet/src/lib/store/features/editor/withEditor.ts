@@ -20,7 +20,6 @@ import {
     ReloadEditorContent
 } from './models';
 import { withSave } from './save/withSave';
-import { withEditorToolbar } from './toolbar/withEditorToolbar';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
@@ -84,7 +83,6 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
-        withEditorToolbar(),
         withSave(),
         withClient(),
         withComputed((store) => {

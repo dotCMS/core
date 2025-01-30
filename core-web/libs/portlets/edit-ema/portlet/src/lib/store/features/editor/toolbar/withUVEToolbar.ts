@@ -9,8 +9,13 @@ import {
 
 import { computed } from '@angular/core';
 
-import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/uve';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotExperimentStatus,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
 
 import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
@@ -109,7 +114,9 @@ export function withUVEToolbar() {
                     unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
-
+            $urlContentMap: computed<DotCMSContentlet>(() => {
+                return store.pageAPIResponse()?.urlContentMap;
+            }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
                 const currentUser = store.currentUser();

@@ -126,22 +126,4 @@ describe('DotEmaBookmarksComponent', () => {
             })
         );
     });
-
-    it('should have a label when preview mode is false', () => {
-        spectator.detectChanges();
-        const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
-
-        expect(button.nativeElement.textContent).toBe('editpage.toolbar.bookmark');
-    });
-
-    describe('preview mode', () => {
-        it('should render the bookmark button with new UVE toolbar style when preview mode is true', () => {
-            mockStore.$previewMode.set(true);
-
-            spectator.detectChanges();
-            const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
-
-            expect(button.nativeElement.textContent).toBe('');
-        });
-    });
 });

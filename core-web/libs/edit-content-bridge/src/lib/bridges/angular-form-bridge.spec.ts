@@ -13,6 +13,7 @@ const mockFormControl = {
     value: '',
     setValue: jest.fn(),
     markAsTouched: jest.fn(),
+    markAsDirty: jest.fn(),
     updateValueAndValidity: jest.fn(),
     valueChanges: {
         subscribe: jest.fn((callback) => {
@@ -48,11 +49,12 @@ describe('AngularFormBridge', () => {
     it('should set field value in Angular form', () => {
         bridge.set('testField', 'new value');
         expect(mockFormControl.setValue).toHaveBeenCalledWith('new value', {
-            emitEvent: false
+            emitEvent: true
         });
         expect(mockFormControl.markAsTouched).toHaveBeenCalled();
+        expect(mockFormControl.markAsDirty).toHaveBeenCalled();
         expect(mockFormControl.updateValueAndValidity).toHaveBeenCalledWith({
-            emitEvent: false
+            emitEvent: true
         });
     });
 

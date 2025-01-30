@@ -16,6 +16,7 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
@@ -252,17 +253,11 @@ public class PageRenderUtil implements Serializable {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Date timeMachineDate    = timeMachineDate(request).orElseGet(()->null);
-        if(null != timeMachineDate){
-            Logger.debug(this, "Time Machine date found cache must be evicted: " + timeMachineDate);
-            // for future time machine we need to invalidate the cache for there can be precalculated content
-            // that was loaded before without using time machine date see https://github.com/dotCMS/core/issues/31061
-            new PageLoader().invalidate(htmlPage, mode);
-        }
-        final boolean live            = this.isLive(request);
+        final boolean live            = isLive();
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI
                 .getPageMultiTrees(htmlPage, currentVariantId, live);
-        final Set<String> personalizationsForPage = this.multiTreeAPI.getPersonalizationsForPage(htmlPage, currentVariantId);
+        final Set<String> personalizationsForPage = multiTreeAPI.getPersonalizationsForPage(htmlPage, currentVariantId);
         final List<ContainerRaw> rawContainers  = Lists.newArrayList();
         final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
 
@@ -434,16 +429,10 @@ public class PageRenderUtil implements Serializable {
      * Checks if live content must be returned based on information in the current HTTP Request. So, if the
      * {@code "tm_date"} Session attribute is present -- a Time Machine request -- then working content must always be
      * returned. Otherwise, the result will be given by the value provided by {@link PageMode#showLive}.
-     *
-     * @param request The current {@link HttpServletRequest} object.
-     *
      * @return If live content must be displayed, returned {@code true}.
      */
-    private boolean isLive(final HttpServletRequest request) {
-
-        return request != null && request.getSession(false) != null && request.getSession(false).getAttribute(PageResource.TM_DATE) != null ?
-                false :
-                mode.showLive;
+    private boolean isLive() {
+        return TimeMachineUtil.isNotRunning() && mode.showLive;
     }
 
     /**

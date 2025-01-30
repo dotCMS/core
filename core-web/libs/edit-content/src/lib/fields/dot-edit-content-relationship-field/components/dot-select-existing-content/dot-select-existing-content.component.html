@@ -18,7 +18,6 @@
         </div>
     } @else {
         <p-table
-            #datatable
             [columns]="columns"
             [value]="data"
             [selectionMode]="selectionMode"
@@ -28,13 +27,14 @@
             [first]="pagination.offset"
             [rows]="pagination.rowsPerPage"
             [scrollable]="true"
-            [globalFilterFields]="['title']"
             styleClass="dotTable p-datatable-existing-content w-full">
             <ng-template pTemplate="caption">
                 <div class="flex justify-content-between align-items-center w-full">
                     <div class="flex align-items-center gap-2">
                         <div class="flex-none">
-                            <dot-search (onSearch)="datatable.filterGlobal($event, 'contains')" />
+                            <dot-search
+                                (onSearch)="store.search($event)"
+                                [isLoading]="store.isLoading()" />
                         </div>
                         <div class="flex-grow-1">
                             <p class="text-primary-500">

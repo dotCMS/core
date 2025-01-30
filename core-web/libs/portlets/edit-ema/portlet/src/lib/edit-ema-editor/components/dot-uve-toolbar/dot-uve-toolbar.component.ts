@@ -30,7 +30,12 @@ import {
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
+import {
+    DotPersona,
+    DotLanguage,
+    DotDeviceListItem,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { UVE_MODE } from '@dotcms/uve';
 
@@ -82,6 +87,7 @@ export class DotUveToolbarComponent {
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
     @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+    @Output() editUrlContentMap = new EventEmitter<DotCMSContentlet>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -100,6 +106,7 @@ export class DotUveToolbarComponent {
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
+    readonly $urlContentMap = this.#store.$urlContentMap;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -109,9 +116,11 @@ export class DotUveToolbarComponent {
     );
 
     protected readonly $pageParams = this.#store.pageParams;
-    protected readonly $previewDate = computed<Date>(() =>
-        this.$pageParams().publishDate ? new Date(this.$pageParams().publishDate) : new Date()
-    );
+    protected readonly $previewDate = computed<Date>(() => {
+        return this.$pageParams().publishDate
+            ? new Date(this.$pageParams().publishDate)
+            : new Date();
+    });
 
     readonly $pageInode = computed(() => {
         return this.#store.pageAPIResponse()?.page.inode;
@@ -121,7 +130,15 @@ export class DotUveToolbarComponent {
     readonly $workflowLoding = this.#store.workflowLoading;
 
     defaultDevices = DEFAULT_DEVICES;
-    CURRENT_DATE = new Date();
+    get MIN_DATE() {
+        const currentDate = new Date();
+
+        // We need to set this to 0 so the minDate does not collide with the previewDate value when we are initializing
+        // This prevents the input from being empty on init
+        currentDate.setHours(0, 0, 0, 0);
+
+        return currentDate;
+    }
 
     /**
      * Fetch the page on a given date

@@ -1,7 +1,7 @@
 import { InjectionToken } from '@angular/core';
 
-import { DotDeviceListItem, DotPersona, FeaturedFlags } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve';
+iimport { UVE_MODE } from '@dotcms/uve';
+import { DotDeviceListItem, DotPersona } from '@dotcms/dotcms-models';
 
 import { CommonErrors, PAGE_MODE } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -69,7 +69,8 @@ export const DEFAULT_PERSONA: DotPersona = {
     modUser: 'system'
 };
 
-export const UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE];
+// Add the Feature flags we want to fetch for UVE
+export const UVE_FEATURE_FLAGS = [];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',
