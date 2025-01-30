@@ -9,13 +9,13 @@ import {
 
 import { computed } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/uve';
 import {
     DotCMSContentlet,
     DotDevice,
     DotExperimentStatus,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve';
 
 import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
