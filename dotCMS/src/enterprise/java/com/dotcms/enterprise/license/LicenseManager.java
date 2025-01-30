@@ -11,14 +11,15 @@ package com.dotcms.enterprise.license;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Logger;
+import io.vavr.Lazy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -37,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class LicenseManager {
 
-    public DotLicense license = new DotLicense();
+    public final Lazy<DotLicense> myLicense = Lazy.of(()-> new DotLicense());
 
 
 
@@ -52,7 +53,7 @@ public final class LicenseManager {
     @WrapInTransaction
     private void init() {
 
-        this.license = insertDefaultLicense();
+        insertDefaultLicense();
         licenseMessage();
 
     }
@@ -90,18 +91,16 @@ public final class LicenseManager {
      * Reads the license information from the dotCMS license file in order to check its validity and
      * expiration days.
      */
-    private DotLicense insertDefaultLicense() {
+    private void insertDefaultLicense() {
 
-        DotLicense license = new DotLicense();
         try {
 
-            LicenseRepoDAO.upsertLicenseToRepo(license.serial, "BSL-" + APILocator.getServerAPI().readServerId());
+            LicenseRepoDAO.insertDefaultLicense();
         }catch (final Throwable e) {
-            // Eat Me
-            Logger.warnAndDebug(LicenseManager.class, String.format("No valid license was found: %s",
-                    ExceptionUtil.getErrorMessage(e)), e);
+            Logger.error(this, "Error inserting default license", e);
+            throw new DotRuntimeException("Error inserting default license", e);
         }
-        return license;
+
     }
 
 
@@ -112,7 +111,7 @@ public final class LicenseManager {
      * @return The client's name.
      */
     public String getClientName() {
-        return license.clientName;
+        return myLicense.get().clientName;
     }
 
     /**
@@ -121,7 +120,7 @@ public final class LicenseManager {
      * @return The serial number.
      */
     public String getSerial() {
-        return license.serial;
+        return myLicense.get().serial;
     }
 
     static final AtomicBoolean LICENSE_INITED = new AtomicBoolean(false);
@@ -138,7 +137,7 @@ public final class LicenseManager {
 
     /**
      * Returns a singleton instance of this class.
-     * 
+     *
      * @return A unique instance of {@link LicenseManager}.
      */
     public static LicenseManager getInstance() {
@@ -192,7 +191,7 @@ public final class LicenseManager {
      * @return The valid-until date.
      */
     public Date getValidUntil() {
-        return license.validUntil;
+        return myLicense.get().validUntil;
     }
 
     /**
@@ -201,7 +200,7 @@ public final class LicenseManager {
      * @return The license level.
      */
     public int getLevel() {
-        return license.level;
+        return myLicense.get().level;
     }
 
 
@@ -291,7 +290,7 @@ public final class LicenseManager {
      * @return The license type.
      */
     public String getLicenseType() {
-        return license.licenseType;
+        return myLicense.get().licenseType;
     }
 
     /**
@@ -300,7 +299,7 @@ public final class LicenseManager {
      * @return Returns {@code true} if the license is perpetual. Otherwise, returns {@code false}.
      */
     public boolean isPerpetual() {
-        return license.perpetual;
+        return myLicense.get().perpetual;
     }
 
     /**
@@ -341,13 +340,7 @@ public final class LicenseManager {
     @WrapInTransaction
     public void insertAvailableLicensesFromZipFile(InputStream input)
                     throws IOException, DotDataException {
-        LicenseRepoDAO.insertAvailableLicensesFromZipFile(input);
-        try{
-        	takeLicenseFromRepoIfNeeded();
-        }
-        catch(Exception e){
-        	throw new DotStateException(e);
-        }
+
     }
 
     /**
@@ -411,8 +404,7 @@ public final class LicenseManager {
      *         {@code false}.
      */
     public boolean isEnterprise() {
-        licenseMessage();
-        return (this.license.level > LicenseLevel.COMMUNITY.level ) ;
+        return true;
 
     }
 
@@ -423,7 +415,7 @@ public final class LicenseManager {
      *         {@code false}.
      */
     public boolean isPlatform() {
-      return (this.license.level == LicenseLevel.PLATFORM.level) ;
+      return true;
     }
 
     
@@ -438,7 +430,7 @@ public final class LicenseManager {
             Logger.info(InitServlet.class,
                     " * This software, code and any modifications to the code are licensed under the terms of the dotCMS BSL License ");
             Logger.info(InitServlet.class,
-                    " * which can be found here : https://www.github.com/dotCMS/core/LICENSE ");
+                    " * which can be found here : https://www.github.com/dotCMS/core ");
             Logger.info(InitServlet.class,
                     "");
         }

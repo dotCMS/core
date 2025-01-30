@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.license;
 
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -30,14 +31,11 @@ public class DotLicense implements Serializable {
     public final boolean perpetual;
     public final boolean expired;
     public final String raw;
+
     public static final Lazy<String> DEFAULT_CLIENT_NAME= Lazy.of(()-> Config.getStringProperty("CUSTOMER_LICENSE_NAME","dotCMS BSL License"));
-
-    public static final Lazy<String>  DEFAULT_SERIAL= Lazy.of(()->
-            Try.of(()-> APILocator.getServerAPI().readServerId() )
-            .getOrElse("BSL-" + UUIDGenerator.shorty()));
+    public static final Lazy<String>  DEFAULT_SERIAL= ServerAPI.SERVER_ID;
 
 
-    
     public DotLicense() {
         this.licenseType = LicenseType.DEFAULT_TYPE.type;
         this.serial = DEFAULT_SERIAL.get();
@@ -47,7 +45,7 @@ public class DotLicense implements Serializable {
         this.level = LicenseLevel.DEFAULT_LEVEL.level;
         this.perpetual = true;
         this.expired = false;
-        this.raw = null;
+        this.raw = "BSL-"+serial;
 
     }
 
@@ -55,7 +53,7 @@ public class DotLicense implements Serializable {
     private boolean expired(){
         return  (!this.perpetual && this.validUntil.before(new Date()));
     }
-        
+
 
     public DotLicense(String clientName, LicenseType licenseType, String serial, Date validUntil,
                     int licenseVersion, int level, boolean perpetual, String raw) {

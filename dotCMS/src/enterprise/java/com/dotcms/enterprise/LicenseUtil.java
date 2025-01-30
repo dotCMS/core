@@ -9,26 +9,7 @@
 
 package com.dotcms.enterprise;
 
-import com.dotcms.enterprise.license.LicenseRepoDAO;
-import com.dotmarketing.util.Config;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.temporal.ChronoUnit;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
@@ -39,19 +20,30 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.enterprise.license.LicenseRepoDAO;
 import com.dotcms.enterprise.license.LicenseType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import org.apache.commons.io.IOUtils;
-
-import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Provides utility methods to access to licensing information in dotCMS.
@@ -72,7 +64,7 @@ public class LicenseUtil {
 	 *         false.
 	 */
 	public static boolean isASAllowed() {
-		return LicenseManager.getInstance().isASEnabled();
+		return true;
 	}
 
 	/**
@@ -185,19 +177,7 @@ public class LicenseUtil {
 	 * @return The license level.
 	 */
 	public static int getLevel(){
-		try{
-			boolean perpetual = LicenseManager.getInstance().isPerpetual();
-			Date validUntil = LicenseManager.getInstance().getValidUntil();
-			if(!perpetual && UtilMethods.isSet(validUntil) && validUntil.before(Calendar.getInstance().getTime())){
-				return LicenseLevel.COMMUNITY.level;
-			}
-			else {
-			    return LicenseManager.getInstance().getLevel();
-			}
-		}catch (Throwable e) {
-			Logger.debug(LicenseUtil.class, e.getMessage());
-			return LicenseLevel.COMMUNITY.level;
-		}
+		return LicenseLevel.PLATFORM.level;
 	}
 
 	/**
@@ -356,7 +336,7 @@ public class LicenseUtil {
 	 *             The licenses could not be added to the server.
 	 */
     public static void uploadLicenseRepoFile(InputStream in) throws DotDataException, IOException {
-        LicenseManager.getInstance().insertAvailableLicensesFromZipFile(in);
+        //LicenseManager.getInstance().insertAvailableLicensesFromZipFile(in);
     }
 
     /**

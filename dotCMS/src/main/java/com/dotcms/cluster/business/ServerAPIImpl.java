@@ -32,7 +32,7 @@ import com.liferay.util.FileUtil;
 
 public class ServerAPIImpl implements ServerAPI {
 
-    final static Lazy<String> SERVER_ID = Lazy.of(UUIDUtil::uuid);
+
     private final ServerFactory serverFactory;
 
     public ServerAPIImpl() {
@@ -108,10 +108,6 @@ public class ServerAPIImpl implements ServerAPI {
         return SERVER_ID.get();
     }
 
-    private void writeServerIdToDisk(String serverId) throws IOException {
-
-
-    }
 
 
     @Override

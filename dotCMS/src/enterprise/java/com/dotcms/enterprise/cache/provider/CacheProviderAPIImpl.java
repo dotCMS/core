@@ -9,9 +9,7 @@
 
 package com.dotcms.enterprise.cache.provider;
 
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotmarketing.business.APILocator;
+
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.CacheOSGIService;
 import com.dotmarketing.business.cache.provider.CacheProvider;
@@ -58,29 +56,7 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
         }).onFailure(e -> Logger.error(this, "Error creating CacheProvider [" + providerClassName + "].", e)).toJavaOptional();
     }
 
-    /**
-     * Verifies if the server have a valid Enterprise License
-     *
-     * @return
-     */
-    private boolean isCommunity () {
 
-         /*
-         Validate if we can get use the LicenseUtil, the CacheLocator and CacheProviders
-         are one of the first elements to be created, using the LicenseUtil here on a clean install
-         can throw errors as the DB could not be even been loaded or a server id file could not be created
-         and we don't want to stop the execution here for those expected cases.
-         */
-        String serverId = APILocator.getServerAPI().readServerId();
-        if ( serverId == null ) {
-            //We can continue, probably a first start
-            Logger.debug(this, "Unable to get License level [server id is null].");
-            return true;
-        }
-
-        return LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level ;
-
-    }
 
     /**
      * Return all the registered CacheProviders, there are cases when is required to iterate over all the Providers, like on
@@ -102,7 +78,7 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
 
 
     private List<String> getProviderNamesPerRegion(String group){
-        if ( isCommunity() || null == group ) {
+        if (null == group ) {
             return noLicenseProviders;
         }
         //Read from the properties the cache chain to use for this region, if nothing found the default chain will be used
