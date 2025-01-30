@@ -80,7 +80,6 @@ import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
-import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderIntegrationTest;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
@@ -165,7 +164,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05390MakeRoomForLongerJobDetailTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
-        BundlePublisherResourceIntegrationTest.class,
         Task00050LoadAppsSecretsTest.class,
         StoragePersistenceAPITest.class,
         FileMetadataAPITest.class,
