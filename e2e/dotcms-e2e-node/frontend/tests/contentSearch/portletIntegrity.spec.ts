@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
   dotCMSUtils,
-  waitForVisibleAndCallback,
 } from "../../utils/dotCMSUtils";
 import { ContentUtils } from "../../utils/contentUtils";
 import {
@@ -42,9 +41,9 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
 
   // Validate the portlet title
   const breadcrumbLocator = page.locator("p-breadcrumb");
-  await waitForVisibleAndCallback(breadcrumbLocator, () =>
-    expect(breadcrumbLocator).toContainText("Search All"),
-  );
+
+  await expect(breadcrumbLocator).toBeVisible();
+  await expect(breadcrumbLocator).toContainText("Search All");
 });
 
 /**
@@ -191,9 +190,7 @@ test("Validate the clear button in the search filter", async ({ page }) => {
 
   //expand the search filter
   const advancedLinkLocator = iframe.getByRole("link", { name: "Advanced" });
-  await waitForVisibleAndCallback(advancedLinkLocator, () =>
-    advancedLinkLocator.click(),
-  );
+  await advancedLinkLocator.click();
 
   // Select the workflow in the search filter
   await iframe
@@ -207,11 +204,9 @@ test("Validate the clear button in the search filter", async ({ page }) => {
   const widgetStepIdLocator = iframe.locator(
     "div[id='widget_step_id'] div[data-dojo-attach-point='_buttonNode']",
   );
-  await waitForVisibleAndCallback(widgetStepIdLocator, () =>
-    widgetStepIdLocator.click(),
-  );
+  await widgetStepIdLocator.click();
   const newOption = iframe.getByRole("option", { name: "New" });
-  await waitForVisibleAndCallback(newOption, () => newOption.click());
+  await newOption.click();
 
   // Select the Show in the search filter
   await iframe
@@ -245,9 +240,7 @@ test("Validate the hide button collapse the filter", async ({ page }) => {
 
   await expect(iframe.getByRole("button", { name: "Search" })).toBeVisible();
   const advancedLinkLocator = iframe.getByRole("link", { name: "Advanced" });
-  await waitForVisibleAndCallback(advancedLinkLocator, () =>
-    advancedLinkLocator.click(),
-  );
+  await advancedLinkLocator.click();
 
   await page.waitForTimeout(1000);
   await expect(iframe.getByRole("link", { name: "Advanced" })).toBeHidden();
