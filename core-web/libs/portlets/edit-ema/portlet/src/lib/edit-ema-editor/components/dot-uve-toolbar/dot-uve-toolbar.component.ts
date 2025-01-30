@@ -198,48 +198,48 @@ export class DotUveToolbarComponent {
      * @memberof DotEmaComponent
      */
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
-        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
-            this.#store.loadPageAsset({
-                'com.dotmarketing.persona.id': persona.identifier
-            });
-        } else {
-            this.#confirmationService.confirm({
-                header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
-                message: this.#dotMessageService.get(
-                    'editpage.personalization.confirm.message',
-                    persona.name
-                ),
-                acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
-                rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
-                accept: () => {
-                    this.#personalizeService
-                        .personalized(persona.pageId, persona.keyTag)
-                        .subscribe({
-                            next: () => {
-                                this.#store.loadPageAsset({
-                                    'com.dotmarketing.persona.id': persona.identifier
-                                });
+        const existPersona =
+            persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
-                                this.$personaSelector().fetchPersonas();
-                            },
-                            error: () => {
-                                this.#messageService.add({
-                                    severity: 'error',
-                                    summary: this.#dotMessageService.get('error'),
-                                    detail: this.#dotMessageService.get(
-                                        'uve.personalize.empty.page.error'
-                                    )
-                                });
+        if (existPersona) {
+            this.#store.loadPageAsset({ personaId: persona.identifier });
 
-                                this.$personaSelector().resetValue();
-                            }
-                        });
-                },
-                reject: () => {
-                    this.$personaSelector().resetValue();
-                }
-            });
+            return;
         }
+
+        const confirmationData = {
+            header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
+            message: this.#dotMessageService.get(
+                'editpage.personalization.confirm.message',
+                persona.name
+            ),
+            acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject')
+        };
+
+        this.#confirmationService.confirm({
+            ...confirmationData,
+            accept: () => {
+                this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
+                    next: () => {
+                        this.#store.loadPageAsset({ personaId: persona.identifier });
+                        this.$personaSelector().fetchPersonas();
+                    },
+                    error: () => {
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('error'),
+                            detail: this.#dotMessageService.get('uve.personalize.empty.page.error')
+                        });
+
+                        this.$personaSelector().resetValue();
+                    }
+                });
+            },
+            reject: () => {
+                this.$personaSelector().resetValue();
+            }
+        });
     }
 
     /**
@@ -264,9 +264,7 @@ export class DotUveToolbarComponent {
                         this.$personaSelector().fetchPersonas();
 
                         if (persona.selected) {
-                            this.#store.loadPageAsset({
-                                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
-                            });
+                            this.#store.loadPageAsset({ personaId: DEFAULT_PERSONA.identifier });
                         }
                     }); // This does a take 1 under the hood
             }

@@ -224,12 +224,12 @@ export class DotEmaShellComponent implements OnInit {
         // If the editor mode is not valid, set it to edit mode
         const UVE_MODES = Object.values(UVE_MODE);
 
-        if (!params.editorMode || !UVE_MODES.includes(params.editorMode)) {
+        if (!UVE_MODES.includes(params.editorMode)) {
             params.editorMode = UVE_MODE.EDIT;
         }
 
-        if (params.editorMode === UVE_MODE.LIVE && !params.publishDate) {
-            params.publishDate = new Date().toISOString();
+        if (params.editorMode === UVE_MODE.LIVE) {
+            params.publishDate = params.publishDate || new Date().toISOString();
         }
 
         return params;

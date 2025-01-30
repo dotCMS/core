@@ -44,7 +44,7 @@ export interface DotPageApiResponse {
 export interface DotPageApiParams {
     url: string;
     language_id: string;
-    'com.dotmarketing.persona.id': string;
+    personaId: string;
     variantName?: string;
     experimentId?: string;
     mode?: string;
@@ -61,9 +61,9 @@ export enum DotPageAssetKeys {
     VARIANT_NAME = 'variantName',
     LANGUAGE_ID = 'language_id',
     EXPERIMENT_ID = 'experimentId',
-    PERSONA_ID = 'com.dotmarketing.persona.id',
     PUBLISH_DATE = 'publishDate',
-    EDITOR_MODE = 'editorMode'
+    EDITOR_MODE = 'editorMode',
+    PERSONA_ID = 'personaId'
 }
 
 export interface GetPersonasParams {
@@ -97,15 +97,7 @@ export class DotPageApiService {
      */
     get(params: DotPageAssetParams): Observable<DotPageApiResponse> {
         // Remove trailing and leading slashes
-        const {
-            clientHost,
-            editorMode,
-            depth = '0',
-            language_id,
-            variantName,
-            experimentId,
-            publishDate
-        } = params;
+        const { clientHost, editorMode, depth = '0', ...restParams } = params;
 
         const url = cleanPageURL(params.url);
 
@@ -113,13 +105,9 @@ export class DotPageApiService {
         const mode = UVE_MODE_TO_PAGE_MODE[editorMode] ?? PAGE_MODE.EDIT;
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
-            language_id,
-            'com.dotmarketing.persona.id': params?.['com.dotmarketing.persona.id'],
-            variantName,
-            experimentId,
             depth,
             mode,
-            publishDate: publishDate ?? undefined
+            ...restParams
         });
 
         const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;

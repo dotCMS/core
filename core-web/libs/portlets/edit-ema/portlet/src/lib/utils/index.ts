@@ -229,25 +229,28 @@ export function createPageApiUrlWithQueryParams(
     params: Partial<DotPageAssetParams>
 ): string {
     // Set default values
-    const completedParams = {
+    const personaId = params.personaId ?? DEFAULT_PERSONA.identifier;
+    const variantName = params.variantName ?? DEFAULT_VARIANT_ID;
+
+    const queryParams = {
         ...params,
-        language_id: params?.language_id ?? '1',
-        'com.dotmarketing.persona.id':
-            params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-        variantName: params?.variantName ?? DEFAULT_VARIANT_ID
+        variantName,
+        'com.dotmarketing.persona.id': personaId
     };
 
-    // Filter out undefined values and url
-    Object.keys(completedParams).forEach(
-        (key) =>
-            (completedParams[key] === undefined || key === 'url') && delete completedParams[key]
+    // Delete url from QP
+    delete queryParams['url'];
+
+    // Filter out undefined values
+    Object.keys(queryParams).forEach(
+        (key) => queryParams[key] === undefined && delete queryParams[key]
     );
 
-    const queryParams = new URLSearchParams({
-        ...completedParams
+    const queryParamsString = new URLSearchParams({
+        ...queryParams
     }).toString();
 
-    return queryParams.length ? `${url}?${queryParams}` : url;
+    return queryParamsString ? `${url}?${queryParamsString}` : url;
 }
 
 /**

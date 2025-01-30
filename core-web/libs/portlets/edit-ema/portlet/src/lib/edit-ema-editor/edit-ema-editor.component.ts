@@ -881,7 +881,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 } else {
                     this.uveStore.loadPageAsset({
                         url: payload.url,
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        personaId: DEFAULT_PERSONA.identifier
                     });
                 }
             },
