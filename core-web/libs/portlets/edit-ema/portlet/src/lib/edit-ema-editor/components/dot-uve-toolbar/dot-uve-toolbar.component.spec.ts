@@ -55,7 +55,6 @@ const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&langu
 
 const params = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
-const MOCKED_DATE = new Date('2025-01-29');
 
 const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
 const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
@@ -621,7 +620,6 @@ describe('DotUveToolbarComponent', () => {
             });
 
             store = spectator.inject(UVEStore, true);
-            jest.useFakeTimers().setSystemTime(MOCKED_DATE);
         });
 
         it('should have a device selector', () => {
@@ -670,8 +668,15 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should have a minDate of current date on 0h 0min 0s 0ms', () => {
+                baseUVEState.$isPreviewMode.set(false);
+                baseUVEState.$isLiveMode.set(true);
+                baseUVEState.socialMedia.set(null);
+                spectator.detectChanges();
+
                 const calendar = spectator.query('p-calendar');
-                const expectedMinDate = new Date(MOCKED_DATE);
+
+                const expectedMinDate = new Date(fixedDate);
+
                 expectedMinDate.setHours(0, 0, 0, 0);
 
                 expect(calendar.getAttribute('ng-reflect-min-date')).toBeDefined();
