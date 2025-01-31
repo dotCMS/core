@@ -81,6 +81,7 @@ export class DotExperimentsConfigurationVariantsComponent {
     protected readonly maxInputTitleLength = MAX_INPUT_TITLE_LENGTH;
     protected readonly DotExperimentStatusList = DotExperimentStatus;
     private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
+    protected readonly url = this.getUrl();
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -186,5 +187,35 @@ export class DotExperimentsConfigurationVariantsComponent {
         if (this.componentRef) {
             this.sidebarHost.viewContainerRef.clear();
         }
+    }
+
+    private getUrl(): string {
+        const firstUrl = window.location.href;
+        const splitUrl = firstUrl.split('url=')[1].replace("&","?").replace(/%3A/g, ':').replace(/%2F/g, '/');
+
+        let finalUrl: string;
+
+
+        let url: URL;
+
+        try {
+            // Sometimes the host is specified in the url so this will work
+            url = new URL(
+                `${splitUrl}${
+                    splitUrl.indexOf('?') != -1 ? '&' : '?'
+                }disabledNavigateMode=true&mode=LIVE`
+            );
+        } catch {
+            // In case it is not a valid URL, we will use the current location
+            url = new URL(
+                `${window.location.origin}/${splitUrl}${
+                    splitUrl.indexOf('?') != -1 ? '&' : '?'
+                }disabledNavigateMode=true&mode=LIVE`
+            );
+        } finally {
+            finalUrl = url.toString();
+        }
+
+        return finalUrl;
     }
 }
