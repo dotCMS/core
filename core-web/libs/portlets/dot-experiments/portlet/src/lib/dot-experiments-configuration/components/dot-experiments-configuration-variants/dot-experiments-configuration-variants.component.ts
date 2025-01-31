@@ -191,10 +191,13 @@ export class DotExperimentsConfigurationVariantsComponent {
 
     private getUrl(): string {
         const firstUrl = window.location.href;
-        const splitUrl = firstUrl.split('url=')[1].replace("&","?").replace(/%3A/g, ':').replace(/%2F/g, '/');
+        const splitUrl = firstUrl
+            .split('url=')[1]
+            .replace('&', '?')
+            .replace(/%3A/g, ':')
+            .replace(/%2F/g, '/');
 
         let finalUrl: string;
-
 
         let url: URL;
 
