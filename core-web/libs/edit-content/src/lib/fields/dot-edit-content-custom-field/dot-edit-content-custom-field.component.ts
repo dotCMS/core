@@ -268,12 +268,10 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
 
         iframeEl.addEventListener('load', updateHeight);
 
-        // Crear un MutationObserver para detectar cambios en el contenido
         const observer = new MutationObserver(() => {
             requestAnimationFrame(updateHeight);
         });
 
-        // Observar cambios después de que el iframe cargue
         iframeEl.addEventListener('load', () => {
             const body = iframeEl.contentWindow?.document.body;
             if (body) {
