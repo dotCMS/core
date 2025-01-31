@@ -11,7 +11,7 @@ import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing'
 
 import { withUVEToolbar } from './withUVEToolbar';
 
-import { DotPageApiService } from '../../../../services/dot-page-api.service';
+import { DotPageApiService, PERSONA_KEY } from '../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
@@ -20,8 +20,8 @@ import { Orientation, UVEState } from '../../../models';
 const pageParams = {
     url: 'test-url',
     language_id: '1',
-    'com.dotmarketing.persona.id': 'dot:persona',
     variantName: 'DEFAULT',
+    [PERSONA_KEY]: 'dot:persona',
     clientHost: 'http://localhost:3000'
 };
 

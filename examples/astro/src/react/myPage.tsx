@@ -18,7 +18,7 @@ export type MyPageProps = {
 };
 
 export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
-  // pageAsset = usePageAsset(pageAsset);
+  pageAsset = usePageAsset(pageAsset);
 
   if (!pageAsset) {
     return <NotFound />;

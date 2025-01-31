@@ -30,7 +30,7 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -39,6 +39,7 @@ import {
     checkClientHostAccess,
     getAllowedPageParams,
     getTargetUrl,
+    getUserFriendlyQP,
     sanitizeURL,
     shouldNavigate
 } from '../utils';
@@ -109,7 +110,7 @@ export class DotEmaShellComponent implements OnInit {
         }
 
         const queryParams = {
-            ...(pageParams ?? {}),
+            ...getUserFriendlyQP(pageParams ?? {}),
             ...(viewParams ?? {})
         };
 
@@ -118,11 +119,9 @@ export class DotEmaShellComponent implements OnInit {
 
     ngOnInit(): void {
         const params = this.#getPageParams();
-
         const viewParams = this.#getViewParams(params.editorMode);
 
         this.uveStore.patchViewParams(viewParams);
-
         this.uveStore.loadPageAsset(params);
 
         // We need to skip one because it's the initial value
@@ -260,6 +259,11 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     #updateLocation(queryParams: Params = {}): void {
+        // Delete default persona from UI
+        if (queryParams.personaId === DEFAULT_PERSONA.identifier) {
+            delete queryParams.personaId;
+        }
+
         const urlTree = this.#router.createUrlTree([], { queryParams });
         this.#location.go(urlTree.toString());
     }

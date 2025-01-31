@@ -45,7 +45,7 @@ import { DotEmaShellComponent } from './dot-ema-shell.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService, PERSONA_KEY } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
@@ -115,7 +115,7 @@ const INITIAL_PAGE_PARAMS = {
     language_id: 1,
     url: 'index',
     variantName: 'DEFAULT',
-    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+    [PERSONA_KEY]: 'modes.persona.no.persona',
     editorMode: UVE_MODE.EDIT
 };
 
@@ -330,7 +330,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'index' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                    '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit'
                 );
             });
 
@@ -355,7 +355,7 @@ describe('DotEmaShellComponent', () => {
                     url: 'some-url/some-nested-url'
                 });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&editorMode=edit'
                 );
             });
 
@@ -376,7 +376,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&editorMode=edit'
                 );
             });
         });
@@ -477,7 +477,7 @@ describe('DotEmaShellComponent', () => {
             expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyLocation).toHaveBeenCalledWith(
-                '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit'
             );
         });
 
@@ -530,24 +530,24 @@ describe('DotEmaShellComponent', () => {
             beforeEach(() => spectator.detectChanges());
 
             it('should update parms when loadPage is triggered', () => {
-                const newParams = {
+                const userFriendlyParams = {
                     language_id: 2,
                     url: 'my-awesome-page',
                     variantName: 'DEFAULT',
-                    'com.dotmarketing.persona.id': 'SomeCoolDude',
-                    editorMode: UVE_MODE.EDIT
+                    editorMode: UVE_MODE.EDIT,
+                    personaId: 'SomeCoolDude'
                 };
 
-                const url = router.createUrlTree([], { queryParams: newParams });
+                const url = router.createUrlTree([], { queryParams: userFriendlyParams });
 
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const spyUrlTree = jest.spyOn(router, 'createUrlTree');
                 const spyLocation = jest.spyOn(location, 'go');
 
-                store.loadPageAsset(newParams);
+                store.loadPageAsset(userFriendlyParams);
                 spectator.detectChanges();
-                expect(spyStoreLoadPage).toHaveBeenCalledWith(newParams);
-                expect(spyUrlTree).toHaveBeenCalledWith([], { queryParams: newParams });
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(userFriendlyParams);
+                expect(spyUrlTree).toHaveBeenCalledWith([], { queryParams: userFriendlyParams });
                 expect(spyLocation).toHaveBeenCalledWith(url.toString());
             });
         });
@@ -836,7 +836,7 @@ describe('DotEmaShellComponent', () => {
                 store.loadPageAsset({
                     url: '/test-url',
                     language_id: '1',
-                    'com.dotmarketing.persona.id': '1'
+                    [PERSONA_KEY]: '1'
                 });
 
                 spectator.detectChanges();

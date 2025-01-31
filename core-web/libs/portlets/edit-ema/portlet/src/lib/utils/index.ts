@@ -13,7 +13,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageAssetKeys, DotPageApiParams, PERSONA_KEY } from '../services/dot-page-api.service';
 import { BASE_IFRAME_MEASURE_UNIT, COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
@@ -224,19 +224,8 @@ export const getPersonalization = (persona: Record<string, string>) => {
  * @param {Partial<DotPageAssetParams>} params
  * @return {*}  {string}
  */
-export function createPageApiUrlWithQueryParams(
-    url: string,
-    params: Partial<DotPageAssetParams>
-): string {
-    // Set default values
-    const personaId = params.personaId ?? DEFAULT_PERSONA.identifier;
-    const variantName = params.variantName ?? DEFAULT_VARIANT_ID;
-
-    const queryParams = {
-        ...params,
-        variantName,
-        'com.dotmarketing.persona.id': personaId
-    };
+export function buildPageApiUrl(url: string, params: Partial<DotPageAssetParams>): string {
+    const queryParams = { ...params };
 
     // Delete url from QP
     delete queryParams['url'];
@@ -691,4 +680,24 @@ export const cleanPageURL = (url: string) => {
     return url
         .replace(/^\/*(.*?)(\/+)?$/, '$1$2') // Capture content and optional trailing slash
         .replace(/\/+/g, '/'); // Clean up any remaining multiple slashes
+};
+
+/**
+ *
+ *
+ * @param {DotPageApiParams} queryParams
+ * @return {*}
+ */
+export const getUserFriendlyQP = (queryParams) => {
+    const copy = { ...queryParams };
+    if (copy[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
+        delete copy[PERSONA_KEY];
+    }
+
+    if (copy[PERSONA_KEY]) {
+        copy['personaId'] = copy[PERSONA_KEY];
+        delete copy[PERSONA_KEY];
+    }
+
+    return copy;
 };

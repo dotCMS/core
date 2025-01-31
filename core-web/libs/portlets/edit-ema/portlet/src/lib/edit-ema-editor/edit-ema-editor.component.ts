@@ -68,7 +68,7 @@ import {
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService, PERSONA_KEY } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
@@ -881,7 +881,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 } else {
                     this.uveStore.loadPageAsset({
                         url: payload.url,
-                        personaId: DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
                 }
             },

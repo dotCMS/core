@@ -8,7 +8,7 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createPageApiUrlWithQueryParams,
+    buildPageApiUrl,
     SDK_EDITOR_SCRIPT_SOURCE,
     computePageIsLocked,
     computeCanEditPage,
@@ -370,7 +370,7 @@ describe('utils functions', () => {
         });
     });
 
-    describe('createPageApiUrlWithQueryParams', () => {
+    describe('buildPageApiUrl', () => {
         it('should return the correct query params', () => {
             const queryParams = {
                 variantName: 'test',
@@ -379,7 +379,7 @@ describe('utils functions', () => {
                 experimentId: '123',
                 mode: PAGE_MODE.LIVE
             };
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            const result = buildPageApiUrl('test', queryParams);
             expect(result).toBe(
                 'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=LIVE'
             );
@@ -387,7 +387,7 @@ describe('utils functions', () => {
 
         it('should return url with default query params if no query params', () => {
             const queryParams = {};
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            const result = buildPageApiUrl('test', queryParams);
             expect(result).toBe(
                 'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
             );
@@ -398,7 +398,7 @@ describe('utils functions', () => {
                 variantName: 'test',
                 experimentId: undefined
             };
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            const result = buildPageApiUrl('test', queryParams);
             expect(result).toBe(
                 'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
             );

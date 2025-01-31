@@ -26,7 +26,6 @@ export interface PageRequestParamsProps {
  *
  * @param {PageRequestParamsProps} PageRequestParamsProps - The properties for the page request.
  * @returns {PageApiOptions} The options for the page API.
- * @deprecated
  * @example
  * ```ts
  * const pageApiOptions = getPageRequestParams({ path: '/api/v1/page', params: queryParams });

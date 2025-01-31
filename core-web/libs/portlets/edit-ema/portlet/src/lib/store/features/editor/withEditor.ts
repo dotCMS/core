@@ -40,7 +40,7 @@ import {
     getPersonalization,
     areContainersEquals,
     getEditorStates,
-    createPageApiUrlWithQueryParams,
+    buildPageApiUrl,
     sanitizeURL,
     getWrapperMeasures
 } from '../../../utils';
@@ -55,7 +55,7 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
         return new String('');
     }
 
-    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
+    const pageAPIQueryParams = buildPageApiUrl(pageURI, params);
     const origin = params.clientHost || window.location.origin;
     const url = new URL(pageAPIQueryParams, origin);
 

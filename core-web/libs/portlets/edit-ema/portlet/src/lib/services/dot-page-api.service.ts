@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
@@ -22,7 +22,9 @@ import { UVE_MODE_TO_PAGE_MODE } from '../shared/consts';
 import { PAGE_MODE } from '../shared/enums';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
-import { cleanPageURL, createPageApiUrlWithQueryParams } from '../utils';
+import { cleanPageURL, buildPageApiUrl } from '../utils';
+
+export const PERSONA_KEY = 'com.dotmarketing.persona.id';
 
 export interface DotPageApiResponse {
     page: DotPage;
@@ -44,7 +46,7 @@ export interface DotPageApiResponse {
 export interface DotPageApiParams {
     url: string;
     language_id: string;
-    personaId: string;
+    [PERSONA_KEY]: string;
     variantName?: string;
     experimentId?: string;
     mode?: string;
@@ -63,7 +65,7 @@ export enum DotPageAssetKeys {
     EXPERIMENT_ID = 'experimentId',
     PUBLISH_DATE = 'publishDate',
     EDITOR_MODE = 'editorMode',
-    PERSONA_ID = 'personaId'
+    PERSONA_ID = PERSONA_KEY
 }
 
 export interface GetPersonasParams {
@@ -86,7 +88,8 @@ export interface PaginationData {
 
 @Injectable()
 export class DotPageApiService {
-    constructor(private http: HttpClient) {}
+    readonly #BASE_URL = '/api/v1/page';
+    readonly #http = inject(HttpClient);
 
     /**
      * Get a page from the Page API
@@ -96,26 +99,21 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     get(params: DotPageAssetParams): Observable<DotPageApiResponse> {
-        // Remove trailing and leading slashes
-        const { clientHost, editorMode, depth = '0', ...restParams } = params;
+        const { clientHost, editorMode, depth, ...restParams } = params;
+        const mode = UVE_MODE_TO_PAGE_MODE[editorMode] ?? PAGE_MODE.EDIT;
+        const pageType = clientHost ? 'json' : 'render';
 
         const url = cleanPageURL(params.url);
-
-        const pageType = clientHost ? 'json' : 'render';
-        const mode = UVE_MODE_TO_PAGE_MODE[editorMode] ?? PAGE_MODE.EDIT;
-
-        const pageApiUrl = createPageApiUrlWithQueryParams(url, {
-            depth,
+        const pageApiUrl = buildPageApiUrl(url, {
             mode,
+            depth,
             ...restParams
         });
 
-        const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;
-
-        return this.http
+        return this.#http
             .get<{
                 entity: DotPageApiResponse;
-            }>(apiUrl)
+            }>(`${this.#BASE_URL}/${pageType}/${pageApiUrl}`)
             .pipe(pluck('entity'));
     }
 
@@ -129,8 +127,8 @@ export class DotPageApiService {
     save({ pageContainers, pageId, params }: SavePagePayload): Observable<unknown> {
         const variantName = params.variantName ?? DEFAULT_VARIANT_ID;
 
-        return this.http
-            .post(`/api/v1/page/${pageId}/content?variantName=${variantName}`, pageContainers)
+        return this.#http
+            .post(`${this.#BASE_URL}/${pageId}/content?variantName=${variantName}`, pageContainers)
             .pipe(catchError(() => EMPTY));
     }
 
@@ -149,7 +147,7 @@ export class DotPageApiService {
     }: GetPersonasParams): Observable<GetPersonasResponse> {
         const url = this.getPersonasURL({ pageId, filter, page, perPage });
 
-        return this.http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
+        return this.#http.get<{ entity: DotPersona[]; pagination: PaginationData }>(url).pipe(
             map((res: { entity: DotPersona[]; pagination: PaginationData }) => ({
                 data: res.entity,
                 pagination: res.pagination
@@ -166,31 +164,11 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     getFormIndetifier(containerId: string, formId: string): Observable<string> {
-        return this.http
+        return this.#http
             .get<{
                 entity: { content: { idenfitier: string } };
             }>(`/api/v1/containers/form/${formId}?containerId=${containerId}`)
             .pipe(pluck('entity', 'content', 'identifier'));
-    }
-
-    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
-        const apiUrl = `/api/v1/page/${pageId}/personas?`;
-
-        const queryParams = new URLSearchParams({
-            perper_page: perPage.toString(),
-            respectFrontEndRoles: 'true',
-            variantName: 'DEFAULT'
-        });
-
-        if (filter) {
-            queryParams.set('filter', filter);
-        }
-
-        if (page) {
-            queryParams.set('page', page.toString());
-        }
-
-        return apiUrl + queryParams.toString();
     }
 
     /**
@@ -201,7 +179,7 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
-        return this.http.put(
+        return this.#http.put(
             `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
             { contentlet }
         );
@@ -221,7 +199,7 @@ export class DotPageApiService {
             dotcachettl: '0' // Bypasses GraphQL cache
         };
 
-        return this.http
+        return this.#http
             .post<{
                 data: { page: Record<string, unknown> };
             }>('/api/v1/graphql', { query }, { headers })
@@ -251,5 +229,25 @@ export class DotPageApiService {
         }
 
         return this.getGraphQLPage(query);
+    }
+
+    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
+        const apiUrl = `${this.#BASE_URL}/${pageId}/personas?`;
+
+        const queryParams = new URLSearchParams({
+            perper_page: perPage.toString(),
+            respectFrontEndRoles: 'true',
+            variantName: 'DEFAULT'
+        });
+
+        if (filter) {
+            queryParams.set('filter', filter);
+        }
+
+        if (page) {
+            queryParams.set('page', page.toString());
+        }
+
+        return apiUrl + queryParams.toString();
     }
 }

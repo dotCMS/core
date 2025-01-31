@@ -36,7 +36,7 @@ import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService, PERSONA_KEY } from '../../../services/dot-page-api.service';
 import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
@@ -47,7 +47,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import {
     createFavoritePagesURL,
     createFullURL,
-    createPageApiUrlWithQueryParams,
+    buildPageApiUrl,
     sanitizeURL
 } from '../../../utils';
 
@@ -56,7 +56,7 @@ const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&langu
 const params = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
 
-const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
+const pageAPIQueryParams = buildPageApiUrl(url, params);
 const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
 const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
 const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked;
@@ -470,9 +470,7 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                expect(spyloadPageAsset).toHaveBeenCalledWith({
-                    'com.dotmarketing.persona.id': '123'
-                });
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ [PERSONA_KEY]: '123' });
             });
 
             it('should personalize - confirmation', () => {

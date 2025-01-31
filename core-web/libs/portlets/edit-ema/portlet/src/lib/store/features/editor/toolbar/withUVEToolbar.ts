@@ -24,7 +24,7 @@ import {
     computePageIsLocked,
     createFavoritePagesURL,
     createFullURL,
-    createPageApiUrlWithQueryParams,
+    buildPageApiUrl,
     getIsDefaultVariant,
     getOrientation
 } from '../../../../utils';
@@ -62,7 +62,7 @@ export function withUVEToolbar() {
 
                 const experiment = store.experiment?.();
                 const pageAPIResponse = store.pageAPIResponse();
-                const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
+                const pageAPIQueryParams = buildPageApiUrl(url, params);
 
                 const pageAPI = `/api/v1/page/${
                     store.isTraditionalPage() ? 'render' : 'json'
@@ -150,7 +150,7 @@ export function withUVEToolbar() {
             $apiURL: computed<string>(() => {
                 const pageParams = store.pageParams();
                 const url = pageParams?.url;
-                const params = createPageApiUrlWithQueryParams(url, pageParams);
+                const params = buildPageApiUrl(url, pageParams);
 
                 const pageType = store.isTraditionalPage() ? 'render' : 'json';
                 const pageAPI = `/api/v1/page/${pageType}/${params}`;
