@@ -191,7 +191,20 @@ export class DotExperimentsConfigurationVariantsComponent {
 
     private getUrl(): string {
         const firstUrl = window.location.href;
-        const splitUrl = firstUrl
+
+        // Check if 'url=' exists in the current URL
+        if (!firstUrl.includes('url=')) {
+            return window.location.origin;
+        }
+
+        const splitUrl = firstUrl.split('url=')[1] || '';
+
+        // Ensure splitUrl is not empty before applying .replace()
+        if (!splitUrl.trim()) {
+            return window.location.origin;
+        }
+
+        const processedUrl = firstUrl
             .split('url=')[1]
             .replace('&', '?')
             .replace(/%3A/g, ':')
@@ -202,17 +215,17 @@ export class DotExperimentsConfigurationVariantsComponent {
         let url: URL;
 
         try {
-            // Sometimes the host is specified in the url so this will work
+            // Try parsing as a full URL
             url = new URL(
-                `${splitUrl}${
-                    splitUrl.indexOf('?') != -1 ? '&' : '?'
+                `${processedUrl}${
+                    processedUrl.indexOf('?') != -1 ? '&' : '?'
                 }disabledNavigateMode=true&mode=LIVE`
             );
         } catch {
-            // In case it is not a valid URL, we will use the current location
+            // Fallback to relative URL using window.location.origin
             url = new URL(
-                `${window.location.origin}/${splitUrl}${
-                    splitUrl.indexOf('?') != -1 ? '&' : '?'
+                `${window.location.origin}/${processedUrl}${
+                    processedUrl.indexOf('?') != -1 ? '&' : '?'
                 }disabledNavigateMode=true&mode=LIVE`
             );
         } finally {
