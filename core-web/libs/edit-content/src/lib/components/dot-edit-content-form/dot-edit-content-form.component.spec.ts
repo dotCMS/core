@@ -371,7 +371,7 @@ describe('DotFormComponent', () => {
                             text2: 'content text 2',
                             text3: 'default value modified',
                             multiselect: 'A,B,C',
-                            languageId: null,
+                            languageId: '',
                             identifier: null
                         }
                     }

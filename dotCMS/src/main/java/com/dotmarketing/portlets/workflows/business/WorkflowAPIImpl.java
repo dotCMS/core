@@ -1787,7 +1787,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		for (final WorkflowAction workflowAction : unfilteredActions) {
 
 			if (this.workflowStatusFilter.filter(workflowAction,
-					new ContentletStateOptions(isNew, isPublished, isArchived, canLock, isLocked, renderMode))) {
+					new ContentletStateOptions(isNew, isPublished, isArchived,
+							canLock(canLock, workflowAction), isLocked, renderMode))) {
 
             	actions.add(workflowAction);
             }
@@ -1796,6 +1797,33 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         return actions.build();
 	}
 
+	/**
+	 * Figure out the can lock, if the can lock is false, check if the workflow has
+	 * 1) the lock action
+	 * 2) if forze lock is enabled
+	 * if both conditions are meet, then the can lock is true
+	 * @param canLock
+	 * @param workflowAction
+	 * @return boolean
+	 */
+	private boolean canLock(final boolean canLock, final WorkflowAction workflowAction) {
+
+		if (!canLock && Objects.nonNull(workflowAction)) {
+
+			final List<WorkflowActionClass> actionClasses = Try.of(()->this.findActionClasses(workflowAction)).getOrNull();
+			if(Objects.nonNull(actionClasses)) {
+
+				return actionClasses.stream().filter(actionClass -> actionClass.getClazz().equals(CheckinContentActionlet.class.getName()))
+						.map(actionClass -> Try.of(()->this.findParamsForActionClass(actionClass)).getOrNull())
+						.filter(workflowActionClassParameterMap -> Objects.nonNull(workflowActionClassParameterMap)  &&
+								workflowActionClassParameterMap.containsKey(CheckinContentActionlet.FORCE_UNLOCK_ALLOWED))
+						.anyMatch(workflowActionClassParameterMap -> "true".equalsIgnoreCase(
+								workflowActionClassParameterMap.get(CheckinContentActionlet.FORCE_UNLOCK_ALLOWED).getValue()));
+			}
+		}
+
+		return canLock;
+	}
 
 
 	/**
@@ -2657,21 +2685,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			return Collections.emptyList();
 		}
 
-
-		boolean canLock      = false;
-		boolean isLocked     = false;
-		boolean isPublish    = false;
-		boolean isArchived   = false;
-
-		try {
-
-			canLock      = APILocator.getContentletAPI().canLock(contentlet, user);
-			isLocked     = isNew? true :  APILocator.getVersionableAPI().isLocked(contentlet);
-			isPublish    = isNew? false:  APILocator.getVersionableAPI().hasLiveVersion(contentlet);
-			isArchived   = isNew? false:  APILocator.getVersionableAPI().isDeleted(contentlet);
-		} catch(Exception e) {
-
-		}
+		final boolean canLock    = Try.of(()->APILocator.getContentletAPI().canLock(contentlet, user)).getOrElse(false);
+		final boolean isLocked   = isNew? true :  Try.of(()->APILocator.getVersionableAPI().isLocked(contentlet)).getOrElse(false);
+		final boolean isPublish  = isNew? false:  Try.of(()->APILocator.getVersionableAPI().hasLiveVersion(contentlet)).getOrElse(false);
+		final boolean isArchived = isNew? false:  Try.of(()->APILocator.getVersionableAPI().isDeleted(contentlet)).getOrElse(false);
 
 		final List<WorkflowStep> steps = findStepsByContentlet(contentlet, false);
 

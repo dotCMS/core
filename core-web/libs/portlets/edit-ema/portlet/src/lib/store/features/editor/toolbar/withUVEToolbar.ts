@@ -10,7 +10,12 @@ import {
 import { computed } from '@angular/core';
 
 import { UVE_MODE } from '@dotcms/client';
-import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotExperimentStatus,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
 
 import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
@@ -109,11 +114,12 @@ export function withUVEToolbar() {
                     unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
-
+            $urlContentMap: computed<DotCMSContentlet>(() => {
+                return store.pageAPIResponse()?.urlContentMap;
+            }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
                 const currentUser = store.currentUser();
-                const isPreviewMode = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
                 const isLocked = computePageIsLocked(pageAPIResponse.page, currentUser);
                 const info = {
                     message: pageAPIResponse.page.canLock
@@ -124,7 +130,7 @@ export function withUVEToolbar() {
 
                 const disabled = !pageAPIResponse.page.canLock;
 
-                return !isPreviewMode && isLocked
+                return isLocked
                     ? {
                           inode: pageAPIResponse.page.inode,
                           loading: store.status() === UVE_STATUS.LOADING,
@@ -153,7 +159,7 @@ export function withUVEToolbar() {
             }),
             $infoDisplayProps: computed<InfoOptions>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
-                const canEditPage = store.canEditPage();
+                const editorMode = store.pageParams()?.editorMode;
 
                 if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
                     const variantId = pageAPIResponse.viewAs.variantId;
@@ -165,11 +171,15 @@ export function withUVEToolbar() {
                             (variant) => variant.id === variantId
                         )?.name ?? 'Unknown Variant';
 
+                    // Now we base on the mode to show the correct message
+                    const message =
+                        editorMode === UVE_MODE.PREVIEW || editorMode === UVE_MODE.LIVE
+                            ? 'editpage.viewing.variant'
+                            : 'editpage.editing.variant';
+
                     return {
                         info: {
-                            message: canEditPage
-                                ? 'editpage.editing.variant'
-                                : 'editpage.viewing.variant',
+                            message,
                             args: [name]
                         },
                         icon: 'pi pi-file-edit',
@@ -178,24 +188,17 @@ export function withUVEToolbar() {
                     };
                 }
 
-                if (!pageAPIResponse.page.locked && !canEditPage) {
-                    return {
-                        icon: 'pi pi-exclamation-circle warning',
-                        id: 'no-permission',
-                        info: { message: 'editema.dont.have.edit.permission', args: [] }
-                    };
-                }
-
                 return null;
             }),
             $showWorkflowsActions: computed<boolean>(() => {
                 const isPreviewMode = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
+                const isLiveMode = store.pageParams()?.editorMode === UVE_MODE.LIVE;
 
                 const isDefaultVariant = getIsDefaultVariant(
                     store.pageAPIResponse()?.viewAs.variantId
                 );
 
-                return !isPreviewMode && isDefaultVariant;
+                return !isPreviewMode && !isLiveMode && isDefaultVariant;
             })
         })),
         withMethods((store) => ({

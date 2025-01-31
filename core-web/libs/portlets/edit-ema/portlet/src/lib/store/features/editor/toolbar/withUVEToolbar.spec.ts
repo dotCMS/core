@@ -105,12 +105,12 @@ describe('withEditor', () => {
             expect(store.$infoDisplayProps()).toEqual(null);
         });
 
-        describe('infoDisplayProps', () => {
+        describe('$infoDisplayProps', () => {
             it('should return null', () => {
                 expect(store.$infoDisplayProps()).toBe(null);
             });
             describe('variant', () => {
-                it('should show have text for variant', () => {
+                it('should show have text for variant when in edit mode', () => {
                     const currentExperiment = getRunningExperimentMock();
 
                     const variantID = currentExperiment.trafficProportion.variants.find(
@@ -125,7 +125,11 @@ describe('withEditor', () => {
                                 variantId: variantID
                             }
                         },
-                        experiment: currentExperiment
+                        experiment: currentExperiment,
+                        pageParams: {
+                            ...store.pageParams(),
+                            editorMode: UVE_MODE.EDIT
+                        }
                     });
 
                     expect(store.$infoDisplayProps()).toEqual({
@@ -138,65 +142,112 @@ describe('withEditor', () => {
                         actionIcon: 'pi pi-arrow-left'
                     });
                 });
-            });
+                it('should show have text for variant when in preview mode', () => {
+                    const currentExperiment = getRunningExperimentMock();
 
-            describe('edit permissions', () => {
-                it('should show label and icon for no permissions', () => {
+                    const variantID = currentExperiment.trafficProportion.variants.find(
+                        (variant) => variant.name !== DEFAULT_VARIANT_NAME
+                    ).id;
+
                     patchState(store, {
-                        canEditPage: false
-                    });
-
-                    expect(store.$infoDisplayProps()).toEqual({
-                        icon: 'pi pi-exclamation-circle warning',
-                        id: 'no-permission',
-                        info: {
-                            message: 'editema.dont.have.edit.permission',
-                            args: []
-                        }
-                    });
-                });
-            });
-
-            describe('$showWorkflowsActions', () => {
-                it('should return false when in preview mode', () => {
-                    patchState(store, {
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                variantId: variantID
+                            }
+                        },
+                        experiment: currentExperiment,
                         pageParams: {
                             ...store.pageParams(),
                             editorMode: UVE_MODE.PREVIEW
                         }
                     });
-                    expect(store.$showWorkflowsActions()).toBe(false);
+
+                    expect(store.$infoDisplayProps()).toEqual({
+                        icon: 'pi pi-file-edit',
+                        id: 'variant',
+                        info: {
+                            message: 'editpage.viewing.variant',
+                            args: ['Variant A']
+                        },
+                        actionIcon: 'pi pi-arrow-left'
+                    });
                 });
 
-                it('should return true when not in preview mode and is default variant', () => {
+                it('should show have text for variant when in live mode', () => {
+                    const currentExperiment = getRunningExperimentMock();
+
+                    const variantID = currentExperiment.trafficProportion.variants.find(
+                        (variant) => variant.name !== DEFAULT_VARIANT_NAME
+                    ).id;
+
                     patchState(store, {
+                        pageAPIResponse: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                variantId: variantID
+                            }
+                        },
+                        experiment: currentExperiment,
                         pageParams: {
                             ...store.pageParams(),
-                            editorMode: UVE_MODE.EDIT
-                        },
-                        pageAPIResponse: {
-                            ...store.pageAPIResponse(),
-                            viewAs: {
-                                ...store.pageAPIResponse().viewAs,
-                                variantId: DEFAULT_VARIANT_ID
-                            }
+                            editorMode: UVE_MODE.LIVE
                         }
                     });
-                    expect(store.$showWorkflowsActions()).toBe(true);
-                });
 
-                it('should return false when not in preview mode and is not default variant', () => {
-                    patchState(store, {
-                        pageAPIResponse: {
-                            ...store.pageAPIResponse(),
-                            viewAs: {
-                                ...store.pageAPIResponse().viewAs,
-                                variantId: 'some-other-variant'
-                            }
-                        }
+                    expect(store.$infoDisplayProps()).toEqual({
+                        icon: 'pi pi-file-edit',
+                        id: 'variant',
+                        info: {
+                            message: 'editpage.viewing.variant',
+                            args: ['Variant A']
+                        },
+                        actionIcon: 'pi pi-arrow-left'
                     });
-                    expect(store.$showWorkflowsActions()).toBe(false);
                 });
+            });
+        });
+        describe('$showWorkflowsActions', () => {
+            it('should return false when in preview mode', () => {
+                patchState(store, {
+                    pageParams: {
+                        ...store.pageParams(),
+                        editorMode: UVE_MODE.PREVIEW
+                    }
+                });
+                expect(store.$showWorkflowsActions()).toBe(false);
+            });
+
+            it('should return true when not in preview mode and is default variant', () => {
+                patchState(store, {
+                    pageParams: {
+                        ...store.pageParams(),
+                        editorMode: UVE_MODE.EDIT
+                    },
+                    pageAPIResponse: {
+                        ...store.pageAPIResponse(),
+                        viewAs: {
+                            ...store.pageAPIResponse().viewAs,
+                            variantId: DEFAULT_VARIANT_ID
+                        }
+                    }
+                });
+                expect(store.$showWorkflowsActions()).toBe(true);
+            });
+
+            it('should return false when not in preview mode and is not default variant', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...store.pageAPIResponse(),
+                        viewAs: {
+                            ...store.pageAPIResponse().viewAs,
+                            variantId: 'some-other-variant'
+                        }
+                    }
+                });
+                expect(store.$showWorkflowsActions()).toBe(false);
             });
         });
 
@@ -234,14 +285,15 @@ describe('withEditor', () => {
                 expect(store.$unlockButton()).toBe(null);
             });
 
-            it('should be null if the page is locked but mode is preview', () => {
+            it('should return the unlock button if the page is locked but mode is preview', () => {
                 patchState(store, {
                     pageAPIResponse: {
                         ...store.pageAPIResponse(),
                         page: {
                             ...store.pageAPIResponse().page,
                             locked: true,
-                            lockedBy: '123'
+                            lockedBy: '123',
+                            lockedByName: 'John Doe'
                         }
                     },
                     pageParams: {
@@ -250,7 +302,43 @@ describe('withEditor', () => {
                     }
                 });
 
-                expect(store.$unlockButton()).toBe(null);
+                expect(store.$unlockButton()).toEqual({
+                    inode: store.pageAPIResponse().page.inode,
+                    disabled: false,
+                    loading: false,
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
+            });
+
+            it('should return the unlock button if the page is locked but mode is live', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...store.pageAPIResponse(),
+                        page: {
+                            ...store.pageAPIResponse().page,
+                            locked: true,
+                            lockedBy: '123',
+                            lockedByName: 'John Doe'
+                        }
+                    },
+                    pageParams: {
+                        ...store.pageParams(),
+                        editorMode: UVE_MODE.LIVE
+                    }
+                });
+
+                expect(store.$unlockButton()).toEqual({
+                    inode: store.pageAPIResponse().page.inode,
+                    disabled: false,
+                    loading: false,
+                    info: {
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: ['John Doe']
+                    }
+                });
             });
 
             it('should show label and icon when page is lock for editing and has unlock permission', () => {

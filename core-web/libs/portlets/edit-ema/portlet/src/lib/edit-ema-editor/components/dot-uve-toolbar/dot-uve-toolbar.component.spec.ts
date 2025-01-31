@@ -9,7 +9,6 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotDevicesService,
@@ -28,6 +27,7 @@ import {
     mockDotDevices
 } from '@dotcms/utils-testing';
 
+import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
@@ -84,13 +84,13 @@ const baseUVEToolbarState = {
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
-    setSocialMedia: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     $apiURL: signal($apiURL),
     reloadCurrentPage: jest.fn(),
     loadPageAsset: jest.fn(),
     $isPreviewMode: signal(false),
+    $isLiveMode: signal(false),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
@@ -101,6 +101,7 @@ const baseUVEState = {
         device: undefined,
         orientation: undefined
     }),
+    $urlContentMap: signal(undefined),
     languages: signal([
         { id: 1, translated: true },
         { id: 2, translated: false },
@@ -166,7 +167,8 @@ describe('DotUveToolbarComponent', () => {
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaPersonaSelectorComponent),
             MockComponent(DotUveWorkflowActionsComponent),
-            MockComponent(DotUveDeviceSelectorComponent)
+            MockComponent(DotUveDeviceSelectorComponent),
+            MockComponent(DotEditorModeSelectorComponent)
         ],
         providers: [
             UVEStore,
@@ -250,6 +252,26 @@ describe('DotUveToolbarComponent', () => {
             expect(workflowActions).toBeTruthy();
         });
 
+        describe('Events', () => {
+            it('should emit editUrlContentMap', () => {
+                const contentlet = {
+                    identifier: '123',
+                    inode: '456',
+                    title: 'My super awesome blog post'
+                };
+                const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
+
+                baseUVEState.$urlContentMap.set(contentlet);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('edit-url-content-map'));
+
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(contentlet);
+            });
+        });
+
         describe('custom devices', () => {
             it('should get custom devices', () => {
                 expect(devicesService.get).toHaveBeenCalled();
@@ -260,6 +282,12 @@ describe('DotUveToolbarComponent', () => {
                     ...DEFAULT_DEVICES,
                     ...mockDotDevices
                 ]);
+            });
+        });
+
+        describe('editor mode selector', () => {
+            it('should have editor mode selector', () => {
+                expect(spectator.query(byTestId('uve-toolbar-editor-mode-selector'))).toBeTruthy();
             });
         });
 
@@ -395,23 +423,6 @@ describe('DotUveToolbarComponent', () => {
             it('should have api link button with correct href', () => {
                 const btn = spectator.query(byTestId('uve-toolbar-api-link'));
                 expect(btn.getAttribute('href')).toBe($apiURL);
-            });
-        });
-
-        describe('Preview', () => {
-            it('should have preview button', () => {
-                expect(spectator.query(byTestId('uve-toolbar-preview'))).toBeTruthy();
-            });
-
-            it('should call store.loadPageAsset with preview true', () => {
-                const spy = jest.spyOn(store, 'loadPageAsset');
-
-                spectator.click(byTestId('uve-toolbar-preview'));
-
-                expect(spy).toHaveBeenCalledWith({
-                    editorMode: UVE_MODE.PREVIEW,
-                    publishDate: fixedDate.toISOString()
-                });
             });
         });
 
@@ -570,43 +581,45 @@ describe('DotUveToolbarComponent', () => {
             store = spectator.inject(UVEStore, true);
         });
 
-        describe('Close Preview Mode', () => {
-            it('should have api link button', () => {
-                expect(spectator.query(byTestId('close-preview-mode'))).toBeTruthy();
-            });
+        it('should have a device selector', () => {
+            expect(spectator.query(byTestId('uve-toolbar-device-selector'))).toBeTruthy();
+        });
 
-            it('should call store.loadPageAsset without editorMode and publishDate', () => {
-                const spy = jest.spyOn(store, 'loadPageAsset');
+        it('should not have experiments', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeFalsy();
+        });
 
-                spectator.click(byTestId('close-preview-mode'));
+        it('should not have a dot-uve-workflow-actions component', () => {
+            baseUVEState.$showWorkflowsActions.set(false);
+            spectator.detectChanges();
 
-                spectator.detectChanges();
-                expect(spy).toHaveBeenCalledWith({ editorMode: undefined, publishDate: undefined });
-            });
+            const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
 
-            it('should call store.loadPageAsset when datePreview model is updated', () => {
-                const spy = jest.spyOn(store, 'loadPageAsset');
+            expect(workflowActions).toBeNull();
+        });
 
-                spectator.debugElement.componentInstance.$previewDate.set(new Date('2024-02-01'));
-                spectator.detectChanges();
-
-                expect(spy).toHaveBeenCalledWith({
-                    editorMode: UVE_MODE.PREVIEW,
-                    publishDate: new Date('2024-02-01').toISOString()
-                });
-            });
-
-            it('should call store.loadPageAsset with currentDate when datePreview model is updated with a past date', () => {
-                const spy = jest.spyOn(store, 'loadPageAsset');
-
-                spectator.debugElement.componentInstance.$previewDate.set(new Date('2023-02-01'));
+        describe('calendar', () => {
+            it('should not show calendar when in preview mode', () => {
                 spectator.detectChanges();
 
-                expect(spy).toHaveBeenCalledWith({
-                    editorMode: UVE_MODE.PREVIEW,
-                    publishDate: fixedDate.toISOString()
-                });
+                expect(spectator.query('p-calendar')).toBeFalsy();
             });
+        });
+    });
+    describe('live', () => {
+        const previewBaseUveState = {
+            ...baseUVEState,
+            $isPreviewMode: signal(false),
+            $isLiveMode: signal(true)
+        };
+
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [mockProvider(UVEStore, previewBaseUveState)]
+            });
+
+            store = spectator.inject(UVEStore, true);
         });
 
         it('should have a device selector', () => {
@@ -628,7 +641,11 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('calendar', () => {
-            it('should show calendar when in preview mode and socialMedia is false', () => {
+            it('should show calendar when in live mode', () => {
+                expect(spectator.query('p-calendar')).toBeTruthy();
+            });
+
+            it('should show calendar when in live mode and socialMedia is false', () => {
                 baseUVEState.socialMedia.set(null);
                 spectator.detectChanges();
 
@@ -642,11 +659,30 @@ describe('DotUveToolbarComponent', () => {
                 expect(spectator.query('p-calendar')).toBeFalsy();
             });
 
-            it('should not show calendar when not in preview mode', () => {
+            it('should not show calendar when not in live mode', () => {
                 baseUVEState.$isPreviewMode.set(false);
+                baseUVEState.$isLiveMode.set(false);
                 spectator.detectChanges();
 
                 expect(spectator.query('p-calendar')).toBeFalsy();
+            });
+
+            it('should have a minDate of current date on 0h 0min 0s 0ms', () => {
+                baseUVEState.$isPreviewMode.set(false);
+                baseUVEState.$isLiveMode.set(true);
+                baseUVEState.socialMedia.set(null);
+                spectator.detectChanges();
+
+                const calendar = spectator.query('p-calendar');
+
+                const expectedMinDate = new Date(fixedDate);
+
+                expectedMinDate.setHours(0, 0, 0, 0);
+
+                expect(calendar.getAttribute('ng-reflect-min-date')).toBeDefined();
+                expect(new Date(calendar.getAttribute('ng-reflect-min-date'))).toEqual(
+                    expectedMinDate
+                );
             });
         });
     });

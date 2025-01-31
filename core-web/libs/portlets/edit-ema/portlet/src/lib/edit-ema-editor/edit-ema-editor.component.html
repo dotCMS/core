@@ -1,13 +1,9 @@
 @let ogTagsResults = ogTagsResults$;
 @let showSEOTool = $editorProps().seoResults && ogTagsResults;
 
-@if ($previewMode()) {
-    <dot-uve-toolbar (translatePage)="translatePage($event)" />
-} @else {
-    <dot-edit-ema-toolbar
-        (translatePage)="translatePage($event)"
-        (editUrlContentMap)="editContentMap($event)" />
-}
+<dot-uve-toolbar
+    (translatePage)="translatePage($event)"
+    (editUrlContentMap)="editContentMap($event)" />
 
 @if (showSEOTool) {
     <dot-results-seo-tool

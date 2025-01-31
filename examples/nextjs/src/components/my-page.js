@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import Activity from "./content-types/activity";
-import Banner from "./content-types/banner";
-import Blog from "./content-types/blog";
-import CalendarEvent from "./content-types/calendarEvent";
-import CallToAction from "./content-types/callToAction";
-import ImageComponent from "./content-types/image";
-import Product from "./content-types/product";
-import WebPageContent from "./content-types/webPageContent";
+import Activity from './content-types/activity';
+import Banner from './content-types/banner';
+import Blog from './content-types/blog';
+import CalendarEvent from './content-types/calendarEvent';
+import CallToAction from './content-types/callToAction';
+import ImageComponent from './content-types/image';
+import Product from './content-types/product';
+import WebPageContent from './content-types/webPageContent';
 
-import { DotcmsLayout } from "@dotcms/react";
-import { usePathname, useRouter } from "next/navigation";
-import { CustomNoComponent } from "./content-types/empty";
-import Footer from "./layout/footer/footer";
-import Header from "./layout/header/header";
-import Navigation from "./layout/navigation";
+import { DotcmsLayout } from '@dotcms/react';
+import { usePathname, useRouter } from 'next/navigation';
+import { CustomNoComponent } from './content-types/empty';
+import Footer from './layout/footer/footer';
+import Header from './layout/header/header';
+import Navigation from './layout/navigation';
 
-import NotFound from "@/app/not-found";
-import { withExperiments } from "@dotcms/experiments";
-import { usePageAsset } from "../hooks/usePageAsset";
+import NotFound from '@/app/not-found';
+import { withExperiments } from '@dotcms/experiments';
+import { usePageAsset } from '../hooks/usePageAsset';
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -27,7 +27,7 @@ import { usePageAsset } from "../hooks/usePageAsset";
 const experimentConfig = {
     apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY, // API key for experiments, should be securely stored
     server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
-    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG, // Debug mode for additional logging
+    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG // Debug mode for additional logging
 };
 
 // Mapping of components to DotCMS content types
@@ -40,7 +40,7 @@ const componentsMap = {
     Image: ImageComponent,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
-    CustomNoComponent: CustomNoComponent,
+    CustomNoComponent: CustomNoComponent
 };
 
 export function MyPage({ pageAsset, nav }) {
@@ -57,7 +57,7 @@ export function MyPage({ pageAsset, nav }) {
     const DotLayoutComponent = experimentConfig?.apiKey
         ? withExperiments(DotcmsLayout, {
               ...experimentConfig,
-              redirectFn: replace,
+              redirectFn: replace
           })
         : DotcmsLayout;
 
@@ -69,23 +69,21 @@ export function MyPage({ pageAsset, nav }) {
 
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
-            {pageAsset?.layout.header && (
-                <Header>{!!nav && <Navigation items={nav} />}</Header>
-            )}
+            {pageAsset?.layout.header && <Header>{!!nav && <Navigation items={nav} />}</Header>}
 
-            <main className="flex flex-col gap-8 m-auto">
+            <main className="container m-auto">
                 <DotLayoutComponent
                     pageContext={{
                         pageAsset,
-                        components: componentsMap,
+                        components: componentsMap
                     }}
                     config={{
                         pathname,
                         editor: {
                             params: {
-                                depth: 3,
-                            },
-                        },
+                                depth: 3
+                            }
+                        }
                     }}
                 />
             </main>

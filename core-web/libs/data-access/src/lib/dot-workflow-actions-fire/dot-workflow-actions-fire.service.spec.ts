@@ -256,7 +256,7 @@ describe('DotWorkflowActionsFireService', () => {
             });
 
         const req = spectator.expectOne(
-            '/api/v1/workflow/actions/new/fire?inode=123&indexPolicy=WAIT_FOR',
+            '/api/v1/workflow/actions/new/fire?indexPolicy=WAIT_FOR&inode=123',
             HttpMethod.PUT
         );
 

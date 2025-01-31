@@ -137,6 +137,24 @@ describe('DotPageApiService', () => {
                 .subscribe();
 
             spectator.expectOne(
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=PREVIEW_MODE',
+                HttpMethod.GET
+            );
+        });
+    });
+
+    describe('live', () => {
+        it("should request page in live mode if 'editorMode' is 'live'", () => {
+            spectator.service
+                .get({
+                    url: 'test-url',
+                    language_id: 'en',
+                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    editorMode: UVE_MODE.LIVE
+                })
+                .subscribe();
+
+            spectator.expectOne(
                 '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT&depth=0&mode=LIVE',
                 HttpMethod.GET
             );

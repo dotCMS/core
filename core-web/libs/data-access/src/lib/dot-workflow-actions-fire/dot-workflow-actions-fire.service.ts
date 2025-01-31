@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
@@ -52,15 +52,21 @@ export class DotWorkflowActionsFireService {
     fireTo<T = Record<string, string>>(
         options: DotFireActionOptions<T>
     ): Observable<DotCMSContentlet> {
-        const { actionId, inode, data } = options;
-        const queryInode = inode ? `inode=${inode}&` : '';
+        const { actionId, inode, data, identifier } = options;
+        let urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
+
+        if (inode) {
+            urlParams = urlParams.set('inode', inode);
+        }
+
+        if (identifier) {
+            urlParams = urlParams.set('identifier', identifier);
+        }
+
+        const url = `${this.BASE_URL}/actions/${actionId}/fire`;
 
         return this.httpClient
-            .put(
-                `${this.BASE_URL}/actions/${actionId}/fire?${queryInode}indexPolicy=WAIT_FOR`,
-                data,
-                { headers: this.defaultHeaders }
-            )
+            .put(url, data, { headers: this.defaultHeaders, params: urlParams })
             .pipe(pluck('entity'));
     }
 

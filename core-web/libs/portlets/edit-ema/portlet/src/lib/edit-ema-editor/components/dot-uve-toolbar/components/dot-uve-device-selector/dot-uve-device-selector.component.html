@@ -30,12 +30,10 @@
 
 @if ($menuItems().length) {
     <p-button
-        icon="pi pi-chevron-down"
+        icon="pi pi-angle-down"
         iconPos="right"
         [label]="$moreButtonLabel() | dm"
         [class.active]="$isMoreButtonActive()"
-        [pTooltip]="$moreButtonLabel() | dm"
-        tooltipPosition="bottom"
         styleClass="p-button-text p-2 p-button-sm"
         (click)="menu.toggle($event)"
         data-testId="more-button" />

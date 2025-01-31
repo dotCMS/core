@@ -6,13 +6,10 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    effect,
     EventEmitter,
     inject,
     Output,
     viewChild,
-    model,
-    untracked,
     Signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -34,9 +31,15 @@ import {
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
+import {
+    DotPersona,
+    DotLanguage,
+    DotDeviceListItem,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
@@ -71,7 +74,8 @@ import { UVEStore } from '../../../store/dot-uve.store';
         DotUveDeviceSelectorComponent,
         DotMessagePipe,
         DotUveWorkflowActionsComponent,
-        ChipModule
+        ChipModule,
+        DotEditorModeSelectorComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -83,6 +87,7 @@ export class DotUveToolbarComponent {
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
     @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+    @Output() editUrlContentMap = new EventEmitter<DotCMSContentlet>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -95,11 +100,13 @@ export class DotUveToolbarComponent {
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
+    readonly $isLiveMode = this.#store.$isLiveMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
+    readonly $urlContentMap = this.#store.$urlContentMap;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -108,37 +115,13 @@ export class DotUveToolbarComponent {
         }
     );
 
-    protected readonly CURRENT_DATE = new Date();
+    protected readonly $pageParams = this.#store.pageParams;
+    protected readonly $previewDate = computed<Date>(() => {
+        return this.$pageParams().publishDate
+            ? new Date(this.$pageParams().publishDate)
+            : new Date();
+    });
 
-    protected readonly publishDateParam = this.#store.pageParams().publishDate;
-    protected readonly $previewDate = model<Date>(
-        this.publishDateParam ? new Date(this.publishDateParam) : null
-    );
-
-    readonly $previewDateEffect = effect(
-        () => {
-            const previewDate = this.$previewDate();
-
-            if (!previewDate) {
-                return;
-            }
-
-            // If previewDate is minor that the CURRENT DATE, set previewDate to CURRENT DATE
-            if (previewDate < this.CURRENT_DATE) {
-                this.$previewDate.set(this.CURRENT_DATE);
-
-                return;
-            }
-
-            untracked(() => {
-                this.#store.loadPageAsset({
-                    editorMode: UVE_MODE.PREVIEW,
-                    publishDate: previewDate?.toISOString()
-                });
-            });
-        },
-        { allowSignalWrites: true }
-    );
     readonly $pageInode = computed(() => {
         return this.#store.pageAPIResponse()?.page.inode;
     });
@@ -146,28 +129,27 @@ export class DotUveToolbarComponent {
     readonly $actions = this.#store.workflowLoading;
     readonly $workflowLoding = this.#store.workflowLoading;
 
-    protected readonly date = new Date();
-
     defaultDevices = DEFAULT_DEVICES;
+    get MIN_DATE() {
+        const currentDate = new Date();
 
-    /**
-     * Initialize the preview mode
-     *
-     * @param {Date} publishDate
-     * @memberof DotUveToolbarComponent
-     */
-    protected triggerPreviewMode(publishDate: Date = new Date()) {
-        this.$previewDate.set(publishDate);
+        // We need to set this to 0 so the minDate does not collide with the previewDate value when we are initializing
+        // This prevents the input from being empty on init
+        currentDate.setHours(0, 0, 0, 0);
+
+        return currentDate;
     }
 
     /**
-     * Initialize the edit mode
-     *
+     * Fetch the page on a given date
+     * @param {Date} publishDate
      * @memberof DotUveToolbarComponent
      */
-    protected triggerEditMode() {
-        this.#store.clearDeviceAndSocialMedia();
-        this.#store.loadPageAsset({ editorMode: undefined, publishDate: undefined });
+    protected fetchPageOnDate(publishDate: Date = new Date()) {
+        this.#store.loadPageAsset({
+            editorMode: UVE_MODE.LIVE,
+            publishDate: publishDate?.toISOString()
+        });
     }
 
     /**
