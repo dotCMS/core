@@ -1231,6 +1231,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
             throws DotDataException {
 
         final String variant = UtilMethods.isSet(variantId) ? variantId : DEFAULT_VARIANT.name();
+
+        final Optional<Contentlet> timeMachine = contentletCache.getTimeMachine(timeMachineDate, identifier, variant);
+        if(timeMachine.isPresent()){
+           final Contentlet contentlet = timeMachine.get();
+           if(!CACHE_404_CONTENTLET.equals(contentlet.getInode())){
+              return contentlet;
+           } else {
+              return null;
+           }
+        }
+
         // Perhaps we should exclude here contents with only a working version and no live version whatsoever
         // To match what we did in the old time machine days
         // This logic is tied with a fragment of VTL code in ContainerLoader.java check it out
@@ -1258,8 +1269,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 .addParam(identifier)
                 .addParam(variant);
 
-        List<Contentlet> con = TransformerLocator.createContentletTransformer(dotConnect.loadObjectResults()).asList();
-                return con.isEmpty() ? null : con.get(0);
+        final List<Contentlet> con = TransformerLocator.createContentletTransformer(dotConnect.loadObjectResults()).asList();
+        if (!con.isEmpty()){
+            final Contentlet contentlet = con.get(0);
+            contentletCache.addTimeMachine(timeMachineDate, identifier, contentlet);
+            return contentlet;
+        }
+        contentletCache.addTimeMachine(timeMachineDate, identifier, cache404Content);
+        return null;
     }
 
 	@Override

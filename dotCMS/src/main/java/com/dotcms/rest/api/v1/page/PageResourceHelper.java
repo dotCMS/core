@@ -21,6 +21,7 @@ import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
@@ -189,6 +190,7 @@ public class PageResourceHelper implements Serializable {
                                 }
 
                                 new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
+                                CacheLocator.getContentletCache().invalidateTimeMachine(contentlet);
                             } catch (final DotDataException e) {
                                 Logger.warn(this, String.format("Contentlet with ID '%s' could not be invalidated " +
                                                                         "from cache: %s", contentletId,

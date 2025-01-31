@@ -13,6 +13,12 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import java.util.Date;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Jason Tesser
@@ -22,11 +28,14 @@ public class ContentletCacheImpl extends ContentletCache {
 
 	private DotCacheAdministrator cache;
 
-	private String primaryGroup = "ContentletCache";
+	private static final String primaryGroup = "ContentletCache";
 
-	private String translatedQueryGroup = "TranslatedQueryCache";
+	private static final String translatedQueryGroup = "TranslatedQueryCache";
 	// region's name for the cache
-	private String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, translatedQueryGroup};
+
+	private static final String timeMachineGroup = "TimeMachineCache";
+
+	private static final String[] groupNames = {primaryGroup, HostCache.PRIMARY_GROUP, translatedQueryGroup, timeMachineGroup};
 
 	public ContentletCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
@@ -160,4 +169,41 @@ public class ContentletCacheImpl extends ContentletCache {
     public Contentlet add(Contentlet content) {
         return add(content.getInode(), content);
     }
+
+	@SuppressWarnings("unchecked")
+	private Map<String, Contentlet> getTimeMachineByIdentifierCache(final String identifier) {
+
+		Map<String, Map<String, Contentlet>> byIdentifierCache =
+				(Map<String, Map<String, Contentlet>>) Try.of(()->cache.get(identifier, timeMachineGroup)).getOrElse(Map.of());
+
+		if (byIdentifierCache == null) {
+			byIdentifierCache = new ConcurrentHashMap<>();
+			cache.put(identifier, byIdentifierCache, timeMachineGroup);
+		}
+
+		return byIdentifierCache.computeIfAbsent(
+				identifier, k -> new ConcurrentHashMap<>());
+	}
+
+	@Override
+	public Contentlet addTimeMachine(final Date timeMachineDate, String identifier, final Contentlet content) {
+		final String key = content.getVariantId() + StringPool.COLON + timeMachineDate.getTime();
+		getTimeMachineByIdentifierCache(identifier).put(key, content);
+		return content;
+	}
+
+	@Override
+	public Optional<Contentlet> getTimeMachine(final Date timeMachineDate, final String identifier, final String variant) {
+		if(DbConnectionFactory.inTransaction()) {
+			Logger.debug(this, "In transaction, returning empty");
+			return Optional.empty();
+		}
+		final String key = variant + StringPool.COLON + timeMachineDate.getTime();
+		return Optional.ofNullable(getTimeMachineByIdentifierCache(identifier).get(key));
+	}
+
+	@Override
+	public void invalidateTimeMachine(Contentlet content) {
+        cache.remove(content.getIdentifier(), timeMachineGroup);
+	}
 }
