@@ -96,8 +96,22 @@ public class UniqueFieldDataBaseUtil {
 
 
     private final static String POPULATE_UNIQUE_FIELDS_VALUES_QUERY = "INSERT INTO unique_fields (unique_key_val, supporting_values) " +
-            "SELECT encode(sha256(CONCAT(content_type_id, field_var_name, language_id, field_value, " +
-            "                  CASE WHEN uniquePerSite = 'true' THEN host_id ELSE '' END)::bytea), 'hex') as unique_key_val, " +
+            "SELECT  encode(" +
+            "            sha256(" +
+            "                    convert_to(" +
+            "                            CONCAT(" +
+            "                                    content_type_id," +
+            "                                    field_var_name," +
+            "                                    language_id," +
+            "                                    COALESCE(host_id::text, '')," +
+            "                                    COALESCE(field_value::text, '')," +
+            "                                    CASE WHEN uniquePerSite = 'true' THEN COALESCE(host_id::text, '') ELSE '' END" +
+            "                            )," +
+            "                            'UTF8'" +
+            "                    )" +
+            "            )," +
+            "            'hex'" +
+            "       ) AS unique_key_val, " +
             "       json_build_object('" + CONTENT_TYPE_ID_ATTR + "', content_type_id, " +
                                     "'" + FIELD_VARIABLE_NAME_ATTR + "', field_var_name, " +
                                     "'" + LANGUAGE_ID_ATTR + "', language_id, " +
