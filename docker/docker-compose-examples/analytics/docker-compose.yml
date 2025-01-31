@@ -128,6 +128,10 @@ services:
       - CUBEJS_JWT_ALGS=RS256
       - CUBEJS_JWT_CLAIMS_NAMESPACE=https://dotcms.com/analytics
       - CUBEJS_LOG_LEVEL=debug
+      - CUBEJS_REFRESH_WORKER=true
+      - CUBEJS_SCHEDULED_REFRESH_TIME=true
+      - CUBEJS_OVERRIDE_CUSTOMER=customer1
+      - CUBEJS_OVERRIDE_CLUSTER=cluster1
     volumes:
       - cube_metastore:/cube/conf/.cubestore
       - ./setup/config/dev/cube/schema:/cube/conf/schema
