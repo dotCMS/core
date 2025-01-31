@@ -37,9 +37,8 @@ test.afterEach(async ({ page, request }) => {
 
 test.describe("site or folder field", () => {
   test("should save a site or folder field", async ({ page }) => {
-    const locatorField = page.getByTestId("field-siteOrFolderField");
-
-    await expect(locatorField).toBeVisible();
+    const locatorFieldLocator = page.getByTestId("field-siteOrFolderField");
+    await expect(locatorFieldLocator).toBeVisible();
 
     const newEditContentFormPage = new NewEditContentFormPage(page);
     const listingContentPage = new ListingContentPage(page);
@@ -50,6 +49,6 @@ test.describe("site or folder field", () => {
     await newEditContentFormPage.goToBack();
     await listingContentPage.clickFirstContentRow();
 
-    await expect(locatorField).toHaveText(`//${selectedFolder}`);
+    await expect(locatorFieldLocator).toHaveText(`//${selectedFolder}`);
   });
 });
