@@ -70,6 +70,11 @@ runs:
         echo "::group::Get current version"
         # This should be empty on the first run. Setting the NEXT_VERSION to 0.0.1-beta.1
         CURRENT_VERSION=$(npm view @dotcms/client dist-tags --json | jq -r '.beta')
+
+        if [ -z "$CURRENT_VERSION" ]; then
+          CURRENT_VERSION="0.0.1-beta.0"
+        fi
+
         echo "Current version: $CURRENT_VERSION"
         echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
         echo "::endgroup::"
@@ -81,19 +86,15 @@ runs:
        CURRENT_VERSION: ${{ steps.current_version.outputs.current_version }}
       run: |
         echo "::group::Calculate next version"
-        if [ -z "$CURRENT_VERSION" ]; then
-          NEXT_VERSION="0.0.1-beta.1"
-        else
-          VERSION_PARTS=(${CURRENT_VERSION//./ })
-          BASE_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
-          BETA_PART=${VERSION_PARTS[3]#*-}
-          BETA_NUMBER=${BETA_PART#*.}
-          NEW_BETA_NUMBER=$((BETA_NUMBER + 1))
-          NEXT_VERSION="${BASE_VERSION}.${NEW_BETA_NUMBER}"
-        fi
-          echo "Next version: $NEXT_VERSION"
-          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-          echo "::endgroup::"
+        VERSION_PARTS=(${CURRENT_VERSION//./ })
+        BASE_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
+        BETA_PART=${VERSION_PARTS[3]#*-}
+        BETA_NUMBER=${BETA_PART#*.}
+        NEW_BETA_NUMBER=$((BETA_NUMBER + 1))
+        NEXT_VERSION="${BASE_VERSION}.${NEW_BETA_NUMBER}"
+        echo "Next version: $NEXT_VERSION"
+        echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
 
       shell: bash
 
