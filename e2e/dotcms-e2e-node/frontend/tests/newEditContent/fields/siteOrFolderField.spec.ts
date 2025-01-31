@@ -36,7 +36,7 @@ test.afterEach(async ({ page, request }) => {
 });
 
 test.describe("site or folder field", () => {
-  test.skip("should save a site or folder field", async ({ page }) => {
+  test("should save a site or folder field", async ({ page }) => {
     const locatorField = page.getByTestId("field-siteOrFolderField");
 
     await expect(locatorField).toBeVisible();
