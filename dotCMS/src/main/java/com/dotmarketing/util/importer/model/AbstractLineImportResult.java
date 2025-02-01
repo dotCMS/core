@@ -1,7 +1,6 @@
 package com.dotmarketing.util.importer.model;
 
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
@@ -97,16 +96,6 @@ public interface AbstractLineImportResult extends Serializable {
      * @return List of categories assigned to the imported content
      */
     List<Category> categories();
-
-    /**
-     * @return Optional relationships configured for the imported content
-     */
-    Optional<ContentletRelationships> relationships();
-
-    /**
-     * @return Optional results from processing content relationships
-     */
-    Optional<RelationshipProcessingResult> relationshipResults();
 
     /**
      * @return List of inodes for all content saved during processing of this line
