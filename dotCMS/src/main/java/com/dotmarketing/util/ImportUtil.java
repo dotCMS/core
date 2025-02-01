@@ -3196,6 +3196,21 @@ public class ImportUtil {
         resultBuilder.addSavedInode(cont.getInode());
     }
 
+    /**
+     * Updates processing counters in the results using the provided values.
+     * <p>
+     * This method updates counters related to import operations. It increments different types of
+     * content based on whether the content is new or not, and under what conditions it should be
+     * considered as updated or duplicated.
+     *
+     * @param isNew             Indicates if the content is newly created.
+     * @param conditionValues   The condition value used for determining updates or duplicates.
+     * @param keyContentUpdated A set tracking condition values added as updated content to avoid
+     *                          duplicates.
+     * @param isMultilingual    Determines if the content is multilingual, affecting update
+     *                          handling.
+     * @param resultBuilder     The object to update counters based on import results.
+     */
     private static void updateCounters(final boolean isNew, final String conditionValues,
             final Set<String> keyContentUpdated, final boolean isMultilingual,
             final ProcessedContentResultBuilder resultBuilder) {
