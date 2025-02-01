@@ -216,18 +216,10 @@ public class ImportResultConverter {
 
         // Add line number if present
         message.lineNumber().ifPresent(line ->
-                sb.append("Line ").append(line).append(": "));
-
-        // Add field if present
-        message.field().ifPresent(field ->
-                sb.append("Field '").append(field).append("': "));
+                sb.append("Line #").append(line).append(": "));
 
         // Add main message
         sb.append(message.message());
-
-        // Add any invalid value
-        message.invalidValue().ifPresent(value ->
-                sb.append(" (value: '").append(value).append("')"));
 
         return sb.toString();
     }
