@@ -42,7 +42,7 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
         query: `
 {
    "measures":[
-      "request.count"
+      "request.totalRequest"
    ],
    "dimensions":[
       "request.identifier",
@@ -51,7 +51,7 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
       "request.url"
    ],
    "order":{
-      "request.count":"desc"
+      "request.totalRequest":"desc"
    }
 }`
     },
@@ -60,7 +60,7 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
         query: `
 {
    "measures":[
-      "request.count"
+      "request.totalRequest"
    ],
    "dimensions":[
       "request.identifier",
@@ -69,7 +69,7 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
       "request.url"
    ],
    "order":{
-      "request.count":"desc"
+      "request.totalRequest":"desc"
    },
    "timeDimensions":[
       {
@@ -78,19 +78,22 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
          "granularity":"day"
       }
    ]
-}`
+}
+`
     },
     {
         title: 'analytics.search.query.by.object.type',
         query: `
 {
-    "measures" : ["request.count"],
-    "dimensions":[
-        "request.baseType"
-    ],
-    "order": {
-        "request.count":  "desc"
-    }
+   "measures":[
+      "request.totalRequest"
+   ],
+   "dimensions":[
+      "request.baseType"
+   ],
+   "order":{
+      "request.totalRequest":"desc"
+   }
 }
 `
     },
@@ -98,21 +101,23 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
         title: 'analytics.search.query.by.average.request',
         query: `
 {
-    "dimensions" : ["request.createdAt"],
-    "measures":[
-        "request.fileRequestAverage",
-        "request.pageRequestAverage",
-        "request.otherRequestAverage"
-    ],
-    "order": {
-        "request.createdAt":  "desc"
-    },
-    "timeDimensions": [
-        {
-            "dimension": "request.createdAt",
-            "granularity": "day"
-        }
-    ]
+   "dimensions":[
+      "request.createdAt"
+   ],
+   "measures":[
+      "request.fileRequestAverage",
+      "request.pageRequestAverage",
+      "request.otherRequestAverage"
+   ],
+   "order":{
+      "request.createdAt":"desc"
+   },
+   "timeDimensions":[
+      {
+         "dimension":"request.createdAt",
+         "granularity":"day"
+      }
+   ]
 }
 `
     },
@@ -120,14 +125,17 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
         title: 'analytics.search.query.by.total.sessions',
         query: `
 {
-    "dimensions" : ["request.conHost", "request.conHostName"],
-    "measures":[
-        "request.totalSessions",
-        "request.totalRequest"
-    ],
-    "order": {
-        "request.conHostName":  "desc"
-    }
+   "dimensions":[
+      "request.conHost",
+      "request.conHostName"
+   ],
+   "measures":[
+      "request.totalSessions",
+      "request.totalRequest"
+   ],
+   "order":{
+      "request.conHostName":"desc"
+   }
 }
 `
     },
@@ -135,20 +143,25 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
         title: 'analytics.search.query.by.unique.request',
         query: `
 {
-    "dimensions" : ["request.identifier", "request.title"],
-    "measures":[
-        "request.totalSessions"
-    ],
-    "filters": [
+   "dimensions":[
+      "request.identifier",
+      "request.title"
+   ],
+   "measures":[
+      "request.totalSessions"
+   ],
+   "filters":[
       {
-        "member": "request.baseType",
-        "operator": "equals",
-        "values": ["HTMLPAGE"]
+         "member":"request.baseType",
+         "operator":"equals",
+         "values":[
+            "HTMLPAGE"
+         ]
       }
-    ],
-    "order": {
-        "request.totalSessions":  "desc"
-    }
+   ],
+   "order":{
+      "request.totalSessions":"desc"
+   }
 }
 `
     },
@@ -156,27 +169,33 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
         title: 'analytics.search.query.by.filter.event',
         query: `
 {
-    "dimensions" : ["request.identifier", "request.title", "request.url"],
-    "measures":[
-        "request.count"
-    ],
-    "filters": [
+   "dimensions":[
+      "request.identifier",
+      "request.title",
+      "request.url"
+   ],
+   "measures":[
+      "request.totalRequest"
+   ],
+   "filters":[
       {
-        "member": "request.baseType",
-        "operator": "equals",
-        "values": ["HTMLPAGE"]
+         "member":"request.baseType",
+         "operator":"equals",
+         "values":[
+            "HTMLPAGE"
+         ]
       }
-    ],
-    "order": {
-        "request.count":  "desc"
-    },
-    "timeDimensions": [
-        {
-        "dimension": "request.createdAt",
-        "granularity": "day",
-        "dateRange": "This week"
-        }
-  ]
+   ],
+   "order":{
+      "request.totalRequest":"desc"
+   },
+   "timeDimensions":[
+      {
+         "dimension":"request.createdAt",
+         "granularity":"day",
+         "dateRange":"This week"
+      }
+   ]
 }
 `
     },
@@ -184,20 +203,25 @@ export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
         title: 'analytics.search.query.by.blogs.hits',
         query: `
 {
-    "dimensions" : ["request.identifier", "request.title"],
-    "measures":[
-        "request.count"
-    ],
-    "filters": [
+   "dimensions":[
+      "request.identifier",
+      "request.title"
+   ],
+   "measures":[
+      "request.totalRequest"
+   ],
+   "filters":[
       {
-        "member": "request.contentTypeName",
-        "operator": "equals",
-        "values": ["Blog"]
+         "member":"request.contentTypeName",
+         "operator":"equals",
+         "values":[
+            "Blog"
+         ]
       }
-    ],
-    "order": {
-        "request.count":  "desc"
-    }
+   ],
+   "order":{
+      "request.totalRequest":"desc"
+   }
 }
 `
     }
