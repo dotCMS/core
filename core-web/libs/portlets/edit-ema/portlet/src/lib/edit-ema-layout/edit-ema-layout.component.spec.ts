@@ -34,6 +34,7 @@ import { EditEmaLayoutComponent } from './edit-ema-layout.component';
 
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
 
@@ -136,7 +137,7 @@ describe('EditEmaLayoutComponent', () => {
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',
-            'com.dotmarketing.persona.id': 'SuperCoolDude'
+            [PERSONA_KEY]: 'SuperCoolDude'
         });
 
         spectator.detectChanges();
