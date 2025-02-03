@@ -9,6 +9,8 @@ import {
 
 import { computed } from '@angular/core';
 
+import { ContentState } from './content.feature';
+
 import { getStoredUIState, saveStoreUIState } from '../../utils/functions.util';
 import { EditContentRootState } from '../edit-content.store';
 
@@ -29,13 +31,19 @@ export const uiInitialState: UIState = getStoredUIState();
  */
 export function withUI() {
     return signalStoreFeature(
-        { state: type<EditContentRootState>() },
+        { state: type<EditContentRootState & ContentState>() },
         withState({ uiState: uiInitialState }),
         withComputed((store) => ({
             /**
-             * Computed property that returns the currently active tab index
+             * Computed property that returns the currently active tab index.
+             * Returns 0 if the initial content state is 'new'.
              */
-            activeTab: computed(() => store.uiState().activeTab),
+            activeTab: computed(() => {
+                const initialState = store.initialContentletState();
+                const uiState = store.uiState();
+
+                return initialState === 'new' ? 0 : uiState.activeTab;
+            }),
             /**
              * Computed property that returns the sidebar visibility state
              */
