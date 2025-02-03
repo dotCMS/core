@@ -77,7 +77,7 @@ describe('SiteFieldStore', () => {
     describe('Initial State', () => {
         it('should have initial state', () => {
             expect(store.nodeSelected()).toBeNull();
-            expect(store.nodeExpaned()).toBeNull();
+            expect(store.nodeExpanded()).toBeNull();
             expect(store.tree()).toEqual([]);
             expect(store.status()).toBe(ComponentStatus.INIT);
             expect(store.error()).toBeNull();
@@ -177,7 +177,7 @@ describe('SiteFieldStore', () => {
             expect(dotEditContentService.getFoldersTreeNode).toHaveBeenCalledWith(
                 'demo.dotcms.com/parent'
             );
-            expect(store.nodeExpaned()).toEqual({
+            expect(store.nodeExpanded()).toEqual({
                 ...mockEvent.node,
                 leaf: true,
                 icon: 'pi pi-folder-open',
@@ -208,7 +208,7 @@ describe('SiteFieldStore', () => {
 
             store.loadChildren(mockEvent);
 
-            expect(store.nodeExpaned()).toBeNull();
+            expect(store.nodeExpanded()).toBeNull();
         });
     });
 

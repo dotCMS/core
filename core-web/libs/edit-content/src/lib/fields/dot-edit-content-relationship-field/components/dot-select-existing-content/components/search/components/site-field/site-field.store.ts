@@ -23,7 +23,7 @@ export const PEER_PAGE_LIMIT = 7000;
  */
 export type SiteFieldState = {
     nodeSelected: TreeNodeItem | null;
-    nodeExpaned: TreeNodeSelectItem['node'] | null;
+    nodeExpanded: TreeNodeSelectItem['node'] | null;
     tree: TreeNodeItem[];
     status: ComponentStatus;
     error: string | null;
@@ -34,7 +34,7 @@ export type SiteFieldState = {
  */
 export const initialState: SiteFieldState = {
     nodeSelected: null,
-    nodeExpaned: null,
+    nodeExpanded: null,
     tree: [],
     status: ComponentStatus.INIT,
     error: null
@@ -114,7 +114,7 @@ export const SiteFieldStore = signalStore(
                                 node.leaf = true;
                                 node.icon = 'pi pi-folder-open';
                                 node.children = [...folders];
-                                patchState(store, { nodeExpaned: node });
+                                patchState(store, { nodeExpanded: node });
                             })
                         );
                     })
