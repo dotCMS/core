@@ -14,7 +14,12 @@ import {
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
-import { BASE_IFRAME_MEASURE_UNIT, COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
+import {
+    BASE_IFRAME_MEASURE_UNIT,
+    COMMON_ERRORS,
+    DEFAULT_PERSONA,
+    PERSONA_KEY
+} from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
@@ -232,8 +237,7 @@ export function createPageApiUrlWithQueryParams(
     const completedParams = {
         ...params,
         language_id: params?.language_id ?? '1',
-        'com.dotmarketing.persona.id':
-            params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
+        [PERSONA_KEY]: params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
         variantName: params?.variantName ?? DEFAULT_VARIANT_ID
     };
 

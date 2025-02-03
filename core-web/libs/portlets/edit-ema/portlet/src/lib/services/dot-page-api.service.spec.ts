@@ -4,6 +4,8 @@ import { UVE_MODE } from '@dotcms/client';
 
 import { DotPageApiService } from './dot-page-api.service';
 
+import { PERSONA_KEY } from '../shared/consts';
+
 describe('DotPageApiService', () => {
     let spectator: SpectatorHttp<DotPageApiService>;
     const createHttp = createHttpFactory(DotPageApiService);
@@ -18,7 +20,7 @@ describe('DotPageApiService', () => {
                 .get({
                     url: 'test-url',
                     language_id: 'en',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    [PERSONA_KEY]: 'modes.persona.no.persona',
                     clientHost: 'some-host'
                 })
                 .subscribe();
@@ -36,7 +38,7 @@ describe('DotPageApiService', () => {
                 .get({
                     url: 'test-url',
                     language_id: 'en',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                    [PERSONA_KEY]: 'modes.persona.no.persona'
                 })
                 .subscribe();
 
@@ -55,7 +57,7 @@ describe('DotPageApiService', () => {
                 params: {
                     url: 'test-url',
                     language_id: 'en',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                    [PERSONA_KEY]: 'modes.persona.no.persona'
                 }
             })
             .subscribe();
@@ -71,7 +73,7 @@ describe('DotPageApiService', () => {
                 params: {
                     url: 'test-url',
                     language_id: 'en',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    [PERSONA_KEY]: 'modes.persona.no.persona',
                     variantName: 'i-have-the-high-ground'
                 }
             })
@@ -88,7 +90,7 @@ describe('DotPageApiService', () => {
             .get({
                 url: '///test-url',
                 language_id: 'en',
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                [PERSONA_KEY]: 'modes.persona.no.persona'
             })
             .subscribe();
 
@@ -103,7 +105,7 @@ describe('DotPageApiService', () => {
             .get({
                 url: '///my-folder///',
                 language_id: 'en',
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                [PERSONA_KEY]: 'modes.persona.no.persona'
             })
             .subscribe();
 
@@ -131,7 +133,7 @@ describe('DotPageApiService', () => {
                 .get({
                     url: 'test-url',
                     language_id: 'en',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    [PERSONA_KEY]: 'modes.persona.no.persona',
                     editorMode: UVE_MODE.PREVIEW
                 })
                 .subscribe();
@@ -149,7 +151,7 @@ describe('DotPageApiService', () => {
                 .get({
                     url: 'test-url',
                     language_id: 'en',
-                    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                    [PERSONA_KEY]: 'modes.persona.no.persona',
                     editorMode: UVE_MODE.LIVE
                 })
                 .subscribe();
@@ -165,7 +167,7 @@ describe('DotPageApiService', () => {
         const baseParams = {
             url: '///test-url',
             language_id: 'en',
-            'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+            [PERSONA_KEY]: 'modes.persona.no.persona'
         };
 
         it('should get the page using graphql if the client send a query', () => {

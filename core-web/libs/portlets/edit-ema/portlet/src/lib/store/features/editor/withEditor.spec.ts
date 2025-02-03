@@ -13,7 +13,7 @@ import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
 import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
-import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
+import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ACTION_MOCK,
@@ -40,7 +40,7 @@ const initialState: UVEState = {
         ...emptyParams,
         url: 'test-url',
         language_id: '1',
-        'com.dotmarketing.persona.id': 'dot:persona',
+        [PERSONA_KEY]: 'dot:persona',
         variantName: 'DEFAULT',
         clientHost: 'http://localhost:3000'
     },

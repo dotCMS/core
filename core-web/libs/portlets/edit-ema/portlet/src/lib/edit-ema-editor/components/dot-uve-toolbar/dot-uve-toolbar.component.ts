@@ -48,7 +48,7 @@ import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-ac
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
-import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 
@@ -200,7 +200,7 @@ export class DotUveToolbarComponent {
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
         if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
             this.#store.loadPageAsset({
-                'com.dotmarketing.persona.id': persona.identifier
+                [PERSONA_KEY]: persona.identifier
             });
         } else {
             this.#confirmationService.confirm({
@@ -217,7 +217,7 @@ export class DotUveToolbarComponent {
                         .subscribe({
                             next: () => {
                                 this.#store.loadPageAsset({
-                                    'com.dotmarketing.persona.id': persona.identifier
+                                    [PERSONA_KEY]: persona.identifier
                                 });
 
                                 this.$personaSelector().fetchPersonas();
@@ -265,7 +265,7 @@ export class DotUveToolbarComponent {
 
                         if (persona.selected) {
                             this.#store.loadPageAsset({
-                                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                             });
                         }
                     }); // This does a take 1 under the hood

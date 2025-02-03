@@ -37,7 +37,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
@@ -471,7 +471,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spyloadPageAsset).toHaveBeenCalledWith({
-                    'com.dotmarketing.persona.id': '123'
+                    [PERSONA_KEY]: '123'
                 });
             });
 

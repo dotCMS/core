@@ -18,7 +18,7 @@ import {
     VanityUrl
 } from '@dotcms/dotcms-models';
 
-import { UVE_MODE_TO_PAGE_MODE } from '../shared/consts';
+import { PERSONA_KEY, UVE_MODE_TO_PAGE_MODE } from '../shared/consts';
 import { PAGE_MODE } from '../shared/enums';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
@@ -44,7 +44,7 @@ export interface DotPageApiResponse {
 export interface DotPageApiParams {
     url: string;
     language_id: string;
-    'com.dotmarketing.persona.id': string;
+    [PERSONA_KEY]: string;
     variantName?: string;
     experimentId?: string;
     mode?: string;
@@ -114,7 +114,7 @@ export class DotPageApiService {
 
         const pageApiUrl = createPageApiUrlWithQueryParams(url, {
             language_id,
-            'com.dotmarketing.persona.id': params?.['com.dotmarketing.persona.id'],
+            [PERSONA_KEY]: params[PERSONA_KEY],
             variantName,
             experimentId,
             depth,

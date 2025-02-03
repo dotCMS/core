@@ -46,7 +46,7 @@ import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, PERSONA_KEY, WINDOW } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
@@ -115,7 +115,7 @@ const INITIAL_PAGE_PARAMS = {
     language_id: 1,
     url: 'index',
     variantName: 'DEFAULT',
-    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+    [PERSONA_KEY]: 'modes.persona.no.persona',
     editorMode: UVE_MODE.EDIT
 };
 
@@ -534,7 +534,7 @@ describe('DotEmaShellComponent', () => {
                     language_id: 2,
                     url: 'my-awesome-page',
                     variantName: 'DEFAULT',
-                    'com.dotmarketing.persona.id': 'SomeCoolDude',
+                    [PERSONA_KEY]: 'SomeCoolDude',
                     editorMode: UVE_MODE.EDIT
                 };
 
@@ -836,7 +836,7 @@ describe('DotEmaShellComponent', () => {
                 store.loadPageAsset({
                     url: '/test-url',
                     language_id: '1',
-                    'com.dotmarketing.persona.id': '1'
+                    [PERSONA_KEY]: '1'
                 });
 
                 spectator.detectChanges();

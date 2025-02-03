@@ -25,6 +25,7 @@ import {
 } from '.';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
+import { PERSONA_KEY } from '../shared/consts';
 import { PAGE_MODE } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
@@ -375,7 +376,7 @@ describe('utils functions', () => {
             const queryParams = {
                 variantName: 'test',
                 language_id: '20',
-                'com.dotmarketing.persona.id': 'the-chosen-one',
+                [PERSONA_KEY]: 'the-chosen-one',
                 experimentId: '123',
                 mode: PAGE_MODE.LIVE
             };
@@ -636,7 +637,7 @@ describe('utils functions', () => {
         const params = {
             url: 'page',
             language_id: '1',
-            'com.dotmarketing.persona.id': 'persona',
+            [PERSONA_KEY]: 'persona',
             variantName: 'new',
             experimentId: '1',
             mode: 'EDIT_MODE',
@@ -771,7 +772,7 @@ describe('utils functions', () => {
                 variantName: 'variant',
                 language_id: '1',
                 experimentId: 'exp123',
-                'com.dotmarketing.persona.id': 'persona123'
+                [PERSONA_KEY]: 'persona123'
             } as DotPageApiParams;
 
             const params: Params = {
