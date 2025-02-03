@@ -11,18 +11,17 @@ warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Suppress SSL warning
-urllib3.disable_warnings(urllib3.exceptions.NotOpenSSLWarning)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class GitHubMetricsBase:
-    def __init__(self, token, owner, repo, team_label="Team : Falcon"):
+    def __init__(self, token, owner, repo):
         self.token = token
         self.owner = owner 
         self.repo = repo
-        self.team_label = team_label
         self.base_url = f"https://api.github.com/repos/{owner}/{repo}"
         self.headers = {
             'Authorization': f'token {token}',
