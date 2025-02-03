@@ -22,7 +22,7 @@ import { PERSONA_KEY, UVE_MODE_TO_PAGE_MODE } from '../shared/consts';
 import { PAGE_MODE } from '../shared/enums';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
-import { cleanPageURL, createPageApiUrlWithQueryParams } from '../utils';
+import { buildPageApiUrl, cleanPageURL } from '../utils';
 
 export interface DotPageApiResponse {
     page: DotPage;
@@ -96,38 +96,18 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     get(params: DotPageAssetParams): Observable<DotPageApiResponse> {
-        // Remove trailing and leading slashes
-        const {
-            clientHost,
-            editorMode,
-            depth = '0',
-            language_id,
-            variantName,
-            experimentId,
-            publishDate
-        } = params;
+        const { url, clientHost, editorMode, ...pageParams } = params;
+        const pagePath = cleanPageURL(url);
 
-        const url = cleanPageURL(params.url);
-
+        // This should be not controled here
         const pageType = clientHost ? 'json' : 'render';
         const mode = UVE_MODE_TO_PAGE_MODE[editorMode] ?? PAGE_MODE.EDIT;
-
-        const pageApiUrl = createPageApiUrlWithQueryParams(url, {
-            language_id,
-            [PERSONA_KEY]: params[PERSONA_KEY],
-            variantName,
-            experimentId,
-            depth,
-            mode,
-            publishDate: publishDate ?? undefined
-        });
-
-        const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;
+        const pageURL = buildPageApiUrl(pagePath, { mode, ...pageParams });
 
         return this.http
             .get<{
                 entity: DotPageApiResponse;
-            }>(apiUrl)
+            }>(`/api/v1/page/${pageType}/${pageURL}`)
             .pipe(pluck('entity'));
     }
 

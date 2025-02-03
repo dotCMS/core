@@ -198,48 +198,48 @@ export class DotUveToolbarComponent {
      * @memberof DotEmaComponent
      */
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
-        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
-            this.#store.loadPageAsset({
-                [PERSONA_KEY]: persona.identifier
-            });
-        } else {
-            this.#confirmationService.confirm({
-                header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
-                message: this.#dotMessageService.get(
-                    'editpage.personalization.confirm.message',
-                    persona.name
-                ),
-                acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
-                rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
-                accept: () => {
-                    this.#personalizeService
-                        .personalized(persona.pageId, persona.keyTag)
-                        .subscribe({
-                            next: () => {
-                                this.#store.loadPageAsset({
-                                    [PERSONA_KEY]: persona.identifier
-                                });
+        const existPersona =
+            persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
-                                this.$personaSelector().fetchPersonas();
-                            },
-                            error: () => {
-                                this.#messageService.add({
-                                    severity: 'error',
-                                    summary: this.#dotMessageService.get('error'),
-                                    detail: this.#dotMessageService.get(
-                                        'uve.personalize.empty.page.error'
-                                    )
-                                });
+        if (existPersona) {
+            this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
 
-                                this.$personaSelector().resetValue();
-                            }
-                        });
-                },
-                reject: () => {
-                    this.$personaSelector().resetValue();
-                }
-            });
+            return;
         }
+
+        const confirmationData = {
+            header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
+            message: this.#dotMessageService.get(
+                'editpage.personalization.confirm.message',
+                persona.name
+            ),
+            acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject')
+        };
+
+        this.#confirmationService.confirm({
+            ...confirmationData,
+            accept: () => {
+                this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
+                    next: () => {
+                        this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
+                        this.$personaSelector().fetchPersonas();
+                    },
+                    error: () => {
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('error'),
+                            detail: this.#dotMessageService.get('uve.personalize.empty.page.error')
+                        });
+
+                        this.$personaSelector().resetValue();
+                    }
+                });
+            },
+            reject: () => {
+                this.$personaSelector().resetValue();
+            }
+        });
     }
 
     /**

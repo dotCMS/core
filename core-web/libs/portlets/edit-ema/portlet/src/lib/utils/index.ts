@@ -255,6 +255,47 @@ export function createPageApiUrlWithQueryParams(
 }
 
 /**
+ * Create a page api url with query params
+ *
+ * @export
+ * @param {string} url
+ * @param {Record<string, string>} params
+ * @return {*}  {string}
+ */
+export function buildPageApiUrl(url: string, params: Record<string, string>): string {
+    const queryParams = { ...params };
+
+    // Delete url from QP
+    delete queryParams['url'];
+
+    // Filter out undefined values
+    Object.keys(queryParams).forEach(
+        (key) => queryParams[key] === undefined && delete queryParams[key]
+    );
+
+    const queryParamsString = new URLSearchParams({
+        ...queryParams
+    }).toString();
+
+    return queryParamsString ? `${url}?${queryParamsString}` : url;
+}
+
+export function createUserQueryParams(params) {
+    const queryParams = { ...params };
+
+    if (queryParams[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
+        delete queryParams.personaId;
+    }
+
+    if (queryParams[PERSONA_KEY]) {
+        queryParams['personaId'] = params[PERSONA_KEY];
+        delete queryParams[PERSONA_KEY];
+    }
+
+    return queryParams;
+}
+
+/**
  * Check if the variant is the default one
  *
  * @export

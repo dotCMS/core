@@ -101,15 +101,15 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const pageParams = this.uveStore.pageParams();
+        const userParams = this.uveStore.$friendlyParams();
         const viewParams = this.uveStore.viewParams();
 
-        if (!pageParams && !viewParams) {
+        if (!userParams && !viewParams) {
             return;
         }
 
         const queryParams = {
-            ...(pageParams ?? {}),
+            ...(userParams ?? {}),
             ...(viewParams ?? {})
         };
 
@@ -117,12 +117,15 @@ export class DotEmaShellComponent implements OnInit {
     });
 
     ngOnInit(): void {
+        // Unify this getUVEParams
         const params = this.#getPageParams();
-
         const viewParams = this.#getViewParams(params.editorMode);
-
+        // setUVEParams
         this.uveStore.patchViewParams(viewParams);
-
+        // parseUVEParamsForPage
+        // convertUVEToPageParams
+        // extractPageParamsFromUVE
+        //
         this.uveStore.loadPageAsset(params);
 
         // We need to skip one because it's the initial value
@@ -228,8 +231,8 @@ export class DotEmaShellComponent implements OnInit {
             params.editorMode = UVE_MODE.EDIT;
         }
 
-        if (params.editorMode === UVE_MODE.LIVE && !params.publishDate) {
-            params.publishDate = new Date().toISOString();
+        if (params.editorMode === UVE_MODE.LIVE) {
+            params.publishDate = params.publishDate || new Date().toISOString();
         }
 
         return params;

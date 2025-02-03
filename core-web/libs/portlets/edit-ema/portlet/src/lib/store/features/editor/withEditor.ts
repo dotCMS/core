@@ -40,9 +40,10 @@ import {
     getPersonalization,
     areContainersEquals,
     getEditorStates,
-    createPageApiUrlWithQueryParams,
     sanitizeURL,
-    getWrapperMeasures
+    getWrapperMeasures,
+    createUserQueryParams,
+    buildPageApiUrl
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
@@ -55,9 +56,9 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
         return new String('');
     }
 
-    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
-    const origin = params.clientHost || window.location.origin;
-    const url = new URL(pageAPIQueryParams, origin);
+    const queryParams = createUserQueryParams(params);
+    const pageAPIQueryParams = buildPageApiUrl(pageURI, queryParams);
+    const url = new URL(pageAPIQueryParams, params.clientHost || window.location.origin);
 
     return url.toString();
 };

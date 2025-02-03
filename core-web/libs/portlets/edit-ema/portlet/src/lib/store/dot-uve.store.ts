@@ -13,7 +13,7 @@ import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
-import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
+import { createUserQueryParams, getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
 
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
@@ -24,6 +24,7 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
+    // uveParams
     pageParams: null,
     viewParams: null,
     status: UVE_STATUS.LOADING,
@@ -132,6 +133,13 @@ export const UVEStore = signalStore(
                 }),
                 $isLiveMode: computed<boolean>(() => {
                     return pageParams()?.editorMode === UVE_MODE.LIVE;
+                }),
+                $friendlyParams: computed(() => {
+                    if (!pageParams()) {
+                        return null;
+                    }
+
+                    return createUserQueryParams(pageParams());
                 })
             };
         }
