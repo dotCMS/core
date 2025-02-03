@@ -20,7 +20,8 @@
                 (ngModelChange)="fetchPageOnDate($event)"
                 [showTime]="true"
                 [hourFormat]="'12'"
-                [minDate]="CURRENT_DATE"
+                dataType="date"
+                [minDate]="MIN_DATE"
                 [readonlyInput]="true" />
             <p-button
                 styleClass="uve-toolbar-chips"
