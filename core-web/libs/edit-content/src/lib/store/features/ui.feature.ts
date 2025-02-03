@@ -3,11 +3,12 @@ import {
     signalStoreFeature,
     type,
     withComputed,
+    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, effect, untracked } from '@angular/core';
 
 import { ContentState } from './content.feature';
 
@@ -23,7 +24,11 @@ export interface UIState {
     activeSidebarTab: number;
 }
 
-export const uiInitialState: UIState = getStoredUIState();
+export const uiInitialState: UIState = {
+    activeTab: 0,
+    isSidebarOpen: false,
+    activeSidebarTab: 0
+};
 
 /**
  * Feature that manages UI-related state for the content editor
@@ -64,7 +69,6 @@ export function withUI() {
                     activeTab: index
                 };
                 patchState(store, { uiState: newState });
-                saveStoreUIState(newState);
             },
 
             /**
@@ -76,7 +80,6 @@ export function withUI() {
                     isSidebarOpen: !store.uiState().isSidebarOpen
                 };
                 patchState(store, { uiState: newState });
-                saveStoreUIState(newState);
             },
 
             /**
@@ -89,8 +92,20 @@ export function withUI() {
                     activeSidebarTab: tab
                 };
                 patchState(store, { uiState: newState });
-                saveStoreUIState(newState);
             }
-        }))
+        })),
+        withHooks({
+            onInit(store) {
+                const storedState = getStoredUIState();
+                patchState(store, { uiState: storedState });
+
+                effect(() => {
+                    const uiState = store.uiState();
+                    untracked(() => {
+                        saveStoreUIState(uiState);
+                    });
+                });
+            }
+        })
     );
 }

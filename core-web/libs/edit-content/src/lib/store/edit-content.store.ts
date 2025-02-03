@@ -31,12 +31,13 @@ export const initialRootState: EditContentRootState = {
 export const DotEditContentStore = signalStore(
     withState(initialRootState),
     withContent(),
+    withUI(),
     withSidebar(),
     withInformation(),
     withWorkflow(),
     withForm(),
     withLocales(),
-    withUI(),
+
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);

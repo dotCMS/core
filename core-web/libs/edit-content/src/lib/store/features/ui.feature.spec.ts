@@ -1,3 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { signalStore, signalStoreFeature, withState } from '@ngrx/signals';
+
+import { fakeAsync, tick } from '@angular/core/testing';
+
+import { contentInitialState } from './content.feature';
+import { withUI } from './ui.feature';
+
+import { DotContentletState } from '../../models/dot-edit-content.model';
+import { getStoredUIState, saveStoreUIState } from '../../utils/functions.util';
+import { initialRootState } from '../edit-content.store';
+
 jest.mock('../../utils/functions.util', () => ({
     getStoredUIState: jest.fn(() => ({
         activeTab: 0,
@@ -7,33 +20,65 @@ jest.mock('../../utils/functions.util', () => ({
     saveStoreUIState: jest.fn()
 }));
 
-import { signalStore, withState } from '@ngrx/signals';
-
-import { uiInitialState, withUI } from './ui.feature';
-
-import { saveStoreUIState } from '../../utils/functions.util';
-import { initialRootState } from '../edit-content.store';
-
 describe('UI Feature', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
+    let spectator: SpectatorService<any>;
+    let store: any;
+
+    const withTest = () =>
+        signalStoreFeature(
+            withState({
+                ...initialRootState,
+                ...contentInitialState,
+                initialContentletState: 'edit' as DotContentletState
+            })
+        );
+
+    const createStore = createServiceFactory({
+        service: signalStore(withTest(), withUI())
     });
 
-    const createTestStore = () => {
-        const TestStore = signalStore(withState(initialRootState), withUI());
-
-        return new TestStore();
-    };
-
-    let store: ReturnType<typeof createTestStore>;
-
     beforeEach(() => {
-        store = createTestStore();
+        jest.clearAllMocks();
+        spectator = createStore();
+        store = spectator.service;
+    });
+
+    describe('Store Initialization', () => {
+        it('should load initial state from localStorage', () => {
+            expect(getStoredUIState).toHaveBeenCalled();
+            expect(store.uiState()).toEqual({
+                activeTab: 0,
+                isSidebarOpen: true,
+                activeSidebarTab: 0
+            });
+        });
+
+        it('should save state changes to localStorage via effect', fakeAsync(() => {
+            // Initial save from initialization
+            tick();
+            expect(saveStoreUIState).toHaveBeenCalledWith(store.uiState());
+
+            // Clear mock to test next state change
+            jest.clearAllMocks();
+
+            // Make a state change
+            store.setActiveTab(2);
+            tick();
+
+            // Verify effect triggered save
+            expect(saveStoreUIState).toHaveBeenCalledWith({
+                ...store.uiState(),
+                activeTab: 2
+            });
+        }));
     });
 
     describe('Computed Properties', () => {
-        it('should compute activeTab', () => {
+        it('should compute activeTab based on initialContentletState', () => {
             expect(store.activeTab()).toBe(0);
+
+            store.setActiveTab(2);
+            expect(store.activeTab()).toBe(2);
         });
 
         it('should compute isSidebarOpen', () => {
@@ -47,47 +92,31 @@ describe('UI Feature', () => {
 
     describe('Methods', () => {
         describe('setActiveTab', () => {
-            it('should update active tab and persist to localStorage', () => {
+            it('should update active tab in state', () => {
                 store.setActiveTab(2);
-
                 expect(store.activeTab()).toBe(2);
-                expect(saveStoreUIState).toHaveBeenCalledWith({
-                    ...uiInitialState,
-                    activeTab: 2
-                });
             });
         });
 
         describe('toggleSidebar', () => {
-            it('should toggle sidebar visibility and persist to localStorage', () => {
+            it('should toggle sidebar visibility in state', () => {
                 const initialState = store.isSidebarOpen();
                 store.toggleSidebar();
-
                 expect(store.isSidebarOpen()).toBe(!initialState);
-                expect(saveStoreUIState).toHaveBeenCalledWith({
-                    ...uiInitialState,
-                    isSidebarOpen: !initialState
-                });
             });
 
             it('should toggle back to original state when called twice', () => {
                 const initialState = store.isSidebarOpen();
                 store.toggleSidebar();
                 store.toggleSidebar();
-
                 expect(store.isSidebarOpen()).toBe(initialState);
             });
         });
 
         describe('setActiveSidebarTab', () => {
-            it('should update active sidebar tab and persist to localStorage', () => {
+            it('should update active sidebar tab in state', () => {
                 store.setActiveSidebarTab(1);
-
                 expect(store.activeSidebarTab()).toBe(1);
-                expect(saveStoreUIState).toHaveBeenCalledWith({
-                    ...uiInitialState,
-                    activeSidebarTab: 1
-                });
             });
         });
     });
