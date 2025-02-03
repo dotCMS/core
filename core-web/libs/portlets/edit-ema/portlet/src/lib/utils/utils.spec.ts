@@ -8,7 +8,7 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    buildFullPageURL,
+    getFullPageURL,
     SDK_EDITOR_SCRIPT_SOURCE,
     computePageIsLocked,
     computeCanEditPage,
@@ -371,28 +371,34 @@ describe('utils functions', () => {
         });
     });
 
-    describe('buildFullPageURL', () => {
+    describe('getFullPageURL', () => {
         it('should return the correct query params', () => {
-            const queryParams = {
+            const params = {
+                url: 'test',
                 variantName: 'test',
                 language_id: '20',
                 [PERSONA_KEY]: 'the-chosen-one',
                 experimentId: '123',
                 mode: PAGE_MODE.LIVE
             };
-            const result = buildFullPageURL('test', queryParams);
+            const result = getFullPageURL({ url: 'test', params });
             expect(result).toBe(
                 'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=LIVE'
             );
         });
 
         it('should ignore the undefined queryParams', () => {
-            const queryParams = {
+            const params = {
+                url: 'test',
+                language_id: '20',
+                [PERSONA_KEY]: 'the-chosen-one',
                 variantName: 'test',
                 experimentId: undefined
             };
-            const result = buildFullPageURL('test', queryParams);
-            expect(result).toBe('test?variantName=test');
+            const result = getFullPageURL({ url: 'test', params });
+            expect(result).toBe(
+                'test?language_id=20&com.dotmarketing.persona.id=the-chosen-one&variantName=test'
+            );
         });
     });
 

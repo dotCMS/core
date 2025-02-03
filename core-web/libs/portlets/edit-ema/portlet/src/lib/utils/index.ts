@@ -222,34 +222,51 @@ export const getPersonalization = (persona: Record<string, string>) => {
 };
 
 /**
- * Create full page URL including the Query Params
+ * Constructs a full page URL by appending query parameters.
+ *
+ * This function takes a base URL and a set of parameters, optionally normalizing them,
+ * and returns a complete URL with the query parameters appended. It ensures that any
+ * undefined values are removed and that the 'url' parameter is not included in the query string.
  *
  * @export
- * @param {string} url
- * @param {Record<string, string> | DotPageAssetParams} params
- * @return {*}  {string}
+ * @param {FullPageURLParams} { url, params, userFriendlyParams = false } - The parameters for constructing the URL.
+ * @param {string} url - The base URL to which query parameters will be appended.
+ * @param {DotPageAssetParams} params - The query parameters to append to the URL.
+ * @param {boolean} [userFriendlyParams=false] - If true, the query parameters are normalized to be more readable and user-friendly. This may involve renaming keys or removing default values that are not necessary for end-users.
+ * @return {string} The full URL with query parameters appended.
  */
-export function buildFullPageURL(
-    url: string,
-    params: Record<string, string> | DotPageAssetParams
-): string {
-    const queryParams = { ...params };
+export function getFullPageURL({
+    url,
+    params,
+    userFriendlyParams = false
+}: {
+    url: string;
+    params: DotPageAssetParams;
+    userFriendlyParams?: boolean;
+}): string {
+    const searchParams = userFriendlyParams ? normalizeQueryParams(params) : { ...params };
 
-    // Delete url from QP\
-    if (queryParams.url) {
-        delete queryParams['url'];
+    // Remove 'url' from query parameters if present
+    if (searchParams.url) {
+        delete searchParams['url'];
     }
 
-    // Filter out undefined values
-    Object.keys(queryParams).forEach(
-        (key) => queryParams[key] === undefined && delete queryParams[key]
+    if (searchParams.editorMode) {
+        searchParams.mode = searchParams.editorMode;
+        delete searchParams['editorMode'];
+    }
+
+    // Filter out undefined values from query parameters
+    Object.keys(searchParams).forEach(
+        (key) => searchParams[key] === undefined && delete searchParams[key]
     );
 
-    const queryParamsString = new URLSearchParams({
-        ...queryParams
+    const path = cleanPageURL(url);
+    const paramsAsString = new URLSearchParams({
+        ...searchParams
     }).toString();
 
-    return queryParamsString ? `${url}?${queryParamsString}` : url;
+    return paramsAsString ? `${path}?${paramsAsString}` : path;
 }
 
 /**

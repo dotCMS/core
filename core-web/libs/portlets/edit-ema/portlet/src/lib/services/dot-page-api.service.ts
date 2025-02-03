@@ -18,11 +18,10 @@ import {
     VanityUrl
 } from '@dotcms/dotcms-models';
 
-import { PERSONA_KEY, UVE_MODE_TO_PAGE_MODE } from '../shared/consts';
-import { PAGE_MODE } from '../shared/enums';
+import { PERSONA_KEY } from '../shared/consts';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
-import { buildFullPageURL, cleanPageURL } from '../utils';
+import { getFullPageURL } from '../utils';
 
 export interface DotPageApiResponse {
     page: DotPage;
@@ -95,14 +94,10 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get(params: DotPageAssetParams): Observable<DotPageApiResponse> {
-        const { url, clientHost, editorMode, ...pageParams } = params;
-        const pagePath = cleanPageURL(url);
-
-        // This should be not controled here
+    get(queryParams: DotPageAssetParams): Observable<DotPageApiResponse> {
+        const { clientHost, ...params } = queryParams;
         const pageType = clientHost ? 'json' : 'render';
-        const mode = UVE_MODE_TO_PAGE_MODE[editorMode] ?? PAGE_MODE.EDIT;
-        const pageURL = buildFullPageURL(pagePath, { mode, ...pageParams });
+        const pageURL = getFullPageURL({ url: params.url, params });
 
         return this.http
             .get<{

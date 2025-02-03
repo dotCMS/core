@@ -42,13 +42,12 @@ import {
     getEditorStates,
     sanitizeURL,
     getWrapperMeasures,
-    normalizeQueryParams,
-    buildFullPageURL
+    getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 
-const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
+const buildIframeURL = ({ url, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
         // Force iframe reload on every page load to avoid caching issues and window dirty state
         // We need a new reference to avoid the iframe to be cached
@@ -56,11 +55,10 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
         return new String('');
     }
 
-    const queryParams = normalizeQueryParams(params);
-    const pageAPIQueryParams = buildFullPageURL(pageURI, queryParams);
-    const url = new URL(pageAPIQueryParams, params.clientHost || window.location.origin);
+    const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
+    const iframeURL = new URL(pageURL, params.clientHost || window.location.origin); // Add Host to iframeURL
 
-    return url.toString();
+    return iframeURL.toString();
 };
 
 const initialState: EditorState = {
@@ -213,10 +211,10 @@ export function withEditor() {
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     const page = store.pageAPIResponse().page;
                     const vanityURL = store.pageAPIResponse().vanityUrl?.url;
-
                     const sanitizedURL = sanitizeURL(vanityURL ?? page?.pageURI);
+
                     const url = buildIframeURL({
-                        pageURI: sanitizedURL,
+                        url: sanitizedURL,
                         params: store.pageParams(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });

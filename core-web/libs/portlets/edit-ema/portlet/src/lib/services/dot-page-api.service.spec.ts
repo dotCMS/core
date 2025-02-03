@@ -19,6 +19,7 @@ describe('DotPageApiService', () => {
             spectator.service
                 .get({
                     url: 'test-url',
+                    mode: 'EDIT_MODE',
                     language_id: 'en',
                     [PERSONA_KEY]: 'modes.persona.no.persona',
                     clientHost: 'some-host'
@@ -37,6 +38,7 @@ describe('DotPageApiService', () => {
             spectator.service
                 .get({
                     url: 'test-url',
+                    mode: 'EDIT_MODE',
                     language_id: 'en',
                     [PERSONA_KEY]: 'modes.persona.no.persona'
                 })
@@ -89,6 +91,7 @@ describe('DotPageApiService', () => {
         spectator.service
             .get({
                 url: '///test-url',
+                mode: 'EDIT_MODE',
                 language_id: 'en',
                 [PERSONA_KEY]: 'modes.persona.no.persona'
             })
@@ -104,6 +107,7 @@ describe('DotPageApiService', () => {
         spectator.service
             .get({
                 url: '///my-folder///',
+                mode: 'EDIT_MODE',
                 language_id: 'en',
                 [PERSONA_KEY]: 'modes.persona.no.persona'
             })
@@ -139,7 +143,7 @@ describe('DotPageApiService', () => {
                 .subscribe();
 
             spectator.expectOne(
-                '/api/v1/page/render/test-url?mode=PREVIEW_MODE&language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&mode=preview',
                 HttpMethod.GET
             );
         });
@@ -157,7 +161,7 @@ describe('DotPageApiService', () => {
                 .subscribe();
 
             spectator.expectOne(
-                '/api/v1/page/render/test-url?mode=LIVE&language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
+                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&mode=live',
                 HttpMethod.GET
             );
         });
@@ -166,6 +170,7 @@ describe('DotPageApiService', () => {
     describe('getClientPage', () => {
         const baseParams = {
             url: '///test-url',
+            mode: 'EDIT_MODE',
             language_id: 'en',
             [PERSONA_KEY]: 'modes.persona.no.persona'
         };
@@ -192,7 +197,7 @@ describe('DotPageApiService', () => {
                 .subscribe();
 
             spectator.expectOne(
-                '/api/v1/page/render/test-url?mode=EDIT_MODE&depth=1&language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
+                '/api/v1/page/render/test-url?depth=1&mode=EDIT_MODE&language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona',
                 HttpMethod.GET
             );
         });

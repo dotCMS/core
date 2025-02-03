@@ -97,12 +97,11 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
      * @memberof EditEmaPersonaSelectorComponent
      */
     onSelect({ value }: { value: DotPersona }) {
-        if (value.identifier !== this.value.identifier) {
-            this.selected.emit({
-                ...value,
-                pageId: this.pageId
-            });
+        if (value.identifier === this.value.identifier) {
+            return;
         }
+
+        this.selected.emit({ ...value, pageId: this.pageId });
     }
 
     /**

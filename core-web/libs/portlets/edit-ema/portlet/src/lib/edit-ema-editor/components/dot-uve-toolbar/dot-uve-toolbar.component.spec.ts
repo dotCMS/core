@@ -44,19 +44,14 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
-import {
-    buildFullPageURL,
-    createFavoritePagesURL,
-    createFullURL,
-    sanitizeURL
-} from '../../../utils';
+import { getFullPageURL, createFavoritePagesURL, createFullURL, sanitizeURL } from '../../../utils';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
 const params = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
 
-const pageAPIQueryParams = buildFullPageURL(url, params);
+const pageAPIQueryParams = getFullPageURL({ url, params });
 const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
 const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
 const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked;
