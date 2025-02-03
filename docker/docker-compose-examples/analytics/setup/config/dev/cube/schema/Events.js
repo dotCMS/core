@@ -21,41 +21,6 @@ cube(`Events`, {
     having isSession = 1
     order by day
   `,
-  preAggregations: {
-    /*targetVisitedAfterAggregation: {
-      measures: [Events.totalSessions, Events.targetVisitedAfterSuccesses],
-      dimensions: [Events.experiment, Events.runningId, Events.variant],
-      timeDimension: Events.day,
-      granularity: `day`,
-      indexes: {
-        totalSessions_targetVisitedAfter_index: {
-          columns: [experiment, variant]
-        }
-      }
-    },
-    bounceRateAggregation: {
-      measures: [Events.totalSessions, Events.bounceRateSuccesses],
-      dimensions: [Events.experiment, Events.variant],
-      timeDimension: Events.day,
-      granularity: `day`,
-      indexes: {
-        totalSessions_bounceRateSuccesses_index: {
-          columns: [totalSessions, bounceRateSuccesses]
-        }
-      }
-    },
-    exitRateAggregation: {
-      measures: [Events.totalSessions, Events.exitRateSuccesses],
-      dimensions: [Events.experiment, Events.variant],
-      timeDimension: Events.day,
-      granularity: `day`,
-      indexes: {
-        totalSessions_exitRateSuccesses_index: {
-          columns: [totalSessions, exitRateSuccesses]
-        }
-      }
-    }*/
-  },
   joins: {},
   measures: {
     count: {
@@ -151,79 +116,93 @@ cube(`Events`, {
 });
 
 cube('request', {
-  sql: `SELECT request_id,
-               MAX(sessionid) as sessionid,
-               (MAX(sessionnew) == 1)::bool as isSessionNew,
-               MIN(utc_time) as createdAt,
-               MAX(source_ip) as source_ip,
-               MAX(language) as language,
-               MAX(languageid) as languageId,
-               MAX(object_live) as live,
-               MAX(object_working) as working,
-               MAX(useragent) as user_agent,
-               MAX(persona) as persona,
-               MAX(referer) as referer,
-               MAX(conhost) as conHost,
-               MAX(conhostname) as conHostName,
-              CASE
-                WHEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_identifier END) IS NOT NULL 
-                    THEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_identifier END)
-                WHEN MAX(CASE WHEN event_type = 'URL_MAP' THEN object_identifier END) IS NOT NULL 
-                    THEN MAX(CASE WHEN event_type = 'URL_MAP' THEN object_identifier END)
-                WHEN COUNT(DISTINCT object_identifier) == 1 THEN MAX(object_identifier)
-                ELSE MAX(object_identifier)
-               END AS  identifier,
-               MAX(object_title) as title,
-               CASE
-                  WHEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_basetype END) IS NOT NULL 
-                      THEN MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_basetype END)
-                  WHEN MAX(CASE WHEN event_type = 'URL_MAP' THEN object_basetype END) IS NOT NULL 
-                      THEN MAX(CASE WHEN event_type = 'URL_MAP' THEN object_basetype END)
-                  WHEN COUNT(DISTINCT object_basetype) == 1 THEN MAX(object_basetype) 
-                  ELSE MAX(object_basetype)
-                END AS  baseType,
-               MAX(object_contenttype) as contentType,
-               MAX(object_contenttypename) as contentTypeName,
-               MAX(object_contenttypeid) as contentTypeId,
-               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_forwardto ELSE NULL END) as vanity_forward_to,
-               MAX(CASE WHEN event_type = 'VANITY_REQUEST' THEN object_action ELSE NULL END) as vanity_action,
-               CASE 
-                    WHEN SUM(CASE WHEN event_type = 'URL_MAP' THEN 1 ELSE 0 END) > 0 THEN 'URL_MAP'
-                    WHEN SUM(CASE WHEN event_type = 'VANITY_REQUEST' THEN 1 ELSE 0 END) > 0 THEN 'VANITY_URL'
-                    ELSE 'NORMAL'
-               END mappingType,
-               MAX(url) AS url,
-               MAX(cluster_id) AS cluster_id,
-               MAX(customer_id) AS customer_id
+  sql: `SELECT *
         FROM events
-        GROUP BY request_id`,
+        WHERE ${FILTER_PARAMS.request.customerId.filter('customer_id')}
+        AND ${FILTER_PARAMS.request.cluster_id ? FILTER_PARAMS.request.cluster_id.filter('cluster_id') : '(cluster_id IS NULL OR cluster_id = \'\')'}`,
+  /*preAggregations: {
+    totalRequestStats: {
+      type: 'rollup',
+      measures: [
+        request.totalRequest
+      ],
+      dimensions: [
+        request.customerId,
+        request.clusterId,
+        request.identifier,
+        request.title,
+        request.baseType,
+        request.url
+      ],
+      granularity: 'day',  // Aggregates data daily
+      timeDimension: request.createdAt,
+      partitionGranularity: 'month', // Partitions by month for better performance
+      refreshKey: {
+        every: '1 hour', // Refresh pre-aggregation every hour
+        incremental: true // Only update new data
+      },
+      indexes: {
+        dailyIndex: {
+          columns: ['request__customer_id', 'request__cluster_id']
+        }
+      }
+    },
+
+    countStats: {
+      type: 'rollup',
+      measures: [
+        request.count
+      ],
+      dimensions: [
+        request.customerId,
+        request.clusterId,
+        request.identifier,
+        request.title,
+        request.baseType,
+        request.url
+      ],
+      granularity: 'day',  // Aggregates data daily
+      timeDimension: request.createdAt,
+      partitionGranularity: 'month', // Partitions by month for better performance
+      refreshKey: {
+        every: '1 hour', // Refresh pre-aggregation every hour
+        incremental: true // Only update new data
+      },
+      indexes: {
+        dailyIndex: {
+          columns: ['request__customer_id', 'request__cluster_id']
+        }
+      }
+    }
+  },*/
   dimensions: {
-    mappingType: { sql: 'mappingType', type: `string` },
-    conHost: { sql: 'conHost', type: `string` },
-    conHostName: { sql: 'conHostName', type: `string` },
-    contentTypeName: { sql: 'contentTypeName', type: `string` },
-    contentTypeId: { sql: 'contentTypeId', type: `string` },
-    contentTypeVariable: { sql: 'contentType', type: `string` },
-    live: { sql: 'live', type: `boolean` },
-    working: { sql: 'working', type: `boolean` },
-    baseType: { sql: 'baseType', type: `string` },
-    identifier: { sql: 'identifier', type: `string` },
-    title: { sql: 'title', type: `string` },
+    conHost: { sql: 'conhost', type: `string` },
+    conHostName: { sql: 'conhostname', type: `string` },
+    contentTypeName: { sql: 'object_contenttypename', type: `string` },
+    contentTypeId: { sql: 'object_contenttypeid', type: `string` },
+    contentTypeVariable: { sql: 'object_contenttype', type: `string` },
+    live: { sql: 'object_live', type: `boolean` },
+    working: { sql: 'object_working', type: `boolean` },
+    baseType: { sql: 'object_basetype', type: `string` },
+    identifier: { sql: 'object_identifier', type: `string` },
+    title: { sql: 'object_title', type: `string` },
     requestId: { sql: 'request_id', type: `string` },
     clusterId: { sql: 'cluster_id', type: `string` },
     customerId: { sql: 'customer_id', type: `string` },
     sessionId: { sql: 'sessionid', type: `string` },
-    isSessionNew: { sql: 'isSessionNew', type: `boolean` },
-    createdAt: { sql: 'createdAt', type: `time`, },
+    isSessionNew: { sql: 'sessionnew', type: `number` },
+    createdAt: { sql: 'utc_time', type: `time`, },
     sourceIp: { sql: 'source_ip', type: `string` },
     language: { sql: 'language', type: `string` },
     languageId: { sql: 'languageid', type: `string` },
-    userAgent: { sql: 'user_agent', type: `string` },
+    userAgent: { sql: 'useragent', type: `string` },
     referer: { sql: 'referer', type: `string` },
     persona: { sql: 'persona', type: `string` },
     url: { sql: 'url', type: `string` },
-    forwardTo: { sql: 'vanity_forward_to', type: `string` },
-    action: { sql: 'vanity_action', type: `string` }
+    forwardTo: { sql: 'object_forwardto', type: `string` },
+    action: { sql: 'object_action', type: `string` },
+    eventType: { sql: 'event_type', type: `string` },
+    eventSource: { sql: 'event_source', type: `string` }
   },
   measures: {
     count: {
@@ -240,7 +219,7 @@ cube('request', {
       title: 'Total Requests'
     },
     fileRequest: {
-      sql: `CASE WHEN ${CUBE}.baseType = 'FILEASSET' THEN 1 ELSE NULL END`,
+      sql: `CASE WHEN ${CUBE}.object_basetype = 'FILEASSET' THEN 1 ELSE NULL END`,
       type: 'count',
       title: 'Count of FileAsset Request'
     },
@@ -250,12 +229,12 @@ cube('request', {
       title: 'FileRequest Average'
     },
     pageRequest: {
-      sql: `CASE WHEN ${CUBE}.baseType = 'HTMLPAGE' THEN 1 ELSE NULL END`,
+      sql: `CASE WHEN ${CUBE}.object_basetype = 'HTMLPAGE' THEN 1 ELSE NULL END`,
       type: 'count',
       title: 'Count of Page request'
     },
     pageRequestAverage: {
-      sql: `${pageRequest} / NULLIF(${totalRequest}, 0)`,
+      sql: `${request.pageRequest} / NULLIF(${totalRequest}, 0)`,
       type: 'number',
       title: 'Page Request Average'
     },
@@ -264,7 +243,5 @@ cube('request', {
       type: 'number',
       title: 'No FIle OR Page Average'
     }
-
   }
 });
-
