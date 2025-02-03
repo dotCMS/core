@@ -1,0 +1,28 @@
+package com.dotcms.rest.api.v1.job;
+
+import javax.servlet.http.HttpServletRequest;
+
+public class JobResponseUtil {
+
+    /**
+     * Builds a JobStatusResponse object with the job ID and status URL.
+     *
+     * @param jobId    The job ID
+     * @param request  The HttpServletRequest to build the base URL
+     * @return A JobStatusResponse object
+     */
+    public static JobStatusResponse buildJobStatusResponse(String jobId, HttpServletRequest request) {
+        String statusUrl = buildBaseUrlFromRequest(request) + "/api/v1/jobs/" + jobId + "/status";
+        return new JobStatusResponse(jobId, statusUrl);
+    }
+
+    /**
+     * Builds the base URL from the HttpServletRequest.
+     *
+     * @param request The HttpServletRequest
+     * @return The base URL as a string
+     */
+    private static String buildBaseUrlFromRequest(HttpServletRequest request) {
+        return request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+    }
+}
