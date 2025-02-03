@@ -21,11 +21,12 @@ import {
     createReorderMenuURL,
     getAllowedPageParams,
     getOrientation,
-    getWrapperMeasures
+    getWrapperMeasures,
+    normalizeQueryParams
 } from '.';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
-import { PERSONA_KEY } from '../shared/consts';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { PAGE_MODE } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
@@ -859,6 +860,54 @@ describe('utils functions', () => {
 
             const result = getOrientation(device);
             expect(result).toBe(Orientation.LANDSCAPE);
+        });
+    });
+
+    describe('normalizeQueryParams', () => {
+        it('should remove PERSONA_KEY if it equals DEFAULT_PERSONA.identifier', () => {
+            const params = {
+                [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                someOtherKey: 'someValue'
+            };
+
+            const result = normalizeQueryParams(params);
+
+            expect(result).toEqual({
+                someOtherKey: 'someValue'
+            });
+        });
+
+        it('should rename PERSONA_KEY to personaId if it is present and not default', () => {
+            const params = {
+                [PERSONA_KEY]: 'customPersonaId',
+                anotherKey: 'anotherValue'
+            };
+
+            const result = normalizeQueryParams(params);
+
+            expect(result).toEqual({
+                personaId: 'customPersonaId',
+                anotherKey: 'anotherValue'
+            });
+        });
+
+        it('should not modify params if PERSONA_KEY is absent', () => {
+            const params = {
+                someKey: 'someValue',
+                anotherKey: 'anotherValue'
+            };
+
+            const result = normalizeQueryParams(params);
+
+            expect(result).toEqual(params);
+        });
+
+        it('should handle empty params object', () => {
+            const params = {};
+
+            const result = normalizeQueryParams(params);
+
+            expect(result).toEqual({});
         });
     });
 });

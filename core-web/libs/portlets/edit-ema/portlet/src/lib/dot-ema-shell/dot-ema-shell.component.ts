@@ -37,7 +37,6 @@ import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
-    normalizeQueryParams,
     getAllowedPageParams,
     getTargetUrl,
     sanitizeURL,
@@ -102,19 +101,8 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const userParams = this.uveStore.pageParams();
-        const viewParams = this.uveStore.viewParams();
-
-        if (!userParams && !viewParams) {
-            return;
-        }
-
-        const queryParams = normalizeQueryParams({
-            ...(userParams ?? {}),
-            ...(viewParams ?? {})
-        });
-
-        this.#updateLocation(queryParams);
+        const params = this.uveStore.$friendlyParams();
+        this.#updateLocation(params);
     });
 
     ngOnInit(): void {

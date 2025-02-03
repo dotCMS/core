@@ -379,6 +379,35 @@ describe('DotEmaShellComponent', () => {
                     '/?language_id=1&url=some-url%2F&variantName=DEFAULT&editorMode=edit'
                 );
             });
+
+            it('should receive `personaId` query param', () => {
+                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const queryParams = {
+                    url: '/some-url/index',
+                    language_id: 1,
+                    personaId: 'someCoolDude'
+                };
+
+                const expectedParams = {
+                    url: 'some-url/',
+                    [PERSONA_KEY]: 'someCoolDude',
+                    editorMode: 'edit',
+                    language_id: 1
+                };
+
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({ queryParams, data: UVE_CONFIG_MOCK(BASIC_OPTIONS) })
+                );
+
+                spectator.detectChanges();
+                expect(spyloadPageAsset).toHaveBeenCalledWith(expectedParams);
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?url=some-url%2F&language_id=1&editorMode=edit&personaId=someCoolDude'
+                );
+            });
         });
 
         it('should patch viewParams with empty object when the editorMode is edit', () => {
