@@ -8,8 +8,18 @@ import { UVEState, UVE_MODE } from './types';
  *
  * @export
  * @return {UVEState | undefined} Returns the UVE state object if running inside the editor,
- * undefined otherwise. The state includes:
+ * undefined otherwise.
+ *
+ * The state includes:
  * - mode: The current editor mode (preview, edit, live)
+ * - languageId: The language ID of the current page setted on the UVE
+ * - url: The URL of the current page
+ * - persona: The persona of the current page setted on the UVE
+ * - variantName: The name of the current variant
+ * - experimentId: The ID of the current experiment
+ * - publishDate: The publish date of the current page setted on the UVE
+ *
+ * The absence of any of these properties means that the value is the default one.
  *
  * @example
  * ```ts
@@ -26,14 +36,23 @@ export function getUVEState(): UVEState | undefined {
 
     const url = new URL(window.location.href);
 
-    // TODO: Return everything from the QP
     const mode = (url.searchParams.get('editorMode') as UVE_MODE) ?? UVE_MODE.UNKNOWN;
+    const languageId = url.searchParams.get('language_id');
+    const persona = url.searchParams.get('personaId');
+    const variantName = url.searchParams.get('variantName');
+    const experimentId = url.searchParams.get('experimentId');
+    const publishDate = url.searchParams.get('publishDate');
 
     if (mode === UVE_MODE.UNKNOWN) {
         console.warn("Couldn't identify the current mode of UVE, please contact customer support.");
     }
 
     return {
-        mode
+        mode,
+        languageId,
+        persona,
+        variantName,
+        experimentId,
+        publishDate
     };
 }

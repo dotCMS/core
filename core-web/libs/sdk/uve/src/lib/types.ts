@@ -3,6 +3,11 @@
 */
 export interface UVEState {
     mode: UVE_MODE;
+    persona: string | null;
+    variantName: string | null;
+    experimentId: string | null;
+    publishDate: string | null;
+    languageId: string | null;
 }
 
 /*
