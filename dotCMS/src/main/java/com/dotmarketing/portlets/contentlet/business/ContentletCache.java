@@ -23,9 +23,11 @@ public abstract class ContentletCache implements Cachable {
 
     public abstract void remove(Contentlet contentlet);
 
-    public abstract Contentlet addTimeMachine(Date timeMachineDate, String identifier, Contentlet content);
+    public abstract void addTimeMachine(Date timeMachineDate, String identifier, Contentlet content);
 
     public abstract Optional<Contentlet> getTimeMachine(Date timeMachineDate, String identifier, String variant);
 
     public abstract void invalidateTimeMachine(Contentlet content);
+
+    public abstract void invalidateTimeMachine();
 }
