@@ -114,9 +114,12 @@ public class ContentImportResource {
                             description = "Content import job created successfully",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityStringView.class),
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class),
                                     examples = @ExampleObject(value = "{\n" +
-                                            "  \"entity\": \"3930f815-7aa4-4649-94c2-3f37fd21136d\",\n" +
+                                            "  \"entity\": {\n" +
+                                            "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
+                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status\"\n" +
+                                            "  },\n" +
                                             "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
                                             "  \"messages\": [],\n" +
@@ -206,7 +209,10 @@ public class ContentImportResource {
                                     mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityJobStatusView.class),
                                     examples = @ExampleObject(value = "{\n" +
-                                            "  \"entity\": \"3930f815-7aa4-4649-94c2-3f37fd21136d\",\n" + //TODO update example
+                                            "  \"entity\": {\n" +
+                                            "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
+                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status\"\n" +
+                                            "  },\n" +
                                             "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
                                             "  \"messages\": [],\n" +
