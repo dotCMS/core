@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "72d1e6bd-4ed6-450c-874d-c0a99bcc305d",
+		"_postman_id": "952929e4-480f-4437-bcfc-356ea5d01630",
 		"name": "ContentImportResource",
 		"description": "Postman collection for testing the ContentImportResource API endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -82,8 +82,11 @@
 									"// Parse the response body",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
-									"    pm.collectionVariables.set(\"jobId\", responseBody.entity);",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.collectionVariables.set(\"jobId\", responseBody.entity.jobId);",
 									"});",
 									""
 								],
@@ -259,7 +262,10 @@
 									"",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
 									"});",
 									""
 								],
@@ -323,7 +329,10 @@
 									"// Parse the response body",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
 									"});",
 									""
 								],
@@ -387,7 +396,10 @@
 									"// Parse the response body",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
 									"});",
 									""
 								],
@@ -948,7 +960,7 @@
 					"response": []
 				},
 				{
-					"name": "Validate Content Import With Unsupported Media Type Expect Failure Copy",
+					"name": "Validate Content Import With Unsupported Media Type Expect Failure",
 					"event": [
 						{
 							"listen": "test",
@@ -1037,8 +1049,11 @@
 									"// Parse the response body",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
-									"    pm.collectionVariables.set(\"jobId\", responseBody.entity);",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.collectionVariables.set(\"jobId\", responseBody.entity.jobId);",
 									"});",
 									""
 								],
@@ -1213,7 +1228,10 @@
 									"",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
 									"});",
 									""
 								],
@@ -1276,7 +1294,10 @@
 									"// Parse the response body",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
 									"});",
 									""
 								],
@@ -1339,7 +1360,10 @@
 									"// Parse the response body",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
 									"});",
 									""
 								],
@@ -1582,7 +1606,7 @@
 					"response": []
 				},
 				{
-					"name": "Create Import Job With Invalid Field Expect Failure Copy",
+					"name": "Create Import Job With Invalid Field Expect Failure",
 					"event": [
 						{
 							"listen": "test",
@@ -1648,7 +1672,7 @@
 					"response": []
 				},
 				{
-					"name": "Create Import Job With Invalid File Type Expect Failure Copy",
+					"name": "Create Import Job With Invalid File Type Expect Failure",
 					"event": [
 						{
 							"listen": "test",
@@ -1713,7 +1737,7 @@
 					"response": []
 				},
 				{
-					"name": "Create Import Job With Invalid Workflow Action Expect Failure Copy",
+					"name": "Create Import Job With Invalid Workflow Action Expect Failure",
 					"event": [
 						{
 							"listen": "test",
@@ -1980,8 +2004,11 @@
 									"// Parse the response body",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
-									"    pm.collectionVariables.set(\"jobId\", responseBody.entity);",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.collectionVariables.set(\"jobId\", responseBody.entity.jobId);",
 									"});",
 									""
 								],
@@ -2318,8 +2345,11 @@
 									"// Parse the response body",
 									"pm.test(\"Response body should contain a valid Job ID\", function () {",
 									"    const responseBody = pm.response.json();",
-									"    pm.expect(responseBody).to.have.property('entity').that.is.not.empty;",
-									"    pm.collectionVariables.set(\"cancelledJobId\",responseBody.entity);",
+									"    pm.expect(responseBody).to.be.an(\"object\").and.to.have.property(\"entity\");",
+									"    pm.expect(responseBody.entity).to.be.an(\"object\");",
+									"    pm.expect(responseBody.entity).to.have.property(\"jobId\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.expect(responseBody.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
+									"    pm.collectionVariables.set(\"cancelledJobId\",responseBody.entity.jobId);",
 									"});",
 									""
 								],
