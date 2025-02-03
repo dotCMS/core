@@ -5,6 +5,9 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.repackage.javax.validation.ValidationException;
 import com.dotcms.rest.*;
+import com.dotcms.rest.api.v1.job.JobResponseUtil;
+import com.dotcms.rest.api.v1.job.JobStatusResponse;
+import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -148,7 +151,9 @@ public class ContentImportResource {
         try {
             // Create the content import job
             final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
-            return Response.ok(new ResponseEntityView<>(jobId)).build();
+
+            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException | ValidationException e) {
             // Handle validation exception and return appropriate error message
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
@@ -199,9 +204,9 @@ public class ContentImportResource {
                             description = "Content import job in preview mode created successfully",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityStringView.class),
+                                    schema = @Schema(implementation = ResponseEntityJobStatusView.class),
                                     examples = @ExampleObject(value = "{\n" +
-                                            "  \"entity\": \"3930f815-7aa4-4649-94c2-3f37fd21136d\",\n" +
+                                            "  \"entity\": \"3930f815-7aa4-4649-94c2-3f37fd21136d\",\n" + //TODO update example
                                             "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
                                             "  \"messages\": [],\n" +
@@ -236,11 +241,18 @@ public class ContentImportResource {
         try {
             // Create the content import job in preview mode
             final String jobId = importHelper.createJob(CMD_PREVIEW, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
-            return Response.ok(new ResponseEntityView<>(jobId)).build();
+
+            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException | ValidationException e) {
             // Handle validation exception and return appropriate error message
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
         }
+    }
+
+    private String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
+        return httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":"
+                + httpServletRequest.getServerPort();
     }
 
     /**
