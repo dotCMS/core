@@ -8,7 +8,7 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createPageApiUrlWithQueryParams,
+    buildFullPageURL,
     SDK_EDITOR_SCRIPT_SOURCE,
     computePageIsLocked,
     computeCanEditPage,
@@ -371,7 +371,7 @@ describe('utils functions', () => {
         });
     });
 
-    describe('createPageApiUrlWithQueryParams', () => {
+    describe('buildFullPageURL', () => {
         it('should return the correct query params', () => {
             const queryParams = {
                 variantName: 'test',
@@ -380,17 +380,9 @@ describe('utils functions', () => {
                 experimentId: '123',
                 mode: PAGE_MODE.LIVE
             };
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            const result = buildFullPageURL('test', queryParams);
             expect(result).toBe(
                 'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=LIVE'
-            );
-        });
-
-        it('should return url with default query params if no query params', () => {
-            const queryParams = {};
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
-            expect(result).toBe(
-                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
             );
         });
 
@@ -399,10 +391,8 @@ describe('utils functions', () => {
                 variantName: 'test',
                 experimentId: undefined
             };
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
-            expect(result).toBe(
-                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
-            );
+            const result = buildFullPageURL('test', queryParams);
+            expect(result).toBe('test?variantName=test');
         });
     });
 

@@ -330,7 +330,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'index' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                    '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit&personaId=modes.persona.no.persona'
                 );
             });
 
@@ -355,7 +355,7 @@ describe('DotEmaShellComponent', () => {
                     url: 'some-url/some-nested-url'
                 });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&editorMode=edit&personaId=modes.persona.no.persona'
                 );
             });
 
@@ -376,7 +376,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&editorMode=edit&personaId=modes.persona.no.persona'
                 );
             });
         });
@@ -477,7 +477,7 @@ describe('DotEmaShellComponent', () => {
             expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyLocation).toHaveBeenCalledWith(
-                '/?language_id=1&url=index&variantName=DEFAULT&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit'
+                '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit&personaId=modes.persona.no.persona'
             );
         });
 
@@ -530,25 +530,33 @@ describe('DotEmaShellComponent', () => {
             beforeEach(() => spectator.detectChanges());
 
             it('should update parms when loadPage is triggered', () => {
-                const newParams = {
-                    language_id: 2,
+                const baseParams = {
+                    language_id: '2',
                     url: 'my-awesome-page',
                     variantName: 'DEFAULT',
-                    [PERSONA_KEY]: 'SomeCoolDude',
                     editorMode: UVE_MODE.EDIT
                 };
+                const pageParams = {
+                    ...baseParams,
+                    [PERSONA_KEY]: 'SomeCoolDude'
+                };
 
-                const url = router.createUrlTree([], { queryParams: newParams });
+                const userParams = {
+                    ...baseParams,
+                    personaId: 'SomeCoolDude'
+                };
 
+                const expectURL = router.createUrlTree([], { queryParams: userParams });
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const spyUrlTree = jest.spyOn(router, 'createUrlTree');
                 const spyLocation = jest.spyOn(location, 'go');
 
-                store.loadPageAsset(newParams);
+                store.loadPageAsset(pageParams);
                 spectator.detectChanges();
-                expect(spyStoreLoadPage).toHaveBeenCalledWith(newParams);
-                expect(spyUrlTree).toHaveBeenCalledWith([], { queryParams: newParams });
-                expect(spyLocation).toHaveBeenCalledWith(url.toString());
+
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(pageParams);
+                expect(spyUrlTree).toHaveBeenCalledWith([], { queryParams: userParams });
+                expect(spyLocation).toHaveBeenCalledWith(expectURL.toString());
             });
         });
 

@@ -37,6 +37,7 @@ import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
+    createUserQueryParams,
     getAllowedPageParams,
     getTargetUrl,
     sanitizeURL,
@@ -101,31 +102,27 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const userParams = this.uveStore.$friendlyParams();
+        const userParams = this.uveStore.pageParams();
         const viewParams = this.uveStore.viewParams();
 
         if (!userParams && !viewParams) {
             return;
         }
 
-        const queryParams = {
+        const queryParams = createUserQueryParams({
             ...(userParams ?? {}),
             ...(viewParams ?? {})
-        };
+        });
 
         this.#updateLocation(queryParams);
     });
 
     ngOnInit(): void {
-        // Unify this getUVEParams
         const params = this.#getPageParams();
         const viewParams = this.#getViewParams(params.editorMode);
-        // setUVEParams
+
         this.uveStore.patchViewParams(viewParams);
-        // parseUVEParamsForPage
-        // convertUVEToPageParams
-        // extractPageParamsFromUVE
-        //
+
         this.uveStore.loadPageAsset(params);
 
         // We need to skip one because it's the initial value

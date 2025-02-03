@@ -214,7 +214,7 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000&personaId=dot%3Apersona'
                 );
             });
 
@@ -248,7 +248,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/first?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                    'http://localhost:3000/first?language_id=1&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000&personaId=dot%3Apersona'
                 );
             });
         });

@@ -43,7 +43,7 @@ import {
     sanitizeURL,
     getWrapperMeasures,
     createUserQueryParams,
-    buildPageApiUrl
+    buildFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
@@ -57,7 +57,7 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
     }
 
     const queryParams = createUserQueryParams(params);
-    const pageAPIQueryParams = buildPageApiUrl(pageURI, queryParams);
+    const pageAPIQueryParams = buildFullPageURL(pageURI, queryParams);
     const url = new URL(pageAPIQueryParams, params.clientHost || window.location.origin);
 
     return url.toString();

@@ -222,51 +222,23 @@ export const getPersonalization = (persona: Record<string, string>) => {
 };
 
 /**
- * Create a page api url with query params
+ * Create full page URL including the Query Params
  *
  * @export
  * @param {string} url
- * @param {Partial<DotPageAssetParams>} params
+ * @param {Record<string, string> | DotPageAssetParams} params
  * @return {*}  {string}
  */
-export function createPageApiUrlWithQueryParams(
+export function buildFullPageURL(
     url: string,
-    params: Partial<DotPageAssetParams>
+    params: Record<string, string> | DotPageAssetParams
 ): string {
-    // Set default values
-    const completedParams = {
-        ...params,
-        language_id: params?.language_id ?? '1',
-        [PERSONA_KEY]: params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-        variantName: params?.variantName ?? DEFAULT_VARIANT_ID
-    };
-
-    // Filter out undefined values and url
-    Object.keys(completedParams).forEach(
-        (key) =>
-            (completedParams[key] === undefined || key === 'url') && delete completedParams[key]
-    );
-
-    const queryParams = new URLSearchParams({
-        ...completedParams
-    }).toString();
-
-    return queryParams.length ? `${url}?${queryParams}` : url;
-}
-
-/**
- * Create a page api url with query params
- *
- * @export
- * @param {string} url
- * @param {Record<string, string>} params
- * @return {*}  {string}
- */
-export function buildPageApiUrl(url: string, params: Record<string, string>): string {
     const queryParams = { ...params };
 
-    // Delete url from QP
-    delete queryParams['url'];
+    // Delete url from QP\
+    if (queryParams.url) {
+        delete queryParams['url'];
+    }
 
     // Filter out undefined values
     Object.keys(queryParams).forEach(

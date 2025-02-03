@@ -22,7 +22,7 @@ import { PERSONA_KEY, UVE_MODE_TO_PAGE_MODE } from '../shared/consts';
 import { PAGE_MODE } from '../shared/enums';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
-import { buildPageApiUrl, cleanPageURL } from '../utils';
+import { buildFullPageURL, cleanPageURL } from '../utils';
 
 export interface DotPageApiResponse {
     page: DotPage;
@@ -102,7 +102,7 @@ export class DotPageApiService {
         // This should be not controled here
         const pageType = clientHost ? 'json' : 'render';
         const mode = UVE_MODE_TO_PAGE_MODE[editorMode] ?? PAGE_MODE.EDIT;
-        const pageURL = buildPageApiUrl(pagePath, { mode, ...pageParams });
+        const pageURL = buildFullPageURL(pagePath, { mode, ...pageParams });
 
         return this.http
             .get<{
