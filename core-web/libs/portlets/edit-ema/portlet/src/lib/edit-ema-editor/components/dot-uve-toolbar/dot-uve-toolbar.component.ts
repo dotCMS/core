@@ -201,9 +201,6 @@ export class DotUveToolbarComponent {
         const existPersona =
             persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
-        // console.log("existPersona:", existPersona);
-        // console.log("persona:", persona);
-
         if (existPersona) {
             this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
 
