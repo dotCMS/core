@@ -88,7 +88,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
+import { DEFAULT_PERSONA, WINDOW, HOST, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
@@ -396,7 +396,7 @@ describe('EditEmaEditorComponent', () => {
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
             });
 
             spectator.detectChanges();
@@ -442,7 +442,7 @@ describe('EditEmaEditorComponent', () => {
                 store.loadPageAsset({
                     url: 'index',
                     language_id: '5',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                     variantName: 'hello-there',
                     experimentId: 'i-have-a-running-experiment'
                 });
@@ -464,7 +464,7 @@ describe('EditEmaEditorComponent', () => {
                 store.loadPageAsset({
                     url: 'index',
                     language_id: '5',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                 });
 
                 spectator.detectChanges();
@@ -691,7 +691,7 @@ describe('EditEmaEditorComponent', () => {
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '1',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     spectator.detectChanges();
@@ -2573,7 +2573,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/page-one?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
+                        'http://localhost:3000/page-one?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1'
                     );
                 });
 
@@ -2585,7 +2585,7 @@ describe('EditEmaEditorComponent', () => {
                         store.loadPageAsset({
                             url: 'index',
                             language_id: '3',
-                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                             clientHost: undefined
                         });
                     });
@@ -2625,7 +2625,7 @@ describe('EditEmaEditorComponent', () => {
                         store.loadPageAsset({
                             url: 'index',
                             language_id: '4',
-                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                         });
 
                         spectator.detectChanges();
@@ -2665,7 +2665,7 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(spyloadPageAsset).toHaveBeenCalledWith({
                         url: '/some',
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                        [PERSONA_KEY]: 'modes.persona.no.persona'
                     });
                 });
 
@@ -2708,7 +2708,7 @@ describe('EditEmaEditorComponent', () => {
                     );
 
                     expect(spyloadPageAsset).toHaveBeenCalledWith({
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        [PERSONA_KEY]: 'modes.persona.no.persona',
                         url: '/some'
                     });
                 });
@@ -2721,7 +2721,7 @@ describe('EditEmaEditorComponent', () => {
                     store.loadPageAsset({
                         url,
                         language_id: '5',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     spectator.detectChanges();
@@ -2760,7 +2760,7 @@ describe('EditEmaEditorComponent', () => {
                     store.loadPageAsset({
                         url: 'index',
                         language_id: '5',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                         variantName: 'hello-there',
                         experimentId: 'i have a variant'
                     });
@@ -2958,7 +2958,7 @@ describe('EditEmaEditorComponent', () => {
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '2',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
@@ -2999,7 +2999,7 @@ describe('EditEmaEditorComponent', () => {
                         clientHost: 'http://localhost:3000',
                         url: 'test-url',
                         language_id: '1',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');

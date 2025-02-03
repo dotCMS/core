@@ -31,6 +31,7 @@ import {
 import { withLoad } from './withLoad';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
+import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import {
     getVanityUrl,
@@ -57,7 +58,7 @@ const buildPageAPIResponseFromMock =
 const pageParams: DotPageApiParams = {
     url: 'new-url',
     language_id: '1',
-    'com.dotmarketing.persona.id': '2'
+    [PERSONA_KEY]: '2'
 };
 
 const initialState: UVEState = {

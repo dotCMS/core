@@ -9,6 +9,7 @@ import { mockWorkflowsActions } from '@dotcms/utils-testing';
 import { withWorkflow } from './withWorkflow';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
+import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { UVEState } from '../../models';
@@ -16,7 +17,7 @@ import { UVEState } from '../../models';
 const pageParams: DotPageApiParams = {
     url: 'new-url',
     language_id: '1',
-    'com.dotmarketing.persona.id': '2'
+    [PERSONA_KEY]: '2'
 };
 
 const initialState: UVEState = {
