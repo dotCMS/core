@@ -13,13 +13,12 @@ import { UVEState, UVE_MODE } from './types';
  * The state includes:
  * - mode: The current editor mode (preview, edit, live)
  * - languageId: The language ID of the current page setted on the UVE
- * - url: The URL of the current page
  * - persona: The persona of the current page setted on the UVE
  * - variantName: The name of the current variant
  * - experimentId: The ID of the current experiment
  * - publishDate: The publish date of the current page setted on the UVE
  *
- * The absence of any of these properties means that the value is the default one.
+ * @note The absence of any of these properties means that the value is the default one.
  *
  * @example
  * ```ts
