@@ -43,6 +43,7 @@ jest.mock('@dotcms/client', () => ({
 }));
 
 jest.mock('@dotcms/uve', () => ({
+    ...jest.requireActual('@dotcms/uve'),
     getUVEState: jest.fn().mockImplementation(() => ({
         mode: 'edit'
     }))

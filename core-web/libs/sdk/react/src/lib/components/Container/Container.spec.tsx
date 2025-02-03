@@ -41,7 +41,9 @@ describe('Container', () => {
         it('renders NoComponent component for unsupported content types', () => {
             const updatedContext = {
                 ...mockPageContext,
-                isInsideEditor: true,
+                UVEState: {
+                    mode: uve.UVE_MODE.EDIT
+                },
                 components: {}
             };
 
@@ -59,7 +61,9 @@ describe('Container', () => {
         it('render custom NoComponent component for unsetted content types', () => {
             const updatedContext = {
                 ...mockPageContext,
-                isInsideEditor: true,
+                UVEState: {
+                    mode: uve.UVE_MODE.EDIT
+                },
                 components: {
                     CustomNoComponent: () => (
                         <div data-testid="custom-no-component">Custom No Component</div>
@@ -88,7 +92,9 @@ describe('Container', () => {
             const updatedContext = {
                 ...mockPageContext,
                 components: {},
-                isInsideEditor: true
+                UVEState: {
+                    mode: uve.UVE_MODE.EDIT
+                }
             };
 
             render(
@@ -117,11 +123,13 @@ describe('Container', () => {
                 uuid: '2',
                 containers: []
             };
-            it('renders EmptyContainer component in editor mode', () => {
+            it('renders EmptyContainer component in EDIT mode', () => {
                 const updatedContext = {
                     ...mockPageContext,
                     components: {},
-                    isInsideEditor: true
+                    UVEState: {
+                        mode: uve.UVE_MODE.EDIT
+                    }
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>
@@ -134,13 +142,33 @@ describe('Container', () => {
                 );
             });
 
-            it('dont render EmptyContainer component outside editor mode', () => {
+            it('dont render EmptyContainer component on LIVE mode ', () => {
                 jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
                 const updatedContext = {
                     ...mockPageContext,
                     components: {},
-                    isInsideEditor: false
+                    UVEState: {
+                        mode: uve.UVE_MODE.LIVE
+                    }
+                };
+                render(
+                    <MockContextRender mockContext={updatedContext}>
+                        <Container containerRef={mockContainerRef} />
+                    </MockContextRender>
+                );
+
+                expect(screen.queryByTestId('dot-container')).toBeNull();
+            });
+            it('dont render EmptyContainer component on PREVIEW mode', () => {
+                jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+
+                const updatedContext = {
+                    ...mockPageContext,
+                    components: {},
+                    UVEState: {
+                        mode: uve.UVE_MODE.PREVIEW
+                    }
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>

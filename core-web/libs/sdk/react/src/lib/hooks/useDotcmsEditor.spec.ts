@@ -11,9 +11,6 @@ import { mockPageContext } from '../mocks/mockPageContext';
 jest.mock('@dotcms/client', () => ({
     ...jest.requireActual('@dotcms/client'),
     isInsideEditor: () => true,
-    getUVEState: () => ({
-        mode: 'edit'
-    }),
     postMessageToEditor: jest.fn(),
     DotCmsClient: {
         instance: {
@@ -24,6 +21,11 @@ jest.mock('@dotcms/client', () => ({
             }
         }
     }
+}));
+
+jest.mock('@dotcms/uve', () => ({
+    ...jest.requireActual('@dotcms/uve'),
+    getUVEState: jest.fn()
 }));
 
 const { DotCmsClient } = sdkClient as jest.Mocked<typeof sdkClient>;
@@ -45,7 +47,7 @@ describe('useDotcmsEditor', () => {
 
     describe('when outside editor', () => {
         it('should not call initEditor or destroyEditor when outside editor', () => {
-            getUVEStateSpy.mockReturnValueOnce(undefined);
+            getUVEStateSpy.mockReturnValue(undefined);
 
             renderHook(() =>
                 useDotcmsEditor({
@@ -61,7 +63,7 @@ describe('useDotcmsEditor', () => {
 
     describe('when inside editor', () => {
         it('should call initEditor when inside editor', () => {
-            getUVEStateSpy.mockReturnValueOnce({
+            getUVEStateSpy.mockReturnValue({
                 mode: uve.UVE_MODE.EDIT
             });
 
@@ -76,7 +78,7 @@ describe('useDotcmsEditor', () => {
         });
 
         it('should call destroyEditor on unmount when inside editor', () => {
-            getUVEStateSpy.mockReturnValueOnce({
+            getUVEStateSpy.mockReturnValue({
                 mode: uve.UVE_MODE.EDIT
             });
 
@@ -104,7 +106,7 @@ describe('useDotcmsEditor', () => {
             };
 
             beforeEach(() => {
-                getUVEStateSpy.mockReturnValueOnce({
+                getUVEStateSpy.mockReturnValue({
                     mode: uve.UVE_MODE.LIVE
                 });
             });

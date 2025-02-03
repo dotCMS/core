@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
+import { UVE_MODE } from '@dotcms/uve';
+
 import { Row } from './Row';
 
 import { MockContextRender } from '../../mocks/mockPageContext';
@@ -45,10 +47,10 @@ describe('Row', () => {
         styleClass: ''
     };
 
-    describe('row is inside editor', () => {
+    describe('row is on EDIT mode editor', () => {
         beforeEach(() => {
             render(
-                <MockContextRender mockContext={{ isInsideEditor: true }}>
+                <MockContextRender mockContext={{ UVEState: { mode: UVE_MODE.EDIT } }}>
                     <Row row={mockRowData} />
                 </MockContextRender>
             );
@@ -76,10 +78,34 @@ describe('Row', () => {
             expect(columns.length).toBe(mockRowData.columns.length);
         });
     });
-    describe('row is not inside editor', () => {
+    describe('row is on LIVE mode editor', () => {
         beforeEach(() => {
             render(
-                <MockContextRender mockContext={{ isInsideEditor: false }}>
+                <MockContextRender
+                    mockContext={{
+                        UVEState: {
+                            mode: UVE_MODE.LIVE
+                        }
+                    }}>
+                    <Row row={mockRowData} />
+                </MockContextRender>
+            );
+        });
+
+        it('should not have dot attr', () => {
+            expect(screen.queryByTestId('row')).toBeNull();
+        });
+    });
+
+    describe('row is on PREVIEW mode editor', () => {
+        beforeEach(() => {
+            render(
+                <MockContextRender
+                    mockContext={{
+                        UVEState: {
+                            mode: UVE_MODE.PREVIEW
+                        }
+                    }}>
                     <Row row={mockRowData} />
                 </MockContextRender>
             );
