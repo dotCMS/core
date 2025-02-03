@@ -23,6 +23,24 @@ public class JobResponseUtil {
      * @return The base URL as a string
      */
     private static String buildBaseUrlFromRequest(HttpServletRequest request) {
-        return request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+
+        if (scheme == null || scheme.isBlank()) {
+            scheme = "http";
+        }
+
+        boolean isDefaultPort = ("http".equalsIgnoreCase(scheme) && serverPort == 80) ||
+                ("https".equalsIgnoreCase(scheme) && serverPort == 443);
+
+        StringBuilder baseUrl = new StringBuilder();
+        baseUrl.append(scheme).append("://").append(serverName);
+
+        if (!isDefaultPort) {
+            baseUrl.append(":").append(serverPort);
+        }
+
+        return baseUrl.toString();
     }
 }
