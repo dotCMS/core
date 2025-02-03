@@ -615,6 +615,7 @@ describe('Utils Functions', () => {
     describe('UI State Storage', () => {
         beforeEach(() => {
             localStorage.clear();
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
             jest.spyOn(console, 'warn').mockImplementation(() => {});
         });
 
