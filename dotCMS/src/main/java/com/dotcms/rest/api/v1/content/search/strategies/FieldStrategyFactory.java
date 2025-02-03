@@ -19,8 +19,15 @@ public class FieldStrategyFactory {
 
     static {
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.CONTENT_TYPE_IDS, new ContentTypesFieldStrategy());
-        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.SITE_ID, new SiteFieldStrategy());
-        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.GLOBAL_SEARCH, new GlobalSearchFieldStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.SITE_ID, new SiteAttributeStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.GLOBAL_SEARCH, new GlobalSearchAttributeStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.VARIANT, new VariantAttributeStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.LANGUAGE, new LanguageAttributeStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.WORKFLOW_SCHEME, new WorkflowSchemeAttributeAction());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.WORKFLOW_STEP, new WorkflowStepAttributeAction());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.ARCHIVED_CONTENT, new ArchivedContentAttributeStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.LOCKED_CONTENT, new LockedContentAttributeStrategy());
+        SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.LIVE_CONTENT, new UnpublishedContentAttributeStrategy());
 
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.TEXT, new TextFieldStrategy());
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.BINARY, new BinaryFieldStrategy());

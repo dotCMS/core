@@ -14,7 +14,51 @@ import java.util.Optional;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
- * Contains all the information needed to search for content in the dotCMS repository.
+ * This class contains all the information needed to search for content in the dotCMS repository.
+ * All data is sent via JSON using the following format:
+ * <pre>
+ *     {@code
+ *     {
+ *         "globalSearch": "",
+ *         "searchableFieldsByContentType": {
+ *             "{{CONTENT_TYPE_ID_OR_VAR_NAME}}": {
+ *                 "binary": "{{STRING}}",
+ *                 "blockEditor": "{{STRING}}",
+ *                 "category": "{{STRING:comma-separated list of values}}",
+ *                 "checkbox": "{{STRING:comma-separated list of values}}",
+ *                 "custom": "{{STRING}}",
+ *                 "date": "{{STRING}}",
+ *                 "dateAndTime": "{{STRING}}:date or date and time",
+ *                 "json": "{{STRING}}",
+ *                 "keyValue": "{{STRING}}",
+ *                 "multiSelect": "{{STRING:comma-separated list of values}}",
+ *                 "radio": "{{STRING}}",
+ *                 "relationships": "{{STRING}}",
+ *                 "select": "{{STRING}}",
+ *                 "tag": "{{STRING:comma-separated list of values}}",
+ *                 "title": "{{STRING}}",
+ *                 "textArea": "{{STRING}}",
+ *                 "time": "{{STRING}}",
+ *                 "wysiwyg": "{{STRING}}"
+ *             }
+ *         },
+ *         "systemSearchableFields": {
+ *             "siteId": "{{STRING}}",
+ *             "languageId": {{INTEGER}},
+ *             "workflowSchemeId": "{{STRING}}",
+ *             "workflowStepId": "{{STRING}}",
+ *             "variantName": "{{STRING}}",
+ *             "systemHostContent": {{BOOLEAN}}
+ *         },
+ *         "archivedContent": {{BOOLEAN}},
+ *         "unpublishedContent": {{BOOLEAN}},
+ *         "lockedContent": {{BOOLEAN}},
+ *         "orderBy": "{{STRING}}",
+ *         "page": {{INTEGER}},
+ *         "perPage": {{INTEGER}}
+ *     }
+ *     }
+ * </pre>
  *
  * @author Jose Castro
  * @since Jan 29th, 2025
@@ -26,9 +70,9 @@ public class ContentSearchForm implements Serializable {
     private final Map<String, Map<String, Object>> searchableFieldsByContentType;
     private final Map<String, Object> systemSearchableFields;
 
-    private final boolean archivedContent;
-    private final boolean unpublishedContent;
-    private final boolean lockedContent;
+    private final String archivedContent;
+    private final String unpublishedContent;
+    private final String lockedContent;
 
     private final String orderBy;
     private final int page;
@@ -110,15 +154,15 @@ public class ContentSearchForm implements Serializable {
         return new ArrayList<>(this.searchableFieldsByContentType.keySet());
     }
 
-    public boolean archivedContent() {
+    public String archivedContent() {
         return this.archivedContent;
     }
 
-    public boolean unpublishedContent() {
+    public String unpublishedContent() {
         return this.unpublishedContent;
     }
 
-    public boolean lockedContent() {
+    public String lockedContent() {
         return this.lockedContent;
     }
 
@@ -147,11 +191,11 @@ public class ContentSearchForm implements Serializable {
         private Map<String, Object> systemSearchableFields;
 
         @JsonProperty
-        private boolean archivedContent = false;
+        private String archivedContent = BLANK;
         @JsonProperty
-        private boolean unpublishedContent = false;
+        private String unpublishedContent = BLANK;
         @JsonProperty
-        private boolean lockedContent = false;
+        private String lockedContent = BLANK;
 
         @JsonProperty
         private String orderBy = BLANK;
@@ -175,17 +219,17 @@ public class ContentSearchForm implements Serializable {
             return this;
         }
 
-        public Builder archivedContent(final boolean archivedContent) {
+        public Builder archivedContent(final String archivedContent) {
             this.archivedContent = archivedContent;
             return this;
         }
 
-        public Builder unpublishedContent(final boolean unpublishedContent) {
+        public Builder unpublishedContent(final String unpublishedContent) {
             this.unpublishedContent = unpublishedContent;
             return this;
         }
 
-        public Builder lockedContent(final boolean lockedContent) {
+        public Builder lockedContent(final String lockedContent) {
             this.lockedContent = lockedContent;
             return this;
         }

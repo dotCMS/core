@@ -6,12 +6,11 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.ContentSearchForm;
-import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
+import com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId;
 import com.dotcms.rest.api.v1.content.search.strategies.FieldStrategy;
 import com.dotcms.rest.api.v1.content.search.strategies.FieldStrategyFactory;
-import com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId;
-import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -31,10 +30,15 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.VARIANT;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_CURRENT_STEP;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKFLOW_STEP;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.ARCHIVED_CONTENT;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.GLOBAL_SEARCH;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.LANGUAGE;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.LIVE_CONTENT;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.LOCKED_CONTENT;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.SITE_ID;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.VARIANT;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.WORKFLOW_SCHEME;
+import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.WORKFLOW_STEP;
 import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.COMMA;
 import static com.liferay.util.StringPool.SPACE;
@@ -199,30 +203,41 @@ public class LuceneQueryBuilder {
      */
     private List<String> getSystemSearchableQueries() {
         return Stream.of(
-                        createQuery(ESMappingConstants.TITLE, contentSearchForm.globalSearch(), FieldHandlerId.GLOBAL_SEARCH),
-                        createQuery(ESMappingConstants.CONTENTLET_HOST, contentSearchForm.siteId(), FieldHandlerId.SITE_ID,
+                        createQuery(ESMappingConstants.TITLE, contentSearchForm.globalSearch(), GLOBAL_SEARCH),
+                        createQuery(ESMappingConstants.CONTENTLET_HOST, contentSearchForm.siteId(), SITE_ID,
                                 Map.of("systemHostContent", contentSearchForm.systemHostContent())),
-                        createLanguageQuery(),
-                        createWorkflowQuery(),
-                        createVariantQuery(),
-                        "+deleted:" + contentSearchForm.archivedContent(),
-                        "+locked:" + contentSearchForm.lockedContent(),
-                        "+live:" + !contentSearchForm.unpublishedContent(),
+                        createQuery(ESMappingConstants.LANGUAGE_ID, contentSearchForm.languageId(), LANGUAGE),
+                        createQuery(ESMappingConstants.WORKFLOW_SCHEME, contentSearchForm.workflowSchemeId(), WORKFLOW_SCHEME),
+                        createQuery(ESMappingConstants.WORKFLOW_STEP, contentSearchForm.workflowStepId(), WORKFLOW_STEP),
+                        //createWorkflowQuery(),
+                        createQuery(ESMappingConstants.VARIANT, contentSearchForm.variantName(), VARIANT),
+                        //"+deleted:" + contentSearchForm.archivedContent(),
+                        createQuery(ESMappingConstants.DELETED, contentSearchForm.archivedContent(), ARCHIVED_CONTENT),
+                        //createOptionalQuery("locked", contentSearchForm.lockedContent()),
+                        createQuery(ESMappingConstants.LOCKED, contentSearchForm.lockedContent(), LOCKED_CONTENT),
+                        //createOptionalQuery("live", contentSearchForm.unpublishedContent()),
+                        createQuery(ESMappingConstants.LIVE, contentSearchForm.unpublishedContent(), LIVE_CONTENT),
                         "+working:true"
                 ).filter(UtilMethods::isSet)
                 .collect(Collectors.toList());
     }
 
-    /**
+    private String createOptionalQuery(final String fieldName, String fieldValue) {
+     return UtilMethods.isSet(fieldValue) ?
+             "+" + fieldName + ":" + contentSearchForm.lockedContent()
+             : BLANK;
+    }
+
+     /**
      * Generates the Lucene query for the language ID specified in the {@link ContentSearchForm}.
      *
      * @return The Lucene query for the language ID specified in the {@link ContentSearchForm}.
      */
-    private String createLanguageQuery() {
+    /*private String createLanguageQuery() {
         return this.contentSearchForm.languageId() > 0
                 ? "+languageId:" + this.contentSearchForm.languageId()
                 : BLANK;
-    }
+    }*/
 
     /**
      * Generates the Lucene query for the variant name specified in the {@link ContentSearchForm}.
@@ -230,13 +245,13 @@ public class LuceneQueryBuilder {
      *
      * @return The Lucene query for the variant name specified in the {@link ContentSearchForm}.
      */
-    private String createVariantQuery() {
+    /*private String createVariantQuery() {
         if (UtilMethods.isSet(this.contentSearchForm.variantName())
                 && !VariantAPI.DEFAULT_VARIANT.name().equals(this.contentSearchForm.variantName())) {
             return "+(" + VARIANT + ":" + this.contentSearchForm.variantName() + " OR " + VARIANT + ":default)";
         }
         return "+" + VARIANT + ":default";
-    }
+    }*/
 
     /**
      * Generates the Lucene query for the workflow scheme ID and workflow step ID specified in the
@@ -245,7 +260,7 @@ public class LuceneQueryBuilder {
      * @return The Lucene query for the workflow scheme ID and workflow step ID specified in the
      * {@link ContentSearchForm}.
      */
-    private String createWorkflowQuery() {
+    /*private String createWorkflowQuery() {
         if (UtilMethods.isSet(this.contentSearchForm.workflowSchemeId())) {
             return "+(" + ESMappingConstants.WORKFLOW_SCHEME + ":" + this.contentSearchForm.workflowSchemeId() + "*)";
         }
@@ -258,26 +273,29 @@ public class LuceneQueryBuilder {
             return "+(" + velocityVarName + ":" + this.contentSearchForm.workflowStepId() + "*)";
         }
         return BLANK;
-    }
+    }*/
 
     /**
      * Creates a Lucene query based on the field name, value, and strategy ID provided.
      *
      * @param fieldName  The search term that will be used to build the Lucene query.
      * @param value      The value of the search term.
-     * @param strategyId The {@link FieldHandlerId} that will be used to build the Lucene query.
+     * @param fieldHandlerId The {@link FieldHandlerId} that will be used to build the Lucene query.
      *
      * @return The Lucene query based on the field name, value, and strategy ID provided.
      */
-    private String createQuery(final String fieldName, final Object value, final FieldHandlerId strategyId) {
+    /*private String createQuery(final String fieldName, final Object value, final FieldHandlerId fieldHandlerId) {
         final FieldContext fieldContext = new FieldContext.Builder()
                 .withFieldName(fieldName)
                 .withFieldValue(value)
                 .build();
-        if (FieldStrategyFactory.getStrategy(FieldHandlerId.GLOBAL_SEARCH).checkRequiredValues(fieldContext)) {
-            return FieldStrategyFactory.getStrategy(strategyId).generateQuery(fieldContext);
+        if (FieldStrategyFactory.getStrategy(fieldHandlerId).checkRequiredValues(fieldContext)) {
+            return FieldStrategyFactory.getStrategy(fieldHandlerId).generateQuery(fieldContext);
         }
         return BLANK;
+    }*/
+    private String createQuery(final String fieldName, final Object value, final FieldHandlerId fieldHandlerId) {
+        return this.createQuery(fieldName, value, fieldHandlerId, Map.of());
     }
 
     /**
@@ -294,12 +312,13 @@ public class LuceneQueryBuilder {
      * provided.
      */
     private String createQuery(final String fieldName, final Object value, final FieldHandlerId strategyId, final Map<String, Object> extraParams) {
-        return FieldStrategyFactory.getStrategy(strategyId)
-                .generateQuery(new FieldContext.Builder()
-                        .withFieldName(fieldName)
-                        .withFieldValue(value)
-                        .withExtraParams(extraParams)
-                        .build());
+        final FieldStrategy strategy = FieldStrategyFactory.getStrategy(strategyId);
+        final FieldContext fieldContext = new FieldContext.Builder()
+                .withFieldName(fieldName)
+                .withFieldValue(value)
+                .withExtraParams(extraParams)
+                .build();
+        return strategy.checkRequiredValues(fieldContext) ? strategy.generateQuery(fieldContext) : BLANK;
     }
 
     /**

@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class CategoryFieldStrategy implements FieldStrategy {
         final List<String> permissionedCategories = this.extractPermissionedCategories(fieldValue, fieldContext.user());
         final String values = permissionedCategories.stream().map(category -> fieldName + ":" + category + " ")
                 .collect(Collectors.joining());
-        return "+(" + values.trim() + ")";
+        return UtilMethods.isSet(values) ? "+(" + values.trim() + ")" : BLANK;
     }
 
     /**
@@ -54,7 +55,11 @@ public class CategoryFieldStrategy implements FieldStrategy {
         for (final String categoryId : categoryList) {
             try {
                 final Category category = catAPI.find(categoryId, user, false);
-                permissionedCategoryNames.add(category.getCategoryVelocityVarName());
+                if (null != category && UtilMethods.isSet(category.getKey())) {
+                    permissionedCategoryNames.add(category.getCategoryVelocityVarName());
+                    continue;
+                }
+                Logger.warn(this, String.format("Category ID '%s' not found.", categoryId));
             } catch (final DotDataException e) {
                 Logger.warnAndDebug(CategoryFieldStrategy.class, String.format("An error occurred when retrieving Category ID " +
                         "'%s': %s", categoryId, ExceptionUtil.getErrorMessage(e)), e);

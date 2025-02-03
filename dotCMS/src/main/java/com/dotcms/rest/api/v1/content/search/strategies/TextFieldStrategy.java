@@ -5,7 +5,9 @@ import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CharMatcher;
 
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.liferay.util.StringPool.SPACE;
 
@@ -30,21 +32,25 @@ public class TextFieldStrategy implements FieldStrategy {
             wildcard = "\"";
             fieldValue = CharMatcher.is('\"').trimFrom(fieldValue).trim();
         }
-        final StringBuilder luceneQuery = new StringBuilder();
+        final String finalWildcard = wildcard;
+        final String luceneQuery;
         if (this.isFieldInURLMapPattern(fieldContext.contentType(), fieldName)) {
-            for (final String token : fieldValue.split(VALUE_SPLIT_REGEX)) {
-                luceneQuery.append("+").append(fieldName).append("_dotraw:")
-                        .append(wildcard).append(token).append(wildcard).append(SPACE);
-            }
+            luceneQuery = Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
+                    .map(String::trim)
+                    .filter(token -> !token.isEmpty())
+                    .map(token -> String.format("+%s_dotraw:%s%s%s",
+                            fieldName, finalWildcard, token, finalWildcard))
+                    .collect(Collectors.joining(SPACE));
         } else {
-            for (final String token : fieldValue.split(VALUE_SPLIT_REGEX)) {
-                luceneQuery.append("+(").append(fieldName).append(":")
-                        .append(wildcard).append(token).append(wildcard).append(SPACE);
-                luceneQuery.append(fieldName).append("_dotraw:")
-                        .append(wildcard).append(token).append(wildcard).append(")").append(SPACE);
-            }
+            luceneQuery = Arrays.stream(fieldValue.split(VALUE_SPLIT_REGEX))
+                    .map(String::trim)
+                    .filter(token -> !token.isEmpty())
+                    .map(token -> String.format("+(%s:%s%s%s %s_dotraw:%s%s%s)",
+                            fieldName, finalWildcard, token, finalWildcard,
+                            fieldName, finalWildcard, token, finalWildcard))
+                    .collect(Collectors.joining(SPACE));
         }
-        return luceneQuery.toString().trim();
+        return luceneQuery.trim();
     }
 
     /**

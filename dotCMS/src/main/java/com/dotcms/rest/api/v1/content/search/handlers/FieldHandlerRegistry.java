@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -58,6 +59,8 @@ public class FieldHandlerRegistry {
         registerHandler(Set.of(DateField.class, DateTimeField.class, TimeField.class), FieldHandlerId.DATE_TIME);
 
         registerHandler(Set.of(CategoryField.class), FieldHandlerId.CATEGORY);
+
+        registerHandler(Set.of(KeyValueField.class), FieldHandlerId.KEY_VALUE);
 
         registerHandler(Set.of(RelationshipField.class), FieldHandlerId.RELATIONSHIP);
 

@@ -10,17 +10,24 @@ package com.dotcms.rest.api.v1.content.search.strategies;
  */
 public enum FieldHandlerId {
 
-    DEFAULT("default"),
+    GLOBAL_SEARCH("globalSearch"),
     CONTENT_TYPE_IDS("contentTypeIds"),
     SITE_ID("siteId"),
-    GLOBAL_SEARCH("globalSearch"),
     TEXT("text"),
     BINARY("binary"),
     DATE_TIME("dateTime"),
     KEY_VALUE("keyValue"),
     CATEGORY("category"),
     RELATIONSHIP("relationship"),
-    TAG("tag");
+    TAG("tag"),
+    VARIANT("variant"),
+    LANGUAGE("language"),
+    WORKFLOW_SCHEME("workflowScheme"),
+    WORKFLOW_STEP("workflowStep"),
+    ARCHIVED_CONTENT("archivedContent"),
+    LOCKED_CONTENT("lockedContent"),
+    LIVE_CONTENT("liveContent"),
+    DEFAULT("default");
 
     private final String id;
 

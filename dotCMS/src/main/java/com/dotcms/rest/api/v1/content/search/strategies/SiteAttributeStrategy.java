@@ -8,12 +8,15 @@ import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This Strategy Field implementation provides a default way to format the value of the Site ID that
- * will be used in the Lucene query, if required.
+ * will be used in the Lucene query, if required. This particular Strategy does not belong to a
+ * specific Content Type field, but to the parameter that allows you to specify the Site ID in a
+ * Lucene query via the following term:
+ * {@link com.dotcms.content.elasticsearch.constants.ESMappingConstants#CONTENTLET_HOST}
  *
  * @author Jose Castro
  * @since Jan 29th, 2025
  */
-public class SiteFieldStrategy implements FieldStrategy {
+public class SiteAttributeStrategy implements FieldStrategy {
 
     @Override
     public boolean checkRequiredValues(final FieldContext fieldContext) {
