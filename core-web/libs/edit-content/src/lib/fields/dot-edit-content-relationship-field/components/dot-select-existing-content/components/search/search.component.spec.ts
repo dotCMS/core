@@ -13,6 +13,7 @@ import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relat
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
+import { SiteFieldComponent } from './components/site-field/site-field.component';
 import { SearchComponent } from './search.compoment';
 
 describe('SearchComponent', () => {
@@ -29,7 +30,7 @@ describe('SearchComponent', () => {
             InputTextModule,
             OverlayPanelModule
         ],
-        declarations: [MockComponent(LanguageFieldComponent)],
+        declarations: [MockComponent(LanguageFieldComponent), MockComponent(SiteFieldComponent)],
         mocks: [DotMessagePipe],
         detectChanges: true
     });
