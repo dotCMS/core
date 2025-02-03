@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     ORDER BY (_timestamp, customer_id)
     SETTINGS index_granularity = 8192;
 
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_utc_time (utc_time) TYPE minmax GRANULARITY 1;
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_cluster_id (cluster_id) TYPE minmax GRANULARITY 1;
+
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_id String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_title String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_content_type_id String;
@@ -71,3 +74,39 @@ ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS host String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS sessionid String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS sessionnew bool;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS rendermode String;
+
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS languageid String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_live String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_working String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS useragent String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS conhost String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS conhostname String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_identifier String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_basetype String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_contenttype String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_contenttypename String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_contenttypeid String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_forwardto String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS object_action String;
+
+ALTER TABLE clickhouse_test_db.events
+UPDATE
+    object_identifier = if(object_id != '', object_id, object_identifier),
+    conhost = if(host != '', host, conhost),
+    object_contenttypename = if(object_content_type_name != '', object_content_type_name, object_contenttypename),
+    object_contenttypeid = if(object_content_type_id != '', object_content_type_id, object_contenttypeid),
+    object_forwardto = if(object_forward_to != '', object_forward_to, object_forwardto),
+    object_action = if(object_response != '', object_response, object_action)
+WHERE 1=1;
+
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_id;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS rendermode;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_content_type_var_name;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS host;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_response;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_content_type_id;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_content_type_name;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_detail_page_url;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_url;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_forward_to;
+ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS comefromvanityurl;
