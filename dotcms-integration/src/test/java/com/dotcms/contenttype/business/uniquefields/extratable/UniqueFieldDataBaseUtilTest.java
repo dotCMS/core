@@ -392,7 +392,7 @@ public class UniqueFieldDataBaseUtilTest {
                 .setValue(liveUniqueValue)
                 .build();
 
-        final String hash = new DotConnect().setSQL("SELECT encode(sha256(?::bytea), 'hex') as hash")
+        final String hash = new DotConnect().setSQL("SELECT encode(sha256(convert_to(?::text, 'UTF8' )), 'hex') as hash")
                  .addParam(uniqueFieldCriteria.criteria())
                  .loadObjectResults().get(0).get("hash").toString();
         return hash;
