@@ -37,7 +37,7 @@ import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
-    createUserQueryParams,
+    normalizeQueryParams,
     getAllowedPageParams,
     getTargetUrl,
     sanitizeURL,
@@ -109,7 +109,7 @@ export class DotEmaShellComponent implements OnInit {
             return;
         }
 
-        const queryParams = createUserQueryParams({
+        const queryParams = normalizeQueryParams({
             ...(userParams ?? {}),
             ...(viewParams ?? {})
         });

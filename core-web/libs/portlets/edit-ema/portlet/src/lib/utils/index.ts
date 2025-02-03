@@ -252,11 +252,22 @@ export function buildFullPageURL(
     return queryParamsString ? `${url}?${queryParamsString}` : url;
 }
 
-export function createUserQueryParams(params) {
+/**
+ * Cleans and transforms query parameters for better readability and usability.
+ *
+ * This function processes the given query parameters by removing unnecessary values
+ * (e.g., default identifiers) and renaming specific keys for a more user-friendly format.
+ * Additional transformations can be applied as needed.
+ *
+ * @export
+ * @param {Object} params - The raw query parameters to be processed.
+ * @return {Object} A cleaned and formatted version of the query parameters.
+ */
+export function normalizeQueryParams(params) {
     const queryParams = { ...params };
 
     if (queryParams[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
-        delete queryParams.personaId;
+        delete queryParams[PERSONA_KEY];
     }
 
     if (queryParams[PERSONA_KEY]) {

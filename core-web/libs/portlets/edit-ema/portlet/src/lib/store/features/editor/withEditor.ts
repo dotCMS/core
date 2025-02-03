@@ -42,7 +42,7 @@ import {
     getEditorStates,
     sanitizeURL,
     getWrapperMeasures,
-    createUserQueryParams,
+    normalizeQueryParams,
     buildFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
@@ -56,7 +56,7 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
         return new String('');
     }
 
-    const queryParams = createUserQueryParams(params);
+    const queryParams = normalizeQueryParams(params);
     const pageAPIQueryParams = buildFullPageURL(pageURI, queryParams);
     const url = new URL(pageAPIQueryParams, params.clientHost || window.location.origin);
 

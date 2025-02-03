@@ -330,7 +330,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'index' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit&personaId=modes.persona.no.persona'
+                    '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit'
                 );
             });
 
@@ -355,7 +355,7 @@ describe('DotEmaShellComponent', () => {
                     url: 'some-url/some-nested-url'
                 });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&editorMode=edit&personaId=modes.persona.no.persona'
+                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&editorMode=edit'
                 );
             });
 
@@ -376,7 +376,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&editorMode=edit&personaId=modes.persona.no.persona'
+                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&editorMode=edit'
                 );
             });
         });
@@ -477,7 +477,7 @@ describe('DotEmaShellComponent', () => {
             expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyLocation).toHaveBeenCalledWith(
-                '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit&personaId=modes.persona.no.persona'
+                '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit'
             );
         });
 
