@@ -61,6 +61,7 @@ export enum DotPageAssetKeys {
     LANGUAGE_ID = 'language_id',
     EXPERIMENT_ID = 'experimentId',
     PERSONA_ID = 'com.dotmarketing.persona.id',
+    PERSONA_ID_FRIENDLY = 'personaId',
     PUBLISH_DATE = 'publishDate',
     EDITOR_MODE = 'editorMode'
 }

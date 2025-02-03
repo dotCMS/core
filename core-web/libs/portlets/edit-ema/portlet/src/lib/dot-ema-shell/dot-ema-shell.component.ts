@@ -232,6 +232,10 @@ export class DotEmaShellComponent implements OnInit {
             params.publishDate = params.publishDate || new Date().toISOString();
         }
 
+        if (queryParams['personaId']) {
+            params['com.dotmarketing.persona.id'] = queryParams['personaId'];
+        }
+
         return params;
     }
 
