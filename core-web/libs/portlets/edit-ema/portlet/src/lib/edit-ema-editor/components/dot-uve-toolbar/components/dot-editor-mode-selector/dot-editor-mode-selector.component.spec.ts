@@ -7,13 +7,14 @@ import { UVE_MODE } from '@dotcms/uve';
 
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
 
+import { PERSONA_KEY } from '../../../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const pageParams = {
     url: 'test-url',
     language_id: 'en',
-    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+    [PERSONA_KEY]: 'modes.persona.no.persona',
     editorMode: UVE_MODE.EDIT
 };
 

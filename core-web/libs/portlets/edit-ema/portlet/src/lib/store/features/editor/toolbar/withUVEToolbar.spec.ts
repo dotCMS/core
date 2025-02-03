@@ -12,7 +12,7 @@ import { UVE_MODE } from '@dotcms/uve';
 import { withUVEToolbar } from './withUVEToolbar';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
-import { DEFAULT_PERSONA } from '../../../../shared/consts';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
@@ -20,7 +20,7 @@ import { Orientation, UVEState } from '../../../models';
 const pageParams = {
     url: 'test-url',
     language_id: '1',
-    'com.dotmarketing.persona.id': 'dot:persona',
+    [PERSONA_KEY]: 'dot:persona',
     variantName: 'DEFAULT',
     clientHost: 'http://localhost:3000'
 };

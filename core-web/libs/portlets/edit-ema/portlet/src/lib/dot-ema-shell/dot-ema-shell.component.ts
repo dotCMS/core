@@ -101,24 +101,12 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const pageParams = this.uveStore.pageParams();
-        const viewParams = this.uveStore.viewParams();
-
-        if (!pageParams && !viewParams) {
-            return;
-        }
-
-        const queryParams = {
-            ...(pageParams ?? {}),
-            ...(viewParams ?? {})
-        };
-
-        this.#updateLocation(queryParams);
+        const params = this.uveStore.$friendlyParams();
+        this.#updateLocation(params);
     });
 
     ngOnInit(): void {
         const params = this.#getPageParams();
-
         const viewParams = this.#getViewParams(params.editorMode);
 
         this.uveStore.patchViewParams(viewParams);
@@ -228,8 +216,12 @@ export class DotEmaShellComponent implements OnInit {
             params.editorMode = UVE_MODE.EDIT;
         }
 
-        if (params.editorMode === UVE_MODE.LIVE && !params.publishDate) {
-            params.publishDate = new Date().toISOString();
+        if (params.editorMode === UVE_MODE.LIVE) {
+            params.publishDate = params.publishDate || new Date().toISOString();
+        }
+
+        if (queryParams['personaId']) {
+            params['com.dotmarketing.persona.id'] = queryParams['personaId'];
         }
 
         return params;
