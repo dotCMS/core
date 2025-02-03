@@ -1,0 +1,88 @@
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withComputed,
+    withMethods,
+    withState
+} from '@ngrx/signals';
+
+import { computed } from '@angular/core';
+
+import { getStoredUIState, saveStoreUIState } from '../../utils/functions.util';
+import { EditContentRootState } from '../edit-content.store';
+
+export interface UIState {
+    /** Active tab index in the content editor */
+    activeTab: number;
+    /** Flag to control sidebar visibility */
+    isSidebarOpen: boolean;
+    /** Active tab in the sidebar */
+    activeSidebarTab: number;
+}
+
+export const uiInitialState: UIState = getStoredUIState();
+
+/**
+ * Feature that manages UI-related state for the content editor
+ * This includes tab management and potentially other UI-specific state
+ */
+export function withUI() {
+    return signalStoreFeature(
+        { state: type<EditContentRootState>() },
+        withState({ uiState: uiInitialState }),
+        withComputed((store) => ({
+            /**
+             * Computed property that returns the currently active tab index
+             */
+            activeTab: computed(() => store.uiState().activeTab),
+            /**
+             * Computed property that returns the sidebar visibility state
+             */
+            isSidebarOpen: computed(() => store.uiState().isSidebarOpen),
+            /**
+             * Computed property that returns the active sidebar tab
+             */
+            activeSidebarTab: computed(() => store.uiState().activeSidebarTab)
+        })),
+        withMethods((store) => ({
+            /**
+             * Sets the active tab index in the store and persists it to localStorage
+             * @param index - The index of the tab to set as active
+             */
+            setActiveTab(index: number): void {
+                const newState = {
+                    ...store.uiState(),
+                    activeTab: index
+                };
+                patchState(store, { uiState: newState });
+                saveStoreUIState(newState);
+            },
+
+            /**
+             * Toggles the sidebar visibility and persists it to localStorage
+             */
+            toggleSidebar(): void {
+                const newState = {
+                    ...store.uiState(),
+                    isSidebarOpen: !store.uiState().isSidebarOpen
+                };
+                patchState(store, { uiState: newState });
+                saveStoreUIState(newState);
+            },
+
+            /**
+             * Sets the active sidebar tab and persists it to localStorage
+             * @param tab - The tab to set as active
+             */
+            setActiveSidebarTab(tab: number): void {
+                const newState = {
+                    ...store.uiState(),
+                    activeSidebarTab: tab
+                };
+                patchState(store, { uiState: newState });
+                saveStoreUIState(newState);
+            }
+        }))
+    );
+}

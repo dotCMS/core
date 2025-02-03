@@ -21,7 +21,7 @@ import {
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { TabViewModule } from 'primeng/tabview';
+import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
@@ -417,5 +417,10 @@ export class DotEditContentFormComponent implements OnInit {
         }
 
         window.open(realUrl, '_blank');
+    }
+
+    onActiveIndexChange($event: TabViewChangeEvent) {
+        const { index } = $event;
+        this.$store.setActiveTab(index);
     }
 }

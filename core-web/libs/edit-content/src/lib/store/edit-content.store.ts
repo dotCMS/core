@@ -10,6 +10,7 @@ import { withForm } from './features/form.feature';
 import { withInformation } from './features/information.feature';
 import { withLocales } from './features/locales.feature';
 import { withSidebar } from './features/sidebar.feature';
+import { withUI } from './features/ui.feature';
 import { withWorkflow } from './features/workflow.feature';
 
 export interface EditContentRootState {
@@ -35,6 +36,7 @@ export const DotEditContentStore = signalStore(
     withWorkflow(),
     withForm(),
     withLocales(),
+    withUI(),
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);
