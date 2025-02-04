@@ -1,4 +1,4 @@
-import { UVEState, UVE_MODE } from './types';
+import { UVE_MODE, UVEState } from './types';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).

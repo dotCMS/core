@@ -29,7 +29,8 @@
                 "generateExportsField": true,
                 "assets": [{ "input": "libs/sdk/uve", "output": ".", "glob": "*.md" }],
                 "outputPath": "dist/libs/sdk/uve",
-                "main": "libs/sdk/uve/src/public-api.ts",
+                "main": "libs/sdk/uve/src/public/index.ts",
+                "additionalEntryPoints": ["libs/sdk/uve/src/public/types.ts"],
                 "tsConfig": "libs/sdk/uve/tsconfig.lib.json"
             }
         }

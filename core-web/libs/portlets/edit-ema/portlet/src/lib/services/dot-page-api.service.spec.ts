@@ -1,6 +1,6 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
-import { UVE_MODE } from '@dotcms/uve';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotPageApiService } from './dot-page-api.service';
 

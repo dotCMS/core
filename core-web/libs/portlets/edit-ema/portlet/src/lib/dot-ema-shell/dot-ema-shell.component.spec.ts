@@ -39,7 +39,7 @@ import {
     DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';

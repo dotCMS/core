@@ -13,7 +13,7 @@ import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
-import { UVE_MODE } from '@dotcms/uve';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 

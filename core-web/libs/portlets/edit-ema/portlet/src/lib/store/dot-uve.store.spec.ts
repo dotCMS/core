@@ -30,7 +30,7 @@ import {
     CurrentUserDataMock,
     mockLanguageArray
 } from '@dotcms/utils-testing';
-import { UVE_MODE } from '@dotcms/uve';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { UVEStore } from './dot-uve.store';
 import { Orientation } from './models';

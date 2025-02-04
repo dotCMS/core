@@ -37,7 +37,7 @@ import {
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { UVE_MODE } from '@dotcms/uve';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
