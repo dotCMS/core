@@ -9,10 +9,8 @@ export class ContentTypeFormPage {
   }
 
   async addTextField() {
-    const dropZoneLocator = this.page.locator('div[dragula="fields-bag"]');
-    const textFieldItemLocator = this.page.locator(
-      "[data-clazz='com.dotcms.contenttype.model.field.ImmutableTextField']",
-    );
+    const dropZoneLocator = this.page.getByTestId('fields-bag-0');
+    const textFieldItemLocator = this.page.getByTestId("com.dotcms.contenttype.model.field.ImmutableTextField");
     await textFieldItemLocator.dragTo(dropZoneLocator);
 
     const dialogInputLocator = this.page.locator("input#name");
@@ -25,10 +23,8 @@ export class ContentTypeFormPage {
   }
 
   async addSiteOrFolderField() {
-    const dropZoneLocator = this.page.locator('div[dragula="fields-bag"]');
-    const siteOrFolderFieldItemLocator = this.page.locator(
-      "[data-clazz='com.dotcms.contenttype.model.field.ImmutableHostFolderField']",
-    );
+    const dropZoneLocator = this.page.getByTestId('fields-bag-0');
+    const siteOrFolderFieldItemLocator = this.page.getByTestId("com.dotcms.contenttype.model.field.ImmutableHostFolderField");
     await siteOrFolderFieldItemLocator.dragTo(dropZoneLocator);
 
     const dialogInputLocator = this.page.locator("input#name");
