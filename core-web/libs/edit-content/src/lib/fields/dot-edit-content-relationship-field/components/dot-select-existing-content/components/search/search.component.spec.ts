@@ -212,7 +212,7 @@ describe('SearchComponent', () => {
             component.form.patchValue({
                 query: 'test search',
                 languageId: 1,
-                siteId: ''
+                siteId: 'site123'
             });
 
             const openFiltersButton = spectator.query(
@@ -226,7 +226,7 @@ describe('SearchComponent', () => {
             expect(searchSpy).toHaveBeenCalledWith({
                 query: 'test search',
                 languageId: 1,
-                siteId: ''
+                siteId: 'site123'
             });
         });
 
@@ -234,7 +234,7 @@ describe('SearchComponent', () => {
             component.form.patchValue({
                 query: 'test query',
                 languageId: 1,
-                siteId: ''
+                siteId: 'site123'
             });
 
             const openFiltersButton = spectator.query(

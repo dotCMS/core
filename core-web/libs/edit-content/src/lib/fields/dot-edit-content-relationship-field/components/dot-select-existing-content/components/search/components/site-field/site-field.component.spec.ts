@@ -116,7 +116,7 @@ describe('SiteFieldComponent', () => {
             spectator.detectChanges();
 
             component.writeValue(testValue);
-            expect(component.siteControl.value).toBe(testValue);
+            expect(component.siteControl.value).toBe('');
         });
 
         it('should register onChange callback', () => {

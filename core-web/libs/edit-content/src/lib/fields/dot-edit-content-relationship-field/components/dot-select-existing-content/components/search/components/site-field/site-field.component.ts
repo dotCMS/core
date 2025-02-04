@@ -119,8 +119,8 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      * Writes a new value to the form control.
      * Implements ControlValueAccessor method to update the control's value programmatically.
      */
-    writeValue(value: string): void {
-        this.siteControl.setValue(value || '', { emitEvent: false });
+    writeValue(_value: string): void {
+        // noop
     }
 
     /**
