@@ -252,6 +252,10 @@ export function getFullPageURL({
         delete searchParams['url'];
     }
 
+    if (searchParams.clientHost) {
+        delete searchParams['clientHost'];
+    }
+
     if (searchParams.editorMode) {
         const EDIT_MODE = UVE_MODE_TO_PAGE_MODE[searchParams.editorMode];
         searchParams.mode = EDIT_MODE ?? PAGE_MODE.EDIT;

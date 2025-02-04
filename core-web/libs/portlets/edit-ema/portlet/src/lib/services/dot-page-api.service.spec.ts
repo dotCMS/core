@@ -135,11 +135,13 @@ describe('DotPageApiService', () => {
     describe('editMode', () => {
         const BASE_URL =
             '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona';
+
         const BASE_PARAMS = {
             url: 'test-url',
             language_id: 'en',
             [PERSONA_KEY]: 'modes.persona.no.persona'
         };
+
         it('should request the page in the right `PAGE_MODE` based on the `editorMode`', () => {
             spectator.service.get({ ...BASE_PARAMS, editorMode: UVE_MODE.EDIT }).subscribe();
             spectator.expectOne(`${BASE_URL}&mode=${PAGE_MODE.EDIT}`, HttpMethod.GET);
