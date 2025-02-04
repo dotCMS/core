@@ -117,15 +117,9 @@ export class DotContentletThumbnail {
     }
 
     private getIcon() {
-        let icon = this.contentlet?.baseType === 'FILEASSET'
+        return this.contentlet?.baseType === 'FILEASSET'
         ? this.contentlet?.__icon__
         : this.contentlet?.contentTypeIcon;
-
-        if (!icon) {
-            icon = this.contentlet?.__icon__ || this.contentlet?.contentTypeIcon || 'default';
-        }
-
-        return icon;
     }
 
     private shouldShowVideoThumbnail() {
