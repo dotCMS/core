@@ -1,7 +1,5 @@
 import { useContext } from 'react';
 
-import { UVE_MODE } from '@dotcms/uve';
-
 import styles from './Column.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
@@ -28,7 +26,7 @@ export interface ColumnProps {
  * @return {JSX.Element} Rendered column with containers
  */
 export function Column({ column }: ColumnProps) {
-    const { UVEState } = useContext(PageContext) as DotCMSPageContext;
+    const { isInsideEditor } = useContext(PageContext) as DotCMSPageContext;
 
     const { startClass, endClass } = getPositionStyleClasses(
         column.leftOffset,
@@ -37,13 +35,12 @@ export function Column({ column }: ColumnProps) {
 
     const combinedClasses = combineClasses([styles[endClass], styles[startClass]]);
 
-    const columnProps =
-        UVEState?.mode === UVE_MODE.EDIT
-            ? {
-                  'data-dot': 'column',
-                  'data-testid': 'column'
-              }
-            : {};
+    const columnProps = isInsideEditor
+        ? {
+              'data-dot': 'column',
+              'data-testid': 'column'
+          }
+        : {};
 
     return (
         <div {...columnProps} className={combinedClasses}>

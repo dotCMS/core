@@ -1,7 +1,6 @@
 import { renderHook } from '@testing-library/react-hooks';
 
 import * as sdkClient from '@dotcms/client';
-import * as uve from '@dotcms/uve';
 
 import { useDotcmsEditor } from './useDotcmsEditor';
 
@@ -23,20 +22,15 @@ jest.mock('@dotcms/client', () => ({
     }
 }));
 
-jest.mock('@dotcms/uve', () => ({
-    ...jest.requireActual('@dotcms/uve'),
-    getUVEState: jest.fn()
-}));
-
 const { DotCmsClient } = sdkClient as jest.Mocked<typeof sdkClient>;
 
 describe('useDotcmsEditor', () => {
-    let getUVEStateSpy: jest.SpyInstance<uve.UVEState | undefined>;
+    let isInsideEditorSpy: jest.SpyInstance<boolean>;
     let initEditorSpy: jest.SpyInstance<void>;
     let destroyEditorSpy: jest.SpyInstance<void>;
 
     beforeEach(() => {
-        getUVEStateSpy = jest.spyOn(uve, 'getUVEState');
+        isInsideEditorSpy = jest.spyOn(sdkClient, 'isInsideEditor');
         initEditorSpy = jest.spyOn(sdkClient, 'initEditor');
         destroyEditorSpy = jest.spyOn(sdkClient, 'destroyEditor');
     });
@@ -47,7 +41,7 @@ describe('useDotcmsEditor', () => {
 
     describe('when outside editor', () => {
         it('should not call initEditor or destroyEditor when outside editor', () => {
-            getUVEStateSpy.mockReturnValue(undefined);
+            isInsideEditorSpy.mockReturnValueOnce(false);
 
             renderHook(() =>
                 useDotcmsEditor({
@@ -63,9 +57,7 @@ describe('useDotcmsEditor', () => {
 
     describe('when inside editor', () => {
         it('should call initEditor when inside editor', () => {
-            getUVEStateSpy.mockReturnValue({
-                mode: uve.UVE_MODE.EDIT
-            });
+            isInsideEditorSpy.mockReturnValueOnce(true);
 
             renderHook(() =>
                 useDotcmsEditor({
@@ -78,9 +70,7 @@ describe('useDotcmsEditor', () => {
         });
 
         it('should call destroyEditor on unmount when inside editor', () => {
-            getUVEStateSpy.mockReturnValue({
-                mode: uve.UVE_MODE.EDIT
-            });
+            isInsideEditorSpy.mockReturnValueOnce(true);
 
             const { unmount } = renderHook(() =>
                 useDotcmsEditor({
@@ -106,9 +96,7 @@ describe('useDotcmsEditor', () => {
             };
 
             beforeEach(() => {
-                getUVEStateSpy.mockReturnValue({
-                    mode: uve.UVE_MODE.LIVE
-                });
+                isInsideEditorSpy.mockReturnValueOnce(true);
             });
 
             it('should subscribe to the `CHANGE` event', () => {

@@ -1,7 +1,5 @@
 import { forwardRef, useContext } from 'react';
 
-import { UVE_MODE } from '@dotcms/uve';
-
 import styles from './Row.module.css';
 
 import { PageContext } from '../../contexts/PageContext';
@@ -33,12 +31,13 @@ export interface RowProps {
  * @return {JSX.Element} Rendered rows with columns
  */
 export const Row = forwardRef<HTMLDivElement, RowProps>((props: RowProps, ref) => {
-    const { UVEState } = useContext<DotCMSPageContext | null>(PageContext) as DotCMSPageContext;
+    const { isInsideEditor } = useContext<DotCMSPageContext | null>(
+        PageContext
+    ) as DotCMSPageContext;
 
     const { row } = props;
 
-    const rowProps =
-        UVEState?.mode === UVE_MODE.EDIT ? { 'data-dot': 'row', 'data-testid': 'row', ref } : {};
+    const rowProps = isInsideEditor ? { 'data-dot': 'row', 'data-testid': 'row', ref } : {};
 
     return (
         <div className={row.styleClass}>

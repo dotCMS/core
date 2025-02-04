@@ -5,10 +5,10 @@ import {
     DotCmsClient,
     destroyEditor,
     initEditor,
+    isInsideEditor as isInsideEditorFn,
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
-import { getUVEState } from '@dotcms/uve';
 
 import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
 import { DotCMSPageContext } from '../models';
@@ -27,22 +27,20 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
     const { pathname, onReload, editor } = config;
     const [state, setState] = useState<DotCMSPageContext>({
         ...pageContext,
-        UVEState: undefined
+        isInsideEditor: false
     });
 
     /**
      * Initializes the DotCMS editor.
      */
     useEffect(() => {
-        const UVEState = getUVEState();
-
-        if (!UVEState) {
+        if (!isInsideEditorFn()) {
             return;
         }
 
         initEditor({ pathname });
         updateNavigation(pathname || '/');
-        setState((prevState) => ({ ...prevState, UVEState }));
+        setState((prevState) => ({ ...prevState, isInsideEditor: true }));
 
         return () => destroyEditor();
     }, [pathname]);
@@ -51,7 +49,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
      * Reloads the page when changes are made in the editor.
      */
     useEffect(() => {
-        const insideEditor = !!getUVEState();
+        const insideEditor = isInsideEditorFn();
         const client = DotCmsClient.instance;
 
         if (!insideEditor || !onReload) {
@@ -67,7 +65,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
      * Sends a message to the editor when the client is ready.
      */
     useEffect(() => {
-        if (!getUVEState()) {
+        if (!isInsideEditorFn()) {
             return;
         }
 
@@ -78,7 +76,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
      * Updates the page asset when changes are made in the editor.
      */
     useEffect(() => {
-        if (!getUVEState()) {
+        if (!isInsideEditorFn()) {
             return;
         }
 

@@ -1,12 +1,10 @@
 import { render, screen } from '@testing-library/react';
 
-import { UVE_MODE } from '@dotcms/uve';
-
 import { Row } from './Row';
 
 import { MockContextRender } from '../../mocks/mockPageContext';
-import { DotCMSPageContext } from '../../models';
 import { ColumnProps } from '../Column/Column';
+import { DotCMSPageContext } from '../PageProvider/PageProvider';
 
 import '@testing-library/jest-dom';
 
@@ -19,7 +17,7 @@ jest.mock('../Column/Column', () => {
 });
 
 describe('Row', () => {
-    const mockRowData: DotCMSPageContext['pageAsset']['layout']['body']['rows'][0] = {
+    const mockRowData: DotCMSPageContext['layout']['body']['rows'][0] = {
         columns: [
             {
                 width: 60,
@@ -47,10 +45,10 @@ describe('Row', () => {
         styleClass: ''
     };
 
-    describe('row is on EDIT mode editor', () => {
+    describe('row is inside editor', () => {
         beforeEach(() => {
             render(
-                <MockContextRender mockContext={{ UVEState: { mode: UVE_MODE.EDIT } }}>
+                <MockContextRender mockContext={{ isInsideEditor: true }}>
                     <Row row={mockRowData} />
                 </MockContextRender>
             );
@@ -78,34 +76,10 @@ describe('Row', () => {
             expect(columns.length).toBe(mockRowData.columns.length);
         });
     });
-    describe('row is on LIVE mode editor', () => {
+    describe('row is not inside editor', () => {
         beforeEach(() => {
             render(
-                <MockContextRender
-                    mockContext={{
-                        UVEState: {
-                            mode: UVE_MODE.LIVE
-                        }
-                    }}>
-                    <Row row={mockRowData} />
-                </MockContextRender>
-            );
-        });
-
-        it('should not have dot attr', () => {
-            expect(screen.queryByTestId('row')).toBeNull();
-        });
-    });
-
-    describe('row is on PREVIEW mode editor', () => {
-        beforeEach(() => {
-            render(
-                <MockContextRender
-                    mockContext={{
-                        UVEState: {
-                            mode: UVE_MODE.PREVIEW
-                        }
-                    }}>
+                <MockContextRender mockContext={{ isInsideEditor: false }}>
                     <Row row={mockRowData} />
                 </MockContextRender>
             );

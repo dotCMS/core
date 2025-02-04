@@ -1,5 +1,3 @@
-import { UVEState } from '@dotcms/uve';
-
 export interface ContainerData {
     [key: string]: {
         container: {
@@ -87,8 +85,7 @@ export interface DotCMSPageContext {
             forward: boolean;
         };
     };
-    isInsideEditor?: boolean;
-    UVEState?: UVEState;
+    isInsideEditor: boolean;
 }
 
 export interface DotCMSContentlet {

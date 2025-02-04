@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import * as uve from '@dotcms/uve';
+import * as dotcmsClient from '@dotcms/client';
 
 import { Column } from './Column';
 
@@ -28,18 +28,11 @@ describe('Column', () => {
         styleClass: ''
     };
 
-    describe('Column is on EDIT mmode editor', () => {
+    describe('Column is inside editor', () => {
         beforeEach(() => {
-            jest.spyOn(uve, 'getUVEState').mockReturnValue({
-                mode: uve.UVE_MODE.EDIT
-            });
+            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
             render(
-                <MockContextRender
-                    mockContext={{
-                        UVEState: {
-                            mode: uve.UVE_MODE.EDIT
-                        }
-                    }}>
+                <MockContextRender mockContext={{ isInsideEditor: true }}>
                     <Column column={mockColumnData} />
                 </MockContextRender>
             );
@@ -67,36 +60,11 @@ describe('Column', () => {
         });
     });
 
-    describe('Column is on LIVE mode editor', () => {
+    describe('Column is not inside editor', () => {
         beforeEach(() => {
-            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+            jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
             render(
-                <MockContextRender
-                    mockContext={{
-                        UVEState: {
-                            mode: uve.UVE_MODE.LIVE
-                        }
-                    }}>
-                    <Column column={mockColumnData} />
-                </MockContextRender>
-            );
-        });
-
-        it('should not have dot attrs', () => {
-            const columnElement = screen.queryByTestId('column');
-            expect(columnElement).toBeNull();
-        });
-    });
-    describe('Column is PREVIEW mode editor', () => {
-        beforeEach(() => {
-            jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
-            render(
-                <MockContextRender
-                    mockContext={{
-                        UVEState: {
-                            mode: uve.UVE_MODE.PREVIEW
-                        }
-                    }}>
+                <MockContextRender mockContext={{ isInsideEditor: false }}>
                     <Column column={mockColumnData} />
                 </MockContextRender>
             );

@@ -29,13 +29,13 @@ import { UVEState, UVE_MODE } from './types';
  * ```
  */
 export function getUVEState(): UVEState | undefined {
-    if (typeof window === 'undefined' || window.parent === window) {
+    if (typeof window === 'undefined' || window.parent === window || !window.location) {
         return;
     }
 
     const url = new URL(window.location.href);
 
-    const mode = (url.searchParams.get('editorMode') as UVE_MODE) ?? UVE_MODE.UNKNOWN;
+    const mode = (url.searchParams.get('mode') as UVE_MODE) ?? UVE_MODE.UNKNOWN;
     const languageId = url.searchParams.get('language_id');
     const persona = url.searchParams.get('personaId');
     const variantName = url.searchParams.get('variantName');
@@ -43,7 +43,9 @@ export function getUVEState(): UVEState | undefined {
     const publishDate = url.searchParams.get('publishDate');
 
     if (mode === UVE_MODE.UNKNOWN) {
-        console.warn("Couldn't identify the current mode of UVE, please contact customer support.");
+        console.warn(
+            `Couldn't identify the current mode of UVE, please contact customer support. Mode: ${mode}`
+        );
     }
 
     return {

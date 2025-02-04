@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import * as uve from '@dotcms/uve';
+import * as dotcmsClient from '@dotcms/client';
 
 import { Container } from './Container';
 
@@ -27,9 +27,7 @@ const getContainer = ({ containerRef, containers }: { containerRef: any; contain
 
 describe('Container', () => {
     // Mock data for your context and container
-    jest.spyOn(uve, 'getUVEState').mockReturnValue({
-        mode: uve.UVE_MODE.EDIT
-    });
+    jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(true);
 
     describe('with contentlets', () => {
         const mockContainerRef = {
@@ -41,9 +39,7 @@ describe('Container', () => {
         it('renders NoComponent component for unsupported content types', () => {
             const updatedContext = {
                 ...mockPageContext,
-                UVEState: {
-                    mode: uve.UVE_MODE.EDIT
-                },
+                isInsideEditor: true,
                 components: {}
             };
 
@@ -61,9 +57,7 @@ describe('Container', () => {
         it('render custom NoComponent component for unsetted content types', () => {
             const updatedContext = {
                 ...mockPageContext,
-                UVEState: {
-                    mode: uve.UVE_MODE.EDIT
-                },
+                isInsideEditor: true,
                 components: {
                     CustomNoComponent: () => (
                         <div data-testid="custom-no-component">Custom No Component</div>
@@ -92,9 +86,7 @@ describe('Container', () => {
             const updatedContext = {
                 ...mockPageContext,
                 components: {},
-                UVEState: {
-                    mode: uve.UVE_MODE.EDIT
-                }
+                isInsideEditor: true
             };
 
             render(
@@ -123,13 +115,11 @@ describe('Container', () => {
                 uuid: '2',
                 containers: []
             };
-            it('renders EmptyContainer component in EDIT mode', () => {
+            it('renders EmptyContainer component in editor mode', () => {
                 const updatedContext = {
                     ...mockPageContext,
                     components: {},
-                    UVEState: {
-                        mode: uve.UVE_MODE.EDIT
-                    }
+                    isInsideEditor: true
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>
@@ -142,33 +132,13 @@ describe('Container', () => {
                 );
             });
 
-            it('dont render EmptyContainer component on LIVE mode ', () => {
-                jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
+            it('dont render EmptyContainer component outside editor mode', () => {
+                jest.spyOn(dotcmsClient, 'isInsideEditor').mockReturnValue(false);
 
                 const updatedContext = {
                     ...mockPageContext,
                     components: {},
-                    UVEState: {
-                        mode: uve.UVE_MODE.LIVE
-                    }
-                };
-                render(
-                    <MockContextRender mockContext={updatedContext}>
-                        <Container containerRef={mockContainerRef} />
-                    </MockContextRender>
-                );
-
-                expect(screen.queryByTestId('dot-container')).toBeNull();
-            });
-            it('dont render EmptyContainer component on PREVIEW mode', () => {
-                jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
-
-                const updatedContext = {
-                    ...mockPageContext,
-                    components: {},
-                    UVEState: {
-                        mode: uve.UVE_MODE.PREVIEW
-                    }
+                    isInsideEditor: false
                 };
                 render(
                     <MockContextRender mockContext={updatedContext}>
