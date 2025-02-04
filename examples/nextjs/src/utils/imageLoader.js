@@ -1,4 +1,4 @@
-import { useDotcmsPageContext } from '@dotcms/react/next';
+import { useDotcmsPageContext } from '@dotcms/react';
 
 const ImageLoader = ({ src, width }) => {
     const dotcmsURL = new URL(process.env.NEXT_PUBLIC_DOTCMS_HOST).origin;

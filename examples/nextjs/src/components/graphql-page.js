@@ -12,7 +12,7 @@ import Header from './layout/header/header';
 import Footer from './layout/footer/footer';
 import Navigation from './layout/navigation';
 import { usePathname, useRouter } from 'next/navigation';
-import { DotcmsLayout } from '@dotcms/react/next';
+import { DotcmsLayout } from '@dotcms/react';
 import { withExperiments } from '@dotcms/experiments';
 import { CustomNoComponent } from './content-types/empty';
 

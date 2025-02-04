@@ -9,7 +9,7 @@ import ImageComponent from './content-types/image';
 import Product from './content-types/product';
 import WebPageContent from './content-types/webPageContent';
 
-import { DotcmsLayout } from '@dotcms/react/next';
+import { DotcmsLayout } from '@dotcms/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { CustomNoComponent } from './content-types/empty';
 import Footer from './layout/footer/footer';
