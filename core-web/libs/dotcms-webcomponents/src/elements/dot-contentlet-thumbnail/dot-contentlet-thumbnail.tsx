@@ -118,8 +118,8 @@ export class DotContentletThumbnail {
 
     private getIcon() {
         return this.contentlet?.baseType === 'FILEASSET'
-        ? this.contentlet?.__icon__
-        : this.contentlet?.contentTypeIcon;
+            ? this.contentlet?.__icon__
+            : this.contentlet?.contentTypeIcon;
     }
 
     private shouldShowVideoThumbnail() {

@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, effect, forwardRef, inject, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnInit,
+    effect,
+    forwardRef,
+    inject,
+    viewChild
+} from '@angular/core';
 import {
     ControlValueAccessor,
     FormControl,
