@@ -1,12 +1,10 @@
-import { getUVEState } from '@dotcms/uve';
-
 import {
     listenEditorMessages,
     listenHoveredContentlet,
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { addClassToEmptyContentlets, initDotUVE } from './sdk-editor';
+import { addClassToEmptyContentlets, initDotUVE, isInsideEditor } from './sdk-editor';
 import { listenBlockEditorInlineEvent } from './utils/traditional-vtl.utils';
 
 /**
@@ -19,7 +17,7 @@ import { listenBlockEditorInlineEvent } from './utils/traditional-vtl.utils';
  * listening for editor messages, hovered contentlet changes, and content changes.
  *
  */
-if (getUVEState()) {
+if (isInsideEditor()) {
     initDotUVE();
     listenEditorMessages();
     scrollHandler();

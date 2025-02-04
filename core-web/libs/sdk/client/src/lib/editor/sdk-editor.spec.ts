@@ -1,5 +1,3 @@
-import { getUVEState } from '@dotcms/uve';
-
 import {
     listenEditorMessages,
     listenHoveredContentlet,
@@ -11,6 +9,7 @@ import {
     addClassToEmptyContentlets,
     initEditor,
     initInlineEditing,
+    isInsideEditor,
     updateNavigation
 } from './sdk-editor';
 
@@ -46,73 +45,25 @@ jest.mock('./listeners/listeners', () => ({
 
 describe('DotCMSPageEditor', () => {
     describe('is NOT inside editor', () => {
-        describe('same window parent', () => {
-            beforeEach(() => {
-                const mockWindow = {
-                    ...window,
-                    parent: window
-                };
+        beforeEach(() => {
+            const mockWindow = {
+                ...window,
+                parent: window
+            };
 
-                const spy = jest.spyOn(global, 'window', 'get');
-                spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
-            });
-
-            afterEach(() => {
-                jest.clearAllMocks();
-            });
-
-            it('should initialize without any listener', () => {
-                const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-
-                expect(addEventListenerSpy).not.toHaveBeenCalled();
-            });
-
-            it('should initialize UVEState as undefined', () => {
-                expect(getUVEState()).toBe(undefined);
-            });
+            const spy = jest.spyOn(global, 'window', 'get');
+            spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
         });
 
-        describe('No window', () => {
-            beforeEach(() => {
-                const mockWindow = undefined;
-
-                const spy = jest.spyOn(global, 'window', 'get');
-                spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
-            });
-
-            afterEach(() => {
-                jest.clearAllMocks();
-            });
-
-            it('should initialize UVEState as undefined', () => {
-                expect(getUVEState()).toBe(undefined);
-            });
+        afterEach(() => {
+            jest.clearAllMocks();
         });
 
-        describe('No dotUVE', () => {
-            beforeEach(() => {
-                const mockWindow = {
-                    ...window,
-                    parent: {
-                        ...window //Another reference
-                    }
-                };
-                const spy = jest.spyOn(global, 'window', 'get');
-                spy.mockReturnValueOnce(mockWindow as unknown as Window & typeof globalThis);
-            });
+        it('should initialize without any listener', () => {
+            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
 
-            afterEach(() => {
-                jest.clearAllMocks();
-            });
-
-            it('should initialize without any listener', () => {
-                const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-
-                expect(addEventListenerSpy).not.toHaveBeenCalled();
-            });
-            it('should initialize UVEState as undefined', () => {
-                expect(getUVEState()).toBe(undefined);
-            });
+            expect(isInsideEditor()).toBe(false);
+            expect(addEventListenerSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -120,15 +71,7 @@ describe('DotCMSPageEditor', () => {
         beforeEach(() => {
             const mockWindow = {
                 ...window,
-                parent: {
-                    ...window
-                },
-                location: {
-                    href: 'https://test.com/hello?editorMode=edit'
-                },
-                dotUVE: {
-                    lastScrollPosition: 0
-                }
+                parent: null
             };
 
             const spy = jest.spyOn(global, 'window', 'get');
@@ -140,9 +83,7 @@ describe('DotCMSPageEditor', () => {
         });
 
         it('should initialize properly', () => {
-            expect(getUVEState()).toEqual({
-                mode: 'edit'
-            });
+            expect(isInsideEditor()).toBe(true);
         });
 
         it('should update navigation', () => {
