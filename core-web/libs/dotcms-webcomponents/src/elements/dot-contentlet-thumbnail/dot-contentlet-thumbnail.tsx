@@ -129,9 +129,9 @@ export class DotContentletThumbnail {
         const { baseType, __icon__, contentTypeIcon } = this.contentlet;
         const isFileAsset = baseType === 'FILEASSET';
 
-        return isFileAsset
-            ? (__icon__ ?? contentTypeIcon ?? '')
-            : (contentTypeIcon ?? __icon__ ?? '');
+        return isFileAsset 
+            ? __icon__ ?? contentTypeIcon ?? ''
+            : contentTypeIcon ?? __icon__ ?? '';
     }
 
     private shouldShowVideoThumbnail() {
