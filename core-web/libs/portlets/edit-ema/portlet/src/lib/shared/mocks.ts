@@ -15,7 +15,7 @@ import {
     dotcmsContentletMock
 } from '@dotcms/utils-testing';
 
-import { DEFAULT_PERSONA } from './consts';
+import { DEFAULT_PERSONA, PERSONA_KEY } from './consts';
 import { ActionPayload, ClientData } from './models';
 
 import {
@@ -28,7 +28,7 @@ import { DotPageApiResponse } from '../services/dot-page-api.service';
 export const HEADLESS_BASE_QUERY_PARAMS = {
     url: 'test-url',
     language_id: '1',
-    'com.dotmarketing.persona.id': DEFAULT_PERSONA.keyTag,
+    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
     variantName: DEFAULT_VARIANT_ID,
     clientHost: 'http://localhost:3000'
 };
@@ -36,7 +36,7 @@ export const HEADLESS_BASE_QUERY_PARAMS = {
 export const VTL_BASE_QUERY_PARAMS = {
     url: 'test-url',
     language_id: '1',
-    'com.dotmarketing.persona.id': DEFAULT_PERSONA.keyTag,
+    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
     variantName: DEFAULT_VARIANT_ID
 };
 
