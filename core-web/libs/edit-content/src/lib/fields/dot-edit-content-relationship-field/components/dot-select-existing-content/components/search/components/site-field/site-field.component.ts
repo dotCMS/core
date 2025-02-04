@@ -54,6 +54,10 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      */
     readonly siteControl = new FormControl<string>('');
 
+    /**
+     * View child for the TreeSelect component.
+     * Allows access to the TreeSelect component's tree view child.
+     */
     $treeSelect = viewChild<TreeSelect>(TreeSelect);
 
     /**
