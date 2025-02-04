@@ -52,8 +52,6 @@ public class UniqueFieldDataBaseUtil {
             "WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?\n" +
             "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
-    private static final String INSERT_SQL_WIT_HASH = "INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (?, ?)";
-
     private static final String UPDATE_CONTENT_LIST ="UPDATE unique_fields " +
             "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
             "WHERE unique_key_val = encode(sha256(convert_to(?::text, 'UTF8')), 'hex')";
@@ -107,7 +105,6 @@ public class UniqueFieldDataBaseUtil {
             "                                    content_type_id::text," +
             "                                    field_var_name::text," +
             "                                    language_id::text," +
-            "                                    host_id::text," +
             "                                    field_value::text," +
             "                                    CASE WHEN uniquePerSite = 'true' THEN COALESCE(host_id::text, '') ELSE '' END" +
             "                            )," +
@@ -152,17 +149,6 @@ public class UniqueFieldDataBaseUtil {
             "                 identifier.host_inode," +
             "                 jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value') as data_to_populate";
 
-    /**
-     * Insert a new register into the unique_fields table, if already exists another register with the same
-     * 'unique_key_val' then a {@link java.sql.SQLException} is thrown.
-     *
-     * @param key
-     * @param supportingValues
-     */
-    @WrapInTransaction
-    public void insertWithHash(final String key, final Map<String, Object> supportingValues) throws DotDataException {
-        new DotConnect().setSQL(INSERT_SQL_WIT_HASH).addParam(key).addJSONParam(supportingValues).loadObjectResults();
-    }
 
     @WrapInTransaction
     public void insert(final String key, final Map<String, Object> supportingValues) throws DotDataException {
