@@ -64,14 +64,14 @@ runs:
         echo "::endgroup::"
       shell: bash
 
-     - name: 'Get current version from NPM'
+    - name: 'Get current version from NPM'
       id: current_version
       run: |
         echo "::group::Get current version"
         # This should be empty on the first run. Setting the NEXT_VERSION to 0.0.1-beta.1
         CURRENT_VERSION=$(npm view @dotcms/client dist-tags --json | jq -r '.beta')
 
-        if [ -z "$CURRENT_VERSION" ]; then
+        if [ -z "$CURRENT_VERSION" ] || [ "$CURRENT_VERSION" = "null" ]; then
           CURRENT_VERSION="0.0.1-beta.0"
         fi
 
