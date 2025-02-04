@@ -33,13 +33,6 @@ public interface AbstractContentletSearchResult extends Serializable {
     List<String> updatedInodes();
 
     /**
-     * Checks if the search results represent new content versus updates.
-     *
-     * @return true if the results are new content, false if they are updates.
-     */
-    boolean isNew();
-
-    /**
      * Checks if the search results are multilingual.
      *
      * @return true if the results are multilingual, false otherwise.

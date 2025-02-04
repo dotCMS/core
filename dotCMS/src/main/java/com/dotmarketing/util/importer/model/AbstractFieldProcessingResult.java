@@ -62,12 +62,6 @@ public interface AbstractFieldProcessingResult extends Serializable {
     List<UniqueFieldBean> uniqueFields();
 
     /**
-     * @return Map of key field names to their values, used for identifying
-     *         existing content during import
-     */
-    Map<String, String> keyFields();
-
-    /**
      * Indicates whether this line should be ignored during import.
      * Lines may be ignored due to validation failures or other processing issues.
      *

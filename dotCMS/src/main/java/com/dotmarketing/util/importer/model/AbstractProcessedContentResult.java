@@ -43,12 +43,28 @@ public interface AbstractProcessedContentResult extends Serializable {
     String lastInode();
 
     /**
-     * Gets the count of new content items created during processing.
-     * This represents content that did not exist in the system before import.
+     * Gets the count of content items that are to be created during processing. This represents
+     * content that is identified for creation based on the import data.
      *
-     * @return Count of newly created content items
+     * @return Count of content items to be created
      */
-    int newContentCount();
+    int contentToCreate();
+
+    /**
+     * Gets the count of content items that were created during processing. This represents content
+     * that was created, regardless of whether it was new or updated.
+     *
+     * @return Count of created content items
+     */
+    int createdContent();
+
+    /**
+     * Gets the count of content items that are to be updated during processing. This represents
+     * content that is identified for update based on the import data.
+     *
+     * @return Count of content items to be updated
+     */
+    int contentToUpdate();
 
     /**
      * Gets the count of existing content items that were updated during processing.
@@ -56,7 +72,7 @@ public interface AbstractProcessedContentResult extends Serializable {
      *
      * @return Count of updated content items
      */
-    int updatedContentCount();
+    int updatedContent();
 
     /**
      * Gets the count of duplicate content items encountered during processing.
@@ -65,7 +81,7 @@ public interface AbstractProcessedContentResult extends Serializable {
      *
      * @return Count of duplicate content items
      */
-    int duplicateContentCount();
+    int duplicateContent();
 
     /**
      * Gets the list of validation messages generated during content processing.

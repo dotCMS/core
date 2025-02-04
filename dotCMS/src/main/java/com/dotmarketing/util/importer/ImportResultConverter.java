@@ -133,17 +133,17 @@ public class ImportResultConverter {
      * backward compatibility by formatting the structured data into the string-based format
      * expected by legacy code.
      *
-     * @param lineResult    The structured LineImportResult to convert
+     * @param importResults The structured LineImportResult to convert
      * @param legacyResults The legacy format results map to update
      * @param counters      The import counters to update
      */
     public static void lineImportResultToLegacyMap(
-            final LineImportResult lineResult,
+            final LineImportResult importResults,
             final Map<String, List<String>> legacyResults,
             final Counters counters) {
 
         // Convert messages
-        for (ValidationMessage msg : lineResult.messages()) {
+        for (ValidationMessage msg : importResults.messages()) {
             switch (msg.type()) {
                 case ERROR:
                     legacyResults.get("errors").add(formatMessage(msg));
@@ -158,15 +158,19 @@ public class ImportResultConverter {
         }
 
         counters.setNewContentCounter(
-                counters.getNewContentCounter() + lineResult.newContentCount());
+                counters.getNewContentCounter() + importResults.contentToCreate());
+        counters.setContentCreated(
+                counters.getContentCreated() + importResults.createdContent());
         counters.setContentToUpdateCounter(
-                counters.getContentToUpdateCounter() + lineResult.updatedContentCount());
+                counters.getContentToUpdateCounter() + importResults.contentToUpdate());
+        counters.setContentUpdated(
+                counters.getContentUpdated() + importResults.updatedContent());
         counters.setContentUpdatedDuplicated(
-                counters.getContentUpdatedDuplicated() + lineResult.duplicateContentCount());
+                counters.getContentUpdatedDuplicated() + importResults.duplicateContent());
 
         legacyResults.get("lastInode").clear();
         List<String> l = legacyResults.get("lastInode");
-        l.add(lineResult.lastInode());
+        l.add(importResults.lastInode());
         legacyResults.put("lastInode", l);
     }
 

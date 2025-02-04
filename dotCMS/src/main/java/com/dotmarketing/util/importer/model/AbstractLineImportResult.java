@@ -109,18 +109,43 @@ public interface AbstractLineImportResult extends Serializable {
     String lastInode();
 
     /**
-     * @return Count of new content items created from this line
+     * Gets the count of content items that are to be created during processing.
+     * This represents content that is identified for creation based on the import data.
+     *
+     * @return Count of content items to be created
      */
-    int newContentCount();
+    int contentToCreate();
 
     /**
-     * @return Count of existing content items updated from this line
+     * Gets the count of content items that have been created during processing.
+     * This represents content that has been successfully created.
+     *
+     * @return Count of content items created
      */
-    int updatedContentCount();
+    int createdContent();
 
     /**
-     * @return Count of duplicate content items encountered while processing this line
+     * Gets the count of content items that are to be updated during processing.
+     * This represents content that is identified for update based on the import data.
+     *
+     * @return Count of content items to be updated
      */
-    int duplicateContentCount();
+    int contentToUpdate();
+
+    /**
+     * Gets the count of content items that have been updated during processing.
+     * This represents content that has been successfully updated.
+     *
+     * @return Count of content items updated
+     */
+    int updatedContent();
+
+    /**
+     * Gets the count of duplicate content items encountered during processing. This represents
+     * content that was identified as duplicate based on the import data.
+     *
+     * @return Count of duplicate content items
+     */
+    int duplicateContent();
 
 }

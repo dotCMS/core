@@ -392,11 +392,11 @@ public class ImportUtil {
                                 //Importing content record...
                                 final var importLineResult = importLine(csvLine, currentSiteId,
                                         contentType, preview, isMultilingual, user, identifier,
-                                        wfActionIdIndex,
-                                        lineNumber, languageToImport, headers, keyFields,
-                                        choosenKeyField, keyContentUpdated, contentTypePermissions,
-                                        uniqueFieldBeans, uniqueFields, relationships, onlyChild,
-                                        onlyParent, sameKeyBatchInsert, wfActionId, request);
+                                        wfActionIdIndex, lineNumber, languageToImport, headers,
+                                        keyFields, choosenKeyField, keyContentUpdated,
+                                        contentTypePermissions, uniqueFieldBeans, uniqueFields,
+                                        relationships, onlyChild, onlyParent, sameKeyBatchInsert,
+                                        wfActionId, request);
                                 // ---
                                 // Convert import results to legacy format
                                 ImportResultConverter.lineImportResultToLegacyMap(
@@ -454,8 +454,11 @@ public class ImportUtil {
                     if (errors > 0) {
                         results.get("errors").add(errors + " " + LanguageUtil.get(user, "input-lines-had-errors" ));
                     }
-                    if(preview && choosenKeyField.length() > 1) {
-                        results.get("messages").add( LanguageUtil.get(user, "Fields-selected-as-key")+": "+choosenKeyField.substring(1).toString()+".");
+                    if (preview && choosenKeyField.length() > 1) {
+                        results.get("messages").add(
+                                LanguageUtil.get(user,
+                                        "Fields-selected-as-key") + ": " +
+                                        choosenKeyField.substring(1) + ".");
                     }
                     if (counters.getNewContentCounter() > 0) {
                         results.get("messages").add(LanguageUtil.get(user, "Attempting-to-create") + " " + (counters.getNewContentCounter()) + " contentlets - " + LanguageUtil.get(user, "check-below-for-errors"));
@@ -1346,8 +1349,8 @@ public class ImportUtil {
             final HashMap<Integer, Boolean> onlyParent,
             final boolean sameKeyBatchInsert,
             final String wfActionId,
-            final HttpServletRequest request)
-            throws DotRuntimeException {
+            final HttpServletRequest request
+    ) throws DotRuntimeException {
 
         final var resultBuilder = new LineImportResultBuilder(lineNumber);
 
@@ -1356,20 +1359,11 @@ public class ImportUtil {
             validateLineLength(line, headers, lineNumber);
 
             // Process fields and collect values
-            final var fieldResults = processFields(line, headers, contentType, user, currentHostId,
-                    language, lineNumber, choosenKeyField);
-
-            // Add key field info message if in preview mode
-            if (preview && choosenKeyField.length() > 1) {
-                resultBuilder.messages.add(ValidationMessage.builder()
-                        .type(ValidationMessageType.INFO)
-                        .message(LanguageUtil.get(user, "Fields-selected-as-key") + ": " +
-                                choosenKeyField.substring(1))
-                        .build());
-            }
+            final var fieldResults = processFields(
+                    line, headers, contentType, user, currentHostId, language, lineNumber
+            );
 
             fieldResults.messages().forEach(resultBuilder::addValidationMessage);
-            fieldResults.keyFields().forEach(resultBuilder::addKeyField);
             fieldResults.categories().forEach(resultBuilder::addCategory);
             uniqueFieldBeans.addAll(fieldResults.uniqueFields());
 
@@ -1425,7 +1419,7 @@ public class ImportUtil {
             }
 
             // Search for existing contentlets
-            ContentletSearchResult searchResult = searchExistingContentlets(
+            final var searchResult = searchExistingContentlets(
                     contentType, values, keyFields, siteAndFolder, urlValue,
                     urlValueAssetName, identifier, preview, sameKeyBatchInsert, isMultilingual,
                     language, lineNumber, choosenKeyField, user);
@@ -1443,11 +1437,13 @@ public class ImportUtil {
             // Handle contentlet creation/update with proper language handling
             resultBuilder.setNewContent(false);
             if (contentlets.isEmpty()) {
-                resultBuilder.incrementNewContent();
+                resultBuilder.incrementContentToCreate();
                 resultBuilder.setNewContent(true);
+
                 Contentlet newCont = new Contentlet();
                 newCont.setStructureInode(contentType.getInode());
                 newCont.setLanguageId(language);
+
                 contentlets.add(newCont);
             } else {
 
@@ -1467,7 +1463,7 @@ public class ImportUtil {
                         resultBuilder.setNewContent(true);
                         for (Contentlet contentlet : contentlets) {
                             if (!contentlet.getIdentifier().equals(lastIdentifier)) {
-                                resultBuilder.incrementNewContent();
+                                resultBuilder.incrementContentToCreate();
                                 Contentlet newCont = new Contentlet();
                                 newCont.setIdentifier(contentlet.getIdentifier());
                                 newCont.setStructureInode(contentType.getInode());
@@ -1483,10 +1479,11 @@ public class ImportUtil {
                     contentlets = multilingualContentlets;
                 }
 
-                if (!searchResult.isNew()) {
-                    if (conditionValues.equals("") || !keyContentUpdated.contains(conditionValues)
+                if (!resultBuilder.isNewContent()) {
+                    if (conditionValues.isEmpty()
+                            || !keyContentUpdated.contains(conditionValues)
                             || isMultilingual) {
-                        resultBuilder.incrementUpdatedContent(contentlets.size());
+                        resultBuilder.incrementContentToUpdate(contentlets.size());
                         if (preview) {
                             keyContentUpdated.add(conditionValues);
                         }
@@ -1523,7 +1520,7 @@ public class ImportUtil {
             ProcessedContentResult processResult = processContent(
                     lineNumber,
                     contentlets,
-                    searchResult.isNew(),
+                    resultBuilder.isNewContent(),
                     existingMultilingualLanguage,
                     values,
                     siteAndFolder,
@@ -1538,7 +1535,6 @@ public class ImportUtil {
                     contentTypePermissions,
                     wfActionIdIndex,
                     preview,
-                    isMultilingual,
                     user,
                     request,
                     line
@@ -1547,9 +1543,11 @@ public class ImportUtil {
             processResult.messages().forEach(resultBuilder::addValidationMessage);
             processResult.savedInodes().forEach(resultBuilder::addSavedInode);
             resultBuilder.setLastInode(processResult.lastInode());
-            resultBuilder.incrementNewContent(processResult.newContentCount());
-            resultBuilder.incrementUpdatedContent(processResult.updatedContentCount());
-            resultBuilder.incrementDuplicateContent(processResult.duplicateContentCount());
+            resultBuilder.incrementContentToCreate(processResult.contentToCreate());
+            resultBuilder.incrementCreatedContent(processResult.createdContent());
+            resultBuilder.incrementContentToUpdate(processResult.contentToUpdate());
+            resultBuilder.incrementUpdatedContent(processResult.updatedContent());
+            resultBuilder.incrementDuplicateContent(processResult.duplicateContent());
 
             return resultBuilder.build();
 
@@ -1605,7 +1603,6 @@ public class ImportUtil {
      * @param currentHostId   Current host/site identifier
      * @param language        Language ID for the content
      * @param lineNumber      Current line number in CSV file for error reporting
-     * @param choosenKeyField Buffer tracking chosen key fields
      * @return FieldProcessingResult containing processed values, validation messages, and
      * and additional field data
      * @throws DotDataException     If a data access error occurs during processing
@@ -1618,9 +1615,8 @@ public class ImportUtil {
             final User user,
             final String currentHostId,
             final long language,
-            final int lineNumber,
-            final StringBuffer choosenKeyField)
-            throws DotDataException, DotSecurityException {
+            final int lineNumber
+    ) throws DotDataException, DotSecurityException {
 
         final var results = new FieldProcessingResultBuilder(lineNumber);
 
@@ -1631,7 +1627,7 @@ public class ImportUtil {
 
             try {
                 final var fieldResult = processField(field, value, user, currentHostId,
-                        language, lineNumber, column, choosenKeyField);
+                        language, lineNumber, column);
 
                 if (fieldResult.ignoreLine()) {
                     return fieldResult;
@@ -1649,7 +1645,6 @@ public class ImportUtil {
                 fieldResult.values().forEach(results::addValue);
                 fieldResult.uniqueFields().forEach(results::addUniqueField);
                 fieldResult.messages().forEach(results::addValidationMessage);
-                fieldResult.keyFields().forEach(results::addKeyField);
 
             } catch (Exception e) {
                 results.addError(formatFieldError(field, value, e));
@@ -1714,7 +1709,6 @@ public class ImportUtil {
      * @param language        Language ID for the content
      * @param lineNumber      Current line number in CSV file for error reporting
      * @param column          Column index in the CSV line
-     * @param choosenKeyField Buffer tracking chosen key fields
      * @return FieldProcessingResult containing the processed value and any validation messages
      * @throws DotDataException     If a data access error occurs during processing
      * @throws DotSecurityException If a security violation occurs during processing
@@ -1727,9 +1721,8 @@ public class ImportUtil {
             final String currentHostId,
             final long language,
             final int lineNumber,
-            final int column,
-            final StringBuffer choosenKeyField)
-            throws DotDataException, DotSecurityException, Exception {
+            final int column
+    ) throws DotDataException, DotSecurityException {
 
         final var results = new FieldProcessingResultBuilder(lineNumber);
         Object processedValue;
@@ -1764,8 +1757,6 @@ public class ImportUtil {
 
         if (field.isUnique()) {
             handleUniqueField(field, processedValue, language, lineNumber, results);
-        } else {
-            updateChosenKeyField(field, choosenKeyField);
         }
 
         if (isUrlField(field, processedValue)) {
@@ -2108,9 +2099,6 @@ public class ImportUtil {
                 lineNumber(lineNumber).
                 languageId(language).build();
         resultBuilder.addUniqueField(bean);
-        resultBuilder.addKeyField(
-                field.getVelocityVarName(), value != null ? value.toString() : null
-        );
     }
 
     /**
@@ -2367,7 +2355,6 @@ public class ImportUtil {
         return builder
                 .contentlets(contentlets)
                 .updatedInodes(updatedInodes)
-                .isNew(contentlets.isEmpty())
                 .isMultilingual(isMultilingualResult)
                 .conditionValues(conditionValues)
                 .build();
@@ -2865,7 +2852,6 @@ public class ImportUtil {
      *                                         line.
      * @param preview                          Indicates if we are in preview mode (no actual
      *                                         saves).
-     * @param isMultilingual                   Indicates if the contentlet is multilingual.
      * @param user                             The user performing the import operation.
      * @param request                          The HTTP request object.
      * @param line                             The current line of data being processed from the
@@ -2895,7 +2881,6 @@ public class ImportUtil {
             final List<Permission> contentTypePermissions,
             final int wfActionIdIndex,
             final boolean preview,
-            final boolean isMultilingual,
             final User user,
             final HttpServletRequest request,
             final String[] line
@@ -2952,8 +2937,7 @@ public class ImportUtil {
             }
 
             // Update counters
-            updateCounters(isNew, conditionValues, keyContentUpdated, isMultilingual,
-                    resultBuilder);
+            updateCounters(isNew, conditionValues, keyContentUpdated, resultBuilder);
         }
 
         return resultBuilder.build();
@@ -3039,7 +3023,7 @@ public class ImportUtil {
             final Map<Integer, Object> values,
             final HttpServletRequest request,
             final boolean preview
-    ) throws DotDataException, IOException, DotSecurityException {
+    ) throws IOException, DotSecurityException {
 
         for (Map.Entry<Integer, Field> entry : headers.entrySet()) {
             Field field = entry.getValue();
@@ -3207,20 +3191,16 @@ public class ImportUtil {
      * @param conditionValues   The condition value used for determining updates or duplicates.
      * @param keyContentUpdated A set tracking condition values added as updated content to avoid
      *                          duplicates.
-     * @param isMultilingual    Determines if the content is multilingual, affecting update
-     *                          handling.
      * @param resultBuilder     The object to update counters based on import results.
      */
     private static void updateCounters(final boolean isNew, final String conditionValues,
-            final Set<String> keyContentUpdated, final boolean isMultilingual,
+            final Set<String> keyContentUpdated,
             final ProcessedContentResultBuilder resultBuilder) {
 
         if (isNew) {
-            resultBuilder.incrementNewContent();
+            resultBuilder.incrementCreatedContent();
         } else {
-            if (conditionValues.isEmpty()
-                    || !keyContentUpdated.contains(conditionValues)
-                    || isMultilingual) {
+            if (conditionValues.isEmpty() || !keyContentUpdated.contains(conditionValues)) {
                 resultBuilder.incrementUpdatedContent();
                 resultBuilder.incrementDuplicateContent();
                 keyContentUpdated.add(conditionValues);
@@ -4052,7 +4032,7 @@ public class ImportUtil {
                     if (count > 0 && value != null && value.equals(bean.value())
                             && lineNumber == bean
                             .lineNumber()) {
-                        resultBuilder.incrementNewContent(-1);
+                        resultBuilder.incrementContentToCreate(-1);
                         ignoreLine = true;
                         resultBuilder.addValidationMessage(ValidationMessage.builder()
                                 .type(ValidationMessageType.WARNING)
@@ -4566,34 +4546,34 @@ public class ImportUtil {
 
         private final LineImportResult.Builder builder;
         private final List<ValidationMessage> messages;
-        private final Map<String, String> keyFields;
         private final List<Category> categories;
         private final List<String> updatedInodes;
         private final List<String> savedInodes;
-        private int newContentCount;
+        private int contentToCreateCount;
+        private int createdContentCount;
+        private int contentToUpdateCount;
         private int updatedContentCount;
         private int duplicateContentCount;
         private String lastInode;
+        private boolean ignoreLine;
+        private boolean isNewContent;
 
         public LineImportResultBuilder(int lineNumber) {
             this.builder = LineImportResult.builder();
             this.messages = new ArrayList<>();
-            this.keyFields = new HashMap<>();
             this.categories = new ArrayList<>();
             this.updatedInodes = new ArrayList<>();
             this.builder.lineNumber(lineNumber).ignoreLine(false);
             this.savedInodes = new ArrayList<>();
-            this.newContentCount = 0;
+            this.contentToCreateCount = 0;
+            this.createdContentCount = 0;
+            this.contentToUpdateCount = 0;
             this.updatedContentCount = 0;
             this.duplicateContentCount = 0;
         }
 
         public void addValidationMessage(ValidationMessage message) {
             messages.add(message);
-        }
-
-        public void addKeyField(String field, String value) {
-            keyFields.put(field, value);
         }
 
         public void addCategory(Category category) {
@@ -4605,23 +4585,35 @@ public class ImportUtil {
         }
 
         public void setIgnoreLine(boolean ignoreLine) {
-            builder.ignoreLine(ignoreLine);
+            this.ignoreLine = ignoreLine;
         }
 
         public void setNewContent(boolean isNewContent) {
-            builder.isNewContent(isNewContent);
+            this.isNewContent = isNewContent;
+        }
+
+        public boolean isNewContent() {
+            return this.isNewContent;
         }
 
         void addSavedInode(String inode) {
             savedInodes.add(inode);
         }
 
-        void incrementNewContent() {
-            newContentCount++;
+        void incrementContentToCreate() {
+            contentToCreateCount++;
         }
 
-        void incrementNewContent(final int count) {
-            newContentCount += count;
+        void incrementContentToCreate(final int count) {
+            contentToCreateCount += count;
+        }
+
+        void incrementCreatedContent(final int count) {
+            createdContentCount += count;
+        }
+
+        void incrementContentToUpdate(final int count) {
+            contentToUpdateCount += count;
         }
 
         void incrementUpdatedContent(final int count) {
@@ -4639,13 +4631,16 @@ public class ImportUtil {
         public LineImportResult build() {
             return builder
                     .messages(messages)
-                    .keyFields(keyFields)
                     .categories(categories)
                     .updatedInodes(updatedInodes)
                     .savedInodes(savedInodes)
-                    .newContentCount(newContentCount)
-                    .updatedContentCount(updatedContentCount)
-                    .duplicateContentCount(duplicateContentCount)
+                    .isNewContent(isNewContent)
+                    .ignoreLine(ignoreLine)
+                    .contentToCreate(contentToCreateCount)
+                    .createdContent(createdContentCount)
+                    .contentToUpdate(contentToUpdateCount)
+                    .updatedContent(updatedContentCount)
+                    .duplicateContent(duplicateContentCount)
                     .lastInode(lastInode)
                     .build();
         }
@@ -4660,7 +4655,6 @@ public class ImportUtil {
         private final int lineNumber;
         private final FieldProcessingResult.Builder builder;
         private final List<ValidationMessage> messages;
-        private final Map<String, String> keyFields;
         private final List<Category> categories;
         List<UniqueFieldBean> uniqueFields = new ArrayList<>();
         Map<Integer, Object> values = new HashMap<>();
@@ -4671,7 +4665,6 @@ public class ImportUtil {
         public FieldProcessingResultBuilder(int lineNumber) {
             this.builder = FieldProcessingResult.builder();
             this.messages = new ArrayList<>();
-            this.keyFields = new HashMap<>();
             this.categories = new ArrayList<>();
             this.uniqueFields = new ArrayList<>();
             this.values = new HashMap<>();
@@ -4723,10 +4716,6 @@ public class ImportUtil {
                     .build());
         }
 
-        public void addKeyField(String field, String value) {
-            keyFields.put(field, value);
-        }
-
         public void addCategory(Category category) {
             categories.add(category);
         }
@@ -4742,7 +4731,6 @@ public class ImportUtil {
         public FieldProcessingResult build() {
             return builder
                     .messages(messages)
-                    .keyFields(keyFields)
                     .categories(categories)
                     .uniqueFields(uniqueFields)
                     .values(values)
@@ -4806,7 +4794,9 @@ public class ImportUtil {
     private static class ProcessedContentResultBuilder {
 
         private final List<String> savedInodes = new ArrayList<>();
-        private int newContentCount;
+        private int contentToCreateCount;
+        private int createdContentCount;
+        private int contentToUpdateCount;
         private int updatedContentCount;
         private int duplicateContentCount;
         private String lastInode;
@@ -4821,8 +4811,16 @@ public class ImportUtil {
             return savedInodes;
         }
 
-        void incrementNewContent() {
-            newContentCount++;
+        void incrementContentToCreate() {
+            contentToCreateCount++;
+        }
+
+        void incrementCreatedContent() {
+            createdContentCount++;
+        }
+
+        void incrementContentToUpdate() {
+            contentToUpdateCount++;
         }
 
         void incrementUpdatedContent() {
@@ -4844,9 +4842,11 @@ public class ImportUtil {
         ProcessedContentResult build() {
             return ProcessedContentResult.builder()
                     .savedInodes(savedInodes)
-                    .newContentCount(newContentCount)
-                    .updatedContentCount(updatedContentCount)
-                    .duplicateContentCount(duplicateContentCount)
+                    .contentToCreate(contentToCreateCount)
+                    .createdContent(createdContentCount)
+                    .contentToUpdate(contentToUpdateCount)
+                    .updatedContent(updatedContentCount)
+                    .duplicateContent(duplicateContentCount)
                     .lastInode(lastInode)
                     .messages(messages)
                     .build();
