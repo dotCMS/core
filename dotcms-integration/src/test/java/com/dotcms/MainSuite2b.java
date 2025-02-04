@@ -352,6 +352,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task250113CreatePostgresJobQueueTablesTest.class,
         UniqueFieldDataBaseUtilTest.class,
         DBUniqueFieldValidationStrategyTest.class,
+
+
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241015ReplaceLanguagesWithLocalesPortletTest.class,
@@ -377,7 +379,19 @@ import org.junit.runners.Suite.SuiteClasses;
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
         LanguageUtilTest.class,
-        FolderResourceTest.class
+        FolderResourceTest.class,
+
+        com.dotmarketing.common.reindex.ReindexThreadTest.class,
+        com.dotmarketing.common.reindex.ReindexAPITest.class,
+        com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
+        com.dotmarketing.common.db.ParamsSetterTest.class,
+        com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class,
+        com.dotmarketing.factories.PublishFactoryTest.class,
+        com.dotmarketing.factories.WebAssetFactoryTest.class,
+        com.dotmarketing.factories.MultiTreeAPITest.class,
+        com.dotmarketing.db.DbConnectionFactoryTest.class,
+        com.dotmarketing.db.DbConnectionFactoryUtilTest.class,
+        com.dotmarketing.db.HibernateUtilTest.class,
 })
 
 public class MainSuite2b {
