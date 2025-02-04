@@ -1,10 +1,9 @@
-import { getUVEState } from '@dotcms/uve';
-
 import { Content } from './content/content-api';
 import { ErrorMessages } from './models';
 import { DotcmsClientListener } from './models/types';
 
 import { NOTIFY_CLIENT } from '../editor/models/listeners.model';
+import { isInsideEditor } from '../editor/sdk-editor';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
@@ -308,8 +307,7 @@ export class DotCmsClient {
          * ```
          */
         on: (action: string, callbackFn: (payload: unknown) => void) => {
-            // The existence of a response determines if we are or not inside the UVE
-            if (!getUVEState()) {
+            if (!isInsideEditor()) {
                 return;
             }
 

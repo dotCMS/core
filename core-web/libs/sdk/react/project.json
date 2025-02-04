@@ -20,12 +20,10 @@
                 "tsConfig": "libs/sdk/react/tsconfig.lib.json",
                 "project": "libs/sdk/react/package.json",
                 "entryFile": "libs/sdk/react/src/index.ts",
-                "additionalEntryPoints": ["libs/sdk/react/src/next.ts"],
                 "external": ["react/jsx-runtime"],
                 "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
                 "compiler": "babel",
                 "extractCss": false,
-                "format": ["esm"],
                 "assets": [
                     {
                         "glob": "libs/sdk/react/README.md",

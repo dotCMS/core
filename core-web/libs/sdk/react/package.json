@@ -9,35 +9,10 @@
     "@tinymce/tinymce-react": "^5.1.1"
   },
   "description": "Official React Components library to render a dotCMS page.",
-  "main": "./index.esm.js",
-  "module": "./index.esm.js",
-  "types": "./index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": ["./index.d.ts"],
-      "./next": ["./next.d.ts"]
-    }
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
-  "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "import": "./index.esm.js"
-    },
-    "./next": {
-      "types": "./next.d.ts",
-      "import": "./next.esm.js"
-    }
-  },
-  "files": [
-    "index.esm.js",
-    "index.d.ts",
-    "next.esm.js",
-    "next.d.ts"
-  ],
   "keywords": [
     "dotCMS",
     "CMS",
