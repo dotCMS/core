@@ -1,12 +1,12 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, Params, Router } from '@angular/router';
 
-import { DEFAULT_PERSONA } from '../../shared/consts';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../../shared/consts';
 
 type EmaQueryParams = {
     url: string;
     language_id: number;
-    'com.dotmarketing.persona.id': string;
+    [PERSONA_KEY]: string;
     variantName: string;
 };
 
