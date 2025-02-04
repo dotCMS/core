@@ -37,6 +37,7 @@ import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.*;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
+import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
@@ -73,6 +74,7 @@ import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
 import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.publishing.manifest.ManifestUtilTest;
+import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
 import com.dotcms.rendering.velocity.viewtools.FileToolTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
@@ -82,14 +84,19 @@ import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderIntegrationTest;
+import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
+import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
+import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.security.multipart.BoundedBufferedReaderTest;
 import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
 import com.dotcms.security.multipart.SecureFileValidatorTest;
@@ -116,6 +123,9 @@ import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
+import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
@@ -134,11 +144,13 @@ import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.*;
 
 import com.dotmarketing.util.ConfigUtilsTest;
+import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
+import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -352,7 +364,20 @@ import org.junit.runners.Suite.SuiteClasses;
         SyncVanitiesCollectorTest.class,
         AsyncVanitiesCollectorTest.class,
         HttpServletRequestImpersonatorTest.class,
-        Task250107RemoveEsReadOnlyMonitorJobTest.class
+        Task250107RemoveEsReadOnlyMonitorJobTest.class,
+        AppsAPIImplTest.class,
+        AppsResourceTest.class,
+        AppsCacheImplTest.class,
+        VelocityServletIntegrationTest.class,
+        DotAssetAPITest.class,
+        DotAssetBaseTypeToContentTypeStrategyImplTest.class,
+        FileAssetAPIImplIntegrationTest.class,
+        FileAssetFactoryIntegrationTest.class,
+        UserResourceIntegrationTest.class,
+        IntegrationResourceLinkTest.class,
+        HashBuilderTest.class,
+        LanguageUtilTest.class,
+        FolderResourceTest.class
 })
 
 public class MainSuite2b {
