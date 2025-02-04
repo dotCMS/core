@@ -1,1 +1,0 @@
-export { DotCMSBodyRender } from './DotCMSBodyRender';

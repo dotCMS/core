@@ -3,8 +3,8 @@ import { DotCMSPageAsset } from '../types';
 
 export interface DotCMSRenderContextI {
     dotCMSPageAsset: DotCMSPageAsset;
-    customComponents: Record<string, React.ComponentType<any>>;
-    devMode: boolean;
+    customComponents?: Record<string, React.ComponentType<any>>;
+    devMode?: boolean;
 }
 
 /**

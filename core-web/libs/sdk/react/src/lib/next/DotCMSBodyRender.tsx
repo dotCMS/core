@@ -4,8 +4,8 @@ import { DotCMSPageAsset } from './types';
 
 interface DotCMSBodyRenderProps {
     dotCMSPageAsset: DotCMSPageAsset;
-    customComponents: Record<string, React.ComponentType<any>>;
-    devMode: boolean;
+    customComponents?: Record<string, React.ComponentType<any>>;
+    devMode?: boolean;
 }
 
 export const DotCMSBodyRender = ({

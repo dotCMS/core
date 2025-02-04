@@ -8,39 +8,31 @@
     "@tinymce/tinymce-react": "^5.1.1"
   },
   "description": "Official React Components library to render a dotCMS page.",
-  "main": "./index.esm.js",
-  "module": "./index.esm.js",
+  "main": "./index.js",
+  "module": "./index.js",
   "types": "./index.d.ts",
   "typesVersions": {
     "*": {
-      "*": [
-        "./index.d.ts"
-      ],
-      "./next": [
-        "./next_public_api.d.ts"
-      ]
+      "*": ["./dist/index.d.ts"],
+      "next": ["./dist/next.d.ts"]
     }
-},
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./index.esm.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./next": {
-      "types": "./next_public_api.d.ts",
-      "import": "./next_public_api.esm.js"
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js",
+      "require": "./dist/next.cjs"
     }
   },
-  "files": [
-    "index.esm.js",
-    "index.d.ts",
-    "next_public_api.esm.js",
-    "next_public_api.d.ts"
-  ],
   "keywords": [
     "dotCMS",
     "CMS",
