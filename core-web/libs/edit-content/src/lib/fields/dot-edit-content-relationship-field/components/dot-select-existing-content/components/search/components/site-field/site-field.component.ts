@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, effect, forwardRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, forwardRef, inject, viewChild } from '@angular/core';
 import {
     ControlValueAccessor,
     FormControl,
@@ -7,7 +7,7 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
-import { TreeSelectModule } from 'primeng/treeselect';
+import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
 import { TruncatePathPipe } from '@dotcms/edit-content/pipes/truncate-path.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -38,7 +38,8 @@ import { SiteFieldStore } from './site-field.store';
         }
     ],
     styleUrls: ['./site-field.component.scss'],
-    templateUrl: './site-field.component.html'
+    templateUrl: './site-field.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     /**
@@ -53,6 +54,8 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      */
     readonly siteControl = new FormControl<string>('');
 
+    $treeSelect = viewChild<TreeSelect>(TreeSelect);
+
     /**
      * Creates an instance of SiteFieldComponent.
      * Sets up an effect to handle value changes and propagate them through the ControlValueAccessor.
@@ -63,6 +66,15 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
 
             if (valueToSave) {
                 this.onChange(valueToSave);
+            }
+        });
+
+        effect(() => {
+            this.store.nodeExpanded();
+            const treeSelect = this.$treeSelect();
+            if (treeSelect.treeViewChild) {
+                treeSelect.treeViewChild.updateSerializedValue();
+                treeSelect.cd.detectChanges();
             }
         });
     }
