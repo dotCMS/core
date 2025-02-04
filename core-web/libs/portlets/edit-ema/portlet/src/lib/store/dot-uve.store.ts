@@ -13,7 +13,7 @@ import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
-import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
+import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
 
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
@@ -37,7 +37,15 @@ export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
     withComputed(
-        ({ pageAPIResponse, pageParams, languages, errorCode: error, status, isEnterprise }) => {
+        ({
+            pageAPIResponse,
+            pageParams,
+            viewParams,
+            languages,
+            errorCode: error,
+            status,
+            isEnterprise
+        }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
                     const response = pageAPIResponse();
@@ -132,6 +140,14 @@ export const UVEStore = signalStore(
                 }),
                 $isLiveMode: computed<boolean>(() => {
                     return pageParams()?.editorMode === UVE_MODE.LIVE;
+                }),
+                $friendlyParams: computed(() => {
+                    const params = {
+                        ...(pageParams() ?? {}),
+                        ...(viewParams() ?? {})
+                    };
+
+                    return normalizeQueryParams(params);
                 })
             };
         }

@@ -8,7 +8,7 @@ import {
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createPageApiUrlWithQueryParams,
+    getFullPageURL,
     SDK_EDITOR_SCRIPT_SOURCE,
     computePageIsLocked,
     computeCanEditPage,
@@ -21,10 +21,12 @@ import {
     createReorderMenuURL,
     getAllowedPageParams,
     getOrientation,
-    getWrapperMeasures
+    getWrapperMeasures,
+    normalizeQueryParams
 } from '.';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { PAGE_MODE } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
@@ -370,37 +372,33 @@ describe('utils functions', () => {
         });
     });
 
-    describe('createPageApiUrlWithQueryParams', () => {
+    describe('getFullPageURL', () => {
         it('should return the correct query params', () => {
-            const queryParams = {
+            const params = {
+                url: 'test',
                 variantName: 'test',
                 language_id: '20',
-                'com.dotmarketing.persona.id': 'the-chosen-one',
+                [PERSONA_KEY]: 'the-chosen-one',
                 experimentId: '123',
                 mode: PAGE_MODE.LIVE
             };
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            const result = getFullPageURL({ url: 'test', params });
             expect(result).toBe(
                 'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=LIVE'
             );
         });
 
-        it('should return url with default query params if no query params', () => {
-            const queryParams = {};
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
-            expect(result).toBe(
-                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
-            );
-        });
-
         it('should ignore the undefined queryParams', () => {
-            const queryParams = {
+            const params = {
+                url: 'test',
+                language_id: '20',
+                [PERSONA_KEY]: 'the-chosen-one',
                 variantName: 'test',
                 experimentId: undefined
             };
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            const result = getFullPageURL({ url: 'test', params });
             expect(result).toBe(
-                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                'test?language_id=20&com.dotmarketing.persona.id=the-chosen-one&variantName=test'
             );
         });
     });
@@ -636,7 +634,7 @@ describe('utils functions', () => {
         const params = {
             url: 'page',
             language_id: '1',
-            'com.dotmarketing.persona.id': 'persona',
+            [PERSONA_KEY]: 'persona',
             variantName: 'new',
             experimentId: '1',
             mode: 'EDIT_MODE',
@@ -771,7 +769,7 @@ describe('utils functions', () => {
                 variantName: 'variant',
                 language_id: '1',
                 experimentId: 'exp123',
-                'com.dotmarketing.persona.id': 'persona123'
+                [PERSONA_KEY]: 'persona123'
             } as DotPageApiParams;
 
             const params: Params = {
@@ -862,6 +860,54 @@ describe('utils functions', () => {
 
             const result = getOrientation(device);
             expect(result).toBe(Orientation.LANDSCAPE);
+        });
+    });
+
+    describe('normalizeQueryParams', () => {
+        it('should remove PERSONA_KEY if it equals DEFAULT_PERSONA.identifier', () => {
+            const params = {
+                [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                someOtherKey: 'someValue'
+            };
+
+            const result = normalizeQueryParams(params);
+
+            expect(result).toEqual({
+                someOtherKey: 'someValue'
+            });
+        });
+
+        it('should rename PERSONA_KEY to personaId if it is present and not default', () => {
+            const params = {
+                [PERSONA_KEY]: 'customPersonaId',
+                anotherKey: 'anotherValue'
+            };
+
+            const result = normalizeQueryParams(params);
+
+            expect(result).toEqual({
+                personaId: 'customPersonaId',
+                anotherKey: 'anotherValue'
+            });
+        });
+
+        it('should not modify params if PERSONA_KEY is absent', () => {
+            const params = {
+                someKey: 'someValue',
+                anotherKey: 'anotherValue'
+            };
+
+            const result = normalizeQueryParams(params);
+
+            expect(result).toEqual(params);
+        });
+
+        it('should handle empty params object', () => {
+            const params = {};
+
+            const result = normalizeQueryParams(params);
+
+            expect(result).toEqual({});
         });
     });
 });
