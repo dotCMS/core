@@ -490,16 +490,25 @@ public class DependencyManager {
 
 				// Content dependencies
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
-					final String luceneQuery = "+conHost:" + host.getIdentifier();
-					//How about we only pull content which modDate is after the last dataset
-					//+modDate:[2024-08-28 TO now]
-					//We would need another query to pull:
-					//1. Contentlet which were unpublished = +working:true +live:false
-					final long totalContentlets = APILocator.getContentletAPI().indexCount(luceneQuery, user, false);
+					//To simulate the same behavior as the push publish, we need to pull the contentlets that were modified after the last dataset used in phase 1
+					//In this case, we are going to use from 1 year ago from today (Feb 3rd, 2025), so it would be from Feb 3rd, 2024
+					final String luceneQuery = "+modDate:[2024-02-03 TO now] +conHost:" + host.getIdentifier();
+					//But since when you unpublish a contentlet there isn't a new version created, we need to pull the contentlets that are unpublished
+					//Query: +working:true +live:false
+					final String luceneQueryUnpublished = "+working:true +live:false +conHost:" + host.getIdentifier();
+
+					long totalContentlets = APILocator.getContentletAPI().indexCount(luceneQuery, user, false);
 					Logger.info(this,"Total Content Count = " + totalContentlets);
-					final List<Contentlet> contentList = APILocator.getContentletAPI()
+					List<Contentlet> contentList = APILocator.getContentletAPI()
 							.search(luceneQuery, (int) totalContentlets, 0, null, user, false);
 					Logger.info(this,"Query: " + luceneQuery + " Contentlets Size: " + contentList.size());
+
+					totalContentlets = APILocator.getContentletAPI().indexCount(luceneQueryUnpublished, user, false);
+					Logger.info(this,"Total Content Count = " + totalContentlets);
+					contentList.addAll(APILocator.getContentletAPI()
+							.search(luceneQueryUnpublished, (int) totalContentlets, 0, null, user, false));
+					Logger.info(this,"Query: " + luceneQueryUnpublished + " Contentlets Size: " + contentList.size());
+
 					for (final Contentlet contentlet : contentList) {
 						if(UtilMethods.isSet(contentlet.getIdentifier()) && !publisherFilter.doesExcludeDependencyQueryContainsContentletId(contentlet.getIdentifier())) {
 							final boolean wasContentAdded = contents.addOrClean(contentlet.getIdentifier(),
