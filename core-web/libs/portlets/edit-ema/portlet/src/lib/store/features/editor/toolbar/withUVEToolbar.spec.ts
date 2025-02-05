@@ -84,8 +84,10 @@ describe('withEditor', () => {
     describe('Computed', () => {
         it('should return the right API URL', () => {
             const params = { ...pageParams };
+
             // Delete the url from the params to test the function
             delete params.url;
+            delete params.clientHost;
 
             const queryParams = new URLSearchParams(params).toString();
             const expectURL = `/api/v1/page/json/test-url?${queryParams}`;

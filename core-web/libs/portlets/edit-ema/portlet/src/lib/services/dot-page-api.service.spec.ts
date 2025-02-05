@@ -5,6 +5,7 @@ import { UVE_MODE } from '@dotcms/uve/types';
 import { DotPageApiService } from './dot-page-api.service';
 
 import { PERSONA_KEY } from '../shared/consts';
+import { PAGE_MODE } from '../shared/enums';
 
 describe('DotPageApiService', () => {
     let spectator: SpectatorHttp<DotPageApiService>;
@@ -131,6 +132,28 @@ describe('DotPageApiService', () => {
         expect(requestHeaders.get('Content-Type')).toEqual('application/json');
     });
 
+    describe('editMode', () => {
+        const BASE_URL =
+            '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona';
+
+        const BASE_PARAMS = {
+            url: 'test-url',
+            language_id: 'en',
+            [PERSONA_KEY]: 'modes.persona.no.persona'
+        };
+
+        it('should request the page in the right `PAGE_MODE` based on the `editorMode`', () => {
+            spectator.service.get({ ...BASE_PARAMS, editorMode: UVE_MODE.EDIT }).subscribe();
+            spectator.expectOne(`${BASE_URL}&mode=${PAGE_MODE.EDIT}`, HttpMethod.GET);
+
+            spectator.service.get({ ...BASE_PARAMS, editorMode: UVE_MODE.PREVIEW }).subscribe();
+            spectator.expectOne(`${BASE_URL}&mode=${PAGE_MODE.PREVIEW}`, HttpMethod.GET);
+
+            spectator.service.get({ ...BASE_PARAMS, editorMode: UVE_MODE.LIVE }).subscribe();
+            spectator.expectOne(`${BASE_URL}&mode=${PAGE_MODE.LIVE}`, HttpMethod.GET);
+        });
+    });
+
     describe('preview', () => {
         it("should request page in preview mode if 'editorMode' is 'preview'", () => {
             spectator.service
@@ -143,7 +166,7 @@ describe('DotPageApiService', () => {
                 .subscribe();
 
             spectator.expectOne(
-                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&mode=preview',
+                `/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&mode=${PAGE_MODE.PREVIEW}`,
                 HttpMethod.GET
             );
         });
@@ -161,7 +184,7 @@ describe('DotPageApiService', () => {
                 .subscribe();
 
             spectator.expectOne(
-                '/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&mode=live',
+                `/api/v1/page/render/test-url?language_id=en&com.dotmarketing.persona.id=modes.persona.no.persona&mode=${PAGE_MODE.LIVE}`,
                 HttpMethod.GET
             );
         });
