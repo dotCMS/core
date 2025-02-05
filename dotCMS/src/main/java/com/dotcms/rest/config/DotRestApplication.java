@@ -1,5 +1,6 @@
 package com.dotcms.rest.config;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.telemetry.rest.TelemetryResource;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -12,6 +13,7 @@ import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.ApplicationPath;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
@@ -87,7 +89,8 @@ public class DotRestApplication extends ResourceConfig {
 			return;
 		}
 		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
-			ContainerReloader.getInstance().reload();
+			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
+            reloader.ifPresent(ContainerReloader::reload);
 		}
 	}
 
@@ -100,7 +103,8 @@ public class DotRestApplication extends ResourceConfig {
 			return;
 		}
 		if(customClasses.remove(clazz) != null){
-			ContainerReloader.getInstance().reload();
+			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
+			reloader.ifPresent(ContainerReloader::reload);
 		}
 	}
 

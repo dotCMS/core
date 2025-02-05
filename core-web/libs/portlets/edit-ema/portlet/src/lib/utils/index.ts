@@ -18,9 +18,10 @@ import {
     BASE_IFRAME_MEASURE_UNIT,
     COMMON_ERRORS,
     DEFAULT_PERSONA,
-    PERSONA_KEY
+    PERSONA_KEY,
+    UVE_MODE_TO_PAGE_MODE
 } from '../shared/consts';
-import { EDITOR_STATE } from '../shared/enums';
+import { EDITOR_STATE, PAGE_MODE } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -251,8 +252,13 @@ export function getFullPageURL({
         delete searchParams['url'];
     }
 
+    if (searchParams.clientHost) {
+        delete searchParams['clientHost'];
+    }
+
     if (searchParams.editorMode) {
-        searchParams.mode = searchParams.editorMode;
+        const EDIT_MODE = UVE_MODE_TO_PAGE_MODE[searchParams.editorMode];
+        searchParams.mode = EDIT_MODE ?? PAGE_MODE.EDIT;
         delete searchParams['editorMode'];
     }
 

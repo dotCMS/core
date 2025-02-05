@@ -401,6 +401,21 @@ describe('utils functions', () => {
                 'test?language_id=20&com.dotmarketing.persona.id=the-chosen-one&variantName=test'
             );
         });
+
+        it('should remove the clientHost if it is passed', () => {
+            const params = {
+                url: 'test',
+                language_id: '20',
+                [PERSONA_KEY]: 'the-chosen-one',
+                variantName: 'test',
+                clientHost: 'http://localhost:4200'
+            };
+
+            const result = getFullPageURL({ url: 'test', params });
+            expect(result).toBe(
+                'test?language_id=20&com.dotmarketing.persona.id=the-chosen-one&variantName=test'
+            );
+        });
     });
 
     describe('computePageIsLocked', () => {
