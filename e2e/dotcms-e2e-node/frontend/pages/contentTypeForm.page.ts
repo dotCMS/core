@@ -10,10 +10,10 @@ export class ContentTypeFormPage {
 
   async createNewContentType(fields: FieldsTypes[]) {
     const promise = fields.reduce((prevPromise, field) => {
-      if (field.fieldType === 'text'){
+      if (field.fieldType === "text") {
         return prevPromise.then(() => this.addTextField(field));
-      } 
-      if (field.fieldType === 'siteOrFolder') {
+      }
+      if (field.fieldType === "siteOrFolder") {
         return prevPromise.then(() => this.addSiteOrFolderField(field));
       }
     }, Promise.resolve());

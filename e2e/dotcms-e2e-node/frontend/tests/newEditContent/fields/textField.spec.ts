@@ -53,5 +53,3 @@ test("should save a text field", async ({ page }) => {
 
   await expect(locatorField).toHaveValue(textFieldValue);
 });
-
-
