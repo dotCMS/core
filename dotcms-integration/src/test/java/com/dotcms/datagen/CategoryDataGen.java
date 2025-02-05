@@ -1,12 +1,16 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -116,6 +120,37 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
             return APILocator.getCategoryAPI().findByKey(object.getKey(), APILocator.systemUser(), false);
         } catch (DotDataException | DotSecurityException e) {
             throw new RuntimeException("Error persisting Category", e);
+        }
+    }
+
+    /**
+     * Deletes the given {@link Category} object.
+     *
+     * @param category the category to delete
+     */
+    public static void delete(final Category category) {
+        delete(category, true);
+    }
+
+    /**
+     * Deletes the given {@link Category} object. If {@code failSilently} is {@code true}, the
+     * method will log the error message. Otherwise, it will throw a {@link DotRuntimeException}.
+     *
+     * @param category     the category to delete
+     * @param failSilently whether to fail silently
+     */
+    public static void delete(final Category category, final boolean failSilently) {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        try {
+            categoryAPI.delete(category, APILocator.systemUser(), false);
+        } catch (final DotDataException | DotSecurityException e) {
+            final String errorMsg = String.format("Error deleting Category " +
+                    "'%s': %s", category, ExceptionUtil.getErrorMessage(e));
+            if (failSilently) {
+                Logger.error(ContentTypeDataGen.class, errorMsg, e);
+            } else {
+                throw new DotRuntimeException(errorMsg, e);
+            }
         }
     }
 

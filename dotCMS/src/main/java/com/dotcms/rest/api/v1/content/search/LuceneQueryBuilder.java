@@ -40,6 +40,7 @@ import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.VA
 import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.WORKFLOW_SCHEME;
 import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.WORKFLOW_STEP;
 import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COLON;
 import static com.liferay.util.StringPool.COMMA;
 import static com.liferay.util.StringPool.SPACE;
 
@@ -109,10 +110,12 @@ public class LuceneQueryBuilder {
                                 if (null != handler) {
                                     final String query = handler.apply(fieldContextBuilder.build());
                                     if (field instanceof RelationshipField) {
-                                        if (UtilMethods.isSet(query)) {
+                                        if (UtilMethods.isSet(query) && !query.contains(COLON)) {
                                             // For Relationships fields, we need to track the related IDs from
                                             // all of them first, and add them to the Lucene query in the end
                                             relatedContentIDs.addAll(Arrays.asList(query.split(COMMA)));
+                                        } else {
+                                            queryTerms.add(query);
                                         }
                                     } else {
                                         queryTerms.add(query);

@@ -3,8 +3,8 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 
-import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.COMMA;
+import static com.liferay.util.StringPool.SPACE;
 
 /**
  * This Field Strategy implementation specifies the correct syntax for querying a Tag Field via
@@ -28,7 +28,7 @@ public class TagFieldStrategy implements FieldStrategy {
                 valueDelimiter = "";
             }
             luceneQuery.append("+").append(fieldName).append(":")
-                    .append(valueDelimiter).append(valueForQuery).append(valueDelimiter).append(BLANK);
+                    .append(valueDelimiter).append(valueForQuery).append(valueDelimiter).append(SPACE);
         }
         return luceneQuery.toString().trim();
     }

@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -10,6 +11,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -18,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
@@ -54,23 +57,21 @@ public class RelationshipFieldStrategy implements FieldStrategy {
             return BLANK;
         }
         final Optional<Relationship> childRelationship = this.getRelationshipFromChildField(contentType, fieldName);
-        final StringBuilder relatedQueryByChild = new StringBuilder();
         List<String> relatedContent = new ArrayList<>();
         if (childRelationship.isPresent()) {
             // Getting related identifiers from index when filtering by parent
-            relatedContent = this.getRelatedIdentifiers(currentUser, offset, relatedQueryByChild,
-                    sortBy, fieldValue, childRelationship);
-
-            relatedQueryByChild.append(fieldName).append(":").append(fieldValue);
+            relatedContent = this.getRelatedIdentifiers(currentUser, offset, sortBy, fieldValue, childRelationship.get());
         }
-        return String.join(",", relatedContent).trim();
+        return UtilMethods.isSet(relatedContent)
+                ? String.join(",", relatedContent).trim()
+                : "+" + fieldName + ":" + fieldValue;
     }
 
     /**
      * Returns a relationship field from the child side
      *
-     * @param contentType
-     * @param fieldName
+     * @param contentType The {@link ContentType} containing the Relationships field.
+     * @param fieldName  The name of the field.
      *
      * @return
      */
@@ -80,7 +81,7 @@ public class RelationshipFieldStrategy implements FieldStrategy {
         final Field field = contentType.fieldMap().get(fieldVar);
         Relationship relationship = APILocator.getRelationshipAPI().byTypeValue(field.relationType());
         // Considers Many-to-One relationships where the fieldName might not contain the relation type value
-        if (null == relationship && !Objects.isNull(field.relationType()) && !field.relationType().contains(".")) {
+        if (null == relationship && Objects.nonNull(field.relationType()) && !field.relationType().contains(".")) {
             relationship = APILocator.getRelationshipAPI().byTypeValue(contentType.variable() + "." + fieldVar);
         }
         return relationship != null ? Optional.of(relationship) : Optional.empty();
@@ -96,25 +97,23 @@ public class RelationshipFieldStrategy implements FieldStrategy {
      * @param childRelationship
      * @return
      */
-    private List<String> getRelatedIdentifiers(final User currentUser, int offset,
-                                       final StringBuilder relatedQueryByChild, final String finalSort, final String fieldValue,
-                                       final Optional<Relationship> childRelationship) {
+    private List<String> getRelatedIdentifiers(final User currentUser, final int offset,
+                                               final String finalSort, final String fieldValue,
+                                               final Relationship childRelationship) {
         final ContentletAPI conAPI = APILocator.getContentletAPI();
         try {
-            final Contentlet relatedParent = conAPI.findContentletByIdentifierAnyLanguage(fieldValue);
-            final List<String> relatedContent = conAPI
-                    .getRelatedContent(relatedParent, childRelationship.get(), true,
-                            currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
-                            offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
-                    .map(Contentlet::getIdentifier).collect(Collectors.toList());
-
-            if (relatedQueryByChild.length() > 0) {
-                relatedQueryByChild.append(",");
-            }
-            return relatedContent;
+            final int filteringOffset = offset > 0 && RELATIONSHIPS_FILTER_CRITERIA_SIZE > 0
+                    ? offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE
+                    : 0;
+            final Contentlet relatedContent = conAPI.findContentletByIdentifierAnyLanguage(fieldValue);
+            return conAPI.getRelatedContent(relatedContent, childRelationship, true, currentUser,
+                            DONT_RESPECT_FRONT_END_ROLES, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
+                            filteringOffset, finalSort)
+                    .stream().map(Contentlet::getIdentifier).collect(Collectors.toList());
         } catch (final DotDataException e) {
-            Logger.warn(this, String.format("An error occurred when retrieving Contentlet ID '%s': %s",
-                    fieldValue, e.getMessage()), e);
+            Logger.warn(this, String.format("An error occurred when retrieving related contents " +
+                            "for Contentlet ID '%s': %s",
+                    fieldValue, ExceptionUtil.getErrorMessage(e)), e);
             return List.of();
         }
     }
