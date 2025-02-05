@@ -35,8 +35,8 @@ export class DotEditorModeSelectorComponent {
 
         if (canEditPage) {
             menu.push({
-                label: 'uve.editor.mode.edit',
-                description: 'uve.editor.mode.edit.description',
+                label: 'uve.editor.mode.draft',
+                description: 'uve.editor.mode.draft.description',
                 id: UVE_MODE.EDIT
             });
         }
@@ -49,8 +49,8 @@ export class DotEditorModeSelectorComponent {
 
         if (hasLiveVersion) {
             menu.push({
-                label: 'uve.editor.mode.live',
-                description: 'uve.editor.mode.live.description',
+                label: 'uve.editor.mode.published',
+                description: 'uve.editor.mode.published.description',
                 id: UVE_MODE.LIVE
             });
         }
