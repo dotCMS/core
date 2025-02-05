@@ -70,7 +70,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
@@ -881,7 +881,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 } else {
                     this.uveStore.loadPageAsset({
                         url: payload.url,
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
                 }
             },

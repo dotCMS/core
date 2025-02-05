@@ -38,7 +38,7 @@
 
                         <dot-copy-button
                             *ngIf="variant.url"
-                            [copy]="variant.url"
+                            [copy]="url + '&variantName=' + variant.id"
                             [label]="'editpage.header.copy' | dm"
                             [tooltipText]="
                                 'dot.common.message.pageurl.copy.clipboard' | dm

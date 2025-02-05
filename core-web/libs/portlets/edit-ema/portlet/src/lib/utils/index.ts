@@ -14,8 +14,14 @@ import {
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
-import { BASE_IFRAME_MEASURE_UNIT, COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
-import { EDITOR_STATE } from '../shared/enums';
+import {
+    BASE_IFRAME_MEASURE_UNIT,
+    COMMON_ERRORS,
+    DEFAULT_PERSONA,
+    PERSONA_KEY,
+    UVE_MODE_TO_PAGE_MODE
+} from '../shared/consts';
+import { EDITOR_STATE, PAGE_MODE } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -217,37 +223,82 @@ export const getPersonalization = (persona: Record<string, string>) => {
 };
 
 /**
- * Create a page api url with query params
+ * Constructs a full page URL by appending query parameters.
+ *
+ * This function takes a base URL and a set of parameters, optionally normalizing them,
+ * and returns a complete URL with the query parameters appended. It ensures that any
+ * undefined values are removed and that the 'url' parameter is not included in the query string.
  *
  * @export
- * @param {string} url
- * @param {Partial<DotPageAssetParams>} params
- * @return {*}  {string}
+ * @param {FullPageURLParams} { url, params, userFriendlyParams = false } - The parameters for constructing the URL.
+ * @param {string} url - The base URL to which query parameters will be appended.
+ * @param {DotPageAssetParams} params - The query parameters to append to the URL.
+ * @param {boolean} [userFriendlyParams=false] - If true, the query parameters are normalized to be more readable and user-friendly. This may involve renaming keys or removing default values that are not necessary for end-users.
+ * @return {string} The full URL with query parameters appended.
  */
-export function createPageApiUrlWithQueryParams(
-    url: string,
-    params: Partial<DotPageAssetParams>
-): string {
-    // Set default values
-    const completedParams = {
-        ...params,
-        language_id: params?.language_id ?? '1',
-        'com.dotmarketing.persona.id':
-            params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-        variantName: params?.variantName ?? DEFAULT_VARIANT_ID
-    };
+export function getFullPageURL({
+    url,
+    params,
+    userFriendlyParams = false
+}: {
+    url: string;
+    params: DotPageAssetParams;
+    userFriendlyParams?: boolean;
+}): string {
+    const searchParams = userFriendlyParams ? normalizeQueryParams(params) : { ...params };
 
-    // Filter out undefined values and url
-    Object.keys(completedParams).forEach(
-        (key) =>
-            (completedParams[key] === undefined || key === 'url') && delete completedParams[key]
+    // Remove 'url' from query parameters if present
+    if (searchParams.url) {
+        delete searchParams['url'];
+    }
+
+    if (searchParams.clientHost) {
+        delete searchParams['clientHost'];
+    }
+
+    if (searchParams.editorMode) {
+        const EDIT_MODE = UVE_MODE_TO_PAGE_MODE[searchParams.editorMode];
+        searchParams.mode = EDIT_MODE ?? PAGE_MODE.EDIT;
+        delete searchParams['editorMode'];
+    }
+
+    // Filter out undefined values from query parameters
+    Object.keys(searchParams).forEach(
+        (key) => searchParams[key] === undefined && delete searchParams[key]
     );
 
-    const queryParams = new URLSearchParams({
-        ...completedParams
+    const path = cleanPageURL(url);
+    const paramsAsString = new URLSearchParams({
+        ...searchParams
     }).toString();
 
-    return queryParams.length ? `${url}?${queryParams}` : url;
+    return paramsAsString ? `${path}?${paramsAsString}` : path;
+}
+
+/**
+ * Cleans and transforms query parameters for better readability and usability.
+ *
+ * This function processes the given query parameters by removing unnecessary values
+ * (e.g., default identifiers) and renaming specific keys for a more user-friendly format.
+ * Additional transformations can be applied as needed.
+ *
+ * @export
+ * @param {Object} params - The raw query parameters to be processed.
+ * @return {Object} A cleaned and formatted version of the query parameters.
+ */
+export function normalizeQueryParams(params) {
+    const queryParams = { ...params };
+
+    if (queryParams[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
+        delete queryParams[PERSONA_KEY];
+    }
+
+    if (queryParams[PERSONA_KEY]) {
+        queryParams['personaId'] = params[PERSONA_KEY];
+        delete queryParams[PERSONA_KEY];
+    }
+
+    return queryParams;
 }
 
 /**

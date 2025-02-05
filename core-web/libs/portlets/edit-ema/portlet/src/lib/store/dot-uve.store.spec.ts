@@ -33,9 +33,10 @@ import {
 } from '@dotcms/utils-testing';
 
 import { UVEStore } from './dot-uve.store';
+import { Orientation } from './models';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { COMMON_ERRORS } from '../shared/consts';
+import { COMMON_ERRORS, PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import {
     BASE_SHELL_ITEMS,
@@ -46,6 +47,7 @@ import {
     MOCK_RESPONSE_VTL,
     VTL_BASE_QUERY_PARAMS
 } from '../shared/mocks';
+import { normalizeQueryParams } from '../utils';
 
 const buildPageAPIResponseFromMock =
     (mock) =>
@@ -386,6 +388,27 @@ describe('UVEStore', () => {
                 store.loadPageAsset({ editorMode: null });
 
                 expect(store.$isLiveMode()).toBe(false);
+            });
+        });
+
+        describe('$friendlyParams', () => {
+            it('should return a readable user params', () => {
+                const pageParams = {
+                    url: '/index',
+                    language_id: '1',
+                    [PERSONA_KEY]: 'someCoolDude'
+                };
+
+                const viewParams = {
+                    orientation: Orientation.LANDSCAPE,
+                    device: '',
+                    seo: ''
+                };
+
+                const expected = normalizeQueryParams({ ...pageParams, ...viewParams });
+
+                patchState(store, { pageParams, viewParams });
+                expect(store.$friendlyParams()).toEqual(expected);
             });
         });
     });

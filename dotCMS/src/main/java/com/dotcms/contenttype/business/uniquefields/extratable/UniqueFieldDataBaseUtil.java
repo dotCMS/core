@@ -34,25 +34,27 @@ import static com.dotcms.util.CollectionsUtils.list;
 @ApplicationScoped
 public class UniqueFieldDataBaseUtil {
 
-    private static final String INSERT_SQL = "INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (encode(sha256(?::bytea), 'hex'), ?)";
+    private static final String INSERT_SQL = "INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (encode(sha256(convert_to(?::text, 'UTF8')), 'hex'), ?)";
 
     private static final String RECALCULATE_UNIQUE_KEY_VAL = "UPDATE unique_fields\n" +
-            "SET unique_key_val = encode(sha256(\n" +
-            "    jsonb_extract_path_text(supporting_values, '" + CONTENT_TYPE_ID_ATTR + "')::bytea || \n" +
-            "    jsonb_extract_path_text(supporting_values, '" + FIELD_VARIABLE_NAME_ATTR + "')::bytea || \n" +
-            "    jsonb_extract_path_text(supporting_values, '" + LANGUAGE_ID_ATTR + "')::bytea || \n" +
-            "    jsonb_extract_path_text(supporting_values, '" + FIELD_VALUE_ATTR + "')::bytea\n" +
-            "    %s \n" +
+            "SET unique_key_val = encode(sha256(" +
+                "convert_to(\n" +
+                    "CONCAT(" +
+                        "    jsonb_extract_path_text(supporting_values, '" + CONTENT_TYPE_ID_ATTR + "')::text || \n" +
+                        "    jsonb_extract_path_text(supporting_values, '" + FIELD_VARIABLE_NAME_ATTR + "')::text || \n" +
+                        "    jsonb_extract_path_text(supporting_values, '" + LANGUAGE_ID_ATTR + "')::text || \n" +
+                        "    jsonb_extract_path_text(supporting_values, '" + FIELD_VALUE_ATTR + "')::text\n" +
+                        "    %s \n" +
+                    "),'UTF8'\n" +
+                ")\n" +
             "), 'hex'), \n" +
             "supporting_values = jsonb_set(supporting_values, '{" + UNIQUE_PER_SITE_ATTR + "}', '%s') \n" +
             "WHERE supporting_values->>'" + CONTENT_TYPE_ID_ATTR + "' = ?\n" +
             "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
-    private static final String INSERT_SQL_WIT_HASH = "INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (?, ?)";
-
     private static final String UPDATE_CONTENT_LIST ="UPDATE unique_fields " +
             "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
-            "WHERE unique_key_val = encode(sha256(?::bytea), 'hex')";
+            "WHERE unique_key_val = encode(sha256(convert_to(?::text, 'UTF8')), 'hex')";
 
     private static final String UPDATE_CONTENT_LIST_WITH_HASH ="UPDATE unique_fields " +
             "SET supporting_values = jsonb_set(supporting_values, '{" + CONTENTLET_IDS_ATTR + "}', ?::jsonb) " +
@@ -96,8 +98,21 @@ public class UniqueFieldDataBaseUtil {
 
 
     private final static String POPULATE_UNIQUE_FIELDS_VALUES_QUERY = "INSERT INTO unique_fields (unique_key_val, supporting_values) " +
-            "SELECT encode(sha256(CONCAT(content_type_id, field_var_name, language_id, field_value, " +
-            "                  CASE WHEN uniquePerSite = 'true' THEN host_id ELSE '' END)::bytea), 'hex') as unique_key_val, " +
+            "SELECT  encode(" +
+            "            sha256(" +
+            "                    convert_to(" +
+            "                            CONCAT(" +
+            "                                    content_type_id::text," +
+            "                                    field_var_name::text," +
+            "                                    language_id::text," +
+            "                                    field_value::text," +
+            "                                    CASE WHEN uniquePerSite = 'true' THEN COALESCE(host_id::text, '') ELSE '' END" +
+            "                            )," +
+            "                            'UTF8'" +
+            "                    )" +
+            "            )," +
+            "            'hex'" +
+            "       ) AS unique_key_val, " +
             "       json_build_object('" + CONTENT_TYPE_ID_ATTR + "', content_type_id, " +
                                     "'" + FIELD_VARIABLE_NAME_ATTR + "', field_var_name, " +
                                     "'" + LANGUAGE_ID_ATTR + "', language_id, " +
@@ -134,17 +149,6 @@ public class UniqueFieldDataBaseUtil {
             "                 identifier.host_inode," +
             "                 jsonb_extract_path_text(contentlet_as_json -> 'fields', field.velocity_var_name)::jsonb ->>'value') as data_to_populate";
 
-    /**
-     * Insert a new register into the unique_fields table, if already exists another register with the same
-     * 'unique_key_val' then a {@link java.sql.SQLException} is thrown.
-     *
-     * @param key
-     * @param supportingValues
-     */
-    @WrapInTransaction
-    public void insertWithHash(final String key, final Map<String, Object> supportingValues) throws DotDataException {
-        new DotConnect().setSQL(INSERT_SQL_WIT_HASH).addParam(key).addJSONParam(supportingValues).loadObjectResults();
-    }
 
     @WrapInTransaction
     public void insert(final String key, final Map<String, Object> supportingValues) throws DotDataException {
