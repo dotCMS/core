@@ -9,15 +9,16 @@ export class ContentTypeFormPage {
   constructor(private page: Page) {}
 
   async createNewContentType(fields: FieldsTypes[]) {
-    const promises = fields.map((field) => {
+    const promise = fields.reduce((prevPromise, field) => {
       if (field.fieldType === 'text'){
-        return this.addTextField(field);
+        return prevPromise.then(() => this.addTextField(field));
       } 
       if (field.fieldType === 'siteOrFolder') {
-        return this.addSiteOrFolderField(field);
+        return prevPromise.then(() => this.addSiteOrFolderField(field));
       }
-    });
-    await Promise.all(promises)
+    }, Promise.resolve());
+
+    await promise;
   }
 
   async addTextField(field: TextField) {
@@ -25,6 +26,7 @@ export class ContentTypeFormPage {
     const textFieldItemLocator = this.page.getByTestId(
       "com.dotcms.contenttype.model.field.ImmutableTextField",
     );
+    await textFieldItemLocator.waitFor();
     await textFieldItemLocator.dragTo(dropZoneLocator);
 
     const dialogInputLocator = this.page.locator("input#name");
@@ -41,6 +43,7 @@ export class ContentTypeFormPage {
     const siteOrFolderFieldItemLocator = this.page.getByTestId(
       "com.dotcms.contenttype.model.field.ImmutableHostFolderField",
     );
+    await siteOrFolderFieldItemLocator.waitFor();
     await siteOrFolderFieldItemLocator.dragTo(dropZoneLocator);
 
     const dialogInputLocator = this.page.locator("input#name");

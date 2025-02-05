@@ -37,6 +37,12 @@ export class ListingContentTypesPage {
 
     await this.page.getByLabel("Content Name").fill(name);
     await this.page.getByTestId("dotDialogAcceptAction").click();
+    await this.page.waitForResponse((response) => {
+      return (
+        response.status() === 200 &&
+        response.url().includes("/api/v1/contenttype")
+      );
+    });
   }
 
   async goToAddNewContentType(contentType: string) {
@@ -68,7 +74,6 @@ export class ListingContentTypesPage {
       .getByTestId(`row-${capitalized}`)
       .getByTestId("dot-menu-button")
       .click();
-    await this.page.getByLabel("Delete").locator("a").click();
-    await this.page.getByRole("button", { name: "Delete" }).click();
+    await this.page.locator('.p-menu-overlay').getByRole("link", { name: "Delete" }).click();
   }
 }
