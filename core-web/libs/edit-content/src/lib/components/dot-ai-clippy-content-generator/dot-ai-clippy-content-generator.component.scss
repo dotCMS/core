@@ -2,6 +2,14 @@
 
 :host {
     position: absolute;
-    right: 10px;
-    bottom: 10px;
+    right: 30px;
+    bottom: 20px;
+
+    ::ng-deep {
+        .ai-button {
+            width: 3.5rem;
+            height: 3.5rem;
+            box-shadow: 0px 10px 20px 0px hsla(230, 13%, 9%, 0.3);
+        }
+    }
 }
