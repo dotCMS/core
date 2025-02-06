@@ -30,6 +30,8 @@ export class AiRefiningInputDirective implements OnInit {
         this.menuComponent.instance.textChanged.subscribe((text) => {
             inputElement.value = text;
         });
+        const parent = inputElement.parentNode as HTMLElement;
+        parent.removeChild(this.menuComponent.location.nativeElement);
 
         inputElement.addEventListener('input', () => {
             const hasContent = inputElement.value.trim().length > 0;
@@ -37,8 +39,6 @@ export class AiRefiningInputDirective implements OnInit {
             if (this.menuComponent) {
                 this.menuComponent.setInput('text', inputElement.value);
             }
-
-            const parent = inputElement.parentNode as HTMLElement;
 
             if (hasContent) {
                 
