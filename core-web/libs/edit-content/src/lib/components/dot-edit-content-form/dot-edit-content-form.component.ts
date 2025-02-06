@@ -24,6 +24,7 @@ import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { OpenAiService } from '@dotcms/edit-content/services/openai/openai.service';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { resolutionValue } from './utils';
@@ -82,6 +83,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         NgTemplateOutlet,
         DotMessagePipe
     ],
+    providers: [OpenAiService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
         trigger('fadeIn', [
@@ -97,6 +99,8 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
+    readonly openAiService = inject(OpenAiService);
+
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -417,5 +421,43 @@ export class DotEditContentFormComponent implements OnInit {
         }
 
         window.open(realUrl, '_blank');
+    }
+
+    getInfoFromGPT() {
+        const ALLOWED_FIELDS_TO_AUTOCOMPLETE = ['Text', 'Textarea', 'Tag', 'Story-Block'];
+
+        const formStructure = Object.keys(this.form.controls).reduce((acc, key) => {
+            const field = this.$formFields().find((f) => f.variable === key);
+
+            if (!field || !ALLOWED_FIELDS_TO_AUTOCOMPLETE.includes(field.fieldType)) {
+                return acc;
+            }
+
+            const control = this.form.get(key);
+            let type = 'string'; // default type
+    
+            if (Array.isArray(control.value)) {
+                type = 'string[]';
+            }
+
+            if (field.fieldType === 'Story-Block') {
+                type = 'html string';
+            }
+    
+            acc[key] = type;
+        
+            return acc;
+        }, {});
+
+        const body = {
+            contentType: this.$store.contentType().variable,    
+            structure: JSON.stringify(formStructure),
+            description: 'The blog is about frogs and how they can destroy the world'
+        }
+
+        this.openAiService.sendMessage(body).subscribe((response) => {
+            console.log(response);
+            this.form.patchValue(JSON.parse(response));
+        }); 
     }
 }
