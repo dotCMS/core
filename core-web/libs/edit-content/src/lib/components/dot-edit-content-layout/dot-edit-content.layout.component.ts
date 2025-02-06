@@ -47,7 +47,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentService,
         DotWorkflowService,
         DotEditContentStore,
-        DialogService
+        DialogService,
     ],
 
     host: {
@@ -92,4 +92,6 @@ export class DotEditContentLayoutComponent {
     onFormChange(value: FormValues) {
         this.$store.onFormChange(value);
     }
+
+
 }

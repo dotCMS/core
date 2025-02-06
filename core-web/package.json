@@ -117,6 +117,7 @@
         "ng2-dragula": "5.0.1",
         "ngx-markdown": "17.1.1",
         "node-fetch": "^2.6.1",
+        "openai": "^4.83.0",
         "primeflex": "3.3.1",
         "primeicons": "7.0.0",
         "primeng": "17.18.11",
