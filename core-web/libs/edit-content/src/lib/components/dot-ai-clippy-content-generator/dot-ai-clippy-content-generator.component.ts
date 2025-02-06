@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-import { DialogModule } from 'primeng/dialog';
+import { ButtonModule } from 'primeng/button';
 import { InputTextareaModule } from 'primeng/inputtextarea';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 @Component({
     selector: 'dot-ai-clippy-content-generator',
     standalone: true,
-    imports: [CommonModule, InputTextareaModule, DialogModule],
+    imports: [CommonModule, InputTextareaModule, OverlayPanelModule, ButtonModule],
     templateUrl: './dot-ai-clippy-content-generator.component.html',
     styleUrl: './dot-ai-clippy-content-generator.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
