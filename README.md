@@ -38,6 +38,7 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. Befo
 
 -  [How to set up my front-end environment?](dotFrontendOnboarding.md) - Useful if you want to propose changes under the core-web directory
 -  [How to set up my back-end environment?](dotBackendOnboarding.md) - Useful if you want to propose changes in Java classes, jsp files and anything under the [dotCMS](dotCMS) or [tools](tools) directories
+-  Test
 
 
 ## Requirements
