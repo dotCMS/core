@@ -72,6 +72,17 @@ The response **must** be a valid JSON object, structured as follows:
 \`\`\`
 `;
 
+/*
+
+    ### **Additional Constraints:**
+    - The response **must contain only the JSON object**, with no additional text or explanation.
+    - Ensure proper JSON formatting so it is **fully valid and parseable**.
+    - Ensue the JSON never ends with a comma.
+
+    TODO: Add to the prompt userConsideratios from fieldVariables. Ex.
+    ### **User Considerations:**
+    ${userConsiderations}
+*/
 @Injectable()
 export class OpenAiService {
     // Define la URL de la API, que se usará para las solicitudes
