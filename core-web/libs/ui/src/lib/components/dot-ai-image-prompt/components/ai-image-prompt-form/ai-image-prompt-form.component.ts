@@ -23,7 +23,8 @@ import { AccordionModule } from 'primeng/accordion';
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -54,7 +55,8 @@ import { DotValidators } from './../../../../validators/dotValidators';
         ReactiveFormsModule,
         FormsModule,
         DropdownModule,
-        InputTextareaModule,
+        InputTextModule,
+        TextareaModule,
         DotFieldRequiredDirective,
         DotMessagePipe,
         DotCopyButtonComponent
