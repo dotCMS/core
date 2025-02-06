@@ -20,6 +20,8 @@ dotCMS is an open source headless/hybrid content management system (CMS) that ha
 
 dotCMS can can serve as a content hub and also as a platform for sites, mobile apps, mini-sites, portals, intranets. dotCMS is used everywhere, from running small sites to powering multi-node installations for governments, Fortune 100 companies, Universities and Global Brands. dotCMS can scale to support hundreds of editors managing thousands of sites with millions of content objects.
 
+Blah!
+
 dotCMS is available as a docker image or as a cloud based product.
 
 -  [Docker Images](https://www.dotcms.com/download)
