@@ -1,10 +1,18 @@
 package com.dotcms.cli.common;
 
+import com.dotcms.api.AnalyticsAPI;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.command.LoginCommand;
+import com.dotcms.cli.command.StatusCommand;
+import com.dotcms.model.analytics.DotCliEvent;
 import com.dotcms.model.config.ServiceBean;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.ArcContainer;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -38,6 +46,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private final ServiceManager serviceManager;
 
+    private final RestClientFactory clientFactory;
 
     /**
      * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
@@ -51,6 +60,22 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         this.processor = processor;
         this.watchService = watchService;
         this.serviceManager = serviceManager;
+        this.clientFactory = null;
+    }
+
+    /**
+     * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
+     *
+     * @param underlyingStrategy the underlying strategy to use for execution
+     */
+    public DotExecutionStrategy(final IExecutionStrategy underlyingStrategy,
+            final SubcommandProcessor processor, final DirectoryWatcherService watchService,
+            final ServiceManager serviceManager, final RestClientFactory clientFactory) {
+        this.underlyingStrategy = underlyingStrategy;
+        this.processor = processor;
+        this.watchService = watchService;
+        this.serviceManager = serviceManager;
+        this.clientFactory = clientFactory;
     }
 
     /**
@@ -89,6 +114,8 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
             //If no remote URL is set, we need to check if there is a configuration
             verifyConfigExists(parseResult, commandsChain);
+
+            recordEvent(commandsChain);
 
             //If we have a configuration, we can proceed with the command execution
             return internalExecute(commandsChain, underlyingStrategy, parseResult);
@@ -184,6 +211,41 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         } finally {
             // Decrement the call depth and remove ThreadLocal if it's zero
             decCallDepth();
+        }
+    }
+
+    @ActivateRequestContext
+    void recordEvent(CommandsChain commandsChain) {
+
+        final String command = commandsChain.command();
+
+        final String parentCommand = commandsChain.firstSubcommand()
+                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+
+        if (!ConfigCommand.NAME.equals(parentCommand)
+                && !LoginCommand.NAME.equals(parentCommand)
+                && !StatusCommand.NAME.equals(parentCommand)) {
+
+            ArcContainer container = Arc.container();
+            var requestContext = container.requestContext();
+            requestContext.activate();
+            if (clientFactory != null) {
+                try {
+                    final var analyticsAPI = clientFactory.getClient(AnalyticsAPI.class);
+                    final var response = analyticsAPI.fireCliEvent(
+                            DotCliEvent.builder()
+                                    .command(command)
+                                    .eventSource("DOT_CLI")
+                                    .eventType("CMD_EXECUTED")
+                                    .user("UNKNOWN")
+                                    .site("UNKNOWN")
+                                    .build());
+                    System.out.println(response);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // Do nothing on failure
+                }
+            }
         }
     }
 

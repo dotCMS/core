@@ -46,7 +46,7 @@ import picocli.CommandLine.ExitCode;
 )
 public class LoginCommand implements Callable<Integer>, DotCommand {
 
-    static final String NAME = "login";
+    public static final String NAME = "login";
 
     public static final String PROMPT_USERNAME = "Username: ";
     public static final String PROMPT_PASSWORD = "Password: ";
