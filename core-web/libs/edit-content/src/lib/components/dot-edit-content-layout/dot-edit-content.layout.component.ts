@@ -17,7 +17,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
-import { DotAiClippyContentGeneratorComponent } from '../dot-ai-clippy-content-generator/dot-ai-clippy-content-generator.component';
 import { DotEditContentFormComponent } from '../dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 
@@ -38,8 +37,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         RouterLink,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
-        ConfirmDialogModule,
-        DotAiClippyContentGeneratorComponent
+        ConfirmDialogModule
     ],
     providers: [
         DotWorkflowsActionsService,
@@ -47,7 +45,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentService,
         DotWorkflowService,
         DotEditContentStore,
-        DialogService,
+        DialogService
     ],
 
     host: {
@@ -92,6 +90,4 @@ export class DotEditContentLayoutComponent {
     onFormChange(value: FormValues) {
         this.$store.onFormChange(value);
     }
-
-
 }
