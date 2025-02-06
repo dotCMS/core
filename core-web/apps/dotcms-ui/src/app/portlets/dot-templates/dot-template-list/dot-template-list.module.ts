@@ -5,11 +5,11 @@ import { SharedModule } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialog } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotBulkInformationModule } from '@components/_common/dot-bulk-information/dot-bulk-information.module';
+import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
@@ -39,8 +39,8 @@ import { DotTemplateListComponent } from './dot-template-list.component';
         DotActionButtonModule,
         DotActionMenuButtonComponent,
         DotAddToBundleComponent,
-        DynamicDialogModule,
-        DotBulkInformationModule,
+        DynamicDialog,
+        DotBulkInformationComponent,
         DotBinaryOptionSelectorComponent,
         DotEmptyStateModule,
         AutoFocusModule

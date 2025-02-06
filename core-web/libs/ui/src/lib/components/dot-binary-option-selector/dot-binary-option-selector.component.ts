@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialog, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
@@ -22,7 +22,7 @@ export interface BINARY_OPTION {
 @Component({
     selector: 'dot-binary-selector',
     standalone: true,
-    imports: [FormsModule, DotMessagePipe, ButtonModule, DynamicDialogModule],
+    imports: [FormsModule, DotMessagePipe, ButtonModule, DynamicDialog],
     templateUrl: './dot-binary-option-selector.component.html',
     styleUrls: ['./dot-binary-option-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
