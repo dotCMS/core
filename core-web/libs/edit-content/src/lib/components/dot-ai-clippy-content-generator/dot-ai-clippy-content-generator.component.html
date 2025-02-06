@@ -1,5 +1,6 @@
-<p-button (click)="op.show($event)" styleClass="p-button-rounded p-button-icon-only ai-button">
+<p-button [disabled]="isClippyThinking()" (click)="op.show($event)" styleClass="p-button-rounded p-button-icon-only ai-button">
     <svg
+        [class.rotate-clippy]="isClippyThinking()"
         width="42"
         height="42"
         viewBox="0 0 452 452"
@@ -20,7 +21,7 @@
         Hello. I'm dotAI what do you want me to generate?
     </div>
     <div class="flex justify-center gap-3 flex-column align-items-end">
-        <textarea style="width: 100%; height: 100%" pInputTextarea value="Hello"></textarea>
-        <p-button label="Generate" styleClass="p-button-sm p-button-rounded" />
+        <textarea style="width: 100%; height: 100%" pInputTextarea [(ngModel)]="message"></textarea>
+        <p-button label="Generate" styleClass="p-button-sm p-button-rounded" (click)="emitGenerateContent(); op.hide()" />
     </div>
 </p-overlayPanel>

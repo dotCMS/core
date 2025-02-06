@@ -12,6 +12,7 @@ import {
     OnDestroy,
     OnInit,
     Output,
+    signal,
     ViewContainerRef
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -100,7 +101,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     public displayCountBar: boolean | string = true;
     public charLimit: number;
     public customBlocks = '';
-    public content: Content = '';
+    public content = signal<Content>('');
     public contentletIdentifier: string;
     editor: Editor;
     subject = new Subject();
@@ -487,15 +488,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     private setEditorJSONContent(content: Content) {
-        this.content =
-            this.allowedBlocks?.length > 1
+        this.content.set(this.allowedBlocks?.length > 1
                 ? removeInvalidNodes(content, this.allowedBlocks)
-                : content;
+                : content);
     }
 
     private setEditorContent(content: Content) {
         if (typeof content === 'string') {
-            this.content = formatHTML(content);
+            this.content.set(formatHTML(content));
 
             return;
         }

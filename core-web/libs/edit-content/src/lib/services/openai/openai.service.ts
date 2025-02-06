@@ -31,7 +31,7 @@ Ensure proper formatting so the JSON is parseable and valid.
 export class OpenAiService {
     // Define la URL de la API, que se usará para las solicitudes
     private apiUrl = 'https://api.openai.com/v1/chat/completions';
-    private apiKey = 'YOUR_API_KEY'; //Thanks Jal!
+    private apiKey = 'YOUR-API-KEY'; //Thanks Jal!
     private http = inject(HttpClient);
 
 
