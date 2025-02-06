@@ -45,47 +45,47 @@ import {
     getFinalCastedValue,
     isFilteredType
 } from '../../utils/functions.util';
-import { DotAiClippyContentGeneratorComponent } from "../dot-ai-clippy-content-generator/dot-ai-clippy-content-generator.component";
+import { DotAiClippyContentGeneratorComponent } from '../dot-ai-clippy-content-generator/dot-ai-clippy-content-generator.component';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 // CAN BE AN UTIL
 const RECORD_OBJECT = {
-    "com.dotcms.contenttype.model.field.ImmutableTextField": {
+    'com.dotcms.contenttype.model.field.ImmutableTextField': {
         variable: '',
         dataType: 'string',
         format: ''
     },
-    "com.dotcms.contenttype.model.field.ImmutableTagField": {
+    'com.dotcms.contenttype.model.field.ImmutableTagField': {
         variable: '',
         dataType: 'string[]',
         format: '[tag1, tag2, tag3]'
     },
-    "com.dotcms.contenttype.model.field.ImmutableStoryBlockField": {
+    'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
         variable: '',
         dataType: 'string',
         format: 'html'
     },
-    "com.dotcms.contenttype.model.field.ImmutableDateTimeField": {
+    'com.dotcms.contenttype.model.field.ImmutableDateTimeField': {
         variable: '',
         dataType: 'string',
         format: 'date: iso string'
     },
-    "com.dotcms.contenttype.model.field.ImmutableCustomField": {
+    'com.dotcms.contenttype.model.field.ImmutableCustomField': {
         variable: '',
-        dataType: "string",
-        format: ""
+        dataType: 'string',
+        format: ''
     },
-    "com.dotcms.contenttype.model.field.ImmutableTextAreaField": {
+    'com.dotcms.contenttype.model.field.ImmutableTextAreaField': {
         variable: '',
         dataType: 'string',
         format: 'text'
     },
-    "com.dotcms.contenttype.model.field.ImmutableWysiwygField": {
+    'com.dotcms.contenttype.model.field.ImmutableWysiwygField': {
         variable: '',
         dataType: 'string',
         format: 'html'
     }
-}
+};
 
 /**
  * DotEditContentFormComponent
@@ -115,16 +115,16 @@ const RECORD_OBJECT = {
     templateUrl: './dot-edit-content-form.component.html',
     styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
-    ReactiveFormsModule,
-    DotEditContentFieldComponent,
-    ButtonModule,
-    TabViewModule,
-    DotWorkflowActionsComponent,
-    TabViewInsertDirective,
-    NgTemplateOutlet,
-    DotMessagePipe,
-    DotAiClippyContentGeneratorComponent
-],
+        ReactiveFormsModule,
+        DotEditContentFieldComponent,
+        ButtonModule,
+        TabViewModule,
+        DotWorkflowActionsComponent,
+        TabViewInsertDirective,
+        NgTemplateOutlet,
+        DotMessagePipe,
+        DotAiClippyContentGeneratorComponent
+    ],
     providers: [OpenAiService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -142,7 +142,6 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
     readonly openAiService = inject(OpenAiService);
-
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -206,7 +205,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     $restOfTabs = computed(() => this.$store.tabs().slice(1));
 
-    isClippyThinking = signal(false)
+    isClippyThinking = signal(false);
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {
@@ -469,37 +468,38 @@ export class DotEditContentFormComponent implements OnInit {
 
     generateContent(message: string) {
         this.isClippyThinking.set(true);
+
         const formStructure = Object.keys(this.form.controls).reduce((acc, key) => {
             const field = this.$formFields().find((f) => f.variable === key);
 
-            const fieldRule  = RECORD_OBJECT[field.clazz];
+            const fieldRule = RECORD_OBJECT[field.clazz];
 
             if (!fieldRule) {
                 return acc;
             }
 
             fieldRule.key = field.variable;
-            
-            if (field.clazz === "com.dotcms.contenttype.model.field.ImmutableCustomField") {
+
+            if (field.clazz === 'com.dotcms.contenttype.model.field.ImmutableCustomField') {
                 fieldRule.type = field.dataType;
                 fieldRule.format = `${field.regexCheck} ${field.name}`;
             }
-    
+
             acc[key] = fieldRule;
-        
+
             return acc;
         }, {});
 
         const body = {
-            contentType: this.$store.contentType().variable,    
+            contentType: this.$store.contentType().variable,
             structure: JSON.stringify(formStructure),
-            description: message
-        }
+            description: message,
+            language: this.$store.currentLocale().isoCode
+        };
 
         this.openAiService.sendMessage(body).subscribe((response) => {
             this.form.patchValue(JSON.parse(response));
             this.isClippyThinking.set(false);
-        }); 
+        });
     }
 }
-
