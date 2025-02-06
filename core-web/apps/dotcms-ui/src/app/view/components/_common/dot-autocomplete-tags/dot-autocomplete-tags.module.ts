@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
-import { ChipsModule } from 'primeng/chips';
+import { Chip } from 'primeng/chip';
 
 import { DotTagsService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
@@ -13,7 +13,7 @@ import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component'
 @NgModule({
     imports: [
         CommonModule,
-        ChipsModule,
+        Chip,
         AutoCompleteModule,
         FormsModule,
         DotIconModule,
@@ -22,6 +22,6 @@ import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component'
     ],
     declarations: [DotAutocompleteTagsComponent],
     providers: [DotTagsService],
-    exports: [DotAutocompleteTagsComponent, ChipsModule]
+    exports: [DotAutocompleteTagsComponent]
 })
 export class DotAutocompleteTagsModule {}
