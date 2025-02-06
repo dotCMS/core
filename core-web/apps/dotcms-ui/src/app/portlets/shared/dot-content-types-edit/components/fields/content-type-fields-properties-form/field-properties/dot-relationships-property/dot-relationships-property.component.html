@@ -1,15 +1,23 @@
 <div *ngIf="!editing" class="field relationship__type">
-    <p-radioButton
-        (click)="clean()"
-        [(ngModel)]="status"
-        [label]="'contenttypes.field.properties.relationship.new.label' | dm"
-        [value]="STATUS_NEW"></p-radioButton>
+    <div class="flex items-center">
+        <p-radioButton
+            (click)="clean()"
+            [(ngModel)]="status"
+            [value]="STATUS_NEW"
+            inputId="newRelationship">
+        </p-radioButton>
+        <label for="newRelationship" class="ml-2">{{'contenttypes.field.properties.relationship.new.label' | dm}}</label>
+    </div>
 
-    <p-radioButton
-        (click)="clean()"
-        [(ngModel)]="status"
-        [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
-        [value]="STATUS_EXISTING"></p-radioButton>
+    <div class="flex items-center">
+        <p-radioButton
+            (click)="clean()"
+            [(ngModel)]="status"
+            [value]="STATUS_EXISTING"
+            inputId="existingRelationship">
+        </p-radioButton>
+        <label for="existingRelationship" class="ml-2">{{'contenttypes.field.properties.relationship.existing.label' | dm}}</label>
+    </div>
 </div>
 
 <div class="relationship__config">

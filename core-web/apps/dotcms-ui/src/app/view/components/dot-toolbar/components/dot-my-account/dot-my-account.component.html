@@ -65,13 +65,17 @@
         </div>
 
         <div class="field">
-            <p-checkbox
-                [(ngModel)]="showStarter"
-                [ngModelOptions]="{ standalone: true }"
-                #showStarterCheckbox
-                data-testid="showStarterBtn"
-                binary="true"
-                label="{{ 'starter.show.getting.started' | dm }}"></p-checkbox>
+            <div class="flex items-center">
+                <p-checkbox
+                    [(ngModel)]="showStarter"
+                    [ngModelOptions]="{ standalone: true }"
+                    #showStarterCheckbox
+                    data-testid="showStarterBtn"
+                    binary="true"
+                    inputId="showStarter">
+                </p-checkbox>
+                <label for="showStarter" class="ml-2">{{ 'starter.show.getting.started' | dm }}</label>
+            </div>
         </div>
 
         <div class="field">
@@ -95,11 +99,15 @@
             }
         </div>
         <div class="field">
-            <p-checkbox
-                (onChange)="toggleChangePasswordOption()"
-                id="dot-my-account-change-password-option"
-                binary="true"
-                label="{{ 'change-password' | dm }}"></p-checkbox>
+            <div class="flex items-center">
+                <p-checkbox
+                    (onChange)="toggleChangePasswordOption()"
+                    id="dot-my-account-change-password-option"
+                    binary="true"
+                    inputId="changePassword">
+                </p-checkbox>
+                <label for="changePassword" class="ml-2">{{ 'change-password' | dm }}</label>
+            </div>
         </div>
         <div class="field">
             <label for="dot-my-account-new-password-input">{{ 'new-password' | dm }}</label>
@@ -138,6 +146,50 @@
                 class="p-invalid">
                 {{ 'error.forgot.password.passwords.dont.match' | dm }}
             </small>
+        </div>
+
+        <div class="my-account__notifications">
+            <div class="flex items-center">
+                <p-checkbox
+                    [formControl]="notificationControl"
+                    [binary]="true"
+                    inputId="notifications">
+                </p-checkbox>
+                <label for="notifications" class="ml-2">{{ 'notifications-check' | dm }}</label>
+            </div>
+        </div>
+
+        <div class="my-account__timezone">
+            <div class="flex items-center">
+                <p-checkbox
+                    [formControl]="timezoneControl"
+                    [binary]="true"
+                    inputId="timezone">
+                </p-checkbox>
+                <label for="timezone" class="ml-2">{{ 'change-time-zone' | dm }}</label>
+            </div>
+        </div>
+
+        <div class="my-account__language">
+            <div class="flex items-center">
+                <p-checkbox
+                    [formControl]="languageControl"
+                    [binary]="true"
+                    inputId="language">
+                </p-checkbox>
+                <label for="language" class="ml-2">{{ 'change-language' | dm }}</label>
+            </div>
+        </div>
+
+        <div class="my-account__password">
+            <div class="flex items-center">
+                <p-checkbox
+                    [formControl]="passwordControl"
+                    [binary]="true"
+                    inputId="password">
+                </p-checkbox>
+                <label for="password" class="ml-2">{{ 'reset-password-confirmation-message' | dm }}</label>
+            </div>
         </div>
     </form>
 </dot-dialog>
