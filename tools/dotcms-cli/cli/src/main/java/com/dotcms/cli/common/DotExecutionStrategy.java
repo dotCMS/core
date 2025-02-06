@@ -235,7 +235,6 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                     final var response = analyticsAPI.fireCliEvent(
                             DotCliEvent.builder()
                                     .command(command)
-                                    .eventSource("DOT_CLI")
                                     .eventType("CMD_EXECUTED")
                                     .user("UNKNOWN")
                                     .site("UNKNOWN")

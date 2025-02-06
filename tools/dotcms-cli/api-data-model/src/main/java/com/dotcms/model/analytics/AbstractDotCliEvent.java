@@ -11,8 +11,6 @@ import org.immutables.value.Value;
 public interface AbstractDotCliEvent {
     @JsonProperty("event_type")
     String eventType();
-    @JsonProperty("event_source")
-    String eventSource();
     String command();
     String user();
     String site();
