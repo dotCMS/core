@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTake2;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -791,6 +792,29 @@ public class ContentResource {
         final List<ExistingLanguagesForContentletView> languagesForContent =
                 this.getExistingLanguagesForContent(identifier, user);
         return new ResponseEntityView<>(languagesForContent);
+    }
+
+    /**
+     * Runs the unique migration
+     */
+    @GET
+    @Path("/unique_")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityView<String> runUniques(@Context final HttpServletRequest request,
+                                                                                                     @Context final HttpServletResponse response) throws Exception {
+
+        Logger.info(this, ()-> "Running unique migration");
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true) // todo: required ADMIN
+                .init()
+                .getUser();
+
+        new UniqueFieldDataBaseUtilTake2().run();
+
+        return new ResponseEntityView<>("Roll the credits");
     }
 
     /**
