@@ -147,49 +147,5 @@
                 {{ 'error.forgot.password.passwords.dont.match' | dm }}
             </small>
         </div>
-
-        <div class="my-account__notifications">
-            <div class="flex items-center">
-                <p-checkbox
-                    [formControl]="notificationControl"
-                    [binary]="true"
-                    inputId="notifications">
-                </p-checkbox>
-                <label for="notifications" class="ml-2">{{ 'notifications-check' | dm }}</label>
-            </div>
-        </div>
-
-        <div class="my-account__timezone">
-            <div class="flex items-center">
-                <p-checkbox
-                    [formControl]="timezoneControl"
-                    [binary]="true"
-                    inputId="timezone">
-                </p-checkbox>
-                <label for="timezone" class="ml-2">{{ 'change-time-zone' | dm }}</label>
-            </div>
-        </div>
-
-        <div class="my-account__language">
-            <div class="flex items-center">
-                <p-checkbox
-                    [formControl]="languageControl"
-                    [binary]="true"
-                    inputId="language">
-                </p-checkbox>
-                <label for="language" class="ml-2">{{ 'change-language' | dm }}</label>
-            </div>
-        </div>
-
-        <div class="my-account__password">
-            <div class="flex items-center">
-                <p-checkbox
-                    [formControl]="passwordControl"
-                    [binary]="true"
-                    inputId="password">
-                </p-checkbox>
-                <label for="password" class="ml-2">{{ 'reset-password-confirmation-message' | dm }}</label>
-            </div>
-        </div>
     </form>
 </dot-dialog>
