@@ -361,8 +361,8 @@ public class ContentAnalyticsResource {
         Logger.debug(this,  ()->"Creating an user custom event with the payload: " + userEventPayload);
         request.setAttribute("requestId", Objects.nonNull(request.getAttribute("requestId")) ? request.getAttribute("requestId") : UUIDUtil.uuid());
         final Map<String, Serializable> userEventPayloadWithDefaults = new HashMap<>(userEventPayload);
-        userEventPayloadWithDefaults.put(Collector.EVENT_SOURCE, EventSource.REST_API.getName());
-        userEventPayloadWithDefaults.put(Collector.EVENT_TYPE,   userEventPayload.getOrDefault(Collector.EVENT_TYPE, EventType.CUSTOM_USER_EVENT.getType()));
+        userEventPayloadWithDefaults.put(Collector.EVENT_SOURCE, userEventPayload.getOrDefault(Collector.EVENT_SOURCE, EventSource.REST_API.getName()));
+        userEventPayloadWithDefaults.put(Collector.EVENT_TYPE, userEventPayload.getOrDefault(Collector.EVENT_TYPE, EventType.CUSTOM_USER_EVENT.getType()));
         WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectorsAndEmitEvent(request, response,
                 loadRequestMatcher(userEventPayload), userEventPayloadWithDefaults, fromPayload(userEventPayload));
 

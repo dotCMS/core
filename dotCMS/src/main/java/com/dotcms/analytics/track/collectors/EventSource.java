@@ -9,7 +9,8 @@ public enum EventSource {
     DOT_CMS("DOT_CMS"),
     REST_API("REST_API"),
     WORKFLOW("WORKFLOW"),
-    RULE("RULE");
+    RULE("RULE"),
+    DOT_CLI("DOT_CLI");
 
     private final String name;
 

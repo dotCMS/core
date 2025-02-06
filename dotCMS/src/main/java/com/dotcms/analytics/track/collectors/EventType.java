@@ -9,8 +9,9 @@ public enum EventType {
     FILE_REQUEST("FILE_REQUEST"),
     PAGE_REQUEST("PAGE_REQUEST"),
     CUSTOM_USER_EVENT("CUSTOM_USER_EVENT"),
+    URL_MAP("URL_MAP"),
+    CMD_EXECUTED("CMD_EXECUTED");
 
-    URL_MAP("URL_MAP");
 
     private final String type;
     private EventType(String type) {
