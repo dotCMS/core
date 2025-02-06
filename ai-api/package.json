@@ -1,0 +1,19 @@
+{
+  "name": "ai-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@hono/node-server": "^1.13.8",
+    "@langchain/openai": "^0.4.2",
+    "dotenv": "^16.4.7",
+    "hono": "^4.6.20",
+    "tsx": "^4.19.2"
+  }
+}

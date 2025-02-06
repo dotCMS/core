@@ -167,4 +167,12 @@ export class DotAiService {
                 )
             );
     }
+
+    async refineText(data: {
+        text: string;
+        tone: 'casual' | 'formal';
+        language: 'en' | 'es';
+    }) {
+        return this.#http.post(`http://localhost:3000/ai/refine-text`, data);
+    }
 }
