@@ -47,11 +47,15 @@
                         [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
                         class="dot-pages-listing-header__language-input"></p-dropdown>
-                    <p-checkbox
-                        (onChange)="setPagesArchived($event.checked)"
-                        [(ngModel)]="vm.showArchivedValue"
-                        [binary]="true"
-                        [label]="'Show-Archived' | dm"></p-checkbox>
+                    <div class="flex items-center">
+                        <p-checkbox
+                            (onChange)="setPagesArchived($event.checked)"
+                            [(ngModel)]="vm.showArchivedValue"
+                            [binary]="true"
+                            inputId="showArchived">
+                        </p-checkbox>
+                        <label for="showArchived" class="ml-2">{{'Show-Archived' | dm}}</label>
+                    </div>
                 </div>
                 <button
                     (click)="store.getPageTypes()"

@@ -9,10 +9,14 @@
                     [innerHTML]="'starter.description' | dm: [user.username]"
                     class="dot-starter-description"></p>
             </div>
-            <p-checkbox
-                (onChange)="handleVisibility($event.checked)"
-                [binary]="true"
-                [label]="'starter.dont.show' | dm"></p-checkbox>
+            <div class="flex items-center">
+                <p-checkbox
+                    (onChange)="handleVisibility($event.checked)"
+                    [binary]="true"
+                    inputId="dontShow">
+                </p-checkbox>
+                <label for="dontShow" class="ml-2">{{'starter.dont.show' | dm}}</label>
+            </div>
         </div>
         <div class="col-12">
             <div class="grid">
