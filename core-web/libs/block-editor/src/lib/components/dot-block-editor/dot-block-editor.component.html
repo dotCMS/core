@@ -11,7 +11,7 @@
             (ngModelChange)="onBlockEditorChange($event)"
             [editor]="editor"
             [ngClass]="{ 'overflow-hidden': freezeScroll }"
-            [ngModel]="content" />
+            [ngModel]="content()" />
     </div>
     @if (showCharData) {
         <dot-editor-count-bar
