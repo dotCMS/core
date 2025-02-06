@@ -3,9 +3,6 @@ import styles from './Row.module.css';
 import { DotPageAssetLayoutRow } from '../../types';
 import { Column } from '../Column/Column';
 
-// Client
-import { isInsideEditor } from '@dotcms/client';
-
 type RowProps = {
     row: DotPageAssetLayoutRow;
 };
@@ -18,7 +15,7 @@ type RowProps = {
  * @return {JSX.Element} Rendered rows with columns
  */
 export const Row = ({ row }: RowProps) => {
-    const rowProps = isInsideEditor() ? { 'data-dot': 'row', 'data-testid': 'row' } : {};
+    const rowProps = { 'data-dot': 'row' };
 
     return (
         <div className={row.styleClass}>

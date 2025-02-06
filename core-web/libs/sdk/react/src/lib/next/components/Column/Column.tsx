@@ -30,7 +30,7 @@ export function Column({ column }: ColumnProps) {
         column.width + column.leftOffset
     );
     const combinedClasses = combineClasses([styles[endClass], styles[startClass]]);
-    const columnProps = isInsideEditor() ? { 'data-dot': 'column', 'data-testid': 'column' } : {};
+    const columnProps = { 'data-dot': 'column' };
 
     return (
         <div {...columnProps} className={combinedClasses}>

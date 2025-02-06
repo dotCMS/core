@@ -16,7 +16,7 @@ export const DotCMSBodyRender = ({
     const dotCMSPageBody = dotCMSPageAsset?.layout?.body;
 
     if (!dotCMSPageBody) {
-        console.warn('');
+        console.warn('The page body is not defined');
 
         return null;
     }

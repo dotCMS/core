@@ -1,10 +1,9 @@
-import { useContext, useRef } from 'react';
-import { isInsideEditor } from '@dotcms/client';
+import { useContext, useMemo } from 'react';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
 import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';
 import { getContainersData } from '../../utils/utils';
-import { useCheckVisibleContent } from '../../hooks/useCheckHaveContent';
+import { Contentlet } from '../Contentlet/Contentlet';
 
 type ContainerProps = {
     container: DotCMSColumnContainer;
@@ -29,13 +28,17 @@ export function Container({ container }: ContainerProps) {
         container
     );
 
-    const containerData = JSON.stringify({
-        uuid,
-        variantId,
-        acceptTypes,
-        maxContentlets,
-        identifier: path ?? identifier
-    }); // Get Container
+    const containerData = useMemo(
+        () =>
+            JSON.stringify({
+                uuid,
+                variantId,
+                acceptTypes,
+                maxContentlets,
+                identifier: path ?? identifier
+            }),
+        [uuid, variantId, acceptTypes, maxContentlets, path, identifier]
+    ); // Get Container
 
     const isEmpty = contentlets.length === 0;
     const emptyContainerStyle = {
@@ -60,62 +63,12 @@ export function Container({ container }: ContainerProps) {
             {isEmpty
                 ? 'This container is empty.'
                 : contentlets.map((contentlet: DotCMSContentlet) => (
-                      <ComponentRender
+                      <Contentlet
                           key={contentlet.identifier}
                           contentlet={contentlet}
-                          components={customComponents}
                           container={containerData}
                       />
                   ))}
         </div>
     );
-}
-
-// MOVE TO ANOTHER FILE
-function ComponentRender({ contentlet, container, components }: any) {
-    const ref = useRef<HTMLDivElement | null>(null);
-    const haveContent = useCheckVisibleContent(ref);
-
-    const ContentTypeComponent = components[contentlet?.contentType];
-    const DefaultComponent = components['CustomNoComponent'] || NoComponent;
-    const FallbackComponent = true || isInsideEditor() ? DefaultComponent : EmptyContent;
-
-    const Component = ContentTypeComponent || FallbackComponent;
-
-    return (
-        <div
-            data-testid="dot-contentlet"
-            data-dot-object="contentlet"
-            data-dot-identifier={contentlet?.identifier}
-            data-dot-basetype={contentlet?.baseType}
-            data-dot-title={contentlet?.widgetTitle || contentlet?.title}
-            data-dot-inode={contentlet?.inode}
-            data-dot-type={contentlet?.contentType}
-            data-dot-container={container}
-            data-dot-on-number-of-pages={contentlet?.onNumberOfPages}
-            key={contentlet?.identifier}
-            ref={ref}
-            style={{ minHeight: haveContent ? undefined : '4rem' }}>
-            <Component {...contentlet} />
-        </div>
-    );
-}
-
-/**
- * Component to render when there is no component for the content type.
- *
- * @param {{ readonly contentType: string }} { contentType }
- * @return {*}
- */
-function NoComponent({ contentType }: { readonly contentType: string }) {
-    return <div data-testid="no-component">No Component for {contentType}</div>;
-}
-
-/**
- * Component to render when there is no content in the container.
- *
- * @return {*}
- */
-function EmptyContent() {
-    return null;
 }

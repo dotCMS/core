@@ -10,6 +10,7 @@ import Product from './content-types/product';
 import WebPageContent from './content-types/webPageContent';
 
 import { DotcmsLayout } from '@dotcms/react';
+import { DotCMSBodyRender } from '@dotcms/react/next';
 import { usePathname, useRouter } from 'next/navigation';
 import { CustomNoComponent } from './content-types/empty';
 import Footer from './layout/footer/footer';
@@ -17,7 +18,6 @@ import Header from './layout/header/header';
 import Navigation from './layout/navigation';
 
 import NotFound from '@/app/not-found';
-import { withExperiments } from '@dotcms/experiments';
 import { usePageAsset } from '../hooks/usePageAsset';
 
 /**
@@ -47,19 +47,6 @@ export function MyPage({ pageAsset, nav }) {
     const { replace } = useRouter();
     const pathname = usePathname();
 
-    /**
-     * If using experiments, `DotLayoutComponent` is `withExperiments(DotcmsLayout)`.
-     * If not using experiments:
-     * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
-     * - Remove DotExperimentsProvider from the return statement.
-     */
-
-    const DotLayoutComponent = experimentConfig?.apiKey
-        ? withExperiments(DotcmsLayout, {
-              ...experimentConfig,
-              redirectFn: replace
-          })
-        : DotcmsLayout;
 
     pageAsset = usePageAsset(pageAsset);
 
@@ -72,19 +59,10 @@ export function MyPage({ pageAsset, nav }) {
             {pageAsset?.layout.header && <Header>{!!nav && <Navigation items={nav} />}</Header>}
 
             <main className="container m-auto">
-                <DotLayoutComponent
-                    pageContext={{
-                        pageAsset,
-                        components: componentsMap
-                    }}
-                    config={{
-                        pathname,
-                        editor: {
-                            params: {
-                                depth: 3
-                            }
-                        }
-                    }}
+                <DotCMSBodyRender
+                    dotCMSPageAsset={pageAsset}
+                    customComponents={componentsMap}
+                    devMode={true}
                 />
             </main>
 
