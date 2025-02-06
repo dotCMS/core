@@ -48,6 +48,45 @@ import {
 import { DotAiClippyContentGeneratorComponent } from "../dot-ai-clippy-content-generator/dot-ai-clippy-content-generator.component";
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
+// CAN BE AN UTIL
+const RECORD_OBJECT = {
+    "com.dotcms.contenttype.model.field.ImmutableTextField": {
+        variable: '',
+        dataType: 'string',
+        format: ''
+    },
+    "com.dotcms.contenttype.model.field.ImmutableTagField": {
+        variable: '',
+        dataType: 'string[]',
+        format: '[tag1, tag2, tag3]'
+    },
+    "com.dotcms.contenttype.model.field.ImmutableStoryBlockField": {
+        variable: '',
+        dataType: 'string',
+        format: 'html'
+    },
+    "com.dotcms.contenttype.model.field.ImmutableDateTimeField": {
+        variable: '',
+        dataType: 'string',
+        format: 'date: iso string'
+    },
+    "com.dotcms.contenttype.model.field.ImmutableCustomField": {
+        variable: '',
+        dataType: "string",
+        format: ""
+    },
+    "com.dotcms.contenttype.model.field.ImmutableTextAreaField": {
+        variable: '',
+        dataType: 'string',
+        format: 'text'
+    },
+    "com.dotcms.contenttype.model.field.ImmutableWysiwygField": {
+        variable: '',
+        dataType: 'string',
+        format: 'html'
+    }
+}
+
 /**
  * DotEditContentFormComponent
  *
@@ -430,27 +469,23 @@ export class DotEditContentFormComponent implements OnInit {
 
     generateContent(message: string) {
         this.isClippyThinking.set(true);
-        const ALLOWED_FIELDS_TO_AUTOCOMPLETE = ['Text', 'Textarea', 'Tag', 'Story-Block'];
-
         const formStructure = Object.keys(this.form.controls).reduce((acc, key) => {
             const field = this.$formFields().find((f) => f.variable === key);
 
-            if (!field || !ALLOWED_FIELDS_TO_AUTOCOMPLETE.includes(field.fieldType)) {
+            const fieldRule  = RECORD_OBJECT[field.clazz];
+
+            if (!fieldRule) {
                 return acc;
             }
 
-            const control = this.form.get(key);
-            let type = 'string'; // default type
-    
-            if (Array.isArray(control.value)) {
-                type = 'string[]';
-            }
-
-            if (field.fieldType === 'Story-Block') {
-                type = 'html string';
+            fieldRule.key = field.variable;
+            
+            if (field.clazz === "com.dotcms.contenttype.model.field.ImmutableCustomField") {
+                fieldRule.type = field.dataType;
+                fieldRule.format = `${field.regexCheck} ${field.name}`;
             }
     
-            acc[key] = type;
+            acc[key] = fieldRule;
         
             return acc;
         }, {});

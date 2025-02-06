@@ -4,27 +4,66 @@ import { inject, Injectable } from "@angular/core";
 import { map } from "rxjs/operators";
 
 const getAutoFillPrompt = (contentType: string, structure: string, description: string) => `
-I have a form that represents the structure of a content type called ${contentType}, with the following structure:
+I have a form that represents the structure of a content type called "${contentType}" with the following structure:  
 
-${structure}
+${structure}  
 
-Please fill in the fields while ensuring that:
+Each object in the structure follows this format:  
+\`\`\`
+[
+  {
+    "variable": "The field name",
+    "format": "Expected format or constraints",
+    "dataType": "The expected data type (e.g., string, number, boolean, HTML, etc.)"
+  }
+]
+\`\`\`
 
-Each field value matches the expected data type defined in $STRUCTURE.
-The values are contextually relevant based on the following description, which provides more details and the theme for generating appropriate content:
-${description}
+Please generate values for each field while ensuring the following:  
 
-For the Story-Block field, the response must be a valid HTML string, and the values must be contextually relevant based on the following rules: 
+1. Each field value strictly matches the expected **data type** and **format** defined in \`${structure}\`.  
+2. The values are contextually relevant based on this description, which provides details and a theme for generating appropriate content:  
+   - **Description:** ${description}  
 
-1. The Story-Block must be a valid HTML string.
-2. The Story-Block must to have a minimum of 4 paragraphs.
-3. The Story-Block must to have a minimum of 2 quotes.
-4. The Story-Block must to have a minimum of 2 images (Using a placeholder image, DO NOT GENERATE IMAGES, use placeholder based on this API URL https://placehold.co/).
+For the **Story-Block** field, follow these additional rules:  
 
-The response must be a valid JSON object that strictly follows the same structure as ${structure}, but with the fields populated based on the generated values.
+1. The Story-Block must be a **valid HTML string**.  
+2. It must contain **at least 4 paragraphs**.  
+3. It must include **at least 2 quotes**.  
+4. It must contain **at least 2 images** (use a placeholder image; **DO NOT generate images**, but reference the placeholder URL: \`https://placehold.co/\`).  
 
-The output must contain only the JSON object and no additional text.
-Ensure proper formatting so the JSON is parseable and valid.
+### **Response Format:**  
+The response **must** be a valid JSON object, structured as follows:  
+
+- Each key in the JSON should use the **"variable"** field from \`${structure}\`.  
+- The corresponding value should be AI-generated, adhering to the specified **format** and **data type**.  
+
+#### **Example Output Format:**  
+\`\`\`json
+{
+  "[VARIABLE_NAME_FROM_STRUCTURE]": "Generated value",
+  "[ANOTHER_VARIABLE_NAME]": "Generated value"
+}
+\`\`\`
+
+### **Additional Constraints:**  
+- The response **must contain only the JSON object**, with no additional text or explanation.  
+- Ensure proper JSON formatting so it is **fully valid and parseable**.  
+- Ensue the JSON never ends with a comma.
+
+**BAD Example***
+\`\`\`
+{
+    "variable": "The field value",
+}
+\`\`\`
+
+**GOOD Example**
+\`\`\`
+{
+    "variable": "The field value"
+}
+\`\`\`
 `
 
 @Injectable()

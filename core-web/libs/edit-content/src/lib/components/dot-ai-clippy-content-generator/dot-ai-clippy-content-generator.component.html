@@ -1,4 +1,4 @@
-<p-button [disabled]="isClippyThinking()" (click)="op.show($event)" styleClass="p-button-rounded p-button-icon-only ai-button">
+<p-button [disabled]="isClippyThinking()" (onClick)="op.toggle($event)" styleClass="p-button-rounded p-button-icon-only ai-button">
     <svg
         [class.rotate-clippy]="isClippyThinking()"
         width="42"
@@ -12,7 +12,7 @@
     </svg>
 </p-button>
 
-<p-overlayPanel #op header="dotAI Generate" [style]="{ width: '25rem' }">
+<p-overlayPanel #op header="dotAI Generate" [style]="{ width: '25rem', zIndex: '25' }">
     <div
         [style]="{
             'font-size': '.875rem',
