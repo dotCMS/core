@@ -20,6 +20,8 @@ import java.nio.file.WatchEvent;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.ExitCode;
@@ -109,20 +111,69 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             // If the dotCMS URL and token are set, we can proceed with the command execution, we
             // can bypass the configuration check as we have everything we need for a remote call
             if (isRemoteURLSet(commandsChain, parseResult.commandSpec().commandLine())) {
-                return internalExecute(commandsChain, underlyingStrategy, parseResult);
+                return executeInParallel(commandsChain, underlyingStrategy, parseResult);
             }
 
             //If no remote URL is set, we need to check if there is a configuration
             verifyConfigExists(parseResult, commandsChain);
 
-            recordEvent(commandsChain);
-
             //If we have a configuration, we can proceed with the command execution
-            return internalExecute(commandsChain, underlyingStrategy, parseResult);
+            return executeInParallel(commandsChain, underlyingStrategy, parseResult);
 
         }
 
         return underlyingStrategy.execute(parseResult);
+    }
+
+    /**
+     * Executes the command in parallel with event analytics recording.
+     *
+     * @param commandsChain
+     * @param underlyingStrategy
+     * @param parseResult
+     * @return
+     * @throws ExecutionException
+     */
+    private int executeInParallel(CommandsChain commandsChain,
+            IExecutionStrategy underlyingStrategy,
+            CommandLine.ParseResult parseResult) throws ExecutionException {
+
+        try {
+            // Create a CompletableFuture for the event recording
+            CompletableFuture<Void> eventFuture = CompletableFuture.runAsync(() -> {
+                try {
+                    recordEvent(commandsChain);
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Error recording event asynchronously", e);
+                }
+            });
+
+            // Create a CompletableFuture for the command execution
+            CompletableFuture<Integer> executeFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return internalExecute(commandsChain, underlyingStrategy, parseResult);
+                } catch (Exception e) {
+                    if (e instanceof RuntimeException) {
+                        throw (RuntimeException) e;
+                    }
+                    throw new RuntimeException(e);
+                }
+            });
+
+            // Wait for both futures to complete
+            CompletableFuture.allOf(eventFuture, executeFuture).join();
+
+            // Return the result from internalExecute
+            return executeFuture.get();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                    "Parallel execution interrupted", e);
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                    "Error in parallel execution", e.getCause());
+        }
     }
 
     /**
@@ -232,17 +283,16 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             if (clientFactory != null) {
                 try {
                     final var analyticsAPI = clientFactory.getClient(AnalyticsAPI.class);
-                    final var response = analyticsAPI.fireCliEvent(
+                    analyticsAPI.fireCliEvent(
                             DotCliEvent.builder()
                                     .command(command)
                                     .eventType("CMD_EXECUTED")
                                     .user("UNKNOWN")
                                     .site("UNKNOWN")
                                     .build());
-                    System.out.println(response);
+                    LOGGER.log(Level.INFO, "Event recorded for command: {0}", command);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    // Do nothing on failure
+                    LOGGER.log(Level.WARNING, "Error recording event for command: " + command, e);
                 }
             }
         }
