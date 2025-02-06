@@ -31,7 +31,13 @@ export class AiRefiningInputDirective implements OnInit {
             inputElement.value = text;
         });
         const parent = inputElement.parentNode as HTMLElement;
-        parent.removeChild(this.menuComponent.location.nativeElement);
+        const hasContent = inputElement.value.trim().length > 0;
+
+        if (!hasContent) {
+            parent.removeChild(this.menuComponent.location.nativeElement);
+        }
+
+        
 
         inputElement.addEventListener('input', () => {
             const hasContent = inputElement.value.trim().length > 0;
