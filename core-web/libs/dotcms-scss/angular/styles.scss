@@ -4,12 +4,16 @@
 @import "mixins";
 @import "typography";
 @import "dotcms-theme/utils/theme-variables"; /* temporary */
-@import "dotcms-theme/theme"; /* prime-ng */
+// @import "dotcms-theme/theme"; /* prime-ng */
 
 // INCLUDE FONT FACES
-@include assistant-font-face(400, "Regular");
-@include assistant-font-face(500, "SemiBold");
-@include assistant-font-face(700, "Bold");
+// @include assistant-font-face(400, "Regular");
+// @include assistant-font-face(500, "SemiBold");
+// @include assistant-font-face(700, "Bold");
+
+@include lato-font-face(400, "Regular");
+@include lato-font-face(500, "SemiBold");
+@include lato-font-face(700, "Bold");
 
 @include redhatmono-font-face(400, "Regular");
 
@@ -90,6 +94,75 @@ a {
 
 button {
     font-family: $font-default;
+}
+
+// FORMS
+
+.p-fluid {
+    .p-inputgroup {
+      .p-button {
+        width: auto;
+
+        &.p-button-icon-only {
+          width: 2.5rem;
+        }
+      }
+
+      .p-inputtext {
+        flex: 1 1 auto;
+        width: 1%;
+      }
+
+      .p-inputwrapper {
+        flex: 1 1 auto;
+        width: 1%;
+
+        > .p-component {
+          flex: 1 1 auto;
+          width: 1%;
+        }
+      }
+    }
+
+    .p-autocomplete.p-component {
+      display: grid;
+      align-items: center;
+      grid-template-columns: auto repeat(3, max-content);
+    }
+
+    .p-dropdown {
+      input.p-dropdown-label {
+        width: 100%;
+      }
+    }
+
+    .p-inputtext {
+      width: 100%;
+    }
+
+    .p-input-icon-left,
+    .p-input-icon-right {
+      display: block;
+      width: 100%;
+    }
+
+    .p-inputtextarea {
+      width: 100%;
+    }
+
+    .p-password {
+      display: flex;
+    }
+  }
+
+
+.field {
+    margin-bottom: $spacing-1;
+
+    & > label {
+        display: inline-block;
+        margin-bottom: .5rem;
+    }
 }
 
 /*
