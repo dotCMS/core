@@ -143,6 +143,9 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #fb = inject(FormBuilder);
     readonly openAiService = inject(OpenAiService);
 
+    $showAcceptChangesButton = signal(false);
+    $latestFormAcceptChanges = signal<string | null>(null); 
+
     /**
      * Output event emitter that informs when the form has changed.
      * Emits an object of type Record<string, string> containing the updated form values.
@@ -498,8 +501,22 @@ export class DotEditContentFormComponent implements OnInit {
         };
 
         this.openAiService.sendMessage(body).subscribe((response) => {
+            this.$latestFormAcceptChanges.set(JSON.stringify(this.form.value))
             this.form.patchValue(JSON.parse(response));
             this.isClippyThinking.set(false);
+
+            // TODO: Show accept changes button
+            this.$showAcceptChangesButton.set(true);
         });
+    }
+
+    acceptChanges() {
+        this.$showAcceptChangesButton.set(false);
+        this.$latestFormAcceptChanges.set(this.form.value);
+    }
+
+    resetChanges() {
+        this.$showAcceptChangesButton.set(false);
+        this.form.patchValue(JSON.parse(this.$latestFormAcceptChanges()));  
     }
 }

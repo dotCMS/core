@@ -87,7 +87,7 @@ The response **must** be a valid JSON object, structured as follows:
 export class OpenAiService {
     // Define la URL de la API, que se usará para las solicitudes
     private apiUrl = 'https://api.openai.com/v1/chat/completions';
-    private apiKey = 'YOUR_OPENAI_API_KEY'; //Thanks Jal!
+    private apiKey = 'YOUR_API_KEY'; //Thanks Jal!
     private http = inject(HttpClient);
 
     // Método para enviar un mensaje a la API mediante una solicitud POST

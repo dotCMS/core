@@ -72,12 +72,29 @@
             pButton
             (click)="goBack()"
             icon="pi pi-chevron-left"
-            class="p-button-tertiary p-button-rounded p-button-sm"></button>
+            class="p-button-tertiary p-button-rounded p-button-sm "></button>
     </div>
 </ng-template>
 
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
+    @if ($showAcceptChangesButton()) {
+        <button
+            pButton
+            icon="pi pi-times"
+            class="p-button-text p-button-rounded p-button-sm mr-2"
+            (click)="resetChanges()">
+            Reset changes
+        </button>
+
+        <button
+            pButton
+            icon="pi pi-check"
+            class="p-button-primary p-button-rounded p-button-sm"
+            (click)="acceptChanges()">
+            Accept changes
+        </button>
+    }
     <div
         class="dot-edit-content-actions"
         data-testId="edit-content-actions"
@@ -144,4 +161,6 @@
     </div>
 </ng-template>
 
-<dot-ai-clippy-content-generator [isClippyThinking]="isClippyThinking()" (generateContent)="generateContent($event)" />
+<dot-ai-clippy-content-generator
+    [isClippyThinking]="isClippyThinking()"
+    (generateContent)="generateContent($event)" />

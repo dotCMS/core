@@ -494,13 +494,26 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
     }
 
     private setEditorContent(content: Content) {
-        if (typeof content === 'string') {
+        let isParsable = false
+        let parsedContent: JSONContent;
+
+        try {
+            parsedContent = JSON.parse(content as unknown as string);
+            isParsable = true;
+
+        } catch (e) {
+            isParsable = false;
+            parsedContent = content as unknown as JSONContent;
+        }
+
+        if (!isParsable && typeof content === 'string') {
             this.content.set(formatHTML(content));
 
             return;
         }
 
-        this.setEditorJSONContent(content);
+        this.setEditorJSONContent(parsedContent);
+
     }
 
     private setFieldVariable() {
