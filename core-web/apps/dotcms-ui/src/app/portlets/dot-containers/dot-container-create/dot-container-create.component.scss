@@ -1,17 +1,17 @@
 @use "variables" as *;
 
 .container-create__tab-container ::ng-deep {
-    .p-tabview {
+    .p-tabs {
         height: 100%;
     }
-    .p-tabview-panels {
+    .p-tabs-panels {
         height: 100%;
         flex-grow: 1;
         flex-basis: 0;
         overflow: auto;
     }
 
-    .p-tabview-panel {
+    .p-tabs-panel {
         height: 100%;
         padding: 0 $spacing-4;
         padding-top: $spacing-2;

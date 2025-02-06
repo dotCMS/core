@@ -1,21 +1,21 @@
 @use "variables" as *;
 @use "dotcms-theme/utils/theme-variables" as *;
 
-.p-tabview .p-tabview-nav {
+.p-tabs .p-tabs-nav {
     border: solid $color-palette-black-op-10;
     border-width: 0 0 1px 0;
     position: relative;
 }
 
-.p-tabview .p-tabview-nav li {
+.p-tabs .p-tabs-nav li {
     margin-right: 0;
 }
 
-.p-tabview-title {
+.p-tabs-title {
     text-transform: capitalize;
 }
 
-.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+.p-tabs .p-tabs-nav li .p-tabs-nav-link {
     border: none;
     border-radius: 0;
     color: $black;
@@ -26,65 +26,65 @@
     height: 100%;
 }
 
-.p-tabview .p-tabview-nav li .p-tabview-nav-link:not(.p-disabled):focus {
+.p-tabs .p-tabs-nav li .p-tabs-nav-link:not(.p-disabled):focus {
     outline: 0 none;
     outline-offset: 0;
     box-shadow: none;
 }
 
-.p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled) .p-tabview-nav-link:hover {
+.p-tabs .p-tabs-nav li:not(.p-highlight):not(.p-disabled) .p-tabs-nav-link:hover {
     background: $bg-hover;
     color: $text-color-hover;
     background-clip: padding-box;
     border-bottom: $tabview-item-border-height solid $bg-hover;
 }
 
-.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+.p-tabs .p-tabs-nav li.p-highlight .p-tabs-nav-link {
     border-bottom: $tabview-item-border-height solid $color-palette-primary;
 }
 
-.p-tabview .p-tabview-left-icon {
+.p-tabs .p-tabs-left-icon {
     margin-right: $spacing-1;
 }
 
-.p-tabview .p-tabview-right-icon {
+.p-tabs .p-tabs-right-icon {
     margin-left: $spacing-1;
 }
 
-.p-tabview .p-tabview-close {
+.p-tabs .p-tabs-close {
     margin-left: $spacing-1;
 }
 
-.p-tabview .p-tabview-panels {
+.p-tabs .p-tabs-panels {
     border: 0 none;
     color: $black;
     border-bottom-right-radius: $border-radius-xs;
     border-bottom-left-radius: $border-radius-xs;
 }
 
-.p-tabview .p-tabview-nav li .p-tabview-nav-link > .p-ink {
+.p-tabs .p-tabs-nav li .p-tabs-nav-link > .p-ink {
     background-color: rgba(63, 81, 181, 0.16);
 }
 
-.p-tabview .p-tabview-nav li .p-tabview-nav-link:focus {
+.p-tabs .p-tabs-nav li .p-tabs-nav-link:focus {
     background-color: $focus-bg;
 }
 
-.p-tabview .p-tabview-nav .p-tabview-ink-bar {
+.p-tabs .p-tabs-nav .p-tabs-ink-bar {
     display: none;
 }
 
-.p-tabview-nav-next.p-link,
-.p-tabview-nav-prev.p-link {
+.p-tabs-nav-next.p-link,
+.p-tabs-nav-prev.p-link {
     width: 40px;
 }
 
-.p-tabview-nav-next.p-link {
+.p-tabs-nav-next.p-link {
     border-left: none;
     background: $color-palette-gray-200;
 }
 
-.p-tabview-nav-prev.p-link {
+.p-tabs-nav-prev.p-link {
     border-right: none;
     background: $color-palette-gray-200;
 }

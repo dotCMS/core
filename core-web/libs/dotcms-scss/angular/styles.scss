@@ -131,6 +131,8 @@ button {
     }
 
     .p-dropdown {
+        display: flex;
+
       input.p-dropdown-label {
         width: 100%;
       }
@@ -163,6 +165,19 @@ button {
         display: inline-block;
         margin-bottom: .5rem;
     }
+}
+
+.p-panel-content-container .p-panel-content {
+    column-gap: 1.5rem;
+    row-gap: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 250px);
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1.5rem;
 }
 
 /*

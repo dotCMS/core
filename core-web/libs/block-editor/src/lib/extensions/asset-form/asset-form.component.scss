@@ -19,15 +19,15 @@
 }
 
 :host::ng-deep {
-    .p-tabview-nav {
+    .p-tabs-nav {
         padding: 0 $spacing-5;
     }
 
-    .p-tabview-panel {
+    .p-tabs-panel {
         height: 25rem;
     }
 
-    .p-tabview-panels {
+    .p-tabs-panels {
         padding: 0;
     }
 }

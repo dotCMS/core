@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host,
-:host ::ng-deep .p-tabview-panels {
+:host ::ng-deep .p-tabs-panels {
     overflow: hidden;
     flex-grow: 1;
     flex-basis: 0;
@@ -9,7 +9,7 @@
 
 :host {
     & ::ng-deep {
-        .p-tabview {
+        .p-tabs {
             display: flex;
             flex-direction: column;
             height: 100%;
@@ -19,7 +19,7 @@
             }
         }
 
-        .p-tabview-panel:not([hidden]) {
+        .p-tabs-panel:not([hidden]) {
             height: 100%;
         }
 
@@ -31,7 +31,7 @@
         }
 
         .dot-template-builder__new-template-builder {
-            .p-tabview-nav {
+            .p-tabs-nav {
                 padding: 0 $spacing-5;
             }
         }
