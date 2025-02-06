@@ -7,6 +7,7 @@ import {
     OnInit,
     ViewContainerRef
 } from '@angular/core';
+
 import { DotAiMenuComponent } from '../dot-ai/dot-ai-menu/dot-ai-menu.component';
 
 @Directive({
@@ -29,6 +30,14 @@ export class AiRefiningInputDirective implements OnInit {
             const hasContent = inputElement.value.trim().length > 0;
             const parent = this.#elementRef.nativeElement.parentNode as HTMLElement;
 
+            if (this.menuComponent) {
+                this.menuComponent.setInput('text', inputElement.value);
+
+                this.menuComponent.instance.textChanged.subscribe((text) => {
+                    inputElement.value = text;
+                });
+            }
+
             if (hasContent && !this.menuComponent) {
                 const parent = inputElement.parentNode as HTMLElement;
                 if (!parent.style.position) {
@@ -36,6 +45,7 @@ export class AiRefiningInputDirective implements OnInit {
                 }
 
                 this.menuComponent = this.#viewContainerRef.createComponent(DotAiMenuComponent);
+                this.menuComponent.setInput('text', inputElement.value);
                 const menuElement = this.menuComponent.location.nativeElement;
                 parent.appendChild(menuElement);
             } else if (!hasContent && this.menuComponent) {

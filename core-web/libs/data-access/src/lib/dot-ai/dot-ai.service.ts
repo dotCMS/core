@@ -169,9 +169,10 @@ export class DotAiService {
     }
 
     refineText(data: {
+        system: string;
         text: string;
-        tone: 'casual' | 'formal';
-        language: 'en' | 'es';
+        tone: string;
+        language: string;
     }) {
         return this.#http.post(`http://localhost:3000/ai/refine`, data);
     }

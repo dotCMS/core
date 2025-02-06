@@ -5,6 +5,7 @@ import { prettyJSON } from "hono/pretty-json";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { z } from "zod";
 
 import "dotenv/config";
 
@@ -53,18 +54,21 @@ app.get('/', async (c) => {
   })
 
   app.post('/ai/refine', async (c) => {
-    const { text, tone, language } = await c.req.json();
+    const { text, tone, language, system } = await c.req.json();
 
 
     const promptTemplate = ChatPromptTemplate.fromMessages([
-        ["system", "You are a text refiner. You will be given a text, a tone, and a language. You will need to refine the text to the tone and language."],
+        ["system", system],
         ["user", "Refine this text <text>{text}</text> in this tone: <tone>{tone}</tone> and language: <language>{language}</language>"],
       ]);
 
+      const structuredLlm = model.withStructuredOutput(z.object({
+        title: z.string(),
+      }));
+
     const chain = RunnableSequence.from([
         promptTemplate,
-        model,
-        new StringOutputParser(),
+        structuredLlm,
       ]);
 
       const result = await chain.invoke({
@@ -73,7 +77,7 @@ app.get('/', async (c) => {
         language
       });
 
-    return c.json({result})
+    return c.json(result)
   })
   
 
