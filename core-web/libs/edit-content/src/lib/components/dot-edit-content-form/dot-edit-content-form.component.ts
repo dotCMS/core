@@ -8,7 +8,8 @@ import {
     effect,
     inject,
     OnInit,
-    output
+    output,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -44,6 +45,7 @@ import {
     getFinalCastedValue,
     isFilteredType
 } from '../../utils/functions.util';
+import { DotAiClippyContentGeneratorComponent } from "../dot-ai-clippy-content-generator/dot-ai-clippy-content-generator.component";
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 /**
@@ -74,15 +76,16 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     templateUrl: './dot-edit-content-form.component.html',
     styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
-        ReactiveFormsModule,
-        DotEditContentFieldComponent,
-        ButtonModule,
-        TabViewModule,
-        DotWorkflowActionsComponent,
-        TabViewInsertDirective,
-        NgTemplateOutlet,
-        DotMessagePipe
-    ],
+    ReactiveFormsModule,
+    DotEditContentFieldComponent,
+    ButtonModule,
+    TabViewModule,
+    DotWorkflowActionsComponent,
+    TabViewInsertDirective,
+    NgTemplateOutlet,
+    DotMessagePipe,
+    DotAiClippyContentGeneratorComponent
+],
     providers: [OpenAiService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -163,6 +166,8 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     $restOfTabs = computed(() => this.$store.tabs().slice(1));
+
+    isClippyThinking = signal(false)
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {
@@ -423,7 +428,8 @@ export class DotEditContentFormComponent implements OnInit {
         window.open(realUrl, '_blank');
     }
 
-    getInfoFromGPT() {
+    generateContent(message: string) {
+        this.isClippyThinking.set(true);
         const ALLOWED_FIELDS_TO_AUTOCOMPLETE = ['Text', 'Textarea', 'Tag', 'Story-Block'];
 
         const formStructure = Object.keys(this.form.controls).reduce((acc, key) => {
@@ -452,12 +458,13 @@ export class DotEditContentFormComponent implements OnInit {
         const body = {
             contentType: this.$store.contentType().variable,    
             structure: JSON.stringify(formStructure),
-            description: 'The blog is about frogs and how they can destroy the world'
+            description: message
         }
 
         this.openAiService.sendMessage(body).subscribe((response) => {
-            console.log(response);
             this.form.patchValue(JSON.parse(response));
+            this.isClippyThinking.set(false);
         }); 
     }
 }
+
