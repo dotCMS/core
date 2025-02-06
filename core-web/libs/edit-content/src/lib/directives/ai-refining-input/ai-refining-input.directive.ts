@@ -20,6 +20,11 @@ export class AiRefiningInputDirective implements OnInit {
         }
 
         this.menuComponent = this.viewContainerRef.createComponent(DotAiMenuComponent);
+        const value = this.el.nativeElement.value;
+
+        console.log(value);
+
+        this.menuComponent.setInput('text', value);
         const menuElement = this.menuComponent.location.nativeElement;
 
         this.el.nativeElement.style.paddingRight = '2.357rem';

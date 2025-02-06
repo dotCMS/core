@@ -5,10 +5,11 @@ import { prettyJSON } from "hono/pretty-json";
 import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { JSONSchemaToZod } from '@dmitryrechkin/json-schema-to-zod';
+
 import "dotenv/config";
 
 import { ChatOpenAI } from "@langchain/openai";
+import { convertJsonToZodSchema } from "./convert";
 
 const model = new ChatOpenAI({ model: "gpt-4o-mini", });
 
@@ -35,7 +36,7 @@ app.get('/', async (c) => {
 
       
 
-      const zodSchema = JSONSchemaToZod.convert(schema);
+      const zodSchema = convertJsonToZodSchema(schema);
 
 
 
