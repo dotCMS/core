@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, Input, OnInit } from '@angular/core';
+import { DotAiService } from '@dotcms/data-access';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
@@ -82,7 +83,10 @@ import { MenuModule } from 'primeng/menu';
     imports: [MenuModule, ButtonModule]
 })
 export class DotAiMenuComponent implements OnInit {
+    @Input() text: string;
     items: MenuItem[] | undefined;
+
+    #dotAiService = inject(DotAiService);
 
     ngOnInit() {
         this.items = [
@@ -92,7 +96,14 @@ export class DotAiMenuComponent implements OnInit {
                     {
                         label: 'Improve writing',
                         command: () => {
-                            console.log('Improve writing clicked');
+                            console.log(this.text);
+                            this.#dotAiService.refineText({
+                                text: 'Hello, world!',
+                                tone: 'casual',
+                                language: 'en'
+                            }).subscribe((response) => {
+                                console.log(response);
+                            });
                         }
                     },
                     {

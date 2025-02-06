@@ -12,9 +12,13 @@
   "dependencies": {
     "@dmitryrechkin/json-schema-to-zod": "^1.0.0",
     "@hono/node-server": "^1.13.8",
+    "@langchain/deepseek": "^0.0.1",
     "@langchain/openai": "^0.4.2",
     "dotenv": "^16.4.7",
     "hono": "^4.6.20",
     "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "json-schema-to-ts": "^3.1.1"
   }
 }
