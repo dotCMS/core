@@ -25,19 +25,9 @@ export class AiRefiningInputDirective implements OnInit {
     ngOnInit() {
         const inputElement = this.#elementRef.nativeElement as HTMLInputElement;
 
-<<<<<<< HEAD
-        this.menuComponent = this.viewContainerRef.createComponent(DotAiMenuComponent);
-        const value = this.el.nativeElement.value;
-
-        console.log(value);
-
-        this.menuComponent.setInput('text', value);
-        const menuElement = this.menuComponent.location.nativeElement;
-=======
         inputElement.addEventListener('input', () => {
             const hasContent = inputElement.value.trim().length > 0;
             const parent = this.#elementRef.nativeElement.parentNode as HTMLElement;
->>>>>>> b412c9908012530b97bd62108b6253f5a428b3bb
 
             if (hasContent && !this.menuComponent) {
                 const parent = inputElement.parentNode as HTMLElement;
