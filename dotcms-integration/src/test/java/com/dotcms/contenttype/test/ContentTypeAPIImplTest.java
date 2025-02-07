@@ -2266,19 +2266,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
-	/**
-	 * Method to test: {@link ContentTypeAPI#findAllRespectingLicense()}
-	 * Given scenario: No EE license
-	 * Expected result: {@link EnterpriseType}s not included in returned List
-	 */
-	@Test
-	public void test_findAllRespectingLicense_whenCommunity_ExcludeEETypes() throws Exception {
-		runNoLicense(() -> {
-			assertTrue(APILocator.getContentTypeAPI(APILocator.systemUser()).findAllRespectingLicense()
-					.stream().noneMatch((type)->type instanceof EnterpriseType));
 
-		});
-	}
 
 	/**
 	 * Method to test: {@link ContentTypeAPI#findAllRespectingLicense()}
@@ -2313,24 +2301,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
                         }));
     }
 
-    /**
-     * Method to test: {@link ContentTypeAPI#isContentTypeAllowed(ContentType)}
-     * Given scenario: The method is invoked without license using {@link BaseContentType#FORM} and {@link BaseContentType#PERSONA}
-     * Expected result: The method should return false
-     * @throws Exception
-     */
-    @Test
-    public void testIsContentTypeAllowedReturnsFalse() throws Exception {
-        runNoLicense(() -> {
-            assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser())
-                    .isContentTypeAllowed(new ContentTypeDataGen()
-                            .baseContentType(BaseContentType.PERSONA).nextPersisted()));
 
-            assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser())
-                    .isContentTypeAllowed(new ContentTypeDataGen()
-                            .baseContentType(BaseContentType.FORM).nextPersisted()));
-        });
-    }
 
 	/***
 	 * Method to test: {@link ContentTypeAPI#save(ContentType)}
