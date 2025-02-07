@@ -195,7 +195,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05350AddDotSaltClusterColumnTest.class,
         PostgresPubSubImplTest.class
 })
-
 public class MainSuite2a {
 
 }
