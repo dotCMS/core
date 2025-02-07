@@ -11,6 +11,7 @@ import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relat
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
+import { SiteFieldComponent } from './components/site-field/site-field.component';
 
 /**
  * A standalone component that provides search functionality with language and site filtering.
@@ -32,7 +33,8 @@ import { LanguageFieldComponent } from './components/language-field/language-fie
         DotMessagePipe,
         DropdownModule,
         ReactiveFormsModule,
-        LanguageFieldComponent
+        LanguageFieldComponent,
+        SiteFieldComponent
     ],
     templateUrl: './search.compoment.html'
 })
