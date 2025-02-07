@@ -147,7 +147,7 @@ export class DotUveToolbarComponent {
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
         this.#store.loadPageAsset({
-            editorMode: UVE_MODE.LIVE,
+            mode: UVE_MODE.LIVE,
             publishDate: publishDate?.toISOString()
         });
     }

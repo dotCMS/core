@@ -107,7 +107,7 @@ export class DotEmaShellComponent implements OnInit {
 
     ngOnInit(): void {
         const params = this.#getPageParams();
-        const viewParams = this.#getViewParams(params.editorMode);
+        const viewParams = this.#getViewParams(params.mode);
 
         this.uveStore.patchViewParams(viewParams);
 
@@ -212,11 +212,11 @@ export class DotEmaShellComponent implements OnInit {
         // If the editor mode is not valid, set it to edit mode
         const UVE_MODES = Object.values(UVE_MODE);
 
-        if (!params.editorMode || !UVE_MODES.includes(params.editorMode)) {
-            params.editorMode = UVE_MODE.EDIT;
+        if (!params.mode || !UVE_MODES.includes(params.mode)) {
+            params.mode = UVE_MODE.EDIT;
         }
 
-        if (params.editorMode === UVE_MODE.LIVE) {
+        if (params.mode === UVE_MODE.LIVE) {
             params.publishDate = params.publishDate || new Date().toISOString();
         }
 

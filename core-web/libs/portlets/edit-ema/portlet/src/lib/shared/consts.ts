@@ -1,9 +1,8 @@
 import { InjectionToken } from '@angular/core';
 
 import { DotDeviceListItem, DotPersona } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/uve/types';
 
-import { CommonErrors, PAGE_MODE } from './enums';
+import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
 
 export const LAYOUT_URL = '/c/portal/layout';
@@ -105,10 +104,3 @@ export const DEFAULT_DEVICES: DotDeviceListItem[] = [
         _isDefault: true
     }
 ];
-
-export const UVE_MODE_TO_PAGE_MODE: Record<UVE_MODE, PAGE_MODE> = {
-    [UVE_MODE.PREVIEW]: PAGE_MODE.PREVIEW,
-    [UVE_MODE.LIVE]: PAGE_MODE.LIVE,
-    [UVE_MODE.EDIT]: PAGE_MODE.EDIT,
-    [UVE_MODE.UNKNOWN]: PAGE_MODE.PREVIEW // Not possible in the current architecture, but required for the type
-};

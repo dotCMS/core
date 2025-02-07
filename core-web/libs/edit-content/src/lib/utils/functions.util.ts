@@ -7,6 +7,7 @@ import {
     DotCMSContentTypeLayoutTab,
     DotLanguage
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
     CALENDAR_FIELD_TYPES,
@@ -331,7 +332,7 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
     params.set('language_id', contentlet.languageId.toString());
     params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
-    params.set('editorMode', 'edit');
+    params.set('edit', UVE_MODE.EDIT);
 
     return `${baseUrl}?${params.toString()}`;
 };

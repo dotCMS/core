@@ -143,6 +143,28 @@ describe('getUVEStatus', () => {
         );
     });
 
+    it('should warn the user when the mode is unknown', () => {
+        const consoleSpy = jest.spyOn(console, 'warn');
+        const mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=IM_TRYING_TO_BREAK_IT'
+            }
+        };
+
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+        getUVEState();
+
+        expect(consoleSpy).toHaveBeenCalledWith(
+            "Couldn't identify the current mode of UVE, please contact customer support. Mode: IM_TRYING_TO_BREAK_IT"
+        );
+    });
+
     it('should parse all URL parameters correctly', () => {
         const mockWindow = {
             ...window,

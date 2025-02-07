@@ -1,7 +1,6 @@
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
-import { UVE_MODE } from '@dotcms/uve/types';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
@@ -253,4 +252,4 @@ export interface ReorderMenuPayload {
     depth: number;
 }
 
-export type DotPageAssetParams = DotPageApiParams & { editorMode?: UVE_MODE };
+export type DotPageAssetParams = DotPageApiParams;

@@ -135,7 +135,7 @@ export function withEditor() {
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
 
-                    const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
+                    const isPreview = params?.mode === UVE_MODE.PREVIEW;
                     const isPageReady = isTraditionalPage || isClientReady || isPreview;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 

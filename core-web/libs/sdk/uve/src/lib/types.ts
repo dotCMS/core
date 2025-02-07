@@ -24,8 +24,8 @@ export interface UVEState {
   UNKNOWN = Used to catch possible errors, UVE should not end in this mode
 */
 export enum UVE_MODE {
-    EDIT = 'edit',
-    PREVIEW = 'preview',
-    LIVE = 'live',
-    UNKNOWN = 'unknown'
+    EDIT = 'EDIT_MODE',
+    PREVIEW = 'PREVIEW_MODE',
+    LIVE = 'LIVE',
+    UNKNOWN = 'UNKNOWN'
 }

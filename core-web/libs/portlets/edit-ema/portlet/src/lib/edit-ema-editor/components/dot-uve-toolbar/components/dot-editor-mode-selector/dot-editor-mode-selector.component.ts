@@ -58,7 +58,7 @@ export class DotEditorModeSelectorComponent {
         return menu;
     });
 
-    readonly $currentMode = computed(() => this.#store.pageParams().editorMode);
+    readonly $currentMode = computed(() => this.#store.pageParams().mode);
 
     readonly $currentModeLabel = computed(() => {
         return this.$menuItems().find((item) => item.id === this.$currentMode())?.label;
@@ -93,7 +93,7 @@ export class DotEditorModeSelectorComponent {
         }
 
         this.#store.loadPageAsset({
-            editorMode: mode,
+            mode: mode,
             publishDate: mode === UVE_MODE.LIVE ? new Date().toISOString() : undefined
         });
     }

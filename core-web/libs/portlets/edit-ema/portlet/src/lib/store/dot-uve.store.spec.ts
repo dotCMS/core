@@ -365,13 +365,13 @@ describe('UVEStore', () => {
 
         describe('$isPreviewMode', () => {
             it("should return true when the preview is 'true'", () => {
-                store.loadPageAsset({ editorMode: UVE_MODE.PREVIEW });
+                store.loadPageAsset({ mode: UVE_MODE.PREVIEW });
 
                 expect(store.$isPreviewMode()).toBe(true);
             });
 
             it("should return false when the preview is not 'true'", () => {
-                store.loadPageAsset({ editorMode: null });
+                store.loadPageAsset({ mode: null });
 
                 expect(store.$isPreviewMode()).toBe(false);
             });
@@ -379,13 +379,13 @@ describe('UVEStore', () => {
 
         describe('$isLiveMode', () => {
             it("should return true when the live is 'true'", () => {
-                store.loadPageAsset({ editorMode: UVE_MODE.LIVE });
+                store.loadPageAsset({ mode: UVE_MODE.LIVE });
 
                 expect(store.$isLiveMode()).toBe(true);
             });
 
             it("should return false when the live is not 'true'", () => {
-                store.loadPageAsset({ editorMode: null });
+                store.loadPageAsset({ mode: null });
 
                 expect(store.$isLiveMode()).toBe(false);
             });

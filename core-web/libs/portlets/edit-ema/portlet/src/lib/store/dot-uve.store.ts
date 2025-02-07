@@ -136,10 +136,10 @@ export const UVEStore = signalStore(
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
                 $isPreviewMode: computed<boolean>(() => {
-                    return pageParams()?.editorMode === UVE_MODE.PREVIEW;
+                    return pageParams()?.mode === UVE_MODE.PREVIEW;
                 }),
                 $isLiveMode: computed<boolean>(() => {
-                    return pageParams()?.editorMode === UVE_MODE.LIVE;
+                    return pageParams()?.mode === UVE_MODE.LIVE;
                 }),
                 $friendlyParams: computed(() => {
                     const params = {

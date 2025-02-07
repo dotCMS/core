@@ -286,7 +286,7 @@ describe('withEditor', () => {
 
             it('should not have opacity or progressBar in preview mode', () => {
                 patchState(store, {
-                    pageParams: { ...emptyParams, editorMode: UVE_MODE.PREVIEW }
+                    pageParams: { ...emptyParams, mode: UVE_MODE.PREVIEW }
                 });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
@@ -483,7 +483,7 @@ describe('withEditor', () => {
                         canEditPage: true,
                         pageParams: {
                             ...emptyParams,
-                            editorMode: UVE_MODE.PREVIEW
+                            mode: UVE_MODE.PREVIEW
                         },
                         state: EDITOR_STATE.IDLE
                     });
