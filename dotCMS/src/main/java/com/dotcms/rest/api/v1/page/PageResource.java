@@ -87,6 +87,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -153,6 +154,7 @@ public class PageResource {
     private static final String PERSONA_ID = "personaId";
     private static final String DEVICE_INODE = "deviceInode";
     private static final String TIME_MACHINE_DATE = "timeMachineDate";
+    public static final String USER = "user";
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -258,16 +260,21 @@ public class PageResource {
                 .asJson(true);
 
         final Optional<Instant> timeMachineDateInstant = getTimeMachineDate(timeMachineDateAsISO8601);
-        //Logging analytics for FTM
-        if (timeMachineDateInstant.isPresent()) {
+        //Logging analytics for FTM if the publishing date is older than five minutes now
+        if (timeMachineDateInstant.isPresent() && isOlderThanFiveMinutes(timeMachineDateInstant.get())) {
             Map<String, Serializable> userEventPayload = new HashMap<>();
+            userEventPayload.put(USER, user);
             userEventPayload.put(URI, uri);
             userEventPayload.put(MODE_PARAM, modeParam);
             userEventPayload.put(LANGUAGE_ID, languageId);
             userEventPayload.put(PERSONA_ID, personaId);
-            userEventPayload.put(DEVICE_INODE, deviceInode);
+
+            if (null != deviceInode){
+                userEventPayload.put(DEVICE_INODE, deviceInode);
+            }
+
             userEventPayload.put(TIME_MACHINE_DATE, timeMachineDateInstant.get());
-            userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST);
+            userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST.getType());
 
             ContentAnalyticsUtil.registerContentAnalyticsRestEvent(originalRequest, response,
                     userEventPayload);
@@ -275,6 +282,16 @@ public class PageResource {
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
                 languageId, deviceInode, timeMachineDateInstant, builder);
         return getPageRender(renderParams);
+    }
+
+
+    /**
+     * Verifies that a given date is older than five minutes now
+     * @param dateToCheck
+     * @return
+     */
+    private static boolean isOlderThanFiveMinutes(Instant dateToCheck) {
+        return Duration.between(Instant.now(), dateToCheck).toMinutes() >= 5;
     }
 
     /**
@@ -362,16 +379,20 @@ public class PageResource {
                 languageId, deviceInode, timeMachineDateInstant, builder);
 
 
-        //Logging analytics for FTM
-        if (timeMachineDateInstant.isPresent()) {
+        //Logging analytics for FTM if the publishing date is older than five minutes now
+        if (timeMachineDateInstant.isPresent() && isOlderThanFiveMinutes(timeMachineDateInstant.get())) {
             Map<String, Serializable> userEventPayload = new HashMap<>();
+            userEventPayload.put(USER, user);
             userEventPayload.put(URI, uri);
             userEventPayload.put(MODE_PARAM, modeParam);
             userEventPayload.put(LANGUAGE_ID, languageId);
             userEventPayload.put(PERSONA_ID, personaId);
-            userEventPayload.put(DEVICE_INODE, deviceInode);
+            if (null != deviceInode){
+                userEventPayload.put(DEVICE_INODE, deviceInode);
+            }
+
             userEventPayload.put(TIME_MACHINE_DATE, timeMachineDateInstant.get());
-            userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST);
+            userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST.getType());
 
             ContentAnalyticsUtil.registerContentAnalyticsRestEvent(originalRequest, response,
                     userEventPayload);
