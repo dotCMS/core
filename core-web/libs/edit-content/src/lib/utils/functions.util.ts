@@ -332,7 +332,7 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
     params.set('language_id', contentlet.languageId.toString());
     params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
-    params.set('edit', UVE_MODE.EDIT);
+    params.set('mode', UVE_MODE.EDIT);
 
     return `${baseUrl}?${params.toString()}`;
 };

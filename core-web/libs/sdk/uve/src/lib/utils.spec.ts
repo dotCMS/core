@@ -32,7 +32,7 @@ describe('getUVEStatus', () => {
                 ...window
             },
             location: {
-                href: 'https://test.com/hello?mode=edit'
+                href: 'https://test.com/hello?mode=EDIT_MODE'
             }
         };
 
@@ -56,7 +56,7 @@ describe('getUVEStatus', () => {
                 ...window
             },
             location: {
-                href: 'https://test.com/hello?mode=preview'
+                href: 'https://test.com/hello?mode=PREVIEW_MODE'
             }
         };
 
@@ -80,7 +80,7 @@ describe('getUVEStatus', () => {
                 ...window
             },
             location: {
-                href: 'https://test.com/hello?mode=live'
+                href: 'https://test.com/hello?mode=LIVE'
             }
         };
 
@@ -172,7 +172,7 @@ describe('getUVEStatus', () => {
                 ...window
             },
             location: {
-                href: 'https://test.com/hello?mode=edit&personaId=mobile&variantName=test-variant&experimentId=exp-123&publishDate=2024-03-20&language_id=en-US'
+                href: 'https://test.com/hello?mode=EDIT_MODE&personaId=mobile&variantName=test-variant&experimentId=exp-123&publishDate=2024-03-20&language_id=en-US'
             }
         };
 
@@ -196,7 +196,7 @@ describe('getUVEStatus', () => {
                 ...window
             },
             location: {
-                href: 'https://test.com/hello?mode=preview&personaId=desktop'
+                href: 'https://test.com/hello?mode=PREVIEW_MODE&personaId=desktop'
             }
         };
 
@@ -220,7 +220,7 @@ describe('getUVEStatus', () => {
                 ...window
             },
             location: {
-                href: 'https://test.com/hello?mode=live&variantName=test%20variant&experimentId=exp%2D123&language_id=en%2DUS'
+                href: 'https://test.com/hello?mode=LIVE&variantName=test%20variant&experimentId=exp%2D123&language_id=en%2DUS'
             }
         };
 
@@ -244,7 +244,7 @@ describe('getUVEStatus', () => {
                 ...window
             },
             location: {
-                href: 'https://test.com/hello?mode=live&variantName=test-variant&experimentId=exp-123'
+                href: 'https://test.com/hello?mode=LIVE&variantName=test-variant&experimentId=exp-123'
             }
         };
 
