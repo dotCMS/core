@@ -1,39 +1,48 @@
 import styles from './Column.module.css';
 
-import { isInsideEditor } from '@dotcms/client';
-
-import { combineClasses, getPositionStyleClasses } from '../../utils';
+import { getColumnPositionClasses } from './utils';
 import { Container } from '../Container/Container';
 import { DotPageAssetLayoutColumn } from '../../types';
+import { combineClasses } from '../../utils';
 
 /**
- * Props for Column component to render a column with its containers.
+ * Props for Column component that represents a single column in the grid layout system.
  *
  * @export
  * @interface ColumnProps
+ * @property {DotPageAssetLayoutColumn} column - Column configuration from dotCMS Page API including
+ * width, leftOffset, styleClass, and containers
  */
 export interface ColumnProps {
     readonly column: DotPageAssetLayoutColumn;
 }
 
 /**
- * Renders a Column with its containers using information provided by dotCMS Page API.
+ * Renders a Column component that represents a single column in a 12-column grid system.
+ * The column's position and width are determined by the leftOffset and width properties
+ * from the dotCMS Page API. Uses CSS Grid classes for positioning.
  *
+ * @example
+ * ```tsx
+ * <Column column={{
+ *   leftOffset: 0,
+ *   width: 6,
+ *   styleClass: "custom-class",
+ *   containers: []
+ * }} />
+ * ```
+ * 
  * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
  * @export
- * @param {ColumnProps} { column }
- * @return {JSX.Element} Rendered column with containers
+ * @param {ColumnProps} { column } - Column configuration object
+ * @return {JSX.Element} Rendered column with its containers positioned in the grid
  */
 export function Column({ column }: ColumnProps) {
-    const { startClass, endClass } = getPositionStyleClasses(
-        column.leftOffset,
-        column.width + column.leftOffset
-    );
+    const { startClass, endClass } = getColumnPositionClasses(column);
     const combinedClasses = combineClasses([styles[endClass], styles[startClass]]);
-    const columnProps = { 'data-dot': 'column' };
 
     return (
-        <div {...columnProps} className={combinedClasses}>
+        <div data-dot="column" className={combinedClasses}>
             <div className={column.styleClass}>
                 {column.containers.map((container) => (
                     <Container
