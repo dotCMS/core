@@ -1,4 +1,4 @@
-import { DotCMSColumnContainer, DotCMSContentlet, DotCMSPageAssetContainer } from '../types';
+import { DotCMSContentlet } from '../types';
 
 const endClassMap: Record<number, string> = {
     1: 'col-end-1',
@@ -29,39 +29,6 @@ const startClassMap: Record<number, string> = {
     10: 'col-start-10',
     11: 'col-start-11',
     12: 'col-start-12'
-};
-
-/**
- * Get the container data from the containers object using the current container reference obtained from the layout.
- *
- * @param {DotCMSPageAssetContainer} pageContainers
- * @param {DotCMSColumnContainer} containerRef
- * @returns {Object} Container with all the data it has.
- */
-export const getContainersData = (
-    pageContainers: { [key: string]: DotCMSPageAssetContainer },
-    { identifier, uuid }: DotCMSColumnContainer
-) => {
-    const currentPageContainer = pageContainers[identifier];
-    const { containerStructures, container, contentlets } = currentPageContainer;
-    const { variantId } = container?.parentPermissionable || {};
-
-    const acceptTypes = containerStructures.map((structure) => structure.contentTypeVar).join(',');
-    const contentletsInContainer =
-        contentlets[`uuid-${uuid}`] || contentlets[`uuid-dotParser_${uuid}`] || [];
-
-    if (!contentletsInContainer) {
-        console.warn(
-            `We couldn't find the contentlets for the container with the identifier ${identifier} and the uuid ${uuid} becareful by adding content to this container.\nWe recommend to change the container in the layout and add the content again.`
-        );
-    }
-
-    return {
-        ...container,
-        acceptTypes,
-        contentlets: contentletsInContainer,
-        variantId
-    };
 };
 
 /**
@@ -104,25 +71,5 @@ export function getDotContentletAttributes(
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
         'data-dot-on-number-of-pages': contentlet?.onNumberOfPages
-    };
-}
-
-/**
- * Helper function that returns an object containing the dotCMS data attributes.
- */
-export function getDotContainerAttributes({
-    acceptTypes,
-    maxContentlets,
-    uuid,
-    identifier,
-    path
-}: Record<string, any>): Record<string, any> {
-    return {
-        'data-testid': 'dot-container',
-        'data-dot-object': 'container',
-        'data-dot-accept-types': acceptTypes,
-        'data-dot-identifier': path ?? identifier,
-        'data-max-contentlets': maxContentlets,
-        'data-dot-uuid': uuid
     };
 }

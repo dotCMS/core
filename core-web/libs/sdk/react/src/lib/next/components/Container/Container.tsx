@@ -2,7 +2,7 @@ import { useContext, useMemo } from 'react';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
 import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';
-import { getContainersData, getDotContainerAttributes } from '../../utils/utils';
+import { getContainersData, getContentletsInContainer, getDotContainerAttributes } from './utils';
 import { Contentlet } from '../Contentlet/Contentlet';
 
 type ContainerProps = {
@@ -20,42 +20,40 @@ const EMPTY_CONTAINER_STYLE = {
 };
 
 /**
- * Renders a Container with its content using information provided by dotCMS Page API.
+ * Container component that renders DotCMS containers and their contentlets.
+ * This component is responsible for:
+ * - Rendering container content based on DotCMS Page API data
+ * - Handling empty container states
+ * - Providing proper data attributes for DotCMS functionality
+ * - Managing container contentlets rendering
  *
- * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
- * @export
- * @param {ContainerProps} { containerRef }
- * @return {JSX.Element} Rendered container with content
+ * @component
+ * @param {ContainerProps} props - Component properties
+ * @returns {JSX.Element} Rendered container with its contentlets or empty state message
+ *
+ * @example
+ * ```tsx
+ * <Container container={containerData} />
+ * ```
  */
 export function Container({ container }: ContainerProps) {
-    const { identifier, uuid } = container;
-    const { dotCMSPageAsset } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
-
-    const { acceptTypes, contentlets, maxContentlets, variantId, path } = getContainersData(
-        dotCMSPageAsset.containers,
-        container
-    );
-
+    const { dotCMSPageAsset, devMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
     const containerData = useMemo(
-        () =>
-            JSON.stringify({
-                uuid,
-                variantId,
-                acceptTypes,
-                maxContentlets,
-                identifier: path ?? identifier
-            }),
-        [uuid, variantId, acceptTypes, maxContentlets, path, identifier]
+        () => getContainersData(dotCMSPageAsset, container),
+        [dotCMSPageAsset, container]
     );
+
+    const contentlets = useMemo(
+        () => getContentletsInContainer(dotCMSPageAsset, container),
+        [dotCMSPageAsset, container]
+    );
+
+    if (!containerData) {
+        return <ContainerNoFound identifier={container.identifier} devMode={!!devMode} />;
+    }
 
     const isEmpty = contentlets.length === 0;
-    const dotAttributes = getDotContainerAttributes({
-        uuid,
-        path,
-        identifier,
-        acceptTypes,
-        maxContentlets
-    });
+    const dotAttributes = useMemo(() => getDotContainerAttributes(containerData), [containerData]);
 
     return (
         <div {...dotAttributes} style={isEmpty ? EMPTY_CONTAINER_STYLE : {}}>
@@ -65,9 +63,31 @@ export function Container({ container }: ContainerProps) {
                       <Contentlet
                           key={contentlet.identifier}
                           contentlet={contentlet}
-                          container={containerData}
+                          container={JSON.stringify(containerData)}
                       />
                   ))}
         </div>
     );
 }
+
+/**
+ * Component to display when a container is not found in the system.
+ * Only renders in development mode for debugging purposes.
+ *
+ * @component
+ * @param {Object} props - Component properties
+ * @param {string} props.identifier - Container identifier
+ * @param {boolean} props.devMode - Whether the application is in development mode
+ * @returns {JSX.Element | null} Message about missing container or null in production
+ */
+const ContainerNoFound = ({ identifier, devMode }: { identifier: string; devMode: boolean }) => {
+    if (!devMode) {
+        return null;
+    }
+
+    return (
+        <div style={EMPTY_CONTAINER_STYLE}>
+            This container with identifier {identifier} was not found.
+        </div>
+    );
+};
