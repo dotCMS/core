@@ -1,28 +1,32 @@
 import { isInsideEditor } from '@dotcms/client';
-import { Row } from './components/Row/Row';
-import { DotCMSRenderContext } from './contexts/DotCMSRenderContext';
-import { DotCMSPageAsset } from './types';
 
-interface DotCMSBodyRenderProps {
+import { Row } from '../Row/Row';
+import { DotCMSRenderContext } from '../../contexts/DotCMSRenderContext';
+import { DotCMSPageAsset } from '../../types';
+
+interface DotCMSBodyRendererProps {
     dotCMSPageAsset: DotCMSPageAsset;
     customComponents?: Record<string, React.ComponentType<any>>;
     devMode?: boolean;
 }
 
-export const DotCMSBodyRender = ({
+export const DotCMSBodyRenderer = ({
     dotCMSPageAsset,
     customComponents,
     devMode
-}: DotCMSBodyRenderProps) => {
+}: DotCMSBodyRendererProps) => {
     const dotCMSPageBody = dotCMSPageAsset?.layout?.body;
+    const isDevMode = !!devMode || isInsideEditor();
 
     if (!dotCMSPageBody) {
         console.warn('The page body is not defined');
 
+        if (isDevMode) {
+            return <div>The page body is not defined, please provide a valid dotCMSPageAsset</div>;
+        }
+
         return null;
     }
-
-    const isDevMode = !!devMode || isInsideEditor();
 
     return (
         <DotCMSRenderContext.Provider value={{ dotCMSPageAsset, customComponents, isDevMode }}>
