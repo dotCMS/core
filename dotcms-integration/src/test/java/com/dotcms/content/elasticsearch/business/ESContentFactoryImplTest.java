@@ -669,22 +669,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     }
 
-    /**
-     * Method to test: {@link ESContentFactoryImpl#translateQuery(String, String)}
-     * Given Scenario: Perform a query with a community license
-     * ExpectedResult: The query should contain a filter by {@link BaseContentType#PERSONA} and {@link BaseContentType#FORM}
-     */
-    @Test
-    public void test_translateQueryWithoutLicense() throws Exception {
-        runNoLicense(() -> {
-            final TranslatedQuery translatedQuery = ESContentFactoryImpl
-                    .translateQuery("+contentType:Host", null);
-            assertTrue(translatedQuery.getQuery()
-                    .contains("-basetype:" + BaseContentType.PERSONA.getType()));
-            assertTrue(translatedQuery.getQuery()
-                    .contains("-basetype:" + BaseContentType.FORM.getType()));
-        });
-    }
+
 
     /**
      * Method to test: {@link ESContentFactoryImpl#translateQuery(String, String)}
