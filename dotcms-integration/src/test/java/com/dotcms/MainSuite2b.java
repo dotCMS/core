@@ -9,6 +9,7 @@ import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
+import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionletTest;
 import com.dotcms.analytics.track.collectors.AsyncVanitiesCollectorTest;
 import com.dotcms.analytics.track.collectors.BasicProfileCollectorTest;
@@ -33,6 +34,7 @@ import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
 import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.*;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
@@ -41,6 +43,8 @@ import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
+import com.dotcms.ema.EMAWebInterceptorTest;
+import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.bundler.URLMapBundlerTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
@@ -69,11 +73,13 @@ import com.dotcms.mail.MailAPIImplTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
+import com.dotcms.publisher.util.PushedAssetUtilTest;
 import com.dotcms.publishing.BundlerUtilTest;
 import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
 import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
 import com.dotcms.publishing.manifest.ManifestUtilTest;
+import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
 import com.dotcms.rendering.velocity.viewtools.FileToolTest;
@@ -82,6 +88,7 @@ import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
+import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
@@ -95,6 +102,8 @@ import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
+import com.dotcms.saml.SamlConfigurationServiceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.security.apps.AppsCacheImplTest;
 import com.dotcms.security.multipart.BoundedBufferedReaderTest;
@@ -104,6 +113,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.timemachine.business.TimeMachineAPITest;
+import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;
@@ -132,6 +142,7 @@ import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
+import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
@@ -352,8 +363,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task250113CreatePostgresJobQueueTablesTest.class,
         UniqueFieldDataBaseUtilTest.class,
         DBUniqueFieldValidationStrategyTest.class,
-
-
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241015ReplaceLanguagesWithLocalesPortletTest.class,
@@ -381,17 +390,18 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
 
-        com.dotmarketing.common.reindex.ReindexThreadTest.class,
-        com.dotmarketing.common.reindex.ReindexAPITest.class,
-        com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
-        com.dotmarketing.common.db.ParamsSetterTest.class,
-        com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class,
-        com.dotmarketing.factories.PublishFactoryTest.class,
-        com.dotmarketing.factories.WebAssetFactoryTest.class,
-        com.dotmarketing.factories.MultiTreeAPITest.class,
-        com.dotmarketing.db.DbConnectionFactoryTest.class,
-        com.dotmarketing.db.DbConnectionFactoryUtilTest.class,
-        com.dotmarketing.db.HibernateUtilTest.class,
+        DotParseTest.class,
+        TestWorkflowAction.class,
+        SamlConfigurationServiceTest.class,
+        ClusterFactoryTest.class,
+        ESMappingUtilHelperTest.class,
+        BundleResourceTest.class,
+        IdentityProviderConfigurationFactoryTest.class,
+        EMAWebInterceptorTest.class,
+        GoogleTranslationServiceIntegrationTest.class,
+        Task240131UpdateLanguageVariableContentTypeTest.class,
+        PushedAssetUtilTest.class,
+        OpenAIAutoTagActionletTest.class
 })
 
 public class MainSuite2b {
