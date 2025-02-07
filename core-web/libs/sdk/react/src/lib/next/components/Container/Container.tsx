@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
 import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';
@@ -81,6 +81,8 @@ export function Container({ container }: ContainerProps) {
  * @returns {JSX.Element | null} Message about missing container or null in production
  */
 const ContainerNoFound = ({ identifier, devMode }: { identifier: string; devMode: boolean }) => {
+    useEffect(() => console.error(`Container with identifier ${identifier} not found`));
+
     if (!devMode) {
         return null;
     }

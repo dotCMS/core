@@ -34,7 +34,6 @@ export const getContainersData = (
     const dotContainer = dotCMSPageAsset.containers[identifier];
 
     if (!dotContainer) {
-        console.warn(`Container with identifier ${identifier} not found`);
         return null;
     }
 

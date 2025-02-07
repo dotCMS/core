@@ -3,7 +3,7 @@ import { isInsideEditor } from '@dotcms/client';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
 import { DotCMSContentlet } from '../../types';
-import { getDotContentletAttributes } from '../../utils/utils';
+import { getDotContentletAttributes } from '../../utils';
 import { useCheckVisibleContent } from '../../hooks/useCheckHaveContent';
 
 // Define props interfaces for better type safety

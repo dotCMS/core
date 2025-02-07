@@ -2,7 +2,7 @@ import styles from './Column.module.css';
 
 import { isInsideEditor } from '@dotcms/client';
 
-import { combineClasses, getPositionStyleClasses } from '../../utils/utils';
+import { combineClasses, getPositionStyleClasses } from '../../utils';
 import { Container } from '../Container/Container';
 import { DotPageAssetLayoutColumn } from '../../types';
 
