@@ -3,7 +3,7 @@ import { isInsideEditor } from '@dotcms/client';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
 import { DotCMSContentlet } from '../../types';
-import { getDotAttributes } from '../../utils/utils';
+import { getDotContentletAttributes } from '../../utils/utils';
 import { useCheckVisibleContent } from '../../hooks/useCheckHaveContent';
 
 // Define props interfaces for better type safety
@@ -14,7 +14,7 @@ interface ContentletProps {
 
 interface CustomComponentProps {
     contentlet: DotCMSContentlet;
-    debugMode: boolean;
+    isDevMode: boolean;
 }
 
 export function Contentlet({ contentlet, container }: ContentletProps) {
@@ -23,36 +23,33 @@ export function Contentlet({ contentlet, container }: ContentletProps) {
     const ref = useRef<HTMLDivElement | null>(null);
     const haveContent = useCheckVisibleContent(ref);
 
-    const debugMode = devMode || isInsideEditor();
+    const isDevMode = devMode || isInsideEditor();
 
     const style = useMemo(
-        () => (debugMode ? { minHeight: haveContent ? undefined : '4rem' } : {}),
-        [debugMode, haveContent]
+        () => (isDevMode ? { minHeight: haveContent ? undefined : '4rem' } : {}),
+        [isDevMode, haveContent]
     );
     const dotAttributes = useMemo(
-        () => (debugMode ? getDotAttributes(contentlet, container) : {}),
-        [debugMode, contentlet, container]
+        () => (isDevMode ? getDotContentletAttributes(contentlet, container) : {}),
+        [isDevMode, contentlet, container]
     );
 
     return (
         <div {...dotAttributes} data-dot-object="contentlet" ref={ref} style={style}>
-            <CustomComponent
-                contentlet={contentlet}
-                debugMode={debugMode}
-            />
+            <CustomComponent contentlet={contentlet} isDevMode={isDevMode} />
         </div>
     );
 }
 
-function CustomComponent({ contentlet, debugMode }: CustomComponentProps) {
+function CustomComponent({ contentlet, isDevMode }: CustomComponentProps) {
     const { customComponents } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
     const UserComponent = customComponents?.[contentlet?.contentType];
-    
+
     if (UserComponent) {
         return <UserComponent {...contentlet} />;
     }
 
-    if(debugMode) {
+    if (!isDevMode) {
         return <EmptyContent />;
     }
 
@@ -68,7 +65,11 @@ function CustomComponent({ contentlet, debugMode }: CustomComponentProps) {
  * @return {*}
  */
 function NoComponent({ contentType }: { readonly contentType: string }) {
-    return <div data-testid="no-component">No Component for {contentType}</div>;
+    return (
+        <div data-testid="no-component">
+            No Component for <strong>{contentType}</strong>.
+        </div>
+    );
 }
 
 /**

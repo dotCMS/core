@@ -92,7 +92,10 @@ export const getPositionStyleClasses = (start: number, end: number) => {
 /**
  * Helper function that returns an object containing the dotCMS data attributes.
  */
-export function getDotAttributes(contentlet: DotCMSContentlet, container: string): Record<string, any> {
+export function getDotContentletAttributes(
+    contentlet: DotCMSContentlet,
+    container: string
+): Record<string, any> {
     return {
         'data-dot-identifier': contentlet?.identifier,
         'data-dot-basetype': contentlet?.baseType,
@@ -101,5 +104,25 @@ export function getDotAttributes(contentlet: DotCMSContentlet, container: string
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
         'data-dot-on-number-of-pages': contentlet?.onNumberOfPages
+    };
+}
+
+/**
+ * Helper function that returns an object containing the dotCMS data attributes.
+ */
+export function getDotContainerAttributes({
+    acceptTypes,
+    maxContentlets,
+    uuid,
+    identifier,
+    path
+}: Record<string, any>): Record<string, any> {
+    return {
+        'data-testid': 'dot-container',
+        'data-dot-object': 'container',
+        'data-dot-accept-types': acceptTypes,
+        'data-dot-identifier': path ?? identifier,
+        'data-max-contentlets': maxContentlets,
+        'data-dot-uuid': uuid
     };
 }
