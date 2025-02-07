@@ -1,3 +1,4 @@
+import { isInsideEditor } from '@dotcms/client';
 import { Row } from './components/Row/Row';
 import { DotCMSRenderContext } from './contexts/DotCMSRenderContext';
 import { DotCMSPageAsset } from './types';
@@ -21,8 +22,10 @@ export const DotCMSBodyRender = ({
         return null;
     }
 
+    const isDevMode = !!devMode || isInsideEditor();
+
     return (
-        <DotCMSRenderContext.Provider value={{ dotCMSPageAsset, customComponents, devMode }}>
+        <DotCMSRenderContext.Provider value={{ dotCMSPageAsset, customComponents, isDevMode }}>
             {dotCMSPageBody.rows.map((row, index) => (
                 <Row key={index} row={row} />
             ))}

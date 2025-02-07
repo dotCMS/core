@@ -47,12 +47,10 @@ interface CustomComponentProps {
  * ```
  */
 export function Contentlet({ contentlet, container }: ContentletProps) {
-    const { devMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
+    const { isDevMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
 
     const ref = useRef<HTMLDivElement | null>(null);
     const haveContent = useCheckVisibleContent(ref);
-
-    const isDevMode = devMode || isInsideEditor();
 
     const style = useMemo(
         () => (isDevMode ? { minHeight: haveContent ? undefined : '4rem' } : {}),
@@ -95,7 +93,7 @@ function CustomComponent({ contentlet, isDevMode }: CustomComponentProps) {
         <FallbackComponent
             UserNoComponent={UserNoComponent}
             contentlet={contentlet}
-            devMode={isDevMode}
+            isDevMode={isDevMode}
         />
     );
 }
