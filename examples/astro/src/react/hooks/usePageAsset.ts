@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  CLIENT_ACTIONS,
-  isInsideEditor,
-  postMessageToEditor,
-} from "@dotcms/client";
+import { CLIENT_ACTIONS, postMessageToEditor } from "@dotcms/client";
+import { getUVEState } from "@dotcms/uve";
 import type { DotCMSPageAsset } from "@dotcms/types";
 import { client } from "@utils/client";
 
@@ -11,7 +8,7 @@ export const usePageAsset = (currentPageAsset: DotCMSPageAsset | undefined) => {
   const [pageAsset, setPageAsset] = useState<DotCMSPageAsset | undefined>();
 
   useEffect(() => {
-    if (!isInsideEditor()) {
+    if (!getUVEState()) {
       return;
     }
 

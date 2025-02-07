@@ -47,10 +47,10 @@ const fetchPageData = async (params: any) => {
     return { pageAsset };
   } catch (error: any) {
     if (error?.status === 404) {
-      return { pageAsset: null, error: null };
+      return { pageAsset: undefined, error: null };
     }
 
-    return { pageAsset: null, error };
+    return { pageAsset: undefined, error };
   }
 };
 
