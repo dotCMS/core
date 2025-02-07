@@ -349,14 +349,15 @@ import org.junit.runners.Suite.SuiteClasses;
         SimpleJUnit4InjectionIT.class,
         LegacyJSONObjectRenderTest.class,
         Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
-
-        Task241015ReplaceLanguagesWithLocalesPortletTest.class,
-        Task241016AddCustomLanguageVariablesPortletToLayoutTest.class,
-
         Task250113CreatePostgresJobQueueTablesTest.class,
         UniqueFieldDataBaseUtilTest.class,
         DBUniqueFieldValidationStrategyTest.class,
 
+
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
+        Task241015ReplaceLanguagesWithLocalesPortletTest.class,
+        Task241016AddCustomLanguageVariablesPortletToLayoutTest.class,
         WebEventsCollectorServiceImplTest.class,
         BasicProfileCollectorTest.class,
         PagesCollectorTest.class,
