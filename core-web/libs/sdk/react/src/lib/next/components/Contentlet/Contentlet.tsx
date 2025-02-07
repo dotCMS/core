@@ -3,20 +3,49 @@ import { isInsideEditor } from '@dotcms/client';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
 import { DotCMSContentlet } from '../../types';
-import { getDotContentletAttributes } from '../../utils';
+import { getDotContentletAttributes } from './utils';
 import { useCheckVisibleContent } from '../../hooks/useCheckHaveContent';
+import { FallbackComponent, NoComponentType } from './FallbackComponent';
 
-// Define props interfaces for better type safety
+/**
+ * Props for the Contentlet component
+ * @interface ContentletProps
+ * @property {DotCMSContentlet} contentlet - The contentlet data to be rendered
+ * @property {string} container - The container identifier where the contentlet is placed
+ */
 interface ContentletProps {
     contentlet: DotCMSContentlet;
     container: string;
 }
 
+/**
+ * Props for the CustomComponent
+ * @interface CustomComponentProps
+ * @property {DotCMSContentlet} contentlet - The contentlet data to be rendered
+ * @property {boolean} isDevMode - Flag indicating if the component is in development mode
+ */
 interface CustomComponentProps {
     contentlet: DotCMSContentlet;
     isDevMode: boolean;
 }
 
+/**
+ * Contentlet component that renders DotCMS content with development mode support
+ *
+ * @component
+ * @param {ContentletProps} props - Component properties
+ * @param {DotCMSContentlet} props.contentlet - The contentlet to be rendered
+ * @param {string} props.container - The container identifier
+ * @returns {JSX.Element} Rendered contentlet with appropriate wrapper and attributes
+ *
+ * @example
+ * ```tsx
+ * <Contentlet
+ *   contentlet={myContentlet}
+ *   container="container-1"
+ * />
+ * ```
+ */
 export function Contentlet({ contentlet, container }: ContentletProps) {
     const { devMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
 
@@ -41,6 +70,17 @@ export function Contentlet({ contentlet, container }: ContentletProps) {
     );
 }
 
+/**
+ * Renders a custom component based on the contentlet type or falls back to a default component
+ *
+ * @component
+ * @param {CustomComponentProps} props - Component properties
+ * @param {DotCMSContentlet} props.contentlet - The contentlet data to render
+ * @param {boolean} props.isDevMode - Whether the component is in development mode
+ * @returns {JSX.Element} The rendered custom component or fallback component
+ *
+ * @internal
+ */
 function CustomComponent({ contentlet, isDevMode }: CustomComponentProps) {
     const { customComponents } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
     const UserComponent = customComponents?.[contentlet?.contentType];
@@ -49,34 +89,13 @@ function CustomComponent({ contentlet, isDevMode }: CustomComponentProps) {
         return <UserComponent {...contentlet} />;
     }
 
-    if (!isDevMode) {
-        return <EmptyContent />;
-    }
+    const UserNoComponent = customComponents?.['CustomNoComponent'] as NoComponentType;
 
-    const NoComponentFound = customComponents?.['CustomNoComponent'] || NoComponent;
-
-    return <NoComponentFound {...contentlet} />;
-}
-
-/**
- * Component to render when there is no component for the content type.
- *
- * @param {{ readonly contentType: string }} { contentType }
- * @return {*}
- */
-function NoComponent({ contentType }: { readonly contentType: string }) {
     return (
-        <div data-testid="no-component">
-            No Component for <strong>{contentType}</strong>.
-        </div>
+        <FallbackComponent
+            UserNoComponent={UserNoComponent}
+            contentlet={contentlet}
+            devMode={isDevMode}
+        />
     );
-}
-
-/**
- * Component to render when there is no content in the container.
- *
- * @return {*}
- */
-function EmptyContent() {
-    return null;
 }
