@@ -139,7 +139,7 @@ describe('getUVEStatus', () => {
         getUVEState();
 
         expect(consoleSpy).toHaveBeenCalledWith(
-            "Couldn't identify the current mode of UVE, please contact customer support. Mode: unknown"
+            "Couldn't identify the current mode of UVE, please contact customer support. Mode: UNKNOWN"
         );
     });
 
