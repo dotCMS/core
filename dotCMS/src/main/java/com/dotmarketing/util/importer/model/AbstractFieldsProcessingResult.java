@@ -7,29 +7,30 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import org.immutables.value.Value;
 
 /**
- * Represents the result of processing a field from a single line during content import.
- * This immutable data structure contains field value, categories, site/folder information,
- * URL data, and validation results from processing a CSV line's field.
+ * Represents the result of processing fields from a single line during content import.
+ * This immutable data structure contains field values, categories, site/folder information,
+ * URL data, and validation results from processing a CSV line's fields.
  *
  * <p>The interface uses Immutables.org to generate an immutable implementation with a builder pattern.
  * The generated class will be named {@code FieldProcessingResult}.</p>
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonDeserialize(as = FieldProcessingResult.class)
+@JsonDeserialize(as = FieldsProcessingResult.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractFieldProcessingResult extends Serializable {
+public interface AbstractFieldsProcessingResult extends Serializable {
 
     /**
-     * @return The value of the processed field
+     * @return Map of column indices to their processed field values
      */
-    Optional<Object> value();
+    Map<Integer, Object> values();
 
     /**
      * @return Set of categories extracted from category fields
@@ -49,9 +50,16 @@ public interface AbstractFieldProcessingResult extends Serializable {
     Optional<Pair<Integer, String>> urlValue();
 
     /**
-     * @return Unique field validation result from processing a field marked as unique
+     * @return Optional asset name extracted from URL processing,
+     *         present if a URL field was processed
      */
-    Optional<UniqueFieldBean> uniqueField();
+    Optional<String> urlValueAssetName();
+
+    /**
+     * @return List of unique field validation results from processing fields
+     *         marked as unique in the content type
+     */
+    List<UniqueFieldBean> uniqueFields();
 
     /**
      * Indicates whether this line should be ignored during import.

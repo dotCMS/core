@@ -57,6 +57,7 @@ import com.dotmarketing.util.importer.model.AbstractValidationMessage.Validation
 import com.dotmarketing.util.importer.model.ContentSummary;
 import com.dotmarketing.util.importer.model.ContentletSearchResult;
 import com.dotmarketing.util.importer.model.FieldProcessingResult;
+import com.dotmarketing.util.importer.model.FieldsProcessingResult;
 import com.dotmarketing.util.importer.model.FileInfo;
 import com.dotmarketing.util.importer.model.HeaderInfo;
 import com.dotmarketing.util.importer.model.HeaderValidationResult;
@@ -1579,9 +1580,6 @@ public class ImportUtil {
     }
 
     /**
-     * Process all fields in the line and return consolidated results
-     */
-    /**
      * Processes and validates all fields in a CSV line, handling field-specific validation and data
      * transformations. This method coordinates the processing of different field types including:
      * <ul>
@@ -1603,12 +1601,12 @@ public class ImportUtil {
      * @param currentHostId   Current host/site identifier
      * @param language        Language ID for the content
      * @param lineNumber      Current line number in CSV file for error reporting
-     * @return FieldProcessingResult containing processed values, validation messages, and
+     * @return FieldsProcessingResult containing processed values, validation messages, and
      * and additional field data
      * @throws DotDataException     If a data access error occurs during processing
      * @throws DotSecurityException If a security violation occurs during processing
      */
-    private static FieldProcessingResult processFields(
+    private static FieldsProcessingResult processFields(
             final String[] line,
             final Map<Integer, Field> headers,
             final Structure contentType,
@@ -1618,7 +1616,7 @@ public class ImportUtil {
             final int lineNumber
     ) throws DotDataException, DotSecurityException {
 
-        final var results = new FieldProcessingResultBuilder(lineNumber);
+        final var results = new FieldsProcessingResultBuilder(lineNumber);
 
         for (Integer column : headers.keySet()) {
 
@@ -1629,10 +1627,6 @@ public class ImportUtil {
                 final var fieldResult = processField(field, value, user, currentHostId,
                         language, lineNumber, column);
 
-                if (fieldResult.ignoreLine()) {
-                    return fieldResult;
-                }
-
                 if (fieldResult.siteAndFolder().isPresent()) {
                     results.setSiteAndFolder(fieldResult.siteAndFolder().get());
                 }
@@ -1642,9 +1636,20 @@ public class ImportUtil {
                 }
 
                 fieldResult.categories().forEach(results::addCategory);
-                fieldResult.values().forEach(results::addValue);
-                fieldResult.uniqueFields().forEach(results::addUniqueField);
+
+                if (fieldResult.value().isPresent()) {
+                    results.addValue(column, fieldResult.value().get());
+                }
+
+                if (fieldResult.uniqueField().isPresent()) {
+                    results.addUniqueField(fieldResult.uniqueField().get());
+                }
+
                 fieldResult.messages().forEach(results::addValidationMessage);
+
+                if (fieldResult.ignoreLine()) {
+                    return results.build();
+                }
 
             } catch (Exception e) {
                 results.addError(formatFieldError(field, value, e));
@@ -1751,12 +1756,10 @@ public class ImportUtil {
             processedValue = processDefaultField(value);
         }
 
-        Map<Integer, Object> values = new HashMap<>();
-        values.put(column, processedValue);
-        results.setValues(values);
+        results.setValue(processedValue);
 
         if (field.isUnique()) {
-            handleUniqueField(field, processedValue, language, lineNumber, results);
+            results.setUniqueField(handleUniqueField(field, processedValue, language, lineNumber));
         }
 
         if (isUrlField(field, processedValue)) {
@@ -2084,21 +2087,18 @@ public class ImportUtil {
     /**
      * Handles a unique field by adding it to the result builder.
      *
-     * @param field         the field definition containing type and validation rules
-     * @param value         the value to process
-     * @param language      the language ID for the content
-     * @param lineNumber    the line number in the CSV file
-     * @param resultBuilder the builder to accumulate validation messages and results
+     * @param field      the field definition containing type and validation rules
+     * @param value      the value to process
+     * @param language   the language ID for the content
+     * @param lineNumber the line number in the CSV file
      */
-    private static void handleUniqueField(final Field field, final Object value,
-            final long language,
-            final int lineNumber, final FieldProcessingResultBuilder resultBuilder) {
-        final var bean = UniqueFieldBean.builder().
+    private static UniqueFieldBean handleUniqueField(final Field field, final Object value,
+            final long language, final int lineNumber) {
+        return UniqueFieldBean.builder().
                 field(field).
                 value(value).
                 lineNumber(lineNumber).
                 languageId(language).build();
-        resultBuilder.addUniqueField(bean);
     }
 
     /**
@@ -4652,28 +4652,107 @@ public class ImportUtil {
      */
     private static class FieldProcessingResultBuilder {
 
-        private final int lineNumber;
         private final FieldProcessingResult.Builder builder;
+        private final int lineNumber;
         private final List<ValidationMessage> messages;
         private final List<Category> categories;
-        List<UniqueFieldBean> uniqueFields = new ArrayList<>();
-        Map<Integer, Object> values = new HashMap<>();
+        UniqueFieldBean uniqueField;
+        Object value;
+        Pair<Host, Folder> siteAndFolder;
+        Pair<Integer, String> urlValue;
+
+        public FieldProcessingResultBuilder(int lineNumber) {
+            this.builder = FieldProcessingResult.builder();
+            this.messages = new ArrayList<>();
+            this.categories = new ArrayList<>();
+            this.builder.lineNumber(lineNumber);
+            this.lineNumber = lineNumber;
+        }
+
+        void setValue(Object value) {
+            this.value = value;
+        }
+
+        void setSiteAndFolder(Pair<Host, Folder> siteAndFolder) {
+            this.siteAndFolder = siteAndFolder;
+        }
+
+        public void addValidationMessage(ValidationMessage message) {
+            messages.add(message);
+        }
+
+        void setUniqueField(UniqueFieldBean uniqueField) {
+            this.uniqueField = uniqueField;
+        }
+
+        void setUrlValue(Pair<Integer, String> urlValue) {
+            this.urlValue = urlValue;
+        }
+
+        public void addWarning(String message) {
+            addValidationMessage(ValidationMessage.builder()
+                    .type(ValidationMessageType.WARNING)
+                    .message(message)
+                    .lineNumber(lineNumber)
+                    .build());
+        }
+
+        public void addError(String message) {
+            addValidationMessage(ValidationMessage.builder()
+                    .type(ValidationMessageType.ERROR)
+                    .message(message)
+                    .lineNumber(lineNumber)
+                    .build());
+        }
+
+        public void addCategory(Category category) {
+            categories.add(category);
+        }
+
+        public void addCategories(Collection<Category> categories) {
+            this.categories.addAll(categories);
+        }
+
+        public void setIgnoreLine(boolean ignoreLine) {
+            builder.ignoreLine(ignoreLine);
+        }
+
+        public FieldProcessingResult build() {
+            return builder
+                    .messages(messages)
+                    .categories(categories)
+                    .uniqueField(Optional.ofNullable(uniqueField))
+                    .value(Optional.ofNullable(value))
+                    .siteAndFolder(Optional.ofNullable(siteAndFolder))
+                    .urlValue(Optional.ofNullable(urlValue))
+                    .build();
+        }
+    }
+
+    /**
+     * Builder class to help construct FieldsProcessingResults during CSV field processing. Provides
+     * methods to accumulate validation messages and set various result properties.
+     */
+    private static class FieldsProcessingResultBuilder {
+
+        private final int lineNumber;
+        private final FieldsProcessingResult.Builder builder;
+        private final List<ValidationMessage> messages;
+        private final List<Category> categories;
+        List<UniqueFieldBean> uniqueFields;
+        Map<Integer, Object> values;
         Pair<Host, Folder> siteAndFolder;
         Pair<Integer, String> urlValue;
         String urlValueAssetName;
 
-        public FieldProcessingResultBuilder(int lineNumber) {
-            this.builder = FieldProcessingResult.builder();
+        public FieldsProcessingResultBuilder(int lineNumber) {
+            this.builder = FieldsProcessingResult.builder();
             this.messages = new ArrayList<>();
             this.categories = new ArrayList<>();
             this.uniqueFields = new ArrayList<>();
             this.values = new HashMap<>();
             this.builder.lineNumber(lineNumber);
             this.lineNumber = lineNumber;
-        }
-
-        void setValues(Map<Integer, Object> values) {
-            this.values = values;
         }
 
         void addValue(Integer index, Object value) {
@@ -4720,15 +4799,11 @@ public class ImportUtil {
             categories.add(category);
         }
 
-        public void addCategories(Collection<Category> categories) {
-            this.categories.addAll(categories);
-        }
-
         public void setIgnoreLine(boolean ignoreLine) {
             builder.ignoreLine(ignoreLine);
         }
 
-        public FieldProcessingResult build() {
+        public FieldsProcessingResult build() {
             return builder
                     .messages(messages)
                     .categories(categories)
