@@ -195,7 +195,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         ResponseEntityJobStatusView responseEntityJobStatusView = (ResponseEntityJobStatusView) importContentResponseEntity;
 
         // Cancel the job
-        importResource.cancelJob(request, response, responseEntityJobStatusView.getEntity().getJobId());
+        importResource.cancelJob(request, response, responseEntityJobStatusView.getEntity().jobId());
 
         // Call the canceledJobs endpoint
         ResponseEntityView<JobPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
@@ -594,15 +594,15 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         // Validate response object and job ID existence
         assertNotNull(responseEntityJobStatusView, "ResponseEntityJobStatusView should not be null");
         assertNotNull(responseEntityJobStatusView.getEntity(), "JobStatusResponse should not be null");
-        assertNotNull(responseEntityJobStatusView.getEntity().getJobId(), "Job ID should not be null");
-        assertNotNull(responseEntityJobStatusView.getEntity().getStatusUrl(), "Job Status URL should not be null");
-        assertFalse(responseEntityJobStatusView.getEntity().getJobId().isEmpty(), "Job ID should be a non-empty string");
-        assertFalse(responseEntityJobStatusView.getEntity().getStatusUrl().isEmpty(), "Job Status URL should be a non-empty string");
+        assertNotNull(responseEntityJobStatusView.getEntity().jobId(), "Job ID should not be null");
+        assertNotNull(responseEntityJobStatusView.getEntity().statusUrl(), "Job Status URL should not be null");
+        assertFalse(responseEntityJobStatusView.getEntity().jobId().isEmpty(), "Job ID should be a non-empty string");
+        assertFalse(responseEntityJobStatusView.getEntity().statusUrl().isEmpty(), "Job Status URL should be a non-empty string");
 
         // Retrieve and validate job exists in the queue
         Job job = contentImportHelper.getJob(responseEntityJobStatusView
 
-                .getEntity().getJobId());
+                .getEntity().jobId());
         assertNotNull(job, "Job should exist in queue");
 
         // Validate core import parameters

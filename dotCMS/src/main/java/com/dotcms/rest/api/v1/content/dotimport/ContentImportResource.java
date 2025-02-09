@@ -6,7 +6,6 @@ import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.repackage.javax.validation.ValidationException;
 import com.dotcms.rest.*;
 import com.dotcms.rest.api.v1.job.JobResponseUtil;
-import com.dotcms.rest.api.v1.job.JobStatusResponse;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;

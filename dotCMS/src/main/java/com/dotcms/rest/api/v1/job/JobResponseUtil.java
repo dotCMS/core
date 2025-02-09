@@ -13,7 +13,10 @@ public class JobResponseUtil {
      */
     public static JobStatusResponse buildJobStatusResponse(String jobId, HttpServletRequest request) {
         String statusUrl = buildBaseUrlFromRequest(request) + "/api/v1/jobs/" + jobId + "/status";
-        return new JobStatusResponse(jobId, statusUrl);
+        return JobStatusResponse.builder()
+                .jobId(jobId)
+                .statusUrl(statusUrl)
+                .build();
     }
 
     /**
