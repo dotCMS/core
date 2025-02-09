@@ -92,8 +92,9 @@ public class ImportResultConverter {
      *
      * @param validationResult The structured ImportHeaderValidationResult to convert
      * @param legacyResults    The legacy format results map to update
+     * @return The number of errors found during header validation
      */
-    public static void headerValidationResultsToLegacyMap(
+    public static int headerValidationResultsToLegacyMap(
             final HeaderValidationResult validationResult,
             final Map<String, List<String>> legacyResults) {
 
@@ -126,6 +127,10 @@ public class ImportResultConverter {
                 );
             }
         }
+
+        return (int) validationResult.messages().stream()
+                .filter(m -> m.type() == ValidationMessageType.ERROR)
+                .count();
     }
 
     /**
@@ -136,8 +141,9 @@ public class ImportResultConverter {
      * @param importResults The structured LineImportResult to convert
      * @param legacyResults The legacy format results map to update
      * @param counters      The import counters to update
+     * @return The number of errors found during line import
      */
-    public static void lineImportResultToLegacyMap(
+    public static int lineImportResultToLegacyMap(
             final LineImportResult importResults,
             final Map<String, List<String>> legacyResults,
             final Counters counters) {
@@ -172,6 +178,10 @@ public class ImportResultConverter {
         List<String> l = legacyResults.get("lastInode");
         l.add(importResults.lastInode());
         legacyResults.put("lastInode", l);
+
+        return (int) importResults.messages().stream()
+                .filter(m -> m.type() == ValidationMessageType.ERROR)
+                .count();
     }
 
     /**

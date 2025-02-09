@@ -52,6 +52,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
+import com.dotmarketing.util.importer.exception.ImportLineException;
 import com.dotmarketing.util.importer.model.AbstractSpecialHeaderInfo.SpecialHeaderType;
 import com.dotmarketing.util.importer.model.AbstractValidationMessage.ValidationMessageType;
 import com.dotmarketing.util.importer.model.ContentSummary;
@@ -335,8 +336,9 @@ public class ImportUtil {
 
                 // ---
                 // Convert header validation results to legacy format
-                ImportResultConverter.headerValidationResultsToLegacyMap(headerValidation, results);
-                errors += results.get("errors").size();
+                errors += ImportResultConverter.headerValidationResultsToLegacyMap(
+                        headerValidation, results
+                );
                 // ---
 
                 lineNumber++;
@@ -354,6 +356,8 @@ public class ImportUtil {
                         }
                         lineNumber++;
                         csvLine = csvreader.getValues();
+                        LineImportResultBuilder resultBuilder = null;
+
                         try {
                             lines++;
                             Logger.debug(ImportUtil.class, "Line " + lines + ": (" + csvreader.getRawRecord() + ").");
@@ -388,22 +392,23 @@ public class ImportUtil {
                                         csvLine);
                                 // Get workflow action id column index from results if it exists
                                 final int wfActionIdIndex = getWorkflowActionIdIndexFromResults(
-                                        results);
+                                        results
+                                );
 
                                 //Importing content record...
-                                final var importLineResult = importLine(csvLine, currentSiteId,
+                                resultBuilder = new LineImportResultBuilder(lineNumber);
+                                importLine(csvLine, currentSiteId,
                                         contentType, preview, isMultilingual, user, identifier,
                                         wfActionIdIndex, lineNumber, languageToImport, headers,
                                         keyFields, choosenKeyField, keyContentUpdated,
                                         contentTypePermissions, uniqueFieldBeans, uniqueFields,
                                         relationships, onlyChild, onlyParent, sameKeyBatchInsert,
-                                        wfActionId, request);
+                                        wfActionId, request, resultBuilder);
                                 // ---
                                 // Convert import results to legacy format
-                                ImportResultConverter.lineImportResultToLegacyMap(
-                                        importLineResult, results, counters
+                                errors += ImportResultConverter.lineImportResultToLegacyMap(
+                                        resultBuilder.build(), results, counters
                                 );
-                                errors += results.get("errors").size();
                                 // ---
 
                                 //Storing the record keys we just imported for a later reference...
@@ -426,7 +431,19 @@ public class ImportUtil {
                                     HibernateUtil.startTransaction();
                                 }
                             }
-                        } catch (final DotRuntimeException ex) {
+                        } catch (final Exception ex) {
+
+                            // If we failed importing a line we need to make sure we track
+                            // everything that was done so far
+                            if (ex instanceof ImportLineException) {
+                                if (resultBuilder != null) {
+                                    // Convert import results to legacy format
+                                    errors += ImportResultConverter.lineImportResultToLegacyMap(
+                                            resultBuilder.build(), results, counters
+                                    );
+                                }
+                            }
+
                             String errorMessage = getErrorMsgFromException(user, ex);
                             if(errorMessage.indexOf(LINE_NO) == -1){
                                 errorMessage = LINE_NO + lineNumber + ": " + errorMessage;
@@ -1291,8 +1308,8 @@ public class ImportUtil {
     }
 
     /**
-     * Processes a single line from the CSV import file. This method handles all aspects
-     * of importing a content line including:
+     * Processes a single line from the CSV import file. This method handles all aspects of
+     * importing a content line including:
      * <ul>
      *   <li>Field validation and processing</li>
      *   <li>Content matching and updates</li>
@@ -1301,33 +1318,33 @@ public class ImportUtil {
      *   <li>Category handling</li>
      * </ul>
      *
-     * @param line CSV line data as string array
-     * @param currentHostId ID of the current host/site
-     * @param contentType Content type structure definition
-     * @param preview If true, validates without saving changes
-     * @param isMultilingual If true, handles multilingual content
-     * @param user User performing the import
-     * @param identifier Optional identifier for content updates
-     * @param wfActionIdIndex Index of workflow action ID in CSV, -1 if none
-     * @param lineNumber Current line number in CSV file
-     * @param language Language ID for the content
-     * @param headers Map of column indices to field definitions
-     * @param keyFields Map of key fields used for content matching
-     * @param choosenKeyField Buffer tracking chosen key fields
-     * @param keyContentUpdated Set tracking updated content keys
+     * @param line                   CSV line data as string array
+     * @param currentHostId          ID of the current host/site
+     * @param contentType            Content type structure definition
+     * @param preview                If true, validates without saving changes
+     * @param isMultilingual         If true, handles multilingual content
+     * @param user                   User performing the import
+     * @param identifier             Optional identifier for content updates
+     * @param wfActionIdIndex        Index of workflow action ID in CSV, -1 if none
+     * @param lineNumber             Current line number in CSV file
+     * @param language               Language ID for the content
+     * @param headers                Map of column indices to field definitions
+     * @param keyFields              Map of key fields used for content matching
+     * @param choosenKeyField        Buffer tracking chosen key fields
+     * @param keyContentUpdated      Set tracking updated content keys
      * @param contentTypePermissions Content type permissions
-     * @param uniqueFieldBeans List tracking unique field values
-     * @param uniqueFields List of fields marked as unique
-     * @param relationships Map of relationship definitions
-     * @param onlyChild Map tracking child-only relationships
-     * @param onlyParent Map tracking parent-only relationships
-     * @param sameKeyBatchInsert True if batch contains multiple rows with same key
-     * @param wfActionId Workflow action ID to execute
-     * @param request HTTP request context
-     * @return Line import results including validation messages and processing outcomes
+     * @param uniqueFieldBeans       List tracking unique field values
+     * @param uniqueFields           List of fields marked as unique
+     * @param relationships          Map of relationship definitions
+     * @param onlyChild              Map tracking child-only relationships
+     * @param onlyParent             Map tracking parent-only relationships
+     * @param sameKeyBatchInsert     True if batch contains multiple rows with same key
+     * @param wfActionId             Workflow action ID to execute
+     * @param request                HTTP request context
+     * @param resultBuilder          Builder to accumulate import results
      * @throws DotRuntimeException If a critical error occurs during import
      */
-    private static LineImportResult importLine(
+    private static void importLine(
             final String[] line,
             final String currentHostId,
             final Structure contentType,
@@ -1350,214 +1367,204 @@ public class ImportUtil {
             final HashMap<Integer, Boolean> onlyParent,
             final boolean sameKeyBatchInsert,
             final String wfActionId,
-            final HttpServletRequest request
-    ) throws DotRuntimeException {
+            final HttpServletRequest request,
+            final LineImportResultBuilder resultBuilder
+    ) throws Exception {
 
-        final var resultBuilder = new LineImportResultBuilder(lineNumber);
+        // First validate line length
+        validateLineLength(line, headers, lineNumber);
 
-        try {
-            // First validate line length
-            validateLineLength(line, headers, lineNumber);
+        // Process fields and collect values
+        final var fieldResults = processFields(
+                line, headers, contentType, user, currentHostId, language, lineNumber
+        );
 
-            // Process fields and collect values
-            final var fieldResults = processFields(
-                    line, headers, contentType, user, currentHostId, language, lineNumber
-            );
+        fieldResults.messages().forEach(resultBuilder::addValidationMessage);
+        fieldResults.categories().forEach(resultBuilder::addCategory);
+        uniqueFieldBeans.addAll(fieldResults.uniqueFields());
 
-            fieldResults.messages().forEach(resultBuilder::addValidationMessage);
-            fieldResults.categories().forEach(resultBuilder::addCategory);
-            uniqueFieldBeans.addAll(fieldResults.uniqueFields());
+        HashMap<Integer, Object> values = new HashMap<>();
+        Set<Category> categories = new HashSet<>();
+        values.putAll(fieldResults.values());
+        categories.addAll(fieldResults.categories());
 
-            //Check if line has repeated values for a unique field, if it does then ignore the line
-            if (!uniqueFieldBeans.isEmpty()) {
-                boolean ignoreLine = validateUniqueFields(user, lineNumber, language,
-                        uniqueFieldBeans, uniqueFields, resultBuilder);
-                if (ignoreLine) {
-                    resultBuilder.setIgnoreLine(true);
-                    return resultBuilder.build();
-                }
-            }
-
-            HashMap<Integer, Object> values = new HashMap<>();
-            Set<Category> categories = new HashSet<>();
-            values.putAll(fieldResults.values());
-            categories.addAll(fieldResults.categories());
-
-            if (fieldResults.ignoreLine()) {
-                return resultBuilder.build();
-            }
-
-            Long existingMultilingualLanguage = null;
-
-            Pair<Host, Folder> siteAndFolder = fieldResults.siteAndFolder().orElse(null);
-            Pair<Integer, String> urlValue = fieldResults.urlValue().orElse(null);
-            String urlValueAssetName = fieldResults.urlValueAssetName().orElse(null);
-
-            // Initialize relationship maps
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
-
-            // Process relationships if any exist
-            if (!relationships.isEmpty()) {
-                RelationshipProcessingResult relationshipResults = processRelationships(
-                        line, relationships, onlyChild, onlyParent, contentType,
-                        language, lineNumber, user);
-
-                relationshipResults.messages().forEach(resultBuilder::addValidationMessage);
-
-                if (relationshipResults.parentOnlyRelationships() != null) {
-                    csvRelationshipRecordsParentOnly.putAll(
-                            relationshipResults.parentOnlyRelationships());
-                }
-                if (relationshipResults.childOnlyRelationships() != null) {
-                    csvRelationshipRecordsChildOnly.putAll(
-                            relationshipResults.childOnlyRelationships());
-                }
-                if (relationshipResults.relationships() != null) {
-                    csvRelationshipRecords.putAll(relationshipResults.relationships());
-                }
-            }
-
-            // Search for existing contentlets
-            final var searchResult = searchExistingContentlets(
-                    contentType, values, keyFields, siteAndFolder, urlValue,
-                    urlValueAssetName, identifier, preview, sameKeyBatchInsert, isMultilingual,
-                    language, lineNumber, choosenKeyField, user);
-            isMultilingual = searchResult.isMultilingual();
-            searchResult.messages().forEach(resultBuilder::addValidationMessage);
-
-            var contentlets = searchResult.contentlets().stream()
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            List<String> updatedInodes = searchResult.updatedInodes();
-            resultBuilder.setUpdatedInodes(updatedInodes);
-
-            String conditionValues = searchResult.conditionValues();
-
-            // Handle contentlet creation/update with proper language handling
-            resultBuilder.setNewContent(false);
-            if (contentlets.isEmpty()) {
-                resultBuilder.incrementContentToCreate();
-                resultBuilder.setNewContent(true);
-
-                Contentlet newCont = new Contentlet();
-                newCont.setStructureInode(contentType.getInode());
-                newCont.setLanguageId(language);
-
-                contentlets.add(newCont);
-            } else {
-
-                if (isMultilingual || UtilMethods.isSet(identifier)) {
-                    List<Contentlet> multilingualContentlets = new ArrayList<>();
-
-                    // Check for existing contentlet in this language
-                    for (Contentlet contentlet : contentlets) {
-                        if (contentlet.getLanguageId() == language) {
-                            multilingualContentlets.add(contentlet);
-                            existingMultilingualLanguage = contentlet.getLanguageId();
-                        }
-                    }
-
-                    if (multilingualContentlets.isEmpty()) {
-                        String lastIdentifier = "";
-                        resultBuilder.setNewContent(true);
-                        for (Contentlet contentlet : contentlets) {
-                            if (!contentlet.getIdentifier().equals(lastIdentifier)) {
-                                resultBuilder.incrementContentToCreate();
-                                Contentlet newCont = new Contentlet();
-                                newCont.setIdentifier(contentlet.getIdentifier());
-                                newCont.setStructureInode(contentType.getInode());
-                                newCont.setLanguageId(language);
-                                multilingualContentlets.add(newCont);
-
-                                existingMultilingualLanguage = contentlet.getLanguageId();
-                                lastIdentifier = contentlet.getIdentifier();
-                            }
-                        }
-                    }
-
-                    contentlets = multilingualContentlets;
-                }
-
-                if (!resultBuilder.isNewContent()) {
-                    if (conditionValues.isEmpty()
-                            || !keyContentUpdated.contains(conditionValues)
-                            || isMultilingual) {
-                        resultBuilder.incrementContentToUpdate(contentlets.size());
-                        if (preview) {
-                            keyContentUpdated.add(conditionValues);
-                        }
-                    }
-
-                    Logger.debug(ImportUtil.class, "Contentlets size: " + contentlets.size());
-                    if (contentlets.size() == 1) {
-                        resultBuilder.addValidationMessage(ValidationMessage.builder()
-                                .type(ValidationMessageType.WARNING)
-                                .message(LanguageUtil.get(user,
-                                        "The-key-fields-chosen-match-one-existing-content(s)")
-                                        + " - "
-                                        + LanguageUtil.get(user,
-                                        "more-than-one-match-suggests-key(s)-are-not-properly-unique"))
-                                .lineNumber(lineNumber)
-                                .build());
-                    } else if (contentlets.size() > 1) {
-                        resultBuilder.addValidationMessage(ValidationMessage.builder()
-                                .type(ValidationMessageType.WARNING)
-                                .message(LanguageUtil.get(user,
-                                        "The-key-fields-choosen-match-more-than-one-content-in-this-case")
-                                        + ": "
-                                        + " " + LanguageUtil.get(user, "matches") + ": "
-                                        + contentlets.size() + " " + LanguageUtil.get(user,
-                                        "different-content-s-looks-like-the-key-fields-choosen")
-                                        + " " +
-                                        LanguageUtil.get(user, "aren-t-a-real-key"))
-                                .lineNumber(lineNumber)
-                                .build());
-                    }
-                }
-            }
-
-            ProcessedContentResult processResult = processContent(
-                    lineNumber,
-                    contentlets,
-                    resultBuilder.isNewContent(),
-                    existingMultilingualLanguage,
-                    values,
-                    siteAndFolder,
-                    wfActionId,
-                    csvRelationshipRecordsParentOnly,
-                    csvRelationshipRecordsChildOnly,
-                    csvRelationshipRecords,
-                    headers,
-                    categories,
-                    conditionValues,
-                    keyContentUpdated,
-                    contentTypePermissions,
-                    wfActionIdIndex,
-                    preview,
-                    user,
-                    request,
-                    line
-            );
-            // Update builder with process results
-            processResult.messages().forEach(resultBuilder::addValidationMessage);
-            processResult.savedInodes().forEach(resultBuilder::addSavedInode);
-            resultBuilder.setLastInode(processResult.lastInode());
-            resultBuilder.incrementContentToCreate(processResult.contentToCreate());
-            resultBuilder.incrementCreatedContent(processResult.createdContent());
-            resultBuilder.incrementContentToUpdate(processResult.contentToUpdate());
-            resultBuilder.incrementUpdatedContent(processResult.updatedContent());
-            resultBuilder.incrementDuplicateContent(processResult.duplicateContent());
-
-            return resultBuilder.build();
-
-        } catch (final Exception e) {
-            Logger.error(ImportUtil.class,
-                    String.format("An error occurred when importing line # %s: %s",
-                            lineNumber, e.getMessage()), e);
-            throw new DotRuntimeException(e.getMessage(), e);
+        if (fieldResults.ignoreLine()) {
+            resultBuilder.setIgnoreLine(true);
+            return;
         }
+
+        //Check if line has repeated values for a unique field, if it does then ignore the line
+        if (!uniqueFieldBeans.isEmpty()) {
+            boolean ignoreLine = validateUniqueFields(user, lineNumber, language,
+                    uniqueFieldBeans, uniqueFields, resultBuilder);
+            if (ignoreLine) {
+                resultBuilder.setIgnoreLine(true);
+                return;
+            }
+        }
+
+        Long existingMultilingualLanguage = null;
+
+        Pair<Host, Folder> siteAndFolder = fieldResults.siteAndFolder().orElse(null);
+        Pair<Integer, String> urlValue = fieldResults.urlValue().orElse(null);
+        String urlValueAssetName = fieldResults.urlValueAssetName().orElse(null);
+
+        // Initialize relationship maps
+        final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
+        final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
+        final HashMap<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
+
+        // Process relationships if any exist
+        if (!relationships.isEmpty()) {
+            RelationshipProcessingResult relationshipResults = processRelationships(
+                    line, relationships, onlyChild, onlyParent, contentType,
+                    language, lineNumber, user);
+
+            relationshipResults.messages().forEach(resultBuilder::addValidationMessage);
+
+            if (relationshipResults.parentOnlyRelationships() != null) {
+                csvRelationshipRecordsParentOnly.putAll(
+                        relationshipResults.parentOnlyRelationships());
+            }
+            if (relationshipResults.childOnlyRelationships() != null) {
+                csvRelationshipRecordsChildOnly.putAll(
+                        relationshipResults.childOnlyRelationships());
+            }
+            if (relationshipResults.relationships() != null) {
+                csvRelationshipRecords.putAll(relationshipResults.relationships());
+            }
+        }
+
+        // Search for existing contentlets
+        final var searchResult = searchExistingContentlets(
+                contentType, values, keyFields, siteAndFolder, urlValue,
+                urlValueAssetName, identifier, preview, sameKeyBatchInsert, isMultilingual,
+                language, lineNumber, choosenKeyField, user);
+        isMultilingual = searchResult.isMultilingual();
+        searchResult.messages().forEach(resultBuilder::addValidationMessage);
+
+        var contentlets = searchResult.contentlets().stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        List<String> updatedInodes = searchResult.updatedInodes();
+        resultBuilder.setUpdatedInodes(updatedInodes);
+
+        String conditionValues = searchResult.conditionValues();
+
+        // Handle contentlet creation/update with proper language handling
+        resultBuilder.setNewContent(false);
+        if (contentlets.isEmpty()) {
+            resultBuilder.incrementContentToCreate();
+            resultBuilder.setNewContent(true);
+
+            Contentlet newCont = new Contentlet();
+            newCont.setStructureInode(contentType.getInode());
+            newCont.setLanguageId(language);
+
+            contentlets.add(newCont);
+        } else {
+
+            if (isMultilingual || UtilMethods.isSet(identifier)) {
+                List<Contentlet> multilingualContentlets = new ArrayList<>();
+
+                // Check for existing contentlet in this language
+                for (Contentlet contentlet : contentlets) {
+                    if (contentlet.getLanguageId() == language) {
+                        multilingualContentlets.add(contentlet);
+                        existingMultilingualLanguage = contentlet.getLanguageId();
+                    }
+                }
+
+                if (multilingualContentlets.isEmpty()) {
+                    String lastIdentifier = "";
+                    resultBuilder.setNewContent(true);
+                    for (Contentlet contentlet : contentlets) {
+                        if (!contentlet.getIdentifier().equals(lastIdentifier)) {
+                            resultBuilder.incrementContentToCreate();
+                            Contentlet newCont = new Contentlet();
+                            newCont.setIdentifier(contentlet.getIdentifier());
+                            newCont.setStructureInode(contentType.getInode());
+                            newCont.setLanguageId(language);
+                            multilingualContentlets.add(newCont);
+
+                            existingMultilingualLanguage = contentlet.getLanguageId();
+                            lastIdentifier = contentlet.getIdentifier();
+                        }
+                    }
+                }
+
+                contentlets = multilingualContentlets;
+            }
+
+            if (!resultBuilder.isNewContent()) {
+                if (conditionValues.isEmpty()
+                        || !keyContentUpdated.contains(conditionValues)
+                        || isMultilingual) {
+                    resultBuilder.incrementContentToUpdate(contentlets.size());
+                    if (preview) {
+                        keyContentUpdated.add(conditionValues);
+                    }
+                }
+
+                Logger.debug(ImportUtil.class, "Contentlets size: " + contentlets.size());
+                if (contentlets.size() == 1) {
+                    resultBuilder.addValidationMessage(ValidationMessage.builder()
+                            .type(ValidationMessageType.WARNING)
+                            .message(LanguageUtil.get(user,
+                                    "The-key-fields-chosen-match-one-existing-content(s)")
+                                    + " - "
+                                    + LanguageUtil.get(user,
+                                    "more-than-one-match-suggests-key(s)-are-not-properly-unique"))
+                            .lineNumber(lineNumber)
+                            .build());
+                } else if (contentlets.size() > 1) {
+                    resultBuilder.addValidationMessage(ValidationMessage.builder()
+                            .type(ValidationMessageType.WARNING)
+                            .message(LanguageUtil.get(user,
+                                    "The-key-fields-choosen-match-more-than-one-content-in-this-case")
+                                    + ": "
+                                    + " " + LanguageUtil.get(user, "matches") + ": "
+                                    + contentlets.size() + " " + LanguageUtil.get(user,
+                                    "different-content-s-looks-like-the-key-fields-choosen")
+                                    + " " +
+                                    LanguageUtil.get(user, "aren-t-a-real-key"))
+                            .lineNumber(lineNumber)
+                            .build());
+                }
+            }
+        }
+
+        ProcessedContentResult processResult = processContent(
+                lineNumber,
+                contentlets,
+                resultBuilder.isNewContent(),
+                existingMultilingualLanguage,
+                values,
+                siteAndFolder,
+                wfActionId,
+                csvRelationshipRecordsParentOnly,
+                csvRelationshipRecordsChildOnly,
+                csvRelationshipRecords,
+                headers,
+                categories,
+                conditionValues,
+                keyContentUpdated,
+                contentTypePermissions,
+                wfActionIdIndex,
+                preview,
+                user,
+                request,
+                line
+        );
+        // Update builder with process results
+        processResult.messages().forEach(resultBuilder::addValidationMessage);
+        processResult.savedInodes().forEach(resultBuilder::addSavedInode);
+        resultBuilder.setLastInode(processResult.lastInode());
+        resultBuilder.incrementContentToCreate(processResult.contentToCreate());
+        resultBuilder.incrementCreatedContent(processResult.createdContent());
+        resultBuilder.incrementContentToUpdate(processResult.contentToUpdate());
+        resultBuilder.incrementUpdatedContent(processResult.updatedContent());
+        resultBuilder.incrementDuplicateContent(processResult.duplicateContent());
     }
 
     /**
@@ -1568,14 +1575,16 @@ public class ImportUtil {
      * @param line       The array of values from the CSV line
      * @param headers    Map of column indices to their corresponding field definitions
      * @param lineNumber The current line number in the CSV file, used for error reporting
-     * @throws DotRuntimeException If the line contains fewer columns than required by the headers.
+     * @throws ImportLineException If the line contains fewer columns than required by the headers.
      *                             The exception includes the line number for error tracking.
      */
     private static void validateLineLength(final String[] line, final Map<Integer, Field> headers,
             final int lineNumber) {
         if (line.length < headers.keySet().stream().mapToInt(i -> i).max().orElse(0)) {
-            throw new DotRuntimeException(
-                    LINE_NO + lineNumber + " doesn't contain all the required columns.");
+            throw ImportLineException.builder()
+                    .message("Doesn't contain all the required columns.")
+                    .lineNumber(lineNumber)
+                    .build();
         }
     }
 
@@ -1670,11 +1679,12 @@ public class ImportUtil {
                 results.addValue(results.urlValue.getLeft(), assetNameForURL);
                 final Pair<Host, Folder> parentPathForURL = pathAndAssetNameForURL.getLeft();
                 if (parentPathForURL == null) {
-                    throw new DotRuntimeException(
-                            LINE_NO + lineNumber + " contains errors. Column: '"
-                                    + HTMLPageAssetAPI.URL_FIELD + "', value: '"
-                                    + results.urlValue.getRight()
-                                    + "', invalid parent folder for URL. Line will be ignored.");
+                    throw ImportLineException.builder()
+                            .message("Invalid parent folder for URL")
+                            .lineNumber(lineNumber)
+                            .field(HTMLPageAssetAPI.URL_FIELD)
+                            .invalidValue(results.urlValue.getRight())
+                            .build();
                 } else {
                     results.setSiteAndFolder(parentPathForURL);
                     results.setUrlValueAssetName(pathAndAssetNameForURL.getRight());
@@ -1733,7 +1743,7 @@ public class ImportUtil {
         Object processedValue;
 
         if (isDateField(field)) {
-            processedValue = validateDateTypes(lineNumber, field, value, value);
+            processedValue = validateDateTypes(field, value, value);
         } else if (isCategoryField(field)) {
             Set<Category> categories = processCategoryField(field, value, user, results);
             processedValue = categories;
@@ -1745,11 +1755,11 @@ public class ImportUtil {
         } else if (isTextAreaField(field)) {
             processedValue = value;
         } else if (isLocationField(field)) {
-            Pair<Host, Folder> location = processLocationField(field, value, user, results);
+            Pair<Host, Folder> location = processLocationField(field, value, user);
             processedValue = value;
             results.setSiteAndFolder(location);
         } else if (isBinaryField(field)) {
-            processedValue = processBinaryField(value, results);
+            processedValue = processBinaryField(value);
         } else if (isFileField(field)) {
             processedValue = processFileField(field, value, currentHostId, user, results);
         } else {
@@ -1952,11 +1962,11 @@ public class ImportUtil {
             for (String catKey : categoryKeys) {
                 Category cat = catAPI.findByKey(catKey.trim(), user, false);
                 if (cat == null) {
-                    resultBuilder.addError(
-                            String.format("Column: '%s', value: '%s', invalid category key found",
-                                    field.getVelocityVarName(), value));
-                    resultBuilder.setIgnoreLine(true);
-                    throw new DotRuntimeException("Invalid category key: " + catKey);
+                    throw ImportLineException.builder()
+                            .message("Invalid category key found")
+                            .field(field.getVelocityVarName())
+                            .invalidValue(value)
+                            .build();
                 }
                 categories.add(cat);
                 resultBuilder.addCategory(cat);
@@ -1982,42 +1992,41 @@ public class ImportUtil {
      * Processes a location field by validating and converting the value to a Pair of Host and
      * Folder.
      *
-     * @param field         the field definition containing type and validation rules
-     * @param value         the raw value from the CSV line
-     * @param user          the user performing the import
-     * @param resultBuilder the builder to accumulate validation messages and results
+     * @param field the field definition containing type and validation rules
+     * @param value the raw value from the CSV line
+     * @param user  the user performing the import
      * @return a Pair of Host and Folder corresponding to the valid location
      * @throws DotDataException     if a data access error occurs during processing
      * @throws DotSecurityException if a security violation occurs during processing
      */
     private static Pair<Host, Folder> processLocationField(final Field field, final String value,
-            final User user, final FieldProcessingResultBuilder resultBuilder
-    ) throws DotDataException, DotSecurityException {
+            final User user) throws DotDataException, DotSecurityException {
+
         Pair<Host, Folder> siteAndFolder = getSiteAndFolderFromIdOrName(value, user);
         if (siteAndFolder == null) {
-            resultBuilder.addError(
-                    String.format("Column: '%s', value: '%s', invalid site/folder inode found",
-                            field.getVelocityVarName(), value));
-            resultBuilder.setIgnoreLine(true);
-            throw new DotRuntimeException("Invalid site/folder: " + value);
+            throw ImportLineException.builder()
+                    .message("Invalid site/folder inode found")
+                    .field(field.getVelocityVarName())
+                    .invalidValue(value)
+                    .build();
         }
+
         return siteAndFolder;
     }
 
     /**
      * Processes a binary field by validating the URL.
      *
-     * @param value         the value to process
-     * @param resultBuilder the builder to accumulate validation messages and results
+     * @param value the value to process
      * @return the processed value if the URL is valid
-     * @throws DotRuntimeException if the URL is invalid
+     * @throws ImportLineException if the URL is invalid
      */
-    private static Object processBinaryField(final String value,
-            final FieldProcessingResultBuilder resultBuilder) {
+    private static Object processBinaryField(final String value) {
         if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
-            resultBuilder.addError("URL is malformed or Response is not 200");
-            resultBuilder.setIgnoreLine(true);
-            throw new DotRuntimeException("Invalid binary URL: " + value);
+            throw ImportLineException.builder()
+                    .message("URL is malformed or Response is not 200")
+                    .invalidValue(value)
+                    .build();
         }
         return value;
     }
@@ -2334,12 +2343,10 @@ public class ImportUtil {
 
         if (UtilMethods.isSet(identifier)) {
             contentlets.addAll(
-                    searchByIdentifier(identifier, contentType, user, lineNumber, builder));
+                    searchByIdentifier(identifier, contentType, user));
         } else if (urlValue != null && keyFields.isEmpty()) {
             // For HTMLPageAsset, we need to search by URL to math existing pages
-            contentlets.addAll(
-                    searchByUrl(contentType, urlValue, siteAndFolder, language, user, lineNumber,
-                            builder));
+            contentlets.addAll(searchByUrl(contentType, urlValue, siteAndFolder, language, user));
         } else if (!keyFields.isEmpty()) {
             // Search by key fields
             SearchByKeyFieldsResult keyFieldResults = searchByKeyFields(
@@ -2366,9 +2373,6 @@ public class ImportUtil {
      * @param identifier  The unique identifier of the contentlet to search for.
      * @param contentType The structure type of the contentlet.
      * @param user        The user performing the search, used for security validation.
-     * @param lineNumber  The line number in the source code where this method is called, used for
-     *                    error messaging.
-     * @param builder     A builder object used to accumulate search results and messages.
      * @return A list of contentlets that match the given identifier. Returns an empty list if no
      * contentlet is found.
      * @throws DotDataException     If there is a data-related exception during the search process.
@@ -2378,9 +2382,7 @@ public class ImportUtil {
     private static List<Contentlet> searchByIdentifier(
             final String identifier,
             final Structure contentType,
-            final User user,
-            final int lineNumber,
-            final ContentletSearchResult.Builder builder
+            final User user
     ) throws DotDataException, DotSecurityException {
 
         StringBuffer query = new StringBuffer()
@@ -2392,15 +2394,14 @@ public class ImportUtil {
                 user, true);
 
         if (contentsSearch == null || contentsSearch.isEmpty()) {
-            builder.addMessages(ValidationMessage.builder()
-                    .type(ValidationMessageType.ERROR)
-                    .message("Content not found with identifier " + identifier)
-                    .lineNumber(lineNumber)
-                    .build());
-            return Collections.emptyList();
+            throw ImportLineException.builder()
+                    .message("Content not found with identifier")
+                    .invalidValue(identifier)
+                    .context(Map.of("Content Type", contentType.getVelocityVarName()))
+                    .build();
         }
 
-        return convertSearchResults(contentsSearch, lineNumber, user, builder);
+        return convertSearchResults(contentsSearch, user);
     }
 
     /**
@@ -2461,14 +2462,11 @@ public class ImportUtil {
             Object value = values.get(column);
 
             if (!UtilMethods.isSet(value)) {
-                builder.addMessages(ValidationMessage.builder()
-                        .type(ValidationMessageType.ERROR)
-                        .message("Key field " + field.getVelocityVarName() + " is required")
+                throw ImportLineException.builder()
+                        .message("Key field " + field.getVelocityVarName()
+                                + " is required since it was defined as a key")
                         .lineNumber(lineNumber)
-                        .build());
-                throw new DotRuntimeException(LINE_NO + lineNumber + " key field " +
-                        field.getVelocityVarName()
-                        + " is required since it was defined as a key\n");
+                        .build();
             }
 
             String processedValue = value.toString();
@@ -2655,9 +2653,6 @@ public class ImportUtil {
      * @param siteAndFolder A pair containing the host and folder where the contentlet is located.
      * @param language      The language ID for which to search contentlets.
      * @param user          The user performing the search, used for security validation.
-     * @param lineNumber    The line number in the source code where this method is called, used for
-     *                      error messaging.
-     * @param builder       A builder object used to accumulate search results and messages.
      * @return A list of contentlets that match the given URL.
      * @throws DotDataException     If there is a data-related exception during the search process.
      * @throws DotSecurityException If the user does not have permission to access the requested
@@ -2668,9 +2663,7 @@ public class ImportUtil {
             final Pair<Integer, String> urlValue,
             final Pair<Host, Folder> siteAndFolder,
             final long language,
-            final User user,
-            final int lineNumber,
-            final ContentletSearchResult.Builder builder
+            final User user
     ) throws DotDataException, DotSecurityException {
 
         StringBuffer query = new StringBuffer()
@@ -2686,16 +2679,11 @@ public class ImportUtil {
         List<ContentletSearch> contentsSearch = conAPI.searchIndex(
                 query.toString(), 0, -1, null, user, true);
 
-        if (contentsSearch == null || contentsSearch.isEmpty()) {
-            builder.addMessages(ValidationMessage.builder()
-                    .type(ValidationMessageType.WARNING)
-                    .message("Content not found with URL " + urlValue.getRight())
-                    .lineNumber(lineNumber)
-                    .build());
-            return Collections.emptyList();
+        if (contentsSearch != null && !contentsSearch.isEmpty()) {
+            return convertSearchResults(contentsSearch, user);
         }
 
-        return convertSearchResults(contentsSearch, lineNumber, user, builder);
+        return Collections.emptyList();
     }
 
     /**
@@ -2735,14 +2723,11 @@ public class ImportUtil {
      * Converts search results from {@link ContentletSearch} objects to {@link Contentlet} objects.
      *
      * @param contentsSearch The list of {@link ContentletSearch} objects returned by the search.
-     * @param lineNumber     The line number in the source code where this method is called, used
-     *                       for error messaging.
      * @param user           The user performing the search, used for security validation.
-     * @param builder        A builder object used to accumulate search results and messages.
      * @return A list of {@link Contentlet} objects that match the search criteria.
      */
     private static List<Contentlet> convertSearchResults(final List<ContentletSearch> contentsSearch,
-            final int lineNumber, final User user, final ContentletSearchResult.Builder builder) {
+            final User user) {
 
         if (contentsSearch == null || contentsSearch.isEmpty()) {
             return Collections.emptyList();
@@ -2754,14 +2739,10 @@ public class ImportUtil {
                         return conAPI.find(contentSearch.getInode(), user, true);
                     } catch (Exception e) {
                         Logger.warn(ImportUtil.class, "Error finding content by inode", e);
-
-                        builder.addMessages(ValidationMessage.builder()
-                                .type(ValidationMessageType.ERROR)
-                                .message("Content not found with identifier "
-                                        + contentSearch.getIdentifier())
-                                .lineNumber(lineNumber)
-                                .build());
-                        return null;
+                        throw ImportLineException.builder()
+                                .message("Content not found with identifier")
+                                .invalidValue(contentSearch.getIdentifier())
+                                .build();
                     }
                 })
                 .filter(Objects::nonNull)
@@ -2987,11 +2968,11 @@ public class ImportUtil {
                         new ArrayList<>(categories));
             }
         } catch (DotContentletValidationException ex) {
-            StringBuffer sb = new StringBuffer(LINE_NO + lineNumber + " contains errors\n");
+            StringBuffer sb = new StringBuffer();
             HashMap<String, List<Field>> errors = (HashMap<String, List<Field>>) ex.getNotValidFields();
             Set<String> keys = errors.keySet();
             for (String key : keys) {
-                sb.append(key + ": ");
+                sb.append(key).append(": ");
                 List<Field> fields = errors.get(key);
                 int count = 0;
                 for (Field field : fields) {
@@ -3003,7 +2984,12 @@ public class ImportUtil {
                 }
                 sb.append("\n");
             }
-            throw new DotRuntimeException(sb.toString());
+
+            throw ImportLineException.builder()
+                    .message(ex.getMessage())
+                    .lineNumber(lineNumber)
+                    .field(sb.toString())
+                    .build();
         }
 
     }
@@ -3979,21 +3965,21 @@ public class ImportUtil {
         return executeWfAction;
     }
 
-    private static Object validateDateTypes(final int lineNumber, final Field field,
-            final String value,
+    private static Object validateDateTypes(final Field field, final String value,
             Object valueObj) {
         if (field.getFieldContentlet().startsWith("date")) {
             if (UtilMethods.isSet(value)) {
                 try {
                     valueObj = parseExcelDate(value);
                 } catch (ParseException e) {
-                    throw new DotRuntimeException(
-                            LINE_NO + lineNumber + " contains errors, Column: " + field
-                                    .getVelocityVarName() +
-                                    ", value: " + value
-                                    + ", couldn't be parsed as any of the following supported formats: "
-                                    +
-                                    printSupportedDateFormats());
+                    throw ImportLineException.builder()
+                            .message(
+                                    "Value couldn't be parsed as any of the following supported formats: "
+                                            + printSupportedDateFormats()
+                            )
+                            .field(field.getVelocityVarName())
+                            .invalidValue(value)
+                            .build();
                 }
             } else {
                 valueObj = null;
@@ -4252,7 +4238,8 @@ public class ImportUtil {
      *
      * @throws LanguageException An error occurred when accessing the i18n resource files.
      */
-    private static String getErrorMsgFromException(final User user, final DotRuntimeException exception) throws
+    private static String getErrorMsgFromException(final User user, final Exception exception)
+            throws
             LanguageException {
         if (!UtilMethods.isSet(exception.getMessage())) {
             return exception.getCause().getClass().getSimpleName();
