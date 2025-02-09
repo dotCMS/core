@@ -390,6 +390,7 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
 
+
         DotParseTest.class,
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
@@ -405,5 +406,4 @@ import org.junit.runners.Suite.SuiteClasses;
 })
 
 public class MainSuite2b {
-
 }
