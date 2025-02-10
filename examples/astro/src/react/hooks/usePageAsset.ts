@@ -4,7 +4,7 @@ import { getUVEState } from "@dotcms/uve";
 import type { DotCMSPageAsset } from "@dotcms/types";
 import { client } from "@utils/client";
 
-export const usePageAsset = (currentPageAsset: DotCMSPageAsset | undefined) => {
+export const usePageAsset = (currentPageAsset?: DotCMSPageAsset) => {
   const [pageAsset, setPageAsset] = useState<DotCMSPageAsset | undefined>();
 
   useEffect(() => {
