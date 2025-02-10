@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -94,6 +95,9 @@ public class UniqueFieldDataBaseUtilTake2  {
 
                         final Object fieldValue = contentlet.get(field.variable());
                         try {
+
+                            Logger.info(this, "Validating contentlet: " + contentlet.getIdentifier() + "on field: " + field.variable()
+                                    + " with value: " + fieldValue + " in content type: " + contentType.variable());
                             strategy.innerValidate(contentlet, field, fieldValue, contentType);
                         } catch (UniqueFieldValueDuplicatedException e) {
                             Logger.info(this, "Duplicated value found for contentlet: " + contentlet.getIdentifier() + "on field: " + field.variable()
@@ -104,6 +108,9 @@ public class UniqueFieldDataBaseUtilTake2  {
                     }
                 }
 
+                Logger.info(this, ()-> "Sleeping for: " +
+                        Config.getIntProperty("UNIQUE_FIELDS_MIGRATION_SLEEP", 1000) + " ms");
+                ThreadUtils.sleep(Config.getIntProperty("UNIQUE_FIELDS_MIGRATION_SLEEP", 1000));
                 offset += limit;
                 contentlets = APILocator.getContentletAPI().findByStructure(
                         contentType.id(), APILocator.systemUser(), false, limit, offset);
