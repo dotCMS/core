@@ -116,10 +116,22 @@ export class DotContentletThumbnail {
         this.renderImage = false;
     }
 
-    private getIcon() {
-        return this.contentlet?.baseType !== 'FILEASSET'
-            ? this.contentlet?.contentTypeIcon
-            : this.contentlet?.__icon__;
+    /**
+     * Gets the appropriate icon for the contentlet based on its type and properties.
+     * Prioritizes file asset icons over content type icons.
+     * @returns The icon string to be displayed
+     */
+    private getIcon(): string {
+        if (!this.contentlet) {
+            return '';
+        }
+
+        const { baseType, __icon__, contentTypeIcon } = this.contentlet;
+        const isFileAsset = baseType === 'FILEASSET';
+
+        return isFileAsset
+            ? (__icon__ ?? contentTypeIcon ?? '')
+            : (contentTypeIcon ?? __icon__ ?? '');
     }
 
     private shouldShowVideoThumbnail() {

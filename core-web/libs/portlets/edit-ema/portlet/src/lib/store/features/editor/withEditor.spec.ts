@@ -13,7 +13,7 @@ import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
 import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
-import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
+import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ACTION_MOCK,
@@ -40,7 +40,7 @@ const initialState: UVEState = {
         ...emptyParams,
         url: 'test-url',
         language_id: '1',
-        'com.dotmarketing.persona.id': 'dot:persona',
+        [PERSONA_KEY]: 'dot:persona',
         variantName: 'DEFAULT',
         clientHost: 'http://localhost:3000'
     },
@@ -102,7 +102,7 @@ describe('withEditor', () => {
                 it('should return the base info', () => {
                     expect(store.$uveToolbar()).toEqual({
                         editor: {
-                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT',
                             bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                             copyUrl:
                                 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
@@ -214,7 +214,7 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
 
@@ -248,7 +248,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/first?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                    'http://localhost:3000/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
         });

@@ -7,13 +7,14 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
 
+import { PERSONA_KEY } from '../../../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const pageParams = {
     url: 'test-url',
     language_id: 'en',
-    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+    [PERSONA_KEY]: 'modes.persona.no.persona',
     editorMode: UVE_MODE.EDIT
 };
 
@@ -219,8 +220,8 @@ describe('DotEditorModeSelectorComponent', () => {
         test.each([
             {
                 mode: UVE_MODE.EDIT,
-                label: 'uve.editor.mode.edit',
-                description: 'uve.editor.mode.edit.description'
+                label: 'uve.editor.mode.draft',
+                description: 'uve.editor.mode.draft.description'
             },
             {
                 mode: UVE_MODE.PREVIEW,
@@ -229,8 +230,8 @@ describe('DotEditorModeSelectorComponent', () => {
             },
             {
                 mode: UVE_MODE.LIVE,
-                label: 'uve.editor.mode.live',
-                description: 'uve.editor.mode.live.description'
+                label: 'uve.editor.mode.published',
+                description: 'uve.editor.mode.published.description'
             }
         ])(
             'should show correct label and description for $mode menu item',
@@ -247,9 +248,9 @@ describe('DotEditorModeSelectorComponent', () => {
         );
 
         test.each([
-            { mode: UVE_MODE.EDIT, label: 'uve.editor.mode.edit' },
+            { mode: UVE_MODE.EDIT, label: 'uve.editor.mode.draft' },
             { mode: UVE_MODE.PREVIEW, label: 'uve.editor.mode.preview' },
-            { mode: UVE_MODE.LIVE, label: 'uve.editor.mode.live' }
+            { mode: UVE_MODE.LIVE, label: 'uve.editor.mode.published' }
         ])('should update button label when mode changes - $mode', ({ mode, label }) => {
             // Start with Edit mode
             mockStore.pageParams.set({ ...pageParams, editorMode: mode });
