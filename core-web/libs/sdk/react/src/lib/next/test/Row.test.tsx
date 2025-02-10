@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
-import { Row } from './Row';
-
-import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '../../types';
+import { Row } from '../components/Row/Row';
+import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '../types';
 
 const mockColumn: DotPageAssetLayoutColumn = {
     left: 0,
