@@ -37,17 +37,15 @@ export function getUVEState(): UVEState | undefined {
 
     const possibleModes = Object.values(UVE_MODE);
 
-    const mode = (url.searchParams.get('mode') as UVE_MODE) ?? UVE_MODE.UNKNOWN;
+    let mode = (url.searchParams.get('mode') as UVE_MODE) ?? UVE_MODE.EDIT;
     const languageId = url.searchParams.get('language_id');
     const persona = url.searchParams.get('personaId');
     const variantName = url.searchParams.get('variantName');
     const experimentId = url.searchParams.get('experimentId');
     const publishDate = url.searchParams.get('publishDate');
 
-    if (!possibleModes.includes(mode) || mode === UVE_MODE.UNKNOWN) {
-        console.warn(
-            `Couldn't identify the current mode of UVE, please contact customer support. Mode: ${mode}`
-        );
+    if (!possibleModes.includes(mode)) {
+        mode = UVE_MODE.EDIT;
     }
 
     return {
