@@ -134,8 +134,7 @@ public class MainServlet extends ActionServlet {
         DbConnectionFactory.closeSilently();
       }
 
-      // Update license with server start time
-      LicenseManager.getInstance().updateServerStartTime();
+
 
       HashSet<String> suppressProperties = new HashSet<>();
       suppressProperties.add("class");
