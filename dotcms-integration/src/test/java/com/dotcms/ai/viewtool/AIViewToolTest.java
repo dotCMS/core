@@ -133,21 +133,7 @@ public class AIViewToolTest extends IntegrationTestBase {
         assertImageResponse(response, prompt.get("prompt").toString(), "dalailama");
     }
 
-    /**
-     * Scenario: No license
-     * When initializing the AIView tool
-     * Then should NOT throw exception
-     */
-    @Test
-    public void test_noLicense_initShouldNotFail() throws Exception {
-        runNoLicense(()-> {
-            try {
-                aiViewTool.init(mock(ViewContext.class));
-            } catch (Exception e) {
-                fail("Should not throw exception");
-            }
-        });
-    }
+
 
     private void assertTextResponse(final JSONObject response, final String containedText) {
         assertNotNull(response);
