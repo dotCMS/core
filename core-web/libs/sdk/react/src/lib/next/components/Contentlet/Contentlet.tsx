@@ -1,11 +1,10 @@
 import { useContext, useRef, useMemo } from 'react';
-import { isInsideEditor } from '@dotcms/client';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
 import { DotCMSContentlet } from '../../types';
 import { getDotContentletAttributes } from './utils';
 import { useCheckVisibleContent } from '../../hooks/useCheckHaveContent';
-import { FallbackComponent, NoComponentType } from './FallbackComponent';
+import { FallbackComponent, NoComponentType } from './components/FallbackComponent';
 
 /**
  * Props for the Contentlet component

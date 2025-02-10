@@ -1,0 +1,129 @@
+import { render, screen } from '@testing-library/react';
+
+import { Container } from './Container';
+import { DotCMSRenderContext } from '../../contexts/DotCMSRenderContext';
+import * as utils from './utils';
+
+import { DotCMSColumnContainer, DotCMSPageAsset } from '../../types';
+
+// Mock the Contentlet component
+jest.mock('../../Contentlet/Contentlet', () => ({
+    Contentlet: ({ contentlet }: { contentlet: any }) => (
+        <div data-testid="mock-contentlet">{contentlet.identifier}</div>
+    )
+}));
+
+const mockContainer: DotCMSColumnContainer = {
+    identifier: 'test-container-id',
+    uuid: 'test-uuid',
+    historyUUIDs: []
+};
+
+const mockPageAsset = {
+    containers: {
+        'test-container-id': {
+            identifier: 'test-container-id',
+            title: 'Test Container'
+        }
+    },
+    contentlets: {
+        'test-container-id': [{ identifier: 'contentlet-1' }, { identifier: 'contentlet-2' }]
+    }
+} as unknown as DotCMSPageAsset;
+
+describe('Container', () => {
+    const renderWithContext = (component: React.ReactNode, contextValue = {}) => {
+        return render(
+            <DotCMSRenderContext.Provider
+                value={{
+                    dotCMSPageAsset: mockPageAsset,
+                    isDevMode: false,
+                    ...contextValue
+                }}>
+                {component}
+            </DotCMSRenderContext.Provider>
+        );
+    };
+
+    beforeEach(() => {
+        jest.spyOn(utils, 'getDotContainerAttributes').mockReturnValue({
+            'data-dot-object': 'container',
+            'data-dot-identifier': 'test-container-id'
+        });
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('renders contentlets when container has content', () => {
+        renderWithContext(<Container container={mockContainer} />);
+
+        const contentlets = screen.getAllByTestId('mock-contentlet');
+        expect(contentlets).toHaveLength(2);
+        expect(contentlets[0]).toHaveTextContent('contentlet-1');
+        expect(contentlets[1]).toHaveTextContent('contentlet-2');
+    });
+
+    it('shows empty message when container has no contentlets', () => {
+        const emptyPageAsset = {
+            ...mockPageAsset,
+            contentlets: { 'test-container-id': [] }
+        };
+
+        renderWithContext(<Container container={mockContainer} />, {
+            dotCMSPageAsset: emptyPageAsset
+        });
+
+        expect(screen.getByText('This container is empty.')).toBeInTheDocument();
+    });
+
+    it('renders ContainerNotFound in dev mode when container is not found', () => {
+        const pageAssetWithoutContainer = {
+            containers: {},
+            contentlets: {}
+        };
+
+        renderWithContext(<Container container={mockContainer} />, {
+            dotCMSPageAsset: pageAssetWithoutContainer,
+            isDevMode: true
+        });
+
+        expect(
+            screen.getByText(/This container with identifier test-container-id was not found/)
+        ).toBeInTheDocument();
+    });
+
+    it('does not render ContainerNotFound in production when container is not found', () => {
+        const pageAssetWithoutContainer = {
+            containers: {},
+            contentlets: {}
+        };
+
+        renderWithContext(<Container container={mockContainer} />, {
+            dotCMSPageAsset: pageAssetWithoutContainer,
+            isDevMode: false
+        });
+
+        expect(screen.queryByText(/This container with identifier/)).not.toBeInTheDocument();
+    });
+
+    it('applies empty container styles when container has no contentlets', () => {
+        const emptyPageAsset = {
+            ...mockPageAsset,
+            contentlets: { 'test-container-id': [] }
+        };
+
+        renderWithContext(<Container container={mockContainer} />, {
+            dotCMSPageAsset: emptyPageAsset
+        });
+
+        const containerElement = screen.getByText('This container is empty.');
+        expect(containerElement.parentElement).toHaveStyle({
+            backgroundColor: '#ECF0FD',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+        });
+    });
+});
