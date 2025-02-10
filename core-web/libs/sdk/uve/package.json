@@ -1,0 +1,22 @@
+{
+  "name": "@dotcms/uve",
+  "version": "0.0.1-alpha.38",
+  "description": "Official JavaScript library for interacting with Universal Visual Editor (UVE)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dotCMS/core.git#main"
+  },
+  "keywords": [
+    "dotCMS",
+    "CMS",
+    "Content Management",
+    "UVE",
+    "Universal Visual Editor"
+  ],
+  "author": "dotcms <dev@dotcms.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dotCMS/core/issues"
+  },
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/client/README.md"
+}

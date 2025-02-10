@@ -2,7 +2,7 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 
 import { computed, untracked } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/client';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
@@ -136,10 +136,10 @@ export const UVEStore = signalStore(
                     return pageAPIResponse()?.viewAs.language?.id || 1;
                 }),
                 $isPreviewMode: computed<boolean>(() => {
-                    return pageParams()?.editorMode === UVE_MODE.PREVIEW;
+                    return pageParams()?.mode === UVE_MODE.PREVIEW;
                 }),
                 $isLiveMode: computed<boolean>(() => {
-                    return pageParams()?.editorMode === UVE_MODE.LIVE;
+                    return pageParams()?.mode === UVE_MODE.LIVE;
                 }),
                 $friendlyParams: computed(() => {
                     const params = {
