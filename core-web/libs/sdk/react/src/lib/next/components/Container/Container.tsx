@@ -80,7 +80,13 @@ export function Container({ container }: ContainerProps) {
  * @param {boolean} props.isDevMode - Whether the application is in development mode
  * @returns {JSX.Element | null} Message about missing container or null in production
  */
-const ContainerNoFound = ({ identifier, isDevMode }: { identifier: string; isDevMode: boolean }) => {
+const ContainerNoFound = ({
+    identifier,
+    isDevMode
+}: {
+    identifier: string;
+    isDevMode: boolean;
+}) => {
     useEffect(() => console.error(`Container with identifier ${identifier} not found`));
 
     if (!isDevMode) {

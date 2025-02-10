@@ -1,4 +1,4 @@
-import { DotPageAssetLayoutColumn } from "../../types";
+import { DotPageAssetLayoutColumn } from '../../types';
 
 const endClassMap: Record<number, string> = {
     1: 'col-end-1',
@@ -59,4 +59,3 @@ export const getColumnPositionClasses = (column: DotPageAssetLayoutColumn) => {
         endClass
     };
 };
-

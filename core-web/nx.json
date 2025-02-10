@@ -176,6 +176,5 @@
         }
     ],
     "defaultBase": "main",
-    "ignorePatterns": ["**/node_modules"],
-    "nxCloudId": "67a22c5c050e241eaf68fcdc"
+    "ignorePatterns": ["**/node_modules"]
 }

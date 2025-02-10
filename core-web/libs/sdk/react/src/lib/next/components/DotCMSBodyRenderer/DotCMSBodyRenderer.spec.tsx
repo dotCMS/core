@@ -5,7 +5,7 @@ import { DotCMSBodyRenderer } from './DotCMSBodyRenderer';
 import { DotCMSPageAsset } from '../../types';
 
 // Mock the @dotcms/client module
-jest.mock('@dotcms/client', () => ({ isInsideEditor: jest.fn()}));
+jest.mock('@dotcms/client', () => ({ isInsideEditor: jest.fn() }));
 
 // Mock the Row component
 jest.mock('./components/Row/Row', () => ({
@@ -16,10 +16,7 @@ describe('DotCMSBodyRenderer', () => {
     const mockPageAsset = {
         layout: {
             body: {
-                rows: [
-                    { identifier: 'row1' },
-                    { identifier: 'row2' }
-                ]
+                rows: [{ identifier: 'row1' }, { identifier: 'row2' }]
             }
         }
     } as unknown as DotCMSPageAsset;
@@ -40,7 +37,7 @@ describe('DotCMSBodyRenderer', () => {
             CustomComponent: () => <div>Custom Component</div>
         };
         render(
-            <DotCMSBodyRenderer 
+            <DotCMSBodyRenderer
                 dotCMSPageAsset={mockPageAsset}
                 customComponents={customComponents}
             />
@@ -49,7 +46,7 @@ describe('DotCMSBodyRenderer', () => {
         expect(rows).toHaveLength(2);
     });
 
-    describe("when the page body is not defined", () => {
+    describe('when the page body is not defined', () => {
         const invalidPageAsset = {} as unknown as DotCMSPageAsset;
 
         it('shows warning message in dev mode when page body is not defined', () => {
@@ -67,6 +64,5 @@ describe('DotCMSBodyRenderer', () => {
             const { container } = render(<DotCMSBodyRenderer dotCMSPageAsset={invalidPageAsset} />);
             expect(container.firstChild).toBeNull();
         });
-
     });
 });

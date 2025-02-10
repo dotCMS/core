@@ -31,7 +31,7 @@ export interface ColumnProps {
  *   containers: []
  * }} />
  * ```
- * 
+ *
  * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
  * @export
  * @param {ColumnProps} { column } - Column configuration object
