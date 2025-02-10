@@ -132,7 +132,7 @@ public class PublishDateUpdater {
                 APILocator.getContentletAPI().unpublish(contentlet, locker(contentlet), false);
             }
             catch(Exception e){
-                Logger.debug(PublishDateUpdater.class, "content failed to publish: " +  e.getMessage());
+                Logger.debug(PublishDateUpdater.class, "content failed to unpublish: " +  e.getMessage());
             }
         }
     }

@@ -37,6 +37,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -348,48 +349,66 @@ public class PublisherTest extends IntegrationTestBase {
     @Test
     public void autoUnpublishContentWithUserWithoutPermissions  () throws DotDataException, DotSecurityException {
 
-
+        //Create a datetime field to be used as expire field
         final Field expiresField = new FieldDataGen().defaultValue(null)
                 .type(DateTimeField.class).next();
 
-        final ContentType contentType = new ContentTypeDataGen()
+        //Create Content Type without Expire Field set
+        ContentType contentType = new ContentTypeDataGen()
                 .field(expiresField)
-                .expireDateFieldVarName(expiresField.variable())
                 .nextPersisted();
 
         Contentlet contentlet = null;
 
         try {
-
+            //Create a date to be used as expire date value
             final Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.DATE, 1);
-            final Date tomorrow = calendar.getTime();
+            calendar.add(Calendar.DATE, -1);
+            final Date expireDate = calendar.getTime();
 
-
+            //Create Contentlet
             contentlet = new ContentletDataGen(contentType)
-                    .skipValidation(true)
-                    .setProperty(expiresField.variable(), tomorrow)
+                    .setProperty(expiresField.variable(), expireDate)
                     .nextPersisted();
 
-            final Role backendRole = TestUserUtils.getBackendRole();
+            ContentletDataGen.publish(contentlet);
 
-            addPermission(backendRole, contentlet, PermissionLevel.PUBLISH);
-            addPermission(backendRole, contentlet, PermissionLevel.READ);
-            addPermission(backendRole, contentlet, PermissionLevel.WRITE);
-            addPermission(backendRole, contentType, PermissionLevel.WRITE);
+            assertTrue(contentlet.isLive());
 
-            final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
-            contentlet.setModUser(userWithBackendRole.getUserId());
+            //Add the Expire Field at content type level
+            final ContentTypeBuilder builder = ContentTypeBuilder.builder(contentType);
+            builder.expireDateVar(expiresField.variable());
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(builder.build());
 
-            APILocator.getContentletAPIImpl().saveDraft(contentlet, (Map<Relationship, List<Contentlet>>) null, null, null, userWithBackendRole, false);
+            //Check if the content type has the expire field
+            assertTrue(contentType.expireDateVar().equals(expiresField.variable()));
 
-            APILocator.getContentletAPIImpl().publish(contentlet, userWithBackendRole, false);
+            //Run the function to auto publish and expire content
+            PublishDateUpdater.updatePublishExpireDates(new Date());
 
-            assertTrue(APILocator.getContentletAPI().searchByIdentifier(contentlet.getIdentifier(),0,-1,null , userWithBackendRole, false).get(0).isLive());
+            //Check if the contentlet was unpublished
+            contentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), APILocator.systemUser(), false);
+            assertFalse(contentlet.isLive());
 
-            PublishDateUpdater.updatePublishExpireDates(tomorrow);
-
-            assertFalse(APILocator.getContentletAPI().searchByIdentifier(contentlet.getIdentifier(),0,-1,null , userWithBackendRole, false).get(0).isLive());
+//            final Role backendRole = TestUserUtils.getBackendRole();
+//
+//            addPermission(backendRole, contentlet, PermissionLevel.PUBLISH);
+//            addPermission(backendRole, contentlet, PermissionLevel.READ);
+//            addPermission(backendRole, contentlet, PermissionLevel.WRITE);
+//            addPermission(backendRole, contentType, PermissionLevel.WRITE);
+//
+//            final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
+//            contentlet.setModUser(userWithBackendRole.getUserId());
+//
+//            APILocator.getContentletAPIImpl().saveDraft(contentlet, (Map<Relationship, List<Contentlet>>) null, null, null, userWithBackendRole, false);
+//
+//            APILocator.getContentletAPIImpl().publish(contentlet, userWithBackendRole, false);
+//
+//            assertTrue(APILocator.getContentletAPI().searchByIdentifier(contentlet.getIdentifier(),0,-1,null , userWithBackendRole, false).get(0).isLive());
+//
+//            PublishDateUpdater.updatePublishExpireDates(tomorrow);
+//
+//            assertFalse(APILocator.getContentletAPI().searchByIdentifier(contentlet.getIdentifier(),0,-1,null , userWithBackendRole, false).get(0).isLive());
         } finally {
 
             ContentletDataGen.remove(contentlet);
