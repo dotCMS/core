@@ -51,6 +51,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.importer.HeaderValidationCodes;
+import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
 import com.dotmarketing.util.importer.exception.HeaderValidationException;
 import com.dotmarketing.util.importer.exception.ImportLineException;
@@ -1308,6 +1309,7 @@ public class ImportUtil {
             validationBuilder.addMessages(
                     ValidationMessage.builder()
                             .type(ValidationMessageType.INFO)
+                            .code(HeaderValidationCodes.SYSTEM_HEADER.name())
                             .message(LanguageUtil.get(user, headerCount + " " +
                                     LanguageUtil.get(user, "headers-match-these-will-be-imported")))
                             .build()
@@ -1317,6 +1319,7 @@ public class ImportUtil {
                 validationBuilder.addMessages(
                         ValidationMessage.builder()
                                 .type(ValidationMessageType.INFO)
+                                .code(HeaderValidationCodes.SYSTEM_HEADER.name())
                                 .message(headerCount + " " +
                                         LanguageUtil.get(user,
                                                 "headers-found-on-the-file-matches-all-the-structure-fields"))
@@ -1326,6 +1329,7 @@ public class ImportUtil {
                 validationBuilder.addMessages(
                         ValidationMessage.builder()
                                 .type(ValidationMessageType.INFO)
+                                .code(HeaderValidationCodes.INVALID_HEADER_FORMAT.name())
                                 .message(LanguageUtil.get(user,
                                         "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"))
                                 .build()
@@ -1349,6 +1353,7 @@ public class ImportUtil {
             validationBuilder.addMessages(
                     ValidationMessage.builder()
                             .type(ValidationMessageType.INFO)
+                            .code(HeaderValidationCodes.SYSTEM_HEADER.name())
                             .message(LanguageUtil.get(user, relationshipCount + " " +
                                     LanguageUtil.get(user,
                                             "relationship-match-these-will-be-imported")))
@@ -1560,6 +1565,7 @@ public class ImportUtil {
                 if (contentlets.size() == 1) {
                     resultBuilder.addValidationMessage(ValidationMessage.builder()
                             .type(ValidationMessageType.WARNING)
+                            .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
                             .message(LanguageUtil.get(user,
                                     "The-key-fields-chosen-match-one-existing-content(s)")
                                     + " - "
@@ -1570,6 +1576,7 @@ public class ImportUtil {
                 } else if (contentlets.size() > 1) {
                     resultBuilder.addValidationMessage(ValidationMessage.builder()
                             .type(ValidationMessageType.WARNING)
+                            .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
                             .message(LanguageUtil.get(user,
                                     "The-key-fields-choosen-match-more-than-one-content-in-this-case")
                                     + ": "
@@ -1632,7 +1639,8 @@ public class ImportUtil {
             final int lineNumber) {
         if (line.length < headers.keySet().stream().mapToInt(i -> i).max().orElse(0)) {
             throw ImportLineException.builder()
-                    .message("Doesn't contain all the required columns.")
+                    .message("Doesn't contain all the required columns")
+                    .code(ImportLineValidationCodes.INCOMPLETE_LINE.name())
                     .lineNumber(lineNumber)
                     .build();
         }
@@ -1743,6 +1751,7 @@ public class ImportUtil {
                 if (parentPathForURL == null) {
                     throw ImportLineException.builder()
                             .message("Invalid parent folder for URL")
+                            .code(ImportLineValidationCodes.INVALID_URL_FOLDER.name())
                             .lineNumber(lineNumber)
                             .field(HTMLPageAssetAPI.URL_FIELD)
                             .invalidValue(results.urlValue.getRight())
@@ -2038,6 +2047,7 @@ public class ImportUtil {
                 if (cat == null) {
                     throw ImportLineException.builder()
                             .message("Invalid category key found")
+                            .code(ImportLineValidationCodes.INVALID_CATEGORY_KEY.name())
                             .field(field.getVelocityVarName())
                             .invalidValue(value)
                             .build();
@@ -2080,6 +2090,7 @@ public class ImportUtil {
         if (siteAndFolder == null) {
             throw ImportLineException.builder()
                     .message("Invalid site/folder inode found")
+                    .code(ImportLineValidationCodes.INVALID_LOCATION.name())
                     .field(field.getVelocityVarName())
                     .invalidValue(value)
                     .build();
@@ -2099,6 +2110,7 @@ public class ImportUtil {
         if (UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)) {
             throw ImportLineException.builder()
                     .message("URL is malformed or Response is not 200")
+                    .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
                     .invalidValue(value)
                     .build();
         }
@@ -2125,8 +2137,9 @@ public class ImportUtil {
         if (Field.FieldType.IMAGE.toString().equals(field.getFieldType()) && !UtilMethods.isImage(
                 filePath)) {
             if (UtilMethods.isSet(filePath)) {
-                resultBuilder.addWarning(String.format("The file is not an image for field: %s",
-                        field.getVelocityVarName()));
+                resultBuilder.addWarning(String.format(
+                                "The file is not an image for field: %s", field.getVelocityVarName()),
+                        ImportLineValidationCodes.INVALID_IMAGE_TYPE.name());
             }
             return null;
         }
@@ -2150,8 +2163,11 @@ public class ImportUtil {
             if (cont != null && InodeUtils.isSet(cont.getInode())) {
                 return cont.getIdentifier();
             }
-            resultBuilder.addWarning(String.format("The file has not been found in %s:%s",
-                    fileHost.getHostname(), filePath));
+            resultBuilder.addWarning(String.format(
+                            "The file has not been found in %s:%s",
+                            fileHost.getHostname(), filePath
+                    ), ImportLineValidationCodes.FILE_NOT_FOUND.name()
+            );
         }
         return null;
     }
@@ -2317,7 +2333,8 @@ public class ImportUtil {
                 }
                 String structureDoesNoMatchMessage = LanguageUtil.get(user,
                         "the-structure-does-not-match-the-relationship");
-                builder.addWarning(structureDoesNoMatchMessage);
+                builder.addWarning(structureDoesNoMatchMessage,
+                        ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name());
             }
         }
 
@@ -2450,6 +2467,7 @@ public class ImportUtil {
         if (contentsSearch == null || contentsSearch.isEmpty()) {
             throw ImportLineException.builder()
                     .message("Content not found with identifier")
+                    .code(ImportLineValidationCodes.CONTENT_NOT_FOUND.name())
                     .invalidValue(identifier)
                     .context(Map.of("Content Type", contentType.getVelocityVarName()))
                     .build();
@@ -2519,6 +2537,7 @@ public class ImportUtil {
                 throw ImportLineException.builder()
                         .message("Key field " + field.getVelocityVarName()
                                 + " is required since it was defined as a key")
+                        .code(ImportLineValidationCodes.MISSING_KEY_FIELD.name())
                         .lineNumber(lineNumber)
                         .build();
             }
@@ -2539,6 +2558,7 @@ public class ImportUtil {
                             .type(ValidationMessageType.WARNING)
                             .message("The date format for field " + field.getVelocityVarName()
                                     + " is undetermined")
+                            .code(ImportLineValidationCodes.INVALID_DATE_FORMAT.name())
                             .lineNumber(lineNumber)
                             .build());
                     Logger.warn(ImportUtil.class,
@@ -2791,6 +2811,7 @@ public class ImportUtil {
                         Logger.warn(ImportUtil.class, "Error finding content by inode", e);
                         throw ImportLineException.builder()
                                 .message("Content not found with identifier")
+                                .code(ImportLineValidationCodes.CONTENT_NOT_FOUND.name())
                                 .invalidValue(contentSearch.getIdentifier())
                                 .build();
                     }
@@ -3037,6 +3058,7 @@ public class ImportUtil {
 
             throw ImportLineException.builder()
                     .message(ex.getMessage())
+                    .code(ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name())
                     .lineNumber(lineNumber)
                     .field(sb.toString())
                     .build();
@@ -3412,14 +3434,20 @@ public class ImportUtil {
                                 "validateWorkflowAction, message.import.contentlet.invalid.action.selected: "
                                 + e.getMessage());
 
-                resultBuilder.messages.add(ValidationMessage.builder()
+                final var messageBuilder = ValidationMessage.builder()
                         .type(ValidationMessageType.WARNING)
                         .message(LanguageUtil.get(user,
                                 "message.import.contentlet.invalid.action.found.in.csv") + " "
                                 + e.getMessage())
                         .invalidValue(cont.getActionId())
-                        .lineNumber(lineNumber)
-                        .build());
+                        .lineNumber(lineNumber);
+
+                if (e instanceof ImportLineException) {
+                    messageBuilder.code(((ImportLineException) e).getCode());
+                    messageBuilder.context(((ImportLineException) e).getContext());
+                }
+
+                resultBuilder.messages.add(messageBuilder.build());
 
                 // if the user doesn't have access to the action then removed it from
                 // the content to avoid troubles executing the action set on the
@@ -3447,14 +3475,20 @@ public class ImportUtil {
                                 "message.import.contentlet.invalid.action.selected: "
                                 + e.getMessage());
 
-                resultBuilder.messages.add(ValidationMessage.builder()
+                final var messageBuilder = ValidationMessage.builder()
                         .type(ValidationMessageType.WARNING)
                         .message(LanguageUtil.get(user,
                                 "message.import.contentlet.invalid.action.selected") + " "
                                 + e.getMessage())
                         .invalidValue(wfActionId)
-                        .lineNumber(lineNumber)
-                        .build());
+                        .lineNumber(lineNumber);
+
+                if (e instanceof ImportLineException) {
+                    messageBuilder.code(((ImportLineException) e).getCode());
+                    messageBuilder.context(((ImportLineException) e).getContext());
+                }
+
+                resultBuilder.messages.add(messageBuilder.build());
 
                 // if the user doesn't have access to the action then removed it from
                 // the content to avoid troubles executing the action set on the
@@ -3686,22 +3720,34 @@ public class ImportUtil {
      * @param cont the contentlet
      * @param siteAndFolder the site and folder pair
      * @throws DotDataException if an dotCMS data error occurs
-     * @throws DotSecurityException if a security error occurs
      */
     private static void setSiteAndFolder(final User user,
             final Contentlet cont, final Pair<Host, Folder> siteAndFolder)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
         if (siteAndFolder != null) {
             final Host host = siteAndFolder.getLeft();
             final Folder folder = siteAndFolder.getRight();
             if (UtilMethods.isSet(folder) && !folder.isSystemFolder() &&
                     !permissionAPI.doesUserHavePermission(folder,
                             PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user)) {
-                throw new DotSecurityException( "User has no Add Children Permissions on selected folder" );
+                throw ImportLineException.builder()
+                        .message("User has no Add Children Permissions on selected folder")
+                        .code(ImportLineValidationCodes.PERMISSION_ERROR.name())
+                        .context(Map.of(
+                                "Identifier", cont.getIdentifier(),
+                                "Folder", folder.getPath()
+                        ))
+                        .build();
             } else if (UtilMethods.isSet(host) && (!permissionAPI.doesUserHavePermission(
                     host,PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user))) {
-                throw new DotSecurityException("User has no Add Children Permissions on selected host");
-
+                throw ImportLineException.builder()
+                        .message("User has no Add Children Permissions on selected host")
+                        .code(ImportLineValidationCodes.PERMISSION_ERROR.name())
+                        .context(Map.of(
+                                "Identifier", cont.getIdentifier(),
+                                "Site", host.getIdentifier()
+                        ))
+                        .build();
             }
             if (UtilMethods.isSet(host) && UtilMethods.isSet(folder)) {
                 cont.setHost(host.getIdentifier());
@@ -3991,8 +4037,7 @@ public class ImportUtil {
      * and the step of the Contentlet
      */
     private static WorkflowAction validateWorkflowAction(final User user,
-            final Contentlet contentlet)
-            throws DotDataException {
+            final Contentlet contentlet) throws ImportLineException {
 
         WorkflowAction executeWfAction;
         String actionId = contentlet.getActionId();
@@ -4005,11 +4050,29 @@ public class ImportUtil {
             //Validate if the action we want to execute is in the right step
             workflowAPI.validateActionStepAndWorkflow(contentlet, user);
         } catch (final DotSecurityException e) {
-            throw new DotDataException(String.format("User '%s' doesn't have permissions to execute Workflow Action " +
-                    "'%s': %s", user.getUserId(), actionId, e.getMessage()), e);
+            throw ImportLineException.builder()
+                    .message(String.format(
+                            "User '%s' doesn't have permissions to execute Workflow Action " +
+                                    "'%s'", user.getUserId(), actionId))
+                    .code(ImportLineValidationCodes.WORKFLOW_PERMISSION_ERROR.name())
+                    .context(Map.of(
+                            "Identifier", contentlet.getIdentifier(),
+                            "WorkflowActionId", actionId,
+                            "Error", e.getMessage()
+                    ))
+                    .build();
         } catch (final DotDataException | IllegalArgumentException e) {
-            throw new DotDataException(String.format("An error occurred when validating Workflow Action '%s' on " +
-                    "content '%s': %s", actionId, contentlet.getIdentifier(), e.getMessage()), e);
+            throw ImportLineException.builder()
+                    .message(String.format(
+                            "An error occurred when validating Workflow Action '%s' on " +
+                                    "content '%s'", actionId, contentlet.getIdentifier()))
+                    .code(ImportLineValidationCodes.INVALID_WORKFLOW_ACTION.name())
+                    .context(Map.of(
+                            "Identifier", contentlet.getIdentifier(),
+                            "WorkflowActionId", actionId,
+                            "Error", e.getMessage()
+                    ))
+                    .build();
         }
 
         return executeWfAction;
@@ -4027,6 +4090,7 @@ public class ImportUtil {
                                     "Value couldn't be parsed as any of the following supported formats: "
                                             + printSupportedDateFormats()
                             )
+                            .code(ImportLineValidationCodes.INVALID_DATE_FORMAT.name())
                             .field(field.getVelocityVarName())
                             .invalidValue(value)
                             .build();
@@ -4078,6 +4142,7 @@ public class ImportUtil {
                                         + " '"
                                         + f.getVelocityVarName() + "', " + LanguageUtil.get(user,
                                         "and-will-be-ignored"))
+                                .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
                                 .field(bean.field().getVelocityVarName())
                                 .invalidValue(bean.value().toString())
                                 .lineNumber(lineNumber)
@@ -4725,18 +4790,11 @@ public class ImportUtil {
             this.urlValue = urlValue;
         }
 
-        public void addWarning(String message) {
+        public void addWarning(final String message, final String code) {
             addValidationMessage(ValidationMessage.builder()
                     .type(ValidationMessageType.WARNING)
                     .message(message)
-                    .lineNumber(lineNumber)
-                    .build());
-        }
-
-        public void addError(String message) {
-            addValidationMessage(ValidationMessage.builder()
-                    .type(ValidationMessageType.ERROR)
-                    .message(message)
+                    .code(code)
                     .lineNumber(lineNumber)
                     .build());
         }
@@ -4815,22 +4873,6 @@ public class ImportUtil {
             this.urlValueAssetName = urlValueAssetName;
         }
 
-        public void addWarning(final String message) {
-            addValidationMessage(ValidationMessage.builder()
-                    .type(ValidationMessageType.WARNING)
-                    .message(message)
-                    .lineNumber(lineNumber)
-                    .build());
-        }
-
-        public void addError(final String message) {
-            addValidationMessage(ValidationMessage.builder()
-                    .type(ValidationMessageType.ERROR)
-                    .message(message)
-                    .lineNumber(lineNumber)
-                    .build());
-        }
-
         public void addError(final String message, final String field, final Object value) {
             addValidationMessage(ValidationMessage.builder()
                     .type(ValidationMessageType.ERROR)
@@ -4890,10 +4932,11 @@ public class ImportUtil {
             relationships.put(relationship, contentlets);
         }
 
-        void addWarning(String message) {
+        void addWarning(final String message, final String code) {
             messages.add(ValidationMessage.builder()
                     .type(ValidationMessageType.WARNING)
                     .message(message)
+                    .code(code)
                     .lineNumber(lineNumber)
                     .build());
         }
