@@ -17,6 +17,7 @@ import {
     DotTemplate,
     VanityUrl
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { PERSONA_KEY } from '../shared/consts';
 import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
@@ -46,7 +47,7 @@ export interface DotPageApiParams {
     [PERSONA_KEY]: string;
     variantName?: string;
     experimentId?: string;
-    mode?: string;
+    mode?: UVE_MODE;
     clientHost?: string;
     depth?: string;
     publishDate?: string;
@@ -61,8 +62,7 @@ export enum DotPageAssetKeys {
     LANGUAGE_ID = 'language_id',
     EXPERIMENT_ID = 'experimentId',
     PERSONA_ID = 'com.dotmarketing.persona.id',
-    PUBLISH_DATE = 'publishDate',
-    EDITOR_MODE = 'editorMode'
+    PUBLISH_DATE = 'publishDate'
 }
 
 export interface GetPersonasParams {

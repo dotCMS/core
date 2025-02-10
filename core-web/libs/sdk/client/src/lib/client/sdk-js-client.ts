@@ -67,7 +67,7 @@ export type PageApiOptions = {
      * @type {string}
      * @optional
      */
-    mode?: 'EDIT_MODE' | 'PREVIEW_MODE' | 'LIVE_MODE';
+    mode?: 'EDIT_MODE' | 'PREVIEW_MODE' | 'LIVE';
     /**
      * The language id of the page you want to retrieve. If not provided, will use the default language of the site.
      * @type {number}
