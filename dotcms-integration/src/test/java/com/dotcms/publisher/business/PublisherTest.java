@@ -31,16 +31,17 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -51,6 +52,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import java.io.IOException;
 import java.util.*;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -60,7 +62,7 @@ import java.io.File;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Test the PushedAssetsAPI
@@ -333,6 +335,69 @@ public class PublisherTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#updatePublishExpireDates(Date)}
+     * When:
+     * - Create a ContentType with expire date field
+     * - Create a {@link Contentlet} with a expire date set, publish it, then remove permissions and unpublish it through the function
+     * Should: The {@link Contentlet} should be unpublished
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void autoUnpublishContentWithUserWithoutPermissions  () throws DotDataException, DotSecurityException {
+
+
+        final Field expiresField = new FieldDataGen().defaultValue(null)
+                .type(DateTimeField.class).next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(expiresField)
+                .expireDateFieldVarName(expiresField.variable())
+                .nextPersisted();
+
+        Contentlet contentlet = null;
+
+        try {
+
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, 1);
+            final Date tomorrow = calendar.getTime();
+
+
+            contentlet = new ContentletDataGen(contentType)
+                    .skipValidation(true)
+                    .setProperty(expiresField.variable(), tomorrow)
+                    .nextPersisted();
+
+            final Role backendRole = TestUserUtils.getBackendRole();
+
+            addPermission(backendRole, contentlet, PermissionLevel.PUBLISH);
+            addPermission(backendRole, contentlet, PermissionLevel.READ);
+            addPermission(backendRole, contentlet, PermissionLevel.WRITE);
+            addPermission(backendRole, contentType, PermissionLevel.WRITE);
+
+            final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
+            contentlet.setModUser(userWithBackendRole.getUserId());
+
+            APILocator.getContentletAPIImpl().saveDraft(contentlet, (Map<Relationship, List<Contentlet>>) null, null, null, userWithBackendRole, false);
+
+            APILocator.getContentletAPIImpl().publish(contentlet, userWithBackendRole, false);
+
+            assertTrue(APILocator.getContentletAPI().searchByIdentifier(contentlet.getIdentifier(),0,-1,null , userWithBackendRole, false).get(0).isLive());
+
+            PublishDateUpdater.updatePublishExpireDates(tomorrow);
+
+            assertFalse(APILocator.getContentletAPI().searchByIdentifier(contentlet.getIdentifier(),0,-1,null , userWithBackendRole, false).get(0).isLive());
+        } finally {
+
+            ContentletDataGen.remove(contentlet);
+            ContentTypeDataGen.remove(contentType);
+
+        }
+    }
+
     private FolderPage createNewPage (final  FolderPage folderPage, final User user) throws Exception {
 
         final HTMLPageAsset page = PublisherTestUtil.createPage(folderPage.folder, user);
@@ -589,5 +654,29 @@ public class PublisherTest extends IntegrationTestBase {
                 new FilterDescriptor("filterTestAPI.yml", "Filter Test Title", filtersMap, true,
                         "Reviewer,dotcms.org.2789");
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
+
+    private void addPermission(
+            final Role role,
+            final Permissionable contentType,
+            final PermissionLevel permissionLevel)
+
+            throws DotDataException, DotSecurityException {
+
+        APILocator.getPermissionAPI().save(
+                getPermission(role, contentType, permissionLevel.getType()),
+                contentType, APILocator.systemUser(), false);
+    }
+    @NotNull
+    private Permission getPermission(
+            final Role role,
+            final Permissionable permissionable,
+            final int permissionPublish) {
+
+        final Permission publishPermission = new Permission();
+        publishPermission.setInode(permissionable.getPermissionId());
+        publishPermission.setRoleId(role.getId());
+        publishPermission.setPermission(permissionPublish);
+        return publishPermission;
     }
 }
