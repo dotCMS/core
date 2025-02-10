@@ -1,5 +1,12 @@
 package com.dotmarketing.util.importer;
 
+import static com.dotmarketing.util.ImportUtil.KEY_COUNTERS;
+import static com.dotmarketing.util.ImportUtil.KEY_ERRORS;
+import static com.dotmarketing.util.ImportUtil.KEY_IDENTIFIERS;
+import static com.dotmarketing.util.ImportUtil.KEY_LAST_INODE;
+import static com.dotmarketing.util.ImportUtil.KEY_MESSAGES;
+import static com.dotmarketing.util.ImportUtil.KEY_WARNINGS;
+
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.ImportUtil.Counters;
 import com.dotmarketing.util.importer.model.AbstractSpecialHeaderInfo.SpecialHeaderType;
@@ -39,6 +46,10 @@ import java.util.stream.Collectors;
  */
 public class ImportResultConverter {
 
+    private ImportResultConverter() {
+        // Utility class, do not instantiate
+    }
+
     /**
      * Converts from the new structured ImportResult format to the legacy HashMap format. This
      * method ensures backward compatibility by formatting the structured data into the string-based
@@ -56,9 +67,9 @@ public class ImportResultConverter {
         Map<ValidationMessageType, List<String>> messagesByType =
                 convertMessagesToLegacyFormat(result.messages());
 
-        legacyResults.put("warnings", messagesByType.get(ValidationMessageType.WARNING));
-        legacyResults.put("errors", messagesByType.get(ValidationMessageType.ERROR));
-        legacyResults.put("messages", messagesByType.get(ValidationMessageType.INFO));
+        legacyResults.put(KEY_WARNINGS, messagesByType.get(ValidationMessageType.WARNING));
+        legacyResults.put(KEY_ERRORS, messagesByType.get(ValidationMessageType.ERROR));
+        legacyResults.put(KEY_MESSAGES, messagesByType.get(ValidationMessageType.INFO));
 
         // Add counters
         List<String> counters = new ArrayList<>();
@@ -67,7 +78,7 @@ public class ImportResultConverter {
         counters.add("errors=" + messagesByType.get(ValidationMessageType.ERROR).size());
         counters.add("newContent=" + data.summary().created());
         counters.add("contentToUpdate=" + data.summary().updated());
-        legacyResults.put("counters", counters);
+        legacyResults.put(KEY_COUNTERS, counters);
 
         // Add results summary
         List<String> results = new ArrayList<>();
@@ -103,13 +114,13 @@ public class ImportResultConverter {
             String messageText = message.message();
             switch (message.type()) {
                 case ERROR:
-                    legacyResults.get("errors").add(messageText);
+                    legacyResults.get(KEY_ERRORS).add(messageText);
                     break;
                 case WARNING:
-                    legacyResults.get("warnings").add(messageText);
+                    legacyResults.get(KEY_WARNINGS).add(messageText);
                     break;
                 case INFO:
-                    legacyResults.get("messages").add(messageText);
+                    legacyResults.get(KEY_MESSAGES).add(messageText);
                     break;
             }
         }
@@ -118,7 +129,7 @@ public class ImportResultConverter {
         for (SpecialHeaderInfo specialHeader : validationResult.headerInfo()
                 .specialHeaders()) {
             if (specialHeader.type() == SpecialHeaderType.IDENTIFIER) {
-                legacyResults.get("identifiers").add(
+                legacyResults.get(KEY_IDENTIFIERS).add(
                         StringPool.BLANK + specialHeader.columnIndex()
                 );
             } else if (specialHeader.type() == SpecialHeaderType.WORKFLOW_ACTION) {
@@ -152,13 +163,13 @@ public class ImportResultConverter {
         for (ValidationMessage msg : importResults.messages()) {
             switch (msg.type()) {
                 case ERROR:
-                    legacyResults.get("errors").add(formatMessage(msg));
+                    legacyResults.get(KEY_ERRORS).add(formatMessage(msg));
                     break;
                 case WARNING:
-                    legacyResults.get("warnings").add(formatMessage(msg));
+                    legacyResults.get(KEY_WARNINGS).add(formatMessage(msg));
                     break;
                 case INFO:
-                    legacyResults.get("messages").add(formatMessage(msg));
+                    legacyResults.get(KEY_MESSAGES).add(formatMessage(msg));
                     break;
             }
         }
@@ -174,10 +185,10 @@ public class ImportResultConverter {
         counters.setContentUpdatedDuplicated(
                 counters.getContentUpdatedDuplicated() + importResults.duplicateContent());
 
-        legacyResults.get("lastInode").clear();
-        List<String> l = legacyResults.get("lastInode");
+        legacyResults.get(KEY_LAST_INODE).clear();
+        List<String> l = legacyResults.get(KEY_LAST_INODE);
         l.add(importResults.lastInode());
-        legacyResults.put("lastInode", l);
+        legacyResults.put(KEY_LAST_INODE, l);
 
         return (int) importResults.messages().stream()
                 .filter(m -> m.type() == ValidationMessageType.ERROR)

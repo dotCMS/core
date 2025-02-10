@@ -130,6 +130,17 @@ public class ImportUtil {
     private final static FolderAPI folderAPI = APILocator.getFolderAPI();
     private final static WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
+    public static final String KEY_WARNINGS = "warnings";
+    public static final String KEY_ERRORS = "errors";
+    public static final String KEY_MESSAGES = "messages";
+    public static final String KEY_RESULTS = "results";
+    public static final String KEY_COUNTERS = "counters";
+    public static final String KEY_IDENTIFIERS = "identifiers";
+    public static final String KEY_UPDATED_INODES = "updatedInodes";
+    public static final String KEY_LAST_INODE = "lastInode";
+
+    private static final int TEXT_FIELD_MAX_LENGTH = 255;
+
     private final static String languageCodeHeader = "languageCode";
     private final static String countryCodeHeader = "countryCode";
 
@@ -140,7 +151,12 @@ public class ImportUtil {
         "MM/dd/yy hh:mm aa", "MM/dd/yyyy hh:mm aa",	"MM/dd/yy HH:mm", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d",
         "EEEE, MMMM dd, yyyy", "MM/dd/yyyy", "hh:mm:ss aa", "HH:mm:ss", "hh:mm aa", "yyyy-MM-dd" };
 
-    private static final SimpleDateFormat DATE_FIELD_FORMAT = new SimpleDateFormat("yyyyMMdd");
+    /**
+     * Date format patterns for different field types
+     */
+    private static final String DATE_FIELD_FORMAT_PATTERN = "yyyyMMdd";
+    private static final String DATE_TIME_FIELD_FORMAT_PATTERN = "MM/dd/yyyy";
+    private static final String TIME_FIELD_FORMAT_PATTERN = "HHmmss";
 
     /**
      * Imports the data contained in a CSV file into dotCMS. The data can be
@@ -281,15 +297,15 @@ public class ImportUtil {
             final HttpServletRequest request, final LongConsumer progressCallback)
             throws DotRuntimeException, DotDataException {
 
-        HashMap<String, List<String>> results = new HashMap<>();
-        results.put("warnings", new ArrayList<>());
-        results.put("errors", new ArrayList<>());
-        results.put("messages", new ArrayList<>());
-        results.put("results", new ArrayList<>());
-        results.put("counters", new ArrayList<>());
-        results.put("identifiers", new ArrayList<>());
-        results.put("updatedInodes", new ArrayList<>());
-        results.put("lastInode", new ArrayList<>());
+        final HashMap<String, List<String>> results = new HashMap<>();
+        results.put(KEY_WARNINGS, new ArrayList<>());
+        results.put(KEY_ERRORS, new ArrayList<>());
+        results.put(KEY_MESSAGES, new ArrayList<>());
+        results.put(KEY_RESULTS, new ArrayList<>());
+        results.put(KEY_COUNTERS, new ArrayList<>());
+        results.put(KEY_IDENTIFIERS, new ArrayList<>());
+        results.put(KEY_UPDATED_INODES, new ArrayList<>());
+        results.put(KEY_LAST_INODE, new ArrayList<>());
         results.put(Contentlet.WORKFLOW_ACTION_KEY, new ArrayList<>());
 
         Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode (contentTypeInode);
@@ -302,16 +318,16 @@ public class ImportUtil {
         int errors = 0;
         int lineNumber = 0;
 
-        Counters counters = new Counters();
-        HashSet<String> keyContentUpdated = new HashSet<>();
-        StringBuffer choosenKeyField = new StringBuffer();
+        final Counters counters = new Counters();
+        final HashSet<String> keyContentUpdated = new HashSet<>();
+        final StringBuilder choosenKeyField = new StringBuilder();
 
         // Data structures to be populated by header validation
-        HashMap<Integer, Field> headers = new HashMap<>();
-        HashMap<Integer, Field> keyFields = new HashMap<>();
-        HashMap<Integer, Relationship> relationships = new HashMap<>();
-        HashMap<Integer, Boolean> onlyParent = new HashMap<>();
-        HashMap<Integer, Boolean> onlyChild = new HashMap<>();
+        final Map<Integer, Field> headers = new HashMap<>();
+        final Map<Integer, Field> keyFields = new HashMap<>();
+        final Map<Integer, Relationship> relationships = new HashMap<>();
+        final Map<Integer, Boolean> onlyParent = new HashMap<>();
+        final Map<Integer, Boolean> onlyChild = new HashMap<>();
 
         //Get unique fields for structure
         for(Field field : FieldsCache.getFieldsByStructureInode(contentType.getInode())){
@@ -421,7 +437,13 @@ public class ImportUtil {
                                     }
                                 }
                             } else {
-                                results.get( "errors" ).add( LanguageUtil.get( user, "Line--" ) + lineNumber + LanguageUtil.get( user, "Locale-not-found-for-languageCode" ) + " ='" + csvLine[languageCodeHeaderColumn] + "' countryCode='" + csvLine[countryCodeHeaderColumn] + "'" );
+                                results.get(KEY_ERRORS)
+                                        .add(LanguageUtil.get(user, "Line--") + lineNumber
+                                                + LanguageUtil.get(user,
+                                                "Locale-not-found-for-languageCode") + " ='"
+                                                + csvLine[languageCodeHeaderColumn]
+                                                + "' countryCode='"
+                                                + csvLine[countryCodeHeaderColumn] + "'");
                                 errors++;
                             }
 
@@ -450,7 +472,7 @@ public class ImportUtil {
                             if(errorMessage.indexOf(LINE_NO) == -1){
                                 errorMessage = LINE_NO + lineNumber + ": " + errorMessage;
                             }
-                            results.get("errors").add(errorMessage);
+                            results.get(KEY_ERRORS).add(errorMessage);
                             errors++;
                             Logger.warn(ImportUtil.class, "Error line: " + lines + " (" + csvreader.getRawRecord()
                                     + "). Line Ignored.");
@@ -463,38 +485,56 @@ public class ImportUtil {
                     }
 
                     if(!preview){
-                        results.get("counters").add("linesread="+lines);
-                        results.get("counters").add("errors="+errors);
-                        results.get("counters").add("newContent="+counters.getNewContentCounter());
-                        results.get("counters").add("contentToUpdate="+counters.getContentToUpdateCounter());
+                        results.get(KEY_COUNTERS).add("linesread=" + lines);
+                        results.get(KEY_COUNTERS).add("errors=" + errors);
+                        results.get(KEY_COUNTERS)
+                                .add("newContent=" + counters.getNewContentCounter());
+                        results.get(KEY_COUNTERS)
+                                .add("contentToUpdate=" + counters.getContentToUpdateCounter());
                         HibernateUtil.closeAndCommitTransaction();
                     }
 
-                    results.get("messages").add(lines + " "+LanguageUtil.get(user, "lines-of-data-were-read" ));
+                    results.get(KEY_MESSAGES)
+                            .add(lines + " " + LanguageUtil.get(user, "lines-of-data-were-read"));
                     if (errors > 0) {
-                        results.get("errors").add(errors + " " + LanguageUtil.get(user, "input-lines-had-errors" ));
+                        results.get(KEY_ERRORS).add(errors + " " + LanguageUtil.get(user,
+                                "input-lines-had-errors"));
                     }
                     if (preview && choosenKeyField.length() > 1) {
-                        results.get("messages").add(
+                        results.get(KEY_MESSAGES).add(
                                 LanguageUtil.get(user,
                                         "Fields-selected-as-key") + ": " +
                                         choosenKeyField.substring(1) + ".");
                     }
                     if (counters.getNewContentCounter() > 0) {
-                        results.get("messages").add(LanguageUtil.get(user, "Attempting-to-create") + " " + (counters.getNewContentCounter()) + " contentlets - " + LanguageUtil.get(user, "check-below-for-errors"));
+                        results.get(KEY_MESSAGES)
+                                .add(LanguageUtil.get(user, "Attempting-to-create") + " "
+                                        + (counters.getNewContentCounter()) + " contentlets - "
+                                        + LanguageUtil.get(user, "check-below-for-errors"));
                     }
                     if (counters.getContentToUpdateCounter() > 0) {
-                        results.get("messages").add(LanguageUtil.get(user, "Approximately") + " " + (counters.getContentToUpdateCounter()) + " " + LanguageUtil.get(user, "old-content-will-be-updated"));
+                        results.get(KEY_MESSAGES).add(LanguageUtil.get(user, "Approximately") + " "
+                                + (counters.getContentToUpdateCounter()) + " " + LanguageUtil.get(
+                                user, "old-content-will-be-updated"));
                     }
 
-                    results.get("results").add(counters.getContentCreated() + " "+LanguageUtil.get(user, "new")+" "+"\"" + contentType.getName() + "\" "+ LanguageUtil.get(user, "were-created"));
-                    results.get("results").add(counters.getContentUpdatedDuplicated() + " \"" + contentType.getName() + "\" "+ LanguageUtil.get(user, "contentlets-updated-corresponding-to")+" "+ counters.getContentUpdated() +" "+ LanguageUtil.get(user, "repeated-contents-based-on-the-key-provided"));
+                    results.get(KEY_RESULTS)
+                            .add(counters.getContentCreated() + " " + LanguageUtil.get(user, "new")
+                                    + " " + "\"" + contentType.getName() + "\" " + LanguageUtil.get(
+                                    user, "were-created"));
+                    results.get(KEY_RESULTS).add(counters.getContentUpdatedDuplicated() + " \""
+                            + contentType.getName() + "\" " + LanguageUtil.get(user,
+                            "contentlets-updated-corresponding-to") + " "
+                            + counters.getContentUpdated() + " " + LanguageUtil.get(user,
+                            "repeated-contents-based-on-the-key-provided"));
 
                     if (errors > 0) {
-                        results.get("results").add(errors + " "+ LanguageUtil.get(user, "contentlets-were-ignored-due-to-invalid-information"));
+                        results.get(KEY_RESULTS).add(errors + " " + LanguageUtil.get(user,
+                                "contentlets-were-ignored-due-to-invalid-information"));
                     }
                 } else {
-                    results.get("errors").add(LanguageUtil.get(user, "No-headers-found-on-the-file-nothing-will-be-imported"));
+                    results.get(KEY_ERRORS).add(LanguageUtil.get(user,
+                            "No-headers-found-on-the-file-nothing-will-be-imported"));
                 }
             }
         } catch (final Exception e) {
@@ -507,7 +547,7 @@ public class ImportUtil {
                 if (errorMessage.indexOf(LINE_NO) == -1) {
                     errorMessage = LINE_NO + lineNumber + ": " + errorMessage;
                 }
-                results.get("errors").add(errorMessage);
+                results.get(KEY_ERRORS).add(errorMessage);
                 errors++;
             }
         }
@@ -546,10 +586,10 @@ public class ImportUtil {
      */
     private static HeaderValidationResult importHeaders(final String[] headerLine,
             final Structure contentType, final String[] keyFieldsInodes,
-            final boolean isMultilingual, final User user, final HashMap<Integer, Field> headers,
-            final HashMap<Integer, Field> keyFields, final List<Field> uniqueFields,
-            final HashMap<Integer, Relationship> relationships,
-            final HashMap<Integer, Boolean> onlyChild, final HashMap<Integer, Boolean> onlyParent)
+            final boolean isMultilingual, final User user, final Map<Integer, Field> headers,
+            final Map<Integer, Field> keyFields, final List<Field> uniqueFields,
+            final Map<Integer, Relationship> relationships,
+            final Map<Integer, Boolean> onlyChild, final Map<Integer, Boolean> onlyParent)
             throws Exception {
 
         // Create structured results for validation tracking
@@ -617,9 +657,9 @@ public class ImportUtil {
             final Structure contentType,
             final String[] keyFieldsInodes, boolean isMultilingual,
             final Map<String, Relationship> relationshipsMap, final List<String> headerFields,
-            final HashMap<Integer, Field> headers, final HashMap<Integer, Field> keyFields,
-            final HashMap<Integer, Relationship> relationships,
-            final HashMap<Integer, Boolean> onlyChild, final HashMap<Integer, Boolean> onlyParent,
+            final Map<Integer, Field> headers, final Map<Integer, Field> keyFields,
+            final Map<Integer, Relationship> relationships,
+            final Map<Integer, Boolean> onlyChild, final Map<Integer, Boolean> onlyParent,
             final User user, final HeaderValidationResult.Builder validationBuilder)
             throws Exception {
 
@@ -727,12 +767,12 @@ public class ImportUtil {
      */
     private static void processAndValidateHeader(
             final String header, final int columnIndex, final Structure contentType,
-            final HashMap<Integer, Field> headers, final String[] keyFieldsInodes,
-            final HashMap<Integer, Field> keyFields,
-            final HashMap<Integer, Boolean> onlyChild,
-            final HashMap<Integer, Boolean> onlyParent,
+            final Map<Integer, Field> headers, final String[] keyFieldsInodes,
+            final Map<Integer, Field> keyFields,
+            final Map<Integer, Boolean> onlyChild,
+            final Map<Integer, Boolean> onlyParent,
             final Map<String, Relationship> relationshipsMap,
-            final HashMap<Integer, Relationship> relationships,
+            final Map<Integer, Relationship> relationships,
             final List<String> validHeaders, final List<String> invalidHeaders,
             final boolean isMultilingual, final User user,
             final HeaderValidationResult.Builder validationBuilder)
@@ -932,11 +972,11 @@ public class ImportUtil {
      * @throws LanguageException If language key lookup fails
      */
     private static boolean processContentTypeField(final String header, final int columnIndex,
-            final Structure contentType, final HashMap<Integer, Field> headers,
-            final String[] keyFieldsInodes, final HashMap<Integer, Field> keyFields,
-            final HashMap<Integer, Boolean> onlyChild, final HashMap<Integer, Boolean> onlyParent,
+            final Structure contentType, final Map<Integer, Field> headers,
+            final String[] keyFieldsInodes, final Map<Integer, Field> keyFields,
+            final Map<Integer, Boolean> onlyChild, final Map<Integer, Boolean> onlyParent,
             final Map<String, Relationship> relationshipsMap,
-            final HashMap<Integer, Relationship> relationships, final User user,
+            final Map<Integer, Relationship> relationships, final User user,
             final HeaderValidationResult.Builder validationBuilder)
             throws LanguageException, DotDataException, DotSecurityException {
 
@@ -1023,8 +1063,8 @@ public class ImportUtil {
      */
     private static boolean processRelationshipHeader(final String header, final int columnIndex,
             final Map<String, Relationship> relationshipsMap,
-            final HashMap<Integer, Relationship> relationships,
-            final HashMap<Integer, Boolean> onlyChild, final HashMap<Integer, Boolean> onlyParent) {
+            final Map<Integer, Relationship> relationships,
+            final Map<Integer, Boolean> onlyChild, final Map<Integer, Boolean> onlyParent) {
 
         String relationshipHeader = header;
         boolean onlyP = false;
@@ -1081,9 +1121,9 @@ public class ImportUtil {
     private static void processRelationshipField(
             final Field field, final int columnIndex, final User user,
             final Map<String, Relationship> relationshipsMap,
-            final HashMap<Integer, Relationship> relationships,
-            final HashMap<Integer, Boolean> onlyParent,
-            final HashMap<Integer, Boolean> onlyChild)
+            final Map<Integer, Relationship> relationships,
+            final Map<Integer, Boolean> onlyParent,
+            final Map<Integer, Boolean> onlyChild)
             throws DotDataException, DotSecurityException {
 
         final Relationship fieldRelationship = APILocator.getRelationshipAPI()
@@ -1171,7 +1211,7 @@ public class ImportUtil {
      * @throws LanguageException If language key lookup fails
      */
     private static void validateKeyFields(final String[] keyFieldsInodes,
-            final HashMap<Integer, Field> headers, final User user,
+            final Map<Integer, Field> headers, final User user,
             final HeaderValidationResult.Builder validationBuilder) throws LanguageException {
 
         if (keyFieldsInodes.length == 0) {
@@ -1365,16 +1405,16 @@ public class ImportUtil {
             final int wfActionIdIndex,
             final int lineNumber,
             final long language,
-            final HashMap<Integer, Field> headers,
-            final HashMap<Integer, Field> keyFields,
-            final StringBuffer choosenKeyField,
+            final Map<Integer, Field> headers,
+            final Map<Integer, Field> keyFields,
+            final StringBuilder choosenKeyField,
             final HashSet<String> keyContentUpdated,
             final List<Permission> contentTypePermissions,
             final List<UniqueFieldBean> uniqueFieldBeans,
             final List<Field> uniqueFields,
-            final HashMap<Integer, Relationship> relationships,
-            final HashMap<Integer, Boolean> onlyChild,
-            final HashMap<Integer, Boolean> onlyParent,
+            final Map<Integer, Relationship> relationships,
+            final Map<Integer, Boolean> onlyChild,
+            final Map<Integer, Boolean> onlyParent,
             final boolean sameKeyBatchInsert,
             final String wfActionId,
             final HttpServletRequest request,
@@ -1393,8 +1433,8 @@ public class ImportUtil {
         fieldResults.categories().forEach(resultBuilder::addCategory);
         uniqueFieldBeans.addAll(fieldResults.uniqueFields());
 
-        HashMap<Integer, Object> values = new HashMap<>();
-        Set<Category> categories = new HashSet<>();
+        final Map<Integer, Object> values = new HashMap<>();
+        final Set<Category> categories = new HashSet<>();
         values.putAll(fieldResults.values());
         categories.addAll(fieldResults.categories());
 
@@ -1420,9 +1460,9 @@ public class ImportUtil {
         String urlValueAssetName = fieldResults.urlValueAssetName().orElse(null);
 
         // Initialize relationship maps
-        final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
-        final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
-        final HashMap<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
+        final Map<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly = new HashMap<>();
+        final Map<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly = new HashMap<>();
+        final Map<Relationship, List<Contentlet>> csvRelationshipRecords = new HashMap<>();
 
         // Process relationships if any exist
         if (!relationships.isEmpty()) {
@@ -1818,7 +1858,7 @@ public class ImportUtil {
      *                        May be empty if no key fields have been chosen yet.
      */
     private static void updateChosenKeyField(final Field field,
-            final StringBuffer choosenKeyField) {
+            final StringBuilder choosenKeyField) {
         if (UtilMethods.isSet(choosenKeyField.toString())) {
             int count = 1;
             String[] chosenArr = choosenKeyField.toString().split(",");
@@ -1834,6 +1874,18 @@ public class ImportUtil {
         } else {
             choosenKeyField.append(", ").append(field.getVelocityVarName());
         }
+    }
+
+    /**
+     * Formats a date value using the specified pattern.
+     *
+     * @param value   The date value to format
+     * @param pattern The format pattern to apply
+     * @return The formatted date string
+     */
+    private static String formatDate(final Date value, final String pattern) {
+        DateFormat df = new SimpleDateFormat(pattern);
+        return df.format(value);
     }
 
     /**
@@ -2004,8 +2056,8 @@ public class ImportUtil {
      * @return the processed value, truncated to 255 characters if necessary
      */
     private static Object processTextField(final String value) {
-        if (value != null && value.length() > 255) {
-            return value.substring(0, 255);
+        if (value != null && value.length() > TEXT_FIELD_MAX_LENGTH) {
+            return value.substring(0, TEXT_FIELD_MAX_LENGTH);
         }
         return value;
     }
@@ -2080,8 +2132,8 @@ public class ImportUtil {
         }
 
         Host fileHost = hostAPI.find(currentHostId, user, false);
-        if (filePath.contains(":")) {
-            String[] fileInfo = filePath.split(":");
+        if (filePath.contains(StringPool.COLON)) {
+            String[] fileInfo = filePath.split(StringPool.COLON);
             if (fileInfo.length == 2) {
                 Host fileHostAux = hostAPI.findByName(fileInfo[0], user, false);
                 fileHost = (UtilMethods.isSet(fileHostAux) ? fileHostAux : fileHost);
@@ -2322,7 +2374,7 @@ public class ImportUtil {
      */
     private static ContentletSearchResult searchExistingContentlets(
             final Structure contentType,
-            final HashMap<Integer, Object> values,
+            final Map<Integer, Object> values,
             final Map<Integer, Field> keyFields,
             final Pair<Host, Folder> siteAndFolder,
             final Pair<Integer, String> urlValue,
@@ -2333,7 +2385,7 @@ public class ImportUtil {
             final boolean isMultilingual,
             final long language,
             final int lineNumber,
-            final StringBuffer choosenKeyField,
+            final StringBuilder choosenKeyField,
             final User user
     ) throws DotDataException, DotSecurityException {
 
@@ -2435,7 +2487,7 @@ public class ImportUtil {
      */
     private static SearchByKeyFieldsResult searchByKeyFields(
             final Structure contentType,
-            final HashMap<Integer, Object> values,
+            final Map<Integer, Object> values,
             final Map<Integer, Field> keyFields,
             final Pair<Host, Folder> siteAndFolder,
             final String urlValueAssetName,
@@ -2445,7 +2497,7 @@ public class ImportUtil {
             final boolean isMultilingual,
             final User user,
             final int lineNumber,
-            final StringBuffer choosenKeyField,
+            final StringBuilder choosenKeyField,
             final ContentletSearchResult.Builder builder
     ) throws DotDataException, DotSecurityException {
 
@@ -2475,13 +2527,11 @@ public class ImportUtil {
             if (value instanceof Date || value instanceof Timestamp) {
                 SimpleDateFormat formatter;
                 if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
-                    processedValue = DATE_FIELD_FORMAT.format((Date) value);
+                    processedValue = formatDate((Date) value, DATE_FIELD_FORMAT_PATTERN);
                 } else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-                    DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
-                    processedValue = df.format((Date) value);
+                    processedValue = formatDate((Date) value, DATE_TIME_FIELD_FORMAT_PATTERN);
                 } else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-                    DateFormat df = new SimpleDateFormat("HHmmss");
-                    processedValue = df.format((Date) value);
+                    processedValue = formatDate((Date) value, TIME_FIELD_FORMAT_PATTERN);
                 } else {
                     formatter = new SimpleDateFormat();
                     processedValue = formatter.format(value);
@@ -2702,20 +2752,18 @@ public class ImportUtil {
         Object result = value;
 
         if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-            DateFormat df = new SimpleDateFormat("HHmmss");
-            String conValueStr = df.format((Date) conValue);
-            String valueStr = df.format((Date) result);
+            String conValueStr = formatDate((Date) conValue, TIME_FIELD_FORMAT_PATTERN);
+            String valueStr = formatDate((Date) result, TIME_FIELD_FORMAT_PATTERN);
             return conValueStr.equals(valueStr);
         } else if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
-            String valueStr = DATE_FIELD_FORMAT.format((Date) result);
-            String conValueStr = DATE_FIELD_FORMAT.format((Date) conValue);
+            String valueStr = formatDate((Date) result, DATE_FIELD_FORMAT_PATTERN);
+            String conValueStr = formatDate((Date) conValue, DATE_FIELD_FORMAT_PATTERN);
             return conValueStr.equals(valueStr);
         } else {
             if (conValue instanceof java.sql.Timestamp) {
                 result = new java.sql.Timestamp(((Date) result).getTime());
             } else if (conValue instanceof Date) {
-                DateFormat df = new SimpleDateFormat("MM/dd/yyyy");
-                result = df.format((Date) result);
+                result = formatDate((Date) result, DATE_TIME_FIELD_FORMAT_PATTERN);
             }
             return conValue.equals(result);
         }
@@ -2762,7 +2810,7 @@ public class ImportUtil {
     private static String getIdentifierFromResults(final Map<String, List<String>> results,
             final String[] line) {
         try {
-            int identifierFieldIndex = Integer.parseInt(results.get("identifiers").get(0));
+            int identifierFieldIndex = Integer.parseInt(results.get(KEY_IDENTIFIERS).get(0));
             return identifierFieldIndex >= 0 ? line[identifierFieldIndex] : null;
         } catch (Exception e) {
             Logger.debug(ImportUtil.class, "No identifier field found", e);
@@ -2854,9 +2902,9 @@ public class ImportUtil {
             final Map<Integer, Object> values,
             final Pair<Host, Folder> siteAndFolder,
             final String wfActionId,
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecords,
+            final Map<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
+            final Map<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
+            final Map<Relationship, List<Contentlet>> csvRelationshipRecords,
             final Map<Integer, Field> headers,
             final Set<Category> categories,
             final String conditionValues,
@@ -2947,9 +2995,9 @@ public class ImportUtil {
             final Map<Integer, Field> headers,
             final Set<Category> categories,
             final Contentlet cont,
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
-            final HashMap<Relationship, List<Contentlet>> csvRelationshipRecords
+            final Map<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
+            final Map<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
+            final Map<Relationship, List<Contentlet>> csvRelationshipRecords
     ) throws DotDataException {
 
         //Check the new contentlet with the validator
@@ -2970,9 +3018,9 @@ public class ImportUtil {
                         new ArrayList<>(categories));
             }
         } catch (DotContentletValidationException ex) {
-            StringBuffer sb = new StringBuffer();
-            HashMap<String, List<Field>> errors = (HashMap<String, List<Field>>) ex.getNotValidFields();
-            Set<String> keys = errors.keySet();
+            final StringBuffer sb = new StringBuffer();
+            final Map<String, List<Field>> errors = ex.getNotValidFields();
+            final Set<String> keys = errors.keySet();
             for (String key : keys) {
                 sb.append(key).append(": ");
                 List<Field> fields = errors.get(key);
@@ -3889,9 +3937,9 @@ public class ImportUtil {
      */
     @NotNull
     private static ContentletRelationships loadRelationshipRecords(
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
-            HashMap<Relationship, List<Contentlet>> csvRelationshipRecords, Contentlet cont)
+            Map<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
+            Map<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
+            Map<Relationship, List<Contentlet>> csvRelationshipRecords, Contentlet cont)
             throws DotDataException {
         //Load the old relationShips and add the new ones
         ContentletRelationships contentletRelationships = conAPI.getAllRelationships(cont);
@@ -4066,7 +4114,7 @@ public class ImportUtil {
     private static String escapeLuceneSpecialCharacter(String text){
         text = text.replaceAll("\\[","\\\\[").replaceAll("\\]","\\\\]");
         text = text.replaceAll("\\{","\\\\{").replaceAll("\\}","\\\\}");
-        text = text.replaceAll("\\+","\\\\+").replaceAll(":","\\\\:");
+        text = text.replaceAll("\\+", "\\\\+").replaceAll(StringPool.COLON, "\\\\:");
         text = text.replaceAll("\\*","\\\\*").replaceAll("\\?","\\\\?");
         text = text.replaceAll("\\(","\\\\(").replaceAll("\\)","\\\\)");
         text = text.replaceAll("&&","\\\\&&").replaceAll("\\|\\|","\\\\||");
