@@ -43,7 +43,7 @@ export function FallbackComponent({
     isDevMode
 }: FallbackComponentProps) {
     if (!isDevMode) {
-        return <EmptyContent />;
+        return null;
     }
 
     const NoComponentFound = UserNoComponent || NoComponent;
@@ -63,13 +63,4 @@ function NoComponent({ contentType }: DotCMSContentlet) {
             No Component for <strong>{contentType}</strong>.
         </div>
     );
-}
-
-/**
- * Component to render when there is no content in the container and the component is not in dev mode.
- *
- * @return {*}
- */
-function EmptyContent() {
-    return null;
 }

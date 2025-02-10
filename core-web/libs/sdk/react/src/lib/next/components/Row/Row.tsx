@@ -19,7 +19,7 @@ export const Row = ({ row }: RowProps) => {
 
     return (
         <div className={row.styleClass}>
-            <div className="container">
+            <div className="dot-container">
                 <div {...rowProps} className={styles.row}>
                     {row.columns.map((column, index) => (
                         <Column key={index} column={column} />

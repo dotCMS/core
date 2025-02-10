@@ -19,7 +19,7 @@ export const DotCMSBodyRenderer = ({
     const isDevMode = !!devMode || isInsideEditor();
 
     if (!dotCMSPageBody) {
-        console.warn('The page body is not defined');
+        console.warn('Missing required layout.body property in page');
 
         if (isDevMode) {
             return <div>The page body is not defined, please provide a valid dotCMSPageAsset</div>;
