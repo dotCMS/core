@@ -152,7 +152,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-
     @WrapInTransaction
     @Override
     public void deleteMultiTree(final List<MultiTree> mTree) throws DotDataException {
@@ -209,7 +208,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 .addParam(multiTree.getVariantId())
                 .loadResult();
     }
-
 
     @CloseDBIfOpened
     @Override
@@ -274,7 +272,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public java.util.List<MultiTree> getMultiTrees(final Identifier htmlPage, final Identifier container) throws DotDataException {
         return getMultiTrees(htmlPage.getId(), container.getId());
     }
-
 
     @Override
     public java.util.List<MultiTree> getMultiTrees(final String parentInode) throws DotDataException {
