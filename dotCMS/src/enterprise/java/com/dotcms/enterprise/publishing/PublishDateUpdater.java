@@ -113,7 +113,7 @@ public class PublishDateUpdater {
 
             for (final Contentlet contentlet : contentletToPublish) {
                 try {
-                    APILocator.getContentletAPI().publish(contentlet, systemUser, false);
+                    APILocator.getContentletAPI().publish(contentlet, locker(contentlet), false);
                 } catch (Exception e) {
                     Logger.debug(PublishDateUpdater.class,
                             "content failed to publish: " + e.getMessage());
@@ -129,7 +129,7 @@ public class PublishDateUpdater {
 
         for(final Contentlet contentlet : contentletToUnPublish) {
             try {
-                APILocator.getContentletAPI().unpublish(contentlet, systemUser, false);
+                APILocator.getContentletAPI().unpublish(contentlet, locker(contentlet), false);
             }
             catch(Exception e){
                 Logger.debug(PublishDateUpdater.class, "content failed to publish: " +  e.getMessage());
@@ -168,7 +168,7 @@ public class PublishDateUpdater {
         try {
             User modUser = APILocator.getUserAPI()
                     .loadUserById(contentlet.getModUser(), locker, false);
-            if (APILocator.getContentletAPI().canLock(contentlet, locker)) {
+            if (APILocator.getContentletAPI().canLock(contentlet, modUser)) {
                 locker = modUser;
             }
         } catch (Exception userEx) {
