@@ -27,7 +27,6 @@ module.exports = {
                 '**/*.test.js'
             ],
             rules: {
-                // Allow any type in test files
                 '@typescript-eslint/no-explicit-any': 'off'
             }
         }

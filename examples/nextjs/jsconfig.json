@@ -1,13 +1,9 @@
 {
     "compilerOptions": {
         "paths": {
-            "@/*": [ "./src/*",],
-            "@dotcms/react": ["../../core-web/dist/libs/sdk/react" ],
-            "@dotcms/react/next": [
-                "../../core-web/dist/libs/sdk/react/next.esm.d.ts",
-                "../../core-web/dist/libs/sdk/react/next.esm.js",
-            ],
-            "@dotcms/client": ["../../core-web/dist/libs/sdk/client"]
+            "@/*": [
+                "./src/*"
+            ]
         }
     }
 }

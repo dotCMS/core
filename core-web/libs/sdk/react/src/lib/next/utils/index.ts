@@ -44,9 +44,6 @@ const startClassMap: Record<number, string> = {
  */
 export const combineClasses = (classes: string[]) => classes.filter(Boolean).join(' ');
 
-// Move all utils here
-// Rename to PageRendererUtils
-
 /**
  * Calculates and returns the CSS Grid positioning classes for a column based on its configuration.
  * Uses a 12-column grid system where columns are positioned using grid-column-start and grid-column-end.
@@ -54,7 +51,7 @@ export const combineClasses = (classes: string[]) => classes.filter(Boolean).joi
  * @example
  * ```typescript
  * const classes = getColumnPositionClasses({
- *   leftOffset: 0, // Starts at the first column
+ *   leftOffset: 1, // Starts at the first column
  *   width: 6      // Spans 6 columns
  * });
  * // Returns: { startClass: 'col-start-1', endClass: 'col-end-7' }
@@ -200,13 +197,13 @@ export function getDotContainerAttributes({
     identifier,
     acceptTypes,
     maxContentlets
-}: Record<string, string>): Record<string, string> {
+}: ContainerEditData): Record<string, string> {
     return {
         'data-testid': 'dot-container',
         'data-dot-object': 'container',
         'data-dot-accept-types': acceptTypes,
         'data-dot-identifier': identifier,
-        'data-max-contentlets': maxContentlets,
+        'data-max-contentlets': maxContentlets.toString(),
         'data-dot-uuid': uuid
     };
 }
