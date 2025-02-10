@@ -243,10 +243,56 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     }
 
     /**
-     * Cleans up the custom field API and the resize observer.
+     * Adjusts the iframe height and sets up the resize observer.
      */
+    private adjustIframeHeight() {
+        const iframeEl = this.iframe()?.nativeElement;
+        if (!iframeEl) {
+            return () => void 0;
+        }
+
+        const updateHeight = () => {
+            try {
+                const body = iframeEl.contentWindow?.document.body;
+                if (body) {
+                    body.style.margin = '0';
+                    const height = body.scrollHeight;
+                    if (height > 0) {
+                        iframeEl.style.height = `${height + 1}px`;
+                    }
+                }
+            } catch (error) {
+                console.warn('Error adjusting iframe height:', error);
+            }
+        };
+
+        iframeEl.addEventListener('load', updateHeight);
+
+        const observer = new MutationObserver(() => {
+            requestAnimationFrame(updateHeight);
+        });
+
+        iframeEl.addEventListener('load', () => {
+            const body = iframeEl.contentWindow?.document.body;
+            if (body) {
+                observer.observe(body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true
+                });
+            }
+        });
+
+        return () => {
+            observer.disconnect();
+            iframeEl.removeEventListener('load', updateHeight);
+        };
+    }
+
     ngOnDestroy(): void {
-        this.#formBridge?.destroy();
+        if (this.#formBridge) {
+            this.#formBridge.destroy();
+        }
     }
 
     /**
@@ -254,72 +300,5 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      */
     ngAfterViewInit() {
         this.adjustIframeHeight();
-    }
-
-    /**
-     * Adjusts the iframe height and sets up the resize observer.
-     */
-    private adjustIframeHeight() {
-        const iframeEl = this.iframe()?.nativeElement;
-        if (!iframeEl) {
-            console.warn('Iframe not initialized');
-
-            return () => void 0;
-        }
-
-        // Set initial height to 0 to prevent the 150px default
-        iframeEl.style.height = '0px';
-
-        const resizeObserver = new ResizeObserver(() => {
-            this.#zone.run(() => {
-                try {
-                    const iframeWindow = iframeEl.contentWindow;
-                    const documentElement = iframeWindow?.document.documentElement;
-                    const body = iframeWindow?.document.body;
-
-                    if (documentElement && body) {
-                        body.style.margin = '0';
-                        const contentHeight = Math.max(
-                            documentElement.scrollHeight,
-                            body.scrollHeight
-                        );
-
-                        if (contentHeight > 0) {
-                            iframeEl.style.height = `${contentHeight}px`;
-                        }
-                    }
-                } catch (error) {
-                    console.warn('Error adjusting iframe height:', error);
-                }
-            });
-        });
-
-        const handleIframeLoad = () => {
-            try {
-                const body = iframeEl.contentWindow?.document.body;
-                const documentElement = iframeEl.contentWindow?.document.documentElement;
-
-                if (body && documentElement) {
-                    body.style.margin = '0';
-                    resizeObserver.observe(body);
-                    resizeObserver.observe(documentElement);
-
-                    const contentHeight = Math.max(documentElement.scrollHeight, body.scrollHeight);
-
-                    if (contentHeight > 0) {
-                        iframeEl.style.height = `${contentHeight}px`;
-                    }
-                }
-            } catch (error) {
-                console.warn('Error setting up iframe resize observer:', error);
-            }
-        };
-
-        iframeEl.addEventListener('load', handleIframeLoad);
-
-        return () => {
-            resizeObserver.disconnect();
-            iframeEl.removeEventListener('load', handleIframeLoad);
-        };
     }
 }
