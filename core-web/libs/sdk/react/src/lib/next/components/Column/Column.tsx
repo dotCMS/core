@@ -1,9 +1,8 @@
 import styles from './Column.module.css';
 
-import { getColumnPositionClasses } from './utils';
-import { Container } from '../Container/Container';
 import { DotPageAssetLayoutColumn } from '../../types';
-import { combineClasses } from '../../utils';
+import { combineClasses, getColumnPositionClasses } from '../../utils';
+import { Container } from '../Container/Container';
 
 /**
  * Props for Column component that represents a single column in the grid layout system.

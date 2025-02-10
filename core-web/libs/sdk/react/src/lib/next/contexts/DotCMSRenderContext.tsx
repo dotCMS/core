@@ -1,9 +1,10 @@
 import { createContext } from 'react';
-import { DotCMSPageAsset } from '../types';
+
+import { DotCMSContentlet, DotCMSPageAsset } from '../types';
 
 export interface DotCMSRenderContextI {
     dotCMSPageAsset: DotCMSPageAsset;
-    customComponents?: Record<string, React.ComponentType<any>>;
+    customComponents?: Record<string, React.ComponentType<DotCMSContentlet>>;
     isDevMode: boolean;
 }
 

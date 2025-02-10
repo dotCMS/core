@@ -1,10 +1,11 @@
 import '@testing-library/jest-dom/extend-expect';
 
 import { render, screen } from '@testing-library/react';
+
 import { Contentlet } from '../components/Contentlet/Contentlet';
 import { DotCMSRenderContext } from '../contexts/DotCMSRenderContext';
 import { useCheckVisibleContent } from '../hooks/useCheckHaveContent';
-import { getDotContentletAttributes } from '../components/Contentlet/utils';
+import { getDotContentletAttributes } from '../utils';
 
 jest.mock('./components/FallbackComponent', () => ({
     FallbackComponent: ({ contentlet }: any) => (

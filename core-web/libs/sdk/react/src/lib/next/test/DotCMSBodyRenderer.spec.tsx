@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react';
+
 import { isInsideEditor } from '@dotcms/client';
-import { DotCMSPageAsset } from '../types';
+
 import { DotCMSBodyRenderer } from '../components/DotCMSBodyRenderer/DotCMSBodyRenderer';
+import { DotCMSPageAsset } from '../types';
 
 // Mock the @dotcms/client module
 jest.mock('@dotcms/client', () => ({ isInsideEditor: jest.fn() }));

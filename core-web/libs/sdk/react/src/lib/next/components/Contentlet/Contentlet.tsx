@@ -1,9 +1,9 @@
 import { useContext, useRef, useMemo } from 'react';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
-import { DotCMSContentlet } from '../../types';
-import { getDotContentletAttributes } from './utils';
 import { useCheckVisibleContent } from '../../hooks/useCheckHaveContent';
+import { DotCMSContentlet } from '../../types';
+import { getDotContentletAttributes } from '../../utils';
 import { FallbackComponent, NoComponentType } from '../FallbackComponent/FallbackComponent';
 
 /**

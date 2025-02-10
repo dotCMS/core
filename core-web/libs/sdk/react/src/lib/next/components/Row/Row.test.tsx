@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react';
+
 import { Row } from './Row';
+
 import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '../../types';
 
 const mockColumn: DotPageAssetLayoutColumn = {
@@ -24,7 +26,7 @@ const mockColumn: DotPageAssetLayoutColumn = {
 };
 
 jest.mock('../../Column/Column', () => ({
-    Column: ({ column }: any) => <div data-testid="mock-column">{column.width}</div>
+    Column: ({ column }: any) => <div data-testid="mock-column">{column?.width}</div>
 }));
 
 describe('Row', () => {

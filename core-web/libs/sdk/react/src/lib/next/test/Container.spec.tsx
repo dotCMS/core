@@ -2,11 +2,9 @@ import { render, screen } from '@testing-library/react';
 
 import { Container } from '../components/Container/Container';
 import { DotCMSRenderContext } from '../contexts/DotCMSRenderContext';
-import * as utils from '../components/Container/utils';
-
 import { DotCMSColumnContainer, DotCMSPageAsset } from '../types';
+import * as utils from '../utils';
 
-// Mock the Contentlet component
 jest.mock('../../Contentlet/Contentlet', () => ({
     Contentlet: ({ contentlet }: { contentlet: any }) => (
         <div data-testid="mock-contentlet">{contentlet.identifier}</div>

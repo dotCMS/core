@@ -1,12 +1,12 @@
 import { isInsideEditor } from '@dotcms/client';
 
-import { Row } from '../Row/Row';
 import { DotCMSRenderContext } from '../../contexts/DotCMSRenderContext';
-import { DotCMSPageAsset } from '../../types';
+import { DotCMSContentlet, DotCMSPageAsset } from '../../types';
+import { Row } from '../Row/Row';
 
 interface DotCMSBodyRendererProps {
     dotCMSPageAsset: DotCMSPageAsset;
-    customComponents?: Record<string, React.ComponentType<any>>;
+    customComponents?: Record<string, React.ComponentType<DotCMSContentlet>>;
     devMode?: boolean;
 }
 

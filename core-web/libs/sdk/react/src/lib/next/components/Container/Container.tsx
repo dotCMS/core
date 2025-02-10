@@ -2,7 +2,11 @@ import { useContext, useEffect, useMemo } from 'react';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
 import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';
-import { getContainersData, getContentletsInContainer, getDotContainerAttributes } from './utils';
+import {
+    getContainersData,
+    getContentletsInContainer,
+    getDotContainerAttributes
+} from '../../utils';
 import { Contentlet } from '../Contentlet/Contentlet';
 
 type ContainerProps = {
@@ -53,7 +57,7 @@ export function Container({ container }: ContainerProps) {
     }
 
     const isEmpty = contentlets.length === 0;
-    const dotAttributes = useMemo(() => getDotContainerAttributes(containerData), [containerData]);
+    const dotAttributes = getDotContainerAttributes(containerData);
 
     return (
         <div {...dotAttributes} style={isEmpty ? EMPTY_CONTAINER_STYLE : {}}>
