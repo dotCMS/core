@@ -1,149 +1,47 @@
 package com.dotmarketing.util.importer.exception;
 
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.importer.model.AbstractValidationMessage.ValidationMessageType;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
 /**
- * Exception class for handling errors during import line processing. Extends DotRuntimeException
- * and provides additional fields to support creation of ValidationMessage objects.
+ * Exception class specifically for handling validation errors during line-by-line content processing
+ * in the import process. This exception is thrown when issues are detected with individual CSV lines
+ * such as invalid field values, missing required data, or relationship validation failures.
+ *
+ * <p>This class extends ValidationMessageException to provide structured error information that can
+ * be converted into ValidationMessage objects for consistent error handling and reporting. It includes
+ * specific information about the line being processed when the error occurred.
+ *
+ * <p>Example usage:
+ * <pre>
+ * throw ImportLineException.builder()
+ *     .message("Invalid category key found")
+ *     .code("INVALID_CATEGORY")
+ *     .lineNumber(42)
+ *     .field("categoryField")
+ *     .invalidValue("invalidKey")
+ *     .build();
+ * </pre>
+ *
+ * <p>This exception is typically thrown during the content processing phase of the import process,
+ * when validating and importing individual lines from the CSV file.
+ *
+ * @see ValidationMessageException
+ * @see com.dotmarketing.util.importer.model.ValidationMessage
  */
-public class ImportLineException extends DotRuntimeException {
-
-    private final ValidationMessageType type;
-    private final String code;
-    private final Integer lineNumber;
-    private final String field;
-    private final String invalidValue;
-    private final Map<String, Object> context;
+public class ImportLineException extends ValidationMessageException {
 
     private ImportLineException(Builder builder) {
-        super(builder.message);
-        this.type = builder.type;
-        this.code = builder.code;
-        this.lineNumber = builder.lineNumber;
-        this.field = builder.field;
-        this.invalidValue = builder.invalidValue;
-        this.context = Collections.unmodifiableMap(
-                builder.context != null ? builder.context : new HashMap<>());
+        super(builder);
     }
 
-    /**
-     * @return The type of validation message (ERROR, WARNING, INFO)
-     */
-    public ValidationMessageType getType() {
-        return type;
-    }
-
-    /**
-     * @return The validation code, may be null
-     */
-    public Optional<String> getCode() {
-        return Optional.ofNullable(code);
-    }
-
-    /**
-     * @return The line number where the error occurred
-     */
-    public Optional<Integer> getLineNumber() {
-        return Optional.ofNullable(lineNumber);
-    }
-
-    /**
-     * @return The field associated with the error, may be null
-     */
-    public Optional<String> getField() {
-        return Optional.ofNullable(field);
-    }
-
-    /**
-     * @return The invalid value that caused the error, may be null
-     */
-    public Optional<String> getInvalidValue() {
-        return Optional.ofNullable(invalidValue);
-    }
-
-    /**
-     * @return Additional context information about the error
-     */
-    public Map<String, Object> getContext() {
-        return context;
-    }
-
-    public static class Builder {
-
-        private ValidationMessageType type = ValidationMessageType.ERROR;
-        private String message;
-        private String code;
-        private Integer lineNumber;
-        private String field;
-        private String invalidValue;
-        private Map<String, Object> context;
-
-        public Builder message(String message) {
-            this.message = message;
-            return this;
-        }
-
-        public Builder code(String code) {
-            this.code = code;
-            return this;
-        }
-
-        public Builder lineNumber(Integer lineNumber) {
-            this.lineNumber = lineNumber;
-            return this;
-        }
-
-        public Builder field(String field) {
-            this.field = field;
-            return this;
-        }
-
-        public Builder invalidValue(String invalidValue) {
-            this.invalidValue = invalidValue;
-            return this;
-        }
-
-        public Builder context(Map<String, Object> context) {
-            this.context = context;
-            return this;
-        }
-
-        public ImportLineException build() {
-            if (message == null) {
-                throw new IllegalStateException("Message is required");
-            }
-            return new ImportLineException(this);
-        }
-    }
-
-    /**
-     * Factory method to create a builder instance.
-     *
-     * @return A new Builder instance
-     */
     public static Builder builder() {
         return new Builder();
     }
 
-    /**
-     * Creates a ValidationMessage instance from this exception.
-     *
-     * @return A ValidationMessage object containing the exception data
-     */
-    public com.dotmarketing.util.importer.model.ValidationMessage toValidationMessage() {
-        return com.dotmarketing.util.importer.model.ValidationMessage.builder()
-                .type(type)
-                .message(getMessage())
-                .code(getCode())
-                .lineNumber(getLineNumber())
-                .field(getField())
-                .invalidValue(getInvalidValue())
-                .context(context)
-                .build();
+    public static class Builder extends ValidationMessageException.Builder<Builder> {
+
+        @Override
+        public ImportLineException build() {
+            validate();
+            return new ImportLineException(this);
+        }
     }
 }

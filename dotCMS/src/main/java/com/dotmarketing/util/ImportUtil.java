@@ -52,6 +52,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
+import com.dotmarketing.util.importer.exception.HeaderValidationException;
 import com.dotmarketing.util.importer.exception.ImportLineException;
 import com.dotmarketing.util.importer.model.AbstractSpecialHeaderInfo.SpecialHeaderType;
 import com.dotmarketing.util.importer.model.AbstractValidationMessage.ValidationMessageType;
@@ -75,6 +76,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -498,6 +500,16 @@ public class ImportUtil {
         } catch (final Exception e) {
             Logger.error(ImportContentletsAction.class, String.format("An error occurred when parsing CSV file in " +
                     "line #%s: %s", lineNumber, e.getMessage()), e);
+
+            // If we failed validating headers we need to make sure we track the error
+            if (e instanceof HeaderValidationException) {
+                String errorMessage = getErrorMsgFromException(user, e);
+                if (errorMessage.indexOf(LINE_NO) == -1) {
+                    errorMessage = LINE_NO + lineNumber + ": " + errorMessage;
+                }
+                results.get("errors").add(errorMessage);
+                errors++;
+            }
         }
         final String action = preview ? "Content preview" : "Content import";
         String statusMsg = String.format("%s has finished, %d lines were read correctly.", action, lines);
@@ -668,13 +680,11 @@ public class ImportUtil {
             final HeaderValidationResult.Builder validationBuilder) throws LanguageException {
 
         if (headerLine == null || headerLine.length == 0) {
-            validationBuilder.addMessages(ValidationMessage.builder()
-                    .type(ValidationMessageType.ERROR)
-                    .code(HeaderValidationCodes.INVALID_HEADER_FORMAT.name())
+            throw HeaderValidationException.builder()
                     .message(LanguageUtil.get(user,
                             "No-headers-found-on-the-file-nothing-will-be-imported"))
-                    .build());
-            throw new DotValidationException("Invalid header format");
+                    .code(HeaderValidationCodes.INVALID_HEADER_FORMAT.name())
+                    .build();
         }
 
         // Validate no duplicate headers
@@ -1661,7 +1671,19 @@ public class ImportUtil {
                 }
 
             } catch (Exception e) {
-                results.addError(formatFieldError(field, value, e));
+
+                if (e instanceof ImportLineException) {
+                    results.addValidationMessage(((ImportLineException) e).toValidationMessage());
+                } else {
+
+                    var exceptionMessage = e.getMessage();
+                    if (!UtilMethods.isSet(exceptionMessage)) {
+                        exceptionMessage = e.toString();
+                    }
+
+                    results.addError(exceptionMessage, field.getVelocityVarName(), value);
+                }
+
                 results.setIgnoreLine(true);
                 return results.build();
             }
@@ -2136,26 +2158,6 @@ public class ImportUtil {
         }
         uriBuilder.append(uri);
         return Pair.of(column, uriBuilder.toString());
-    }
-
-    /**
-     * Formats an error message for a field.
-     *
-     * @param field the field definition containing type and validation rules
-     * @param value the value that caused the error
-     * @param e the exception that was thrown
-     * @return the formatted error message
-     */
-    private static String formatFieldError(final Field field, final String value,
-            final Exception e) {
-
-        var exceptionMessage = e.getMessage();
-        if (!UtilMethods.isSet(exceptionMessage)) {
-            exceptionMessage = e.toString();
-        }
-
-        return String.format("Column: '%s', value: '%s', %s",
-                field.getVelocityVarName(), value, exceptionMessage);
     }
 
     /**
@@ -4235,16 +4237,15 @@ public class ImportUtil {
      * @param exception The exception that was thrown because of the error.
      *
      * @return The appropriate error message that will be displayed to the user.
-     *
-     * @throws LanguageException An error occurred when accessing the i18n resource files.
      */
-    private static String getErrorMsgFromException(final User user, final Exception exception)
-            throws
-            LanguageException {
+    private static String getErrorMsgFromException(final User user, final Exception exception) {
+
         if (!UtilMethods.isSet(exception.getMessage())) {
             return exception.getCause().getClass().getSimpleName();
         } else {
-            return LanguageUtil.get(user, exception.getMessage());
+            return Try
+                    .of(() -> LanguageUtil.get(user, exception.getMessage()))
+                    .getOrElse(exception.getMessage());
         }
     }
 
@@ -4766,7 +4767,7 @@ public class ImportUtil {
             this.urlValueAssetName = urlValueAssetName;
         }
 
-        public void addWarning(String message) {
+        public void addWarning(final String message) {
             addValidationMessage(ValidationMessage.builder()
                     .type(ValidationMessageType.WARNING)
                     .message(message)
@@ -4774,11 +4775,21 @@ public class ImportUtil {
                     .build());
         }
 
-        public void addError(String message) {
+        public void addError(final String message) {
             addValidationMessage(ValidationMessage.builder()
                     .type(ValidationMessageType.ERROR)
                     .message(message)
                     .lineNumber(lineNumber)
+                    .build());
+        }
+
+        public void addError(final String message, final String field, final Object value) {
+            addValidationMessage(ValidationMessage.builder()
+                    .type(ValidationMessageType.ERROR)
+                    .message(message)
+                    .lineNumber(lineNumber)
+                    .field(field != null ? Optional.of(field) : Optional.empty())
+                    .invalidValue(value != null ? Optional.of(value.toString()) : Optional.empty())
                     .build());
         }
 
