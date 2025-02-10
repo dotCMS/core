@@ -1240,8 +1240,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final ContainerUUID containerUUID,
             final Container container) {
 
-
-         if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
+        if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
             return true;
         } else if(pageContents.contains(container.getIdentifier(), ParseContainer.PARSE_CONTAINER_UUID_PREFIX + containerUUID.getUUID())) {
             return true;
@@ -1314,7 +1313,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      *
      * @param layoutChanges
      * @param pageIds
-     * @param variant
      *
      * @throws DotDataException
      */
