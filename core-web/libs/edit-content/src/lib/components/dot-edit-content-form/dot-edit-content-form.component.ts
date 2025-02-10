@@ -419,8 +419,13 @@ export class DotEditContentFormComponent implements OnInit {
         window.open(realUrl, '_blank');
     }
 
-    onActiveIndexChange($event: TabViewChangeEvent) {
-        const { index } = $event;
+    /**
+     * Sets the active tab index in the store when the tab view changes.
+     *
+     * @param {TabViewChangeEvent} event - The event object containing the active tab index.
+     * @memberof DotEditContentFormComponent
+     */
+    onActiveIndexChange({ index }: TabViewChangeEvent) {
         this.$store.setActiveTab(index);
     }
 }

@@ -59,7 +59,7 @@ export class DotEditContentSidebarComponent {
     /**
      * Computed property that returns the workflow state of the content.
      */
-    readonly $workflow = computed<DotWorkflowState | null>(() => ({
+    readonly $workflow = computed<DotWorkflowState>(() => ({
         scheme: this.$store.getScheme(),
         step: this.$store.getCurrentStep(),
         task: this.$store.lastTask(),
