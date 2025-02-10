@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { FallbackComponent } from '../FallbackComponent';
-import { DotCMSContentlet } from '../../../types';
+import { FallbackComponent } from '../components/FallbackComponent/FallbackComponent';
+import { DotCMSContentlet } from '../types';
 
 const dummyContentlet = { contentType: 'test-type' } as unknown as DotCMSContentlet;
 

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
-import { Column } from './Column';
-import { DotPageAssetLayoutColumn } from '../../types';
+import { Column } from '../components/Column/Column';
+import { DotPageAssetLayoutColumn } from '../types';
 
 jest.mock('../../Container/Container', () => ({
     Container: ({ container }: any) => (

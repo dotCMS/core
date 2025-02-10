@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
 
-import { Container } from './Container';
-import { DotCMSRenderContext } from '../../contexts/DotCMSRenderContext';
-import * as utils from './utils';
+import { Container } from '../components/Container/Container';
+import { DotCMSRenderContext } from '../contexts/DotCMSRenderContext';
+import * as utils from '../components/Container/utils';
 
-import { DotCMSColumnContainer, DotCMSPageAsset } from '../../types';
+import { DotCMSColumnContainer, DotCMSPageAsset } from '../types';
 
 // Mock the Contentlet component
 jest.mock('../../Contentlet/Contentlet', () => ({

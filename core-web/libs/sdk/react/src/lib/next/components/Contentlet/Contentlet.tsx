@@ -4,7 +4,7 @@ import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMS
 import { DotCMSContentlet } from '../../types';
 import { getDotContentletAttributes } from './utils';
 import { useCheckVisibleContent } from '../../hooks/useCheckHaveContent';
-import { FallbackComponent, NoComponentType } from './components/FallbackComponent';
+import { FallbackComponent, NoComponentType } from '../FallbackComponent/FallbackComponent';
 
 /**
  * Props for the Contentlet component

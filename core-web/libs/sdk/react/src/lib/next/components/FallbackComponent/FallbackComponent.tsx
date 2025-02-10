@@ -1,4 +1,4 @@
-import { DotCMSContentlet } from '../../../types';
+import { DotCMSContentlet } from '../../types';
 
 /**
  * Type definition for components that can be used as fallback when no matching component is found
