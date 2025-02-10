@@ -2,14 +2,14 @@
 import Link from 'next/link';
 
 import { useEffect, useState } from 'react';
-import { isEditing as computeIsEditing } from '@/utils/isEditing';
+import { isEditMode } from '@/utils/isEditMode';
 import ReorderButton from './components/reorderMenu';
 
 function Header({ children }) {
     const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
-        setIsEditing(computeIsEditing());
+        setIsEditing(isEditMode());
     }, []);
 
     return (

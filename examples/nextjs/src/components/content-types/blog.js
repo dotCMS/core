@@ -1,4 +1,4 @@
-import { isEditing } from '@/utils/isEditing';
+import { isEditMode } from '@/utils/isEditMode';
 import { BlockEditorRenderer } from '@dotcms/react';
 
 const CustomParagraph = ({ content }) => {
@@ -21,7 +21,7 @@ const ActivityBlock = (props) => {
 };
 
 function Blog({ blogContent, ...contentlet }) {
-    const twActives = isEditing() ? 'border-2 border-solid border-cyan-400 cursor-pointer' : '';
+    const twActives = isEditMode() ? 'border-2 border-solid border-cyan-400 cursor-pointer' : '';
 
     return (
         <BlockEditorRenderer
