@@ -390,6 +390,18 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
 
+        com.dotmarketing.common.reindex.ReindexThreadTest.class,
+        com.dotmarketing.common.reindex.ReindexAPITest.class,
+        com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
+        com.dotmarketing.common.db.ParamsSetterTest.class,
+        com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class,
+        com.dotmarketing.factories.PublishFactoryTest.class,
+        com.dotmarketing.factories.WebAssetFactoryTest.class,
+        com.dotmarketing.factories.MultiTreeAPITest.class,
+        com.dotmarketing.db.DbConnectionFactoryTest.class,
+        com.dotmarketing.db.DbConnectionFactoryUtilTest.class,
+        com.dotmarketing.db.HibernateUtilTest.class,
+        com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
 
         DotParseTest.class,
         TestWorkflowAction.class,
