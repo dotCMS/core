@@ -12,7 +12,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
-import { CLIENT_ACTIONS, UVE_MODE } from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotExperimentsService,
@@ -39,6 +39,7 @@ import {
     DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
@@ -116,7 +117,7 @@ const INITIAL_PAGE_PARAMS = {
     url: 'index',
     variantName: 'DEFAULT',
     [PERSONA_KEY]: 'modes.persona.no.persona',
-    editorMode: UVE_MODE.EDIT
+    mode: UVE_MODE.EDIT
 };
 
 const BASIC_OPTIONS = {
@@ -330,7 +331,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'index' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit'
+                    '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
@@ -355,7 +356,7 @@ describe('DotEmaShellComponent', () => {
                     url: 'some-url/some-nested-url'
                 });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&editorMode=edit'
+                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
@@ -376,7 +377,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&editorMode=edit'
+                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
@@ -393,7 +394,7 @@ describe('DotEmaShellComponent', () => {
                 const expectedParams = {
                     url: 'some-url/',
                     [PERSONA_KEY]: 'someCoolDude',
-                    editorMode: 'edit',
+                    mode: UVE_MODE.EDIT,
                     language_id: 1
                 };
 
@@ -405,16 +406,16 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith(expectedParams);
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?url=some-url%2F&language_id=1&editorMode=edit&personaId=someCoolDude'
+                    '/?url=some-url%2F&language_id=1&mode=EDIT_MODE&personaId=someCoolDude'
                 );
             });
         });
 
-        it('should patch viewParams with empty object when the editorMode is edit', () => {
+        it('should patch viewParams with empty object when the mode is edit', () => {
             const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
             const params = {
                 ...INITIAL_PAGE_PARAMS,
-                editorMode: UVE_MODE.EDIT
+                mode: UVE_MODE.EDIT
             };
 
             overrideRouteSnashot(
@@ -432,7 +433,7 @@ describe('DotEmaShellComponent', () => {
 
             const params = {
                 ...INITIAL_PAGE_PARAMS,
-                editorMode: UVE_MODE.PREVIEW
+                mode: UVE_MODE.PREVIEW
             };
 
             overrideRouteSnashot(
@@ -456,7 +457,7 @@ describe('DotEmaShellComponent', () => {
                 device: 'mobile',
                 orientation: 'landscape',
                 seo: undefined,
-                editorMode: UVE_MODE.PREVIEW
+                mode: UVE_MODE.PREVIEW
             };
 
             overrideRouteSnashot(
@@ -480,7 +481,7 @@ describe('DotEmaShellComponent', () => {
                 device: 'mobile',
                 orientation: 'landscape',
                 seo: undefined,
-                editorMode: UVE_MODE.LIVE
+                mode: UVE_MODE.LIVE
             };
 
             overrideRouteSnashot(
@@ -506,7 +507,7 @@ describe('DotEmaShellComponent', () => {
             expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyLocation).toHaveBeenCalledWith(
-                '/?language_id=1&url=index&variantName=DEFAULT&editorMode=edit'
+                '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
             );
         });
 
@@ -563,7 +564,7 @@ describe('DotEmaShellComponent', () => {
                     language_id: '2',
                     url: 'my-awesome-page',
                     variantName: 'DEFAULT',
-                    editorMode: UVE_MODE.EDIT
+                    mode: UVE_MODE.EDIT
                 };
                 const pageParams = {
                     ...baseParams,
@@ -727,11 +728,11 @@ describe('DotEmaShellComponent', () => {
         });
 
         describe('Editor Mode', () => {
-            it('should set editorMode to EDIT when wrong editorMode is passed', () => {
+            it('should set mode to EDIT when wrong mode is passed', () => {
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: 'WRONG'
+                    mode: 'WRONG'
                 };
                 overrideRouteSnashot(
                     activatedRoute,
@@ -740,15 +741,15 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyStoreLoadPage).toHaveBeenCalledWith({
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: UVE_MODE.EDIT
+                    mode: UVE_MODE.EDIT
                 });
             });
 
-            it('should set editorMode to EDIT when wrong editorMode is not passed', () => {
+            it('should set mode to EDIT when wrong mode is not passed', () => {
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: undefined
+                    mode: undefined
                 };
                 overrideRouteSnashot(
                     activatedRoute,
@@ -757,7 +758,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyStoreLoadPage).toHaveBeenCalledWith({
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: UVE_MODE.EDIT
+                    mode: UVE_MODE.EDIT
                 });
             });
 
@@ -765,7 +766,7 @@ describe('DotEmaShellComponent', () => {
                 const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
-                    editorMode: UVE_MODE.LIVE
+                    mode: UVE_MODE.LIVE
                 };
 
                 // override the new Date() to return a fixed date
