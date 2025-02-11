@@ -76,7 +76,7 @@ export function Contentlet({ contentlet, container }: ContentletProps) {
  * @internal
  */
 function CustomComponent({ contentlet }: CustomComponentProps) {
-    const { userComponents } = useContext(DotCMSPageContext) ;
+    const { userComponents } = useContext(DotCMSPageContext);
     const UserComponent = userComponents?.[contentlet?.contentType];
 
     if (UserComponent) {

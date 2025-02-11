@@ -34,8 +34,8 @@ describe('Container', () => {
         return render(
             <DotCMSPageContext.Provider
                 value={{
-                    dotCMSPageAsset: mockPageAsset,
-                    isDevMode: false,
+                    pageAsset: mockPageAsset,
+                    mode: 'production',
                     ...contextValue
                 }}>
                 {component}
@@ -83,8 +83,8 @@ describe('Container', () => {
         };
 
         renderWithContext(<Container container={mockContainer} />, {
-            dotCMSPageAsset: pageAssetWithoutContainer,
-            isDevMode: true
+            pageAsset: pageAssetWithoutContainer,
+            mode: 'development'
         });
 
         expect(
@@ -99,8 +99,8 @@ describe('Container', () => {
         };
 
         renderWithContext(<Container container={mockContainer} />, {
-            dotCMSPageAsset: pageAssetWithoutContainer,
-            isDevMode: false
+            pageAsset: pageAssetWithoutContainer,
+            mode: 'production'
         });
 
         expect(screen.queryByText(/This container with identifier/)).not.toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('Container', () => {
         };
 
         renderWithContext(<Container container={mockContainer} />, {
-            dotCMSPageAsset: emptyPageAsset
+            pageAsset: emptyPageAsset
         });
 
         const containerElement = screen.getByText('This container is empty.');

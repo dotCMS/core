@@ -8,7 +8,7 @@ export interface DotCMSPageContextProps {
     pageAsset: DotCMSPageAsset;
     mode: RendererMode;
     userComponents?: Record<string, React.ComponentType<DotCMSContentlet>>;
-  }
+}
 
 /**
  * The `PageContext` is a React context that provides access to the DotCMS page context.

@@ -28,7 +28,7 @@ describe('DotCMSLayoutBodyRenderer', () => {
     });
 
     it('renders rows when page body is provided', () => {
-        render(<DotCMSLayoutBodyRenderer dotCMSPageAsset={mockPageAsset} />);
+        render(<DotCMSLayoutBodyRenderer page={mockPageAsset} />);
         const rows = screen.getAllByTestId('mock-row');
         expect(rows).toHaveLength(2);
     });
@@ -37,12 +37,7 @@ describe('DotCMSLayoutBodyRenderer', () => {
         const customComponents = {
             CustomComponent: () => <div>Custom Component</div>
         };
-        render(
-            <DotCMSLayoutBodyRenderer
-                dotCMSPageAsset={mockPageAsset}
-                customComponents={customComponents}
-            />
-        );
+        render(<DotCMSLayoutBodyRenderer page={mockPageAsset} components={customComponents} />);
         const rows = screen.getAllByTestId('mock-row');
         expect(rows).toHaveLength(2);
     });
@@ -51,18 +46,18 @@ describe('DotCMSLayoutBodyRenderer', () => {
         const invalidPageAsset = {} as unknown as DotCMSPageAsset;
 
         it('shows warning message in dev mode when page body is not defined', () => {
-            render(<DotCMSLayoutBodyRenderer dotCMSPageAsset={invalidPageAsset} devMode={true} />);
+            render(<DotCMSLayoutBodyRenderer page={invalidPageAsset} mode={'development'} />);
             expect(screen.getByText(/The page body is not defined/)).toBeInTheDocument();
         });
 
         it('shows warning message when inside editor and page body is not defined', () => {
             (isInsideEditor as jest.Mock).mockReturnValue(true);
-            render(<DotCMSLayoutBodyRenderer dotCMSPageAsset={invalidPageAsset} />);
+            render(<DotCMSLayoutBodyRenderer page={invalidPageAsset} />);
             expect(screen.getByText(/The page body is not defined/)).toBeInTheDocument();
         });
 
         it('returns null when page body is not defined and not in dev mode', () => {
-            const { container } = render(<DotCMSLayoutBodyRenderer dotCMSPageAsset={invalidPageAsset} />);
+            const { container } = render(<DotCMSLayoutBodyRenderer page={invalidPageAsset} />);
             expect(container.firstChild).toBeNull();
         });
     });

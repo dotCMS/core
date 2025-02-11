@@ -1,9 +1,10 @@
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
 import { Row } from '../components/Row/Row';
 import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '../types';
 
-const mockColumn: DotPageAssetLayoutColumn = {
+const MOCK_COLUMN: DotPageAssetLayoutColumn = {
     left: 0,
     width: 6,
     leftOffset: 2,
@@ -24,35 +25,47 @@ const mockColumn: DotPageAssetLayoutColumn = {
     ]
 };
 
-jest.mock('../../Column/Column', () => ({
+const MOCK_ROW: DotPageAssetLayoutRow = {
+    identifier: 1,
+    styleClass: 'test-style-class',
+    columns: [MOCK_COLUMN]
+};
+
+jest.mock('../components/Column/Column', () => ({
     Column: ({ column }: any) => <div data-testid="mock-column">{column?.width}</div>
 }));
 
 describe('Row', () => {
-    const mockRow: DotPageAssetLayoutRow = {
-        identifier: 1,
-        columns: [mockColumn]
-    };
-
-    it('renders with correct style class', () => {
-        render(<Row row={mockRow} />);
-        expect(screen.getByRole('generic')).toHaveClass('test-style-class');
-    });
-
-    it('renders all columns', () => {
-        render(<Row row={mockRow} />);
+    it('should render all columns', () => {
+        render(<Row row={MOCK_ROW} />);
         const columns = screen.getAllByTestId('mock-column');
-        expect(columns).toHaveLength(2);
+        expect(columns).toHaveLength(1);
     });
 
-    it('renders with data-dot attribute', () => {
-        render(<Row row={mockRow} />);
-        const rowElement = document.querySelector('[data-dot="row"]');
-        expect(rowElement).toBeInTheDocument();
+    it('should have a container div', () => {
+        const { container } = render(<Row row={MOCK_ROW} />);
+        expect(container.querySelector('.dot-row-container')).toBeInTheDocument();
     });
 
-    it('renders with container class', () => {
-        render(<Row row={mockRow} />);
-        expect(screen.getByRole('generic').querySelector('.container')).toBeInTheDocument();
+    describe('style class', () => {
+        it('should have custom style class', () => {
+            const { container } = render(<Row row={MOCK_ROW} />);
+            const dotRow = container.querySelector('[data-dot-object="row"]') as HTMLElement;
+
+            expect(dotRow).toHaveClass('test-style-class');
+        });
+
+        it('should have default style class', () => {
+            const { container } = render(<Row row={MOCK_ROW} />);
+            const dotRow = container.querySelector('[data-dot-object="row"]') as HTMLElement;
+
+            expect(dotRow).toHaveClass('row');
+        });
+
+        it('should have a `dot-row-container` class in the wrapper div', () => {
+            const { container } = render(<Row row={MOCK_ROW} />);
+            const dotRowContainer = container.querySelector('.dot-row-container') as HTMLElement;
+            expect(dotRowContainer).toBeDefined();
+        });
     });
 });

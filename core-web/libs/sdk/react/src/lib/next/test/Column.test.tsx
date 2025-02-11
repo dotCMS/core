@@ -1,9 +1,32 @@
+import '@testing-library/jest-dom';
+
 import { render, screen } from '@testing-library/react';
 
 import { Column } from '../components/Column/Column';
 import { DotPageAssetLayoutColumn } from '../types';
 
-jest.mock('../../Container/Container', () => ({
+const MOCK_COLUMN: DotPageAssetLayoutColumn = {
+    left: 0,
+    width: 6,
+    leftOffset: 2,
+    preview: false,
+    widthPercent: 50,
+    styleClass: 'custom-column-class',
+    containers: [
+        {
+            identifier: 'container-1',
+            uuid: 'uuid-1',
+            historyUUIDs: []
+        },
+        {
+            identifier: 'container-2',
+            uuid: 'uuid-2',
+            historyUUIDs: []
+        }
+    ]
+};
+
+jest.mock('../components/Container/Container', () => ({
     Container: ({ container }: any) => (
         <div data-testid="mock-container" data-container-id={container.identifier}>
             Mock Container
@@ -12,45 +35,8 @@ jest.mock('../../Container/Container', () => ({
 }));
 
 describe('Column', () => {
-    const mockColumn: DotPageAssetLayoutColumn = {
-        left: 0,
-        width: 6,
-        leftOffset: 2,
-        preview: false,
-        widthPercent: 50,
-        styleClass: 'custom-column-class',
-        containers: [
-            {
-                identifier: 'container-1',
-                uuid: 'uuid-1',
-                historyUUIDs: []
-            },
-            {
-                identifier: 'container-2',
-                uuid: 'uuid-2',
-                historyUUIDs: []
-            }
-        ]
-    };
-
-    it('renders column with correct grid classes', () => {
-        render(<Column column={mockColumn} />);
-
-        const columnElement = screen.getByTestId('column');
-        expect(columnElement).toHaveClass('col-start-2');
-        expect(columnElement).toHaveClass('col-end-8');
-    });
-
-    it('applies custom style class to inner div', () => {
-        render(<Column column={mockColumn} />);
-
-        const innerDiv = screen.getByTestId('column').children[0];
-
-        expect(innerDiv).toHaveClass('custom-column-class');
-    });
-
-    it('renders all containers', () => {
-        render(<Column column={mockColumn} />);
+    it('should render all containers', () => {
+        render(<Column column={MOCK_COLUMN} />);
 
         const containers = screen.getAllByTestId('mock-container');
 
@@ -59,9 +45,9 @@ describe('Column', () => {
         expect(containers[1]).toHaveAttribute('data-container-id', 'container-2');
     });
 
-    it('renders column without containers', () => {
+    it('should render a column without containers', () => {
         const emptyColumn = {
-            ...mockColumn,
+            ...MOCK_COLUMN,
             containers: []
         };
 
@@ -71,15 +57,38 @@ describe('Column', () => {
         expect(containers).toHaveLength(0);
     });
 
-    it('renders column without style class', () => {
-        const columnWithoutStyle = {
-            ...mockColumn,
+    it('should render a column with correct grid classes', () => {
+        const { container } = render(<Column column={MOCK_COLUMN} />);
+
+        const columnElement = container.querySelector('[data-dot="column"]');
+
+        const startClass = `col-start-${MOCK_COLUMN.leftOffset}`;
+        const endClass = `col-end-${MOCK_COLUMN.width + MOCK_COLUMN.leftOffset}`;
+
+        expect(columnElement).toHaveClass(startClass);
+        expect(columnElement).toHaveClass(endClass);
+    });
+
+    it('should render a container wrapper with custom style class', () => {
+        const { container } = render(<Column column={MOCK_COLUMN} />);
+
+        const columnElement = container.querySelector('[data-dot="column"]');
+        const containerWrapper = columnElement?.children[0];
+
+        expect(containerWrapper).toHaveClass('custom-column-class');
+    });
+
+    it('should render a container wrapper without custom style clas', () => {
+        const CUSTOM_MOCK_COLUMN_WITHOUT_STYLE_CLASS = {
+            ...MOCK_COLUMN,
             styleClass: ''
         };
 
-        render(<Column column={columnWithoutStyle} />);
+        const { container } = render(<Column column={CUSTOM_MOCK_COLUMN_WITHOUT_STYLE_CLASS} />);
 
-        const innerDiv = screen.getByTestId('column').children[0];
-        expect(innerDiv).not.toHaveClass('custom-column-class');
+        const columnElement = container.querySelector('[data-dot="column"]');
+        const containerWrapper = columnElement?.children[0];
+
+        expect(containerWrapper).not.toHaveClass('custom-column-class');
     });
 });

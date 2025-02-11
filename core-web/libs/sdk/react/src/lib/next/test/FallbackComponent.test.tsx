@@ -16,11 +16,7 @@ const CustomNoComponent: React.FC<DotCMSContentlet> = ({ contentType }) => (
 describe('FallbackComponent', () => {
     test('renders nothing when not in development mode', () => {
         const { container } = render(
-            <FallbackComponent
-                UserNoComponent={CustomNoComponent}
-                contentlet={dummyContentlet}
-                isDevMode={false}
-            />
+            <FallbackComponent UserNoComponent={CustomNoComponent} contentlet={dummyContentlet} />
         );
         expect(container.firstChild).toBeNull();
     });
@@ -31,7 +27,6 @@ describe('FallbackComponent', () => {
             <FallbackComponent
                 UserNoComponent={undefined as unknown as React.ComponentType<DotCMSContentlet>}
                 contentlet={dummyContentlet}
-                isDevMode={true}
             />
         );
         const defaultComponent = screen.getByTestId('no-component');
@@ -42,11 +37,7 @@ describe('FallbackComponent', () => {
 
     test('renders custom component when provided in development mode', () => {
         render(
-            <FallbackComponent
-                UserNoComponent={CustomNoComponent}
-                contentlet={dummyContentlet}
-                isDevMode={true}
-            />
+            <FallbackComponent UserNoComponent={CustomNoComponent} contentlet={dummyContentlet} />
         );
         const customComponent = screen.getByTestId('custom-no-component');
         expect(customComponent).toBeInTheDocument();

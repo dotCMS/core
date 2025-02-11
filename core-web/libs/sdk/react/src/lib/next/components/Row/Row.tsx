@@ -15,16 +15,14 @@ type RowProps = {
  * @return {JSX.Element} Rendered rows with columns
  */
 export const Row = ({ row }: RowProps) => {
-    const rowProps = { 'data-dot': 'row' };
+    const customRowClass = `${row.styleClass || ''} ${styles.row}`;
 
     return (
-        <div className={row.styleClass}>
-            <div className="dot-container">
-                <div {...rowProps} className={styles.row}>
-                    {row.columns.map((column, index) => (
-                        <Column key={index} column={column} />
-                    ))}
-                </div>
+        <div className="dot-row-container">
+            <div className={customRowClass} data-dot-object={'row'}>
+                {row.columns.map((column, index) => (
+                    <Column key={index} column={column} />
+                ))}
             </div>
         </div>
     );

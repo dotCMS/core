@@ -60,8 +60,8 @@ describe('Contentlet', () => {
         );
 
         const contextValue = {
-            isDevMode: true,
-            customComponents: {
+            mode: 'development',
+            userComponents: {
                 'test-type': CustomComponentMock
             }
         };
@@ -74,8 +74,8 @@ describe('Contentlet', () => {
 
     it('applies empty style when isDevMode is false', () => {
         const contextValue = {
-            isDevMode: false,
-            customComponents: {}
+            mode: 'production',
+            userComponents: {}
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
@@ -89,8 +89,8 @@ describe('Contentlet', () => {
         (useCheckVisibleContent as jest.Mock).mockReturnValue(true);
 
         const contextValue = {
-            isDevMode: true,
-            customComponents: {}
+            mode: 'development',
+            userComponents: {}
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
