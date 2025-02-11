@@ -1,4 +1,4 @@
-package com.dotmarketing.util.importer;
+package com.dotmarketing.util.importer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -12,9 +12,9 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonDeserialize(as = ImportFileInfo.class)
+@JsonDeserialize(as = FileInfo.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractImportFileInfo extends Serializable {
+public interface AbstractFileInfo extends Serializable {
 
     /**
      * @return The total number of rows found in the import file
@@ -29,5 +29,5 @@ public interface AbstractImportFileInfo extends Serializable {
     /**
      * @return Detailed information about the validated headers in the import file
      */
-    ImportHeaderInfo headerInfo();
+    HeaderInfo headerInfo();
 }
