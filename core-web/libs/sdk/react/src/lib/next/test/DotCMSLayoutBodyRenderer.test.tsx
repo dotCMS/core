@@ -1,64 +1,73 @@
+import '@testing-library/jest-dom';
+
 import { render, screen } from '@testing-library/react';
 
-import { isInsideEditor } from '@dotcms/client';
+import * as dotcmsClient from '@dotcms/client';
 
 import { DotCMSLayoutBodyRenderer } from '../components/DotCMSLayoutBodyRenderer/DotCMSLayoutBodyRenderer';
-import { DotCMSPageAsset } from '../types';
 
-// Mock the @dotcms/client module
-jest.mock('@dotcms/client', () => ({ isInsideEditor: jest.fn() }));
-
-// Mock the Row component
-jest.mock('./components/Row/Row', () => ({
-    Row: ({ row }: { row: any }) => <div data-testid="mock-row">{row.identifier}</div>
+const MOCK_PAGE = {
+    layout: {
+        body: {
+            rows: [
+                { id: 1, content: 'Row 1 Content' },
+                { id: 2, content: 'Row 2 Content' }
+            ]
+        }
+    }
+} as any;
+jest.mock('../components/Row/Row', () => ({
+    Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
 }));
 
 describe('DotCMSLayoutBodyRenderer', () => {
-    const mockPageAsset = {
-        layout: {
-            body: {
-                rows: [{ identifier: 'row1' }, { identifier: 'row2' }]
-            }
-        }
-    } as unknown as DotCMSPageAsset;
+    describe('With valid layout.body', () => {
+        it('should render all rows when the page has a valid layout.body', () => {
+            render(<DotCMSLayoutBodyRenderer page={MOCK_PAGE} mode="production" />);
 
-    beforeEach(() => {
-        (isInsideEditor as jest.Mock).mockReset();
-        (isInsideEditor as jest.Mock).mockReturnValue(false);
+            const rows = screen.getAllByTestId('row');
+            expect(rows).toHaveLength(2);
+            expect(rows[0]).toHaveTextContent('Row 1 Content');
+            expect(rows[1]).toHaveTextContent('Row 2 Content');
+        });
     });
 
-    it('renders rows when page body is provided', () => {
-        render(<DotCMSLayoutBodyRenderer page={mockPageAsset} />);
-        const rows = screen.getAllByTestId('mock-row');
-        expect(rows).toHaveLength(2);
-    });
-
-    it('passes custom components through context', () => {
-        const customComponents = {
-            CustomComponent: () => <div>Custom Component</div>
-        };
-        render(<DotCMSLayoutBodyRenderer page={mockPageAsset} components={customComponents} />);
-        const rows = screen.getAllByTestId('mock-row');
-        expect(rows).toHaveLength(2);
-    });
-
-    describe('when the page body is not defined', () => {
-        const invalidPageAsset = {} as unknown as DotCMSPageAsset;
-
-        it('shows warning message in dev mode when page body is not defined', () => {
-            render(<DotCMSLayoutBodyRenderer page={invalidPageAsset} mode={'development'} />);
-            expect(screen.getByText(/The page body is not defined/)).toBeInTheDocument();
+    describe('With missing layout.body', () => {
+        const MOCK_INVALID_PAGE = {} as any;
+        const MESSAGE_WARNING = 'Missing required layout.body property in page';
+        let consoleSpy: jest.SpyInstance;
+        let isInsideEditorSpy: jest.SpyInstance;
+        beforeEach(() => {
+            consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => MESSAGE_WARNING);
+            isInsideEditorSpy = jest.spyOn(dotcmsClient, 'isInsideEditor');
         });
 
-        it('shows warning message when inside editor and page body is not defined', () => {
-            (isInsideEditor as jest.Mock).mockReturnValue(true);
-            render(<DotCMSLayoutBodyRenderer page={invalidPageAsset} />);
-            expect(screen.getByText(/The page body is not defined/)).toBeInTheDocument();
+        afterEach(() => jest.restoreAllMocks());
+
+        it('should log a warning if the page is missing layout.body', () => {
+            render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />);
+            expect(consoleSpy).toHaveBeenCalledWith(MESSAGE_WARNING);
         });
 
-        it('returns null when page body is not defined and not in dev mode', () => {
-            const { container } = render(<DotCMSLayoutBodyRenderer page={invalidPageAsset} />);
-            expect(container.firstChild).toBeNull();
+        it('should displays an error message in development mode', () => {
+            render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="development" />);
+            const errorMessage = screen.getByTestId('error-message');
+            expect(errorMessage).toBeInTheDocument();
+        });
+
+        it('should display an error message in production mode if the page is inside the editor', () => {
+            isInsideEditorSpy.mockReturnValue(true);
+
+            render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />);
+            const errorMessage = screen.getByTestId('error-message');
+            expect(errorMessage).toBeInTheDocument();
+        });
+
+        it('should not display an error message in production mode', () => {
+            const { container } = render(
+                <DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />
+            );
+            expect(container.innerHTML).toBe('');
         });
     });
 });

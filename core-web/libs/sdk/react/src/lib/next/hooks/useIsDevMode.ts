@@ -15,14 +15,14 @@ import { DotCMSPageContext, RendererMode } from '../contexts/DotCMSPageContext';
  * @returns {boolean} - `true` if in development mode or inside the editor; otherwise, `false`.
  */
 export const useIsDevMode = (renderMode?: RendererMode) => {
-    const [isDevMode, setIsDevMode] = useState(false);
     const { mode } = useContext(DotCMSPageContext);
+    const effectiveMode = renderMode ?? mode;
+
+    const [isDevMode, setIsDevMode] = useState(effectiveMode === 'development');
 
     useEffect(() => {
-        const contextMode = mode || renderMode;
-        const isDevMode = contextMode === 'development' || isInsideEditor();
-        setIsDevMode(isDevMode || isInsideEditor());
-    }, [mode, renderMode]);
+        setIsDevMode(effectiveMode === 'development' || isInsideEditor());
+    }, [effectiveMode]);
 
     return isDevMode;
 };

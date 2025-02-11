@@ -57,28 +57,28 @@ describe('Column', () => {
         expect(containers).toHaveLength(0);
     });
 
-    it('should render a column with correct grid classes', () => {
+    it('should render a container wrapper with correct grid classes', () => {
         const { container } = render(<Column column={MOCK_COLUMN} />);
 
-        const columnElement = container.querySelector('[data-dot="column"]');
+        const containerWrapper = container.querySelector('[data-dot="column"]');
 
         const startClass = `col-start-${MOCK_COLUMN.leftOffset}`;
         const endClass = `col-end-${MOCK_COLUMN.width + MOCK_COLUMN.leftOffset}`;
 
-        expect(columnElement).toHaveClass(startClass);
-        expect(columnElement).toHaveClass(endClass);
+        expect(containerWrapper).toHaveClass(startClass);
+        expect(containerWrapper).toHaveClass(endClass);
     });
 
-    it('should render a container wrapper with custom style class', () => {
+    it('should render a container with custom style class', () => {
         const { container } = render(<Column column={MOCK_COLUMN} />);
 
-        const columnElement = container.querySelector('[data-dot="column"]');
-        const containerWrapper = columnElement?.children[0];
+        const containerWrapper = container.querySelector('[data-dot="column"]');
+        const columnElement = containerWrapper?.children[0];
 
-        expect(containerWrapper).toHaveClass('custom-column-class');
+        expect(columnElement).toHaveClass('custom-column-class');
     });
 
-    it('should render a container wrapper without custom style clas', () => {
+    it('should render a container without custom style clas', () => {
         const CUSTOM_MOCK_COLUMN_WITHOUT_STYLE_CLASS = {
             ...MOCK_COLUMN,
             styleClass: ''
@@ -86,9 +86,9 @@ describe('Column', () => {
 
         const { container } = render(<Column column={CUSTOM_MOCK_COLUMN_WITHOUT_STYLE_CLASS} />);
 
-        const columnElement = container.querySelector('[data-dot="column"]');
-        const containerWrapper = columnElement?.children[0];
+        const containerWrapper = container.querySelector('[data-dot="column"]');
+        const columnElement = containerWrapper?.children[0];
 
-        expect(containerWrapper).not.toHaveClass('custom-column-class');
+        expect(columnElement).not.toHaveClass('custom-column-class');
     });
 });

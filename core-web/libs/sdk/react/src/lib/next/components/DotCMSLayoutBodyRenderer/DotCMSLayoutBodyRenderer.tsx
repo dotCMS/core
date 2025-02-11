@@ -54,7 +54,9 @@ const ErrorMessage = ({ mode }: { mode: RendererMode }) => {
     }
 
     return (
-        <div style={{ padding: '1rem', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
+        <div
+            data-testid="error-message"
+            style={{ padding: '1rem', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
             <p style={{ margin: '0 0 0.5rem', color: '#666' }}>
                 The <code>page</code> is missing the required <code>layout.body</code> property.
             </p>
