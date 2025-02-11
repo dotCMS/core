@@ -24,21 +24,23 @@ import static com.liferay.util.StringPool.BLANK;
  *             "{{CONTENT_TYPE_ID_OR_VAR_NAME}}": {
  *                 "binary": "{{STRING}}",
  *                 "blockEditor": "{{STRING}}",
- *                 "category": "{{STRING:comma-separated list of values}}",
- *                 "checkbox": "{{STRING:comma-separated list of values}}",
+ *                 "category": "{{STRING: Comma-separated list of Category IDs}}",
+ *                 "checkbox": "{{STRING: Comma-separated list of values}}",
  *                 "custom": "{{STRING}}",
- *                 "date": "{{STRING}}",
- *                 "dateAndTime": "{{STRING}}:date or date and time",
- *                 "json": "{{STRING}}",
- *                 "keyValue": "{{STRING}}",
- *                 "multiSelect": "{{STRING:comma-separated list of values}}",
- *                 "radio": "{{STRING}}",
- *                 "relationships": "{{STRING}}",
- *                 "select": "{{STRING}}",
- *                 "tag": "{{STRING:comma-separated list of values}}",
+ *                 "date": "{{STRING}}: Can use ranges by including the [ and ] characters",
+ *                 "dateAndTime": "{{STRING}}: Date or date and time. Can use ranges by including
+ *                 the [ and ] characters",
+ *                 "json": "{{STRING}: Matches any String in the JSON object}",
+ *                 "keyValue": "{{STRING}: Matches keys and values in
+ *                 "multiSelect": "{{STRING: Comma-separated list of values, not labels}}",
+ *                 "radio": "{{STRING}: Matches values, not labels}",
+ *                 "relationships": "{{STRING:ID of the contentlet that must be referenced by the
+ *                 content(s) you want to query}}",
+ *                 "select": "{{STRING}: Matches values, not labels}",
+ *                 "tag": "{{STRING:comma-separated list of Tag names}}",
  *                 "title": "{{STRING}}",
  *                 "textArea": "{{STRING}}",
- *                 "time": "{{STRING}}",
+ *                 "time": "{{STRING}: Can use ranges by including the [ and ] characters}",
  *                 "wysiwyg": "{{STRING}}"
  *             }
  *         },
@@ -78,6 +80,11 @@ public class ContentSearchForm implements Serializable {
     private final int page;
     private final int perPage;
 
+    /**
+     * Creates an instance of this class using the provided Builder.
+     *
+     * @param builder The {@link Builder} instance to use.
+     */
     private ContentSearchForm(final Builder builder) {
         this.globalSearch = builder.globalSearch;
         this.searchableFieldsByContentType = builder.searchableFieldsByContentType;
@@ -92,61 +99,140 @@ public class ContentSearchForm implements Serializable {
         this.perPage = builder.perPage;
     }
 
+    /**
+     * Returns the global search term. This attribute represents, for instance, the global search
+     * box that you can see in the {@code Search} portlet, and in the dynamic search dialog in the
+     * {@code Relationships} field.
+     *
+     * @return The global search term.
+     */
     public String globalSearch() {
         return this.globalSearch;
     }
 
+    /**
+     * Returns a map containing all the searchable fields for each content type. The key of the map
+     * is the content type ID or variable name, and the value is another map containing the fields
+     * and their values.
+     *
+     * @return A map containing all the searchable fields for each content type.
+     */
     public Map<String, Map<String, Object>> searchableFields() {
         return this.searchableFieldsByContentType;
     }
 
+    /**
+     * Returns a list of searchable fields for a specific content type.
+     *
+     * @param contentTypeId The ID or variable name of the content type.
+     *
+     * @return A list of searchable fields for the specified content type.
+     */
     public List<String> searchableFields(final String contentTypeId) {
         return null != this.searchableFieldsByContentType
                 ? new ArrayList<>(this.searchableFieldsByContentType.getOrDefault(contentTypeId, new HashMap<>()).keySet())
                 : List.of();
     }
 
-    public Optional<Object> searchableFieldsByContentTypeAndField(final String contentTypeId,
+    /**
+     * Returns an Optional with the value of a specific field for a specific content type.
+     *
+     * @param contentTypeIdOrVar The ID or variable name of the content type.
+     * @param fieldVarName       The variable name of the field.
+     *
+     * @return An {@link Optional} with the value of the field, or an empty Optional if the field is
+     * not found.
+     */
+    public Optional<Object> searchableFieldsByContentTypeAndField(final String contentTypeIdOrVar,
                                                                   final String fieldVarName) {
-        return null != this.searchableFieldsByContentType && null != this.searchableFieldsByContentType.get(contentTypeId)
-                ? Optional.of(this.searchableFieldsByContentType.get(contentTypeId).get(fieldVarName))
+        return null != this.searchableFieldsByContentType && null != this.searchableFieldsByContentType.get(contentTypeIdOrVar)
+                ? Optional.of(this.searchableFieldsByContentType.get(contentTypeIdOrVar).get(fieldVarName))
                 : Optional.empty();
     }
 
+    /**
+     * Returns a map containing all the system searchable fields. These fields are used to filter
+     * content based on system properties like the site ID, language ID, workflow scheme ID, etc.
+     * and not actual fields in a Content Type.
+     *
+     * @return A map containing all the system searchable fields.
+     */
     public Map<String, Object> systemSearchableFields() {
         return null != this.systemSearchableFields
                 ? this.systemSearchableFields
                 : Map.of();
     }
 
+    /**
+     * Returns the site ID to filter the content by.
+     *
+     * @return The site ID to filter the content by.
+     */
     public String siteId() {
         return (String) this.systemSearchableFields().getOrDefault("siteId", BLANK);
     }
 
+    /**
+     * Returns the language ID to filter the content by.
+     *
+     * @return The language ID to filter the content by.
+     */
     public int languageId() {
         return (int) this.systemSearchableFields().getOrDefault("languageId", -1);
     }
 
+    /**
+     * Returns the workflow scheme ID to filter the content by.
+     *
+     * @return The workflow scheme ID to filter the content by.
+     */
     public String workflowSchemeId() {
         return (String) this.systemSearchableFields().getOrDefault("workflowSchemeId", BLANK);
     }
 
+    /**
+     * Returns the workflow step ID to filter the content by.
+     *
+     * @return The workflow step ID to filter the content by.
+     */
     public String workflowStepId() {
         return (String) this.systemSearchableFields().getOrDefault("workflowStepId", BLANK);
     }
 
+    /**
+     * Returns the variant name to filter the content by.
+     *
+     * @return The variant name to filter the content by.
+     */
     public String variantName() {
         return (String) this.systemSearchableFields().getOrDefault("variantName", VariantAPI.DEFAULT_VARIANT.name());
     }
 
+    /**
+     * Returns a boolean indicating whether the generated Lucene query must look for content living
+     * under System host or not.
+     *
+     * @return If the generated Lucene query must look for content living under System host, returns
+     * {@code true}.
+     */
     public boolean systemHostContent() {
         return (boolean) this.systemSearchableFields().getOrDefault("systemHostContent", true);
     }
 
+    /**
+     * Returns the criterion being used to filter results by.
+     *
+     * @return The criterion being used to filter results by.
+     */
     public String orderBy() {
         return this.orderBy;
     }
 
+    /**
+     * Returns a list of content type IDs that can be used to filter the search results.
+     *
+     * @return A list of content type IDs that can be used to filter the search results.
+     */
     public List<String> contentTypeIds() {
         if (null == this.searchableFieldsByContentType) {
             return List.of();
@@ -154,26 +240,57 @@ public class ContentSearchForm implements Serializable {
         return new ArrayList<>(this.searchableFieldsByContentType.keySet());
     }
 
+    /**
+     * Returns a boolean indicating whether the search results must include archived content or not.
+     *
+     * @return If the search results must include archived content, returns {@code true}.
+     */
     public String archivedContent() {
         return this.archivedContent;
     }
 
+    /**
+     * Returns a boolean indicating whether the search results must include unpublished content or
+     * not.
+     *
+     * @return If the search results must include unpublished content, returns {@code true}.
+     */
     public String unpublishedContent() {
         return this.unpublishedContent;
     }
 
+    /**
+     * Returns a boolean indicating whether the search results must include locked content or not.
+     *
+     * @return If the search results must include locked content, returns {@code true}.
+     */
     public String lockedContent() {
         return this.lockedContent;
     }
 
+    /**
+     * Returns the page number to be used to paginate the search results.
+     *
+     * @return The page number to be used to paginate the search results.
+     */
     public int page() {
         return this.page;
     }
 
+    /**
+     * Returns the number of results to be shown per page.
+     *
+     * @return The number of results to be shown per page.
+     */
     public int perPage() {
         return this.perPage;
     }
 
+    /**
+     * Returns the offset to be used to paginate the search results.
+     *
+     * @return The offset to be used to paginate the search results.
+     */
     public int offset() {
         if (this.page != 0) {
             return this.perPage * (this.page - 1);
@@ -181,6 +298,9 @@ public class ContentSearchForm implements Serializable {
         return 0;
     }
 
+    /**
+     * Allows you to create an instance of the {@link ContentSearchForm} class using a Builder.
+     */
     public static final class Builder {
 
         @JsonProperty

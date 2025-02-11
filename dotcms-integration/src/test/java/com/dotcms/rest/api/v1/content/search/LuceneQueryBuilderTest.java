@@ -27,7 +27,6 @@ import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FieldRelationshipDataGen;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.content.ContentSearchForm;
 import com.dotcms.util.IntegrationTestInitService;
@@ -52,7 +51,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.enterprise.context.ApplicationScoped;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -99,10 +97,12 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
     /**
      * This DataProvider provides the test cases for the different content status filters:
      * <ul>
-     *     <li>Global Search.</li>
+     *     <li>Global Search. This is basically the top center Search field you can see in the
+     *     {@code Search} portlet, and the field in the search dialog of the Relationships field.
+     *     </li>
      *     <li>Unpublished content.</li>
      *     <li>Locked content.</li>
-     *     <li>Deleted content.</li>
+     *     <li>Archived content.</li>
      *     <li>Working content.</li>
      *     <li>Live content.</li>
      * </ul>
@@ -169,15 +169,20 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
 
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link }</li>
-     *     <li><b>Given Scenario: </b></li>
-     *     <li><b>Expected Result: </b></li>
+     *     <li><b>Method to test: </b>{@link LuceneQueryBuilder#build()}</li>
+     *     <li><b>Given Scenario: </b>Verifies that the Lucene query can be built correctly based
+     *     on the content status filters specified in the
+     *     {@link #contentStatusTestCases()} Data Provider.</li>
+     *     <li><b>Expected Result: </b>Each Test Case provides its own expected Lucene query</li>
      * </ul>
      *
-     * @param testCase
-     * @throws JsonProcessingException
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param testCase The {@link TestCase} object that provides a User input, and an expected
+     *                 resulting Lucene query.
+     *
+     * @throws JsonProcessingException If there is an error parsing the JSON input.
+     * @throws DotDataException        If there is an error accessing the data.
+     * @throws DotSecurityException    If there is a permission-related error when accessing the
+     *                                 data.
      */
     @Test
     @UseDataProvider("contentStatusTestCases")
@@ -191,6 +196,22 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
         assertEquals(String.format("The generated query is different than expected for Test Case: '%s'", testCase.title), testCase.expectedQuery, luceneQuery);
     }
 
+    /**
+     * This DataProvider provides the test cases for the different system searchable fields. These
+     * fields are NOT actual fields in a Contentlet per se, but rather fields that allow you to
+     * filter contents in a way that provides additional value to users. For instance, you can
+     * filter them based on:
+     * <ul>
+     *     <li>Site ID.</li>
+     *     <li>Language ID.</li>
+     *     <li>Workflow Scheme ID.</li>
+     *     <li>Workflow Step ID.</li>
+     *     <li>Variant name.</li>
+     *     <li>Content living under System Host.</li>
+     * </ul>
+     *
+     * @return An array of {@link TestCase} objects.
+     */
     @DataProvider
     public static Object[] systemSearchableFieldsTestCases() {
         return new TestCase[]{
@@ -254,15 +275,20 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
 
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link }</li>
-     *     <li><b>Given Scenario: </b></li>
-     *     <li><b>Expected Result: </b></li>
+     *     <li><b>Method to test: </b>{@link LuceneQueryBuilder#build()}</li>
+     *     <li><b>Given Scenario: </b>Verifies that the Lucene query can be built correctly based
+     *     on the system searchable fields specified in the
+     *     {@link #systemSearchableFieldsTestCases()} Data Provider.</li>
+     *     <li><b>Expected Result: </b>Each Test Case provides its own expected Lucene query</li>
      * </ul>
      *
-     * @param testCase
-     * @throws JsonProcessingException
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param testCase The {@link TestCase} object that provides a User input, and an expected
+     *                 resulting Lucene query.
+     *
+     * @throws JsonProcessingException If there is an error parsing the JSON input.
+     * @throws DotDataException        If there is an error accessing the data.
+     * @throws DotSecurityException    If there is a permission-related error when accessing the
+     *                                 data.
      */
     @Test
     @UseDataProvider("systemSearchableFieldsTestCases")
@@ -276,39 +302,26 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
         assertEquals(String.format("The generated query is different than expected for Test Case: '%s'", testCase.title), testCase.expectedQuery, luceneQuery);
     }
 
-    @DataProvider
-    public static Object[] contentTypeSearchableFieldsTestCases() {
-        return new TestCase[]{
-                new TestCase("With No Content Type",
-                        "{ }",
-                        "+systemType:false -contentType:forms -contentType:Host +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true"),
-        };
-    }
-
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link }</li>
-     *     <li><b>Given Scenario: </b></li>
-     *     <li><b>Expected Result: </b></li>
+     *     <li><b>Method to test: </b>{@link LuceneQueryBuilder#build()}</li>
+     *     <li><b>Given Scenario: </b>Generates a Lucene query under the following circumstances:
+     *     <ul>
+     *         <li>The JSON body is empty.</li>
+     *         <li>The Content Type is specified by its Velocity Var Name.</li>
+     *         <li>The Content Type is specified by its ID.</li>
+     *     </ul>
+     *     </li>
+     *     <li><b>Expected Result: </b>The resulting query must include the default filtering values
+     *     for the first case, and the expected Content Type in the other two cases.
+     *     every time.</li>
      * </ul>
      *
-     * @param testCase
-     * @throws JsonProcessingException
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @throws JsonProcessingException If there is an error parsing the JSON input.
+     * @throws DotDataException        If there is an error accessing the data.
+     * @throws DotSecurityException    If there is a permission-related error when accessing the
+     *                                 data.
      */
-    @Test
-    @UseDataProvider("contentTypeSearchableFieldsTestCases")
-    public void runContentTypeSearchableFieldsTestCases(final TestCase testCase) throws JsonProcessingException, DotDataException, DotSecurityException {
-        final ContentSearchForm contentSearchForm = jsonMapper.readValue(testCase.jsonBody, ContentSearchForm.class);
-        final LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
-        final String luceneQuery = luceneQueryBuilder.build();
-
-        assertNotNull(String.format("Generated query cannot be null for Test Case: '%s'", testCase.title), luceneQuery);
-        assertFalse(String.format("Generated query cannot be an empty String for Test Case: '%s'", testCase.title), luceneQuery.isEmpty());
-        assertEquals(String.format("The generated query is different than expected for Test Case: '%s'", testCase.title), testCase.expectedQuery, luceneQuery);
-    }
-
     @Test
     public void testSearchableFieldsByContentTypeAttribute() throws JsonProcessingException, DotDataException, DotSecurityException {
         final ContentType testContentType = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME);
@@ -361,20 +374,36 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * This DataProvider provides the test cases for the different Content Type fields that can be
+     * flagged as {@code User Searchable} in dotCMS, using a test Content Type. There are several
+     * fields that share the same formatting when being queried via Lucene. Here's the list of
+     * fields that are being tested:
+     * <ul>
+     *     <li>Binary Field.</li>
+     *     <li>Checkbox Field.</li>
+     *     <li>Custom Field.</li>
+     *     <li>Date Field.</li>
+     *     <li>Date and Time Field.</li>
+     *     <li>JSON Field.</li>
+     *     <li>Key/Value Field.</li>
+     *     <li>Multi-Select Field.</li>
+     *     <li>Radio Field.</li>
+     *     <li>Select Field.</li>
+     *     <li>Tag Field.</li>
+     *     <li>Text Field.</li>
+     *     <li>Text Area Field.</li>
+     *     <li>Time Field.</li>
+     *     <li>WYSIWYG Field.</li>
+     * </ul>
+     * <p>There are two fields that are NOT included in this Data Provider: The Category Field, and
+     * the Relationships field, which require specific test data to be set before testing them.</p>
+     *
+     * @return An array of {@link TestCase} objects.
+     */
     @DataProvider
     public static Object[] contentTypeSearchableFieldsWithFieldTestCases() {
         return new TestCase[]{
-                new TestCase("With Text Field",
-                        "text",
-                        "{\n" +
-                                "    \"searchableFieldsByContentType\": {\n" +
-                                "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
-                                "            \"text\": \"value\"\n" +
-                                "        }\n" +
-                                "    }\n" +
-                                "}",
-                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.text:*value* SSS.text_dotraw:*value*)"
-                                .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
                 new TestCase("With Binary Field",
                         "binary",
@@ -508,6 +537,18 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                         "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +SSS.tag:\"beach\" +SSS.tag:\"mountain\""
                                 .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
 
+                new TestCase("With Text Field",
+                        "text",
+                        "{\n" +
+                                "    \"searchableFieldsByContentType\": {\n" +
+                                "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
+                                "            \"text\": \"value\"\n" +
+                                "        }\n" +
+                                "    }\n" +
+                                "}",
+                        "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.text:*value* SSS.text_dotraw:*value*)"
+                                .replaceAll("SSS", TEST_CONTENT_TYPE_NAME)),
+
                 new TestCase("With Text Area Field",
                         "textArea",
                         "{\n" +
@@ -546,17 +587,28 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
         };
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link LuceneQueryBuilder#build()}</li>
+     *     <li><b>Given Scenario: </b>Verifies that the Lucene query can be built correctly based
+     *     on the Content Type searchable fields specified in the
+     *     {@link #contentTypeSearchableFieldsWithFieldTestCases()} Data Provider.</li>
+     *     <li><b>Expected Result: </b>Each Test Case provides its own expected Lucene query.</li>
+     * </ul>
+     *
+     * @param testCase The {@link TestCase} object that provides a User input, and an expected
+     *                 resulting Lucene query.
+     *
+     * @throws JsonProcessingException If there is an error parsing the JSON input.
+     * @throws DotDataException        If there is an error accessing the data.
+     * @throws DotSecurityException    If there is a permission-related error when accessing the
+     *                                 data.
+     */
     @Test
     @UseDataProvider("contentTypeSearchableFieldsWithFieldTestCases")
     public void testSearchableFieldsByContentType(final TestCase testCase) throws JsonProcessingException, DotDataException, DotSecurityException {
-        /*final ContentType testContentType = new ContentTypeDataGen()
-                .host(defaultSite)
-                .name(TEST_CONTENT_TYPE_NAME)
-                .velocityVarName(TEST_CONTENT_TYPE_NAME)
-                .field(getFields().get(testCase.field))
-                .workflowId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2").nextPersisted();*/
-        //final ContentType testContentType = this.createTestContentType(this.getFields().get(testCase.field));
-        final ContentType testContentType = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME, List.of(this.getFields().get(testCase.field)));
+        final ContentType testContentType = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME,
+                List.of(this.getFields().get(testCase.field)));
         try {
             final ContentSearchForm contentSearchForm = jsonMapper.readValue(testCase.jsonBody, ContentSearchForm.class);
             final LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
@@ -571,11 +623,301 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
     }
 
     /**
-     * Utility method that adds a specific Field to the test Content Type. This is meant just for
-     * passing down test data to the {@link #contentTypeSearchableFieldsWithFieldTestCases()}
-     * method.
+     * <ul>
+     *     <li><b>Method to test: </b>{@link LuceneQueryBuilder#build()}</li>
+     *     <li><b>Given Scenario: </b>Verifies that the Lucene query can be built correctly when a
+     *     Category field is being queried. This requires creating some Categories first.</li>
+     *     <li><b>Expected Result: </b>The Lucene query correctly transforms the Category IDs in the
+     *     JSON Body into the expected Category Names.</li>
+     * </ul>
      *
-     * @return
+     * @throws JsonProcessingException If there is an error parsing the JSON input.
+     * @throws DotDataException        If there is an error accessing the data.
+     * @throws DotSecurityException    If there is a permission-related error when accessing the
+     *                                 data.
+     */
+    @Test
+    public void testCategoryField() throws JsonProcessingException, DotDataException, DotSecurityException {
+        final Category testCategoryOne = new CategoryDataGen()
+                .setCategoryName("rain forest")
+                .setKey("rain_forest")
+                .setCategoryVelocityVarName("rain_forest")
+                .nextPersisted();
+        final Category testCategoryTwo = new CategoryDataGen()
+                .setCategoryName("sloths")
+                .setKey("sloths")
+                .setCategoryVelocityVarName("sloths")
+                .nextPersisted();
+
+        final String categoryFieldName = "category";
+        final ContentType testContentType = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME, List.of(new FieldDataGen()
+                .type(CategoryField.class)
+                .name(categoryFieldName)
+                .velocityVarName("category")
+                .values("")
+                .defaultValue("")
+                .searchable(true).next()));
+        try {
+            String jsonBody = "{\n" +
+                    "    \"searchableFieldsByContentType\": {\n" +
+                    "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
+                    "            \"" + categoryFieldName + "\": \"" + testCategoryOne.getCategoryId() + ", " + testCategoryTwo.getCategoryId() + "\"\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "}";
+            String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS." + categoryFieldName + ":" + testCategoryOne.getKey() + " SSS." + categoryFieldName + ":" + testCategoryTwo.getKey() + ")")
+                    .replaceAll("SSS", TEST_CONTENT_TYPE_NAME);
+
+            ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
+            LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
+            String luceneQuery = luceneQueryBuilder.build();
+
+            assertNotNull("Generated query using Velocity Var Name cannot be null", luceneQuery);
+            assertFalse("Generated query using Velocity Var Name cannot be an empty String", luceneQuery.isEmpty());
+            assertEquals("The generated query using Velocity Var Name is different than expected", expectedQuery, luceneQuery);
+        } finally {
+            ContentTypeDataGen.remove(testContentType);
+            CategoryDataGen.delete(testCategoryOne);
+            CategoryDataGen.delete(testCategoryTwo);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link LuceneQueryBuilder#build()}</li>
+     *     <li><b>Given Scenario: </b>Verifies that the Lucene query can be built correctly when
+     *     there's a Relationships field being queried, and involves different Content Types.</li>
+     *     <li><b>Expected Result: </b>The JSON Body takes the Identifier of the Contentlet that is
+     *     referenced by one or more parents, and includes the Identifiers of such parents in order
+     *     to generate the appropriate query. In other words, you specify the Identifier of the
+     *     child contentlet, and the query returns the Identifiers of its respective parent
+     *     contentlets.</li>
+     * </ul>
+     *
+     * @throws JsonProcessingException If there is an error parsing the JSON input.
+     * @throws DotDataException        If there is an error accessing the data.
+     * @throws DotSecurityException    If there is a permission-related error when accessing the
+     *                                 data.
+     */
+    @Test
+    public void testRelationshipsFieldWithDifferentContentTypes() throws DotDataException, DotSecurityException, JsonProcessingException {
+        ContentType parentCt = null;
+        ContentType childCt = null;
+        try {
+            parentCt = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME,
+                    List.of(FieldBuilder
+                            .builder(TextField.class)
+                            .name("title")
+                            .variable("title")
+                            .indexed(true)
+                            .searchable(true).build()));
+
+            childCt = this.createTestContentType(TEST_CHILD_CONTENT_TYPE_NAME, TEST_CHILD_CONTENT_TYPE_NAME,
+                    List.of(FieldBuilder
+                            .builder(TextField.class)
+                            .name("title")
+                            .variable("title")
+                            .indexed(true)
+                            .searchable(true).build()));
+
+            assertNotNull("Test Parent Content Type cannot be null", parentCt);
+            assertNotNull("Test Child Content Type cannot be null", childCt);
+
+            final String relationshipsFieldName = "relationship";
+            final Field field = FieldBuilder.builder(RelationshipField.class)
+                    .name(relationshipsFieldName)
+                    .contentTypeId(parentCt.id())
+                    .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                    .relationType(childCt.variable())
+                    .required(false)
+                    .build();
+            final Field fieldSaved = APILocator.getContentTypeFieldAPI().save(field, adminUser);
+            final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(fieldSaved, adminUser);
+
+            ContentletDataGen contentletDataGen = new ContentletDataGen(parentCt.id())
+                    .languageId(1)
+                    .host(defaultSite)
+                    .setProperty("hostfolder", defaultSite)
+                    .setProperty("title", "Parent content")
+                    .setPolicy(IndexPolicy.WAIT_FOR);
+            Contentlet parentTestContent = contentletDataGen.nextPersisted();
+            ContentletDataGen.publish(parentTestContent);
+
+            contentletDataGen = new ContentletDataGen(childCt.id())
+                    .languageId(1)
+                    .host(defaultSite)
+                    .setProperty("hostfolder", defaultSite)
+                    .setProperty("title", "Child content")
+                    .setPolicy(IndexPolicy.WAIT_FOR);
+            final Contentlet childTestContent = contentletDataGen.nextPersisted();
+            ContentletDataGen.publish(childTestContent);
+
+            parentTestContent = ContentletDataGen.checkout(parentTestContent);
+            parentTestContent.setProperty(relationship.getChildRelationName(), Collections.singletonList(childTestContent));
+            ContentletDataGen.checkin(parentTestContent);
+
+            assertRelatedContents(relationship, parentTestContent, childTestContent);
+
+            assertTrue("The Velocity Var Name for the Parent CT cannot be null/empty", UtilMethods.isSet(parentCt.variable()));
+
+            final String jsonBody = "{\n" +
+                    "    \"searchableFieldsByContentType\": {\n" +
+                    "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
+                    "            \"" + relationshipsFieldName + "\": \"" + childTestContent.getIdentifier() + "\"" +
+                    "        }\n" +
+                    "    }\n" +
+                    "}";
+            final String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +identifier:(" + parentTestContent.getIdentifier() + ")")
+                    .replaceAll("SSS", parentCt.variable());
+
+            final ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
+            final LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
+            final String luceneQuery = luceneQueryBuilder.build();
+
+            assertNotNull("Generated query using Velocity Var Name cannot be null", luceneQuery);
+            assertFalse("Generated query using Velocity Var Name cannot be an empty String", luceneQuery.isEmpty());
+            assertEquals("The generated query using Velocity Var Name is different than expected", expectedQuery, luceneQuery);
+        } finally {
+            ContentTypeDataGen.remove(parentCt);
+            ContentTypeDataGen.remove(childCt);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link LuceneQueryBuilder#build()}</li>
+     *     <li><b>Given Scenario: </b>Verifies that the Lucene query can be built correctly when
+     *     there's a Relationships field being queried, and involves self-related Content Types.
+     *     </li>
+     *     <li><b>Expected Result: </b>The JSON Body takes the Identifier of the Contentlet that is
+     *     referenced by one or more parents, and includes the Identifiers of such parents in order
+     *     to generate the appropriate query. In other words, you specify the Identifier of the
+     *     child contentlet, and the query returns the Identifiers of its respective parent
+     *     contentlets.</li>
+     * </ul>
+     *
+     * @throws JsonProcessingException If there is an error parsing the JSON input.
+     * @throws DotDataException        If there is an error accessing the data.
+     * @throws DotSecurityException    If there is a permission-related error when accessing the
+     *                                 data.
+     */
+    @Test
+    public void testRelationshipsFieldSelfRelated() throws DotDataException, DotSecurityException, JsonProcessingException {
+        ContentType parentCt = null;
+        try {
+            parentCt = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME,
+                    List.of(FieldBuilder
+                            .builder(TextField.class)
+                            .name("title")
+                            .variable("title")
+                            .indexed(true)
+                            .searchable(true).build()));
+
+            final String relationshipsFieldName = "relationship";
+            final Field field = FieldBuilder.builder(RelationshipField.class)
+                    .name(relationshipsFieldName)
+                    .contentTypeId(parentCt.id())
+                    .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                    .relationType(parentCt.variable())
+                    .required(false)
+                    .build();
+            final Field fieldSaved = APILocator.getContentTypeFieldAPI().save(field, adminUser);
+            final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(fieldSaved, adminUser);
+
+            ContentletDataGen contentletDataGen = new ContentletDataGen(parentCt.id())
+                    .languageId(1)
+                    .host(defaultSite)
+                    .setProperty("hostfolder", defaultSite)
+                    .setProperty("title", "Parent content")
+                    .setPolicy(IndexPolicy.WAIT_FOR);
+            Contentlet parentTestContent = contentletDataGen.nextPersisted();
+            ContentletDataGen.publish(parentTestContent);
+
+            contentletDataGen = new ContentletDataGen(parentCt.id())
+                    .languageId(1)
+                    .host(defaultSite)
+                    .setProperty("hostfolder", defaultSite)
+                    .setProperty("title", "Child content")
+                    .setPolicy(IndexPolicy.WAIT_FOR);
+            final Contentlet childTestContent = contentletDataGen.nextPersisted();
+            ContentletDataGen.publish(childTestContent);
+
+            parentTestContent = ContentletDataGen.checkout(parentTestContent);
+            parentTestContent.setProperty(relationship.getChildRelationName(), Collections.singletonList(childTestContent));
+            ContentletDataGen.checkin(parentTestContent);
+
+            assertRelatedContents(relationship, parentTestContent, childTestContent);
+
+            String jsonBody = "{\n" +
+                    "    \"searchableFieldsByContentType\": {\n" +
+                    "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
+                    "            \"" + relationshipsFieldName + "\": \"" + childTestContent.getIdentifier() + "\"" +
+                    "        }\n" +
+                    "    }\n" +
+                    "}";
+            String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +my_test_ct." + relationshipsFieldName + ":" + childTestContent.getIdentifier())
+                    .replaceAll("SSS", parentCt.variable());
+
+            ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
+            LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
+            String luceneQuery = luceneQueryBuilder.build();
+
+            assertNotNull("Generated query using Velocity Var Name cannot be null", luceneQuery);
+            assertFalse("Generated query using Velocity Var Name cannot be an empty String", luceneQuery.isEmpty());
+            assertEquals("The generated query using Velocity Var Name is different than expected", expectedQuery, luceneQuery);
+        } finally {
+            ContentTypeDataGen.remove(parentCt);
+        }
+    }
+
+    /**
+     * Utility method that creates a test {@link ContentType} with a specific name and Velocity
+     * Variable Name.
+     *
+     * @param name            The name of the test Content Type.
+     * @param velocityVarName The Velocity Variable Name of the test Content Type.
+     *
+     * @return A {@link ContentType} object.
+     */
+    private ContentType createTestContentType(final String name, final String velocityVarName) {
+        return this.createTestContentType(name, velocityVarName, null);
+    }
+
+    /**
+     * Utility method that creates a test {@link ContentType} with a specific name, Velocity
+     * Variable Name, and a list of {@link Field} objects.
+     *
+     * @param name            The name of the test Content Type.
+     * @param velocityVarName The Velocity Variable Name of the test Content Type.
+     * @param fields          A {@link List} of {@link Field} objects.
+     *
+     * @return A {@link ContentType} object.
+     */
+    private ContentType createTestContentType(final String name, final String velocityVarName, final List<Field> fields) {
+        final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+                .host(defaultSite)
+                .name(name)
+                .velocityVarName(velocityVarName)
+                // This is the ID of the System Workflow
+                .workflowId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2");
+        if (UtilMethods.isSet(fields)) {
+            contentTypeDataGen.fields(fields);
+        }
+        return contentTypeDataGen.nextPersisted();
+    }
+
+    /**
+     * Utility method that creates a Map with the User Searchable {@link Field} objects for the test
+     * Content Type. This is meant just for passing down test data to the
+     * {@link #testSearchableFieldsByContentType(TestCase)} Integration Test; i.e., create the test
+     * Content Type that will be used by the
+     * {@link #contentTypeSearchableFieldsWithFieldTestCases()} Data Provider to generate the
+     * expected Lucene query for a given Searchable Field.
+     * <p>Again, keep in mind that the Category field and the Relationships field are not part of
+     * this Test Case. They're validated separately because of the additional test data they need.
+     * </p>
+     *
+     * @return A {@link Map} with the User Searchable {@link Field} objects.
      */
     private Map<String, Field> getFields() {
         Map<String, Field> fields = new java.util.HashMap<>(Map.of(
@@ -685,421 +1027,36 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
         return fields;
     }
 
-    @Test
-    public void testCategoryField() throws JsonProcessingException, DotDataException, DotSecurityException {
-        final Category testCategoryOne = new CategoryDataGen()
-                .setCategoryName("rain forest")
-                .setKey("rain_forest")
-                .setCategoryVelocityVarName("rain_forest")
-                .nextPersisted();
-        final Category testCategoryTwo = new CategoryDataGen()
-                .setCategoryName("sloths")
-                .setKey("sloths")
-                .setCategoryVelocityVarName("sloths")
-                .nextPersisted();
-        final ContentType testContentType = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME, List.of(new FieldDataGen()
-                .type(CategoryField.class)
-                .name("category")
-                .velocityVarName("category")
-                .values("")
-                .defaultValue("")
-                .searchable(true).next()));
-        try {
-            String jsonBody = "{\n" +
-                    "    \"searchableFieldsByContentType\": {\n" +
-                    "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
-                    "            \"category\": \"" + testCategoryOne.getCategoryId() + ", " + testCategoryTwo.getCategoryId() + "\"\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}";
-            String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.category:" + testCategoryOne.getKey() + " SSS.category:" + testCategoryTwo.getKey() + ")")
-                    .replaceAll("SSS", TEST_CONTENT_TYPE_NAME);
-
-            ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
-            LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
-            String luceneQuery = luceneQueryBuilder.build();
-
-            assertNotNull("Generated query using Velocity Var Name cannot be null", luceneQuery);
-            assertFalse("Generated query using Velocity Var Name cannot be an empty String", luceneQuery.isEmpty());
-            assertEquals("The generated query using Velocity Var Name is different than expected", expectedQuery, luceneQuery);
-        } finally {
-            ContentTypeDataGen.remove(testContentType);
-            CategoryDataGen.delete(testCategoryOne);
-            CategoryDataGen.delete(testCategoryTwo);
-        }
-    }
-
-    @Test
-    public void testRelationshipsFieldWithDifferentContentTypes() throws DotDataException, DotSecurityException, JsonProcessingException {
-        ContentType parentCt = null;
-        ContentType childCt = null;
-        try {
-            parentCt = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME,
-                    List.of(FieldBuilder
-                            .builder(TextField.class)
-                            .name("title")
-                            .variable("title")
-                            .indexed(true)
-                            .searchable(true).build()));
-
-            childCt = this.createTestContentType(TEST_CHILD_CONTENT_TYPE_NAME, TEST_CHILD_CONTENT_TYPE_NAME,
-                    List.of(FieldBuilder
-                            .builder(TextField.class)
-                            .name("title")
-                            .variable("title")
-                            .indexed(true)
-                            .searchable(true).build()));
-
-            final Field field = FieldBuilder.builder(RelationshipField.class)
-                    .name("relationship")
-                    .contentTypeId(parentCt.id())
-                    .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
-                    .relationType(childCt.variable())
-                    .required(false)
-                    .build();
-            final Field fieldSaved = APILocator.getContentTypeFieldAPI().save(field, adminUser);
-            final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(fieldSaved, adminUser);
-
-            ContentletDataGen contentletDataGen = new ContentletDataGen(parentCt.id())
-                    .languageId(1)
-                    .host(defaultSite)
-                    .setProperty("hostfolder", defaultSite)
-                    .setProperty("title", "Parent content")
-                    .setPolicy(IndexPolicy.WAIT_FOR);
-            Contentlet parentTestContent = contentletDataGen.nextPersisted();
-            ContentletDataGen.publish(parentTestContent);
-
-            contentletDataGen = new ContentletDataGen(childCt.id())
-                    .languageId(1)
-                    .host(defaultSite)
-                    .setProperty("hostfolder", defaultSite)
-                    .setProperty("title", "Child content")
-                    .setPolicy(IndexPolicy.WAIT_FOR);
-            final Contentlet childTestContent = contentletDataGen.nextPersisted();
-            ContentletDataGen.publish(childTestContent);
-
-            parentTestContent = ContentletDataGen.checkout(parentTestContent);
-            parentTestContent.setProperty(relationship.getChildRelationName(), Collections.singletonList(childTestContent));
-            ContentletDataGen.checkin(parentTestContent);
-
-            assertRelatedContents(relationship, parentTestContent, childTestContent);
-
-            String jsonBody = "{\n" +
-                    "    \"searchableFieldsByContentType\": {\n" +
-                    "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
-                    "            \"relationship\": \"" + childTestContent.getIdentifier() + "\"" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}";
-            String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +identifier:(" + parentTestContent.getIdentifier() + ")")
-                    .replaceAll("SSS", parentCt.variable());
-
-            ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
-            LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
-            String luceneQuery = luceneQueryBuilder.build();
-
-            assertNotNull("Generated query using Velocity Var Name cannot be null", luceneQuery);
-            assertFalse("Generated query using Velocity Var Name cannot be an empty String", luceneQuery.isEmpty());
-            assertEquals("The generated query using Velocity Var Name is different than expected", expectedQuery, luceneQuery);
-        } finally {
-            ContentTypeDataGen.remove(parentCt);
-            ContentTypeDataGen.remove(childCt);
-        }
-    }
-
-    @Test
-    public void testRelationshipsFieldSelfRelated() throws DotDataException, DotSecurityException, JsonProcessingException {
-        ContentType parentCt = null;
-        try {
-            parentCt = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CONTENT_TYPE_NAME,
-                    List.of(FieldBuilder
-                            .builder(TextField.class)
-                            .name("title")
-                            .variable("title")
-                            .indexed(true)
-                            .searchable(true).build()));
-
-            final Field field = FieldBuilder.builder(RelationshipField.class)
-                    .name("relationship")
-                    .contentTypeId(parentCt.id())
-                    .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
-                    .relationType(parentCt.variable())
-                    .required(false)
-                    .build();
-            final Field fieldSaved = APILocator.getContentTypeFieldAPI().save(field, adminUser);
-            final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(fieldSaved, adminUser);
-
-            ContentletDataGen contentletDataGen = new ContentletDataGen(parentCt.id())
-                    .languageId(1)
-                    .host(defaultSite)
-                    .setProperty("hostfolder", defaultSite)
-                    .setProperty("title", "Parent content")
-                    .setPolicy(IndexPolicy.WAIT_FOR);
-            Contentlet parentTestContent = contentletDataGen.nextPersisted();
-            ContentletDataGen.publish(parentTestContent);
-
-            contentletDataGen = new ContentletDataGen(parentCt.id())
-                    .languageId(1)
-                    .host(defaultSite)
-                    .setProperty("hostfolder", defaultSite)
-                    .setProperty("title", "Child content")
-                    .setPolicy(IndexPolicy.WAIT_FOR);
-            final Contentlet childTestContent = contentletDataGen.nextPersisted();
-            ContentletDataGen.publish(childTestContent);
-
-            parentTestContent = ContentletDataGen.checkout(parentTestContent);
-            parentTestContent.setProperty(relationship.getChildRelationName(), Collections.singletonList(childTestContent));
-            ContentletDataGen.checkin(parentTestContent);
-
-            assertRelatedContents(relationship, parentTestContent, childTestContent);
-
-            String jsonBody = "{\n" +
-                    "    \"searchableFieldsByContentType\": {\n" +
-                    "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
-                    "            \"relationship\": \"" + childTestContent.getIdentifier() + "\"" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}";
-            String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +my_test_ct.relationship:" + childTestContent.getIdentifier())
-                    .replaceAll("SSS", parentCt.variable());
-
-            ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
-            LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
-            String luceneQuery = luceneQueryBuilder.build();
-
-            assertNotNull("Generated query using Velocity Var Name cannot be null", luceneQuery);
-            assertFalse("Generated query using Velocity Var Name cannot be an empty String", luceneQuery.isEmpty());
-            assertEquals("The generated query using Velocity Var Name is different than expected", expectedQuery, luceneQuery);
-        } finally {
-            ContentTypeDataGen.remove(parentCt);
-        }
-    }
-
-    //@Test
-    public void testRelationshipsFieldOld() throws DotDataException, JsonProcessingException, DotSecurityException {
-        /*final ContentType contentType =  new ContentTypeDataGen()
-                .host(defaultSite)
-                .nextPersisted();*/
-        final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
-                .host(defaultSite)
-                .name("childCT2")
-                .velocityVarName("childCT2")
-                .workflowId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2");
-        ContentType childCt = contentTypeDataGen.nextPersisted();
-
-        final ContentType contentType = this.createTestContentType(TEST_CONTENT_TYPE_NAME, TEST_CHILD_CONTENT_TYPE_NAME, List.of(new FieldDataGen()
-                .type(RelationshipField.class)
-                .name("relationship")
-                .velocityVarName("relationship")
-                .relationType("childCT2")
-                .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
-                .defaultValue("")
-                .indexed(true)
-                .searchable(true).next()));
-
-        final Relationship relationship = new FieldRelationshipDataGen()
-                .child(childCt)
-                .parent(contentType)
-                .cardinality(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY)
-                .nextPersisted();
-
-        /*Contentlet contentletC = new ContentletDataGen(contentType)
-                .host(defaultSite)
-                .nextPersisted();*/
-
-        try {
-            Contentlet contentletA = new ContentletDataGen(childCt)
-                    .host(defaultSite)
-                    .setProperty("title", "Child 1")
-                    .nextPersisted();
-
-            Contentlet contentletB = new ContentletDataGen(contentType)
-                    .host(defaultSite)
-                    .setProperty("title", "Parent Content")
-                    .setProperty(relationship.getChildRelationName(), Arrays.asList(contentletA))
-                    .nextPersisted();
-
-            contentletA = relateContent(relationship, contentletA, contentletB);
-            //contentletB = relateContent(relationship, contentletB, contentletA);
-            //contentletC = relateContent(relationship, contentletC, contentletA, contentletB);
-
-            //contentletA.setProperty("relationship", Collections.singletonList(contentletB));
-
-            //contentletA = ContentletDataGen.checkout(contentletA);
-            //ContentletDataGen.checkin(contentletA);
-
-            assertRelatedContents(relationship, contentletA, contentletB);
-            //assertRelatedContents(relationship, contentletB, contentletA);
-
-            String jsonBody = "{\n" +
-                    "    \"searchableFieldsByContentType\": {\n" +
-                    "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
-                    "            \"relationship\": \"" + contentletA.getIdentifier() + "\"" +
-                    "        }\n" +
-                    "    }\n" +
-                    "}";
-            String expectedQuery = ("+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true ")
-                    .replaceAll("SSS", contentType.variable());
-
-            ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
-            LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
-            String luceneQuery = luceneQueryBuilder.build();
-
-            assertNotNull("Generated query using Velocity Var Name cannot be null", luceneQuery);
-            assertFalse("Generated query using Velocity Var Name cannot be an empty String", luceneQuery.isEmpty());
-            assertEquals("The generated query using Velocity Var Name is different than expected", expectedQuery, luceneQuery);
-        } finally {
-            ContentTypeDataGen.remove(contentType);
-            ContentTypeDataGen.remove(childCt);
-        }
-    }
-
-    private Contentlet relateContent(
-            Relationship relationship,
-            Contentlet parentContent,
-            Contentlet... contentletChilds) {
-        final Contentlet parentCheckout = ContentletDataGen.checkout(parentContent);
-        parentCheckout.setProperty(relationship.getChildRelationName(), Arrays.asList(contentletChilds));
-        return  ContentletDataGen.checkin(parentCheckout);
-    }
-
-    private void assertRelatedContents(Relationship relationship, Contentlet contentletParent,
-                                       Contentlet... contentsRelated) throws DotDataException {
+    /**
+     * Utility method that asserts the related contents of a given parent contentlet, based on a
+     * given relationship from the Relationships API, against a list of related contentlets.
+     *
+     * @param relationship    The {@link Relationship} object.
+     * @param parentContent   The parent {@link Contentlet} object.
+     * @param relatedContents The related {@link Contentlet} objects.
+     *
+     * @throws DotDataException If there is an error accessing the data.
+     */
+    private void assertRelatedContents(final Relationship relationship, final Contentlet parentContent, final Contentlet... relatedContents) throws DotDataException {
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-        final List<String> contentlets = relationshipAPI
-                .dbRelatedContent(relationship, contentletParent, true)
-                .stream()
-                .map(contentlet -> contentlet.getIdentifier())
-                .collect(Collectors.toList());
+        final List<String> relatedContentsFromAPI = relationshipAPI.dbRelatedContent(relationship, parentContent, true)
+                .stream().map(Contentlet::getIdentifier).collect(Collectors.toList());
 
-        assertEquals(contentsRelated.length, contentlets.size());
+        assertEquals("The total number of specified related contents does not match the number of related contents coming from the API",
+                relatedContents.length, relatedContentsFromAPI.size());
 
-        for (Contentlet contentletRelated : contentsRelated) {
-            assertTrue(contentlets.contains(contentletRelated.getIdentifier()));
+        for (final Contentlet relatedContent : relatedContents) {
+            assertTrue(String.format("Related content '%s' [ %s ] was not found in the list of related content from the API",
+                    relatedContent.getTitle(), relatedContent.getIdentifier()),
+                    relatedContentsFromAPI.contains(relatedContent.getIdentifier()));
         }
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-    @Test
-    public void testSearchableFieldsByContentTypeWithText() throws JsonProcessingException, DotDataException, DotSecurityException {
-        final Field textField = new FieldDataGen()
-                .type(TextField.class)
-                .name("text")
-                .velocityVarName("text")
-                .searchable(true).next();
-        String jsonBody = "{\n" +
-                "    \"searchableFieldsByContentType\": {\n" +
-                "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
-                "            \"text\": \"value\"\n" +
-                "        }\n" +
-                "    }\n" +
-                "}";
-        final String expectedQuery = "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.text:*value* SSS.text_dotraw:*value*)"
-                .replaceAll("SSS", TEST_CONTENT_TYPE_NAME);
-        this.validateSearchableFieldByContentType(textField, jsonBody, expectedQuery);
-    }
-
-    @Test
-    public void testSearchableFieldsByContentTypeWithBinary() throws JsonProcessingException, DotDataException, DotSecurityException {
-        final Field textField = new FieldDataGen()
-                .type(BinaryField.class)
-                .name("binary")
-                .velocityVarName("binary")
-                .searchable(true).next();
-        String jsonBody = "{\n" +
-                "    \"searchableFieldsByContentType\": {\n" +
-                "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
-                "            \"binary\": \"value\"\n" +
-                "        }\n" +
-                "    }\n" +
-                "}";
-        final String expectedQuery = "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +SSS.binary:*value*"
-                .replaceAll("SSS", TEST_CONTENT_TYPE_NAME);
-        this.validateSearchableFieldByContentType(textField, jsonBody, expectedQuery);
-    }
-
-    @Test
-    public void testSearchableFieldsByContentTypeWithBlockEditor() throws JsonProcessingException, DotDataException, DotSecurityException {
-        final Field textField = new FieldDataGen()
-                .type(StoryBlockField.class)
-                .name("blockEditor")
-                .velocityVarName("blockEditor")
-                .searchable(true).next();
-        String jsonBody = "{\n" +
-                "    \"searchableFieldsByContentType\": {\n" +
-                "        \"" + TEST_CONTENT_TYPE_NAME + "\": {\n" +
-                "            \"blockEditor\": \"value\"\n" +
-                "        }\n" +
-                "    }\n" +
-                "}";
-        final String expectedQuery = "+contentType:(SSS) +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true +(SSS.blockEditor:*value* SSS.blockEditor_dotraw:*value*)"
-                .replaceAll("SSS", TEST_CONTENT_TYPE_NAME);
-        this.validateSearchableFieldByContentType(textField, jsonBody, expectedQuery);
-    }
-
-
-    private void validateSearchableFieldByContentType(final Field field, final String jsonBody, final String expectedQuery) throws JsonProcessingException, DotDataException, DotSecurityException {
-        final ContentType testContentType = new ContentTypeDataGen()
-                .host(defaultSite)
-                .name(TEST_CONTENT_TYPE_NAME)
-                .velocityVarName(TEST_CONTENT_TYPE_NAME)
-                .field(field)
-                .workflowId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2").nextPersisted();
-        try {
-            final ContentSearchForm contentSearchForm = jsonMapper.readValue(jsonBody, ContentSearchForm.class);
-            final LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, adminUser);
-            final String luceneQuery = luceneQueryBuilder.build();
-
-            assertNotNull("Generated query using Content Type ID cannot be null", luceneQuery);
-            assertFalse("Generated query using Content Type ID cannot be an empty String", luceneQuery.isEmpty());
-            assertEquals("The generated query using Content Type ID is different than expected", expectedQuery, luceneQuery);
-        } finally {
-            ContentTypeDataGen.remove(testContentType, true);
-        }
-    }*/
-
-    private ContentType createTestContentType(final String name, final String velocityVarName) {
-        return this.createTestContentType(name, velocityVarName, null);
-    }
-
-    /*private ContentType createTestContentType(final Field field) {
-        final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
-                .host(defaultSite)
-                .name(TEST_CONTENT_TYPE_NAME)
-                .velocityVarName(TEST_CONTENT_TYPE_NAME)
-                .workflowId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2");
-        if (null != field) {
-            contentTypeDataGen.field(field);
-        }
-        return contentTypeDataGen.nextPersisted();
-    }*/
-    private ContentType createTestContentType(final String name, final String velocityVarName, final List<Field> fields) {
-        final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
-                .host(defaultSite)
-                .name(name)
-                .velocityVarName(velocityVarName)
-                .workflowId("d61a59e1-a49c-46f2-a929-db2b4bfa88b2");
-        if (UtilMethods.isSet(fields)) {
-            contentTypeDataGen.fields(fields);
-        }
-        return contentTypeDataGen.nextPersisted();
     }
 
     /**
      * Defines a test case for the {@link LuceneQueryBuilderTest} class. It's composed of:
      * <ol>
      *     <li>A description of the test case.</li>
+     *     <li>The Velocity Variable Name of the specified User Searchable Field.</li>
      *     <li>The JSON body that will be used to create the {@link ContentSearchForm} object.</li>
      *     <li>The expected Lucene query that will be generated.</li>
      * </ol>
@@ -1111,17 +1068,45 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
         String jsonBody;
         String expectedQuery;
 
+        /**
+         * Constructor that initializes the test case with the given parameters.
+         *
+         * @param title         The description of the test case.
+         * @param jsonBody      The JSON body that will be used to create the
+         *                      {@link ContentSearchForm} object.
+         * @param expectedQuery The expected Lucene query that will be generated.
+         */
         public TestCase(final String title, final String jsonBody, final String expectedQuery) {
             this.title = title;
             this.jsonBody = jsonBody;
             this.expectedQuery = expectedQuery;
         }
 
-        public TestCase(final String title, final String field, final String jsonBody, final String expectedQuery) {
+        /**
+         * Constructor that initializes the test case with the given parameters.
+         *
+         * @param title         The description of the test case.
+         * @param field         The Velocity Variable Name of the specified User Searchable Field.
+         * @param jsonBody      The JSON body that will be used to create the
+         *                      {@link ContentSearchForm} object.
+         * @param expectedQuery The expected Lucene query that will be generated.
+         */
+        public TestCase(final String title, final String field, final String jsonBody,
+                        final String expectedQuery) {
             this.title = title;
             this.field = field;
             this.jsonBody = jsonBody;
             this.expectedQuery = expectedQuery;
+        }
+
+        @Override
+        public String toString() {
+            return "TestCase{" +
+                    "title='" + title + '\'' +
+                    ", field='" + field + '\'' +
+                    ", jsonBody='" + jsonBody + '\'' +
+                    ", expectedQuery='" + expectedQuery + '\'' +
+                    '}';
         }
 
     }
