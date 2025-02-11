@@ -17,8 +17,8 @@ import static com.liferay.util.StringPool.BLANK;
  * This class contains all the information needed to search for content in the dotCMS repository.
  * All data is sent via JSON using the following format:
  * <pre>
- *     {@code
- *     {
+ *     <code>
+ * {
  *         "globalSearch": "",
  *         "searchableFieldsByContentType": {
  *             "{{CONTENT_TYPE_ID_OR_VAR_NAME}}": {
@@ -59,7 +59,7 @@ import static com.liferay.util.StringPool.BLANK;
  *         "page": {{INTEGER}},
  *         "perPage": {{INTEGER}}
  *     }
- *     }
+ * </code>
  * </pre>
  *
  * @author Jose Castro
