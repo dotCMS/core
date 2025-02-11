@@ -115,15 +115,6 @@ public class LuceneQueryBuilder {
                                 final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
                                 if (null != handler) {
                                     final String query = handler.apply(fieldContextBuilder.build());
-                                    /*if (field instanceof RelationshipField) {
-                                        if (UtilMethods.isSet(query) && !query.contains(COLON)) {
-                                            // For Relationships fields, we need to track the related IDs from
-                                            // all of them first, and add them to the Lucene query in the end
-                                            relatedContentIDs.addAll(Arrays.asList(query.split(COMMA)));
-                                        } else {
-                                            queryTerms.add(query);
-                                        }
-                                    }*/
                                     if (field instanceof RelationshipField && UtilMethods.isSet(query) && !query.contains(COLON)) {
                                         // For Relationships fields, we need to track the related IDs from
                                         // all of them first, and add them to the Lucene query in the end
