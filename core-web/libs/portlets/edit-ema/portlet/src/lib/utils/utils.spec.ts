@@ -2,6 +2,7 @@ import { Params } from '@angular/router';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
     deleteContentletFromContainer,
@@ -27,7 +28,6 @@ import {
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { PAGE_MODE } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
 import { Orientation } from '../store/models';
@@ -380,7 +380,7 @@ describe('utils functions', () => {
                 language_id: '20',
                 [PERSONA_KEY]: 'the-chosen-one',
                 experimentId: '123',
-                mode: PAGE_MODE.LIVE
+                mode: UVE_MODE.LIVE
             };
             const result = getFullPageURL({ url: 'test', params });
             expect(result).toBe(
@@ -652,7 +652,7 @@ describe('utils functions', () => {
             [PERSONA_KEY]: 'persona',
             variantName: 'new',
             experimentId: '1',
-            mode: 'EDIT_MODE',
+            mode: UVE_MODE.EDIT,
             clientHost: 'http://localhost:4200/',
             depth: '1'
         };
@@ -778,7 +778,7 @@ describe('utils functions', () => {
         it('should filter and return only allowed page params', () => {
             const expected = {
                 url: 'some-url',
-                mode: 'edit',
+                mode: UVE_MODE.EDIT,
                 depth: '2',
                 clientHost: 'localhost',
                 variantName: 'variant',

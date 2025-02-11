@@ -1,16 +1,16 @@
 'use client';
 import Link from 'next/link';
-import { isInsideEditor } from '@dotcms/client';
+
 import { useEffect, useState } from 'react';
+import { isEditMode } from '@/utils/isEditMode';
 import ReorderButton from './components/reorderMenu';
 
 function Header({ children }) {
-    const [insideEditor, setInsideEditor] = useState(false);
-    
+    const [isEditing, setIsEditing] = useState(false);
 
     useEffect(() => {
-        setInsideEditor(isInsideEditor());
-    }, [])
+        setIsEditing(isEditMode());
+    }, []);
 
     return (
         <div className="flex items-center justify-between p-4 bg-purple-500">
@@ -19,17 +19,12 @@ function Header({ children }) {
                     <Link href="/">TravelLux in NextJS</Link>
                 </h2>
 
-                {insideEditor && (
-                    <ReorderButton />
-                )}
+                {isEditing && <ReorderButton />}
             </div>
-            
+
             {children}
         </div>
     );
 }
-
-
-
 
 export default Header;

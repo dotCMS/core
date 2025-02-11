@@ -1,8 +1,23 @@
 package com.dotmarketing.util.importer;
 
+import static com.dotmarketing.util.ImportUtil.KEY_COUNTERS;
+import static com.dotmarketing.util.ImportUtil.KEY_ERRORS;
+import static com.dotmarketing.util.ImportUtil.KEY_IDENTIFIERS;
+import static com.dotmarketing.util.ImportUtil.KEY_LAST_INODE;
+import static com.dotmarketing.util.ImportUtil.KEY_MESSAGES;
+import static com.dotmarketing.util.ImportUtil.KEY_WARNINGS;
+
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.importer.AbstractImportValidationMessage.ValidationMessageType;
-import com.dotmarketing.util.importer.AbstractSpecialHeaderInfo.SpecialHeaderType;
+import com.dotmarketing.util.ImportUtil.Counters;
+import com.dotmarketing.util.importer.model.AbstractSpecialHeaderInfo.SpecialHeaderType;
+import com.dotmarketing.util.importer.model.AbstractValidationMessage.ValidationMessageType;
+import com.dotmarketing.util.importer.model.HeaderInfo;
+import com.dotmarketing.util.importer.model.HeaderValidationResult;
+import com.dotmarketing.util.importer.model.ImportResult;
+import com.dotmarketing.util.importer.model.LineImportResult;
+import com.dotmarketing.util.importer.model.ResultData;
+import com.dotmarketing.util.importer.model.SpecialHeaderInfo;
+import com.dotmarketing.util.importer.model.ValidationMessage;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +46,10 @@ import java.util.stream.Collectors;
  */
 public class ImportResultConverter {
 
+    private ImportResultConverter() {
+        // Utility class, do not instantiate
+    }
+
     /**
      * Converts from the new structured ImportResult format to the legacy HashMap format. This
      * method ensures backward compatibility by formatting the structured data into the string-based
@@ -48,18 +67,18 @@ public class ImportResultConverter {
         Map<ValidationMessageType, List<String>> messagesByType =
                 convertMessagesToLegacyFormat(result.messages());
 
-        legacyResults.put("warnings", messagesByType.get(ValidationMessageType.WARNING));
-        legacyResults.put("errors", messagesByType.get(ValidationMessageType.ERROR));
-        legacyResults.put("messages", messagesByType.get(ValidationMessageType.INFO));
+        legacyResults.put(KEY_WARNINGS, messagesByType.get(ValidationMessageType.WARNING));
+        legacyResults.put(KEY_ERRORS, messagesByType.get(ValidationMessageType.ERROR));
+        legacyResults.put(KEY_MESSAGES, messagesByType.get(ValidationMessageType.INFO));
 
         // Add counters
         List<String> counters = new ArrayList<>();
-        ImportResultData data = result.data();
+        ResultData data = result.data();
         counters.add("linesread=" + result.fileInfo().totalRows());
         counters.add("errors=" + messagesByType.get(ValidationMessageType.ERROR).size());
         counters.add("newContent=" + data.summary().created());
         counters.add("contentToUpdate=" + data.summary().updated());
-        legacyResults.put("counters", counters);
+        legacyResults.put(KEY_COUNTERS, counters);
 
         // Add results summary
         List<String> results = new ArrayList<>();
@@ -84,23 +103,24 @@ public class ImportResultConverter {
      *
      * @param validationResult The structured ImportHeaderValidationResult to convert
      * @param legacyResults    The legacy format results map to update
+     * @return The number of errors found during header validation
      */
-    public static void addValidationResultsToLegacyMap(
-            final ImportHeaderValidationResult validationResult,
+    public static int headerValidationResultsToLegacyMap(
+            final HeaderValidationResult validationResult,
             final Map<String, List<String>> legacyResults) {
 
         // Convert validation messages
-        for (ImportValidationMessage message : validationResult.messages()) {
+        for (ValidationMessage message : validationResult.messages()) {
             String messageText = message.message();
             switch (message.type()) {
                 case ERROR:
-                    legacyResults.get("errors").add(messageText);
+                    legacyResults.get(KEY_ERRORS).add(messageText);
                     break;
                 case WARNING:
-                    legacyResults.get("warnings").add(messageText);
+                    legacyResults.get(KEY_WARNINGS).add(messageText);
                     break;
                 case INFO:
-                    legacyResults.get("messages").add(messageText);
+                    legacyResults.get(KEY_MESSAGES).add(messageText);
                     break;
             }
         }
@@ -109,7 +129,7 @@ public class ImportResultConverter {
         for (SpecialHeaderInfo specialHeader : validationResult.headerInfo()
                 .specialHeaders()) {
             if (specialHeader.type() == SpecialHeaderType.IDENTIFIER) {
-                legacyResults.get("identifiers").add(
+                legacyResults.get(KEY_IDENTIFIERS).add(
                         StringPool.BLANK + specialHeader.columnIndex()
                 );
             } else if (specialHeader.type() == SpecialHeaderType.WORKFLOW_ACTION) {
@@ -118,6 +138,61 @@ public class ImportResultConverter {
                 );
             }
         }
+
+        return (int) validationResult.messages().stream()
+                .filter(m -> m.type() == ValidationMessageType.ERROR)
+                .count();
+    }
+
+    /**
+     * Converts the structured LineImportResult to the legacy HashMap format. This method ensures
+     * backward compatibility by formatting the structured data into the string-based format
+     * expected by legacy code.
+     *
+     * @param importResults The structured LineImportResult to convert
+     * @param legacyResults The legacy format results map to update
+     * @param counters      The import counters to update
+     * @return The number of errors found during line import
+     */
+    public static int lineImportResultToLegacyMap(
+            final LineImportResult importResults,
+            final Map<String, List<String>> legacyResults,
+            final Counters counters) {
+
+        // Convert messages
+        for (ValidationMessage msg : importResults.messages()) {
+            switch (msg.type()) {
+                case ERROR:
+                    legacyResults.get(KEY_ERRORS).add(formatMessage(msg));
+                    break;
+                case WARNING:
+                    legacyResults.get(KEY_WARNINGS).add(formatMessage(msg));
+                    break;
+                case INFO:
+                    legacyResults.get(KEY_MESSAGES).add(formatMessage(msg));
+                    break;
+            }
+        }
+
+        counters.setNewContentCounter(
+                counters.getNewContentCounter() + importResults.contentToCreate());
+        counters.setContentCreated(
+                counters.getContentCreated() + importResults.createdContent());
+        counters.setContentToUpdateCounter(
+                counters.getContentToUpdateCounter() + importResults.contentToUpdate());
+        counters.setContentUpdated(
+                counters.getContentUpdated() + importResults.updatedContent());
+        counters.setContentUpdatedDuplicated(
+                counters.getContentUpdatedDuplicated() + importResults.duplicateContent());
+
+        legacyResults.get(KEY_LAST_INODE).clear();
+        List<String> l = legacyResults.get(KEY_LAST_INODE);
+        l.add(importResults.lastInode());
+        legacyResults.put(KEY_LAST_INODE, l);
+
+        return (int) importResults.messages().stream()
+                .filter(m -> m.type() == ValidationMessageType.ERROR)
+                .count();
     }
 
     /**
@@ -130,7 +205,7 @@ public class ImportResultConverter {
      * message strings
      */
     private static Map<ValidationMessageType, List<String>> convertMessagesToLegacyFormat(
-            List<ImportValidationMessage> messages) {
+            List<ValidationMessage> messages) {
 
         Map<ValidationMessageType, List<String>> result = Arrays.stream(
                         ValidationMessageType.values())
@@ -161,23 +236,15 @@ public class ImportResultConverter {
      * @param message The validation message to format
      * @return A formatted string representation of the message
      */
-    private static String formatMessage(ImportValidationMessage message) {
+    private static String formatMessage(ValidationMessage message) {
         StringBuilder sb = new StringBuilder();
 
         // Add line number if present
         message.lineNumber().ifPresent(line ->
-                sb.append("Line ").append(line).append(": "));
-
-        // Add field if present
-        message.field().ifPresent(field ->
-                sb.append("Field '").append(field).append("': "));
+                sb.append("Line #").append(line).append(": "));
 
         // Add main message
         sb.append(message.message());
-
-        // Add any invalid value
-        message.invalidValue().ifPresent(value ->
-                sb.append(" (value: '").append(value).append("')"));
 
         return sb.toString();
     }
@@ -190,7 +257,7 @@ public class ImportResultConverter {
      * @param headerInfo    The structured header validation information
      * @param legacyResults The legacy format results map to update
      */
-    private static void addHeaderValidationToLegacy(ImportHeaderInfo headerInfo,
+    private static void addHeaderValidationToLegacy(HeaderInfo headerInfo,
             Map<String, List<String>> legacyResults) {
 
         if (headerInfo == null || legacyResults == null) {

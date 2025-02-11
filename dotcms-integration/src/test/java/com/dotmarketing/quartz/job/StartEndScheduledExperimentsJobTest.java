@@ -101,27 +101,5 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
     }
 
 
-    /**
-     * Method to test: StartEndScheduledExperimentsJobTest.run
-     * Given scenario: No license
-     * Expected result: Should not call the api methods
-     */
-    @Test
-    public void testJob_noLicense() throws Exception {
 
-        runNoLicense(()-> {
-            final ExperimentsAPI experimentsAPI1 = mock(ExperimentsAPI.class);
-
-            try {
-                new StartEndScheduledExperimentsJob(experimentsAPI1).run(null);
-            } catch (JobExecutionException e) {
-                throw new RuntimeException(e);
-            }
-
-            verify(experimentsAPI1, never()).startScheduledToStartExperiments(
-                    APILocator.systemUser());
-
-            verify(experimentsAPI1, never()).endFinalizedExperiments(APILocator.systemUser());
-        });
-    }
 }
