@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import GqlWebPageContent from "./content-types/gqlWebPageContent";
-import Banner from "./content-types/banner";
-import Activity from "./content-types/activity";
-import CallToAction from "./content-types/callToAction";
-import CalendarEvent from "./content-types/calendarEvent";
-import Product from "./content-types/product";
-import ImageComponent from "./content-types/image";
+import GqlWebPageContent from './content-types/gqlWebPageContent';
+import Banner from './content-types/banner';
+import Activity from './content-types/activity';
+import CallToAction from './content-types/callToAction';
+import CalendarEvent from './content-types/calendarEvent';
+import Product from './content-types/product';
+import ImageComponent from './content-types/image';
 
-import Header from "./layout/header/header";
-import Footer from "./layout/footer/footer";
-import Navigation from "./layout/navigation";
-import { usePathname, useRouter } from "next/navigation";
-import { DotcmsLayout } from "@dotcms/react";
-import { withExperiments } from "@dotcms/experiments";
-import { CustomNoComponent } from "./content-types/empty";
+import Header from './layout/header/header';
+import Footer from './layout/footer/footer';
+import Navigation from './layout/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { DotcmsLayout } from '@dotcms/react';
+import { withExperiments } from '@dotcms/experiments';
+import { CustomNoComponent } from './content-types/empty';
 
 /**
  * Configure experiment settings below. If you are not using experiments,
@@ -23,7 +23,7 @@ import { CustomNoComponent } from "./content-types/empty";
 const experimentConfig = {
     apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY, // API key for experiments, should be securely stored
     server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
-    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG, // Debug mode for additional logging
+    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG // Debug mode for additional logging
 };
 
 // Mapping of components to DotCMS content types
@@ -35,7 +35,7 @@ const componentsMap = {
     Image: ImageComponent,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
-    CustomNoComponent: CustomNoComponent,
+    CustomNoComponent: CustomNoComponent
 };
 
 export function MyGraphQLPage({ pageAsset, nav, query }) {
@@ -51,7 +51,7 @@ export function MyGraphQLPage({ pageAsset, nav, query }) {
     const DotLayoutComponent = experimentConfig.apiKey
         ? withExperiments(DotcmsLayout, {
               ...experimentConfig,
-              redirectFn: replace,
+              redirectFn: replace
           })
         : DotcmsLayout;
 
@@ -67,7 +67,7 @@ export function MyGraphQLPage({ pageAsset, nav, query }) {
                 <DotLayoutComponent
                     pageContext={{
                         components: componentsMap,
-                        pageAsset: pageAsset,
+                        pageAsset: pageAsset
                     }}
                     config={{
                         pathname,

@@ -11,7 +11,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
-import { TabViewModule } from 'primeng/tabview';
+import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
 import { DotEditContentSidebarLocalesComponent } from '@dotcms/edit-content/components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
@@ -50,29 +50,29 @@ import { DotEditContentStore } from '../../store/edit-content.store';
     ]
 })
 export class DotEditContentSidebarComponent {
-    readonly store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
-    readonly $identifier = this.store.getCurrentContentIdentifier;
-    readonly $formValues = this.store.formValues;
-    readonly $contentType = this.store.contentType;
-    readonly $contentlet = this.store.contentlet;
+    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $identifier = this.$store.getCurrentContentIdentifier;
+    readonly $formValues = this.$store.formValues;
+    readonly $contentType = this.$store.contentType;
+    readonly $contentlet = this.$store.contentlet;
 
     /**
      * Computed property that returns the workflow state of the content.
      */
-    readonly $workflow = computed<DotWorkflowState | null>(() => ({
-        scheme: this.store.getScheme(),
-        step: this.store.getCurrentStep(),
-        task: this.store.lastTask(),
-        contentState: this.store.initialContentletState(),
-        resetAction: this.store.getResetWorkflowAction()
+    readonly $workflow = computed<DotWorkflowState>(() => ({
+        scheme: this.$store.getScheme(),
+        step: this.$store.getCurrentStep(),
+        task: this.$store.lastTask(),
+        contentState: this.$store.initialContentletState(),
+        resetAction: this.$store.getResetWorkflowAction()
     }));
 
     /**
      * Computed property that returns the workflow selection state.
      */
     readonly $workflowSelection = computed(() => ({
-        schemeOptions: this.store.workflowSchemeOptions(),
-        isWorkflowSelected: this.store.showSelectWorkflowWarning()
+        schemeOptions: this.$store.workflowSchemeOptions(),
+        isWorkflowSelected: this.$store.showSelectWorkflowWarning()
     }));
 
     /**
@@ -90,13 +90,17 @@ export class DotEditContentSidebarComponent {
 
         untracked(() => {
             if (identifier) {
-                this.store.getReferencePages(identifier);
+                this.$store.getReferencePages(identifier);
             }
         });
     });
 
+    /**
+     * Fires a workflow action.
+     * @param actionId - The ID of the action to fire.
+     */
     fireWorkflowAction(actionId: string): void {
-        this.store.fireWorkflowAction({
+        this.$store.fireWorkflowAction({
             actionId,
             inode: this.$contentlet().inode,
             data: {
@@ -106,5 +110,14 @@ export class DotEditContentSidebarComponent {
                 }
             }
         });
+    }
+
+    /**
+     * Handles the active index change event from the sidebar tabs.
+     * @param $event - The event object containing the active index.
+     */
+    onActiveIndexChange($event: TabViewChangeEvent) {
+        const { index } = $event;
+        this.$store.setActiveSidebarTab(index);
     }
 }

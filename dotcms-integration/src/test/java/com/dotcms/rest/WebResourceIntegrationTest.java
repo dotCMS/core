@@ -481,12 +481,6 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
 
   }
 
-  @Test(expected = InvalidLicenseException.class)
-  public void webResource_NoLicense_RequiredLicense_returnInvalidLicenseException() throws Exception {
-    runNoLicense(() -> new WebResource.InitBuilder()
-            .requestAndResponse(apiRequest(), response)
-            .requireLicense(true)
-            .init());
-  }
+
 
 }

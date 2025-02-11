@@ -21,7 +21,7 @@ import {
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { TabViewModule } from 'primeng/tabview';
+import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
@@ -417,5 +417,15 @@ export class DotEditContentFormComponent implements OnInit {
         }
 
         window.open(realUrl, '_blank');
+    }
+
+    /**
+     * Sets the active tab index in the store when the tab view changes.
+     *
+     * @param {TabViewChangeEvent} event - The event object containing the active tab index.
+     * @memberof DotEditContentFormComponent
+     */
+    onActiveIndexChange({ index }: TabViewChangeEvent) {
+        this.$store.setActiveTab(index);
     }
 }

@@ -13,6 +13,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.ValidationException;
@@ -189,12 +190,12 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         // Retrieve the job ID from the response entity
         Object importContentResponseEntity = importContentResponse.getEntity();
         assertNotNull(importContentResponseEntity, "Response entity should not be null");
-        assertInstanceOf(ResponseEntityView.class, importContentResponseEntity, "Entity should be of type ResponseEntityView<String>");
+        assertInstanceOf(ResponseEntityJobStatusView.class, importContentResponseEntity, "Entity should be of type ResponseEntityJobStatusView");
         @SuppressWarnings("unchecked")
-        ResponseEntityView<String> responseEntityView = (ResponseEntityView<String>) importContentResponseEntity;
+        ResponseEntityJobStatusView responseEntityJobStatusView = (ResponseEntityJobStatusView) importContentResponseEntity;
 
         // Cancel the job
-        importResource.cancelJob(request, response, responseEntityView.getEntity());
+        importResource.cancelJob(request, response, responseEntityJobStatusView.getEntity().jobId());
 
         // Call the canceledJobs endpoint
         ResponseEntityView<JobPaginatedResult> result = importResource.canceledJobs(request, response, 1, 20);
@@ -264,7 +265,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws DotDataException if there's an error with dotCMS data operations
      */
     @Test
-    public void test_import_content__validate_with_language_iso_code() throws IOException, DotDataException {
+    public void test_import_content_validate_with_language_iso_code() throws IOException, DotDataException {
         ContentImportForm form = createContentImportForm(contentType.name(), defaultLanguage.getIsoCode(), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
         ContentImportParams params = createContentImportParams(csvFile, form);
 
@@ -585,18 +586,23 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         // Check and cast the entity safely
         Object entity = response.getEntity();
         assertNotNull(entity, "Response entity should not be null");
-        assertInstanceOf(ResponseEntityView.class, entity, "Entity should be of type ResponseEntityView<String>");
+        assertInstanceOf(ResponseEntityJobStatusView.class, entity, "Entity should be of type ResponseEntityJobStatusView");
 
         @SuppressWarnings("unchecked")
-        ResponseEntityView<String> responseEntityView = (ResponseEntityView<String>) entity;
+        ResponseEntityJobStatusView responseEntityJobStatusView = (ResponseEntityJobStatusView) entity;
 
         // Validate response object and job ID existence
-        assertNotNull(responseEntityView, "ResponseEntityView should not be null");
-        assertNotNull(responseEntityView.getEntity(), "Job ID should not be null");
-        assertFalse(responseEntityView.getEntity().isEmpty(), "Job ID should be a non-empty string");
+        assertNotNull(responseEntityJobStatusView, "ResponseEntityJobStatusView should not be null");
+        assertNotNull(responseEntityJobStatusView.getEntity(), "JobStatusResponse should not be null");
+        assertNotNull(responseEntityJobStatusView.getEntity().jobId(), "Job ID should not be null");
+        assertNotNull(responseEntityJobStatusView.getEntity().statusUrl(), "Job Status URL should not be null");
+        assertFalse(responseEntityJobStatusView.getEntity().jobId().isEmpty(), "Job ID should be a non-empty string");
+        assertFalse(responseEntityJobStatusView.getEntity().statusUrl().isEmpty(), "Job Status URL should be a non-empty string");
 
         // Retrieve and validate job exists in the queue
-        Job job = contentImportHelper.getJob(responseEntityView.getEntity());
+        Job job = contentImportHelper.getJob(responseEntityJobStatusView
+
+                .getEntity().jobId());
         assertNotNull(job, "Job should exist in queue");
 
         // Validate core import parameters
