@@ -32,12 +32,14 @@ import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.compo
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
+import * as utils from '../../utils/functions.util';
 import { MockResizeObserver } from '../../utils/mocks';
 
 describe('DotEditContentSidebarComponent', () => {
     let spectator: Spectator<DotEditContentSidebarComponent>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
+    let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
 
     const createComponent = createComponentFactory({
         component: DotEditContentSidebarComponent,
@@ -46,7 +48,7 @@ describe('DotEditContentSidebarComponent', () => {
             MockComponent(DotEditContentSidebarWorkflowComponent)
         ],
         providers: [
-            DotEditContentStore, // Due using the store directly
+            DotEditContentStore,
             mockProvider(DotWorkflowsActionsService),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotEditContentService),
@@ -62,8 +64,6 @@ describe('DotEditContentSidebarComponent', () => {
             {
                 provide: ActivatedRoute,
                 useValue: {
-                    // Provide an empty snapshot to bypass the Store's onInit,
-                    // allowing direct method calls for testing
                     get snapshot() {
                         return { params: { id: undefined, contentType: undefined } };
                     }
@@ -76,8 +76,17 @@ describe('DotEditContentSidebarComponent', () => {
         window.ResizeObserver = MockResizeObserver;
         spectator = createComponent({ detectChanges: false });
 
+        store = spectator.inject(DotEditContentStore, true);
         dotEditContentService = spectator.inject(DotEditContentService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
+
+        // Mock the initial UI state
+        jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+            activeTab: 0,
+            isSidebarOpen: true,
+            activeSidebarTab: 0
+        });
+
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
         dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
@@ -117,10 +126,28 @@ describe('DotEditContentSidebarComponent', () => {
     });
 
     it('should call toggleSidebar when toggle button is clicked', () => {
-        const storeSpy = jest.spyOn(spectator.component.store, 'toggleSidebar');
+        const storeSpy = jest.spyOn(store, 'toggleSidebar');
 
         spectator.click(byTestId('toggle-button'));
 
         expect(storeSpy).toHaveBeenCalled();
+    });
+
+    describe('UI State', () => {
+        it('should initialize with correct UI state', () => {
+            expect(store.isSidebarOpen()).toBe(true);
+            expect(store.activeSidebarTab()).toBe(0);
+        });
+
+        it('should update active tab when changed', () => {
+            store.setActiveSidebarTab(1);
+            expect(store.activeSidebarTab()).toBe(1);
+        });
+
+        it('should toggle sidebar visibility', () => {
+            const initialState = store.isSidebarOpen();
+            store.toggleSidebar();
+            expect(store.isSidebarOpen()).toBe(!initialState);
+        });
     });
 });

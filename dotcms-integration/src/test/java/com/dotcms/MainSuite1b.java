@@ -80,6 +80,12 @@ import org.junit.runners.Suite.SuiteClasses;
         DotConnectTest.class,
         com.dotcms.contenttype.model.field.layout.FieldUtilTest.class,
         com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
+        com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
+        com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
+        com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
+        com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
+        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class
 })
 
 public class MainSuite1b {
