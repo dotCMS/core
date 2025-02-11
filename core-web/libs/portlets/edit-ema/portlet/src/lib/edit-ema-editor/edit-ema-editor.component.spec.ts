@@ -2573,7 +2573,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/page-one?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1'
+                        'http://localhost:3000/page-one?language_id=1'
                     );
                 });
 

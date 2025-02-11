@@ -62,7 +62,7 @@ describe('EditContentLayoutComponent', () => {
             MockComponent(DotEditContentSidebarComponent)
         ],
         componentProviders: [
-            DotEditContentStore, // Usign the real DotEditContentStore
+            DotEditContentStore,
             mockProvider(DotWorkflowsActionsService),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotEditContentService),
@@ -78,8 +78,6 @@ describe('EditContentLayoutComponent', () => {
             {
                 provide: ActivatedRoute,
                 useValue: {
-                    // Provide an empty snapshot to bypass the Store's onInit,
-                    // allowing direct method calls for testing
                     get snapshot() {
                         return { params: { id: undefined, contentType: undefined } };
                     }
@@ -90,7 +88,6 @@ describe('EditContentLayoutComponent', () => {
                 url: '/test-url',
                 events: of()
             }),
-
             provideHttpClient(),
             provideHttpClientTesting()
         ]
@@ -111,8 +108,12 @@ describe('EditContentLayoutComponent', () => {
 
         jest.spyOn(dotLanguagesService, 'get').mockReturnValue(of(MOCK_LANGUAGES));
 
-        // By default, the local storage is set to true
-        jest.spyOn(utils, 'getPersistSidebarState').mockReturnValue(true);
+        // Mock the initial UI state
+        jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+            activeTab: 0,
+            isSidebarOpen: true,
+            activeSidebarTab: 0
+        });
     });
 
     it('should have p-confirmDialog component', () => {
@@ -136,7 +137,7 @@ describe('EditContentLayoutComponent', () => {
             tick(); // Wait for the defer to load
 
             expect(store.isEnabledNewContentEditor()).toBe(true);
-            expect(store.showSidebar()).toBe(true);
+            expect(store.isSidebarOpen()).toBe(true);
 
             expect(spectator.query(byTestId('edit-content-layout__topBar'))).toBeTruthy();
             expect(spectator.query(byTestId('edit-content-layout__body'))).toBeTruthy();

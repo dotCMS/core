@@ -24,7 +24,6 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { map } from 'rxjs/operators';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotDevicesService,
@@ -38,6 +37,7 @@ import {
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -147,7 +147,7 @@ export class DotUveToolbarComponent {
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
         this.#store.loadPageAsset({
-            editorMode: UVE_MODE.LIVE,
+            mode: UVE_MODE.LIVE,
             publishDate: publishDate?.toISOString()
         });
     }

@@ -5,9 +5,9 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withUVEToolbar } from './withUVEToolbar';
 
@@ -84,8 +84,10 @@ describe('withEditor', () => {
     describe('Computed', () => {
         it('should return the right API URL', () => {
             const params = { ...pageParams };
+
             // Delete the url from the params to test the function
             delete params.url;
+            delete params.clientHost;
 
             const queryParams = new URLSearchParams(params).toString();
             const expectURL = `/api/v1/page/json/test-url?${queryParams}`;
@@ -128,7 +130,7 @@ describe('withEditor', () => {
                         experiment: currentExperiment,
                         pageParams: {
                             ...store.pageParams(),
-                            editorMode: UVE_MODE.EDIT
+                            mode: UVE_MODE.EDIT
                         }
                     });
 
@@ -160,7 +162,7 @@ describe('withEditor', () => {
                         experiment: currentExperiment,
                         pageParams: {
                             ...store.pageParams(),
-                            editorMode: UVE_MODE.PREVIEW
+                            mode: UVE_MODE.PREVIEW
                         }
                     });
 
@@ -193,7 +195,7 @@ describe('withEditor', () => {
                         experiment: currentExperiment,
                         pageParams: {
                             ...store.pageParams(),
-                            editorMode: UVE_MODE.LIVE
+                            mode: UVE_MODE.LIVE
                         }
                     });
 
@@ -214,7 +216,7 @@ describe('withEditor', () => {
                 patchState(store, {
                     pageParams: {
                         ...store.pageParams(),
-                        editorMode: UVE_MODE.PREVIEW
+                        mode: UVE_MODE.PREVIEW
                     }
                 });
                 expect(store.$showWorkflowsActions()).toBe(false);
@@ -224,7 +226,7 @@ describe('withEditor', () => {
                 patchState(store, {
                     pageParams: {
                         ...store.pageParams(),
-                        editorMode: UVE_MODE.EDIT
+                        mode: UVE_MODE.EDIT
                     },
                     pageAPIResponse: {
                         ...store.pageAPIResponse(),
@@ -278,7 +280,7 @@ describe('withEditor', () => {
                     },
                     pageParams: {
                         ...store.pageParams(),
-                        editorMode: UVE_MODE.EDIT
+                        mode: UVE_MODE.EDIT
                     }
                 });
 
@@ -298,7 +300,7 @@ describe('withEditor', () => {
                     },
                     pageParams: {
                         ...store.pageParams(),
-                        editorMode: UVE_MODE.PREVIEW
+                        mode: UVE_MODE.PREVIEW
                     }
                 });
 
@@ -326,7 +328,7 @@ describe('withEditor', () => {
                     },
                     pageParams: {
                         ...store.pageParams(),
-                        editorMode: UVE_MODE.LIVE
+                        mode: UVE_MODE.LIVE
                     }
                 });
 
@@ -355,7 +357,7 @@ describe('withEditor', () => {
                     },
                     pageParams: {
                         ...store.pageParams(),
-                        editorMode: UVE_MODE.EDIT
+                        mode: UVE_MODE.EDIT
                     },
                     status: UVE_STATUS.LOADED
                 });
@@ -384,7 +386,7 @@ describe('withEditor', () => {
                     },
                     pageParams: {
                         ...store.pageParams(),
-                        editorMode: UVE_MODE.EDIT
+                        mode: UVE_MODE.EDIT
                     },
                     status: UVE_STATUS.LOADED
                 });

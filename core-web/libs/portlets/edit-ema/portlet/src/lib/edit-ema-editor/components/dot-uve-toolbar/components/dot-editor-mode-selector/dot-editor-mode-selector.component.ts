@@ -12,8 +12,8 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DotMessagePipe } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
@@ -35,8 +35,8 @@ export class DotEditorModeSelectorComponent {
 
         if (canEditPage) {
             menu.push({
-                label: 'uve.editor.mode.edit',
-                description: 'uve.editor.mode.edit.description',
+                label: 'uve.editor.mode.draft',
+                description: 'uve.editor.mode.draft.description',
                 id: UVE_MODE.EDIT
             });
         }
@@ -49,8 +49,8 @@ export class DotEditorModeSelectorComponent {
 
         if (hasLiveVersion) {
             menu.push({
-                label: 'uve.editor.mode.live',
-                description: 'uve.editor.mode.live.description',
+                label: 'uve.editor.mode.published',
+                description: 'uve.editor.mode.published.description',
                 id: UVE_MODE.LIVE
             });
         }
@@ -58,7 +58,7 @@ export class DotEditorModeSelectorComponent {
         return menu;
     });
 
-    readonly $currentMode = computed(() => this.#store.pageParams().editorMode);
+    readonly $currentMode = computed(() => this.#store.pageParams().mode);
 
     readonly $currentModeLabel = computed(() => {
         return this.$menuItems().find((item) => item.id === this.$currentMode())?.label;
@@ -93,7 +93,7 @@ export class DotEditorModeSelectorComponent {
         }
 
         this.#store.loadPageAsset({
-            editorMode: mode,
+            mode: mode,
             publishDate: mode === UVE_MODE.LIVE ? new Date().toISOString() : undefined
         });
     }

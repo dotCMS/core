@@ -6,9 +6,9 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withEditor } from './withEditor';
 
@@ -102,7 +102,7 @@ describe('withEditor', () => {
                 it('should return the base info', () => {
                     expect(store.$uveToolbar()).toEqual({
                         editor: {
-                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT',
                             bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                             copyUrl:
                                 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
@@ -214,7 +214,7 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000&personaId=dot%3Apersona'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
 
@@ -248,7 +248,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/first?language_id=1&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000&personaId=dot%3Apersona'
+                    'http://localhost:3000/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
         });
@@ -286,7 +286,7 @@ describe('withEditor', () => {
 
             it('should not have opacity or progressBar in preview mode', () => {
                 patchState(store, {
-                    pageParams: { ...emptyParams, editorMode: UVE_MODE.PREVIEW }
+                    pageParams: { ...emptyParams, mode: UVE_MODE.PREVIEW }
                 });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
@@ -483,7 +483,7 @@ describe('withEditor', () => {
                         canEditPage: true,
                         pageParams: {
                             ...emptyParams,
-                            editorMode: UVE_MODE.PREVIEW
+                            mode: UVE_MODE.PREVIEW
                         },
                         state: EDITOR_STATE.IDLE
                     });

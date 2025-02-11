@@ -1,4 +1,5 @@
 /*
+
 * Licensed to dotCMS LLC under the dotCMS Enterprise License (the
 * “Enterprise License”) found below
 *
@@ -41,6 +42,7 @@
 * For all third party components incorporated into the dotCMS Software,
 * those components are licensed under the original license provided by the
 * owner of the applicable component.
+
 */
 
 package com.dotcms.enterprise.publishing;

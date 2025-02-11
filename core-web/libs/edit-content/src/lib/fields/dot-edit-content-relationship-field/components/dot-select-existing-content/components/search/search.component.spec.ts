@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
+import { of } from 'rxjs';
 
 import { ReactiveFormsModule } from '@angular/forms';
 
@@ -9,8 +10,12 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
+import { TreeNodeItem } from '@dotcms/edit-content/models/dot-edit-content-host-folder-field.interface';
+import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 import { DotMessagePipe } from '@dotcms/ui';
+import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SearchComponent } from './search.compoment';
@@ -18,6 +23,48 @@ import { SearchComponent } from './search.compoment';
 describe('SearchComponent', () => {
     let spectator: Spectator<SearchComponent>;
     let component: SearchComponent;
+
+    const messageServiceMock = new MockDotMessageService({
+        'dot.file.relationship.dialog.search.language.failed': 'Failed to load languages'
+    });
+
+    const mockSites: TreeNodeItem[] = [
+        {
+            label: 'demo.dotcms.com',
+            data: {
+                id: '123',
+                hostname: 'demo.dotcms.com',
+                path: '',
+                type: 'site'
+            },
+            icon: 'pi pi-globe',
+            leaf: false,
+            children: []
+        }
+    ];
+
+    const mockFolders = {
+        parent: {
+            id: 'parent-id',
+            hostName: 'demo.dotcms.com',
+            path: '/parent',
+            addChildrenAllowed: true
+        },
+        folders: [
+            {
+                label: 'folder1',
+                data: {
+                    id: 'folder1',
+                    hostname: 'demo.dotcms.com',
+                    path: 'folder1',
+                    type: 'folder' as const
+                },
+                icon: 'pi pi-folder',
+                leaf: true,
+                children: []
+            }
+        ]
+    };
 
     const createComponent = createComponentFactory({
         component: SearchComponent,
@@ -31,7 +78,17 @@ describe('SearchComponent', () => {
         ],
         declarations: [MockComponent(LanguageFieldComponent)],
         mocks: [DotMessagePipe],
-        detectChanges: true
+        detectChanges: true,
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotEditContentService, {
+                getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
+                getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+            }),
+            mockProvider(DotLanguagesService, {
+                get: jest.fn().mockReturnValue(of(mockLocales))
+            })
+        ]
     });
 
     beforeEach(() => {
@@ -155,7 +212,7 @@ describe('SearchComponent', () => {
             component.form.patchValue({
                 query: 'test search',
                 languageId: 1,
-                siteId: 'site1'
+                siteId: 'site123'
             });
 
             const openFiltersButton = spectator.query(
@@ -169,7 +226,7 @@ describe('SearchComponent', () => {
             expect(searchSpy).toHaveBeenCalledWith({
                 query: 'test search',
                 languageId: 1,
-                siteId: 'site1'
+                siteId: 'site123'
             });
         });
 
@@ -177,7 +234,7 @@ describe('SearchComponent', () => {
             component.form.patchValue({
                 query: 'test query',
                 languageId: 1,
-                siteId: 'site1'
+                siteId: 'site123'
             });
 
             const openFiltersButton = spectator.query(

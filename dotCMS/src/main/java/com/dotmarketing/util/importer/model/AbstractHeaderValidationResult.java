@@ -1,4 +1,4 @@
-package com.dotmarketing.util.importer;
+package com.dotmarketing.util.importer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -13,19 +13,19 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonDeserialize(as = ImportHeaderValidationResult.class)
+@JsonDeserialize(as = HeaderValidationResult.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractImportHeaderValidationResult {
+public interface AbstractHeaderValidationResult {
 
     /**
      * @return Detailed information about the validated headers
      */
-    ImportHeaderInfo headerInfo();
+    HeaderInfo headerInfo();
 
     /**
      * @return List of validation messages generated during header processing
      */
-    List<ImportValidationMessage> messages();
+    List<ValidationMessage> messages();
 
     /**
      * @return Contextual information needed for the import process, such as processed headers,

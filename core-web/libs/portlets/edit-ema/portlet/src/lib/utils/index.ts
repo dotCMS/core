@@ -251,9 +251,8 @@ export function getFullPageURL({
         delete searchParams['url'];
     }
 
-    if (searchParams.editorMode) {
-        searchParams.mode = searchParams.editorMode;
-        delete searchParams['editorMode'];
+    if (searchParams.clientHost) {
+        delete searchParams['clientHost'];
     }
 
     // Filter out undefined values from query parameters
