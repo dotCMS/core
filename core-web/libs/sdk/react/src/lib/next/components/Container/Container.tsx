@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo } from 'react';
 
-import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
+import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';
 import {
     getContainersData,
@@ -41,15 +42,15 @@ const EMPTY_CONTAINER_STYLE = {
  * ```
  */
 export function Container({ container }: ContainerProps) {
-    const { dotCMSPageAsset } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
-    const containerData = useMemo(
-        () => getContainersData(dotCMSPageAsset, container),
-        [dotCMSPageAsset, container]
-    );
+    const { pageAsset } = useContext(DotCMSPageContext);
 
+    const containerData = useMemo(
+        () => getContainersData(pageAsset, container),
+        [pageAsset, container]
+    );
     const contentlets = useMemo(
-        () => getContentletsInContainer(dotCMSPageAsset, container),
-        [dotCMSPageAsset, container]
+        () => getContentletsInContainer(pageAsset, container),
+        [pageAsset, container]
     );
 
     if (!containerData) {
@@ -84,7 +85,7 @@ export function Container({ container }: ContainerProps) {
  * @returns {JSX.Element | null} Message about missing container or null in production
  */
 const ContainerNoFound = ({ identifier }: { identifier: string }) => {
-    const { isDevMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
+    const isDevMode = useIsDevMode();
 
     useEffect(() => console.error(`Container with identifier ${identifier} not found`));
 

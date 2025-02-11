@@ -1,6 +1,4 @@
-import { useContext } from 'react';
-
-import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
+import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { DotCMSContentlet } from '../../types';
 
 /**
@@ -37,7 +35,8 @@ interface FallbackComponentProps {
  * ```
  */
 export function FallbackComponent({ UserNoComponent, contentlet }: FallbackComponentProps) {
-    const { isDevMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
+    const isDevMode = useIsDevMode();
+
     if (!isDevMode) {
         return null;
     }

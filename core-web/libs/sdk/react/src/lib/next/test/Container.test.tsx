@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { Container } from '../components/Container/Container';
-import { DotCMSRenderContext } from '../contexts/DotCMSRenderContext';
+import { DotCMSPageContext } from '../contexts/DotCMSPageContext';
 import { DotCMSColumnContainer, DotCMSPageAsset } from '../types';
 import * as utils from '../utils';
 
@@ -32,14 +32,14 @@ const mockPageAsset = {
 describe('Container', () => {
     const renderWithContext = (component: React.ReactNode, contextValue = {}) => {
         return render(
-            <DotCMSRenderContext.Provider
+            <DotCMSPageContext.Provider
                 value={{
                     dotCMSPageAsset: mockPageAsset,
                     isDevMode: false,
                     ...contextValue
                 }}>
                 {component}
-            </DotCMSRenderContext.Provider>
+            </DotCMSPageContext.Provider>
         );
     };
 

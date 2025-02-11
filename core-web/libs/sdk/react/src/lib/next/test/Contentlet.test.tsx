@@ -3,8 +3,8 @@ import '@testing-library/jest-dom/extend-expect';
 import { render, screen } from '@testing-library/react';
 
 import { Contentlet } from '../components/Contentlet/Contentlet';
-import { DotCMSRenderContext } from '../contexts/DotCMSRenderContext';
-import { useCheckVisibleContent } from '../hooks/useCheckHaveContent';
+import { DotCMSPageContext } from '../contexts/DotCMSPageContext';
+import { useCheckVisibleContent } from '../hooks/useCheckVisibleContent';
 import { getDotContentletAttributes } from '../utils';
 
 jest.mock('./components/FallbackComponent', () => ({
@@ -26,9 +26,9 @@ describe('Contentlet', () => {
     const dummyContentlet = { contentType: 'test-type', someField: 'value' };
     const renderContentlet = (contextValue: any, contentletProps: any) => {
         return render(
-            <DotCMSRenderContext.Provider value={contextValue}>
+            <DotCMSPageContext.Provider value={contextValue}>
                 <Contentlet {...contentletProps} />
-            </DotCMSRenderContext.Provider>
+            </DotCMSPageContext.Provider>
         );
     };
 

@@ -1,7 +1,8 @@
 import { useContext, useRef, useMemo } from 'react';
 
-import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
+import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { DotCMSContentlet } from '../../types';
 import { getDotContentletAttributes } from '../../utils';
 import { FallbackComponent, NoComponentType } from '../FallbackComponent/FallbackComponent';
@@ -44,9 +45,8 @@ interface CustomComponentProps {
  * ```
  */
 export function Contentlet({ contentlet, container }: ContentletProps) {
-    const { isDevMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
-
     const ref = useRef<HTMLDivElement | null>(null);
+    const isDevMode = useIsDevMode();
     const haveContent = useCheckVisibleContent(ref);
 
     const style = useMemo(
@@ -76,14 +76,14 @@ export function Contentlet({ contentlet, container }: ContentletProps) {
  * @internal
  */
 function CustomComponent({ contentlet }: CustomComponentProps) {
-    const { customComponents } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
-    const UserComponent = customComponents?.[contentlet?.contentType];
+    const { userComponents } = useContext(DotCMSPageContext) ;
+    const UserComponent = userComponents?.[contentlet?.contentType];
 
     if (UserComponent) {
         return <UserComponent {...contentlet} />;
     }
 
-    const UserNoComponent = customComponents?.['CustomNoComponent'] as NoComponentType;
+    const UserNoComponent = userComponents?.['CustomNoComponent'] as NoComponentType;
 
     return <FallbackComponent UserNoComponent={UserNoComponent} contentlet={contentlet} />;
 }

@@ -1,1 +1,1 @@
-export { DotCMSBodyRenderer } from './lib/next/components/DotCMSBodyRenderer/DotCMSBodyRenderer';
+export { DotCMSLayoutBodyRenderer } from './lib/next/components/DotCMSLayoutBodyRenderer/DotCMSLayoutBodyRenderer';
