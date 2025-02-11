@@ -5,7 +5,8 @@ import { DotCMSPageContext } from '../contexts/DotCMSPageContext';
 import { DotCMSColumnContainer, DotCMSPageAsset } from '../types';
 import * as utils from '../utils';
 
-jest.mock('../../Contentlet/Contentlet', () => ({
+// Needs to fix these tests
+jest.mock('../components/Contentlet/Contentlet', () => ({
     Contentlet: ({ contentlet }: { contentlet: any }) => (
         <div data-testid="mock-contentlet">{contentlet.identifier}</div>
     )

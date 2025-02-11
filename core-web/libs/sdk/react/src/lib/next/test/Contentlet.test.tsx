@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
@@ -7,18 +7,18 @@ import { DotCMSPageContext } from '../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../hooks/useCheckVisibleContent';
 import { getDotContentletAttributes } from '../utils';
 
-jest.mock('./components/FallbackComponent', () => ({
+jest.mock('../components/FallbackComponent/FallbackComponent', () => ({
     FallbackComponent: ({ contentlet }: any) => (
         <div data-testid="fallback">Fallback Component: {contentlet.contentType}</div>
     ),
     NoComponentType: () => <div>No Component</div>
 }));
 
-jest.mock('../../hooks/useCheckHaveContent', () => ({
+jest.mock('../hooks/useCheckVisibleContent', () => ({
     useCheckVisibleContent: jest.fn(() => false)
 }));
 
-jest.mock('./utils', () => ({
+jest.mock('../utils', () => ({
     getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' }))
 }));
 
@@ -32,16 +32,18 @@ describe('Contentlet', () => {
         );
     };
 
+    const useCheckVisibleContentMock = useCheckVisibleContent as jest.Mock;
+    const getDotContentletAttributesMock = getDotContentletAttributes as jest.Mock;
+
     beforeEach(() => {
-        // Reset the mock value for useCheckVisibleContent before each test.
-        (useCheckVisibleContent as jest.Mock).mockReturnValue(false);
-        (getDotContentletAttributes as jest.Mock).mockClear();
+        useCheckVisibleContentMock.mockReturnValue(false);
+        getDotContentletAttributesMock.mockClear();
     });
 
-    it('renders fallback component when no custom component exists', () => {
+    test('should render fallback component when no custom component exists', () => {
         const contextValue = {
-            isDevMode: true,
-            customComponents: {}
+            mode: 'development',
+            userComponents: {}
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
@@ -51,10 +53,10 @@ describe('Contentlet', () => {
         expect(containerDiv).toHaveAttribute('data-dot-object', 'contentlet');
 
         expect(containerDiv).toHaveStyle('min-height: 4rem');
-        expect(getDotContentletAttributes).toHaveBeenCalledWith(dummyContentlet, 'container-1');
+        expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
     });
 
-    it('renders custom component when provided', () => {
+    test('should render custom component when provided', () => {
         const CustomComponentMock = ({ someField }: any) => (
             <div data-testid="custom">Custom Component Rendered with {someField}</div>
         );
@@ -72,21 +74,27 @@ describe('Contentlet', () => {
         );
     });
 
-    it('applies empty style when isDevMode is false', () => {
+    test('should apply empty style when isDevMode is false', () => {
         const contextValue = {
             mode: 'production',
             userComponents: {}
         };
 
-        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
+        const { container } = renderContentlet(contextValue, {
+            contentlet: dummyContentlet,
+            container: 'container-1'
+        });
+
         expect(getDotContentletAttributes).not.toHaveBeenCalled();
 
-        const containerDiv = document.querySelector('div[data-dot-object="contentlet"]');
-        expect(containerDiv).toHaveStyle('');
+        const containerDiv = container.querySelector(
+            '[data-dot-object="contentlet"]'
+        ) as HTMLElement;
+        expect(containerDiv.className).toBe('');
     });
 
-    it('does not apply minHeight style if useCheckVisibleContent returns true', () => {
-        (useCheckVisibleContent as jest.Mock).mockReturnValue(true);
+    test('should not apply minHeight style if useCheckVisibleContent returns true', () => {
+        useCheckVisibleContentMock.mockReturnValue(true);
 
         const contextValue = {
             mode: 'development',
