@@ -36,33 +36,33 @@ jest.mock('../components/Column/Column', () => ({
 }));
 
 describe('Row', () => {
-    it('should render all columns', () => {
+    test('should render all columns', () => {
         render(<Row row={MOCK_ROW} />);
         const columns = screen.getAllByTestId('mock-column');
         expect(columns).toHaveLength(1);
     });
 
-    it('should have a container div', () => {
+    test('should have a container div', () => {
         const { container } = render(<Row row={MOCK_ROW} />);
         expect(container.querySelector('.dot-row-container')).toBeInTheDocument();
     });
 
     describe('style class', () => {
-        it('should have custom style class', () => {
+        test('should have custom style class', () => {
             const { container } = render(<Row row={MOCK_ROW} />);
             const dotRow = container.querySelector('[data-dot-object="row"]') as HTMLElement;
 
             expect(dotRow).toHaveClass('test-style-class');
         });
 
-        it('should have default style class', () => {
+        test('should have default style class', () => {
             const { container } = render(<Row row={MOCK_ROW} />);
             const dotRow = container.querySelector('[data-dot-object="row"]') as HTMLElement;
 
             expect(dotRow).toHaveClass('row');
         });
 
-        it('should have a `dot-row-container` class in the wrapper div', () => {
+        test('should have a `dot-row-container` class in the wrapper div', () => {
             const { container } = render(<Row row={MOCK_ROW} />);
             const dotRowContainer = container.querySelector('.dot-row-container') as HTMLElement;
             expect(dotRowContainer).toBeDefined();

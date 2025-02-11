@@ -54,7 +54,7 @@ describe('Container', () => {
         jest.clearAllMocks();
     });
 
-    it('renders contentlets when container has content', () => {
+    test('renders contentlets when container has content', () => {
         renderWithContext(<Container container={mockContainer} />);
 
         const contentlets = screen.getAllByTestId('mock-contentlet');
@@ -63,7 +63,7 @@ describe('Container', () => {
         expect(contentlets[1]).toHaveTextContent('contentlet-2');
     });
 
-    it('shows empty message when container has no contentlets', () => {
+    test('shows empty message when container has no contentlets', () => {
         const emptyPageAsset = {
             ...mockPageAsset,
             contentlets: { 'test-container-id': [] }
@@ -76,7 +76,7 @@ describe('Container', () => {
         expect(screen.getByText('This container is empty.')).toBeInTheDocument();
     });
 
-    it('renders ContainerNotFound in dev mode when container is not found', () => {
+    test('renders ContainerNotFound in dev mode when container is not found', () => {
         const pageAssetWithoutContainer = {
             containers: {},
             contentlets: {}
@@ -92,7 +92,7 @@ describe('Container', () => {
         ).toBeInTheDocument();
     });
 
-    it('does not render ContainerNotFound in production when container is not found', () => {
+    test('does not render ContainerNotFound in production when container is not found', () => {
         const pageAssetWithoutContainer = {
             containers: {},
             contentlets: {}
@@ -106,7 +106,7 @@ describe('Container', () => {
         expect(screen.queryByText(/This container with identifier/)).not.toBeInTheDocument();
     });
 
-    it('applies empty container styles when container has no contentlets', () => {
+    test('applies empty container styles when container has no contentlets', () => {
         const emptyPageAsset = {
             ...mockPageAsset,
             contentlets: { 'test-container-id': [] }

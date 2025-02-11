@@ -16,13 +16,14 @@ const MOCK_PAGE = {
         }
     }
 } as any;
+
 jest.mock('../components/Row/Row', () => ({
     Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
 }));
 
 describe('DotCMSLayoutBodyRenderer', () => {
     describe('With valid layout.body', () => {
-        it('should render all rows when the page has a valid layout.body', () => {
+        test('should render all rows when the page has a valid layout.body', () => {
             render(<DotCMSLayoutBodyRenderer page={MOCK_PAGE} mode="production" />);
 
             const rows = screen.getAllByTestId('row');
@@ -44,18 +45,18 @@ describe('DotCMSLayoutBodyRenderer', () => {
 
         afterEach(() => jest.restoreAllMocks());
 
-        it('should log a warning if the page is missing layout.body', () => {
+        test('should log a warning if the page is missing layout.body', () => {
             render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />);
             expect(consoleSpy).toHaveBeenCalledWith(MESSAGE_WARNING);
         });
 
-        it('should displays an error message in development mode', () => {
+        test('should displays an error message in development mode', () => {
             render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="development" />);
             const errorMessage = screen.getByTestId('error-message');
             expect(errorMessage).toBeInTheDocument();
         });
 
-        it('should display an error message in production mode if the page is inside the editor', () => {
+        test('should display an error message in production mode if the page is inside the editor', () => {
             isInsideEditorSpy.mockReturnValue(true);
 
             render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />);
@@ -63,7 +64,7 @@ describe('DotCMSLayoutBodyRenderer', () => {
             expect(errorMessage).toBeInTheDocument();
         });
 
-        it('should not display an error message in production mode', () => {
+        test('should not display an error message in production mode', () => {
             const { container } = render(
                 <DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />
             );

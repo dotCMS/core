@@ -35,7 +35,7 @@ jest.mock('../components/Container/Container', () => ({
 }));
 
 describe('Column', () => {
-    it('should render all containers', () => {
+    test('should render all containers', () => {
         render(<Column column={MOCK_COLUMN} />);
 
         const containers = screen.getAllByTestId('mock-container');
@@ -45,7 +45,7 @@ describe('Column', () => {
         expect(containers[1]).toHaveAttribute('data-container-id', 'container-2');
     });
 
-    it('should render a column without containers', () => {
+    test('should render a column without containers', () => {
         const emptyColumn = {
             ...MOCK_COLUMN,
             containers: []
@@ -57,7 +57,7 @@ describe('Column', () => {
         expect(containers).toHaveLength(0);
     });
 
-    it('should render a container wrapper with correct grid classes', () => {
+    test('should render a container wrapper with correct grid classes', () => {
         const { container } = render(<Column column={MOCK_COLUMN} />);
 
         const containerWrapper = container.querySelector('[data-dot="column"]');
@@ -69,7 +69,7 @@ describe('Column', () => {
         expect(containerWrapper).toHaveClass(endClass);
     });
 
-    it('should render a container with custom style class', () => {
+    test('should render a container with custom style class', () => {
         const { container } = render(<Column column={MOCK_COLUMN} />);
 
         const containerWrapper = container.querySelector('[data-dot="column"]');
@@ -78,7 +78,7 @@ describe('Column', () => {
         expect(columnElement).toHaveClass('custom-column-class');
     });
 
-    it('should render a container without custom style clas', () => {
+    test('should render a container without custom style clas', () => {
         const CUSTOM_MOCK_COLUMN_WITHOUT_STYLE_CLASS = {
             ...MOCK_COLUMN,
             styleClass: ''
