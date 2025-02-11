@@ -53,27 +53,25 @@ public class RelationshipFieldStrategy implements FieldStrategy {
         final String sortBy = fieldContext.sortBy();
         final String fieldName = fieldContext.fieldName();
         final String fieldValue = fieldContext.fieldValue().toString();
-        if (null == contentType) {
-            return BLANK;
-        }
         final Optional<Relationship> childRelationship = this.getRelationshipFromChildField(contentType, fieldName);
-        List<String> relatedContent = new ArrayList<>();
-        if (childRelationship.isPresent()) {
-            // Getting related identifiers from index when filtering by parent
-            relatedContent = this.getRelatedIdentifiers(currentUser, offset, sortBy, fieldValue, childRelationship.get());
-        }
+        final List<String> relatedContent = childRelationship.isPresent()
+                // Getting related identifiers from index when filtering by parent
+                ? this.getRelatedIdentifiers(currentUser, offset, sortBy, fieldValue, childRelationship.get())
+                : new ArrayList<>();
         return UtilMethods.isSet(relatedContent)
                 ? String.join(",", relatedContent).trim()
                 : "+" + fieldName + ":" + fieldValue;
     }
 
     /**
-     * Returns a relationship field from the child side
+     * Returns a {@link Relationship} object based on the provided field name and Content Type. This
+     * method is used to determine the relationship between the parent and child Contentlets.
      *
      * @param contentType The {@link ContentType} containing the Relationships field.
      * @param fieldName  The name of the field.
      *
-     * @return
+     * @return An {@link Optional} containing the {@link Relationship} object if found, or an empty
+     * {@link Optional} otherwise.
      */
     private Optional<Relationship> getRelationshipFromChildField(final ContentType contentType,
                                                                  final String fieldName) {
@@ -88,17 +86,24 @@ public class RelationshipFieldStrategy implements FieldStrategy {
     }
 
     /**
+     * Returns the list of Contentlets that are referencing the provided child Contentlet. That is,
+     * this method returns the potential parents of the specified Contentlet. If no records are
+     * returned, it may indicate that the child Contentlet is part of a Relationship between a
+     * single Content Type.
      *
-     * @param currentUser
-     * @param offset
-     * @param relatedQueryByChild
-     * @param finalSort
-     * @param fieldValue
-     * @param childRelationship
-     * @return
+     * @param user              The {@link User} performing the search.
+     * @param offset            The offset to be used when filtering the related content.
+     * @param sort              The sort criteria to be used when filtering the related content.
+     * @param fieldValue        The value of the field. In this case, the ID of the child
+     *                          Contentlet.
+     * @param childRelationship The {@link Relationship} object representing the relationship
+     *                          between the parent and child Contentlets.
+     *
+     * @return The list of Contentlet identifiers that are referencing the provided child
+     * Contentlet.
      */
-    private List<String> getRelatedIdentifiers(final User currentUser, final int offset,
-                                               final String finalSort, final String fieldValue,
+    private List<String> getRelatedIdentifiers(final User user, final int offset,
+                                               final String sort, final String fieldValue,
                                                final Relationship childRelationship) {
         final ContentletAPI conAPI = APILocator.getContentletAPI();
         try {
@@ -106,9 +111,9 @@ public class RelationshipFieldStrategy implements FieldStrategy {
                     ? offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE
                     : 0;
             final Contentlet relatedContent = conAPI.findContentletByIdentifierAnyLanguage(fieldValue);
-            return conAPI.getRelatedContent(relatedContent, childRelationship, true, currentUser,
+            return conAPI.getRelatedContent(relatedContent, childRelationship, true, user,
                             DONT_RESPECT_FRONT_END_ROLES, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
-                            filteringOffset, finalSort)
+                            filteringOffset, sort)
                     .stream().map(Contentlet::getIdentifier).collect(Collectors.toList());
         } catch (final DotDataException e) {
             Logger.warn(this, String.format("An error occurred when retrieving related contents " +

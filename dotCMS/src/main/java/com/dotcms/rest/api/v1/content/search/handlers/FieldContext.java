@@ -29,6 +29,11 @@ public class FieldContext {
     private final String sortBy;
     private final Map<String, Object> extraParams;
 
+    /**
+     * Creates a new instance of {@link FieldContext} with the given {@link Builder}.
+     *
+     * @param builder the builder to use.
+     */
     public FieldContext(final Builder builder) {
         this.contentType = builder.contentType;
         this.user = builder.user;
@@ -40,38 +45,83 @@ public class FieldContext {
         this.extraParams = builder.extraParams;
     }
 
+    /**
+     * Returns the {@link ContentType} that field belongs to.
+     *
+     * @return The {@link ContentType} that field belongs to.
+     */
     public ContentType contentType() {
         return contentType;
     }
 
+    /**
+     * Returns the {@link User} that is performing the search.
+     *
+     * @return The {@link User} that is performing the search.
+     */
     public User user() {
         return user;
     }
 
+    /**
+     * Returns the name of the field.
+     *
+     * @return The name of the field.
+     */
     public String fieldName() {
         return fieldName;
     }
 
+    /**
+     * Returns the value of the field.
+     *
+     * @return The value of the field.
+     */
     public Object fieldValue() {
         return fieldValue;
     }
 
+    /**
+     * Returns the page number, when pagination is involved and required to retrieve specific
+     * values.
+     *
+     * @return The page number.
+     */
     public int page() {
         return page;
     }
 
+    /**
+     * Returns the offset, when pagination is involved and required to retrieve specific
+     * values.
+     *
+     * @return The offset.
+     */
     public int offset() {
         return offset;
     }
 
+    /**
+     * Returns the criterion used to sort results.
+     *
+     * @return The criterion used to sort results.
+     */
     public String sortBy() {
         return sortBy;
     }
 
+    /**
+     * Returns any extra parameters that the field may need to generate the correct Lucene query.
+     *
+     * @return Any extra parameters that the field may need to generate the correct Lucene query.
+     */
     public Map<String, Object> extraParams() {
         return extraParams;
     }
 
+    /**
+     * Builder class for {@link FieldContext}.
+     */
     public static class Builder {
 
         private ContentType contentType;

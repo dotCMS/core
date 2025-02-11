@@ -46,8 +46,9 @@ public class FieldHandlerRegistry {
     private static final Map<Class<? extends Field>, Function<FieldContext, String>> handlers = new HashMap<>();
 
     static {
-        // Registers the Field Handlers for the group of fields that can share the same
-        // query format.
+        // Here, we associate each type of User Searchable field in a Content Type with their
+        // specific type of Field Handler. This way, we can determine how a field can be queried via
+        // Lucene in the expected format
         registerHandler(Set.of(TextField.class, StoryBlockField.class, CheckboxField.class,
                         CustomField.class, JSONField.class, MultiSelectField.class,
                         RadioField.class, SelectField.class, TextAreaField.class,
@@ -68,9 +69,9 @@ public class FieldHandlerRegistry {
     }
 
     /**
-     * Registers a group of fields with the same query format.
+     * Registers a group of fields that share the same query format.
      *
-     * @param fieldTypes     The fields that share the same query format.
+     * @param fieldTypes     The list of {@link Field} objects.
      * @param fieldHandlerId The {@link FieldHandlerId} that will be used to retrieve the
      *                       {@link FieldStrategy} that will be used to generate the Lucene
      *                       query for a given field.

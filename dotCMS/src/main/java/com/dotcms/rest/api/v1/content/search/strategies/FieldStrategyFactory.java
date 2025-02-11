@@ -18,6 +18,9 @@ public class FieldStrategyFactory {
     private static final Map<FieldHandlerId, FieldStrategy> SEARCHABLE_FIELD_STRATEGY_MAP = new HashMap<>();
 
     static {
+        // Here, we're associating each Field Handler with its corresponding Field Strategy for the
+        // System Searchable fields/attributes. It's worth noting that These are NOT actual Content
+        // Type fields per se. But, they allow users to query contents via Lucene
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.CONTENT_TYPE_IDS, new ContentTypesFieldStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.SITE_ID, new SiteAttributeStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.GLOBAL_SEARCH, new GlobalSearchAttributeStrategy());
@@ -29,6 +32,9 @@ public class FieldStrategyFactory {
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.LOCKED_CONTENT, new LockedContentAttributeStrategy());
         SYSTEM_FIELD_STRATEGY_MAP.put(FieldHandlerId.LIVE_CONTENT, new UnpublishedContentAttributeStrategy());
 
+        // Here, we're associating each Field Handler with its corresponding Field Strategy for the
+        // group of actual Content Type fields that share the same query formatting, escaping and
+        // processing for their specific values
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.TEXT, new TextFieldStrategy());
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.BINARY, new BinaryFieldStrategy());
         SEARCHABLE_FIELD_STRATEGY_MAP.put(FieldHandlerId.DATE_TIME, new DateTimeFieldStrategy());
