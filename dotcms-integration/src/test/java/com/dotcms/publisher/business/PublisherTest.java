@@ -347,7 +347,7 @@ public class PublisherTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void autoUnpublishContent() throws DotDataException, DotSecurityException {
+    public void autoUnpublishContent() throws DotDataException, DotSecurityException, InterruptedException {
 
         //Create a datetime field to be used as expire field
         final Field expiresField = new FieldDataGen().defaultValue(null)
@@ -380,6 +380,9 @@ public class PublisherTest extends IntegrationTestBase {
             builder.expireDateVar(expiresField.variable());
             contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(builder.build());
 
+            //To give some time to the system to update the identifier (IdenfierDateJob)
+            Thread.sleep(1000);
+
             //Check if the content type has the expire field
             assertTrue(contentType.expireDateVar().equals(expiresField.variable()));
 
@@ -409,7 +412,7 @@ public class PublisherTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void autoPublishContent() throws DotDataException, DotSecurityException {
+    public void autoPublishContent() throws DotDataException, DotSecurityException, InterruptedException {
 
         //Create a datetime field to be used as publish field
         final Field publishField = new FieldDataGen().defaultValue(null)
@@ -440,6 +443,9 @@ public class PublisherTest extends IntegrationTestBase {
             final ContentTypeBuilder builder = ContentTypeBuilder.builder(contentType);
             builder.publishDateVar(publishField.variable());
             contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(builder.build());
+
+            //To give some time to the system to update the identifier (IdenfierDateJob)
+            Thread.sleep(1000);
 
             //Check if the content type has the publish field
             assertTrue(contentType.publishDateVar().equals(publishField.variable()));
