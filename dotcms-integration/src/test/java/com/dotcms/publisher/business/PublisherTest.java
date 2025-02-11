@@ -340,14 +340,14 @@ public class PublisherTest extends IntegrationTestBase {
      * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#updatePublishExpireDates(Date)}
      * When:
      * - Create a ContentType with expire date field
-     * - Create a {@link Contentlet} with a expire date set, publish it, then remove permissions and unpublish it through the function
-     * Should: The {@link Contentlet} should be unpublished
+     * - Create a {@link Contentlet} with a expire date set, publish it
+     * Should: The {@link Contentlet} should be unpublished and system user should be the one executing the action
      *
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
-    public void autoUnpublishContentWithUserWithoutPermissions  () throws DotDataException, DotSecurityException {
+    public void autoUnpublishContent() throws DotDataException, DotSecurityException {
 
         //Create a datetime field to be used as expire field
         final Field expiresField = new FieldDataGen().defaultValue(null)
@@ -390,25 +390,68 @@ public class PublisherTest extends IntegrationTestBase {
             contentlet = APILocator.getContentletAPI().checkout(contentlet.getInode(), APILocator.systemUser(), false);
             assertFalse(contentlet.isLive());
 
-//            final Role backendRole = TestUserUtils.getBackendRole();
-//
-//            addPermission(backendRole, contentlet, PermissionLevel.PUBLISH);
-//            addPermission(backendRole, contentlet, PermissionLevel.READ);
-//            addPermission(backendRole, contentlet, PermissionLevel.WRITE);
-//            addPermission(backendRole, contentType, PermissionLevel.WRITE);
-//
-//            final User userWithBackendRole = TestUserUtils.getBackendUser(APILocator.systemHost());
-//            contentlet.setModUser(userWithBackendRole.getUserId());
-//
-//            APILocator.getContentletAPIImpl().saveDraft(contentlet, (Map<Relationship, List<Contentlet>>) null, null, null, userWithBackendRole, false);
-//
-//            APILocator.getContentletAPIImpl().publish(contentlet, userWithBackendRole, false);
-//
-//            assertTrue(APILocator.getContentletAPI().searchByIdentifier(contentlet.getIdentifier(),0,-1,null , userWithBackendRole, false).get(0).isLive());
-//
-//            PublishDateUpdater.updatePublishExpireDates(tomorrow);
-//
-//            assertFalse(APILocator.getContentletAPI().searchByIdentifier(contentlet.getIdentifier(),0,-1,null , userWithBackendRole, false).get(0).isLive());
+        } finally {
+
+            ContentletDataGen.remove(contentlet);
+            ContentTypeDataGen.remove(contentType);
+
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#updatePublishExpireDates(Date)}
+     * When:
+     * - Create a ContentType with publish date field
+     * - Create a {@link Contentlet} with a publish date set
+     * Should: The {@link Contentlet} should be publish and system user should be the one executing the action
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void autoPublishContent() throws DotDataException, DotSecurityException {
+
+        //Create a datetime field to be used as publish field
+        final Field publishField = new FieldDataGen().defaultValue(null)
+                .type(DateTimeField.class).next();
+
+        //Create Content Type without publish field set
+        ContentType contentType = new ContentTypeDataGen()
+                .field(publishField)
+                .nextPersisted();
+
+        Contentlet contentlet = null;
+
+        try {
+            //Create a date to be used as publish date value
+            final Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, -1);
+            final Date publishDate = calendar.getTime();
+
+            //Create Contentlet
+            contentlet = new ContentletDataGen(contentType)
+                    .setProperty(publishField.variable(), publishDate)
+                    .nextPersisted();
+
+            
+            assertFalse(contentlet.isLive());
+
+            //Add the publish Field at content type level
+            final ContentTypeBuilder builder = ContentTypeBuilder.builder(contentType);
+            builder.publishDateVar(publishField.variable());
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(builder.build());
+
+            //Check if the content type has the publish field
+            assertTrue(contentType.publishDateVar().equals(publishField.variable()));
+
+            //Run the function to auto publish and expire content
+            PublishDateUpdater.updatePublishExpireDates(new Date());
+
+            //Check if the contentlet was published
+            contentlet = APILocator.getContentletAPI().search(contentlet.getIdentifier(), 0, -1, null, APILocator.systemUser(), false).get(0);
+
+            assertTrue(contentlet.isLive());
+
         } finally {
 
             ContentletDataGen.remove(contentlet);
@@ -675,27 +718,5 @@ public class PublisherTest extends IntegrationTestBase {
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 
-    private void addPermission(
-            final Role role,
-            final Permissionable contentType,
-            final PermissionLevel permissionLevel)
 
-            throws DotDataException, DotSecurityException {
-
-        APILocator.getPermissionAPI().save(
-                getPermission(role, contentType, permissionLevel.getType()),
-                contentType, APILocator.systemUser(), false);
-    }
-    @NotNull
-    private Permission getPermission(
-            final Role role,
-            final Permissionable permissionable,
-            final int permissionPublish) {
-
-        final Permission publishPermission = new Permission();
-        publishPermission.setInode(permissionable.getPermissionId());
-        publishPermission.setRoleId(role.getId());
-        publishPermission.setPermission(permissionPublish);
-        return publishPermission;
-    }
 }
