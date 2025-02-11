@@ -1,4 +1,4 @@
-package com.dotmarketing.util.importer;
+package com.dotmarketing.util.importer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -14,9 +14,9 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonDeserialize(as = ImportValidationMessage.class)
+@JsonDeserialize(as = ValidationMessage.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractImportValidationMessage extends Serializable {
+public interface AbstractValidationMessage extends Serializable {
 
     /**
      * Enumeration of possible message types for validation results.
