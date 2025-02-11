@@ -41,7 +41,7 @@ const EMPTY_CONTAINER_STYLE = {
  * ```
  */
 export function Container({ container }: ContainerProps) {
-    const { dotCMSPageAsset, isDevMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
+    const { dotCMSPageAsset } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
     const containerData = useMemo(
         () => getContainersData(dotCMSPageAsset, container),
         [dotCMSPageAsset, container]
@@ -53,7 +53,7 @@ export function Container({ container }: ContainerProps) {
     );
 
     if (!containerData) {
-        return <ContainerNoFound identifier={container.identifier} isDevMode={isDevMode} />;
+        return <ContainerNoFound identifier={container.identifier} />;
     }
 
     const isEmpty = contentlets.length === 0;
@@ -81,16 +81,11 @@ export function Container({ container }: ContainerProps) {
  * @component
  * @param {Object} props - Component properties
  * @param {string} props.identifier - Container identifier
- * @param {boolean} props.isDevMode - Whether the application is in development mode
  * @returns {JSX.Element | null} Message about missing container or null in production
  */
-const ContainerNoFound = ({
-    identifier,
-    isDevMode
-}: {
-    identifier: string;
-    isDevMode: boolean;
-}) => {
+const ContainerNoFound = ({ identifier }: { identifier: string }) => {
+    const { isDevMode } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
+
     useEffect(() => console.error(`Container with identifier ${identifier} not found`));
 
     if (!isDevMode) {

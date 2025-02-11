@@ -22,7 +22,7 @@ export const DotCMSBodyRenderer = ({
         console.warn('Missing required layout.body property in page');
 
         if (isDevMode) {
-            return <div>The page body is not defined, please provide a valid dotCMSPageAsset</div>;
+            return <ErrorMessage />;
         }
 
         return null;
@@ -34,5 +34,23 @@ export const DotCMSBodyRenderer = ({
                 <Row key={index} row={row} />
             ))}
         </DotCMSRenderContext.Provider>
+    );
+};
+
+/**
+ * Error message component for when the page body is missing
+ *
+ * @return {JSX.Element} Error message component
+ */
+const ErrorMessage = () => {
+    return (
+        <div style={{ padding: '1rem', border: '1px solid #e0e0e0', borderRadius: '4px' }}>
+            <p style={{ margin: '0 0 0.5rem', color: '#666' }}>
+                The <code>page</code> is missing the required <code>layout.body</code> property.
+            </p>
+            <p style={{ margin: 0, color: '#666' }}>
+                Make sure the page asset is properly loaded and includes a layout configuration.
+            </p>
+        </div>
     );
 };

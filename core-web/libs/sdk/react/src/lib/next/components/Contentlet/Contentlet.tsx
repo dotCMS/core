@@ -1,7 +1,7 @@
 import { useContext, useRef, useMemo } from 'react';
 
 import { DotCMSRenderContext, DotCMSRenderContextI } from '../../contexts/DotCMSRenderContext';
-import { useCheckVisibleContent } from '../../hooks/useCheckHaveContent';
+import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 import { DotCMSContentlet } from '../../types';
 import { getDotContentletAttributes } from '../../utils';
 import { FallbackComponent, NoComponentType } from '../FallbackComponent/FallbackComponent';
@@ -21,11 +21,9 @@ interface ContentletProps {
  * Props for the CustomComponent
  * @interface CustomComponentProps
  * @property {DotCMSContentlet} contentlet - The contentlet data to be rendered
- * @property {boolean} isDevMode - Flag indicating if the component is in development mode
  */
 interface CustomComponentProps {
     contentlet: DotCMSContentlet;
-    isDevMode: boolean;
 }
 
 /**
@@ -62,7 +60,7 @@ export function Contentlet({ contentlet, container }: ContentletProps) {
 
     return (
         <div {...dotAttributes} data-dot-object="contentlet" ref={ref} style={style}>
-            <CustomComponent contentlet={contentlet} isDevMode={isDevMode} />
+            <CustomComponent contentlet={contentlet} />
         </div>
     );
 }
@@ -73,12 +71,11 @@ export function Contentlet({ contentlet, container }: ContentletProps) {
  * @component
  * @param {CustomComponentProps} props - Component properties
  * @param {DotCMSContentlet} props.contentlet - The contentlet data to render
- * @param {boolean} props.isDevMode - Whether the component is in development mode
  * @returns {JSX.Element} The rendered custom component or fallback component
  *
  * @internal
  */
-function CustomComponent({ contentlet, isDevMode }: CustomComponentProps) {
+function CustomComponent({ contentlet }: CustomComponentProps) {
     const { customComponents } = useContext(DotCMSRenderContext) as DotCMSRenderContextI;
     const UserComponent = customComponents?.[contentlet?.contentType];
 
@@ -88,11 +85,5 @@ function CustomComponent({ contentlet, isDevMode }: CustomComponentProps) {
 
     const UserNoComponent = customComponents?.['CustomNoComponent'] as NoComponentType;
 
-    return (
-        <FallbackComponent
-            UserNoComponent={UserNoComponent}
-            contentlet={contentlet}
-            isDevMode={isDevMode}
-        />
-    );
+    return <FallbackComponent UserNoComponent={UserNoComponent} contentlet={contentlet} />;
 }
