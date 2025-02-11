@@ -64,13 +64,17 @@ describe('DotEditContentStore', () => {
         // Verify features are composed into the store
         expect(store.contentType).toBeDefined();
         expect(store.contentlet).toBeDefined();
-        expect(store.showSidebar).toBeDefined();
-        expect(store.showWorkflowActions).toBeDefined();
         expect(store.information).toBeDefined();
         expect(store.locales).toBeDefined();
         expect(store.systemDefaultLocale).toBeDefined();
         expect(store.currentLocale).toBeDefined();
         expect(store.currentIdentifier).toBeDefined();
         expect(store.localesStatus).toBeDefined();
+        expect(store.showWorkflowActions).toBeDefined();
+        // UI Feature
+        expect(store.uiState).toBeDefined();
+        expect(store.isSidebarOpen).toBeDefined();
+        expect(store.activeTab).toBeDefined();
+        expect(store.activeSidebarTab).toBeDefined();
     });
 });

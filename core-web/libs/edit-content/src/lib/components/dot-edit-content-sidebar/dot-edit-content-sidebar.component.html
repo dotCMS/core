@@ -1,11 +1,16 @@
-@let contentlet = store.contentlet();
-@let contentType = store.contentType();
+@let contentlet = $store.contentlet();
+@let contentType = $store.contentType();
+@let activeIndex = $store.activeSidebarTab();
+
 <!-- Information Component -->
-@let isLoadingInformation = store.isLoadingInformation();
-@let referencePagesCount = store.information.relatedContent();
+@let isLoadingInformation = $store.isLoadingInformation();
+@let referencePagesCount = $store.information.relatedContent();
 
 <aside class="content-sidebar">
-    <p-tabView>
+    <p-tabView
+        [activeIndex]="activeIndex"
+        (onChange)="onActiveIndexChange($event)"
+        data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
         <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
 
@@ -13,7 +18,7 @@
             <!-- Information section -->
             <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.general.title' | dm">
                 <ng-template #sectionAction>
-                    @if (!store.isNew() && !store.isCopyingLocale()) {
+                    @if (!$store.isNew() && !$store.isCopyingLocale()) {
                         <dot-copy-button
                             [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
@@ -33,11 +38,11 @@
 
             <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
                 <dot-edit-content-sidebar-locales
-                    [locales]="store.locales()"
-                    [defaultLocale]="store.systemDefaultLocale()"
-                    [currentLocale]="store.currentLocale()"
-                    [isLoading]="store.isLoadingLocales()"
-                    (switchLocale)="store.switchLocale($event)"
+                    [locales]="$store.locales()"
+                    [defaultLocale]="$store.systemDefaultLocale()"
+                    [currentLocale]="$store.currentLocale()"
+                    [isLoading]="$store.isLoadingLocales()"
+                    (switchLocale)="$store.switchLocale($event)"
                     data-testId="locales" />
             </dot-edit-content-sidebar-section>
 
@@ -47,11 +52,11 @@
                 <dot-edit-content-sidebar-workflow
                     [workflowSelection]="$workflowSelection()"
                     [(showDialog)]="$showDialog"
-                    (onSelectWorkflow)="store.setSelectedWorkflow($event)"
-                    [resetWorkflowAction]="store.getResetWorkflowAction()"
+                    (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
+                    [resetWorkflowAction]="$store.getResetWorkflowAction()"
                     (onResetWorkflow)="fireWorkflowAction($event)"
                     [workflow]="$workflow()"
-                    [isLoading]="store.isLoadingWorkflow()"
+                    [isLoading]="$store.isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
         </p-tabPanel>
@@ -74,7 +79,7 @@
     <div class="content-sidebar__close">
         <button
             class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
-            (click)="store.toggleSidebar()"
+            (click)="$store.toggleSidebar()"
             data-testId="toggle-button">
             <svg
                 width="20"

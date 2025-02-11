@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 
 import {
     DotCMSContentTypeField,
@@ -13,10 +13,9 @@ import {
     createPaths,
     generatePreviewUrl,
     getFieldVariablesParsed,
-    getPersistSidebarState,
+    getStoredUIState,
     isFilteredType,
     isValidJson,
-    setPersistSidebarState,
     sortLocalesTranslatedFirst,
     stringToJson
 } from './functions.util';
@@ -25,7 +24,7 @@ import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './moc
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
-import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
+import { UI_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 describe('Utils Functions', () => {
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
@@ -613,34 +612,75 @@ describe('Utils Functions', () => {
         });
     });
 
-    describe('Sidebar State Persistence', () => {
+    describe('UI State Storage', () => {
         beforeEach(() => {
             localStorage.clear();
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            jest.spyOn(console, 'warn').mockImplementation(() => {});
         });
 
-        describe('getPersistSidebarState', () => {
-            it('should return true when localStorage is empty', () => {
-                expect(getPersistSidebarState()).toBe(true);
-            });
-
-            it('should return true when localStorage value is "true"', () => {
-                localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, 'true');
-                expect(getPersistSidebarState()).toBe(true);
-            });
-
-            it('should return false when localStorage value is "false"', () => {
-                localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, 'false');
-                expect(getPersistSidebarState()).toBe(false);
-            });
+        afterEach(() => {
+            jest.restoreAllMocks();
         });
 
-        describe('setPersistSidebarState', () => {
-            it('should set the value in localStorage', () => {
-                setPersistSidebarState('true');
-                expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('true');
+        describe('getStoredUIState', () => {
+            it('should return default state when localStorage is empty', () => {
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+            });
 
-                setPersistSidebarState('false');
-                expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('false');
+            it('should return stored state from localStorage', () => {
+                const mockState = {
+                    activeTab: 2,
+                    isSidebarOpen: false,
+                    activeSidebarTab: 1
+                };
+                localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
+
+                const state = getStoredUIState();
+                expect(state).toEqual(mockState);
+            });
+
+            it('should return default state and warn when localStorage has invalid JSON', () => {
+                localStorage.setItem(UI_STORAGE_KEY, 'invalid-json');
+
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+                expect(console.warn).toHaveBeenCalledWith(
+                    'Error reading UI state from localStorage:',
+                    expect.any(Error)
+                );
+            });
+
+            it('should return default state and warn when localStorage throws error', () => {
+                const mockGetItem = jest.fn(() => {
+                    throw new Error('Storage error');
+                });
+
+                Object.defineProperty(window, 'localStorage', {
+                    value: {
+                        getItem: mockGetItem
+                    }
+                });
+
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+                expect(console.warn).toHaveBeenCalledWith(
+                    'Error reading UI state from localStorage:',
+                    expect.any(Error)
+                );
             });
         });
     });
