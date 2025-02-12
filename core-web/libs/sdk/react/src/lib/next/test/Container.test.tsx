@@ -111,15 +111,17 @@ describe('Container', () => {
             expect(emptyContainerMessage).toBeDefined();
         });
 
-        test('should show empty container with styles when container has no contentlets', () => {
+        test('should show empty container with styles when container has no contentlets and is in dev mode', () => {
             const emptyPageAsset = {
                 ...MOCK_PAGE_ASSET,
                 contentlets: { 'test-container-id': [] }
             };
 
             const { container } = renderWithContext(<Container container={mockContainer} />, {
-                pageAsset: emptyPageAsset
+                pageAsset: emptyPageAsset,
+                mode: 'development'
             });
+
             const emptyContainerMessage = container.querySelector(
                 '[data-testid="empty-container-message"]'
             );
@@ -131,6 +133,19 @@ describe('Container', () => {
             expect(parentElement?.style.display).toBe('flex');
             expect(parentElement?.style.justifyContent).toBe('center');
             expect(parentElement?.style.alignItems).toBe('center');
+        });
+
+        test('should not show empty container with styles when container has no contentlets and is in production mode', () => {
+            const { container } = renderWithContext(<Container container={mockContainer} />, {
+                pageAsset: emptyPageAsset,
+                mode: 'production'
+            });
+
+            const emptyContainerMessage = container.querySelector(
+                '[data-testid="empty-container-message"]'
+            );
+
+            expect(emptyContainerMessage).toBeNull();
         });
     });
 

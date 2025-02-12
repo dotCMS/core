@@ -21,7 +21,7 @@ export const useIsDevMode = (renderMode?: RendererMode) => {
     const [isDevMode, setIsDevMode] = useState(effectiveMode === 'development');
 
     useEffect(() => {
-        setIsDevMode(effectiveMode === 'development' || isInsideEditor());
+        setIsDevMode(effectiveMode === 'development' || !!isInsideEditor());
     }, [effectiveMode]);
 
     return isDevMode;

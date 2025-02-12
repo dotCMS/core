@@ -5,16 +5,13 @@ export const useCheckVisibleContent = (ref: RefObject<HTMLDivElement>) => {
 
     useEffect(() => {
         if (!ref.current) {
+            setHaveContent(false);
+
             return;
         }
 
-        const childElement = ref.current.firstElementChild;
-        if (childElement) {
-            const { height } = childElement.getBoundingClientRect();
-            setHaveContent(height > 0);
-        } else {
-            setHaveContent(false);
-        }
+        const { height } = ref.current.getBoundingClientRect();
+        setHaveContent(height > 0);
     }, [ref]);
 
     return haveContent;
