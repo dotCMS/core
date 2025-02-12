@@ -101,3 +101,5 @@ This maintenance release includes the following code fixes:
 95. https://github.com/dotCMS/core/issues/30468 : Remove calls to ElasticReadOnlyCommand and disable EsReadOnlyMonitorJob  #30468
 96. https://github.com/dotCMS/core/issues/30993 : In 24.12.10 the EsReadOnlyMonitorJob still shows error #30993
 97. https://github.com/dotCMS/core/issues/26503 : CORS not applied when specifying resource #26503
+98. https://github.com/dotCMS/core/issues/28365 : Add Host to the reference tab on Content #28365
+
