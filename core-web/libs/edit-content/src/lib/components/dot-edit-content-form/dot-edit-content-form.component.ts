@@ -24,7 +24,11 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 
+import { map, switchMap } from 'rxjs/operators';
+
+import { DotAiService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotFileFieldUploadService } from '@dotcms/edit-content/fields/dot-edit-content-file-field/services/upload-file/upload-file.service';
 import { OpenAiService } from '@dotcms/edit-content/services/openai/openai.service';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
@@ -47,6 +51,7 @@ import {
 } from '../../utils/functions.util';
 import { DotAiClippyContentGeneratorComponent } from '../dot-ai-clippy-content-generator/dot-ai-clippy-content-generator.component';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
+
 
 // CAN BE AN UTIL
 const RECORD_OBJECT = {
@@ -125,7 +130,7 @@ const RECORD_OBJECT = {
         DotMessagePipe,
         DotAiClippyContentGeneratorComponent
     ],
-    providers: [OpenAiService],
+    providers: [OpenAiService, DotFileFieldUploadService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
         trigger('fadeIn', [
@@ -142,7 +147,8 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
     readonly openAiService = inject(OpenAiService);
-
+    readonly dotFileFieldUploadService = inject(DotFileFieldUploadService);
+    readonly dotAiService = inject(DotAiService);
     $showAcceptChangesButton = signal(false);
     $latestFormAcceptChanges = signal<string | null>(null);
 
@@ -508,6 +514,7 @@ export class DotEditContentFormComponent implements OnInit {
             }
 
             acc[key] = fieldRule;
+
             return acc;
         }, {});
 
@@ -526,9 +533,20 @@ export class DotEditContentFormComponent implements OnInit {
                 language: this.$store.currentLocale().isoCode,
                 formStructure
             })
+            .pipe(
+                switchMap((newContent) => {
+                    return this.dotAiService.generateAndPublishImage(newContent.title).pipe(
+                        map((response) => {
+                            return {
+                                ...newContent,
+                                image: response.contentlet.identifier
+                            };
+                        })
+                    );
+                })
+            )
             .subscribe((response) => {
-                this.$latestFormAcceptChanges.set(JSON.stringify(this.form.value));
-                console.log(response);
+
                 this.form.patchValue(response);
                 this.form.markAllAsTouched();
                 this.form.markAsDirty();

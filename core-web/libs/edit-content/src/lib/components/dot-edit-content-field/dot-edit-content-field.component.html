@@ -92,16 +92,6 @@
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }
-    @case (fieldTypes.BINARY) {
-        @defer (on immediate) {
-            <ng-container [ngTemplateOutlet]="labelTemplate" />
-            <dot-edit-content-binary-field
-                [formControlName]="field.variable"
-                [contentlet]="contentlet"
-                [field]="field"
-                [attr.data-testId]="'field-' + field.variable" />
-        }
-    }
     @case (fieldTypes.CUSTOM_FIELD) {
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
@@ -155,7 +145,7 @@
                 [field]="field" />
         }
     }
-    @case (fieldTypes.FILE) {
+    @case (fieldTypes.FILE || fieldTypes.BINARY) {
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-file-field
