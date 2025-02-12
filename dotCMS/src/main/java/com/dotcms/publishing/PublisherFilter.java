@@ -7,6 +7,18 @@ package com.dotcms.publishing;
  * if is not returns true, so the asset can be added to the bundle.
  */
 public interface PublisherFilter {
+    String CONTENT_ONLY_KEY = "ContentOnly.yml";
+    String FORCE_PUSH_KEY = "ForcePush.yml";
+    String INTELLIGENT__KEY = "Intelligent.yml";
+    String SHALLOW_PUSH_KEY = "ShallowPush.yml";
+    String WEB_CONTENT_KEY = "WebContentOnly.yml";
+
+    /**
+     * Returns the key of the specified Push Publishing Filter.
+     *
+     * @return The Push Publishing Filter key.
+     */
+    String key();
 
     /**
      * Check if the asset needs to be excluded from the bundle.

@@ -150,7 +150,7 @@ public class PushPublisher extends Publisher {
 		try {
 			//Compressing bundle
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
-			ArrayList<File> list = new ArrayList<>(1);
+			final List<File> list = new ArrayList<>(1);
 			list.add(bundleRoot);
 			File bundleFile = new File(bundleRoot + ".tar.gz");
 
@@ -165,7 +165,7 @@ public class PushPublisher extends Publisher {
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
 			Map<String, Map<String, EndpointDetail>> endpointsMap = currentStatusHistory.getEndpointsMap();
 			// If not empty, don't overwrite publish history already set via the PublisherQueueJob
-			boolean isHistoryEmpty = endpointsMap.size() == 0;
+			boolean isHistoryEmpty = endpointsMap.isEmpty();
 			currentStatusHistory.setPublishStart(new Date());
 			PushPublishLogger.log(this.getClass(), "Status Update: Sending to all environments");
 			pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
@@ -181,23 +181,23 @@ public class PushPublisher extends Publisher {
 
 				Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());
 				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
-				for(PublishingEndPoint ep : allEndpoints) {
-					if(ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
-						// If pushing a bundle for the first time, always add
-						// all end-points
-						if (null == endpointsDetail || endpointsDetail.size() == 0) {
-							endpoints.add(ep);
-						} else {
-							EndpointDetail epDetail = endpointsDetail.get(ep.getId());
-							// If re-trying a bundle or just re-attempting to
-							// install a bundle, send it only to those
-							// end-points whose status IS NOT success
-							if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-									&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
-                                    && Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
-									&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
+				if (null != allEndpoints) {
+					for (PublishingEndPoint ep : allEndpoints) {
+						if (ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
+							// If pushing a bundle for the first time, always add all end-points
+							if (null == endpointsDetail || endpointsDetail.isEmpty()) {
 								endpoints.add(ep);
+							} else {
+								EndpointDetail epDetail = endpointsDetail.get(ep.getId());
+								// If re-trying a bundle or just re-attempting to install a bundle,
+								// send it only to those end-points whose status IS NOT success
+								if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+										|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+										&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
+										&& Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
+										&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
+									endpoints.add(ep);
+								}
 							}
 						}
 					}
@@ -224,9 +224,10 @@ public class PushPublisher extends Publisher {
 
 						if (endpoint.hasAuthKey()) {
 							PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
-
+							final String filterKey = bundle.getFilterKey();
 							WebTarget webTarget = client.target(endpoint.toURL() + "/api/bundlePublisher/publish")
-									.queryParam("FORCE_PUSH", bundle.isForcePush());
+									.queryParam("FORCE_PUSH", bundle.isForcePush())
+									.queryParam("filterkey", filterKey);;
 
 							Response response = webTarget.request(MediaType.APPLICATION_JSON)
 									.header("Content-Disposition", contentDisposition)

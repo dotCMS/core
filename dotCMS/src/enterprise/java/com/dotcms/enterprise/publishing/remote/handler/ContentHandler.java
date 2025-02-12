@@ -55,10 +55,13 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtil.HandlerType;
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
@@ -134,6 +137,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This handler deals with Contentlet-related information inside a bundle and
@@ -162,6 +167,7 @@ public class ContentHandler implements IHandler {
 	private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
 	private final Lazy<MultiTreeAPI> multiTreeAPI = Lazy.of(APILocator::getMultiTreeAPI);
+	private final Lazy<BundleAPI> bundleAPI = Lazy.of(APILocator::getBundleAPI);
 
 	private final Map<String,Long> infoToRemove = new HashMap<>();
 	private final ExistingContentMapping existingContentMap = new ExistingContentMapping();
@@ -785,9 +791,18 @@ public class ContentHandler implements IHandler {
         }
         content = this.contentletAPI.checkin(content, userToUse, !RESPECT_FRONTEND_ROLES);
 
-        //First we need to remove the "old" trees in order to add this new ones
-        cleanTrees( content );
-		regenerateTree(wrapper,remoteLocalLanguages.getLeft());
+		final String filterKey = this.getFilterKeyFromBundle();
+		Logger.debug(this, () -> "Filter Key: " + filterKey);
+		final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
+		boolean isRelationshipsFilter = filterDescriptor.getFilters().containsKey(RELATIONSHIPS_KEY) ? Boolean.class.cast(filterDescriptor.getFilters()
+				.get(RELATIONSHIPS_KEY)) : true;
+		Logger.debug(this, () -> "Relationships Filter: " + isRelationshipsFilter);
+		if (isRelationshipsFilter) {
+			// Depending on the selected Push Publishing Filter, we need to remove the "old" trees
+			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
+			this.cleanTrees(content);
+			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
+		}
 
         // Categories
         if (UtilMethods.isSet(wrapper.getCategories())) {
@@ -843,6 +858,20 @@ public class ContentHandler implements IHandler {
 				isHost ? PushPublishHandler.HOST : PushPublishHandler.CONTENT,
 				PushPublishAction.PUBLISH, content.getIdentifier(), content.getInode(), content.getName(), config.getId());
     }
+
+	/**
+	 * Retrieves the Push Publishing Filter that was selected to generate the current Bundle.
+	 *
+	 * @return The Push Publishing Filter key. But, if the bundle doesn't exist, returns an empty
+	 * String.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the data source.
+	 */
+	private String getFilterKeyFromBundle() throws DotDataException {
+		final Bundle bundle =
+				this.bundleAPI.get().getBundleById(com.dotmarketing.util.FileUtil.removeExtension(this.config.getId()));
+		return null != bundle ? bundle.getFilterKey() : BLANK;
+	}
 
 	/**
 	 * Invalidates the respective MultiTree cache entry when the pushed Contentlet is the child of an existing record

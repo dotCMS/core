@@ -30,7 +30,7 @@ public class BundlePublisherResourceIntegrationTest extends IntegrationTestBase 
             final BundlePublisherResource bundlePublisherResource = new BundlePublisherResource();
 
             try {
-                bundlePublisherResource.publish(null, null, true, request, response);
+                bundlePublisherResource.publish(null, null, true, "", request, response);
                 throw new AssertionError();
             } catch(InvalidLicenseException e) {
                 //expected

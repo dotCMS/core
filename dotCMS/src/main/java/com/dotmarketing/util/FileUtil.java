@@ -470,6 +470,25 @@ public class FileUtil {
 
 	}
 
+	/**
+	 * Removes the extension from a filename. This method will remove all characters starting from
+	 * the first occurrence of the period character.
+	 *
+	 * @param filename The filename to remove the extension from.
+	 *
+	 * @return The filename without the extension.
+	 */
+	public static String removeExtension(final String filename) {
+		if (filename == null) {
+			return null;
+		}
+		final int pos = filename.indexOf(StringPool.PERIOD);
+		if (pos == -1) {
+			return filename;
+		}
+		return filename.substring(0, pos);
+	}
+
 }
 
 final class PNGFileNameFilter implements FilenameFilter {
