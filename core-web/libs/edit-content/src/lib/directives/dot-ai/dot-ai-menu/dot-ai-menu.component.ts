@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, inject, input, Input, OnInit, Output } from '@angular/core';
 import { DotAiService } from '@dotcms/data-access';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -9,12 +9,15 @@ import { MenuModule } from 'primeng/menu';
     template: `
         <p-menu #menu [model]="items" [popup]="true" [appendTo]="'body'" />
         <p-button
+            *ngIf="visible()"
             #btn
             (onClick)="menu.toggle($event)"
             [text]="true"
             severity="secondary"
             class="ai-trigger-button"
-            aria-label="AI Actions">
+            aria-label="AI Actions"
+            [class.disabled]="disabled()"
+            [disabled]="disabled()">
             <svg
                 class="ai-icon"
                 width="20"
@@ -90,6 +93,9 @@ export class DotAiMenuComponent implements OnInit {
 
     #dotAiService = inject(DotAiService);
 
+    disabled = input<boolean>(true);
+    visible = input<boolean>(false);
+
     ngOnInit() {
         this.items = [
             {
@@ -98,25 +104,41 @@ export class DotAiMenuComponent implements OnInit {
                     {
                         label: 'Improve writing',
                         command: () => {
-                            this.refineText('You are a text refiner. You will be given a text, a tone, and a language. You will need to refine the text to the tone and language.', 'formal', 'en');
+                            this.refineText(
+                                'You are a text refiner. You will be given a text, a tone, and a language. You will need to refine the text to the tone and language.',
+                                'formal',
+                                'en'
+                            );
                         }
                     },
                     {
                         label: 'Fix spelling and grammar',
                         command: () => {
-                            this.refineText('You are an expert proofreader. You will be given a text, and you will need to fix the spelling and grammar.', 'formal', 'en');
+                            this.refineText(
+                                'You are an expert proofreader. You will be given a text, and you will need to fix the spelling and grammar.',
+                                'formal',
+                                'en'
+                            );
                         }
                     },
                     {
                         label: 'Convert to English (US)',
                         command: () => {
-                            this.refineText('You are an expert translator. You will be given a text, and you will need to convert it to US English.', 'formal', 'en');
+                            this.refineText(
+                                'You are an expert translator. You will be given a text, and you will need to convert it to US English.',
+                                'formal',
+                                'en'
+                            );
                         }
                     },
                     {
                         label: 'Simplify language',
                         command: () => {
-                            this.refineText('You are an expert simplifier. You will be given a text, and you will need to simplify it.', 'formal', 'en');
+                            this.refineText(
+                                'You are an expert simplifier. You will be given a text, and you will need to simplify it.',
+                                'formal',
+                                'en'
+                            );
                         }
                     }
                 ]
@@ -127,19 +149,31 @@ export class DotAiMenuComponent implements OnInit {
                     {
                         label: 'Write in friendly tone',
                         command: () => {
-                            this.refineText('You are an expert writer. You will be given a text, and you will need to write it in a friendly tone.', 'friendly', 'en');
+                            this.refineText(
+                                'You are an expert writer. You will be given a text, and you will need to write it in a friendly tone.',
+                                'friendly',
+                                'en'
+                            );
                         }
                     },
                     {
                         label: 'Write in casual tone',
                         command: () => {
-                            this.refineText('You are an expert writer. You will be given a text, and you will need to write it in a casual tone.', 'casual', 'en');
+                            this.refineText(
+                                'You are an expert writer. You will be given a text, and you will need to write it in a casual tone.',
+                                'casual',
+                                'en'
+                            );
                         }
                     },
                     {
                         label: 'Write in professional tone',
                         command: () => {
-                            this.refineText('You are an expert writer. You will be given a text, and you will need to write it in a professional tone.', 'professional', 'en');
+                            this.refineText(
+                                'You are an expert writer. You will be given a text, and you will need to write it in a professional tone.',
+                                'professional',
+                                'en'
+                            );
                         }
                     }
                 ]
@@ -150,19 +184,31 @@ export class DotAiMenuComponent implements OnInit {
                     {
                         label: 'Generate SEO friendly title',
                         command: () => {
-                            this.refineText('You are an expert SEO writer. You will be given a text, and you will need to generate a SEO friendly title.', 'formal', 'en');
+                            this.refineText(
+                                'You are an expert SEO writer. You will be given a text, and you will need to generate a SEO friendly title.',
+                                'formal',
+                                'en'
+                            );
                         }
                     },
                     {
                         label: 'Generate catchy headline',
                         command: () => {
-                            this.refineText('You are an expert headline writer. You will be given a text, and you will need to generate a catchy headline.', 'formal', 'en');
+                            this.refineText(
+                                'You are an expert headline writer. You will be given a text, and you will need to generate a catchy headline.',
+                                'formal',
+                                'en'
+                            );
                         }
                     },
                     {
                         label: 'Generate URL friendly title',
                         command: () => {
-                            this.refineText('You are an expert URL title writer. You will be given a text, and you will need to generate a URL friendly title.', 'formal', 'en');
+                            this.refineText(
+                                'You are an expert URL title writer. You will be given a text, and you will need to generate a URL friendly title.',
+                                'formal',
+                                'en'
+                            );
                         }
                     }
                 ]
@@ -171,14 +217,19 @@ export class DotAiMenuComponent implements OnInit {
     }
 
     refineText(system: string, tone: string, language: string) {
-        this.#dotAiService.refineText({
-            system: system,
-            text: this.text,
-            tone: tone,
-            language: language
-        })
-        .subscribe((response: any) => {
-            this.textChanged.emit(response.title);
-        });
+        this.#dotAiService
+            .refineText({
+                system: system,
+                text: this.text,
+                tone: tone,
+                language: language
+            })
+            .subscribe((response: any) => {
+                this.textChanged.emit(response.title);
+            });
+    }
+
+    handleClick() {
+        // Implementation of handleClick method
     }
 }

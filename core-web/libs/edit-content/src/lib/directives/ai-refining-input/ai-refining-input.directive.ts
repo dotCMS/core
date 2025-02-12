@@ -7,6 +7,7 @@ import {
     OnInit,
     ViewContainerRef
 } from '@angular/core';
+import { NgControl } from '@angular/forms';
 
 import { DotAiMenuComponent } from '../dot-ai/dot-ai-menu/dot-ai-menu.component';
 
@@ -22,41 +23,37 @@ export class AiRefiningInputDirective implements OnInit {
 
     #elementRef = inject(ElementRef);
     #viewContainerRef = inject(ViewContainerRef);
+    #ngControl = inject(NgControl);
 
     ngOnInit() {
-        const inputElement = this.#elementRef.nativeElement as HTMLInputElement;
+        const element = this.#elementRef.nativeElement as HTMLInputElement | HTMLTextAreaElement;
         this.menuComponent = this.#viewContainerRef.createComponent(DotAiMenuComponent);
-        
-        this.menuComponent.instance.textChanged.subscribe((text) => {
-            inputElement.value = text;
-        });
-        const parent = inputElement.parentNode as HTMLElement;
-        const hasContent = inputElement.value.trim().length > 0;
+        const parent = element.parentNode as HTMLElement;
 
-        if (!hasContent) {
-            parent.removeChild(this.menuComponent.location.nativeElement);
+        // Configurar el contenedor padre para el posicionamiento
+        if (!parent.style.position) {
+            parent.style.position = 'relative';
         }
 
-        
+        // Agregar el menú al DOM inmediatamente
+        const menuElement = this.menuComponent.location.nativeElement;
+        parent.appendChild(menuElement);
 
-        inputElement.addEventListener('input', () => {
-            const hasContent = inputElement.value.trim().length > 0;
+        // Observar cambios en el control
+        this.#ngControl.control?.valueChanges.subscribe((value) => {
+            console.log('value', value);
+            const hasContent = value?.trim().length > 0;
+            const isDirty = this.#ngControl.dirty;
 
-            if (this.menuComponent) {
-                this.menuComponent.setInput('text', inputElement.value);
-            }
+            this.menuComponent.setInput('text', value || '');
+            this.menuComponent.setInput('disabled', !hasContent || !isDirty);
+            this.menuComponent.setInput('visible', isDirty);
+        });
 
-            if (hasContent) {
-                
-                if (!parent.style.position) {
-                    parent.style.position = 'relative';
-                }
-                
-                const menuElement = this.menuComponent.location.nativeElement;
-                parent.appendChild(menuElement);
-            } else {
-                parent.removeChild(this.menuComponent.location.nativeElement);
-            }
+        this.menuComponent.instance.textChanged.subscribe((text) => {
+            if (!text) return;
+            this.#ngControl.control?.setValue(text);
+            this.#ngControl.control?.markAsDirty();
         });
     }
 }

@@ -144,7 +144,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly openAiService = inject(OpenAiService);
 
     $showAcceptChangesButton = signal(false);
-    $latestFormAcceptChanges = signal<string | null>(null); 
+    $latestFormAcceptChanges = signal<string | null>(null);
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -485,29 +485,58 @@ export class DotEditContentFormComponent implements OnInit {
 
             if (field.clazz === 'com.dotcms.contenttype.model.field.ImmutableCustomField') {
                 fieldRule.type = field.dataType;
-                fieldRule.format = `${field.regexCheck} ${field.name}`;
+
+                if (field.regexCheck && field.regexCheck !== 'undefined') {
+                    fieldRule.format =
+                        field.regexCheck === 'html'
+                            ? 'html'
+                            : field.regexCheck === 'text'
+                              ? 'text'
+                              : field.dataType;
+                } else {
+                    fieldRule.format = field.dataType === 'string' ? 'text' : field.dataType;
+                }
+
+                if (field.name.toLowerCase().includes('date')) {
+                    fieldRule.format = 'date: iso string';
+                }
+
+                if (field.name.toLowerCase().includes('tags')) {
+                    fieldRule.dataType = 'string[]';
+                    fieldRule.format = '[tag1, tag2, tag3]';
+                }
             }
 
             acc[key] = fieldRule;
-
             return acc;
         }, {});
 
-        const body = {
-            contentType: this.$store.contentType().variable,
-            structure: JSON.stringify(formStructure),
-            description: message,
-            language: this.$store.currentLocale().isoCode
-        };
+        console.log(formStructure);
+        // const body = {
+        //     contentType: this.$store.contentType().variable,
+        //     structure: JSON.stringify(formStructure),
+        //     description: message,
+        //     language: this.$store.currentLocale().isoCode
+        // };
 
-        this.openAiService.sendMessage(body).subscribe((response) => {
-            this.$latestFormAcceptChanges.set(JSON.stringify(this.form.value))
-            this.form.patchValue(JSON.parse(response));
-            this.isClippyThinking.set(false);
+        this.openAiService
+            .sendMessage({
+                topic: message,
+                tone: 'formal',
+                language: this.$store.currentLocale().isoCode,
+                formStructure
+            })
+            .subscribe((response) => {
+                this.$latestFormAcceptChanges.set(JSON.stringify(this.form.value));
+                console.log(response);
+                this.form.patchValue(response);
+                this.form.markAllAsTouched();
+                this.form.markAsDirty();
+                this.isClippyThinking.set(false);
 
-            // TODO: Show accept changes button
-            this.$showAcceptChangesButton.set(true);
-        });
+                // TODO: Show accept changes button
+                this.$showAcceptChangesButton.set(true);
+            });
     }
 
     acceptChanges() {
@@ -517,6 +546,6 @@ export class DotEditContentFormComponent implements OnInit {
 
     resetChanges() {
         this.$showAcceptChangesButton.set(false);
-        this.form.patchValue(JSON.parse(this.$latestFormAcceptChanges()));  
+        this.form.patchValue(JSON.parse(this.$latestFormAcceptChanges()));
     }
 }
