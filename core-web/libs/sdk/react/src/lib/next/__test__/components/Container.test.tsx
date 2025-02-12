@@ -2,8 +2,9 @@ import { render, screen } from '@testing-library/react';
 
 import { Container } from '@dotcms/react/next/components/Container/Container';
 import { DotCMSPageContext } from '@dotcms/react/next/contexts/DotCMSPageContext';
-import { DotCMSColumnContainer, DotCMSPageAsset } from '@dotcms/react/next/types';
 import * as utils from '@dotcms/react/next/utils';
+
+import { EMPTY_PAGE_ASSET, MOCK_CONTAINER, MOCK_PAGE_ASSET, MOCK_CONTAINER_DATA } from '../mock';
 
 jest.mock('@dotcms/react/next/components/Contentlet/Contentlet', () => ({
     Contentlet: ({ contentlet }: { contentlet: any }) => (
@@ -16,36 +17,6 @@ jest.mock('@dotcms/react/next/utils', () => ({
     getDotContainerAttributes: jest.fn(),
     getContentletsInContainer: jest.fn()
 }));
-
-const mockContainer: DotCMSColumnContainer = {
-    identifier: 'test-container-id',
-    uuid: 'test-uuid',
-    historyUUIDs: []
-};
-
-const MOCK_PAGE_ASSET = {
-    containers: {
-        'test-container-id': {
-            identifier: 'test-container-id',
-            title: 'Test Container'
-        }
-    },
-    contentlets: {
-        'test-container-id': [{ identifier: 'contentlet-1' }, { identifier: 'contentlet-2' }]
-    }
-} as unknown as DotCMSPageAsset;
-
-const emptyPageAsset = {
-    ...MOCK_PAGE_ASSET,
-    contentlets: { 'test-container-id': [] }
-};
-
-const MOCK_CONTAINER_DATA = {
-    uuid: 'test-uuid',
-    identifier: 'test-container-id',
-    acceptTypes: 'test-accept-types',
-    maxContentlets: 10
-};
 
 describe('Container', () => {
     const getContainersDataMock = utils.getContainersData as jest.Mock;
@@ -89,7 +60,7 @@ describe('Container', () => {
         );
 
         test('should contentlets when container has content', () => {
-            renderWithContext(<Container container={mockContainer} />);
+            renderWithContext(<Container container={MOCK_CONTAINER} />);
             const contentlets = screen.getAllByTestId('mock-contentlet');
             expect(contentlets).toHaveLength(2);
         });
@@ -99,8 +70,8 @@ describe('Container', () => {
         beforeEach(() => getContentletsInContainerMock.mockReturnValue([]));
 
         test('should show empty message when container has no contentlets', () => {
-            const { container } = renderWithContext(<Container container={mockContainer} />, {
-                dotCMSPageAsset: emptyPageAsset
+            const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                dotCMSPageAsset: EMPTY_PAGE_ASSET
             });
 
             const emptyContainerMessage = container.querySelector(
@@ -111,13 +82,8 @@ describe('Container', () => {
         });
 
         test('should show empty container with styles when container has no contentlets and is in dev mode', () => {
-            const emptyPageAsset = {
-                ...MOCK_PAGE_ASSET,
-                contentlets: { 'test-container-id': [] }
-            };
-
-            const { container } = renderWithContext(<Container container={mockContainer} />, {
-                pageAsset: emptyPageAsset,
+            const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                pageAsset: EMPTY_PAGE_ASSET,
                 mode: 'development'
             });
 
@@ -135,8 +101,8 @@ describe('Container', () => {
         });
 
         test('should not show empty container with styles when container has no contentlets and is in production mode', () => {
-            const { container } = renderWithContext(<Container container={mockContainer} />, {
-                pageAsset: emptyPageAsset,
+            const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                pageAsset: EMPTY_PAGE_ASSET,
                 mode: 'production'
             });
 
@@ -154,7 +120,7 @@ describe('Container', () => {
         });
 
         test('should show ContainerNotFound in dev mode when container is not found', () => {
-            const { container } = renderWithContext(<Container container={mockContainer} />, {
+            const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
                 pageAsset: MOCK_PAGE_ASSET,
                 mode: 'development'
             });
@@ -166,7 +132,7 @@ describe('Container', () => {
         });
 
         test('should not render ContainerNotFound in production when container is not found', () => {
-            const { container } = renderWithContext(<Container container={mockContainer} />, {
+            const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
                 pageAsset: MOCK_PAGE_ASSET,
                 mode: 'production'
             });

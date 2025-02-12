@@ -2,28 +2,9 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
 import { Row } from '@dotcms/react/next/components/Row/Row';
-import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '@dotcms/react/next/types';
+import { DotPageAssetLayoutRow } from '@dotcms/react/next/types';
 
-const MOCK_COLUMN: DotPageAssetLayoutColumn = {
-    left: 0,
-    width: 6,
-    leftOffset: 2,
-    preview: false,
-    widthPercent: 50,
-    styleClass: 'custom-column-class',
-    containers: [
-        {
-            identifier: 'container-1',
-            uuid: 'uuid-1',
-            historyUUIDs: []
-        },
-        {
-            identifier: 'container-2',
-            uuid: 'uuid-2',
-            historyUUIDs: []
-        }
-    ]
-};
+import { MOCK_COLUMN } from '../mock';
 
 const MOCK_ROW: DotPageAssetLayoutRow = {
     identifier: 1,

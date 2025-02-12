@@ -5,16 +5,7 @@ import { render, screen } from '@testing-library/react';
 import * as dotcmsClient from '@dotcms/client';
 import { DotCMSLayoutBodyRenderer } from '@dotcms/react/next/components/DotCMSLayoutBodyRenderer/DotCMSLayoutBodyRenderer';
 
-const MOCK_PAGE = {
-    layout: {
-        body: {
-            rows: [
-                { id: 1, content: 'Row 1 Content' },
-                { id: 2, content: 'Row 2 Content' }
-            ]
-        }
-    }
-} as any;
+import { MOCK_PAGE_ASSET } from '../mock';
 
 jest.mock('@dotcms/react/next/components/Row/Row', () => ({
     Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
@@ -23,7 +14,7 @@ jest.mock('@dotcms/react/next/components/Row/Row', () => ({
 describe('DotCMSLayoutBodyRenderer', () => {
     describe('With valid layout.body', () => {
         test('should render all rows when the page has a valid layout.body', () => {
-            render(<DotCMSLayoutBodyRenderer page={MOCK_PAGE} mode="production" />);
+            render(<DotCMSLayoutBodyRenderer page={MOCK_PAGE_ASSET} mode="production" />);
 
             const rows = screen.getAllByTestId('row');
             expect(rows).toHaveLength(2);
