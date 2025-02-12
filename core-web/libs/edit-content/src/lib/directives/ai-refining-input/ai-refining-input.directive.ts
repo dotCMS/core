@@ -18,6 +18,8 @@ import { DotAiMenuComponent } from '../dot-ai/dot-ai-menu/dot-ai-menu.component'
 export class AiRefiningInputDirective implements OnInit {
     private menuComponent!: ComponentRef<DotAiMenuComponent>;
 
+    language = input<string>('en-us', { alias: 'language' });
+
     //** show the ai menu button */
     $showAiMenu = input<boolean>(false, { alias: 'showAiMenu' });
 
@@ -41,13 +43,11 @@ export class AiRefiningInputDirective implements OnInit {
 
         // Observar cambios en el control
         this.#ngControl.control?.valueChanges.subscribe((value) => {
-            console.log('value', value);
             const hasContent = value?.trim().length > 0;
-            const isDirty = this.#ngControl.dirty;
 
             this.menuComponent.setInput('text', value || '');
-            this.menuComponent.setInput('disabled', !hasContent || !isDirty);
-            this.menuComponent.setInput('visible', isDirty);
+            this.menuComponent.setInput('disabled', !hasContent);
+            this.menuComponent.setInput('language', this.language());
         });
 
         this.menuComponent.instance.textChanged.subscribe((text) => {

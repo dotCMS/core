@@ -38,8 +38,10 @@
     }
     @case (fieldTypes.TEXT) {
         @defer (on immediate) {
+            {{ $currentLanguage() }}
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-text-field
+                [currentLanguage]="$currentLanguage()"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
         }
@@ -48,6 +50,7 @@
         @defer (on immediate) {
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-text-area
+                [currentLanguage]="$currentLanguage()"
                 [field]="field"
                 [attr.data-testId]="'field-' + field.variable" />
         }

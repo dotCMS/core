@@ -51,11 +51,11 @@ app.post("/ai/content-generator", async (c) => {
   const promptTemplate = ChatPromptTemplate.fromMessages([
     [
       "system",
-      "You are a content generator. Generate content that matches exactly the structure provided.",
+      "You are a content generator. Generate content that matches exactly the structure provided. Return only the requested fields with valid values.",
     ],
     [
       "user",
-      "Generate content for:\nTopic: {topic}\nTone: {tone}\nLanguage: {language}\n\nUse this exact structure: {structure}",
+      "Generate content for:\nTopic: {topic}\nTone: {tone}\nLanguage: {language}\n\nUse exactly this structure: {structure}",
     ],
   ]);
 
@@ -79,13 +79,22 @@ app.post("/ai/refine", async (c) => {
     ["system", system],
     [
       "user",
-      "Refine this text <text>{text}</text> in this tone: <tone>{tone}</tone> and language: <language>{language}</language>",
+      `Please improve the following text:
+
+Original text: "${text}"
+Desired tone: ${tone}
+Language: ${language}
+
+Please provide an improved version that maintains the core meaning.`,
     ],
   ]);
 
   const structuredLlm = model.withStructuredOutput(
     z.object({
-      title: z.string(),
+      text: z.string().describe("The improved version of the text"),
+      explanation: z
+        .string()
+        .describe("Brief explanation of what was improved"),
     })
   );
 
@@ -96,7 +105,7 @@ app.post("/ai/refine", async (c) => {
     tone,
     language,
   });
-
+  console.log(result);
   return c.json(result);
 });
 

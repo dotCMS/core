@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextareaModule } from 'primeng/inputtextarea';
@@ -22,4 +22,5 @@ import { AiRefiningInputDirective } from '../../directives/ai-refining-input/ai-
 })
 export class DotEditContentTextAreaComponent {
     @Input() field: DotCMSContentTypeField;
+    currentLanguage = input<string>('en-us');
 }

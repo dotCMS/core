@@ -50,6 +50,7 @@
                             <div class="dot-edit-content-form__layout-column" data-testId="column">
                                 @for (field of column.fields; track field) {
                                     <dot-edit-content-field
+                                        [currentLanguage]="$store.currentLocale()?.isoCode"
                                         [contentType]="contentType.variable"
                                         [contentlet]="contentlet"
                                         [field]="field"
@@ -72,7 +73,7 @@
             pButton
             (click)="goBack()"
             icon="pi pi-chevron-left"
-            class="p-button-tertiary p-button-rounded p-button-sm "></button>
+            class="p-button-tertiary p-button-rounded p-button-sm"></button>
     </div>
 </ng-template>
 

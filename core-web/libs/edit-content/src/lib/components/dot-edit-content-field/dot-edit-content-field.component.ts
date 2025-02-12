@@ -94,6 +94,8 @@ export class DotEditContentFieldComponent {
     readonly fieldTypes = FIELD_TYPES;
     readonly calendarTypes = CALENDAR_FIELD_TYPES as string[];
 
+    $currentLanguage = input<string>('en-us', { alias: 'currentLanguage' });
+
     /**
      * Whether to show the label.
      */

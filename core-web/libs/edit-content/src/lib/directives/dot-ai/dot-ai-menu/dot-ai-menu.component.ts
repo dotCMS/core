@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, input, Input, OnInit, Output } from '@angular/core';
+import { Component, inject, input, OnInit, output } from '@angular/core';
 import { DotAiService } from '@dotcms/data-access';
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -8,16 +8,15 @@ import { MenuModule } from 'primeng/menu';
     selector: 'dot-ai-menu',
     template: `
         <p-menu #menu [model]="items" [popup]="true" [appendTo]="'body'" />
+
         <p-button
-            *ngIf="visible()"
             #btn
             (onClick)="menu.toggle($event)"
             [text]="true"
             severity="secondary"
             class="ai-trigger-button"
-            aria-label="AI Actions"
-            [class.disabled]="disabled()"
-            [disabled]="disabled()">
+            [disabled]="disabled()"
+            aria-label="AI Actions">
             <svg
                 class="ai-icon"
                 width="20"
@@ -86,15 +85,15 @@ import { MenuModule } from 'primeng/menu';
     imports: [MenuModule, ButtonModule]
 })
 export class DotAiMenuComponent implements OnInit {
-    @Input() text: string;
     items: MenuItem[] | undefined;
 
-    @Output() textChanged = new EventEmitter<string>();
+    textChanged = output<string>();
 
     #dotAiService = inject(DotAiService);
 
     disabled = input<boolean>(true);
-    visible = input<boolean>(false);
+    text = input<string>('');
+    language = input<string>('en-us');
 
     ngOnInit() {
         this.items = [
@@ -105,9 +104,9 @@ export class DotAiMenuComponent implements OnInit {
                         label: 'Improve writing',
                         command: () => {
                             this.refineText(
-                                'You are a text refiner. You will be given a text, a tone, and a language. You will need to refine the text to the tone and language.',
+                                'You are an expert content improver. Your task is to enhance the text while maintaining its core meaning. Focus on clarity, engagement, and effectiveness.',
                                 'formal',
-                                'en'
+                                this.language()
                             );
                         }
                     },
@@ -115,9 +114,9 @@ export class DotAiMenuComponent implements OnInit {
                         label: 'Fix spelling and grammar',
                         command: () => {
                             this.refineText(
-                                'You are an expert proofreader. You will be given a text, and you will need to fix the spelling and grammar.',
+                                'You are an expert proofreader. Your task is to correct any spelling and grammatical errors while maintaining the original meaning. Only fix errors, do not rewrite the content.',
                                 'formal',
-                                'en'
+                                this.language()
                             );
                         }
                     },
@@ -125,9 +124,9 @@ export class DotAiMenuComponent implements OnInit {
                         label: 'Convert to English (US)',
                         command: () => {
                             this.refineText(
-                                'You are an expert translator. You will be given a text, and you will need to convert it to US English.',
+                                'You are an expert translator. Your task is to convert this text to US English while preserving the original meaning and tone. Do not add or remove information.',
                                 'formal',
-                                'en'
+                                this.language()
                             );
                         }
                     },
@@ -135,9 +134,9 @@ export class DotAiMenuComponent implements OnInit {
                         label: 'Simplify language',
                         command: () => {
                             this.refineText(
-                                'You are an expert simplifier. You will be given a text, and you will need to simplify it.',
-                                'formal',
-                                'en'
+                                'You are an expert in clear communication. Your task is to simplify this text to make it more accessible and easier to understand. Maintain the core meaning but use simpler language.',
+                                'simple',
+                                this.language()
                             );
                         }
                     }
@@ -152,7 +151,7 @@ export class DotAiMenuComponent implements OnInit {
                             this.refineText(
                                 'You are an expert writer. You will be given a text, and you will need to write it in a friendly tone.',
                                 'friendly',
-                                'en'
+                                this.language()
                             );
                         }
                     },
@@ -162,7 +161,7 @@ export class DotAiMenuComponent implements OnInit {
                             this.refineText(
                                 'You are an expert writer. You will be given a text, and you will need to write it in a casual tone.',
                                 'casual',
-                                'en'
+                                this.language()
                             );
                         }
                     },
@@ -172,7 +171,7 @@ export class DotAiMenuComponent implements OnInit {
                             this.refineText(
                                 'You are an expert writer. You will be given a text, and you will need to write it in a professional tone.',
                                 'professional',
-                                'en'
+                                this.language()
                             );
                         }
                     }
@@ -187,7 +186,7 @@ export class DotAiMenuComponent implements OnInit {
                             this.refineText(
                                 'You are an expert SEO writer. You will be given a text, and you will need to generate a SEO friendly title.',
                                 'formal',
-                                'en'
+                                this.language()
                             );
                         }
                     },
@@ -197,7 +196,7 @@ export class DotAiMenuComponent implements OnInit {
                             this.refineText(
                                 'You are an expert headline writer. You will be given a text, and you will need to generate a catchy headline.',
                                 'formal',
-                                'en'
+                                this.language()
                             );
                         }
                     },
@@ -207,7 +206,7 @@ export class DotAiMenuComponent implements OnInit {
                             this.refineText(
                                 'You are an expert URL title writer. You will be given a text, and you will need to generate a URL friendly title.',
                                 'formal',
-                                'en'
+                                this.language()
                             );
                         }
                     }
@@ -220,12 +219,13 @@ export class DotAiMenuComponent implements OnInit {
         this.#dotAiService
             .refineText({
                 system: system,
-                text: this.text,
+                text: this.text(),
                 tone: tone,
                 language: language
             })
             .subscribe((response: any) => {
-                this.textChanged.emit(response.title);
+                console.log('response', response);
+                this.textChanged.emit(response.text);
             });
     }
 
