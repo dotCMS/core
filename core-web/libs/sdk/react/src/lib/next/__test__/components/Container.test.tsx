@@ -1,18 +1,17 @@
 import { render, screen } from '@testing-library/react';
 
-import { Container } from '../components/Container/Container';
-import { DotCMSPageContext } from '../contexts/DotCMSPageContext';
-import { DotCMSColumnContainer, DotCMSPageAsset } from '../types';
-import * as utils from '../utils';
+import { Container } from '../../../next/components/Container/Container';
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
+import { DotCMSColumnContainer, DotCMSPageAsset } from '../../types';
+import * as utils from '../../utils';
 
-// Needs to fix these tests
-jest.mock('../components/Contentlet/Contentlet', () => ({
+jest.mock('../../../next/components/Contentlet/Contentlet', () => ({
     Contentlet: ({ contentlet }: { contentlet: any }) => (
         <div data-testid="mock-contentlet">{contentlet.identifier}</div>
     )
 }));
 
-jest.mock('../utils', () => ({
+jest.mock('../../../next/utils', () => ({
     getContainersData: jest.fn(),
     getDotContainerAttributes: jest.fn(),
     getContentletsInContainer: jest.fn()

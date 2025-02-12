@@ -2,23 +2,23 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import { Contentlet } from '../components/Contentlet/Contentlet';
-import { DotCMSPageContext } from '../contexts/DotCMSPageContext';
-import { useCheckVisibleContent } from '../hooks/useCheckVisibleContent';
-import { getDotContentletAttributes } from '../utils';
+import { Contentlet } from '../../../next/components/Contentlet/Contentlet';
+import { DotCMSPageContext } from '../../../next/contexts/DotCMSPageContext';
+import { useCheckVisibleContent } from '../../../next/hooks/useCheckVisibleContent';
+import { getDotContentletAttributes } from '../../../next/utils';
 
-jest.mock('../components/FallbackComponent/FallbackComponent', () => ({
+jest.mock('../../../next/components/FallbackComponent/FallbackComponent', () => ({
     FallbackComponent: ({ contentlet }: any) => (
         <div data-testid="fallback">Fallback Component: {contentlet.contentType}</div>
     ),
     NoComponentType: () => <div>No Component</div>
 }));
 
-jest.mock('../hooks/useCheckVisibleContent', () => ({
+jest.mock('../../../next/hooks/useCheckVisibleContent', () => ({
     useCheckVisibleContent: jest.fn(() => false)
 }));
 
-jest.mock('../utils', () => ({
+jest.mock('../../../next/utils', () => ({
     getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' }))
 }));
 

@@ -5,7 +5,7 @@ import {
     getContainersData,
     getContentletsInContainer,
     getDotContainerAttributes
-} from './index';
+} from '../../next/utils';
 
 describe('utils', () => {
     describe('combineClasses', () => {
