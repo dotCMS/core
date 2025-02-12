@@ -1,7 +1,7 @@
 @if ($store.isLoaded() || $store.isSaving()) {
     @let contentType = $store.contentType();
     @let variable = contentType.variable;
-    @let showSidebar = $store.showSidebar();
+    @let showSidebar = $store.isSidebarOpen();
     @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
 
     <div class="edit-content-layout__topBar" data-testId="edit-content-layout__topBar">

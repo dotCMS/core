@@ -1,4 +1,4 @@
-import { UVE_MODE, CLIENT_ACTIONS } from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
@@ -252,4 +252,4 @@ export interface ReorderMenuPayload {
     depth: number;
 }
 
-export type DotPageAssetParams = DotPageApiParams & { editorMode?: UVE_MODE };
+export type DotPageAssetParams = DotPageApiParams;

@@ -49,7 +49,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
     ],
 
     host: {
-        '[class.edit-content--with-sidebar]': '$store.showSidebar()'
+        '[class.edit-content--with-sidebar]': '$store.isSidebarOpen()'
     },
     templateUrl: './dot-edit-content.layout.component.html',
     styleUrls: ['./dot-edit-content.layout.component.scss'],
