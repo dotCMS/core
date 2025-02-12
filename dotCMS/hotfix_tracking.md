@@ -104,4 +104,5 @@ This maintenance release includes the following code fixes:
 98. https://github.com/dotCMS/core/issues/28365 : Add Host to the reference tab on Content #28365
 99. https://github.com/dotCMS/core/issues/28579 : Add a way to bulk Reset Permissions #28579
 100. https://github.com/dotCMS/core/issues/28939 : New Divider Button under Workflows should be under FF #28939
+101. https://github.com/dotCMS/core/issues/30761 : Data is not getting saved in the workflow #30761
 
