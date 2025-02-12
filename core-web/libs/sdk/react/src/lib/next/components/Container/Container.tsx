@@ -62,15 +62,17 @@ export function Container({ container }: ContainerProps) {
 
     return (
         <div {...dotAttributes} style={isEmpty ? EMPTY_CONTAINER_STYLE : {}}>
-            {isEmpty
-                ? 'This container is empty.'
-                : contentlets.map((contentlet: DotCMSContentlet) => (
-                      <Contentlet
-                          key={contentlet.identifier}
-                          contentlet={contentlet}
-                          container={JSON.stringify(containerData)}
-                      />
-                  ))}
+            {isEmpty ? (
+                <span data-testid="empty-container-message">This container is empty.</span>
+            ) : (
+                contentlets.map((contentlet: DotCMSContentlet) => (
+                    <Contentlet
+                        key={contentlet.identifier}
+                        contentlet={contentlet}
+                        container={JSON.stringify(containerData)}
+                    />
+                ))
+            )}
         </div>
     );
 }
@@ -94,7 +96,7 @@ const ContainerNoFound = ({ identifier }: { identifier: string }) => {
     }
 
     return (
-        <div style={EMPTY_CONTAINER_STYLE}>
+        <div data-testid="container-not-found" style={EMPTY_CONTAINER_STYLE}>
             This container with identifier {identifier} was not found.
         </div>
     );

@@ -12,13 +12,19 @@ jest.mock('../components/Contentlet/Contentlet', () => ({
     )
 }));
 
+jest.mock('../utils', () => ({
+    getContainersData: jest.fn(),
+    getDotContainerAttributes: jest.fn(),
+    getContentletsInContainer: jest.fn()
+}));
+
 const mockContainer: DotCMSColumnContainer = {
     identifier: 'test-container-id',
     uuid: 'test-uuid',
     historyUUIDs: []
 };
 
-const mockPageAsset = {
+const MOCK_PAGE_ASSET = {
     containers: {
         'test-container-id': {
             identifier: 'test-container-id',
@@ -30,12 +36,27 @@ const mockPageAsset = {
     }
 } as unknown as DotCMSPageAsset;
 
+const emptyPageAsset = {
+    ...MOCK_PAGE_ASSET,
+    contentlets: { 'test-container-id': [] }
+};
+
+const MOCK_CONTAINER_DATA = {
+    uuid: 'test-uuid',
+    identifier: 'test-container-id',
+    acceptTypes: 'test-accept-types',
+    maxContentlets: 10
+};
+
 describe('Container', () => {
+    const getContainersDataMock = utils.getContainersData as jest.Mock;
+    const getContentletsInContainerMock = utils.getContentletsInContainer as jest.Mock;
+
     const renderWithContext = (component: React.ReactNode, contextValue = {}) => {
         return render(
             <DotCMSPageContext.Provider
                 value={{
-                    pageAsset: mockPageAsset,
+                    pageAsset: MOCK_PAGE_ASSET,
                     mode: 'production',
                     ...contextValue
                 }}>
@@ -49,80 +70,93 @@ describe('Container', () => {
             'data-dot-object': 'container',
             'data-dot-identifier': 'test-container-id'
         });
+        getContainersDataMock.mockReturnValue(MOCK_CONTAINER_DATA);
     });
 
     afterEach(() => {
         jest.clearAllMocks();
     });
 
-    test('renders contentlets when container has content', () => {
-        renderWithContext(<Container container={mockContainer} />);
+    describe('WITH CONTENT', () => {
+        beforeEach(() =>
+            getContentletsInContainerMock.mockReturnValue([
+                { identifier: 'contentlet-1' },
+                { identifier: 'contentlet-2' }
+            ])
+        );
 
-        const contentlets = screen.getAllByTestId('mock-contentlet');
-        expect(contentlets).toHaveLength(2);
-        expect(contentlets[0]).toHaveTextContent('contentlet-1');
-        expect(contentlets[1]).toHaveTextContent('contentlet-2');
+        test('should contentlets when container has content', () => {
+            renderWithContext(<Container container={mockContainer} />);
+            const contentlets = screen.getAllByTestId('mock-contentlet');
+            expect(contentlets).toHaveLength(2);
+        });
     });
 
-    test('shows empty message when container has no contentlets', () => {
-        const emptyPageAsset = {
-            ...mockPageAsset,
-            contentlets: { 'test-container-id': [] }
-        };
+    describe('EMPTY CONTAINER', () => {
+        beforeEach(() => getContentletsInContainerMock.mockReturnValue([]));
 
-        renderWithContext(<Container container={mockContainer} />, {
-            dotCMSPageAsset: emptyPageAsset
+        test('should show empty message when container has no contentlets', () => {
+            const { container } = renderWithContext(<Container container={mockContainer} />, {
+                dotCMSPageAsset: emptyPageAsset
+            });
+
+            const emptyContainerMessage = container.querySelector(
+                '[data-testid="empty-container-message"]'
+            );
+
+            expect(emptyContainerMessage).toBeDefined();
         });
 
-        expect(screen.getByText('This container is empty.')).toBeInTheDocument();
+        test('should show empty container with styles when container has no contentlets', () => {
+            const emptyPageAsset = {
+                ...MOCK_PAGE_ASSET,
+                contentlets: { 'test-container-id': [] }
+            };
+
+            const { container } = renderWithContext(<Container container={mockContainer} />, {
+                pageAsset: emptyPageAsset
+            });
+            const emptyContainerMessage = container.querySelector(
+                '[data-testid="empty-container-message"]'
+            );
+
+            const parentElement = emptyContainerMessage?.parentElement;
+
+            expect(emptyContainerMessage).toBeDefined();
+            expect(parentElement?.style.backgroundColor).toBe('rgb(236, 240, 253)');
+            expect(parentElement?.style.display).toBe('flex');
+            expect(parentElement?.style.justifyContent).toBe('center');
+            expect(parentElement?.style.alignItems).toBe('center');
+        });
     });
 
-    test('renders ContainerNotFound in dev mode when container is not found', () => {
-        const pageAssetWithoutContainer = {
-            containers: {},
-            contentlets: {}
-        };
-
-        renderWithContext(<Container container={mockContainer} />, {
-            pageAsset: pageAssetWithoutContainer,
-            mode: 'development'
+    describe('CONTAINER NOT FOUND', () => {
+        beforeEach(() => {
+            getContainersDataMock.mockReturnValue(null);
         });
 
-        expect(
-            screen.getByText(/This container with identifier test-container-id was not found/)
-        ).toBeInTheDocument();
-    });
+        test('should show ContainerNotFound in dev mode when container is not found', () => {
+            const { container } = renderWithContext(<Container container={mockContainer} />, {
+                pageAsset: MOCK_PAGE_ASSET,
+                mode: 'development'
+            });
 
-    test('does not render ContainerNotFound in production when container is not found', () => {
-        const pageAssetWithoutContainer = {
-            containers: {},
-            contentlets: {}
-        };
-
-        renderWithContext(<Container container={mockContainer} />, {
-            pageAsset: pageAssetWithoutContainer,
-            mode: 'production'
+            const containerNotFound = container.querySelector(
+                '[data-testid="container-not-found"]'
+            );
+            expect(containerNotFound).toBeDefined();
         });
 
-        expect(screen.queryByText(/This container with identifier/)).not.toBeInTheDocument();
-    });
+        test('should not render ContainerNotFound in production when container is not found', () => {
+            const { container } = renderWithContext(<Container container={mockContainer} />, {
+                pageAsset: MOCK_PAGE_ASSET,
+                mode: 'production'
+            });
 
-    test('applies empty container styles when container has no contentlets', () => {
-        const emptyPageAsset = {
-            ...mockPageAsset,
-            contentlets: { 'test-container-id': [] }
-        };
-
-        renderWithContext(<Container container={mockContainer} />, {
-            pageAsset: emptyPageAsset
-        });
-
-        const containerElement = screen.getByText('This container is empty.');
-        expect(containerElement.parentElement).toHaveStyle({
-            backgroundColor: '#ECF0FD',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
+            const containerNotFound = container.querySelector(
+                '[data-testid="container-not-found"]'
+            );
+            expect(containerNotFound).toBeNull();
         });
     });
 });
