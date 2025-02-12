@@ -3,8 +3,7 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
 import * as dotcmsClient from '@dotcms/client';
-
-import { DotCMSLayoutBodyRenderer } from '../../../next/components/DotCMSLayoutBodyRenderer/DotCMSLayoutBodyRenderer';
+import { DotCMSLayoutBodyRenderer } from '@dotcms/react/next/components/DotCMSLayoutBodyRenderer/DotCMSLayoutBodyRenderer';
 
 const MOCK_PAGE = {
     layout: {
@@ -17,7 +16,7 @@ const MOCK_PAGE = {
     }
 } as any;
 
-jest.mock('../../../next/components/Row/Row', () => ({
+jest.mock('@dotcms/react/next/components/Row/Row', () => ({
     Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
 }));
 

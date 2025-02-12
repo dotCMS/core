@@ -1,17 +1,17 @@
 import { render, screen } from '@testing-library/react';
 
-import { Container } from '../../../next/components/Container/Container';
-import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
-import { DotCMSColumnContainer, DotCMSPageAsset } from '../../types';
-import * as utils from '../../utils';
+import { Container } from '@dotcms/react/next/components/Container/Container';
+import { DotCMSPageContext } from '@dotcms/react/next/contexts/DotCMSPageContext';
+import { DotCMSColumnContainer, DotCMSPageAsset } from '@dotcms/react/next/types';
+import * as utils from '@dotcms/react/next/utils';
 
-jest.mock('../../../next/components/Contentlet/Contentlet', () => ({
+jest.mock('@dotcms/react/next/components/Contentlet/Contentlet', () => ({
     Contentlet: ({ contentlet }: { contentlet: any }) => (
         <div data-testid="mock-contentlet">{contentlet.identifier}</div>
     )
 }));
 
-jest.mock('../../../next/utils', () => ({
+jest.mock('@dotcms/react/next/utils', () => ({
     getContainersData: jest.fn(),
     getDotContainerAttributes: jest.fn(),
     getContentletsInContainer: jest.fn()

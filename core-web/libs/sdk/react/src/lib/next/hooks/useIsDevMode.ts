@@ -1,8 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 
 import { isInsideEditor } from '@dotcms/client';
-
-import { DotCMSPageContext, RendererMode } from '../contexts/DotCMSPageContext';
+import { DotCMSPageContext, RendererMode } from '@dotcms/react/next/contexts/DotCMSPageContext';
 
 /**
  * A React hook that determines if the current environment is in development mode.

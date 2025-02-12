@@ -3,13 +3,13 @@ import {
     DotCMSContentlet,
     DotCMSColumnContainer,
     DotCMSPageAsset
-} from '../types';
+} from '@dotcms/react/next/types';
 
 /**
  * Interface representing the data needed for container editing
- * @interface ContainerEditData
+ * @interface EditableContainerData
  */
-interface ContainerEditData {
+interface EditableContainerData {
     uuid: string;
     identifier: string;
     acceptTypes: string;
@@ -138,7 +138,7 @@ export function getDotContentletAttributes(
  * @param {DotCMSPageAsset} dotCMSPageAsset - The page asset containing all containers data
  * @param {DotCMSColumnContainer} columContainer - The container reference from the layout
  * @throws {Error} When page asset is invalid or container is not found
- * @returns {ContainerEditData} Formatted container data for editing
+ * @returns {EditableContainerData} Formatted container data for editing
  *
  * @example
  * const containerData = getContainersData(pageAsset, containerRef);
@@ -147,7 +147,7 @@ export function getDotContentletAttributes(
 export const getContainersData = (
     dotCMSPageAsset: DotCMSPageAsset,
     columContainer: DotCMSColumnContainer
-): ContainerEditData | null => {
+): EditableContainerData | null => {
     const { identifier, uuid } = columContainer;
     const dotContainer = dotCMSPageAsset.containers[identifier];
 
@@ -207,7 +207,7 @@ export const getContentletsInContainer = (
  * Generates the required DotCMS data attributes for a container element.
  * These attributes are used by DotCMS for container identification and functionality.
  *
- * @param {ContainerEditData} params - Container data including uuid, identifier, acceptTypes, and maxContentlets
+ * @param {EditableContainerData} params - Container data including uuid, identifier, acceptTypes, and maxContentlets
  * @returns {DotContainerAttributes} Object containing all necessary data attributes
  *
  * @example
@@ -224,7 +224,7 @@ export function getDotContainerAttributes({
     identifier,
     acceptTypes,
     maxContentlets
-}: ContainerEditData): DotContainerAttributes {
+}: EditableContainerData): DotContainerAttributes {
     return {
         'data-testid': 'dot-container',
         'data-dot-object': 'container',

@@ -1,9 +1,8 @@
 import { renderHook } from '@testing-library/react';
 
 import { isInsideEditor } from '@dotcms/client';
-
-import { DotCMSPageContext, RendererMode } from '../../contexts/DotCMSPageContext';
-import { useIsDevMode } from '../../hooks/useIsDevMode';
+import { DotCMSPageContext, RendererMode } from '@dotcms/react/next/contexts/DotCMSPageContext';
+import { useIsDevMode } from '@dotcms/react/next/hooks/useIsDevMode';
 
 const Wrapper = ({ children, mode = 'production' }: any) => {
     return (

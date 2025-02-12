@@ -3,11 +3,11 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
-import { FallbackComponent } from '../../../next/components/FallbackComponent/FallbackComponent';
-import * as useIsDevModeHook from '../../../next/hooks/useIsDevMode';
-import { DotCMSContentlet } from '../../types';
+import { FallbackComponent } from '@dotcms/react/next/components/FallbackComponent/FallbackComponent';
+import * as useIsDevModeHook from '@dotcms/react/next/hooks/useIsDevMode';
+import { DotCMSContentlet } from '@dotcms/react/next/types';
 
-jest.mock('../../../next/hooks/useIsDevMode', () => ({
+jest.mock('@dotcms/react/next/hooks/useIsDevMode', () => ({
     useIsDevMode: jest.fn()
 }));
 

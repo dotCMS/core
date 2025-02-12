@@ -2,8 +2,8 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import { Column } from '../../../next/components/Column/Column';
-import { DotPageAssetLayoutColumn } from '../../../next/types';
+import { Column } from '@dotcms/react/next/components/Column/Column';
+import { DotPageAssetLayoutColumn } from '@dotcms/react/next/types';
 
 const MOCK_COLUMN: DotPageAssetLayoutColumn = {
     left: 0,
@@ -26,7 +26,7 @@ const MOCK_COLUMN: DotPageAssetLayoutColumn = {
     ]
 };
 
-jest.mock('../../../next/components/Container/Container', () => ({
+jest.mock('@dotcms/react/next/components/Container/Container', () => ({
     Container: ({ container }: any) => (
         <div data-testid="mock-container" data-container-id={container.identifier}>
             Mock Container
