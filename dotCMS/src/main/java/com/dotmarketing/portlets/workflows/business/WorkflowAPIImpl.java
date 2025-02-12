@@ -228,6 +228,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				NotifyAssigneeActionlet.class,
 				UnarchiveContentActionlet.class,
 				ResetTaskActionlet.class,
+				ResetPermissionsActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
 				TwitterActionlet.class,
