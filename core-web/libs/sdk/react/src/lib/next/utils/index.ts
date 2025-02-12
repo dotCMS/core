@@ -5,6 +5,45 @@ import {
     DotCMSPageAsset
 } from '../types';
 
+/**
+ * Interface representing the data needed for container editing
+ * @interface ContainerEditData
+ */
+interface ContainerEditData {
+    uuid: string;
+    identifier: string;
+    acceptTypes: string;
+    maxContentlets: number;
+    variantId?: string;
+}
+
+/**
+ * Interface representing the data attributes of a DotCMS container.
+ * @interface DotContainerAttributes
+ */
+export interface DotContainerAttributes {
+    'data-testid': string;
+    'data-dot-object': string;
+    'data-dot-accept-types': string;
+    'data-dot-identifier': string;
+    'data-max-contentlets': string;
+    'data-dot-uuid': string;
+}
+
+/**
+ * Interface representing the data attributes of a DotCMS contentlet.
+ * @interface DotContentletAttributes
+ */
+export interface DotContentletAttributes {
+    'data-dot-identifier': string;
+    'data-dot-basetype': string;
+    'data-dot-title': string;
+    'data-dot-inode': string;
+    'data-dot-type': string;
+    'data-dot-container': string;
+    'data-dot-on-number-of-pages': string;
+}
+
 const endClassMap: Record<number, string> = {
     1: 'col-end-1',
     2: 'col-end-2',
@@ -79,7 +118,7 @@ export const getColumnPositionClasses = (column: DotPageAssetLayoutColumn) => {
 export function getDotContentletAttributes(
     contentlet: DotCMSContentlet,
     container: string
-): Record<string, string> {
+): DotContentletAttributes {
     return {
         'data-dot-identifier': contentlet?.identifier,
         'data-dot-basetype': contentlet?.baseType,
@@ -89,18 +128,6 @@ export function getDotContentletAttributes(
         'data-dot-container': container,
         'data-dot-on-number-of-pages': contentlet?.onNumberOfPages
     };
-}
-
-/**
- * Interface representing the data needed for container editing
- * @interface ContainerEditData
- */
-interface ContainerEditData {
-    uuid: string;
-    identifier: string;
-    acceptTypes: string;
-    maxContentlets: number;
-    variantId?: string;
 }
 
 /**
@@ -181,7 +208,7 @@ export const getContentletsInContainer = (
  * These attributes are used by DotCMS for container identification and functionality.
  *
  * @param {ContainerEditData} params - Container data including uuid, identifier, acceptTypes, and maxContentlets
- * @returns {Record<string, string | number>} Object containing all necessary data attributes
+ * @returns {DotContainerAttributes} Object containing all necessary data attributes
  *
  * @example
  * const attributes = getDotContainerAttributes({
@@ -197,7 +224,7 @@ export function getDotContainerAttributes({
     identifier,
     acceptTypes,
     maxContentlets
-}: ContainerEditData): Record<string, string> {
+}: ContainerEditData): DotContainerAttributes {
     return {
         'data-testid': 'dot-container',
         'data-dot-object': 'container',

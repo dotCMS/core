@@ -68,7 +68,11 @@ describe('Container', () => {
     beforeEach(() => {
         jest.spyOn(utils, 'getDotContainerAttributes').mockReturnValue({
             'data-dot-object': 'container',
-            'data-dot-identifier': 'test-container-id'
+            'data-dot-identifier': 'test-container-id',
+            'data-dot-accept-types': 'test-accept-types',
+            'data-max-contentlets': '10',
+            'data-dot-uuid': 'test-uuid',
+            'data-testid': 'dot-container'
         });
         getContainersDataMock.mockReturnValue(MOCK_CONTAINER_DATA);
     });
