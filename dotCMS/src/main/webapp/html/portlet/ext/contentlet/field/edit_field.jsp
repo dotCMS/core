@@ -117,9 +117,9 @@
     }
 </style>
 
-<div class="fieldWrapper" > 
-    <% 
-    final com.dotcms.contenttype.model.field.Field newField2 = new LegacyFieldTransformer(field).from(); 
+<div class="fieldWrapper" >
+    <%
+    final com.dotcms.contenttype.model.field.Field newField2 = new LegacyFieldTransformer(field).from();
     final com.dotcms.contenttype.model.field.FieldVariable hideLabelFieldVar = newField2.fieldVariablesMap().get("hideLabel");
     if (hideLabelFieldVar == null || !Boolean.parseBoolean(hideLabelFieldVar.value())) { %>
         <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
@@ -466,7 +466,7 @@
                         }
                     }
             %>
-                <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" style="<%= fullScreenHeight%>" >
+                <div class="wysiwyg-container" id="wysiwyg-container-<%=field.getVelocityVarName()%>" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" style="<%= fullScreenHeight%>" >
             <% if (dragAndDrop) {  %>
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
             <% }  %>
