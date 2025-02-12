@@ -502,7 +502,7 @@ public class ContainerAPITest extends ContentletBaseTest {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    //@Test
+    @Test
     public void tryToGetLiveContainerWithLimitedUser () throws DotDataException, DotSecurityException {
         final User limitedUser = new UserDataGen().nextPersisted();
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
@@ -558,7 +558,6 @@ public class ContainerAPITest extends ContentletBaseTest {
         } finally {
             APILocator.getHostAPI().makeDefault(originalDefaultHost, APILocator.systemUser(), false);
             APILocator.getPermissionAPI().save(originalSystemHostPermission, systemHost, APILocator.systemUser(), false);
-            System.out.println();
         }
 
     }
