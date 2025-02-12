@@ -37,9 +37,8 @@ import { debounceTime } from 'rxjs/operators';
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
+import { dotVelocityLanguageDefinition } from '@dotcms/edit-content/custom-languages/velocity-monaco-language';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
-
-import { VELOCITY_TOKENIZER } from './languages';
 
 import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 
@@ -151,14 +150,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
             mimetypes: ['text/x-velocity']
         });
 
-        window.monaco.languages.setMonarchTokensProvider('velocity', {
-            defaultToken: '',
-            tokenPostfix: '.velocity',
-            ignoreCase: true,
-            tokenizer: {
-                ...VELOCITY_TOKENIZER
-            }
-        } as monaco.languages.IMonarchLanguage);
+        window.monaco.languages.setMonarchTokensProvider('velocity', dotVelocityLanguageDefinition);
     }
 
     onSubmit(): void {

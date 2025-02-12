@@ -1,4 +1,4 @@
-const HTML_BASE_TOKENIZER_ROOT = [
+export const HTML_BASE_TOKENIZER_ROOT = [
     [/<!DOCTYPE/, 'metatag', '@doctype'],
     [/<!--/, 'comment', '@comment'],
     [/(<)((?:[\w-]+:)?[\w-]+)(\s*)(\/>)/, ['delimiter', 'tag', '', 'delimiter']],
@@ -8,9 +8,9 @@ const HTML_BASE_TOKENIZER_ROOT = [
     [/(<\/)((?:[\w-]+:)?[\w-]+)/, ['delimiter', { token: 'tag', next: '@otherTag' }]],
     [/</, 'delimiter'],
     [/[^<#$]+/, ''] // text
-];
+] as monaco.languages.IMonarchLanguageRule[];
 
-const HTML_BASE_TOKENIZER_STATES = {
+export const HTML_BASE_TOKENIZER_STATES = {
     doctype: [
         [/[^>]+/, 'metatag.content'],
         [/>/, 'metatag', '@pop']
@@ -147,32 +147,4 @@ const HTML_BASE_TOKENIZER_STATES = {
         [/<\/style/, { token: '@rematch', next: '@pop', nextEmbedded: '@pop' }],
         [/[^<]+/, '']
     ]
-};
-
-const VELOCITY_TOKENIZER_ROOT = [
-    // ========== Velocity-specific tokens ==========
-    // Velocity directives
-    [
-        /#(set|if|else|elseif|end|foreach|include|parse|stop|break|evaluate|macro|define)\b/,
-        'keyword'
-    ],
-
-    // Velocity variables
-    [/\$!?\{[^}]+}/, 'variable'],
-    [/\$!?[a-zA-Z_][a-zA-Z0-9_]*/, 'variable'],
-
-    // ========== HTML tokenizer (from Monaco) ==========
-    // The rules below should match Monaco's HTML tokenizer
-    ...HTML_BASE_TOKENIZER_ROOT
-];
-
-export const VELOCITY_TOKENIZER = {
-    root: [
-        // ========== Velocity-specific tokens ==========
-        ...VELOCITY_TOKENIZER_ROOT,
-        // ========== HTML tokenizer (from Monaco) ==========
-        ...HTML_BASE_TOKENIZER_ROOT
-    ],
-    // ========== HTML states (from Monaco) ==========
-    ...HTML_BASE_TOKENIZER_STATES
 };
