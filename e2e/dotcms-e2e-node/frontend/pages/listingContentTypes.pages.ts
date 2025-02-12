@@ -28,7 +28,7 @@ export class ListingContentTypesPage {
   }
 
   async addNewContentType(name: string) {
-    await this.page.getByRole("button", { name: "" }).click();
+    await this.page.getByTestId("dot-action-button").click();
     await this.page.getByLabel("Content").locator("a").click();
     await this.page
       .locator('[data-test-id="content-type__new-content-banner"] div')
@@ -37,6 +37,12 @@ export class ListingContentTypesPage {
 
     await this.page.getByLabel("Content Name").fill(name);
     await this.page.getByTestId("dotDialogAcceptAction").click();
+    await this.page.waitForResponse((response) => {
+      return (
+        response.status() === 200 &&
+        response.url().includes("/api/v1/contenttype")
+      );
+    });
   }
 
   async goToAddNewContentType(contentType: string) {
@@ -68,7 +74,10 @@ export class ListingContentTypesPage {
       .getByTestId(`row-${capitalized}`)
       .getByTestId("dot-menu-button")
       .click();
-    await this.page.getByLabel("Delete").locator("a").click();
-    await this.page.getByRole("button", { name: "Delete" }).click();
+    await this.page
+      .locator(".p-menu-overlay")
+      .getByLabel("Delete")
+      .locator("a")
+      .click();
   }
 }

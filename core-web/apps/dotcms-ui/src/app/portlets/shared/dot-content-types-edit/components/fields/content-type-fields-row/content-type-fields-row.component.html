@@ -7,6 +7,7 @@
         [(dragulaModel)]="column.fields"
         [class.empty]="!column.fields.length"
         class="row-columns__item"
+        [attr.data-testid]="'fields-bag-' + i"
         data-drag-type="target"
         dragula="fields-bag">
         <p-button

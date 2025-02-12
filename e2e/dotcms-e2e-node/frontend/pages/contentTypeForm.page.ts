@@ -1,34 +1,57 @@
 import { Page } from "@playwright/test";
+import {
+  FieldsTypes,
+  TextField,
+  SiteorHostField,
+} from "@models/newContentType.model";
 
 export class ContentTypeFormPage {
-  private dropZone = this.page.locator('div[dragula="fields-bag"]');
-  private dotDialogInput = this.page.locator("input#name");
-  private textFieldItem = this.page.locator(
-    "[data-clazz='com.dotcms.contenttype.model.field.ImmutableTextField']",
-  );
-  private siteOrFolderFieldItem = this.page.locator(
-    "[data-clazz='com.dotcms.contenttype.model.field.ImmutableHostFolderField']",
-  );
-  private dotDialogAcceptAction = this.page.getByTestId(
-    "dotDialogAcceptAction",
-  );
-
   constructor(private page: Page) {}
 
-  async fillNewContentType() {
-    await this.addTextField();
-    await this.addSiteOrFolderField();
+  async createNewContentType(fields: FieldsTypes[]) {
+    const promise = fields.reduce((prevPromise, field) => {
+      if (field.fieldType === "text") {
+        return prevPromise.then(() => this.addTextField(field));
+      }
+      if (field.fieldType === "siteOrFolder") {
+        return prevPromise.then(() => this.addSiteOrFolderField(field));
+      }
+    }, Promise.resolve());
+
+    await promise;
   }
 
-  async addTextField() {
-    await this.textFieldItem.dragTo(this.dropZone);
-    await this.dotDialogInput.fill("Text Field");
-    await this.dotDialogAcceptAction.click();
+  async addTextField(field: TextField) {
+    const dropZoneLocator = this.page.getByTestId("fields-bag-0");
+    const textFieldItemLocator = this.page.getByTestId(
+      "com.dotcms.contenttype.model.field.ImmutableTextField",
+    );
+    await textFieldItemLocator.waitFor();
+    await textFieldItemLocator.dragTo(dropZoneLocator);
+
+    const dialogInputLocator = this.page.locator("input#name");
+    await dialogInputLocator.fill(field.title);
+
+    const dialogAcceptBtnLocator = this.page.getByTestId(
+      "dotDialogAcceptAction",
+    );
+    await dialogAcceptBtnLocator.click();
   }
 
-  async addSiteOrFolderField() {
-    await this.siteOrFolderFieldItem.dragTo(this.dropZone);
-    await this.dotDialogInput.fill("Site or Folder Field");
-    await this.dotDialogAcceptAction.click();
+  async addSiteOrFolderField(field: SiteorHostField) {
+    const dropZoneLocator = this.page.getByTestId("fields-bag-0");
+    const siteOrFolderFieldItemLocator = this.page.getByTestId(
+      "com.dotcms.contenttype.model.field.ImmutableHostFolderField",
+    );
+    await siteOrFolderFieldItemLocator.waitFor();
+    await siteOrFolderFieldItemLocator.dragTo(dropZoneLocator);
+
+    const dialogInputLocator = this.page.locator("input#name");
+    await dialogInputLocator.fill(field.title);
+
+    const dialogAcceptBtnLocator = this.page.getByTestId(
+      "dotDialogAcceptAction",
+    );
+    await dialogAcceptBtnLocator.click();
   }
 }
