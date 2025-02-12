@@ -23,8 +23,7 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { PaginatorModule } from 'primeng/paginator';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-
-import { dotVelocityLanguageDefinition } from './custom-languages/velocity-monaco-language';
+import { dotVelocityLanguageDefinition } from '@dotcms/edit-content/custom-languages/velocity-monaco-language';
 
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
 import {
