@@ -39,6 +39,8 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { VELOCITY_TOKENIZER } from './languages';
+
 import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 
 const DEFAULT_FILE_TYPE = 'text';
@@ -142,6 +144,21 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
         if (this.fileName) {
             this.setEditorLanguage(this.fileName);
         }
+
+        window.monaco.languages.register({
+            id: 'velocity',
+            extensions: ['.vtl'],
+            mimetypes: ['text/x-velocity']
+        });
+
+        window.monaco.languages.setMonarchTokensProvider('velocity', {
+            defaultToken: '',
+            tokenPostfix: '.velocity',
+            ignoreCase: true,
+            tokenizer: {
+                ...VELOCITY_TOKENIZER
+            }
+        } as monaco.languages.IMonarchLanguage);
     }
 
     onSubmit(): void {
@@ -200,7 +217,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
     private setVelocityLanguage() {
         this.mimeType = 'text/x-velocity';
         this.extension = 'vtl';
-        this.updateEditorLanguage('html'); //Force html highlighting for .vtl files
+        this.updateEditorLanguage('velocity');
     }
 
     private updateLanguageForFileExtension(fileExtension: string) {
