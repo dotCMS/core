@@ -347,7 +347,9 @@ public class Config {
     public static List<String> subsetContainsAsList(final String containsString){
         final List<String> fullListProps = new ArrayList<String>();
         props.getKeys().forEachRemaining(fullListProps::add);
-
+        if(null != systemTableConfigSource && enableSystemTableConfigSource){
+            systemTableConfigSource.getPropertyNames().forEach(fullListProps::add);
+        }
         //List with all system env props that contains the pattern
         final String envContainsString = envKey(containsString);
         final List<String> propList = fullListProps.stream().filter(prop -> prop.contains(envContainsString)).collect(Collectors.toList());
