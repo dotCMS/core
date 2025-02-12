@@ -2,16 +2,11 @@ package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContainerAsFileDataGen;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
+import com.dotcms.datagen.*;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -19,9 +14,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Supplier;
 
+import static com.dotmarketing.util.Constants.CONTAINER_FOLDER_PATH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -491,4 +492,70 @@ public class ContainerAPITest extends ContentletBaseTest {
         return name.toString();
     }
 
+
+    /**
+     * Method to test: {@link ContainerAPIImpl#getLiveContainerByFolderPath(String, User, boolean, Supplier)}
+     * When: A Limited User without READ permission in the Default Host
+     * try to get the LIve Version of a File Container using the full Container Path
+     * Should: Work because acces to the Default Hst is not really need in this case
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void tryToGetLiveContainerWithLimitedUser () throws DotDataException, DotSecurityException {
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+        final Host originalDefaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final List<Permission> originalSystemHosPermission = APILocator.getPermissionAPI().getPermissions(systemHost);
+
+        try {
+            final User limitedUser = new UserDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
+            final Host emptyHost = new SiteDataGen().nextPersisted();
+
+            APILocator.getHostAPI().makeDefault(emptyHost, APILocator.systemUser(), false);
+            APILocator.getPermissionAPI().removePermissions(systemHost);
+
+            APILocator.getPermissionAPI().removePermissions(emptyHost);
+
+            PermissionUtilTest.addPermission(host, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                   PermissionAPI.PERMISSION_READ);
+
+            final String containerName = "container_test_" + System.currentTimeMillis();
+            final String containerPath = CONTAINER_FOLDER_PATH + "/" + containerName;
+
+            FileAssetContainer fileContainer = new ContainerAsFileDataGen()
+                    .host(host)
+                    .folderName(containerName)
+                    .nextPersisted();
+
+            fileContainer.setHost(host);
+
+            final Contentlet contentlet = APILocator.getContentletAPI().find(fileContainer.getInode(),
+                    APILocator.systemUser(), false);
+            ContentletDataGen.publish(contentlet);
+
+            PermissionUtilTest.addPermission(contentlet, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    PermissionAPI.PERMISSION_READ);
+
+            final Folder containerFolder = APILocator.getFolderAPI().findFolderByPath(containerPath, host,
+                    APILocator.systemUser(), false);
+
+            PermissionUtilTest.addPermission(containerFolder, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    PermissionAPI.PERMISSION_READ);
+
+            final String fullPath = "//" + host.getHostname() + containerPath;
+
+            CacheLocator.getPermissionCache().clearCache();
+            final Container liveContainer = APILocator.getContainerAPI().getLiveContainerByFolderPath(
+                    fullPath, limitedUser, true, () -> null);
+
+            assertNotNull(liveContainer);
+        } finally {
+            APILocator.getHostAPI().makeDefault(originalDefaultHost, APILocator.systemUser(), false);
+            APILocator.getPermissionAPI().save(originalSystemHosPermission, systemHost, APILocator.systemUser(), false);
+        }
+
+    }
 }
