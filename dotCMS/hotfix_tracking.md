@@ -192,3 +192,4 @@ This maintenance release includes the following code fixes:
 185. https://github.com/dotCMS/core/issues/30804 : The file with name of webPageContent.vtl can't GET and throws 404 #30804
 186. https://github.com/dotCMS/core/issues/30993 : Remove calls to ElasticReadOnlyCommand and disable EsReadOnlyMonitorJob  #30468
 187. https://github.com/dotCMS/core/issues/30993 : In 24.12.10 the EsReadOnlyMonitorJob still shows error #30993
+188. https://github.com/dotCMS/core/issues/26503 : CORS not applied when specifying resource #26503
