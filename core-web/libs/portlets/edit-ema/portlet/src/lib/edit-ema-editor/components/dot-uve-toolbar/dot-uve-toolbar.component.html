@@ -17,11 +17,21 @@
 
     @if (live && !$socialMedia()) {
     <ng-template #center>
-    <div class="p-toolbar-group-center">
-        <p-calendar inputStyleClass="p-inputtext-sm" [ngModel]="$previewDate()"
-            (ngModelChange)="fetchPageOnDate($event)" [showTime]="true" [hourFormat]="'12'" dataType="date"
-            [minDate]="MIN_DATE" [readonlyInput]="true" />
-            <p-button styleClass="uve-toolbar-chips" [label]="'Today' | dm" alt="Page Day" (click)="fetchPageOnDate()" />
+        <div class="p-toolbar-group-center">
+            <p-calendar
+                inputStyleClass="p-inputtext-sm"
+                [ngModel]="$previewDate()"
+                (ngModelChange)="fetchPageOnDate($event)"
+                [showTime]="true"
+                [hourFormat]="'12'"
+                dataType="date"
+                [minDate]="$MIN_DATE()"
+                [readonlyInput]="true" />
+            <p-button
+                styleClass="uve-toolbar-chips"
+                [label]="'Today' | dm"
+                alt="Page Day"
+                (click)="fetchPageOnDate()" />
         </div>
     </ng-template>
     }
