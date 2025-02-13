@@ -82,9 +82,10 @@ jobs:
           issues_json: ${{ steps.changelog.outputs.issues_json }}
           tag: ${{ github.event.inputs.tag_name }}
           format: md
-      -
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.0.0
         with:
+          image: tonistiigi/binfmt:qemu-v7.0.0-28
           platforms: amd64,arm64
       -
         uses: docker/setup-buildx-action@v3.0.0
