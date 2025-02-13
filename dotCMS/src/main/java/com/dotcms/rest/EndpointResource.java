@@ -163,7 +163,12 @@ public class EndpointResource {
 				.init();
 
 		Logger.debug(this, ()-> "Retrieving PublishingEndPoint for endpointId: " + endpointId);
-        return new ResponseEntityEndpointView(this.publisherEndPointAPI.findEndPointById(endpointId));
+		final PublishingEndPoint publishingEndPoint = this.publisherEndPointAPI.findEndPointById(endpointId);
+		if (Objects.isNull(publishingEndPoint)) {
+
+			throw new DoesNotExistException("Can't find endpoint with id: " + endpointId);
+		}
+        return new ResponseEntityEndpointView(publishingEndPoint);
 	}
 
 	/**
@@ -319,11 +324,11 @@ public class EndpointResource {
 		final String endpointName = endpointForm.getName();
 		final PublishingEndPoint existingEndpoint = publishingEndPointAPI.findEndPointByName(endpointName);
 
-		if (Objects.isNull(existingEndpoint)
-				|| !existingEndpoint.getId().equals(id)) {
+		if (Objects.nonNull(existingEndpoint)
+				&& !existingEndpoint.getId().equals(id)) {
 
-			Logger.info(getClass(), "Can't save EndPoint. An Endpoint with the given name already exists. ");
-			throw new IllegalArgumentException("An Endpoint with the given id " + id + " does not exist.");
+			Logger.info(getClass(), "Can't save EndPoint. An Endpoint with the given name: " + endpointName + " already exists. ");
+			throw new IllegalArgumentException("Can't save EndPoint. An Endpoint with the given name: " + endpointName + " already exists. ");
 		}
 
 		Logger.debug(this, ()-> "Updating endpoint: " + endpointName);
