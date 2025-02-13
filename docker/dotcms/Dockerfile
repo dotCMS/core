@@ -48,7 +48,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
 RUN apt-get update \
-    && apt-get upgrade -y
+    && apt-get upgrade  -y --ignore-missing
+
+##Reinstall libc-bin to fix the following error
+RUN apt install --reinstall -y libc-bin
 
 # Cleanup
 RUN apt purge --allow-remove-essential -y \
