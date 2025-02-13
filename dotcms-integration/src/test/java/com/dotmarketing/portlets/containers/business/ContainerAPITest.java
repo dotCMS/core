@@ -502,13 +502,10 @@ public class ContainerAPITest extends ContentletBaseTest {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    //@Test
+    @Test
     public void tryToGetLiveContainerWithLimitedUser () throws DotDataException, DotSecurityException {
         final User limitedUser = new UserDataGen().nextPersisted();
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
-
-        PermissionUtilTest.addPermission(systemHost, limitedUser, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                PermissionAPI.PERMISSION_READ);
 
         final Host originalDefaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
         final List<Permission> originalSystemHostPermission = APILocator.getPermissionAPI().getPermissions(systemHost);
@@ -517,8 +514,8 @@ public class ContainerAPITest extends ContentletBaseTest {
             final Host host = new SiteDataGen().nextPersisted();
             final Host emptyHost = new SiteDataGen().nextPersisted();
 
-            APILocator.getHostAPI().makeDefault(emptyHost, APILocator.systemUser(), false);
-            APILocator.getPermissionAPI().removePermissions(systemHost);
+            //APILocator.getHostAPI().makeDefault(emptyHost, APILocator.systemUser(), false);
+            //APILocator.getPermissionAPI().removePermissions(systemHost);
 
             APILocator.getPermissionAPI().removePermissions(emptyHost);
 
@@ -556,8 +553,8 @@ public class ContainerAPITest extends ContentletBaseTest {
 
             assertNotNull(liveContainer);
         } finally {
-            APILocator.getHostAPI().makeDefault(originalDefaultHost, APILocator.systemUser(), false);
-            APILocator.getPermissionAPI().save(originalSystemHostPermission, systemHost, APILocator.systemUser(), false);
+            //APILocator.getHostAPI().makeDefault(originalDefaultHost, APILocator.systemUser(), false);
+            //APILocator.getPermissionAPI().save(originalSystemHostPermission, systemHost, APILocator.systemUser(), false);
         }
 
     }
