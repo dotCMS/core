@@ -8,19 +8,19 @@
 [![Nightly](https://github.com/dotCMS/core/actions/workflows/cicd_4-nightly.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_4-nightly.yml)
 
 
+dotCMS is a leading Universal content management system powering thousands of digital experiences for over 150 customers worldwide.
 
-dotCMS is a Universal content management system (CMS) that can power headless and server side rendered content experiences.  dotCMS has been designed to manage and deliver personalized, permission-based content and assets across all your stack and channels. 
+With powerful visual editing tools, multi-tenancy and a tech-agnostic architecture dotCMS empowers technical and content teams to collaborate efficiently and deliver content globally, on any stack, and at any scale.
 
 - **BSL Licensed** - Generous BSL 1.1 licensing terms makes dotCMS free to use in many cases.
-- **Universal Visual Editing** - Full featured page editing that works both headlessly and for server-side rendered content, in your SPA or for traditional page delivery
+- **Universal Visual Editing** - Full featured page editing that works both headlessly and for SSR content, in your SPA or for web page rendering and delivery.
+- **Multi-tenancy** - Manage multiple sites in multiple languages, from microsites to brand sites to intranet/extranets or knowledge centers all from a single instance.
 - **REST & GraphQL APIs** - instant endpoints for your all your content
-- **Search & RAG Built in** - dotCMS indexes all content and assets in Elasticsearch for real time search-abiliity and faceted based searches.  dotCMS can also vectorize all content and assets, offering semantic content searching to power AI applications such as chatbots or knowledge centers. 
+- **Search & RAG Built in** - dotCMS indexes all content and assets in Elasticsearch for real time search-abiliity and faceted based searches.  dotCMS can also vectorize all content and assets, offering semantic content searching to power AI applications such as chatbots or knowledge centers.
 - **Personalization, Rules & A/B Testing** - Empower your marketing teams with targeting and content optimizations.
-- **Cloud, Cloud Anywhere or Self-Hosted** - Flexiable deployment works with your IT/cloud strategies. 
+- **Cloud, Cloud Anywhere or Self-Hosted** - Flexible deployment works with your IT/cloud strategies. 
 - **Feature Rich** - Custom content workflows, scriptable APIs, push and static publishing, custom roles and permissions, osgi based plugin architecture.  Do more with more.
 
-
-dotCMS is a content hub that acts as the foundation for content, sites, mobile apps, mini-sites, portals, intranets. dotCMS is used everywhere, from running small sites to powering multi-node installations for governments, Fortune 100 companies, Universities and Global Brands. dotCMS can scale to support hundreds of editors managing thousands of sites with millions of content objects.
 
 dotCMS is available as a docker image or as a cloud based product.
 
