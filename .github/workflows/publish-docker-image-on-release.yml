@@ -10,7 +10,7 @@ on:
 jobs:
   publish_image:
     name: Publish DotCMS docker image on release push
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Process Params
         run: |
