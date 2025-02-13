@@ -2,8 +2,9 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import * as dotcmsClient from '@dotcms/client';
 import { DotCMSLayoutBodyRenderer } from '@dotcms/react/next/components/DotCMSLayoutBodyRenderer/DotCMSLayoutBodyRenderer';
+import * as dotcmsUVE from '@dotcms/uve';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { MOCK_PAGE_ASSET } from '../mock';
 
@@ -27,10 +28,10 @@ describe('DotCMSLayoutBodyRenderer', () => {
         const MOCK_INVALID_PAGE = {} as any;
         const MESSAGE_WARNING = 'Missing required layout.body property in page';
         let consoleSpy: jest.SpyInstance;
-        let isInsideEditorSpy: jest.SpyInstance;
+        let getUVEStateSpy: jest.SpyInstance;
         beforeEach(() => {
             consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => MESSAGE_WARNING);
-            isInsideEditorSpy = jest.spyOn(dotcmsClient, 'isInsideEditor');
+            getUVEStateSpy = jest.spyOn(dotcmsUVE, 'getUVEState');
         });
 
         afterEach(() => jest.restoreAllMocks());
@@ -47,7 +48,7 @@ describe('DotCMSLayoutBodyRenderer', () => {
         });
 
         test('should display an error message in production mode if the page is inside the editor', () => {
-            isInsideEditorSpy.mockReturnValue(true);
+            getUVEStateSpy.mockReturnValue({ mode: UVE_MODE.EDIT });
 
             render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />);
             const errorMessage = screen.getByTestId('error-message');

@@ -1,9 +1,9 @@
-import { useEffect, useState, RefObject } from 'react';
+import { useState, RefObject, useLayoutEffect } from 'react';
 
 export const useCheckVisibleContent = (ref: RefObject<HTMLDivElement>) => {
     const [haveContent, setHaveContent] = useState<boolean>(false);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!ref.current) {
             setHaveContent(false);
 

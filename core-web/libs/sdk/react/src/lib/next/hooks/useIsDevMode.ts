@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { isInsideEditor } from '@dotcms/client';
 import { DotCMSPageContext, RendererMode } from '@dotcms/react/next/contexts/DotCMSPageContext';
+import { getUVEState } from '@dotcms/uve';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 /**
  * A React hook that determines if the current environment is in development mode.
@@ -20,7 +21,15 @@ export const useIsDevMode = (renderMode?: RendererMode) => {
     const [isDevMode, setIsDevMode] = useState(effectiveMode === 'development');
 
     useEffect(() => {
-        setIsDevMode(effectiveMode === 'development' || !!isInsideEditor());
+        // Inside UVE we rely on the UVE state to determine if we are in development mode
+        if (getUVEState()?.mode) {
+            const isUVEInEditor = getUVEState()?.mode === UVE_MODE.EDIT;
+            setIsDevMode(isUVEInEditor);
+
+            return;
+        }
+
+        setIsDevMode(effectiveMode === 'development');
     }, [effectiveMode]);
 
     return isDevMode;
