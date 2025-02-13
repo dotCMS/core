@@ -38,7 +38,6 @@
     }
     @case (fieldTypes.TEXT) {
         @defer (on immediate) {
-            {{ $currentLanguage() }}
             <ng-container [ngTemplateOutlet]="labelTemplate" />
             <dot-edit-content-text-field
                 [currentLanguage]="$currentLanguage()"
