@@ -90,7 +90,7 @@ jobs:
   #
   build-jdk11:
     name: "Initial JDK 11 Build"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: changes
     if: ${{ needs.changes.outputs.build == 'true' }}
     outputs:
@@ -217,7 +217,7 @@ jobs:
   #
   linux-jvm-tests:
     name: JVM Unit Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: ${{ needs.changes.outputs.jvm_unit_test == 'true' }}
     needs: [changes,build-jdk11]
     timeout-minutes: 240
@@ -281,7 +281,7 @@ jobs:
   #
   linux-frontend-tests:
     name: Frontend Unit Tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: ${{ needs.changes.outputs.frontend == 'true' }}
     needs: [changes,build-jdk11]
     timeout-minutes: 240
@@ -358,7 +358,7 @@ jobs:
   #
   linux-integration-tests:
     name: JVM IT Tests - JDK ${{matrix.java.name}} ${{matrix.suites.name}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     # Skip master in forks
     if: ${{ needs.changes.outputs.backend == 'true' }}
     needs: [build-jdk11,changes]
@@ -549,7 +549,7 @@ jobs:
   #
   prepare-report-data:
     name: Prepare Report Data
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [ build-jdk11,linux-jvm-tests,linux-integration-tests,linux-frontend-tests,linux-postman-tests ]
     if: always()
     outputs:
@@ -679,7 +679,7 @@ jobs:
     name: Final Status
     needs: prepare-report-data
     if: always()
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check Final Status
         run: |

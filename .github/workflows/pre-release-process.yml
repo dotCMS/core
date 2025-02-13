@@ -20,7 +20,7 @@ on:
 jobs:
   code-freeze-process:
     name: Automated code freeze process
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       DOT_CICD_BRANCH: master
       RELEASE_VERSION: ${{ github.event.inputs.release_version }}
