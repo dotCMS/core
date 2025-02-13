@@ -4,7 +4,10 @@
     dragula="fields-bag"
     data-drag-type="source">
     @for (fieldType of $fieldTypes(); track fieldType.clazz) {
-        <li [attr.data-clazz]="fieldType.clazz" class="content-types-fields-list__item">
+        <li
+            [attr.data-testid]="fieldType.clazz"
+            [attr.data-clazz]="fieldType.clazz"
+            class="content-types-fields-list__item">
             <dot-icon name="{{ fieldIcons[fieldType.clazz] }}"></dot-icon>
             <span role="listitem">{{ fieldType.name }}</span>
         </li>

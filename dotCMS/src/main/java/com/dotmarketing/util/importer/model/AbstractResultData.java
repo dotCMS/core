@@ -1,4 +1,4 @@
-package com.dotmarketing.util.importer;
+package com.dotmarketing.util.importer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -11,9 +11,9 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonDeserialize(as = ImportResultData.class)
+@JsonDeserialize(as = ResultData.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractImportResultData extends Serializable {
+public interface AbstractResultData extends Serializable {
 
     /**
      * @return Statistics about processed records including valid and invalid counts
