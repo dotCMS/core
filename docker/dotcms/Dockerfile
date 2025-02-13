@@ -46,18 +46,9 @@ WORKDIR /srv
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-## Installing basic packages
-#RUN apt-get update \
-#    && apt-get upgrade  -y --ignore-missing
-#
-###Reinstall libc-bin to fix the following error
-#RUN apt install --reinstall -y libc-bin
-
-## Following possible fix https://stackoverflow.com/questions/78105004/docker-build-fails-because-unable-to-install-libc-bin
-RUN rm /var/lib/dpkg/info/libc-bin.*
-RUN apt-get clean
-RUN apt-get update
-RUN apt-get install libc-bin
+# Installing basic packages
+RUN apt update \
+    && apt upgrade -y
 
 # Cleanup
 RUN apt purge --allow-remove-essential -y \

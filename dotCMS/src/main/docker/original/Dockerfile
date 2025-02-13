@@ -9,8 +9,8 @@ WORKDIR /srv
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
-RUN apt-get update \
-    && apt-get upgrade -y
+RUN apt update \
+    && apt upgrade -y
 
 # Cleanup
 RUN apt purge --allow-remove-essential -y \
