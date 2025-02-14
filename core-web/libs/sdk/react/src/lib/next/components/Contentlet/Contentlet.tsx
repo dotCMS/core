@@ -5,7 +5,7 @@ import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { DotCMSContentlet } from '../../types';
 import { getDotContentletAttributes } from '../../utils';
-import { FallbackComponent, NoComponentType } from '../FallbackComponent/FallbackComponent';
+import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
 
 /**
  * Props for the Contentlet component
@@ -77,13 +77,13 @@ export function Contentlet({ contentlet, container }: ContentletProps) {
  */
 function CustomComponent({ contentlet }: CustomComponentProps) {
     const { userComponents } = useContext(DotCMSPageContext);
-    const UserComponent = userComponents?.[contentlet?.contentType];
+    const UserComponent = userComponents[contentlet?.contentType];
 
     if (UserComponent) {
         return <UserComponent {...contentlet} />;
     }
 
-    const UserNoComponent = userComponents?.['CustomNoComponent'] as NoComponentType;
+    const UserNoComponent = userComponents['CustomNoComponent'];
 
     return <FallbackComponent UserNoComponent={UserNoComponent} contentlet={contentlet} />;
 }

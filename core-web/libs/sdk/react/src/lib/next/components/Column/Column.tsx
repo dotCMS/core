@@ -5,7 +5,7 @@ import { combineClasses, getColumnPositionClasses } from '../../utils';
 import { Container } from '../Container/Container';
 
 /**
- * Props for Column component that represents a single column in the grid layout system.
+ * Props for the Column component, which represents a single column in the grid layout system.
  *
  * @export
  * @interface ColumnProps

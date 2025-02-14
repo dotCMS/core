@@ -7,7 +7,7 @@ export type RendererMode = 'production' | 'development';
 export interface DotCMSPageContextProps {
     pageAsset: DotCMSPageAsset;
     mode: RendererMode;
-    userComponents?: Record<string, React.ComponentType<DotCMSContentlet>>;
+    userComponents: Record<string, React.ComponentType<DotCMSContentlet>>;
 }
 
 /**

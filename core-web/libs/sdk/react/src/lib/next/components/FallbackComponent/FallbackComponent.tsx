@@ -9,12 +9,12 @@ export type NoComponentType = React.ComponentType<DotCMSContentlet>;
 /**
  * Props for the FallbackComponent
  * @interface FallbackComponentProps
- * @property {NoComponentType} [UserNoComponent] - Optional custom component to render when no matching component is found
+ * @property {React.ComponentType<DotCMSContentlet>} [UserNoComponent] - Optional custom component to render when no matching component is found
  * @property {DotCMSContentlet} [contentlet] - The contentlet that couldn't be rendered
  */
 interface FallbackComponentProps {
-    UserNoComponent: NoComponentType;
     contentlet: DotCMSContentlet;
+    UserNoComponent?: React.ComponentType<DotCMSContentlet>;
 }
 
 /**
