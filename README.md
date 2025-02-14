@@ -16,7 +16,7 @@ With powerful visual editing tools, multi-tenancy and a tech-agnostic architectu
 - **Universal Visual Editing** - Full featured page editing that works both headlessly and for SSR content, in your SPA or for web page rendering and delivery.
 - **Multi-tenancy** - Manage multiple sites in multiple languages, from microsites to brand sites to intranet/extranets or knowledge centers all from a single instance.
 - **REST & GraphQL APIs** - instant endpoints for your all your content
-- **Search & RAG Built in** - dotCMS indexes all content and assets in Elasticsearch for real time search-abiliity and faceted based searches.  dotCMS can also vectorize all content and assets, offering semantic content searching to power AI applications such as chatbots or knowledge centers.
+- **Search & RAG Built in** - dotCMS indexes all content and assets in Elasticsearch for real time search-abiliity and facet based searches.  dotCMS can also vectorize all content and assets, offering semantic content searching to power AI applications such as chatbots or knowledge centers.
 - **Personalization, Rules & A/B Testing** - Empower your marketing teams with targeting and content optimizations.
 - **Cloud, Cloud Anywhere or Self-Hosted** - Flexible deployment works with your IT/cloud strategies. 
 - **Feature Rich** - Custom content workflows, scriptable APIs, push and static publishing, custom roles and permissions, osgi based plugin architecture.  Do more with more.
@@ -32,7 +32,7 @@ dotCMS is available as a docker image or as a cloud based product.
 
 ## Licensing
 
-dotCMS is licensed under the terms of the BSL 1.1 license and all features are free to use by companies, individuals and organizations whose total finances are below $5,000,000.  For more information about the BSL license terms, see the [dotCMS BSL FAQ](http://www.dotcms.com/bsl-faq). 
+dotCMS is licensed under the terms of the BSL 1.1 license and all features are free to use by companies, individuals and organizations whose total finances are below $5,000,000 USD.  For more information about the BSL license terms, see the [dotCMS BSL FAQ](http://www.dotcms.com/bsl-faq). 
 
 ## Contributing
 
