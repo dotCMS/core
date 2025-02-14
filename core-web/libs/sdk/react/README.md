@@ -26,7 +26,7 @@ yarn add @dotcms/react
 
 ### Deprecated: DotcmsLayout
 
-**Important:** The `DotcmsLayout` component is deprecated. Please use the new [`DotCMSLayoutBodyRenderer`](#dotcmslayoutbodyrenderer) component instead.
+**Important:** The `DotcmsLayout` component is deprecated. Please use the new [`DotCMSLayoutBody`](#DotCMSLayoutBody) component instead.
 
 #### Props
 
@@ -43,9 +43,9 @@ const MyPage = ({ entity }) => {
 };
 ```
 
-### `DotCMSLayoutBodyRenderer`
+### `DotCMSLayoutBody`
 
-The `DotCMSLayoutBodyRenderer` component renders the layout body for a DotCMS page.
+The `DotCMSLayoutBody` component renders the layout body for a DotCMS page.
 
 #### Props
 
@@ -56,10 +56,10 @@ The `DotCMSLayoutBodyRenderer` component renders the layout body for a DotCMS pa
 #### Usage
 
 ```javascript
-import { DotCMSLayoutBodyRenderer } from '@dotcms/react';
+import { DotCMSLayoutBody } from '@dotcms/react';
 
 const MyPage = ({ page }) => {
-    return <DotCMSLayoutBodyRenderer page={page} components={components} />;
+    return <DotCMSLayoutBody page={page} components={components} />;
 };
 ```
 

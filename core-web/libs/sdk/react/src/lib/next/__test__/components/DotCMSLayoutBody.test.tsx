@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import { DotCMSLayoutBodyRenderer } from '@dotcms/react/next/components/DotCMSLayoutBodyRenderer/DotCMSLayoutBodyRenderer';
+import { DotCMSLayoutBody } from '@dotcms/react/next/components/DotCMSLayoutBody/DotCMSLayoutBody';
 import * as dotcmsUVE from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -12,10 +12,10 @@ jest.mock('@dotcms/react/next/components/Row/Row', () => ({
     Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
 }));
 
-describe('DotCMSLayoutBodyRenderer', () => {
+describe('DotCMSLayoutBody', () => {
     describe('With valid layout.body', () => {
         test('should render all rows when the page has a valid layout.body', () => {
-            render(<DotCMSLayoutBodyRenderer page={MOCK_PAGE_ASSET} mode="production" />);
+            render(<DotCMSLayoutBody page={MOCK_PAGE_ASSET} mode="production" />);
 
             const rows = screen.getAllByTestId('row');
             expect(rows).toHaveLength(2);
@@ -37,12 +37,12 @@ describe('DotCMSLayoutBodyRenderer', () => {
         afterEach(() => jest.restoreAllMocks());
 
         test('should log a warning if the page is missing layout.body', () => {
-            render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />);
+            render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} mode="production" />);
             expect(consoleSpy).toHaveBeenCalledWith(MESSAGE_WARNING);
         });
 
         test('should displays an error message in development mode', () => {
-            render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="development" />);
+            render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} mode="development" />);
             const errorMessage = screen.getByTestId('error-message');
             expect(errorMessage).toBeInTheDocument();
         });
@@ -50,14 +50,14 @@ describe('DotCMSLayoutBodyRenderer', () => {
         test('should display an error message in production mode if the page is inside the editor', () => {
             getUVEStateSpy.mockReturnValue({ mode: UVE_MODE.EDIT });
 
-            render(<DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />);
+            render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} mode="production" />);
             const errorMessage = screen.getByTestId('error-message');
             expect(errorMessage).toBeInTheDocument();
         });
 
         test('should not display an error message in production mode', () => {
             const { container } = render(
-                <DotCMSLayoutBodyRenderer page={MOCK_INVALID_PAGE} mode="production" />
+                <DotCMSLayoutBody page={MOCK_INVALID_PAGE} mode="production" />
             );
             expect(container.innerHTML).toBe('');
         });

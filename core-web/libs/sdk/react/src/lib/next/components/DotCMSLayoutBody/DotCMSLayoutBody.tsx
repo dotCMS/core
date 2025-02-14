@@ -4,14 +4,14 @@ import { DotCMSPageContext, DotCMSPageRendererMode } from '../../contexts/DotCMS
 import { DotCMSContentlet, DotCMSPageAsset } from '../../types';
 import { Row } from '../Row/Row';
 
-interface DotCMSLayoutBodyRendererProps {
+interface DotCMSLayoutBodyProps {
     page: DotCMSPageAsset;
     components: Record<string, React.ComponentType<DotCMSContentlet>>;
     mode?: DotCMSPageRendererMode;
 }
 
 /**
- * DotCMSLayoutBodyRenderer component renders the layout body for a DotCMS page.
+ * DotCMSLayoutBody component renders the layout body for a DotCMS page.
  *
  * It utilizes the page asset's layout body to render rows using the Row component.
  * If the layout body does not exist, it renders an error message.
@@ -28,18 +28,18 @@ interface DotCMSLayoutBodyRendererProps {
  *
  * -------------------------------------------------------------------
  *
- * El componente DotCMSLayoutBodyRenderer renderiza el cuerpo del layout para una página de DotCMS.
+ * El componente DotCMSLayoutBody renderiza el cuerpo del layout para una página de DotCMS.
  *
  * Utiliza el "body" del layout del asset de la página para renderizar las filas mediante el componente Row.
  * Si el "body" del layout no está presente, renderiza un mensaje de error.
  * También provee un contexto (DotCMSPageContext) con el asset de la página, componentes de usuario opcionales,
  * y el modo del renderizado para sus componentes hijos.
  */
-export const DotCMSLayoutBodyRenderer = ({
+export const DotCMSLayoutBody = ({
     page,
     components = {},
     mode = 'production'
-}: DotCMSLayoutBodyRendererProps) => {
+}: DotCMSLayoutBodyProps) => {
     const dotCMSPageBody = page?.layout?.body;
 
     if (!dotCMSPageBody) {

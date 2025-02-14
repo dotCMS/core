@@ -36,7 +36,7 @@ export type DotcmsPageProps = {
  * @category Components
  * @param {DotcmsPageProps} props - The properties for the DotCMS page.
  * @returns {JSX.Element} - A JSX element that represents the layout for a DotCMS page.
- * @deprecated Use `DotCMSLayoutBodyRenderer` instead. More info at https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/src/lib/next/components/DotCMSLayoutBodyRenderer/DotCMSLayoutBodyRenderer.tsx
+ * @deprecated Use `DotCMSLayoutBody` instead. More info at https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/src/lib/next/components/DotCMSLayoutBody/DotCMSLayoutBody.tsx
  */
 export function DotcmsLayout(dotPageProps: DotcmsPageProps): JSX.Element {
     const pageContext = useDotcmsEditor(dotPageProps);
