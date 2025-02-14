@@ -35,6 +35,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.0.0
         with:
+          image: tonistiigi/binfmt:qemu-v7.0.0-28
           platforms: amd64,arm64
         if: github.event.inputs.multi_arch == 'true'
       - id: docker-setup-buildx
