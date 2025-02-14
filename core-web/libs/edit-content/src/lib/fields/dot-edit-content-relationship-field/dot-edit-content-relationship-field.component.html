@@ -49,7 +49,7 @@
     <ng-template pTemplate="body" let-item let-index="rowIndex">
         <tr [pReorderableRow]="index">
             <td>
-                <i class="material-icons text-gray-500" pReorderableRowHandle>drag_indicator</i>
+                <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
             </td>
             <td class="max-w-12rem" style="min-width: 13rem">
                 <p class="truncate-text">{{ item.title }}</p>
