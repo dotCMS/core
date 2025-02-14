@@ -308,13 +308,14 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                 this.filterList.stream().filter(filter -> filterKey.equalsIgnoreCase(filter.getKey())).findFirst().orElse(defaultFilter);
     }
 
+    @SuppressWarnings("unchecked")
     @CloseDBIfOpened
     @Override
     public PublisherFilter createPublisherFilter(final String bundleId) throws DotDataException, DotSecurityException {
 
         final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
         final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
-        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl((Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.DEPENDENCIES_KEY,true),
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(filterKey, (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.DEPENDENCIES_KEY,true),
                 (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true));
 
         if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_CLASSES_KEY)){

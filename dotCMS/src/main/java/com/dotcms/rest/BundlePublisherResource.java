@@ -33,6 +33,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import static com.liferay.util.StringPool.BLANK;
+
 @Path("/bundlePublisher")
 public class BundlePublisherResource {
 
@@ -60,6 +62,7 @@ public class BundlePublisherResource {
 			@QueryParam("type")        final String type,
 			@QueryParam("callback")    final String callback,
 			@QueryParam("FORCE_PUSH")  final boolean forcePush,
+			@QueryParam("filterkey") final String filterKey,
 			@Context final HttpServletRequest  request,
 			@Context final HttpServletResponse response
 	) throws Exception {
@@ -67,14 +70,16 @@ public class BundlePublisherResource {
 		if (LicenseManager.getInstance().isCommunity()) {
 			throw new InvalidLicenseException("License required");
 		}
+		Logger.debug(this, String.format("Publishing bundle with type: [ %s ], callback: [ %s ], forcePush: [ %s ], filterKey: [ %s ]",
+				type, callback, forcePush, filterKey));
 
 		final ResourceResponse responseResource = new ResourceResponse(
-				CollectionsUtils.map("type", type, "callback", callback));
+				CollectionsUtils.map("type", type, "callback", callback,"filterKey",UtilMethods.isSet(filterKey) ? filterKey : BLANK));
 		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
 				request.getRemoteHost() : request.getRemoteAddr();
 
 		if (request.getInputStream().isFinished()) {
-			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " bundle expected");
+			Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + ": Bundle expected");
 			return responseResource.responseError(HttpStatus.SC_BAD_REQUEST);
 		}
 
@@ -87,13 +92,14 @@ public class BundlePublisherResource {
 			return failResponse.get();
 		}
 
-		final Bundle bundle = this.publishBundle(forcePush, request, remoteIP);
+		final Bundle bundle = this.publishBundle(forcePush, filterKey, request, remoteIP);
 
 		return Response.ok(bundle).build();
 	}
 
 	@WrapInTransaction
 	private Bundle publishBundle(final boolean forcePush,
+								 final String filterKey,
 								 final HttpServletRequest request,
 								 final String remoteIP) throws Exception {
 
@@ -104,7 +110,7 @@ public class BundlePublisherResource {
 		final String fileName = UtilMethods.isSet(fileNameSent) ? fileNameSent : generatedBundleFileName();
 		Logger.debug(BundlePublisherResource.class, "Bundle file name: " + fileName);
 
-		Bundle bundle = null;
+		Bundle bundle;
 
 		try (InputStream bundleStream = request.getInputStream()) {
 
@@ -124,6 +130,7 @@ public class BundlePublisherResource {
 				bundle.setPublishDate(Calendar.getInstance().getTime());
 				bundle.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
 				bundle.setForcePush(forcePush);
+				bundle.setFilterKey(filterKey);
 				APILocator.getBundleAPI().saveBundle(bundle);
 				Logger.debug(BundlePublisherResource.class, "Bundle saved: " + bundleFolder);
 			}
@@ -164,10 +171,5 @@ public class BundlePublisherResource {
 
 	private String generatedBundleFileName() {
 		return String.format("bundle_%d.tar.gz", System.currentTimeMillis());
-	}
-
-	private boolean isAdmin(final User user) {
-
-		return null != user && user.isBackendUser() && user.isAdmin();
 	}
 }

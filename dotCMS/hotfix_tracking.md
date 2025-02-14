@@ -196,3 +196,4 @@ This maintenance release includes the following code fixes:
 189. https://github.com/dotCMS/core/issues/28365 : Add Host to the reference tab on Content #28365
 190. https://github.com/dotCMS/core/issues/28579 : Add a way to bulk Reset Permissions #28579
 191. https://github.com/dotCMS/core/issues/30761 : Data is not getting saved in the workflow #30761
+192. https://github.com/dotCMS/core/issues/30998 : [PP]: Filter option relationships is not being respected #30998
