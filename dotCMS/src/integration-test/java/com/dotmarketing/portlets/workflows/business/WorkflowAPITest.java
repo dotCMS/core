@@ -295,8 +295,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
         HostAPI hostAPI = APILocator.getHostAPI();
 
         //Setting the test user
-        adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", user, false);
         user = APILocator.getUserAPI().getSystemUser();
+        adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", user, false);
         defaultHost = hostAPI.findDefaultHost(user, false);
         contentTypeAPI = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
         fieldAPI = APILocator.getContentTypeFieldAPI();
