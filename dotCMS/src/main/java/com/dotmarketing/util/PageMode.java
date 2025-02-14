@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
@@ -113,13 +114,17 @@ public enum PageMode {
 
     }
 
+    public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode){
+        return setPageMode(request, mode, true);
+    }
+
     /**
      * Page mode can only be set for back end users, not for front end users (even logged in Front end users)
      * @param request
      * @param mode
      * @return
      */
-    public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode) {
+    public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode, final boolean setSession) {
 
         if (DEFAULT_PAGE_MODE != mode) {
             final User user = PortalUtil.getUser(request);
@@ -128,25 +133,11 @@ public enum PageMode {
             }
         }
 
-        if(request.getSession(false)!=null) {
+        if( setSession && request.getSession(false)!=null) {
             request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
         }
         request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, mode);
         return mode;
-    }
-
-    private static boolean isPageModeSet(final HttpSession ses) {
-        return (ses != null && ses.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_SESSION) != null);
-    }
-
-    private static PageMode getCurrentPageMode(final HttpSession ses) {
-        PageMode sessionPageMode = ses==null ? DEFAULT_PAGE_MODE : (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
-
-        if (isNavigateEditMode(ses)) {
-            return PageMode.NAVIGATE_EDIT_MODE;
-        } else {
-            return sessionPageMode;
-        }
     }
 
     private static boolean isNavigateEditMode(final HttpSession ses) {

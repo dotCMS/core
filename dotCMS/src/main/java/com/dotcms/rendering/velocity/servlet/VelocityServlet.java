@@ -8,6 +8,7 @@ import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.UserWebAPIImpl;
@@ -70,24 +71,30 @@ public class VelocityServlet extends HttpServlet {
         }
 
         if (LoginMode.UNKNOWN == loginMode) {
-
-            return user.isFrontendUser()
-                    ? PageMode.setPageMode(request, PageMode.LIVE)
-                    :  useNavigateMode(request, loginMode)
-                    ? PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE)
-                    :  PageMode.setPageMode(request, PageMode.LIVE);
+            return determinePageMode(request, user, LoginMode.UNKNOWN);
         }
 
         if ( LoginMode.FE == loginMode) {
-            return PageMode.setPageMode(request, PageMode.LIVE);
+            return PageMode.setPageMode(request, PageMode.LIVE, false);
         }
 
         return  useNavigateMode(request, loginMode) ?
-                 PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE) : PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
+                 PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE, false) : PageMode.setPageMode(request, PageMode.PREVIEW_MODE, false);
+    }
+
+    private static PageMode determinePageMode(HttpServletRequest request, User user, LoginMode loginMode) {
+        if (user.isFrontendUser()) {
+            return PageMode.setPageMode(request, PageMode.LIVE, false);
+        }
+
+        if (useNavigateMode(request, loginMode)) {
+            return PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE,false);
+        }
+
+        return PageMode.setPageMode(request, PageMode.LIVE, false);
     }
 
     private static boolean useNavigateMode(final HttpServletRequest request, LoginMode loginMode) {
-
 
         if (LoginMode.FE == loginMode) {
             return false;
@@ -161,7 +168,9 @@ public class VelocityServlet extends HttpServlet {
                     request,
                     response
             );
+
             Logger.debug(this, "VelocityServlet_service pageHtml: " + pageHtml);
+
             response.getOutputStream().write(pageHtml.getBytes());
         } catch (ResourceNotFoundException rnfe) {
             Logger.warnAndDebug(this.getClass(), "ResourceNotFoundException" + rnfe.toString(), rnfe);
