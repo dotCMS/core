@@ -194,3 +194,4 @@ This maintenance release includes the following code fixes:
 187. https://github.com/dotCMS/core/issues/30993 : In 24.12.10 the EsReadOnlyMonitorJob still shows error #30993
 188. https://github.com/dotCMS/core/issues/26503 : CORS not applied when specifying resource #26503
 189. https://github.com/dotCMS/core/issues/28365 : Add Host to the reference tab on Content #28365
+190. https://github.com/dotCMS/core/issues/28579 : Add a way to bulk Reset Permissions #28579

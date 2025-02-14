@@ -233,6 +233,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				AsyncEmailActionlet.class,
                 SetValueActionlet.class,
                 ReindexContentActionlet.class,
+				ResetPermissionsActionlet.class,
                 PushNowActionlet.class,
 				TranslationActionlet.class,
 				SaveContentActionlet.class,
