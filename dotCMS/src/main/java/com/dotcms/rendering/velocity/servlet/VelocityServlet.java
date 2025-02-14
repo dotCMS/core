@@ -8,7 +8,6 @@ import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
-import com.dotcms.util.TimeMachineUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.UserWebAPIImpl;
@@ -27,15 +26,14 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import javax.servlet.http.HttpSession;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
+import java.io.IOException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import javax.servlet.http.HttpSession;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 public class VelocityServlet extends HttpServlet {
 
@@ -82,6 +80,13 @@ public class VelocityServlet extends HttpServlet {
                  PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE, false) : PageMode.setPageMode(request, PageMode.PREVIEW_MODE, false);
     }
 
+    /**
+     * This method will determine the page mode based on the user and the login mode
+     * @param request HttpServletRequest
+     * @param user User
+     * @param loginMode LoginMode
+     * @return PageMode
+     */
     private static PageMode determinePageMode(HttpServletRequest request, User user, LoginMode loginMode) {
         if (user.isFrontendUser()) {
             return PageMode.setPageMode(request, PageMode.LIVE, false);
