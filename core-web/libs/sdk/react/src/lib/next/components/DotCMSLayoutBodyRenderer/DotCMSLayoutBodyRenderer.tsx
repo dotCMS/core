@@ -6,7 +6,7 @@ import { Row } from '../Row/Row';
 
 interface DotCMSLayoutBodyRendererProps {
     page: DotCMSPageAsset;
-    components?: Record<string, React.ComponentType<DotCMSContentlet>>;
+    components: Record<string, React.ComponentType<DotCMSContentlet>>;
     mode?: DotCMSPageRendererMode;
 }
 
@@ -55,8 +55,6 @@ export const DotCMSLayoutBodyRenderer = ({
     return (
         <DotCMSPageContext.Provider value={contextValue}>
             {dotCMSPageBody.rows.map((row, index) => (
-                // Render each row using the Row component.
-                // Se renderiza cada fila usando el componente Row.
                 <Row key={index} row={row} />
             ))}
         </DotCMSPageContext.Provider>
