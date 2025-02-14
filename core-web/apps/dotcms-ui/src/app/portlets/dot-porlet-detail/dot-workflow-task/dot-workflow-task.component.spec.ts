@@ -193,7 +193,7 @@ describe('DotWorkflowTaskComponent', () => {
             detail: {
                 name: 'workflow-wizard',
                 data: {
-                    callback: 'fileActionCallbackFromAngular'
+                    callback: 'test'
                 }
             }
         };

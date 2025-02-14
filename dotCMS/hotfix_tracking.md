@@ -195,3 +195,4 @@ This maintenance release includes the following code fixes:
 188. https://github.com/dotCMS/core/issues/26503 : CORS not applied when specifying resource #26503
 189. https://github.com/dotCMS/core/issues/28365 : Add Host to the reference tab on Content #28365
 190. https://github.com/dotCMS/core/issues/28579 : Add a way to bulk Reset Permissions #28579
+191. https://github.com/dotCMS/core/issues/30761 : Data is not getting saved in the workflow #30761
