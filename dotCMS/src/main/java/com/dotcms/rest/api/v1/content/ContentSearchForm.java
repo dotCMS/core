@@ -298,6 +298,21 @@ public class ContentSearchForm implements Serializable {
         return 0;
     }
 
+    @Override
+    public String toString() {
+        return "ContentSearchForm{" +
+                "globalSearch='" + globalSearch + '\'' +
+                ", searchableFieldsByContentType=" + searchableFieldsByContentType +
+                ", systemSearchableFields=" + systemSearchableFields +
+                ", archivedContent='" + archivedContent + '\'' +
+                ", unpublishedContent='" + unpublishedContent + '\'' +
+                ", lockedContent='" + lockedContent + '\'' +
+                ", orderBy='" + orderBy + '\'' +
+                ", page=" + page +
+                ", perPage=" + perPage +
+                '}';
+    }
+
     /**
      * Allows you to create an instance of the {@link ContentSearchForm} class using a Builder.
      */

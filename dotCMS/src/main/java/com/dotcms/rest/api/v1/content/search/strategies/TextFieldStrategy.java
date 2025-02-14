@@ -6,7 +6,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CharMatcher;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.liferay.util.StringPool.SPACE;

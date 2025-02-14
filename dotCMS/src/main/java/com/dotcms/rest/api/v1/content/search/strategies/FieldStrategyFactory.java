@@ -45,6 +45,39 @@ public class FieldStrategyFactory {
     }
 
     /**
+     * Adds a new Field Strategy to the group of Searchable Field Strategies. A Field Strategy
+     * defines the way a specific type of field can be queried via Lucene.
+     * <p>These types of strategies must always match one or more fields that can be added to a
+     * Content Type's definition. For instance, the {@link FieldHandlerId#TEXT} related to the
+     * {@link TextFieldStrategy} takes care of handling all sort of text-based fields: Text, Text
+     * Area, WYSIWYG, Block Editor, Select, and so on. If, for any reason, one of those fields must
+     * be handled in a particular way, a new Field Handler ID and Field Strategy
+     * must be implemented.</p>
+     *
+     * @param strategyId The {@link FieldHandlerId} that represents the Field Strategy.
+     * @param strategy   The {@link FieldStrategy} implementation that will be used to generate the
+     *                   Lucene query.
+     */
+    public static void addFieldStrategy(final FieldHandlerId strategyId, final FieldStrategy strategy) {
+        SEARCHABLE_FIELD_STRATEGY_MAP.put(strategyId, strategy);
+    }
+
+    /**
+     * Adds a new Field Strategy to the group of System Field Strategies. A Field Strategy of this
+     * type represents a filtering value that does NOT match a User Searchable field in a Content
+     * Type. For instance, the Lucene term {@code +locked} -- which allows you to filter locked or
+     * unlocked content -- is a type of System Field Strategy. They usually have their own Field
+     * Handler ID and Field Strategy.
+     *
+     * @param strategyId The {@link FieldHandlerId} that represents the Field Strategy.
+     * @param strategy   The {@link FieldStrategy} implementation that will be used to generate the
+     *                   Lucene query.
+     */
+    public static void addSystemFieldStrategy(final FieldHandlerId strategyId, final FieldStrategy strategy) {
+        SYSTEM_FIELD_STRATEGY_MAP.put(strategyId, strategy);
+    }
+
+    /**
      * Returns the appropriate Field Strategy instance based on the Field Handler type; i.e., the
      * type of searchable field that must be used in the resulting Lucene query.
      *

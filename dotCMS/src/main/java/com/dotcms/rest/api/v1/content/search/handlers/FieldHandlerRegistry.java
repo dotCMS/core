@@ -76,7 +76,7 @@ public class FieldHandlerRegistry {
      *                       {@link FieldStrategy} that will be used to generate the Lucene
      *                       query for a given field.
      */
-    private static void registerHandler(final Set<Class<? extends Field>> fieldTypes,
+    public static void registerHandler(final Set<Class<? extends Field>> fieldTypes,
                                         final FieldHandlerId fieldHandlerId) {
         final FieldStrategy strategy = FieldStrategyFactory.getStrategy(fieldHandlerId);
         fieldTypes.forEach(fieldType -> handlers.put(fieldType,
@@ -88,7 +88,8 @@ public class FieldHandlerRegistry {
     /**
      * Retrieves the Field Handler for a given field in a Content Type. This handler will call a
      * specific {@link FieldStrategy} that is the one in charge of generating the Lucene query
-     * for the given field.
+     * for the given field. It has access to the {@link FieldContext} object which provides all the
+     * information the Field Strategy needs to generate the appropriate Lucene query.
      *
      * @param fieldType The {@link Class} of the field whose Field Handler will be retrieved.
      *

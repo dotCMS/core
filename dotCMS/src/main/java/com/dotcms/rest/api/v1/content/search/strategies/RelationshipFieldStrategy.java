@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
-import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This Strategy Field implementation specifies the correct syntax for querying a Relationship Field

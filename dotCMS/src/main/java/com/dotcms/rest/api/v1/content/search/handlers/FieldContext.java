@@ -14,6 +14,8 @@ import static com.liferay.util.StringPool.BLANK;
  * with the field's var name and its value -- while others might need to access other APIs, user
  * permission validations, pagination information, Content Type-specific data, or any other piece
  * of information that an existing or new searchable field may require.
+ * <p>This class can be extended as required, in case new types of Content Type fields or specific
+ * formatting in the Lucene query need additional data.</p>
  *
  * @author Jose Castro
  * @since Jan 29th, 2025

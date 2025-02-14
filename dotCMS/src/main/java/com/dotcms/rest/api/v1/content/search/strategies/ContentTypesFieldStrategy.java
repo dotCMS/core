@@ -20,6 +20,7 @@ public class ContentTypesFieldStrategy implements FieldStrategy {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public String generateQuery(final FieldContext queryContext) {
         final String fieldName = queryContext.fieldName();

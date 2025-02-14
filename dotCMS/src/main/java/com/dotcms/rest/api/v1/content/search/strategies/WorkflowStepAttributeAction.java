@@ -3,8 +3,6 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 
-import static com.dotcms.rest.api.v1.content.search.strategies.FieldHandlerId.WORKFLOW_STEP;
-
 /**
  * This Strategy Field implementation provides a default way to format the value of the Workflow
  * Step Attribute that will be used in the Lucene query, if required. This particular Strategy

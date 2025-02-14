@@ -64,6 +64,8 @@ public class LuceneQueryBuilder {
     private final User user;
     private final ContentSearchForm contentSearchForm;
 
+    private static final String DEFAULT_SORT = "score,modDate desc";
+
      /**
       * Creates a new instance of the {@link LuceneQueryBuilder} class.
       *
@@ -95,13 +97,13 @@ public class LuceneQueryBuilder {
         final List<String> queryTerms = new ArrayList<>();
         final List<ContentType> contentTypeList = this.getContentTypes();
         queryTerms.add(this.getContentTypeQuery(contentTypeList));
-        queryTerms.add(String.join(SPACE, this.getSystemSearchableQueries()));
-        final String luceneQuerySort = this.getLuceneQuerySort();
+        queryTerms.add(String.join(SPACE, this.getSystemSearchableQueryTerms()));
+        final String orderByClause = this.getOrderByClause();
         final FieldContext.Builder fieldContextBuilder = new FieldContext.Builder()
                 .withUser(user)
                 .withPage(this.contentSearchForm.page())
                 .withOffset(this.contentSearchForm.offset())
-                .withSortBy(luceneQuerySort);
+                .withSortBy(orderByClause);
         contentTypeList
                 .forEach(contentType -> this.resolveFieldList(contentType)
                         .forEach(fieldVarName -> {
@@ -112,6 +114,7 @@ public class LuceneQueryBuilder {
                                 fieldContextBuilder.withContentType(contentType);
                                 fieldContextBuilder.withFieldName(luceneFieldName);
                                 fieldContextBuilder.withFieldValue(fieldValue);
+                                Logger.debug(this, String.format("Processing Field Name '%s' with Field Value '%s'", luceneFieldName, fieldValue));
                                 final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
                                 if (null != handler) {
                                     final String query = handler.apply(fieldContextBuilder.build());
@@ -122,7 +125,9 @@ public class LuceneQueryBuilder {
                                     } else {
                                         queryTerms.add(query);
                                     }
+                                    Logger.debug(this, String.format("Generated query term for field '%s': '%s'", fieldVarName, query));
                                 } else {
+                                    Logger.debug(this, String.format("No Field Handler found for field '%s'. Using the default strategy", luceneFieldName));
                                     final FieldStrategy defaultStrategy = FieldStrategyFactory.getStrategy(FieldHandlerId.DEFAULT);
                                     queryTerms.add(defaultStrategy.generateQuery(fieldContextBuilder.build()));
                                 }
@@ -132,8 +137,10 @@ public class LuceneQueryBuilder {
         if (!relatedContentIDs.isEmpty()) {
             queryTerms.add("+identifier:(" + String.join(" OR ", relatedContentIDs) + ")");
         }
-        return queryTerms.stream().filter(term -> UtilMethods.isSet(term) && !term.isEmpty())
+        final String generatedQuery = queryTerms.stream().filter(term -> UtilMethods.isSet(term) && !term.isEmpty())
                 .reduce((a, b) -> a + SPACE + b).orElse(BLANK);
+        Logger.debug(this, String.format("Generated Lucene Query: %s", generatedQuery));
+        return generatedQuery;
     }
 
     /**
@@ -165,9 +172,11 @@ public class LuceneQueryBuilder {
             return List.of();
         }
         final List<String> searchableFields = this.contentSearchForm.searchableFields(contentType.id());
-        return UtilMethods.isSet(searchableFields)
+        final List<String> resolvedFields = UtilMethods.isSet(searchableFields)
                 ? searchableFields
                 : this.contentSearchForm.searchableFields(contentType.variable());
+        Logger.debug(this, String.format("Resolved Fields: %s", resolvedFields));
+        return resolvedFields;
     }
 
     /**
@@ -206,8 +215,8 @@ public class LuceneQueryBuilder {
      * @return The Lucene query for the system searchable fields specified in the
      * {@link ContentSearchForm}.
      */
-    private List<String> getSystemSearchableQueries() {
-        return Stream.of(
+    private List<String> getSystemSearchableQueryTerms() {
+        final List<String> systemSearchableQueryTerms = Stream.of(
                         this.createQuery(ESMappingConstants.TITLE, contentSearchForm.globalSearch(), GLOBAL_SEARCH),
                         this.createQuery(ESMappingConstants.CONTENTLET_HOST, contentSearchForm.siteId(), SITE_ID,
                                 Map.of("systemHostContent", contentSearchForm.systemHostContent())),
@@ -218,9 +227,11 @@ public class LuceneQueryBuilder {
                         this.createQuery(ESMappingConstants.DELETED, contentSearchForm.archivedContent(), ARCHIVED_CONTENT),
                         this.createQuery(ESMappingConstants.LOCKED, contentSearchForm.lockedContent(), LOCKED_CONTENT),
                         this.createQuery(ESMappingConstants.LIVE, contentSearchForm.unpublishedContent(), LIVE_CONTENT),
-                        "+working:true"
-                ).filter(UtilMethods::isSet)
+                        "+working:true")
+                .filter(UtilMethods::isSet)
                 .collect(Collectors.toList());
+        Logger.debug(this, String.format("System Searchable query terms: %s", systemSearchableQueryTerms));
+        return systemSearchableQueryTerms;
     }
 
      /**
@@ -274,12 +285,14 @@ public class LuceneQueryBuilder {
      */
     private List<ContentType> getContentTypes() {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
-        return Optional.ofNullable(contentSearchForm.contentTypeIds())
+        final List<ContentType> contentTypeList = Optional.ofNullable(contentSearchForm.contentTypeIds())
                 .stream()
                 .flatMap(Collection::stream)
                 .map(id -> this.fetchContentType(contentTypeAPI, id))
                 .flatMap(Optional::stream)
                 .collect(Collectors.toList());
+        Logger.debug(this, String.format("Content Types to query: %s", contentTypeList));
+        return contentTypeList;
     }
 
     /**
@@ -305,13 +318,12 @@ public class LuceneQueryBuilder {
 
     /**
      * Retrieves the Lucene query sort based on the {@link ContentSearchForm} object. If no sort is
-     * specified, it defaults to "modDate desc". This implementation is intended to be backwards
-     * compatible.
+     * specified, it defaults to the value of {@link #DEFAULT_SORT}.
      *
      * @return The Lucene query sort based on the {@link ContentSearchForm} object.
      */
-    private String getLuceneQuerySort() {
-        final String orderBy = contentSearchForm.orderBy();
+    public String getOrderByClause() {
+        final String orderBy = UtilMethods.isSet(contentSearchForm.orderBy()) ? contentSearchForm.orderBy() : DEFAULT_SORT;
         if (!UtilMethods.isSet(orderBy)) {
             return "modDate desc";
         } else if (orderBy.equalsIgnoreCase("score,modDate desc") && this.contentSearchForm.contentTypeIds().isEmpty()) {
@@ -321,6 +333,7 @@ public class LuceneQueryBuilder {
         } else if (orderBy.endsWith("__wfstep__ desc")) {
             return "wfCurrentStepName desc";
         }
+        Logger.debug(this, String.format("Adjusted Order by: %s", orderBy));
         return orderBy;
     }
 
