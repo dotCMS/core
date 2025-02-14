@@ -18,7 +18,7 @@ import { ControlContainer, FormGroupDirective } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { createFormBridge, FormBridge } from '@dotcms/edit-content/bridge';
+import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { DotIconModule, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
@@ -44,7 +44,10 @@ import { WINDOW } from '@dotcms/utils';
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    host: {
+        '[class.no-label]': '!$showLabel()'
+    }
 })
 export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewInit {
     /**
@@ -98,6 +101,16 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     });
 
     /**
+     * Whether to show the label.
+     */
+    $showLabel = computed(() => {
+        const field = this.$field();
+        if (!field) return true;
+
+        return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
+    });
+
+    /**
      * The title for the iframe.
      */
     $iframeTitle = computed(() => {
@@ -123,11 +136,6 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      * The form to get the form.
      */
     $form = computed(() => (this.#controlContainer as FormGroupDirective).form);
-
-    /**
-     * The cleanup function for the resize observer.
-     */
-    private resizeCleanup?: () => void;
 
     /**
      * Handles messages from the custom field and toggles fullscreen mode.
@@ -235,13 +243,55 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
     }
 
     /**
-     * Cleans up the custom field API and the resize observer.
+     * Adjusts the iframe height and sets up the resize observer.
      */
+    private adjustIframeHeight() {
+        const iframeEl = this.iframe()?.nativeElement;
+        if (!iframeEl) {
+            return () => void 0;
+        }
+
+        const updateHeight = () => {
+            try {
+                const body = iframeEl.contentWindow?.document.body;
+                if (body) {
+                    body.style.margin = '0';
+                    const height = body.scrollHeight;
+                    if (height > 0) {
+                        iframeEl.style.height = `${height + 1}px`;
+                    }
+                }
+            } catch (error) {
+                console.warn('Error adjusting iframe height:', error);
+            }
+        };
+
+        iframeEl.addEventListener('load', updateHeight);
+
+        const observer = new MutationObserver(() => {
+            requestAnimationFrame(updateHeight);
+        });
+
+        iframeEl.addEventListener('load', () => {
+            const body = iframeEl.contentWindow?.document.body;
+            if (body) {
+                observer.observe(body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true
+                });
+            }
+        });
+
+        return () => {
+            observer.disconnect();
+            iframeEl.removeEventListener('load', updateHeight);
+        };
+    }
+
     ngOnDestroy(): void {
-        this.#formBridge?.destroy();
-        // Cleanup resize observer if it exists
-        if (this.resizeCleanup) {
-            this.resizeCleanup();
+        if (this.#formBridge) {
+            this.#formBridge.destroy();
         }
     }
 
@@ -249,57 +299,6 @@ export class DotEditContentCustomFieldComponent implements OnDestroy, AfterViewI
      * Adjusts the iframe height and sets up the resize observer.
      */
     ngAfterViewInit() {
-        this.resizeCleanup = this.adjustIframeHeight();
-    }
-
-    /**
-     * Adjusts the iframe height and sets up the resize observer.
-     */
-    private adjustIframeHeight() {
-        const iframeEl = this.iframe()?.nativeElement;
-        if (!iframeEl) {
-            console.warn('Iframe not initialized');
-
-            return () => {
-                // nothing to do
-            };
-        }
-
-        // Set initial height to 0 to prevent the 150px default
-        iframeEl.style.height = '0px';
-
-        const resizeObserver = new ResizeObserver(() => {
-            try {
-                const contentHeight = iframeEl.contentWindow?.document.documentElement.scrollHeight;
-                if (contentHeight) {
-                    iframeEl.style.height = `${contentHeight}px`;
-                }
-            } catch (error) {
-                console.warn('Error adjusting iframe height:', error);
-            }
-        });
-
-        const handleIframeLoad = () => {
-            try {
-                const body = iframeEl.contentWindow?.document.body;
-                if (body) {
-                    resizeObserver.observe(body);
-                    const contentHeight =
-                        iframeEl.contentWindow?.document.documentElement.scrollHeight;
-                    if (contentHeight) {
-                        iframeEl.style.height = `${contentHeight}px`;
-                    }
-                }
-            } catch (error) {
-                console.warn('Error setting up iframe resize observer:', error);
-            }
-        };
-
-        iframeEl.addEventListener('load', handleIframeLoad);
-
-        return () => {
-            resizeObserver.disconnect();
-            iframeEl.removeEventListener('load', handleIframeLoad);
-        };
+        this.adjustIframeHeight();
     }
 }

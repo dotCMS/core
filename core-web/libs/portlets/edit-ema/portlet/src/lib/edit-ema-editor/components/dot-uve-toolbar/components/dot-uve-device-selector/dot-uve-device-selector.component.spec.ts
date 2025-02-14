@@ -20,7 +20,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 import { Orientation } from '../../../../../store/models';
 import {
     sanitizeURL,
-    createPageApiUrlWithQueryParams,
+    getFullPageURL,
     createFavoritePagesURL,
     createFullURL
 } from '../../../../../utils';
@@ -30,7 +30,7 @@ const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&langu
 const params = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
 
-const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
+const pageAPIQueryParams = getFullPageURL({ url, params });
 const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
 const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
 const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked;
@@ -59,7 +59,6 @@ const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
     setSEO: jest.fn(),
-    setSocialMedia: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     $apiURL: signal($apiURL),

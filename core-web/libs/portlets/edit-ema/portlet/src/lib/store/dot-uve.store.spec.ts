@@ -12,7 +12,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotExperimentsService,
     DotLanguagesService,
@@ -31,11 +30,13 @@ import {
     CurrentUserDataMock,
     mockLanguageArray
 } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { UVEStore } from './dot-uve.store';
+import { Orientation } from './models';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { COMMON_ERRORS } from '../shared/consts';
+import { COMMON_ERRORS, PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import {
     BASE_SHELL_ITEMS,
@@ -46,6 +47,7 @@ import {
     MOCK_RESPONSE_VTL,
     VTL_BASE_QUERY_PARAMS
 } from '../shared/mocks';
+import { normalizeQueryParams } from '../utils';
 
 const buildPageAPIResponseFromMock =
     (mock) =>
@@ -363,13 +365,13 @@ describe('UVEStore', () => {
 
         describe('$isPreviewMode', () => {
             it("should return true when the preview is 'true'", () => {
-                store.loadPageAsset({ editorMode: UVE_MODE.PREVIEW });
+                store.loadPageAsset({ mode: UVE_MODE.PREVIEW });
 
                 expect(store.$isPreviewMode()).toBe(true);
             });
 
             it("should return false when the preview is not 'true'", () => {
-                store.loadPageAsset({ editorMode: null });
+                store.loadPageAsset({ mode: null });
 
                 expect(store.$isPreviewMode()).toBe(false);
             });
@@ -377,15 +379,36 @@ describe('UVEStore', () => {
 
         describe('$isLiveMode', () => {
             it("should return true when the live is 'true'", () => {
-                store.loadPageAsset({ editorMode: UVE_MODE.LIVE });
+                store.loadPageAsset({ mode: UVE_MODE.LIVE });
 
                 expect(store.$isLiveMode()).toBe(true);
             });
 
             it("should return false when the live is not 'true'", () => {
-                store.loadPageAsset({ editorMode: null });
+                store.loadPageAsset({ mode: null });
 
                 expect(store.$isLiveMode()).toBe(false);
+            });
+        });
+
+        describe('$friendlyParams', () => {
+            it('should return a readable user params', () => {
+                const pageParams = {
+                    url: '/index',
+                    language_id: '1',
+                    [PERSONA_KEY]: 'someCoolDude'
+                };
+
+                const viewParams = {
+                    orientation: Orientation.LANDSCAPE,
+                    device: '',
+                    seo: ''
+                };
+
+                const expected = normalizeQueryParams({ ...pageParams, ...viewParams });
+
+                patchState(store, { pageParams, viewParams });
+                expect(store.$friendlyParams()).toEqual(expected);
             });
         });
     });

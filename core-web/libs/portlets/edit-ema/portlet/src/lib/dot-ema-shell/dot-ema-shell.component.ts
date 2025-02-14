@@ -9,7 +9,6 @@ import { ToastModule } from 'primeng/toast';
 
 import { skip } from 'rxjs/operators';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotESContentService,
     DotExperimentsService,
@@ -24,6 +23,7 @@ import {
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
@@ -101,25 +101,13 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const pageParams = this.uveStore.pageParams();
-        const viewParams = this.uveStore.viewParams();
-
-        if (!pageParams && !viewParams) {
-            return;
-        }
-
-        const queryParams = {
-            ...(pageParams ?? {}),
-            ...(viewParams ?? {})
-        };
-
-        this.#updateLocation(queryParams);
+        const params = this.uveStore.$friendlyParams();
+        this.#updateLocation(params);
     });
 
     ngOnInit(): void {
         const params = this.#getPageParams();
-
-        const viewParams = this.#getViewParams(params.editorMode);
+        const viewParams = this.#getViewParams(params.mode);
 
         this.uveStore.patchViewParams(viewParams);
 
@@ -224,12 +212,16 @@ export class DotEmaShellComponent implements OnInit {
         // If the editor mode is not valid, set it to edit mode
         const UVE_MODES = Object.values(UVE_MODE);
 
-        if (!params.editorMode || !UVE_MODES.includes(params.editorMode)) {
-            params.editorMode = UVE_MODE.EDIT;
+        if (!params.mode || !UVE_MODES.includes(params.mode)) {
+            params.mode = UVE_MODE.EDIT;
         }
 
-        if (params.editorMode === UVE_MODE.LIVE && !params.publishDate) {
-            params.publishDate = new Date().toISOString();
+        if (params.mode === UVE_MODE.LIVE) {
+            params.publishDate = params.publishDate || new Date().toISOString();
+        }
+
+        if (queryParams['personaId']) {
+            params['com.dotmarketing.persona.id'] = queryParams['personaId'];
         }
 
         return params;

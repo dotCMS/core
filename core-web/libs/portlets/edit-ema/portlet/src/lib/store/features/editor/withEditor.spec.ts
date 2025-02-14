@@ -6,20 +6,14 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { UVE_MODE } from '@dotcms/client';
-import { CurrentUser } from '@dotcms/dotcms-js';
-import {
-    DEFAULT_VARIANT_ID,
-    DEFAULT_VARIANT_NAME,
-    DotCMSContentlet,
-    DotDeviceListItem
-} from '@dotcms/dotcms-models';
-import { getRunningExperimentMock, mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
+import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
-import { BASE_IFRAME_MEASURE_UNIT, DEFAULT_PERSONA } from '../../../shared/consts';
+import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ACTION_MOCK,
@@ -32,22 +26,6 @@ import {
 } from '../../../shared/mocks';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
-const mockCurrentUser: CurrentUser = {
-    email: 'admin@dotcms.com',
-    givenName: 'Admin',
-    loginAs: true,
-    roleId: 'e7d4e34e-5127-45fc-8123-d48b62d510e3',
-    surname: 'User',
-    userId: 'dotcms.org.1'
-};
-const mockOtherUser: CurrentUser = {
-    email: 'admin2@dotcms.com',
-    givenName: 'Admin2',
-    loginAs: true,
-    roleId: '73ec980e-d74f-4cec-a4d0-e319061e20b9',
-    surname: 'User',
-    userId: 'dotcms.org.2808'
-};
 
 const emptyParams = {} as DotPageApiParams;
 
@@ -62,7 +40,7 @@ const initialState: UVEState = {
         ...emptyParams,
         url: 'test-url',
         language_id: '1',
-        'com.dotmarketing.persona.id': 'dot:persona',
+        [PERSONA_KEY]: 'dot:persona',
         variantName: 'DEFAULT',
         clientHost: 'http://localhost:3000'
     },
@@ -118,459 +96,13 @@ describe('withEditor', () => {
         patchState(store, initialState);
     });
 
-    describe('withEditorToolbar', () => {
-        describe('withComputed', () => {
-            describe('$toolbarProps', () => {
-                it('should return the base info', () => {
-                    expect(store.$toolbarProps()).toEqual({
-                        apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
-                        bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
-                        copyUrl:
-                            'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl',
-                        currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
-                        deviceSelector: {
-                            apiLink:
-                                'http://localhost:3000/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
-                            hideSocialMedia: true
-                        },
-                        personaSelector: {
-                            pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                            value: MOCK_RESPONSE_HEADLESS.viewAs.persona ?? DEFAULT_PERSONA
-                        },
-                        runningExperiment: null,
-                        isDefaultVariant: true,
-                        showInfoDisplay: false,
-                        unlockButton: null,
-                        urlContentMap: null,
-                        workflowActionsInode: MOCK_RESPONSE_HEADLESS.page.inode
-                    });
-                });
-
-                describe('urlContentMap', () => {
-                    it('should return the urlContentMap if the state is edit', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                urlContentMap: {
-                                    title: 'Title',
-                                    inode: '123',
-                                    contentType: 'test'
-                                } as unknown as DotCMSContentlet
-                            }
-                        });
-
-                        expect(store.$toolbarProps().urlContentMap).toEqual({
-                            title: 'Title',
-                            inode: '123',
-                            contentType: 'test'
-                        });
-                    });
-
-                    it('should not return the urlContentMap if the state is not edit', () => {
-                        patchState(store, { isEditState: false });
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                urlContentMap: {
-                                    title: 'Title',
-                                    inode: '123',
-                                    contentType: 'test'
-                                } as unknown as DotCMSContentlet
-                            }
-                        });
-
-                        expect(store.$toolbarProps().urlContentMap).toEqual(null);
-                    });
-                });
-
-                describe('runningExperiment', () => {
-                    it('should have a runningExperiment if the experiment is running', () => {
-                        patchState(store, { experiment: getRunningExperimentMock() });
-
-                        expect(store.$toolbarProps().runningExperiment).toEqual(
-                            getRunningExperimentMock()
-                        );
-                    });
-                });
-
-                describe('workflowActionsInode', () => {
-                    it("should not have an workflowActionsInode if the user can't edit the page", () => {
-                        patchState(store, { canEditPage: false });
-
-                        expect(store.$toolbarProps().workflowActionsInode).toBe(null);
-                    });
-                });
-
-                describe('unlockButton', () => {
-                    it('should display unlockButton if the page is locked by another user and the current user can lock the page', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                page: {
-                                    ...MOCK_RESPONSE_HEADLESS.page,
-                                    locked: true,
-                                    lockedBy: mockOtherUser.userId,
-                                    canLock: true
-                                }
-                            },
-                            currentUser: mockCurrentUser,
-                            status: UVE_STATUS.LOADED
-                        });
-
-                        expect(store.$toolbarProps().unlockButton).toEqual({
-                            inode: '123-i',
-                            loading: false
-                        });
-                    });
-
-                    it('should not display unlockButton if the page is locked by the current user', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                page: {
-                                    ...MOCK_RESPONSE_HEADLESS.page,
-                                    locked: true,
-                                    lockedBy: mockCurrentUser.userId,
-                                    canLock: true
-                                }
-                            },
-                            currentUser: mockCurrentUser
-                        });
-
-                        expect(store.$toolbarProps().unlockButton).toBeNull();
-                    });
-
-                    it('should not display unlockButton if the page is not locked', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                page: {
-                                    ...MOCK_RESPONSE_HEADLESS.page,
-                                    locked: false,
-                                    canLock: true
-                                }
-                            },
-                            currentUser: mockCurrentUser
-                        });
-
-                        expect(store.$toolbarProps().unlockButton).toBeNull();
-                    });
-
-                    it('should not display unlockButton if the user cannot lock the page', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                page: {
-                                    ...MOCK_RESPONSE_HEADLESS.page,
-                                    locked: true,
-                                    canLock: false
-                                }
-                            },
-                            currentUser: mockCurrentUser
-                        });
-
-                        expect(store.$toolbarProps().unlockButton).toBeNull();
-                    });
-                });
-
-                describe('shouldShowInfoDisplay', () => {
-                    it("should have shouldShowInfoDisplay as true if the user can't edit the page", () => {
-                        patchState(store, { canEditPage: false });
-
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
-                    });
-
-                    it('should have shouldShowInfoDisplay as true if the device is set', () => {
-                        patchState(store, { device: mockDotDevices[0] });
-
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
-                    });
-
-                    it('should have shouldShowInfoDisplay as true if the socialMedia is set', () => {
-                        patchState(store, { socialMedia: 'facebook' });
-
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
-                    });
-
-                    it('should have shouldShowInfoDisplay as true if the page is a variant different from default', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                viewAs: {
-                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                    variantId: 'test'
-                                }
-                            }
-                        });
-
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
-                    });
-                    it('should have shouldShowInfoDisplay as true if the page is locked by another user', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                page: {
-                                    ...MOCK_RESPONSE_HEADLESS.page,
-                                    locked: true,
-                                    lockedBy: mockOtherUser.userId
-                                }
-                            },
-                            currentUser: mockCurrentUser
-                        });
-
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(true);
-                    });
-
-                    it('should have shouldShowInfoDisplay as false if the page is locked by the current user and other conditions are not met', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                page: {
-                                    ...MOCK_RESPONSE_HEADLESS.page,
-                                    locked: true,
-                                    lockedBy: mockCurrentUser.userId
-                                }
-                            },
-                            currentUser: mockCurrentUser,
-                            canEditPage: true,
-                            device: null,
-                            socialMedia: null
-                        });
-
-                        expect(store.$toolbarProps().showInfoDisplay).toBe(false);
-                    });
-                });
-
-                describe('isDefaultVariant', () => {
-                    it('should have isDefaultVariant as true if the page variant is default', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                viewAs: {
-                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                    variantId: DEFAULT_VARIANT_ID
-                                }
-                            }
-                        });
-
-                        expect(store.$toolbarProps().isDefaultVariant).toBe(true);
-                    });
-                    it('should have isDefaultVariant as false if the page is a variant different from default', () => {
-                        patchState(store, {
-                            pageAPIResponse: {
-                                ...MOCK_RESPONSE_HEADLESS,
-                                viewAs: {
-                                    ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                    variantId: 'test'
-                                }
-                            }
-                        });
-
-                        expect(store.$toolbarProps().isDefaultVariant).toBe(false);
-                    });
-                });
-            });
-
-            describe('$infoDisplayOptions', () => {
-                it('should be null in regular conditions', () => {
-                    patchState(store, { canEditPage: true, pageAPIResponse: null });
-                    expect(store.$infoDisplayOptions()).toBe(null);
-                });
-
-                it('should return info for device', () => {
-                    const device = mockDotDevices[0] as DotDeviceListItem;
-
-                    patchState(store, { device });
-
-                    expect(store.$infoDisplayOptions()).toEqual({
-                        icon: device.icon,
-                        info: {
-                            message: 'iphone 200 x 100',
-                            args: []
-                        },
-                        id: 'device',
-                        actionIcon: 'pi pi-times'
-                    });
-                });
-
-                it('should return info for socialMedia', () => {
-                    patchState(store, { socialMedia: 'Facebook' });
-
-                    expect(store.$infoDisplayOptions()).toEqual({
-                        icon: 'pi pi-facebook',
-                        info: {
-                            message: 'Viewing <b>Facebook</b> social media preview',
-                            args: []
-                        },
-                        id: 'socialMedia',
-                        actionIcon: 'pi pi-times'
-                    });
-                });
-
-                it('should return info when visiting a variant and can edit', () => {
-                    const currentExperiment = getRunningExperimentMock();
-
-                    const variantID = currentExperiment.trafficProportion.variants.find(
-                        (variant) => variant.name !== DEFAULT_VARIANT_NAME
-                    ).id;
-
-                    patchState(store, {
-                        canEditPage: true,
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                variantId: variantID
-                            }
-                        },
-                        experiment: currentExperiment
-                    });
-
-                    expect(store.$infoDisplayOptions()).toEqual({
-                        icon: 'pi pi-file-edit',
-                        info: {
-                            message: 'editpage.editing.variant',
-                            args: ['Variant A']
-                        },
-                        id: 'variant',
-                        actionIcon: 'pi pi-arrow-left'
-                    });
-                });
-
-                it('should return info when visiting a variant and can not edit', () => {
-                    const currentExperiment = getRunningExperimentMock();
-
-                    const variantID = currentExperiment.trafficProportion.variants.find(
-                        (variant) => variant.name !== DEFAULT_VARIANT_NAME
-                    ).id;
-
-                    patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            page: {
-                                ...MOCK_RESPONSE_HEADLESS.page
-                            },
-                            viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                variantId: variantID
-                            }
-                        },
-                        experiment: currentExperiment,
-                        canEditPage: false
-                    });
-
-                    expect(store.$infoDisplayOptions()).toEqual({
-                        icon: 'pi pi-file-edit',
-                        info: {
-                            message: 'editpage.viewing.variant',
-                            args: ['Variant A']
-                        },
-                        id: 'variant',
-                        actionIcon: 'pi pi-arrow-left'
-                    });
-                });
-
-                it('should return info when the page is locked and can lock', () => {
-                    patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            page: {
-                                ...MOCK_RESPONSE_HEADLESS.page,
-                                locked: true,
-                                canLock: true,
-                                lockedByName: 'John Doe'
-                            }
-                        }
-                    });
-
-                    expect(store.$infoDisplayOptions()).toEqual({
-                        icon: 'pi pi-lock',
-                        info: {
-                            message: 'editpage.locked-by',
-                            args: ['John Doe']
-                        },
-                        id: 'locked'
-                    });
-                });
-
-                it('should return info when the page is locked and cannot lock', () => {
-                    patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            page: {
-                                ...MOCK_RESPONSE_HEADLESS.page,
-                                locked: true,
-                                canLock: false,
-                                lockedByName: 'John Doe'
-                            }
-                        }
-                    });
-
-                    expect(store.$infoDisplayOptions()).toEqual({
-                        icon: 'pi pi-lock',
-                        info: {
-                            message: 'editpage.locked-contact-with',
-                            args: ['John Doe']
-                        },
-                        id: 'locked'
-                    });
-                });
-
-                it('should return info when you cannot edit the page', () => {
-                    patchState(store, { canEditPage: false });
-
-                    expect(store.$infoDisplayOptions()).toEqual({
-                        icon: 'pi pi-exclamation-circle warning',
-                        info: { message: 'editema.dont.have.edit.permission', args: [] },
-                        id: 'no-permission'
-                    });
-                });
-            });
-        });
-
-        describe('withMethods', () => {
-            it('should set the device with setDevice', () => {
-                const device = {
-                    identifier: '123',
-                    cssHeight: '120',
-                    cssWidth: '120',
-                    name: 'square',
-                    inode: '1234',
-                    icon: 'icon'
-                };
-
-                store.setDevice(device);
-
-                expect(store.device()).toEqual(device);
-                expect(store.isEditState()).toBe(false);
-            });
-
-            it('should set the socialMedia with setSocialMedia', () => {
-                const socialMedia = 'facebook';
-
-                store.setSocialMedia(socialMedia);
-
-                expect(store.socialMedia()).toEqual(socialMedia);
-                expect(store.isEditState()).toBe(false);
-            });
-
-            it('should reset the state with clearDeviceAndSocialMedia', () => {
-                store.clearDeviceAndSocialMedia();
-
-                expect(store.device()).toBe(null);
-                expect(store.socialMedia()).toBe(null);
-                expect(store.isEditState()).toBe(true);
-            });
-        });
-    });
-
     describe('withUVEToolbar', () => {
         describe('withComputed', () => {
             describe('$toolbarProps', () => {
                 it('should return the base info', () => {
                     expect(store.$uveToolbar()).toEqual({
                         editor: {
-                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000',
+                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT',
                             bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1',
                             copyUrl:
                                 'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&host_id=123-xyz-567-xxl'
@@ -682,7 +214,7 @@ describe('withEditor', () => {
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                    'http://localhost:3000/test-url?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
 
@@ -716,7 +248,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/first?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&clientHost=http%3A%2F%2Flocalhost%3A3000'
+                    'http://localhost:3000/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
         });
@@ -729,7 +261,10 @@ describe('withEditor', () => {
                     iframe: {
                         opacity: '0.5',
                         pointerEvents: 'auto',
-                        wrapper: null
+                        wrapper: {
+                            width: '100%',
+                            height: '100%'
+                        }
                     },
                     progressBar: true,
                     contentletTools: null,
@@ -751,7 +286,7 @@ describe('withEditor', () => {
 
             it('should not have opacity or progressBar in preview mode', () => {
                 patchState(store, {
-                    pageParams: { ...emptyParams, editorMode: UVE_MODE.PREVIEW }
+                    pageParams: { ...emptyParams, mode: UVE_MODE.PREVIEW }
                 });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
@@ -948,7 +483,7 @@ describe('withEditor', () => {
                         canEditPage: true,
                         pageParams: {
                             ...emptyParams,
-                            editorMode: UVE_MODE.PREVIEW
+                            mode: UVE_MODE.PREVIEW
                         },
                         state: EDITOR_STATE.IDLE
                     });

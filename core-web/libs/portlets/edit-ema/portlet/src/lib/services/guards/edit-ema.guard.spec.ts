@@ -7,6 +7,8 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { editEmaGuard } from './edit-ema.guard';
 
+import { PERSONA_KEY } from '../../shared/consts';
+
 describe('EditEmaGuard', () => {
     let router: Router;
 
@@ -37,7 +39,7 @@ describe('EditEmaGuard', () => {
             },
             queryParams: {
                 url: '/some-url',
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                [PERSONA_KEY]: 'modes.persona.no.persona',
                 language_id: 1
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,7 +60,7 @@ describe('EditEmaGuard', () => {
             },
             queryParams: {
                 url: '/im-just-a-cool-index-index',
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                [PERSONA_KEY]: 'modes.persona.no.persona',
                 language_id: 1
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,7 +81,7 @@ describe('EditEmaGuard', () => {
             },
             queryParams: {
                 url: '/im-just-a-cool-index-index/index-something',
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                [PERSONA_KEY]: 'modes.persona.no.persona',
                 language_id: 1
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,7 +108,7 @@ describe('EditEmaGuard', () => {
 
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
             queryParams: {
-                'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                [PERSONA_KEY]: 'modes.persona.no.persona',
                 language_id: 1,
                 url: 'index'
             },

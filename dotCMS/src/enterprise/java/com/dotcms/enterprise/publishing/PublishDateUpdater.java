@@ -1,15 +1,16 @@
-/* 
+/*
+
 * Licensed to dotCMS LLC under the dotCMS Enterprise License (the
-* “Enterprise License”) found below 
-* 
+* “Enterprise License”) found below
+*
 * Copyright (c) 2023 dotCMS Inc.
-* 
+*
 * With regard to the dotCMS Software and this code:
-* 
+*
 * This software, source code and associated documentation files (the
 * "Software")  may only be modified and used if you (and any entity that
 * you represent) have:
-* 
+*
 * 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
 * of Service, available at https://www.dotcms.com/terms (the “Enterprise
 * Terms”) or have another agreement governing the licensing and use of the
@@ -17,7 +18,7 @@
 * enterprise features enabled by the code in this directory is licensed
 * under these agreements and has a separate and valid dotCMS Enterprise
 * server key issued by dotCMS.
-* 
+*
 * Subject to these terms, you are free to modify this Software and publish
 * patches to the Software if you agree that dotCMS and/or its licensors
 * (as applicable) retain all right, title and interest in and to all such
@@ -29,7 +30,7 @@
 * modifications.  You are not granted any other rights beyond what is
 * expressly stated herein.  Subject to the foregoing, it is forbidden to
 * copy, merge, publish, distribute, sublicense, and/or sell the Software.
-* 
+*
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
 * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -37,15 +38,14 @@
 * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* 
+*
 * For all third party components incorporated into the dotCMS Software,
 * those components are licensed under the original license provided by the
 * owner of the applicable component.
+
 */
 
 package com.dotcms.enterprise.publishing;
-
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.publishExpireESDateTimeFormat;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -57,20 +57,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-
-import com.liferay.util.StringUtil;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import graphql.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.publishExpireESDateTimeFormat;
 
 
 public class PublishDateUpdater {
@@ -113,7 +109,7 @@ public class PublishDateUpdater {
 
             for (final Contentlet contentlet : contentletToPublish) {
                 try {
-                    APILocator.getContentletAPI().publish(contentlet, locker(contentlet), false);
+                    APILocator.getContentletAPI().publish(contentlet, systemUser, false);
                 } catch (Exception e) {
                     Logger.debug(PublishDateUpdater.class,
                             "content failed to publish: " + e.getMessage());
@@ -129,10 +125,10 @@ public class PublishDateUpdater {
 
         for(final Contentlet contentlet : contentletToUnPublish) {
             try {
-                APILocator.getContentletAPI().unpublish(contentlet, locker(contentlet), false);
+                APILocator.getContentletAPI().unpublish(contentlet, systemUser, false);
             }
             catch(Exception e){
-                Logger.debug(PublishDateUpdater.class, "content failed to publish: " +  e.getMessage());
+                Logger.debug(PublishDateUpdater.class, "content failed to unpublish: " +  e.getMessage());
             }
         }
     }
@@ -156,26 +152,6 @@ public class PublishDateUpdater {
         return String.format(luceneQueryTemplate, parameters );
     }
 
-    /**
-     *
-     * @param contentlet
-     * @return
-     * @throws DotDataException
-     */
-    private static User locker(final Contentlet contentlet) throws DotDataException {
 
-        User locker = APILocator.getUserAPI().getSystemUser();
-        try {
-            User modUser = APILocator.getUserAPI()
-                    .loadUserById(contentlet.getModUser(), locker, false);
-            if (APILocator.getContentletAPI().canLock(contentlet, locker)) {
-                locker = modUser;
-            }
-        } catch (Exception userEx) {
-            Logger.error(PublishDateUpdater.class, userEx.getMessage(), userEx);
-        }
-
-        return locker;
-    }
 
 }

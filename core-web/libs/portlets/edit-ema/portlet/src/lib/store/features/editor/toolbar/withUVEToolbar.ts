@@ -9,8 +9,13 @@ import {
 
 import { computed } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/client';
-import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotExperimentStatus,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
@@ -19,7 +24,7 @@ import {
     computePageIsLocked,
     createFavoritePagesURL,
     createFullURL,
-    createPageApiUrlWithQueryParams,
+    getFullPageURL,
     getIsDefaultVariant,
     getOrientation
 } from '../../../../utils';
@@ -57,7 +62,7 @@ export function withUVEToolbar() {
 
                 const experiment = store.experiment?.();
                 const pageAPIResponse = store.pageAPIResponse();
-                const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
+                const pageAPIQueryParams = getFullPageURL({ url, params });
 
                 const pageAPI = `/api/v1/page/${
                     store.isTraditionalPage() ? 'render' : 'json'
@@ -84,7 +89,7 @@ export function withUVEToolbar() {
                 const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
-                const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
+                const isPreview = params?.mode === UVE_MODE.PREVIEW;
                 const prevewItem = isPreview
                     ? {
                           deviceSelector: {
@@ -109,7 +114,9 @@ export function withUVEToolbar() {
                     unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
-
+            $urlContentMap: computed<DotCMSContentlet>(() => {
+                return store.pageAPIResponse()?.urlContentMap;
+            }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
                 const currentUser = store.currentUser();
@@ -141,18 +148,17 @@ export function withUVEToolbar() {
                 };
             }),
             $apiURL: computed<string>(() => {
-                const pageParams = store.pageParams();
-                const url = pageParams?.url;
-                const params = createPageApiUrlWithQueryParams(url, pageParams);
+                const params = store.pageParams();
+                const pageURL = getFullPageURL({ url: params.url, params });
 
                 const pageType = store.isTraditionalPage() ? 'render' : 'json';
-                const pageAPI = `/api/v1/page/${pageType}/${params}`;
+                const pageAPI = `/api/v1/page/${pageType}/${pageURL}`;
 
                 return pageAPI;
             }),
             $infoDisplayProps: computed<InfoOptions>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
-                const editorMode = store.pageParams()?.editorMode;
+                const mode = store.pageParams()?.mode;
 
                 if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
                     const variantId = pageAPIResponse.viewAs.variantId;
@@ -166,7 +172,7 @@ export function withUVEToolbar() {
 
                     // Now we base on the mode to show the correct message
                     const message =
-                        editorMode === UVE_MODE.PREVIEW || editorMode === UVE_MODE.LIVE
+                        mode === UVE_MODE.PREVIEW || mode === UVE_MODE.LIVE
                             ? 'editpage.viewing.variant'
                             : 'editpage.editing.variant';
 
@@ -184,8 +190,8 @@ export function withUVEToolbar() {
                 return null;
             }),
             $showWorkflowsActions: computed<boolean>(() => {
-                const isPreviewMode = store.pageParams()?.editorMode === UVE_MODE.PREVIEW;
-                const isLiveMode = store.pageParams()?.editorMode === UVE_MODE.LIVE;
+                const isPreviewMode = store.pageParams()?.mode === UVE_MODE.PREVIEW;
+                const isLiveMode = store.pageParams()?.mode === UVE_MODE.LIVE;
 
                 const isDefaultVariant = getIsDefaultVariant(
                     store.pageAPIResponse()?.viewAs.variantId

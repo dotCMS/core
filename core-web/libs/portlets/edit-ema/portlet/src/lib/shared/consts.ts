@@ -1,12 +1,13 @@
 import { InjectionToken } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/client';
-import { DotDeviceListItem, DotPersona, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, DotPersona } from '@dotcms/dotcms-models';
 
-import { CommonErrors, PAGE_MODE } from './enums';
+import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
 
 export const LAYOUT_URL = '/c/portal/layout';
+
+export const PERSONA_KEY = 'com.dotmarketing.persona.id';
 
 export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
@@ -69,7 +70,8 @@ export const DEFAULT_PERSONA: DotPersona = {
     modUser: 'system'
 };
 
-export const UVE_FEATURE_FLAGS = [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE];
+// Add the Feature flags we want to fetch for UVE
+export const UVE_FEATURE_FLAGS = [];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',
@@ -102,9 +104,3 @@ export const DEFAULT_DEVICES: DotDeviceListItem[] = [
         _isDefault: true
     }
 ];
-
-export const UVE_MODE_TO_PAGE_MODE: Record<UVE_MODE, PAGE_MODE> = {
-    [UVE_MODE.PREVIEW]: PAGE_MODE.PREVIEW,
-    [UVE_MODE.LIVE]: PAGE_MODE.LIVE,
-    [UVE_MODE.EDIT]: PAGE_MODE.EDIT
-};

@@ -1,36 +1,42 @@
 import { expect, Page } from "@playwright/test";
 
 export class NewEditContentFormPage {
-  private textField = this.page.getByTestId("textField");
-  private siteOrFolderField = this.page.getByTestId("field-siteOrFolderField");
-
   constructor(private page: Page) {}
 
   async fillTextField(text: string) {
-    await this.textField.fill(text);
+    const textFieldLocator = this.page.getByTestId("textField");
+    await textFieldLocator.fill(text);
   }
 
   async selectSiteOrFolderField() {
-    await this.siteOrFolderField.click();
+    const siteOrFolderFieldLocator = this.page.getByTestId(
+      "field-siteOrFolderField",
+    );
+    await siteOrFolderFieldLocator.click();
 
-    const treeNode = this.page.locator(".p-treenode");
-    const textContent = await treeNode.first().textContent();
-    await treeNode.first().click();
+    const treeNodeLocator = this.page.locator(".p-treenode");
+    const textContent = await treeNodeLocator.first().textContent();
+    await treeNodeLocator.first().click();
 
-    const label = this.page.locator(".p-treeselect-label");
-    await expect(label).toHaveText(`//${textContent}`);
+    const labelLocator = this.page.locator(".p-treeselect-label");
+    await expect(labelLocator).toHaveText(`//${textContent}`);
     return textContent;
   }
 
   async save() {
-    await this.page.getByRole("button", { name: "Save" }).click();
-    await this.page.waitForResponse(response => {
-      return response.status() === 200 && response.url().includes('/api/v1/workflow/actions/')
+    const saveButtonLocator = this.page.getByRole("button", { name: "Save" });
+    await saveButtonLocator.click();
+    await this.page.waitForResponse((response) => {
+      return (
+        response.status() === 200 &&
+        response.url().includes("/api/v1/workflow/actions/")
+      );
     });
   }
-  
+
   async goToBack() {
-    await this.page.getByTestId("back-button").click();
+    const backButtonLocator = this.page.getByTestId("back-button");
+    await backButtonLocator.click();
   }
 
   async goToContent(id: string) {

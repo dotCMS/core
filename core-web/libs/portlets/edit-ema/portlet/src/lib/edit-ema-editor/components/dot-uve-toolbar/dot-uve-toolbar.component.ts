@@ -10,7 +10,8 @@ import {
     inject,
     Output,
     viewChild,
-    Signal
+    Signal,
+    signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -24,15 +25,20 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { map } from 'rxjs/operators';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotDevicesService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
-import { DotPersona, DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
+import {
+    DotPersona,
+    DotLanguage,
+    DotDeviceListItem,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -43,7 +49,7 @@ import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-ac
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
-import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 
@@ -82,6 +88,7 @@ export class DotUveToolbarComponent {
     $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
 
     @Output() translatePage = new EventEmitter<{ page: DotPage; newLanguage: number }>();
+    @Output() editUrlContentMap = new EventEmitter<DotCMSContentlet>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -100,6 +107,7 @@ export class DotUveToolbarComponent {
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
+    readonly $urlContentMap = this.#store.$urlContentMap;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -109,9 +117,11 @@ export class DotUveToolbarComponent {
     );
 
     protected readonly $pageParams = this.#store.pageParams;
-    protected readonly $previewDate = computed<Date>(() =>
-        this.$pageParams().publishDate ? new Date(this.$pageParams().publishDate) : new Date()
-    );
+    protected readonly $previewDate = computed<Date>(() => {
+        return this.$pageParams().publishDate
+            ? new Date(this.$pageParams().publishDate)
+            : new Date();
+    });
 
     readonly $pageInode = computed(() => {
         return this.#store.pageAPIResponse()?.page.inode;
@@ -121,7 +131,7 @@ export class DotUveToolbarComponent {
     readonly $workflowLoding = this.#store.workflowLoading;
 
     defaultDevices = DEFAULT_DEVICES;
-    CURRENT_DATE = new Date();
+    $MIN_DATE = signal(this.#getMinDate());
 
     /**
      * Fetch the page on a given date
@@ -130,7 +140,7 @@ export class DotUveToolbarComponent {
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
         this.#store.loadPageAsset({
-            editorMode: UVE_MODE.LIVE,
+            mode: UVE_MODE.LIVE,
             publishDate: publishDate?.toISOString()
         });
     }
@@ -181,48 +191,48 @@ export class DotUveToolbarComponent {
      * @memberof DotEmaComponent
      */
     onPersonaSelected(persona: DotPersona & { pageId: string }) {
-        if (persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized) {
-            this.#store.loadPageAsset({
-                'com.dotmarketing.persona.id': persona.identifier
-            });
-        } else {
-            this.#confirmationService.confirm({
-                header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
-                message: this.#dotMessageService.get(
-                    'editpage.personalization.confirm.message',
-                    persona.name
-                ),
-                acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
-                rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
-                accept: () => {
-                    this.#personalizeService
-                        .personalized(persona.pageId, persona.keyTag)
-                        .subscribe({
-                            next: () => {
-                                this.#store.loadPageAsset({
-                                    'com.dotmarketing.persona.id': persona.identifier
-                                });
+        const existPersona =
+            persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
-                                this.$personaSelector().fetchPersonas();
-                            },
-                            error: () => {
-                                this.#messageService.add({
-                                    severity: 'error',
-                                    summary: this.#dotMessageService.get('error'),
-                                    detail: this.#dotMessageService.get(
-                                        'uve.personalize.empty.page.error'
-                                    )
-                                });
+        if (existPersona) {
+            this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
 
-                                this.$personaSelector().resetValue();
-                            }
-                        });
-                },
-                reject: () => {
-                    this.$personaSelector().resetValue();
-                }
-            });
+            return;
         }
+
+        const confirmationData = {
+            header: this.#dotMessageService.get('editpage.personalization.confirm.header'),
+            message: this.#dotMessageService.get(
+                'editpage.personalization.confirm.message',
+                persona.name
+            ),
+            acceptLabel: this.#dotMessageService.get('dot.common.dialog.accept'),
+            rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject')
+        };
+
+        this.#confirmationService.confirm({
+            ...confirmationData,
+            accept: () => {
+                this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
+                    next: () => {
+                        this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
+                        this.$personaSelector().fetchPersonas();
+                    },
+                    error: () => {
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('error'),
+                            detail: this.#dotMessageService.get('uve.personalize.empty.page.error')
+                        });
+
+                        this.$personaSelector().resetValue();
+                    }
+                });
+            },
+            reject: () => {
+                this.$personaSelector().resetValue();
+            }
+        });
     }
 
     /**
@@ -248,7 +258,7 @@ export class DotUveToolbarComponent {
 
                         if (persona.selected) {
                             this.#store.loadPageAsset({
-                                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                             });
                         }
                     }); // This does a take 1 under the hood
@@ -287,6 +297,24 @@ export class DotUveToolbarComponent {
                 this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
             }
         });
+    }
+
+    /**
+     * Gets the minimum allowed date for the calendar component.
+     * Sets hours/minutes/seconds/milliseconds to 0 to avoid collisions with preview date
+     * when initializing, which would cause the input to be empty.
+     *
+     * @returns {Date} The minimum allowed date with time set to midnight
+     * @private
+     */
+    #getMinDate() {
+        const currentDate = new Date();
+
+        // We need to set this to 0 so the minDate does not collide with the previewDate value when we are initializing
+        // This prevents the input from being empty on init
+        currentDate.setHours(0, 0, 0, 0);
+
+        return currentDate;
     }
 
     /**

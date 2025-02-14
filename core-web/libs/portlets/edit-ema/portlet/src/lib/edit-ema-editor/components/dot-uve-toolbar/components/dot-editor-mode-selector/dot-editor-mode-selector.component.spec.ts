@@ -2,19 +2,20 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DotMessageService } from '@dotcms/data-access';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
 
+import { PERSONA_KEY } from '../../../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const pageParams = {
     url: 'test-url',
     language_id: 'en',
-    'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-    editorMode: UVE_MODE.EDIT
+    [PERSONA_KEY]: 'modes.persona.no.persona',
+    mode: UVE_MODE.EDIT
 };
 
 describe('DotEditorModeSelectorComponent', () => {
@@ -98,7 +99,7 @@ describe('DotEditorModeSelectorComponent', () => {
 
     describe('$currentModeLabel', () => {
         it('should return correct label for current mode', () => {
-            mockStore.pageParams.set({ ...pageParams, editorMode: UVE_MODE.PREVIEW });
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.PREVIEW });
             expect(component.$currentModeLabel()).toBe('uve.editor.mode.preview');
         });
     });
@@ -113,7 +114,7 @@ describe('DotEditorModeSelectorComponent', () => {
             component.onModeChange(UVE_MODE.EDIT);
             expect(mockStore.clearDeviceAndSocialMedia).toHaveBeenCalled();
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                editorMode: UVE_MODE.EDIT,
+                mode: UVE_MODE.EDIT,
                 publishDate: undefined
             });
         });
@@ -125,7 +126,7 @@ describe('DotEditorModeSelectorComponent', () => {
 
             component.onModeChange(UVE_MODE.LIVE);
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                editorMode: UVE_MODE.LIVE,
+                mode: UVE_MODE.LIVE,
                 publishDate: now.toISOString()
             });
 
@@ -135,19 +136,19 @@ describe('DotEditorModeSelectorComponent', () => {
 
     describe('$modeGuardEffect', () => {
         it('should switch to PREVIEW mode when in EDIT mode without edit permission', () => {
-            mockStore.pageParams.set({ ...pageParams, editorMode: UVE_MODE.EDIT });
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
             mockStore.canEditPage.set(false);
 
             spectator.detectChanges();
 
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                editorMode: UVE_MODE.PREVIEW,
+                mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
             });
         });
 
         it('should switch to PREVIEW mode when in LIVE mode without live version', () => {
-            mockStore.pageParams.set({ ...pageParams, editorMode: UVE_MODE.LIVE });
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.LIVE });
             mockStore.pageAPIResponse.set({
                 ...MOCK_RESPONSE_HEADLESS,
                 page: {
@@ -159,7 +160,7 @@ describe('DotEditorModeSelectorComponent', () => {
             spectator.detectChanges();
 
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                editorMode: UVE_MODE.PREVIEW,
+                mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
             });
         });
@@ -183,7 +184,7 @@ describe('DotEditorModeSelectorComponent', () => {
 
         it('should change mode when clicking a menu item', () => {
             // Setup initial state as EDIT mode
-            mockStore.pageParams.set({ ...pageParams, editorMode: UVE_MODE.EDIT });
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
             spectator.detectChanges();
 
             // Open menu
@@ -197,13 +198,13 @@ describe('DotEditorModeSelectorComponent', () => {
             spectator.click(previewMenuItem);
 
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                editorMode: UVE_MODE.PREVIEW,
+                mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
             });
         });
 
         it('should highlight active mode in menu', () => {
-            mockStore.pageParams.set({ ...pageParams, editorMode: UVE_MODE.PREVIEW });
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.PREVIEW });
             spectator.detectChanges();
 
             const button = spectator.query('[data-testId="more-button"]');
@@ -219,8 +220,8 @@ describe('DotEditorModeSelectorComponent', () => {
         test.each([
             {
                 mode: UVE_MODE.EDIT,
-                label: 'uve.editor.mode.edit',
-                description: 'uve.editor.mode.edit.description'
+                label: 'uve.editor.mode.draft',
+                description: 'uve.editor.mode.draft.description'
             },
             {
                 mode: UVE_MODE.PREVIEW,
@@ -229,8 +230,8 @@ describe('DotEditorModeSelectorComponent', () => {
             },
             {
                 mode: UVE_MODE.LIVE,
-                label: 'uve.editor.mode.live',
-                description: 'uve.editor.mode.live.description'
+                label: 'uve.editor.mode.published',
+                description: 'uve.editor.mode.published.description'
             }
         ])(
             'should show correct label and description for $mode menu item',
@@ -247,12 +248,12 @@ describe('DotEditorModeSelectorComponent', () => {
         );
 
         test.each([
-            { mode: UVE_MODE.EDIT, label: 'uve.editor.mode.edit' },
+            { mode: UVE_MODE.EDIT, label: 'uve.editor.mode.draft' },
             { mode: UVE_MODE.PREVIEW, label: 'uve.editor.mode.preview' },
-            { mode: UVE_MODE.LIVE, label: 'uve.editor.mode.live' }
+            { mode: UVE_MODE.LIVE, label: 'uve.editor.mode.published' }
         ])('should update button label when mode changes - $mode', ({ mode, label }) => {
             // Start with Edit mode
-            mockStore.pageParams.set({ ...pageParams, editorMode: mode });
+            mockStore.pageParams.set({ ...pageParams, mode: mode });
             spectator.detectChanges();
 
             const button = spectator.query('[data-testId="more-button"]');

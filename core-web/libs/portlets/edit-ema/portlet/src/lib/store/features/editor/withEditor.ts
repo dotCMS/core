@@ -9,8 +9,8 @@ import {
 
 import { computed, untracked } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
     EditorProps,
@@ -20,7 +20,6 @@ import {
     ReloadEditorContent
 } from './models';
 import { withSave } from './save/withSave';
-import { withEditorToolbar } from './toolbar/withEditorToolbar';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
@@ -41,14 +40,14 @@ import {
     getPersonalization,
     areContainersEquals,
     getEditorStates,
-    createPageApiUrlWithQueryParams,
     sanitizeURL,
-    getWrapperMeasures
+    getWrapperMeasures,
+    getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 
-const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
+const buildIframeURL = ({ url, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
         // Force iframe reload on every page load to avoid caching issues and window dirty state
         // We need a new reference to avoid the iframe to be cached
@@ -56,11 +55,10 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
         return new String('');
     }
 
-    const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
-    const origin = params.clientHost || window.location.origin;
-    const url = new URL(pageAPIQueryParams, origin);
+    const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
+    const iframeURL = new URL(pageURL, params.clientHost || window.location.origin); // Add Host to iframeURL
 
-    return url.toString();
+    return iframeURL.toString();
 };
 
 const initialState: EditorState = {
@@ -84,7 +82,6 @@ export function withEditor() {
         },
         withState<EditorState>(initialState),
         withUVEToolbar(),
-        withEditorToolbar(),
         withSave(),
         withClient(),
         withComputed((store) => {
@@ -138,7 +135,7 @@ export function withEditor() {
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
 
-                    const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
+                    const isPreview = params?.mode === UVE_MODE.PREVIEW;
                     const isPageReady = isTraditionalPage || isClientReady || isPreview;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
@@ -214,10 +211,10 @@ export function withEditor() {
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     const page = store.pageAPIResponse().page;
                     const vanityURL = store.pageAPIResponse().vanityUrl?.url;
-
                     const sanitizedURL = sanitizeURL(vanityURL ?? page?.pageURI);
+
                     const url = buildIframeURL({
-                        pageURI: sanitizedURL,
+                        url: sanitizedURL,
                         params: store.pageParams(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });

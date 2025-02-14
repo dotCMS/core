@@ -47,10 +47,10 @@ const fetchPageData = async (params: any) => {
     return { pageAsset };
   } catch (error: any) {
     if (error?.status === 404) {
-      return { pageAsset: null, error: null };
+      return { pageAsset: undefined, error: undefined };
     }
 
-    return { pageAsset: null, error };
+    return { pageAsset: undefined, error };
   }
 };
 
@@ -64,6 +64,6 @@ const fetchNavData = async (languageId = 1) => {
 
     return { nav: entity };
   } catch (error) {
-    return { nav: null, error };
+    return { nav: undefined, error };
   }
 };

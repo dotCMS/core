@@ -81,7 +81,6 @@ import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/com
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
-import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
@@ -89,7 +88,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
+import { DEFAULT_PERSONA, WINDOW, HOST, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
@@ -104,7 +103,7 @@ import {
     MOCK_RESPONSE_VTL,
     PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK
 } from '../shared/mocks';
-import { ActionPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
+import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
 
@@ -132,8 +131,7 @@ const createRouting = () =>
         declarations: [
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
-            MockComponent(DotEmaRunningExperimentComponent),
-            MockComponent(EditEmaToolbarComponent)
+            MockComponent(DotEmaRunningExperimentComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -398,7 +396,7 @@ describe('EditEmaEditorComponent', () => {
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
             });
 
             spectator.detectChanges();
@@ -427,19 +425,7 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should show the old toolbar when FEATURE_FLAG_UVE_PREVIEW_MODE is false', () => {
-                const toolbar = spectator.query(EditEmaToolbarComponent);
-
-                expect(toolbar).not.toBeNull();
-            });
-
-            it('should show the new toolbar when FEATURE_FLAG_UVE_PREVIEW_MODE is true', () => {
-                store.setFlags({
-                    FEATURE_FLAG_UVE_PREVIEW_MODE: true
-                });
-
-                spectator.detectChanges();
-
+            it('should have a toolbar', () => {
                 const toolbar = spectator.query(DotUveToolbarComponent);
 
                 expect(toolbar).not.toBeNull();
@@ -456,7 +442,7 @@ describe('EditEmaEditorComponent', () => {
                 store.loadPageAsset({
                     url: 'index',
                     language_id: '5',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                     variantName: 'hello-there',
                     experimentId: 'i-have-a-running-experiment'
                 });
@@ -478,7 +464,7 @@ describe('EditEmaEditorComponent', () => {
                 store.loadPageAsset({
                     url: 'index',
                     language_id: '5',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                 });
 
                 spectator.detectChanges();
@@ -573,7 +559,7 @@ describe('EditEmaEditorComponent', () => {
 
                     jest.spyOn(dialog, 'editUrlContentMapContentlet');
 
-                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'editUrlContentMap', {
+                    spectator.triggerEventHandler(DotUveToolbarComponent, 'editUrlContentMap', {
                         identifier: '123',
                         inode: '456',
                         title: 'Hello World'
@@ -705,7 +691,7 @@ describe('EditEmaEditorComponent', () => {
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '1',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     spectator.detectChanges();
@@ -2587,7 +2573,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/page-one?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
+                        'http://localhost:3000/page-one?language_id=1'
                     );
                 });
 
@@ -2599,8 +2585,8 @@ describe('EditEmaEditorComponent', () => {
                         store.loadPageAsset({
                             url: 'index',
                             language_id: '3',
-                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
-                            clientHost: ''
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                            clientHost: undefined
                         });
                     });
 
@@ -2639,7 +2625,7 @@ describe('EditEmaEditorComponent', () => {
                         store.loadPageAsset({
                             url: 'index',
                             language_id: '4',
-                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                         });
 
                         spectator.detectChanges();
@@ -2679,7 +2665,7 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(spyloadPageAsset).toHaveBeenCalledWith({
                         url: '/some',
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+                        [PERSONA_KEY]: 'modes.persona.no.persona'
                     });
                 });
 
@@ -2722,7 +2708,7 @@ describe('EditEmaEditorComponent', () => {
                     );
 
                     expect(spyloadPageAsset).toHaveBeenCalledWith({
-                        'com.dotmarketing.persona.id': 'modes.persona.no.persona',
+                        [PERSONA_KEY]: 'modes.persona.no.persona',
                         url: '/some'
                     });
                 });
@@ -2735,7 +2721,7 @@ describe('EditEmaEditorComponent', () => {
                     store.loadPageAsset({
                         url,
                         language_id: '5',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     spectator.detectChanges();
@@ -2774,7 +2760,7 @@ describe('EditEmaEditorComponent', () => {
                     store.loadPageAsset({
                         url: 'index',
                         language_id: '5',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                         variantName: 'hello-there',
                         experimentId: 'i have a variant'
                     });
@@ -2967,36 +2953,12 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('language selected', () => {
-                it('should call translatePage when language is emitted from toolbar', () => {
-                    const spyTranslatePage = jest.spyOn(spectator.component, 'translatePage');
-
-                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'translatePage', {
-                        page: {} as DotPage,
-                        newLanguage: 1
-                    });
-
-                    expect(spyTranslatePage).toHaveBeenCalled();
-                });
-
-                it('should open a dialog to create the page in the new language when the user accepts the creation', () => {
-                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'translatePage', {
-                        page: {} as DotPage,
-                        newLanguage: 2
-                    });
-
-                    spectator.detectChanges();
-
-                    const dialog = spectator.component.dialog;
-
-                    expect(dialog).not.toBeNull();
-                });
-
                 it('should update the URL and language when the user create a new translation changing the URL', () => {
                     store.loadPageAsset({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '2',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
@@ -3037,7 +2999,7 @@ describe('EditEmaEditorComponent', () => {
                         clientHost: 'http://localhost:3000',
                         url: 'test-url',
                         language_id: '1',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');

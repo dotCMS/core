@@ -37,26 +37,21 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
-import {
-    createFavoritePagesURL,
-    createFullURL,
-    createPageApiUrlWithQueryParams,
-    sanitizeURL
-} from '../../../utils';
+import { getFullPageURL, createFavoritePagesURL, createFullURL, sanitizeURL } from '../../../utils';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
 const params = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
 
-const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
+const pageAPIQueryParams = getFullPageURL({ url, params });
 const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
 const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
 const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked;
@@ -84,7 +79,6 @@ const baseUVEToolbarState = {
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
-    setSocialMedia: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     $apiURL: signal($apiURL),
@@ -102,6 +96,7 @@ const baseUVEState = {
         device: undefined,
         orientation: undefined
     }),
+    $urlContentMap: signal(undefined),
     languages: signal([
         { id: 1, translated: true },
         { id: 2, translated: false },
@@ -250,6 +245,26 @@ describe('DotUveToolbarComponent', () => {
         it('should have a dot-uve-workflow-actions component', () => {
             const workflowActions = spectator.query(DotUveWorkflowActionsComponent);
             expect(workflowActions).toBeTruthy();
+        });
+
+        describe('Events', () => {
+            it('should emit editUrlContentMap', () => {
+                const contentlet = {
+                    identifier: '123',
+                    inode: '456',
+                    title: 'My super awesome blog post'
+                };
+                const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
+
+                baseUVEState.$urlContentMap.set(contentlet);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId('edit-url-content-map'));
+
+                spectator.click(button);
+
+                expect(spy).toHaveBeenCalledWith(contentlet);
+            });
         });
 
         describe('custom devices', () => {
@@ -451,7 +466,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spyloadPageAsset).toHaveBeenCalledWith({
-                    'com.dotmarketing.persona.id': '123'
+                    [PERSONA_KEY]: '123'
                 });
             });
 
@@ -645,6 +660,24 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.query('p-calendar')).toBeFalsy();
+            });
+
+            it('should have a minDate of current date on 0h 0min 0s 0ms', () => {
+                baseUVEState.$isPreviewMode.set(false);
+                baseUVEState.$isLiveMode.set(true);
+                baseUVEState.socialMedia.set(null);
+                spectator.detectChanges();
+
+                const calendar = spectator.query('p-calendar');
+
+                const expectedMinDate = new Date(fixedDate);
+
+                expectedMinDate.setHours(0, 0, 0, 0);
+
+                expect(calendar.getAttribute('ng-reflect-min-date')).toBeDefined();
+                expect(new Date(calendar.getAttribute('ng-reflect-min-date'))).toEqual(
+                    expectedMinDate
+                );
             });
         });
     });

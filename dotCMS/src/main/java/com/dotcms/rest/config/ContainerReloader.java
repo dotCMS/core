@@ -9,7 +9,7 @@ import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
 import org.glassfish.jersey.server.spi.Container;
 
 /**
- * A new Re-loader will get created on each reload there can only be one container at a time
+ * A new Reloader will get created on each reload there can only be one container at a time
  */
 @Provider
 @ApplicationScoped
@@ -39,6 +39,8 @@ public class ContainerReloader extends AbstractContainerLifecycleListener {
         Logger.debug(ContainerReloader.class, "Jersey Reloading request");
         if (container != null) {
             container.reload(ResourceConfig.forApplicationClass(DotRestApplication.class));
+        } else {
+            Logger.error(ContainerReloader.class, "Jersey Container not available");
         }
     }
 }

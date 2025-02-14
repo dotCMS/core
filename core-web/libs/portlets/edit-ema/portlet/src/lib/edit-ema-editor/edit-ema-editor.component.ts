@@ -56,7 +56,6 @@ import { isEqual } from '@dotcms/utils';
 
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
-import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
@@ -71,7 +70,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY, WINDOW } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
@@ -114,7 +113,6 @@ import {
         DotSpinnerModule,
         DotEmaDialogComponent,
         ConfirmDialogModule,
-        EditEmaToolbarComponent,
         EmaPageDropzoneComponent,
         EditEmaPaletteComponent,
         EmaContentletToolsComponent,
@@ -160,7 +158,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
     readonly $editorProps = this.uveStore.$editorProps;
 
-    readonly $previewMode = this.uveStore.$previewMode;
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
@@ -884,7 +881,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 } else {
                     this.uveStore.loadPageAsset({
                         url: payload.url,
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
                 }
             },
