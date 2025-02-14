@@ -25,7 +25,13 @@ const EMPTY_CONTAINER_STYLE = {
 export const ContainerNoFound = ({ identifier }: { identifier: string }) => {
     const isDevMode = useIsDevMode();
 
-    useEffect(() => console.error(`Container with identifier ${identifier} not found`));
+    useEffect(() => {
+        if (!isDevMode) {
+            return;
+        }
+
+        console.error(`Container with identifier ${identifier} not found`);
+    }, [identifier, isDevMode]);
 
     if (!isDevMode) {
         return null;
