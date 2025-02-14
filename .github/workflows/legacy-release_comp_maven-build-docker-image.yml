@@ -258,7 +258,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.0.0
         with:
-          image: tonistiigi/binfmt:qemu-v8.1.5
+          image: tonistiigi/binfmt:qemu-v7.0.0
           platforms: ${{ inputs.docker_platforms }}
         if: success()
 
