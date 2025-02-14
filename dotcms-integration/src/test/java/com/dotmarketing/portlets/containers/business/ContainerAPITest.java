@@ -508,14 +508,13 @@ public class ContainerAPITest extends ContentletBaseTest {
         final Host systemHost = APILocator.getHostAPI().findSystemHost();
 
         final Host originalDefaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-        final List<Permission> originalSystemHostPermission = APILocator.getPermissionAPI().getPermissions(systemHost);
 
         try {
             final Host host = new SiteDataGen().nextPersisted();
             final Host emptyHost = new SiteDataGen().nextPersisted();
 
             APILocator.getHostAPI().makeDefault(emptyHost, APILocator.systemUser(), false);
-            //APILocator.getPermissionAPI().removePermissions(systemHost);
+            APILocator.getPermissionAPI().removePermissions(systemHost);
 
             APILocator.getPermissionAPI().removePermissions(emptyHost);
 
@@ -554,7 +553,6 @@ public class ContainerAPITest extends ContentletBaseTest {
             assertNotNull(liveContainer);
         } finally {
             APILocator.getHostAPI().makeDefault(originalDefaultHost, APILocator.systemUser(), false);
-            //APILocator.getPermissionAPI().save(originalSystemHostPermission, systemHost, APILocator.systemUser(), false);
         }
 
     }
