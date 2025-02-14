@@ -51,7 +51,7 @@ public class CompletionsForm {
     public final String operator;
     public final String site;
     public final User user;
-    public final String responseFormat;
+    public final Map<String, Object> responseFormat;
 
     @Override
     public boolean equals(final Object o) {
@@ -192,7 +192,7 @@ public class CompletionsForm {
         @JsonSetter(nulls = Nulls.SKIP)
         private User user;
         @JsonSetter(nulls = Nulls.SKIP)
-        private String responseFormat;
+        private Map<String, Object> responseFormat;
 
         public Builder prompt(String queryOrPrompt) {
             this.prompt = queryOrPrompt;
@@ -274,7 +274,7 @@ public class CompletionsForm {
             return this;
         }
 
-        public Builder responseFormat(String responseFormat) {
+        public Builder responseFormat(Map<String, Object> responseFormat) {
             this.responseFormat = responseFormat;
             return this;
         }
