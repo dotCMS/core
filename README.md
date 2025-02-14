@@ -8,7 +8,7 @@
 [![Nightly](https://github.com/dotCMS/core/actions/workflows/cicd_4-nightly.yml/badge.svg)](https://github.com/dotCMS/core/actions/workflows/cicd_4-nightly.yml)
 
 
-dotCMS is a leading Universal content management system powering thousands of digital experiences for over 150 customers worldwide.
+dotCMS is the leading Universal content management system powering thousands of digital experiences for over 150 customers worldwide.
 
 With powerful visual editing tools, multi-tenancy and a tech-agnostic architecture dotCMS empowers technical and content teams to collaborate efficiently and deliver content globally, on any stack, and at any scale.
 
