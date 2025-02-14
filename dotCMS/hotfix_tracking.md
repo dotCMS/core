@@ -13,3 +13,4 @@ This maintenance release includes the following code fixes:
 7. https://github.com/dotCMS/core/issues/31034 : Empty allowed file type not being saved #3103
 8. https://github.com/dotCMS/core/issues/30694 : [Localization] : Special chars are not being migrated correctly #30694
 9. https://github.com/dotCMS/core/issues/30761 : Data is not getting saved in the workflow #30761
+10. https://github.com/dotCMS/core/issues/31185 : Fix for IllegalStateException when stopping re-satrting an OSGI plugin with Jersey resources #31185
