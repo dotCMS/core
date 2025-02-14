@@ -79,7 +79,7 @@ export class ContentTypeFormPage {
     const cardinalitySelectorLocator = this.page.locator("dot-cardinality-selector");
     await cardinalitySelectorLocator.click();
 
-    const cardinalityOptionLocator = this.page.locator(field.cardinality);
+    const cardinalityOptionLocator = this.page.getByLabel(field.cardinality);
     await cardinalityOptionLocator.click();
 
     const dialogAcceptBtnLocator = this.page.getByTestId(
