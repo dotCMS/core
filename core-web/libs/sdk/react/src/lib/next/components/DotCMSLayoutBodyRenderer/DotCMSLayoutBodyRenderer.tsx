@@ -35,7 +35,6 @@ interface DotCMSLayoutBodyRendererProps {
  * También provee un contexto (DotCMSPageContext) con el asset de la página, componentes de usuario opcionales,
  * y el modo del renderizado para sus componentes hijos.
  */
-// Maybe this should be called DotCMSPageBodyRenderer | DotCMSMainContentRenderer |DotCMSBodyRenderer | DotCMSRowsRenderer | DotCMSLayoutBodyRenderer
 export const DotCMSLayoutBodyRenderer = ({
     page,
     components = {},
