@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react';
 
 import { Container } from '@dotcms/react/next/components/Container/Container';
-import { DotCMSPageContext } from '@dotcms/react/next/contexts/DotCMSPageContext';
+import {
+    DotCMSPageContext,
+    DotCMSPageContextProps
+} from '@dotcms/react/next/contexts/DotCMSPageContext';
 import * as utils from '@dotcms/react/next/utils';
 
 import { EMPTY_PAGE_ASSET, MOCK_CONTAINER, MOCK_PAGE_ASSET, MOCK_CONTAINER_DATA } from '../mock';
@@ -18,18 +21,22 @@ jest.mock('@dotcms/react/next/utils', () => ({
     getContentletsInContainer: jest.fn()
 }));
 
+const DEFAULT_CONTEXT_VALUE: DotCMSPageContextProps = {
+    pageAsset: MOCK_PAGE_ASSET,
+    mode: 'production',
+    userComponents: {}
+};
+
 describe('Container', () => {
     const getContainersDataMock = utils.getContainersData as jest.Mock;
     const getContentletsInContainerMock = utils.getContentletsInContainer as jest.Mock;
 
-    const renderWithContext = (component: React.ReactNode, contextValue = {}) => {
+    const renderWithContext = (
+        component: React.ReactNode,
+        contextValue: DotCMSPageContextProps
+    ) => {
         return render(
-            <DotCMSPageContext.Provider
-                value={{
-                    pageAsset: MOCK_PAGE_ASSET,
-                    mode: 'production',
-                    ...contextValue
-                }}>
+            <DotCMSPageContext.Provider value={contextValue}>
                 {component}
             </DotCMSPageContext.Provider>
         );
@@ -59,8 +66,8 @@ describe('Container', () => {
             ])
         );
 
-        test('should contentlets when container has content', () => {
-            renderWithContext(<Container container={MOCK_CONTAINER} />);
+        test('should show contentlets when container has content', () => {
+            renderWithContext(<Container container={MOCK_CONTAINER} />, DEFAULT_CONTEXT_VALUE);
             const contentlets = screen.getAllByTestId('mock-contentlet');
             expect(contentlets).toHaveLength(2);
         });
@@ -71,7 +78,8 @@ describe('Container', () => {
 
         test('should show empty message when container has no contentlets', () => {
             const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
-                dotCMSPageAsset: EMPTY_PAGE_ASSET
+                ...DEFAULT_CONTEXT_VALUE,
+                pageAsset: EMPTY_PAGE_ASSET
             });
 
             const emptyContainerMessage = container.querySelector(
@@ -83,6 +91,7 @@ describe('Container', () => {
 
         test('should show empty container with styles when container has no contentlets and is in dev mode', () => {
             const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                ...DEFAULT_CONTEXT_VALUE,
                 pageAsset: EMPTY_PAGE_ASSET,
                 mode: 'development'
             });
@@ -102,6 +111,7 @@ describe('Container', () => {
 
         test('should not show empty container with styles when container has no contentlets and is in production mode', () => {
             const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                ...DEFAULT_CONTEXT_VALUE,
                 pageAsset: EMPTY_PAGE_ASSET,
                 mode: 'production'
             });
@@ -121,6 +131,7 @@ describe('Container', () => {
 
         test('should show ContainerNotFound in dev mode when container is not found', () => {
             const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                ...DEFAULT_CONTEXT_VALUE,
                 pageAsset: MOCK_PAGE_ASSET,
                 mode: 'development'
             });
@@ -133,6 +144,7 @@ describe('Container', () => {
 
         test('should not render ContainerNotFound in production when container is not found', () => {
             const { container } = renderWithContext(<Container container={MOCK_CONTAINER} />, {
+                ...DEFAULT_CONTEXT_VALUE,
                 pageAsset: MOCK_PAGE_ASSET,
                 mode: 'production'
             });

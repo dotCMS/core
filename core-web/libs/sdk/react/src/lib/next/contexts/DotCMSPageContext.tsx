@@ -2,11 +2,18 @@ import { createContext } from 'react';
 
 import { DotCMSContentlet, DotCMSPageAsset } from '../types';
 
-export type RendererMode = 'production' | 'development';
+export type DotCMSPageRendererMode = 'production' | 'development';
 
+/**
+ * Props for the DotCMSPageContext
+ * @interface DotCMSPageContextProps
+ * @property {DotCMSPageAsset} pageAsset - The DotCMS page asset
+ * @property {RendererMode} mode - The renderer mode
+ * @property {Record<string, React.ComponentType<DotCMSContentlet>>} userComponents - The user components
+ */
 export interface DotCMSPageContextProps {
     pageAsset: DotCMSPageAsset;
-    mode: RendererMode;
+    mode: DotCMSPageRendererMode;
     userComponents: Record<string, React.ComponentType<DotCMSContentlet>>;
 }
 

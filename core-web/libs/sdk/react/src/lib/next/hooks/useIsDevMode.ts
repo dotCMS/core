@@ -1,6 +1,9 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { DotCMSPageContext, RendererMode } from '@dotcms/react/next/contexts/DotCMSPageContext';
+import {
+    DotCMSPageContext,
+    DotCMSPageRendererMode
+} from '@dotcms/react/next/contexts/DotCMSPageContext';
 import { getUVEState } from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -11,10 +14,10 @@ import { UVE_MODE } from '@dotcms/uve/types';
  *   - The context mode (or the optional `renderMode` argument) is set to 'development', or
  *   - The application is running inside the DotCMS editor (as determined by `isInsideEditor()`).
  *
- * @param {RendererMode} [renderMode] - Optional override for the render mode.
+ * @param {DotCMSPageRendererMode} [renderMode] - Optional override for the render mode.
  * @returns {boolean} - `true` if in development mode or inside the editor; otherwise, `false`.
  */
-export const useIsDevMode = (renderMode?: RendererMode) => {
+export const useIsDevMode = (renderMode?: DotCMSPageRendererMode) => {
     const { mode } = useContext(DotCMSPageContext);
     const effectiveMode = renderMode ?? mode;
 

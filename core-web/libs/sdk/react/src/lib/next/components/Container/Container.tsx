@@ -11,7 +11,12 @@ import {
 } from '../../utils';
 import { Contentlet } from '../Contentlet/Contentlet';
 
-type ContainerProps = {
+/**
+ * Props for the Container component
+ * @interface DotCMSContainerRendererProps
+ * @property {DotCMSColumnContainer} container - The container data to be rendered
+ */
+type DotCMSContainerRendererProps = {
     container: DotCMSColumnContainer;
 };
 
@@ -24,7 +29,7 @@ type ContainerProps = {
  * - Managing container contentlets rendering
  *
  * @component
- * @param {ContainerProps} props - Component properties
+ * @param {DotCMSContainerRendererProps} props - Component properties
  * @returns {JSX.Element} Rendered container with its contentlets or empty state message
  *
  * @example
@@ -32,7 +37,7 @@ type ContainerProps = {
  * <Container container={containerData} />
  * ```
  */
-export function Container({ container }: ContainerProps) {
+export function Container({ container }: DotCMSContainerRendererProps) {
     const { pageAsset } = useContext(DotCMSPageContext);
 
     const containerData = useMemo(

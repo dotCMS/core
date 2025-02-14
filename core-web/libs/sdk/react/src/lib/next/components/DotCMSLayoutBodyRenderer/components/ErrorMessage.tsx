@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { RendererMode } from '../../../contexts/DotCMSPageContext';
+import { DotCMSPageRendererMode } from '../../../contexts/DotCMSPageContext';
 import { useIsDevMode } from '../../../hooks/useIsDevMode';
 
 /**
@@ -8,7 +8,7 @@ import { useIsDevMode } from '../../../hooks/useIsDevMode';
  *
  * @return {JSX.Element} Error message component
  */
-export const ErrorMessage = ({ mode }: { mode: RendererMode }) => {
+export const ErrorMessage = ({ mode }: { mode: DotCMSPageRendererMode }) => {
     useEffect(() => {
         console.warn('Missing required layout.body property in page');
     }, []);

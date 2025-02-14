@@ -8,11 +8,11 @@ export type NoComponentType = React.ComponentType<DotCMSContentlet>;
 
 /**
  * Props for the FallbackComponent
- * @interface FallbackComponentProps
+ * @interface DotCMSFallbackComponentProps
  * @property {React.ComponentType<DotCMSContentlet>} [UserNoComponent] - Optional custom component to render when no matching component is found
  * @property {DotCMSContentlet} [contentlet] - The contentlet that couldn't be rendered
  */
-interface FallbackComponentProps {
+interface DotCMSFallbackComponentProps {
     contentlet: DotCMSContentlet;
     UserNoComponent?: React.ComponentType<DotCMSContentlet>;
 }
@@ -21,7 +21,7 @@ interface FallbackComponentProps {
  * Renders a fallback component when no matching component is found for a content type
  *
  * @component
- * @param {FallbackComponentProps} props - Component properties
+ * @param {DotCMSFallbackComponentProps} props - Component properties
  * @param {NoComponentType} [props.UserNoComponent] - Optional custom component to render
  * @param {DotCMSContentlet} [props.contentlet] - The contentlet that couldn't be rendered
  * @returns {JSX.Element} The rendered fallback component
@@ -34,7 +34,7 @@ interface FallbackComponentProps {
  * />
  * ```
  */
-export function FallbackComponent({ UserNoComponent, contentlet }: FallbackComponentProps) {
+export function FallbackComponent({ UserNoComponent, contentlet }: DotCMSFallbackComponentProps) {
     const isDevMode = useIsDevMode();
 
     if (!isDevMode) {

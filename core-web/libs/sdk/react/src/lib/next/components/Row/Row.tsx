@@ -3,7 +3,12 @@ import styles from './Row.module.css';
 import { DotPageAssetLayoutRow } from '../../types';
 import { Column } from '../Column/Column';
 
-type RowProps = {
+/**
+ * Props for the Row component
+ * @interface DotCMSRowRendererProps
+ * @property {DotPageAssetLayoutRow} row - The row data to be rendered
+ */
+type DotCMSRowRendererProps = {
     row: DotPageAssetLayoutRow;
 };
 /**
@@ -11,10 +16,10 @@ type RowProps = {
  *
  * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
  * @category Components
- * @param {React.ForwardedRef<HTMLDivElement, RowProps>} ref
+ * @param {React.ForwardedRef<HTMLDivElement, DotCMS>} ref
  * @return {JSX.Element} Rendered rows with columns
  */
-export const Row = ({ row }: RowProps) => {
+export const Row = ({ row }: DotCMSRowRendererProps) => {
     const customRowClass = `${row.styleClass || ''} ${styles.row}`;
 
     return (

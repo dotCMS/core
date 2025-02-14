@@ -9,11 +9,11 @@ import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
 
 /**
  * Props for the Contentlet component
- * @interface ContentletProps
+ * @interface DotCMSContentletRendererProps
  * @property {DotCMSContentlet} contentlet - The contentlet data to be rendered
  * @property {string} container - The container identifier where the contentlet is placed
  */
-interface ContentletProps {
+interface DotCMSContentletRendererProps {
     contentlet: DotCMSContentlet;
     container: string;
 }
@@ -31,7 +31,7 @@ interface CustomComponentProps {
  * Contentlet component that renders DotCMS content with development mode support
  *
  * @component
- * @param {ContentletProps} props - Component properties
+ * @param {DotCMSContentletRendererProps} props - Component properties
  * @param {DotCMSContentlet} props.contentlet - The contentlet to be rendered
  * @param {string} props.container - The container identifier
  * @returns {JSX.Element} Rendered contentlet with appropriate wrapper and attributes
@@ -44,7 +44,7 @@ interface CustomComponentProps {
  * />
  * ```
  */
-export function Contentlet({ contentlet, container }: ContentletProps) {
+export function Contentlet({ contentlet, container }: DotCMSContentletRendererProps) {
     const ref = useRef<HTMLDivElement | null>(null);
     const isDevMode = useIsDevMode();
     const haveContent = useCheckVisibleContent(ref);

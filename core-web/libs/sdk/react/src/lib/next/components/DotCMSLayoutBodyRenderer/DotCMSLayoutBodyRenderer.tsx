@@ -1,13 +1,13 @@
 import { ErrorMessage } from './components/ErrorMessage';
 
-import { DotCMSPageContext, RendererMode } from '../../contexts/DotCMSPageContext';
+import { DotCMSPageContext, DotCMSPageRendererMode } from '../../contexts/DotCMSPageContext';
 import { DotCMSContentlet, DotCMSPageAsset } from '../../types';
 import { Row } from '../Row/Row';
 
 interface DotCMSLayoutBodyRendererProps {
     page: DotCMSPageAsset;
     components?: Record<string, React.ComponentType<DotCMSContentlet>>;
-    mode?: RendererMode;
+    mode?: DotCMSPageRendererMode;
 }
 
 /**
@@ -22,7 +22,7 @@ interface DotCMSLayoutBodyRendererProps {
  * @param {Object} props - Component properties.
  * @param {DotCMSPageAsset} props.page - The DotCMS page asset containing the layout information.
  * @param {Record<string, React.ComponentType<DotCMSContentlet>>} [props.components] - Optional mapping of custom components for content rendering.
- * @param {RendererMode} [props.mode='production'] - The renderer mode; defaults to 'production'. Alternate modes might trigger different behaviors.
+ * @param {DotCMSPageRendererMode} [props.mode='production'] - The renderer mode; defaults to 'production'. Alternate modes might trigger different behaviors.
  *
  * @returns {JSX.Element} The rendered DotCMS page body or an error message if the layout body is missing.
  *
