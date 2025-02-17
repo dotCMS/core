@@ -184,6 +184,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
             json.put(AiKeys.MODEL, modelTuple._2.getName());
         }
 
+        if (UtilMethods.isSet(form.responseFormat)) {
+            json.put(AiKeys.RESPONSE_FORMAT, form.responseFormat);
+        }
+
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
 
         return json;
