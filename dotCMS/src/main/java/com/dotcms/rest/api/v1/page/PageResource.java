@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.page;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
+import com.dotcms.analytics.track.collectors.Collector;
+import com.dotcms.analytics.track.collectors.EventType;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -17,6 +19,7 @@ import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.page.ImmutablePageRenderParams.Builder;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPaginator;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
@@ -83,6 +86,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.io.Serializable;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -142,6 +147,14 @@ public class PageResource {
     public static final String TM_LANG = "tm_lang";
     public static final String TM_HOST = "tm_host";
     public static final String DOT_CACHE = "dotcache";
+
+    private static final String URI = "uri";
+    private static final String MODE_PARAM = "modeParam";
+    private static final String LANGUAGE_ID = "languageId";
+    private static final String PERSONA_ID = "personaId";
+    private static final String DEVICE_INODE = "deviceInode";
+    private static final String TIME_MACHINE_DATE = "timeMachineDate";
+    public static final String USER = "user";
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -245,9 +258,40 @@ public class PageResource {
                 .user(user)
                 .uri(uri)
                 .asJson(true);
+
+        final Optional<Instant> timeMachineDateInstant = getTimeMachineDate(timeMachineDateAsISO8601);
+        //Logging analytics for FTM if the publishing date is older than five minutes now
+        if (timeMachineDateInstant.isPresent() && isOlderThanFiveMinutes(timeMachineDateInstant.get())) {
+            Map<String, Serializable> userEventPayload = new HashMap<>();
+            userEventPayload.put(USER, user);
+            userEventPayload.put(URI, uri);
+            userEventPayload.put(MODE_PARAM, modeParam);
+            userEventPayload.put(LANGUAGE_ID, languageId);
+            userEventPayload.put(PERSONA_ID, personaId);
+
+            if (null != deviceInode){
+                userEventPayload.put(DEVICE_INODE, deviceInode);
+            }
+
+            userEventPayload.put(TIME_MACHINE_DATE, timeMachineDateInstant.get());
+            userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST.getType());
+
+            ContentAnalyticsUtil.registerContentAnalyticsRestEvent(originalRequest, response,
+                    userEventPayload);
+        }
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
-                languageId, deviceInode, timeMachineDateAsISO8601, builder);
+                languageId, deviceInode, timeMachineDateInstant, builder);
         return getPageRender(renderParams);
+    }
+
+
+    /**
+     * Verifies that a given date is older than five minutes now
+     * @param dateToCheck
+     * @return
+     */
+    private static boolean isOlderThanFiveMinutes(Instant dateToCheck) {
+        return Duration.between(Instant.now(), dateToCheck).toMinutes() >= 5;
     }
 
     /**
@@ -323,6 +367,8 @@ public class PageResource {
                         .rejectWhenNoUser(true)
                         .init();
         final User user = initData.getUser();
+
+        final Optional<Instant> timeMachineDateInstant = getTimeMachineDate(timeMachineDateAsISO8601);
         final Builder builder = ImmutablePageRenderParams.builder();
         builder.originalRequest(originalRequest)
                 .request(request)
@@ -330,7 +376,27 @@ public class PageResource {
                 .user(user)
                 .uri(uri);
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
-                languageId, deviceInode, timeMachineDateAsISO8601, builder);
+                languageId, deviceInode, timeMachineDateInstant, builder);
+
+
+        //Logging analytics for FTM if the publishing date is older than five minutes now
+        if (timeMachineDateInstant.isPresent() && isOlderThanFiveMinutes(timeMachineDateInstant.get())) {
+            Map<String, Serializable> userEventPayload = new HashMap<>();
+            userEventPayload.put(USER, user);
+            userEventPayload.put(URI, uri);
+            userEventPayload.put(MODE_PARAM, modeParam);
+            userEventPayload.put(LANGUAGE_ID, languageId);
+            userEventPayload.put(PERSONA_ID, personaId);
+            if (null != deviceInode){
+                userEventPayload.put(DEVICE_INODE, deviceInode);
+            }
+
+            userEventPayload.put(TIME_MACHINE_DATE, timeMachineDateInstant.get());
+            userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST.getType());
+
+            ContentAnalyticsUtil.registerContentAnalyticsRestEvent(originalRequest, response,
+                    userEventPayload);
+        }
         return getPageRender(renderParams);
     }
 
@@ -339,12 +405,12 @@ public class PageResource {
      * @param modeParam      The current {@link PageMode} used to render the page.
      * @param languageId    The {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s
      * @param deviceInode  The {@link java.lang.String}'s inode to render the page.
-     * @param timeMachineDateAsISO8601 The date to set the Time Machine to.
+     * @param timeMachineDateInstant The date to set the Time Machine to.
      * @param builder The builder to use to create the {@link PageRenderParams}.
      * @return The {@link PageRenderParams} object.
      */
     private PageRenderParams optionalRenderParams(final String modeParam,
-            final String languageId, final String deviceInode, final String timeMachineDateAsISO8601,
+            final String languageId, final String deviceInode, final Optional<Instant> timeMachineDateInstant,
             Builder builder) {
         if (null != languageId){
             builder.languageId(languageId);
@@ -355,8 +421,15 @@ public class PageResource {
         if (null != deviceInode){
             builder.deviceInode(deviceInode);
         }
+        if (timeMachineDateInstant.isPresent()) {
+            builder.timeMachineDate(timeMachineDateInstant.get());
+        }
+        return builder.build();
+    }
+
+    private static Optional<Instant> getTimeMachineDate(String timeMachineDateAsISO8601) {
+        final Date date;
         if (null != timeMachineDateAsISO8601) {
-            final Date date;
             try {
                 date = Try.of(() -> DateUtil.convertDate(timeMachineDateAsISO8601)).getOrElseThrow(
                         e -> new IllegalArgumentException(
@@ -365,10 +438,9 @@ public class PageResource {
             } catch (IllegalArgumentException e) {
                 throw new RuntimeException(e);
             }
-            final Instant instant = date.toInstant();
-            builder.timeMachineDate(instant);
+            return Optional.of(date.toInstant());
         }
-        return builder.build();
+        return Optional.empty();
     }
 
     /**
