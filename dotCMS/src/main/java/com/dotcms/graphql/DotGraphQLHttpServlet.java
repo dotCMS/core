@@ -11,6 +11,7 @@ import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 
 public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
@@ -18,6 +19,21 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
     private static final String CORS_DEFAULT=CorsFilter.CORS_PREFIX + "." + CorsFilter.CORS_DEFAULT;
 
     private static final String CORS_GRAPHQL = CorsFilter.CORS_PREFIX + ".graphql";
+
+    /**
+     * Wrapper to force the request to be a POST
+     */
+    static class PostRequestWrapper extends HttpServletRequestWrapper {
+        public PostRequestWrapper(HttpServletRequest request) {
+            super(request);
+        }
+
+        @Override
+        public String getMethod() {
+            return "POST";
+        }
+    }
+
 
     @Override
     protected GraphQLConfiguration getConfiguration() {
@@ -30,7 +46,16 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest request, final HttpServletResponse response) {
-        handleRequest(request, response);
+
+        if(request.getParameter("qid") == null) {
+            Logger.warn(DotGraphQLHttpServlet.class, "No query id (qid) provided in graphql GET .  This can result in invalid cached data by both browsers and CDNs.  Please provide a distinguishing query id (qid) parameter to execute a graphql query via GET, e.g. /api/v1/graphql?qid=123abc");
+            Try.run(()->response.sendError(500, "No query id (qid) provided.  This can result in invalid cached data by both browsers and CDNs.  Please provide a distinguishing query id (qid) parameter to execute a graphql query via GET, e.g. /api/v1/graphql?qid=123abc"));
+            return;
+        }
+
+        HttpServletRequest wrapper = new PostRequestWrapper(request);
+
+        handleRequest(wrapper, response);
     }
 
     @Override
