@@ -322,10 +322,19 @@ public class ContentResource {
     }
 
 
+    /**
+     * @Deprecated This method is deprecated and will be removed in future versions. Use {@link com.dotcms.rest.api.v1.content.ContentResource#lockContent(HttpServletRequest, HttpServletResponse, String, String)}
+     * @param request
+     * @param response
+     * @param params
+     * @return
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @Deprecated
     @PUT
     @Path("/lock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-
     public Response lockContent(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws DotDataException, JSONException {
@@ -394,6 +403,16 @@ public class ContentResource {
     }
 
 
+    /**
+     * @Deprecated This method is deprecated and will be removed in future versions. Use {@link com.dotcms.rest.api.v1.content.ContentResource#canLockContent(HttpServletRequest, HttpServletResponse, String, String)}
+     * @param request
+     * @param response
+     * @param params
+     * @return
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @Deprecated
     @PUT
     @Path("/canLock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -482,10 +501,19 @@ public class ContentResource {
         }
     }
 
+    /**
+     * @Deprecated This method is deprecated and will be removed in future versions. Use {@link com.dotcms.rest.api.v1.content.ContentResource#unlockContent(HttpServletRequest, HttpServletResponse, String, String)}
+     * @param request
+     * @param response
+     * @param params
+     * @return
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @Deprecated
     @PUT
     @Path("/unlock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-
     public Response unlockContent(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws DotDataException, JSONException {
