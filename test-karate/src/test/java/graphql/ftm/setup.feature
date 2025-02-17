@@ -36,7 +36,7 @@ Feature: Setting up the Future Time Machine Test
     * def newContentPiceOneVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(contentTypeId)', identifier: '#(contentPieceOneId)', title: 'test 1 v2 (This ver will be publshed in the future)', publishDate: '#(formattedFutureDateTime)' }
     * def newContentPiceTwoVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(contentTypeId)', identifier: '#(contentPieceTwoId)', title: 'test 2 v2' }
 
-    # Lets create a new non-published piece of content wiht a publish date in the future
+    # Lets create a new non-published piece of content with a publish date in the future
     * def nonPublishedPieceResult = callonce read('classpath:graphql/ftm/newContent.feature') { contentTypeId: '#(contentTypeId)', title: 'Working version Only! with publish date', publishDate: '#(formattedFutureDateTime)', action: 'NEW' }
     * def nonPublishedPiece = nonPublishedPieceResult.response.entity.results
     * def nonPublishedPieceId = nonPublishedPiece.map(result => Object.keys(result)[0])
