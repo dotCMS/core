@@ -51,6 +51,7 @@ public class CompletionsForm {
     public final String operator;
     public final String site;
     public final User user;
+    public final Map<String, Object> responseFormat;
 
     @Override
     public boolean equals(final Object o) {
@@ -122,6 +123,7 @@ public class CompletionsForm {
         }
         this.model = UtilMethods.isSet(builder.model) ? builder.model : ConfigService.INSTANCE.config().getModel().getCurrentModel();
         this.user = builder.user;
+        this.responseFormat = builder.responseFormat;
     }
 
     private String validateBuilderQuery(final String query) {
@@ -153,7 +155,8 @@ public class CompletionsForm {
                 .indexName(form.indexName)
                 .threshold(form.threshold)
                 .stream(form.stream)
-                .user(form.user);
+                .user(form.user)
+                .responseFormat(form.responseFormat);
     }
 
     public static final class Builder {
@@ -188,6 +191,8 @@ public class CompletionsForm {
         private String site;
         @JsonSetter(nulls = Nulls.SKIP)
         private User user;
+        @JsonSetter(nulls = Nulls.SKIP)
+        private Map<String, Object> responseFormat;
 
         public Builder prompt(String queryOrPrompt) {
             this.prompt = queryOrPrompt;
@@ -266,6 +271,11 @@ public class CompletionsForm {
 
         public Builder user(User user) {
             this.user = user;
+            return this;
+        }
+
+        public Builder responseFormat(Map<String, Object> responseFormat) {
+            this.responseFormat = responseFormat;
             return this;
         }
 
