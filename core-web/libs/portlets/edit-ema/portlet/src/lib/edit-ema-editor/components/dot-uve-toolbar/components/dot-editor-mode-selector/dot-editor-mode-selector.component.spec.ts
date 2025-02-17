@@ -83,6 +83,7 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should exclude LIVE mode when page has no live version', () => {
+            mockStore.$hasLiveVersion.set(false);
             mockStore.pageAPIResponse.set({
                 ...MOCK_RESPONSE_HEADLESS,
                 page: {
@@ -174,6 +175,7 @@ describe('DotEditorModeSelectorComponent', () => {
             mockStore.canEditPage.set(true);
             mockStore.pageAPIResponse.set(MOCK_RESPONSE_HEADLESS);
             mockStore.pageParams.set(pageParams);
+            mockStore.$hasLiveVersion.set(true);
         });
 
         it('should show menu when clicking the button', () => {

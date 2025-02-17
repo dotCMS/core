@@ -76,6 +76,7 @@ import {
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
+import { DotUveErrorComponent } from './components/dot-uve-error/dot-uve-error.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -476,11 +477,26 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should relaod when Block editor is saved', () => {
+            it('should reload when Block editor is saved', () => {
                 const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
                 const spy = jest.spyOn(store, 'reloadCurrentPage');
                 blockEditorSidebar.onSaved.emit();
                 expect(spy).toHaveBeenCalled();
+            });
+
+            it('should show the error component when there is no live version', () => {
+                const errorComponent = spectator.query(DotUveErrorComponent);
+
+                spectator.detectChanges();
+
+                store.loadPageAsset({
+                    url: 'index',
+                    language_id: '9'
+                });
+
+                spectator.detectChanges();
+
+                expect(errorComponent).toBeDefined();
             });
         });
 
