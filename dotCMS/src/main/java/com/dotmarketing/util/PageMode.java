@@ -1,7 +1,6 @@
 package com.dotmarketing.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotmarketing.filters.CMSUrlUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
@@ -114,18 +113,28 @@ public enum PageMode {
 
     }
 
-    public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode){
-        return setPageMode(request, mode, true);
-    }
-
     /**
      * Page mode can only be set for back end users, not for front end users (even logged in Front end users)
      * @param request
      * @param mode
      * @return
      */
-    public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode, final boolean setSession) {
+    public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode){
+        return setPageMode(request, mode, true);
+    }
 
+    /**
+     * Page mode can only be set for back end users, not for front end users (even logged in Front end users)
+     * We should avoid setting the mode in the session.
+     * Session should be used to keep immutable data. like the user of company. But not state data that might dictate the behavior of the UI.
+     * I'm introducing this method to avoid setting the mode in the session.
+     * Many times passing stuff down the request is enough.
+     * @param request HttpServletRequest
+     * @param mode PageMode to set
+     * @param setSession if true, the mode will be set in the session
+     * @return
+     */
+    public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode, final boolean setSession) {
         if (DEFAULT_PAGE_MODE != mode) {
             final User user = PortalUtil.getUser(request);
             if (user == null || !user.isBackendUser()) {
@@ -133,26 +142,11 @@ public enum PageMode {
             }
         }
 
-        if( setSession && request.getSession(false)!=null) {
+        if(request.getSession(false)!=null) {
             request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
         }
         request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, mode);
         return mode;
-    }
-
-    private static boolean isNavigateEditMode(final HttpSession ses) {
-        PageMode sessionPageMode = ses==null ? DEFAULT_PAGE_MODE : (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
-        HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-
-        final User user = PortalUtil.getUser(request);
-        if (user == null || !user.isBackendUser()) {
-            return false;
-        }
-
-
-        return  sessionPageMode != PageMode.LIVE &&
-                request != null &&
-                request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
     }
 
     /**
