@@ -112,6 +112,7 @@ public class OpenAIClient implements AIClient {
             throw new DotAIModelNotOperationalException(String.format("Model [%s] is not operational", modelName));
         }
 
+
         final long sleep = lastRestCall.computeIfAbsent(aiModel, m -> 0L)
                 + aiModel.minIntervalBetweenCalls()
                 - System.currentTimeMillis();
