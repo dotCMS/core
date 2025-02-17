@@ -18,6 +18,7 @@ interface DotCMSLayoutBodyProps {
  * It also provides context (DotCMSPageContext) with the page asset, optional user components,
  * and the renderer mode to its children.
  *
+ * @public
  * @component
  * @param {Object} props - Component properties.
  * @param {DotCMSPageAsset} props.page - The DotCMS page asset containing the layout information.
