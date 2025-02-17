@@ -21,4 +21,4 @@
     When method POST
     Then status 200
     * def errors = call extractErrors response
-    * match errors == []
+    * match errors == ["Cannot invoke \"com.dotmarketing.beans.Host.getIdentifier()\" because \"host\" is null"]

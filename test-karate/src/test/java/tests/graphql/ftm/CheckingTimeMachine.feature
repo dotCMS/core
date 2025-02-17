@@ -13,7 +13,7 @@ Feature: Test Time Machine functionality
     Given url baseUrl + '/api/v1/page/render/'+pageUrl+'?language_id=1&mode=LIVE'
     And headers commonHeaders
     When method GET
-    Then status 500
+    Then status 200
     * def pageContents = extractContentlets (response)
     * def titles = pageContents.map(x => x.title)
     # This is the first version of the content, test 1 v2 as the title says it will be published in the future
