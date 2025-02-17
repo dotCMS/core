@@ -47,20 +47,17 @@ public class TotalSitesWithAutoIndexContentConfigMetricType implements MetricTyp
         final AppsAPI appsAPI = APILocator.getAppsAPI();
         final String key = "dotAI";
         try {
-            final Optional<AppDescriptor> appDescriptorOptional = appsAPI
-                    .getAppDescriptor(key, APILocator.systemUser());
+            final Optional<AppDescriptor> appDescriptorOptional = appsAPI.getAppDescriptor(key, APILocator.systemUser());
             if (appDescriptorOptional.isEmpty()) {
-                throw new DoesNotExistException(String.format("No App was found for key `%s`. ", key)
-                );
+                throw new DoesNotExistException(String.format("No App was found for key: '%s'", key));
             }
             final Map<String, Set<String>> appKeysByHost = appsAPI.appKeysByHost();
             int counter = 0;
             for (final String siteId : appKeysByHost.keySet()) {
-                Host site = APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
+                final Host site = APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
                 final Optional<AppSecrets> secrets = appsAPI.getSecrets(key, site, APILocator.systemUser());
                 if (secrets.isPresent()) {
-                    final AppSecrets appSecrets = secrets.get();
-                    final Map<String, Secret> secretsMap = appSecrets.getSecrets();
+                    final Map<String, Secret> secretsMap = secrets.get().getSecrets();
                     if (UtilMethods.isSet(secretsMap.getOrDefault("listenerIndexer", null))) {
                         final Secret secret = secretsMap.get("listenerIndexer");
                         if (null != secret.getValue() && UtilMethods.isSet(new String(secret.getValue()))) {
