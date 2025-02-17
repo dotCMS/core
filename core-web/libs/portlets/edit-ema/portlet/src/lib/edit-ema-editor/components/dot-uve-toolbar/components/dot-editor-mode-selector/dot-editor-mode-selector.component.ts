@@ -30,7 +30,7 @@ export class DotEditorModeSelectorComponent {
 
     readonly $menuItems = computed(() => {
         const canEditPage = this.#store.canEditPage();
-        const hasLiveVersion = this.#store.pageAPIResponse().page.live;
+        const hasLiveVersion = this.#store.$hasLiveVersion();
         const menu = [];
 
         if (canEditPage) {
@@ -68,7 +68,7 @@ export class DotEditorModeSelectorComponent {
         () => {
             const currentMode = untracked(() => this.$currentMode());
             const canEditPage = this.#store.canEditPage();
-            const hasLiveVersion = this.#store.pageAPIResponse().page.live;
+            const hasLiveVersion = this.#store.$hasLiveVersion();
 
             // If the user is in edit mode and does not have edit permission, change to preview mode
             if (currentMode === UVE_MODE.EDIT && !canEditPage) {

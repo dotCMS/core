@@ -31,6 +31,7 @@ describe('DotEditorModeSelectorComponent', () => {
                 live: true
             }
         },
+        hasLiveVersion: true,
         pageParams
     };
 
@@ -38,6 +39,7 @@ describe('DotEditorModeSelectorComponent', () => {
         canEditPage: signal(mockStoreState.canEditPage),
         pageAPIResponse: signal(mockStoreState.pageAPIResponse),
         pageParams: signal(mockStoreState.pageParams),
+        $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
         clearDeviceAndSocialMedia: jest.fn(),
         loadPageAsset: jest.fn()
     };
