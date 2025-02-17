@@ -1,6 +1,7 @@
 package com.dotmarketing.util.importer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import java.util.List;
@@ -17,8 +18,45 @@ import org.immutables.value.Value;
 public interface AbstractImportResult extends Serializable {
 
     /**
+     * Retrieves the operation type.
+     *
+     * @return the operation type as an instance of OperationType
+     */
+    OperationType type();
+
+    /**
+     * Retrieves the name of the content type associated with the current import operation.
+     *
+     * @return the content type name as a string
+     */
+    String contentTypeName();
+
+    /**
+     * Retrieves the variable name associated with the content type in the import process.
+     *
+     * @return a String representing the variable name for the content type
+     */
+    String contentTypeVariableName();
+
+    /**
+     * Retrieves the identifier of the workflow action associated with the import operation.
+     *
+     * @return a string representing the workflow action ID
+     */
+    String workflowActionId();
+
+    /**
+     * Retrieves a list of key fields used during the import operation. These fields typically
+     * represent unique identifiers or critical attributes necessary for processing the data.
+     *
+     * @return a list of key field names as strings
+     */
+    List<String> keyFields();
+
+    /**
      * @return Information about the processed import file
      */
+    @JsonProperty("file")
     FileInfo fileInfo();
 
     /**
@@ -27,8 +65,35 @@ public interface AbstractImportResult extends Serializable {
     ResultData data();
 
     /**
-     * @return List of validation and processing messages generated during import
+     * Retrieves a list of validation messages, typically representing potential issues or
+     * informational messages encountered during a validation process.
+     *
+     * @return a list of validation messages
      */
-    List<ValidationMessage> messages();
+    List<ValidationMessage> info();
 
+    /**
+     * Retrieves a list of validation messages classified as warnings during the import operation.
+     *
+     * @return a list of warning messages encountered, or an empty list if no warnings are present
+     */
+    List<ValidationMessage> warning();
+
+    /**
+     * Retrieves a list of validation error messages.
+     *
+     * @return a list of ValidationMessage objects representing the errors encountered during
+     * validation.
+     */
+    List<ValidationMessage> error();
+
+    /**
+     * Represents the type of operation being performed during an import process. This enum is used
+     * to differentiate between different kinds of operations that can be performed, such as
+     * publishing or previewing content.
+     */
+    enum OperationType {
+        PUBLISH,
+        PREVIEW
+    }
 }
