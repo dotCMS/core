@@ -1,6 +1,6 @@
 # @dotcms/react
 
-`@dotcms/react` is the official set of React components and hooks designed to work seamlessly with dotCMS, making it easy to render dotCMS pages an use the page builder.
+`@dotcms/react` is the official set of React components and hooks designed to work seamlessly with dotCMS, making it easy to render dotCMS pages and use the page builder.
 
 ## Features
 
@@ -24,9 +24,9 @@ yarn add @dotcms/react
 
 ## Components
 
-### `DotcmsLayout`
+### Deprecated: DotcmsLayout
 
-A functional component that renders a layout for a dotCMS page.
+**Important:** The `DotcmsLayout` component is deprecated. Please use the new [`DotCMSLayoutBody`](#DotCMSLayoutBody) component instead.
 
 #### Props
 
@@ -35,10 +35,31 @@ A functional component that renders a layout for a dotCMS page.
 #### Usage
 
 ```javascript
+// Deprecated:
 import { DotcmsLayout } from '@dotcms/react';
 
 const MyPage = ({ entity }) => {
     return <DotcmsLayout entity={entity} />;
+};
+```
+
+### `DotCMSLayoutBody`
+
+The `DotCMSLayoutBody` component renders the layout body for a DotCMS page.
+
+#### Props
+
+-   **page**: The DotCMS page asset containing the layout information.
+-   **components**: A mapping of custom components for content rendering.
+-   **mode** (optional): The renderer mode; defaults to `'production'`.
+
+#### Usage
+
+```javascript
+import { DotCMSLayoutBody } from '@dotcms/react';
+
+const MyPage = ({ page }) => {
+    return <DotCMSLayoutBody page={page} components={components} />;
 };
 ```
 
