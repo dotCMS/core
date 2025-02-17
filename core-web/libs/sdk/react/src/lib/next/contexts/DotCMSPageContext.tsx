@@ -5,6 +5,8 @@ import { DotCMSContentlet, DotCMSPageAsset } from '../types';
 export type DotCMSPageRendererMode = 'production' | 'development';
 
 /**
+ * @internal
+ *
  * Props for the DotCMSPageContext
  * @interface DotCMSPageContextProps
  * @property {DotCMSPageAsset} pageAsset - The DotCMS page asset

@@ -1,6 +1,7 @@
 import { useState, RefObject, useLayoutEffect } from 'react';
 
 /**
+ * @internal
  * A custom React hook that checks whether a referenced HTMLDivElement has visible content based on its height.
  *
  * @param {RefObject<HTMLDivElement>} ref - A React ref object pointing to an HTMLDivElement.

@@ -6,6 +6,8 @@ import {
 } from '@dotcms/react/next/types';
 
 /**
+ * @internal
+ *
  * Interface representing the data needed for container editing
  * @interface EditableContainerData
  */
@@ -18,11 +20,12 @@ interface EditableContainerData {
 }
 
 /**
+ * @internal
+ *
  * Interface representing the data attributes of a DotCMS container.
  * @interface DotContainerAttributes
  */
 export interface DotContainerAttributes {
-    'data-testid': string;
     'data-dot-object': string;
     'data-dot-accept-types': string;
     'data-dot-identifier': string;
@@ -31,6 +34,8 @@ export interface DotContainerAttributes {
 }
 
 /**
+ * @internal
+ *
  * Interface representing the data attributes of a DotCMS contentlet.
  * @interface DotContentletAttributes
  */
@@ -76,6 +81,8 @@ const startClassMap: Record<number, string> = {
 };
 
 /**
+ * @internal
+ *
  * Combine classes into a single string.
  *
  * @param {string[]} classes
@@ -84,6 +91,8 @@ const startClassMap: Record<number, string> = {
 export const combineClasses = (classes: string[]) => classes.filter(Boolean).join(' ');
 
 /**
+ * @internal
+ *
  * Calculates and returns the CSS Grid positioning classes for a column based on its configuration.
  * Uses a 12-column grid system where columns are positioned using grid-column-start and grid-column-end.
  *
@@ -113,7 +122,12 @@ export const getColumnPositionClasses = (column: DotPageAssetLayoutColumn) => {
 };
 
 /**
+ * @internal
+ *
  * Helper function that returns an object containing the dotCMS data attributes.
+ * @param {DotCMSContentlet} contentlet - The contentlet to get the attributes for
+ * @param {string} container - The container to get the attributes for
+ * @returns {DotContentletAttributes} The dotCMS data attributes
  */
 export function getDotContentletAttributes(
     contentlet: DotCMSContentlet,
@@ -131,6 +145,8 @@ export function getDotContentletAttributes(
 }
 
 /**
+ * @internal
+ *
  * Retrieves container data from a DotCMS page asset using the container reference.
  * This function processes the container information and returns a standardized format
  * for container editing.
@@ -174,6 +190,8 @@ export const getContainersData = (
 };
 
 /**
+ * @internal
+ *
  * Retrieves the contentlets (content items) associated with a specific container.
  * Handles different UUID formats and provides warning for missing contentlets.
  *
@@ -204,6 +222,8 @@ export const getContentletsInContainer = (
 };
 
 /**
+ * @internal
+ *
  * Generates the required DotCMS data attributes for a container element.
  * These attributes are used by DotCMS for container identification and functionality.
  *
@@ -226,7 +246,6 @@ export function getDotContainerAttributes({
     maxContentlets
 }: EditableContainerData): DotContainerAttributes {
     return {
-        'data-testid': 'dot-container',
         'data-dot-object': 'container',
         'data-dot-accept-types': acceptTypes,
         'data-dot-identifier': identifier,

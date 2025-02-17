@@ -8,6 +8,7 @@ import { getUVEState } from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/uve/types';
 
 /**
+ * @internal
  * A React hook that determines if the current environment is in development mode.
  *
  * The hook returns `true` if either:

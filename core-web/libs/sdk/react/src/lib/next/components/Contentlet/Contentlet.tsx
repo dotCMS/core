@@ -8,6 +8,8 @@ import { getDotContentletAttributes } from '../../utils';
 import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
 
 /**
+ * @internal
+ *
  * Props for the Contentlet component
  * @interface DotCMSContentletRendererProps
  * @property {DotCMSContentlet} contentlet - The contentlet data to be rendered

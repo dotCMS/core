@@ -12,6 +12,8 @@ import {
 import { Contentlet } from '../Contentlet/Contentlet';
 
 /**
+ * @internal
+ *
  * Props for the Container component
  * @interface DotCMSContainerRendererProps
  * @property {DotCMSColumnContainer} container - The container data to be rendered
@@ -21,6 +23,8 @@ type DotCMSContainerRendererProps = {
 };
 
 /**
+ * @internal
+ *
  * Container component that renders DotCMS containers and their contentlets.
  * This component is responsible for:
  * - Rendering container content based on DotCMS Page API data

@@ -165,7 +165,6 @@ describe('utils', () => {
             const result = getDotContainerAttributes(containerData);
 
             expect(result).toEqual({
-                'data-testid': 'dot-container',
                 'data-dot-object': 'container',
                 'data-dot-accept-types': 'type1,type2',
                 'data-dot-identifier': 'test-identifier',

@@ -2,11 +2,15 @@ import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { DotCMSContentlet } from '../../types';
 
 /**
+ * @internal
+ *
  * Type definition for components that can be used as fallback when no matching component is found
  */
 export type NoComponentType = React.ComponentType<DotCMSContentlet>;
 
 /**
+ * @internal
+ *
  * Props for the FallbackComponent
  * @interface DotCMSFallbackComponentProps
  * @property {React.ComponentType<DotCMSContentlet>} [UserNoComponent] - Optional custom component to render when no matching component is found
@@ -18,6 +22,8 @@ interface DotCMSFallbackComponentProps {
 }
 
 /**
+ * @internal
+ *
  * Renders a fallback component when no matching component is found for a content type
  *
  * @component
@@ -47,6 +53,8 @@ export function FallbackComponent({ UserNoComponent, contentlet }: DotCMSFallbac
 }
 
 /**
+ * @internal
+ *
  * Component to render when there is no component for the content type.
  *
  * @param {DotCMSContentlet} contentType - The content type that couldn't be rendered

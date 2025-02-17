@@ -5,6 +5,8 @@ import { combineClasses, getColumnPositionClasses } from '../../utils';
 import { Container } from '../Container/Container';
 
 /**
+ * @internal
+ *
  * Props for the Column component, which represents a single column in the grid layout system.
  *
  * @export
@@ -17,6 +19,8 @@ export interface ColumnProps {
 }
 
 /**
+ * @internal
+ *
  * Renders a Column component that represents a single column in a 12-column grid system.
  * The column's position and width are determined by the leftOffset and width properties
  * from the dotCMS Page API. Uses CSS Grid classes for positioning.

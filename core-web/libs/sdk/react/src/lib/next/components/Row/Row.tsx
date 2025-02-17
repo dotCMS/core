@@ -4,6 +4,8 @@ import { DotPageAssetLayoutRow } from '../../types';
 import { Column } from '../Column/Column';
 
 /**
+ * @internal
+ *
  * Props for the Row component
  * @interface DotCMSRowRendererProps
  * @property {DotPageAssetLayoutRow} row - The row data to be rendered

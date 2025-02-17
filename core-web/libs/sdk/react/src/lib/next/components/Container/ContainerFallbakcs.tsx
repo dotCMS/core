@@ -14,6 +14,8 @@ const EMPTY_CONTAINER_STYLE = {
 };
 
 /**
+ * @internal
+ *
  * Component to display when a container is not found in the system.
  * Only renders in development mode for debugging purposes.
  *
@@ -44,6 +46,14 @@ export const ContainerNoFound = ({ identifier }: { identifier: string }) => {
     );
 };
 
+/**
+ * @internal
+ *
+ * Component to display when a container is empty.
+ *
+ * @param {DotContainerAttributes} dotAttributes
+ * @return {*}
+ */
 export const EmptyContainer = (dotAttributes: DotContainerAttributes) => {
     const isDevMode = useIsDevMode();
 
