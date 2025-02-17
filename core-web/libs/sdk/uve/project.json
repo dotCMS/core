@@ -17,7 +17,7 @@
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": ["libs/sdk/client/**/*.ts"]
+                "lintFilePatterns": ["libs/sdk/uve/**/*.ts"]
             }
         },
         "build": {

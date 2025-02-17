@@ -88,4 +88,10 @@ public interface PublishingEndPointAPI {
 	 * @throws DotDataException
 	 */
 	List<String> findSendGroups()throws DotDataException;
+
+	/**
+	 * Creates an endPoint of the specified protocol.
+	 * @return PublishingEndPoint
+	 */
+	PublishingEndPoint createEndPoint(String protocol) ;
 }
