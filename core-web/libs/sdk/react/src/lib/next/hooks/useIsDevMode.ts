@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import {
     DotCMSPageContext,
@@ -20,7 +20,8 @@ import { UVE_MODE } from '@dotcms/uve/types';
  */
 export const useIsDevMode = (renderMode?: DotCMSPageRendererMode) => {
     const { mode } = useContext(DotCMSPageContext);
-    const effectiveMode = useMemo(() => renderMode ?? mode, [renderMode, mode]);
+
+    const effectiveMode = renderMode ?? mode;
     const [isDevMode, setIsDevMode] = useState(effectiveMode === 'development');
 
     useEffect(() => {
@@ -32,8 +33,9 @@ export const useIsDevMode = (renderMode?: DotCMSPageRendererMode) => {
             return;
         }
 
+        const effectiveMode = renderMode ?? mode;
         setIsDevMode(effectiveMode === 'development');
-    }, [effectiveMode]);
+    }, [renderMode, mode]);
 
     return isDevMode;
 };
