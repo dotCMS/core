@@ -5,7 +5,8 @@ import {
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutTab,
-    DotLanguage
+    DotLanguage,
+    UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -22,7 +23,6 @@ import {
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { Tab } from '../models/dot-edit-content-form.interface';
-import { UI_STORAGE_KEY } from '../models/dot-edit-content.constant';
 import { UIState } from '../models/dot-edit-content.model';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
@@ -341,17 +341,4 @@ export const saveStoreUIState = (state: UIState): void => {
     } catch (e) {
         console.warn('Error saving UI state to sessionStorage:', e);
     }
-};
-
-/**
- * Initializes the UI state keeping only the isSidebarOpen value from storage
- */
-export const initContentEditSessionStorage = (): UIState => {
-    const currentState = getStoredUIState();
-
-    return {
-        activeTab: 0,
-        isSidebarOpen: currentState?.isSidebarOpen ?? true,
-        activeSidebarTab: 0
-    };
 };

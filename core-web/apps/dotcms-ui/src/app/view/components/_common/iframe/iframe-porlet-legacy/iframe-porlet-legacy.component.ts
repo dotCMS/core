@@ -9,7 +9,7 @@ import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custo
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
-import { initContentEditSessionStorage } from '@dotcms/edit-content';
+import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 @Component({
@@ -66,7 +66,10 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         this.subscribeToAIGeneration();
 
         // Workaroud to remove edit-content ui state
-        initContentEditSessionStorage();
+        this.#initContentEditSessionStorage();
+    }
+    #initContentEditSessionStorage() {
+        sessionStorage.removeItem(UI_STORAGE_KEY);
     }
 
     ngOnDestroy(): void {

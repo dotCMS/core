@@ -3,7 +3,8 @@ import { describe, expect, it, jest } from '@jest/globals';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
-    DotLanguage
+    DotLanguage,
+    UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
@@ -14,7 +15,6 @@ import {
     generatePreviewUrl,
     getFieldVariablesParsed,
     getStoredUIState,
-    initContentEditSessionStorage,
     isFilteredType,
     isValidJson,
     sortLocalesTranslatedFirst,
@@ -25,8 +25,6 @@ import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './moc
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
-import { UI_STORAGE_KEY } from '../models/dot-edit-content.constant';
-import { UIState } from '../models/dot-edit-content.model';
 
 describe('Utils Functions', () => {
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
@@ -802,94 +800,6 @@ describe('Utils Functions', () => {
             });
 
             expect(generatePreviewUrl(contentlet)).toBe('');
-        });
-    });
-
-    describe('initContentEditSessionStorage', () => {
-        let sessionStorageMock: { [key: string]: string };
-
-        beforeEach(() => {
-            sessionStorageMock = {};
-
-            // Mock sessionStorage
-            Object.defineProperty(window, 'sessionStorage', {
-                value: {
-                    getItem: (key: string) => sessionStorageMock[key] || null,
-                    setItem: (key: string, value: string) => {
-                        sessionStorageMock[key] = value;
-                    },
-                    clear: () => {
-                        sessionStorageMock = {};
-                    }
-                },
-                writable: true
-            });
-        });
-
-        it('should initialize UI state with default values while preserving isSidebarOpen from storage', () => {
-            // Arrange
-            const storedState: UIState = {
-                activeTab: 2,
-                isSidebarOpen: false,
-                activeSidebarTab: 3
-            };
-            sessionStorageMock[UI_STORAGE_KEY] = JSON.stringify(storedState);
-
-            // Act
-            const result = initContentEditSessionStorage();
-
-            // Assert
-            expect(result).toEqual({
-                activeTab: 0,
-                isSidebarOpen: false, // Preserved from storage
-                activeSidebarTab: 0
-            });
-        });
-
-        it('should initialize UI state with default values when storage is empty', () => {
-            // Act
-            const result = initContentEditSessionStorage();
-
-            // Assert
-            expect(result).toEqual({
-                activeTab: 0,
-                isSidebarOpen: true, // Default value when no storage
-                activeSidebarTab: 0
-            });
-        });
-
-        it('should initialize UI state with default values when storage is invalid JSON', () => {
-            // Arrange
-            sessionStorageMock[UI_STORAGE_KEY] = 'invalid-json';
-
-            // Act
-            const result = initContentEditSessionStorage();
-
-            // Assert
-            expect(result).toEqual({
-                activeTab: 0,
-                isSidebarOpen: true, // Default value when storage is invalid
-                activeSidebarTab: 0
-            });
-        });
-
-        it('should handle storage with missing isSidebarOpen property', () => {
-            // Arrange
-            const storedState = {
-                activeTab: 2,
-                activeSidebarTab: 3
-            };
-            sessionStorageMock[UI_STORAGE_KEY] = JSON.stringify(storedState);
-
-            // Act
-            const result = initContentEditSessionStorage();
-
-            // Assert
-            expect(result).toEqual({
-                activeTab: 0,
-                isSidebarOpen: true, // Default value when property is missing
-                activeSidebarTab: 0
-            });
         });
     });
 });
