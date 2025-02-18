@@ -14,6 +14,7 @@ import {
     generatePreviewUrl,
     getFieldVariablesParsed,
     getStoredUIState,
+    initContentEditSessionStorage,
     isFilteredType,
     isValidJson,
     sortLocalesTranslatedFirst,
@@ -26,7 +27,6 @@ import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { UI_STORAGE_KEY } from '../models/dot-edit-content.constant';
 import { UIState } from '../models/dot-edit-content.model';
-import { initContentEditSessionStorage } from './functions.util';
 
 describe('Utils Functions', () => {
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =

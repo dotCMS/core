@@ -348,6 +348,7 @@ export const saveStoreUIState = (state: UIState): void => {
  */
 export const initContentEditSessionStorage = (): UIState => {
     const currentState = getStoredUIState();
+
     return {
         activeTab: 0,
         isSidebarOpen: currentState?.isSidebarOpen ?? true,
