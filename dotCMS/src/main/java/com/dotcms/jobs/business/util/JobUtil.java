@@ -14,7 +14,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.jonpeterson.jackson.module.versioning.VersioningModule;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,11 +32,26 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import javax.servlet.http.HttpServletRequest;
+import org.json.JSONObject;
 
 /**
  * Utility class for job-related operations.
  */
 public class JobUtil {
+
+    /**
+     * Jackson mapper configuration and lazy initialized instance.
+     */
+    private static final Lazy<ObjectMapper> objectMapper = Lazy.of(() -> {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new GuavaModule());
+        mapper.registerModule(new JavaTimeModule());
+        mapper.registerModule(new VersioningModule());
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        return mapper;
+    });
 
     private JobUtil() {
         throw new IllegalStateException("Utility class");
@@ -158,6 +181,41 @@ public class JobUtil {
         Try.run(() -> APILocator.getSystemEventsAPI()
                         .push(SystemEventType.CLUSTER_WIDE_EVENT, new Payload(event)))
                 .onFailure(e -> Logger.error(JobUtil.class, e.getMessage()));
+    }
+
+    /**
+     * Converts the given object into a Map representation.
+     *
+     * @param toTransform The object to be transformed into a Map. It should be serializable to a
+     *                    JSON string.
+     * @return A Map containing the data of the given object. If the object cannot be serialized or
+     * its representation is empty, an empty Map is returned.
+     * @throws JsonProcessingException If the object cannot be converted to a JSON string.
+     */
+    public static Map<String, Object> transformToMap(final Object toTransform)
+            throws JsonProcessingException {
+
+        final var asString = transformToString(toTransform);
+        if (!UtilMethods.isSet(asString)) {
+            return Map.of();
+        }
+
+        JSONObject resultJsonObject = new JSONObject(asString);
+        return resultJsonObject.toMap();
+    }
+
+    /**
+     * Converts the given object into its JSON string representation using the configured
+     * ObjectMapper. The ObjectMapper is configured with various modules (JDK8, Guava, JavaTime,
+     * Versioning) and has pretty printing enabled.
+     *
+     * @param toTransform The object to be transformed into a JSON string
+     * @return A JSON string representation of the input object
+     * @throws JsonProcessingException If the object cannot be serialized to JSON
+     */
+    public static String transformToString(final Object toTransform)
+            throws JsonProcessingException {
+        return objectMapper.get().writeValueAsString(toTransform);
     }
 
 }
