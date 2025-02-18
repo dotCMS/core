@@ -80,7 +80,7 @@ public class TimeMachineFilter implements Filter {
 		if(req.getSession().getAttribute("tm_date")!=null && urlUtil.amISomething(uri,(Host)req.getSession().getAttribute("tm_host")
 				,Long.parseLong((String)req.getSession().getAttribute("tm_lang")))) {
 			com.liferay.portal.model.User user = null;
-			PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
+			PageMode.setPageMode(req, PageMode.PREVIEW_MODE,false);
 			try {
 				user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) request);
 				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("time-machine", user)){

@@ -466,10 +466,9 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			} else {
 
-
-
-			    // Set the expiration time
-				if (!mode.isAdmin) {
+				// Set the expiration time
+				// Sometimes when The PageMode flag is LIVE, and we are serving a live view of the page from within the admin tool we might end up caching images that we shouldn't
+				if (!isDotAdminRequest(req) && !mode.isAdmin) {
 
 				    int _daysCache = 365;
 				    GregorianCalendar expiration = new GregorianCalendar();
@@ -683,6 +682,16 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		}
 
+	}
+
+	/**
+	 * Test the request to see if it is a dotAdmin request
+	 * @param request the request to test
+	 * @return true if the request is a dotAdmin request
+	 */
+	public static boolean isDotAdminRequest(HttpServletRequest request) {
+		final String referer = request.getHeader("referer");
+		return  referer != null && referer.contains("/dotAdmin");
 	}
 
 	private Contentlet getContentletByIdentifier(final PageMode pageMode,

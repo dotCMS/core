@@ -195,7 +195,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final PageMode mode = context.getPageMode();
 
-        PageMode.setPageMode(request, mode);
+        PageMode.setPageMode(request, mode, false);
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         final HTMLPageUrl htmlPageUrl = context.getPage() != null
