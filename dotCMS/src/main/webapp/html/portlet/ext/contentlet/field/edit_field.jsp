@@ -296,7 +296,7 @@
 
                         // Set current value in the hidden field
                         field.value = content || '';
-                        const DOUBLE_QUOTE = "*DOUBLE_QUOTE*";
+                        const DOUBLE_QUOTE = "*DOTCMS_DOUBLE_QUOTE*";
 
                         // Fix field variables to avoid double quotes, so we can parse it as JSON
                         const fieldVariablesFixed = '<%=fieldVariablesContent%>'.replace(/\\"/g, DOUBLE_QUOTE);
@@ -304,7 +304,7 @@
                         // Parse the field variables and fix double quotes
                         const finalFieldVariables = JSON.parse(fieldVariablesFixed).map((fieldVariable) => {
                             if(fieldVariable.value.includes(DOUBLE_QUOTE)) {
-                                fieldVariable.value = fieldVariable.value.replace(/\*DOUBLE_QUOTE\*/g, "\"");
+                                fieldVariable.value = fieldVariable.value.replace(/\*DOTCMS_DOUBLE_QUOTE\*/g, "\"");
                             }
                             return fieldVariable;
                         });
