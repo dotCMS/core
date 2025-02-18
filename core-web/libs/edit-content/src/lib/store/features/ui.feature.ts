@@ -111,14 +111,6 @@ export function withUI() {
                     });
                 });
             }
-            // onDestroy(store) {
-            //     const newState = {
-            //         ...store.uiState(),
-            //         activeTab: 0,
-            //         activeSidebarTab: 0
-            //     };
-            //     saveStoreUIState(newState);
-            // }
         })
     );
 }
