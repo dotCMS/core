@@ -26,7 +26,7 @@ export interface UIState {
 
 export const uiInitialState: UIState = {
     activeTab: 0,
-    isSidebarOpen: false,
+    isSidebarOpen: true,
     activeSidebarTab: 0
 };
 

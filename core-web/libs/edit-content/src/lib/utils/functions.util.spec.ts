@@ -614,7 +614,7 @@ describe('Utils Functions', () => {
 
     describe('UI State Storage', () => {
         beforeEach(() => {
-            localStorage.clear();
+            sessionStorage.clear();
             // eslint-disable-next-line @typescript-eslint/no-empty-function
             jest.spyOn(console, 'warn').mockImplementation(() => {});
         });
@@ -624,7 +624,7 @@ describe('Utils Functions', () => {
         });
 
         describe('getStoredUIState', () => {
-            it('should return default state when localStorage is empty', () => {
+            it('should return default state when sessionStorage is empty', () => {
                 const state = getStoredUIState();
                 expect(state).toEqual({
                     activeTab: 0,
@@ -633,20 +633,20 @@ describe('Utils Functions', () => {
                 });
             });
 
-            it('should return stored state from localStorage', () => {
+            it('should return stored state from sessionStorage', () => {
                 const mockState = {
                     activeTab: 2,
                     isSidebarOpen: false,
                     activeSidebarTab: 1
                 };
-                localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
+                sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
 
                 const state = getStoredUIState();
                 expect(state).toEqual(mockState);
             });
 
-            it('should return default state and warn when localStorage has invalid JSON', () => {
-                localStorage.setItem(UI_STORAGE_KEY, 'invalid-json');
+            it('should return default state and warn when sessionStorage has invalid JSON', () => {
+                sessionStorage.setItem(UI_STORAGE_KEY, 'invalid-json');
 
                 const state = getStoredUIState();
                 expect(state).toEqual({
@@ -655,17 +655,17 @@ describe('Utils Functions', () => {
                     activeSidebarTab: 0
                 });
                 expect(console.warn).toHaveBeenCalledWith(
-                    'Error reading UI state from localStorage:',
+                    'Error reading UI state from sessionStorage:',
                     expect.any(Error)
                 );
             });
 
-            it('should return default state and warn when localStorage throws error', () => {
+            it('should return default state and warn when sessionStorage throws error', () => {
                 const mockGetItem = jest.fn(() => {
                     throw new Error('Storage error');
                 });
 
-                Object.defineProperty(window, 'localStorage', {
+                Object.defineProperty(window, 'sessionStorage', {
                     value: {
                         getItem: mockGetItem
                     }
@@ -678,7 +678,7 @@ describe('Utils Functions', () => {
                     activeSidebarTab: 0
                 });
                 expect(console.warn).toHaveBeenCalledWith(
-                    'Error reading UI state from localStorage:',
+                    'Error reading UI state from sessionStorage:',
                     expect.any(Error)
                 );
             });
