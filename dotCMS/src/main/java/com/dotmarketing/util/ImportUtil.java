@@ -578,9 +578,10 @@ public class ImportUtil {
         return resultBuilder
                 .type(preview ? OperationType.PREVIEW : OperationType.PUBLISH)
                 .keyFields(calculatedKeyFields)
-                .workflowActionId(wfActionId)
+                .workflowActionId(Optional.ofNullable(wfActionId))
                 .contentTypeName(contentType.getName())
                 .contentTypeVariableName(contentType.getVelocityVarName())
+                .lastInode(Optional.ofNullable(counters.getLastInode()))
                 .fileInfo(fileInfo)
                 .data(ResultData.builder()
                         .processed(ProcessedData.builder()
@@ -639,6 +640,7 @@ public class ImportUtil {
         }
 
         // Update results from line processing
+        counters.setLastInode(lineResult.lastInode());
         messages.addAll(lineResult.messages());
         savedInodes.addAll(lineResult.savedInodes());
         updatedInodes.addAll(lineResult.updatedInodes());
@@ -4316,6 +4318,8 @@ public class ImportUtil {
 
         private Collection<Map<String, String>> keys = new ArrayList<>();
 
+        private String lastInode = "";
+
         public int getContentToCreate() {
             return contentToCreate;
         }
@@ -4332,34 +4336,36 @@ public class ImportUtil {
             this.contentToUpdate = contentToUpdate;
         }
 
-
         public int getContentCreated() {
             return contentCreated;
         }
-
 
         public void setContentCreated(int contentCreated) {
             this.contentCreated = contentCreated;
         }
 
-
         public int getContentUpdated() {
             return contentUpdated;
         }
-
 
         public void setContentUpdated(int contentUpdated) {
             this.contentUpdated = contentUpdated;
         }
 
-
         public int getContentUpdatedDuplicated() {
             return contentUpdatedDuplicated;
         }
 
-
         public void setContentUpdatedDuplicated(int contentUpdatedDuplicated) {
             this.contentUpdatedDuplicated = contentUpdatedDuplicated;
+        }
+
+        public String getLastInode() {
+            return lastInode;
+        }
+
+        public void setLastInode(String lastInode) {
+            this.lastInode = lastInode;
         }
 
         /**

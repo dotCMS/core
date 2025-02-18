@@ -1,10 +1,12 @@
 package com.dotmarketing.util.importer.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
@@ -43,7 +45,7 @@ public interface AbstractImportResult extends Serializable {
      *
      * @return a string representing the workflow action ID
      */
-    String workflowActionId();
+    Optional<String> workflowActionId();
 
     /**
      * Retrieves a list of key fields used during the import operation. These fields typically
@@ -86,6 +88,16 @@ public interface AbstractImportResult extends Serializable {
      * validation.
      */
     List<ValidationMessage> error();
+
+    /**
+     * Retrieves the identifier of the last inode processed during the import operation, if
+     * available.
+     *
+     * @return an {@code Optional<String>} representing the last inode processed, or an empty
+     * Optional if no inode was processed
+     */
+    @JsonIgnore
+    Optional<String> lastInode();
 
     /**
      * Represents the type of operation being performed during an import process. This enum is used

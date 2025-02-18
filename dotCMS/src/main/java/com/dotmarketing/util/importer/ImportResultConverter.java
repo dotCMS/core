@@ -72,6 +72,11 @@ public class ImportResultConverter {
             legacyResults.put(KEY_LAST_INODE, new ArrayList<>());
             legacyResults.put(Contentlet.WORKFLOW_ACTION_KEY, new ArrayList<>());
 
+            List<String> lastInode = legacyResults.get(KEY_LAST_INODE);
+            if (result.lastInode().isPresent()) {
+                lastInode.add(result.lastInode().get());
+            }
+
             // Convert messages to legacy format by type
             for (ValidationMessage message : result.info()) {
                 if (message.message().contains("repeated content based on the key provided")) {
