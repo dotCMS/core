@@ -243,24 +243,8 @@
             }
 
             List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
-            String fieldVariablesContent = "";
-            try {
-                // Process each field variable to properly escape any JSON values
-                for (FieldVariable fv : acceptTypes) {
-                    // If the field variable is a custom block or a JSON value, parse and re-stringify JSON values to ensure proper escaping
-                    if ("customBlocks".equals(fv.getKey()) || fv.getValue().trim().startsWith("{") || fv.getValue().trim().startsWith("[")) {
-                        // Parse and re-stringify JSON values to ensure proper escaping
-                        Object jsonValue = mapper.readValue(fv.getValue(), Object.class);
-                        String escapedJson = mapper.writeValueAsString(jsonValue)
-                            .replace("\"", "\\\""); // Escape double quotes, so we can parse it as JSON and avoid double quotes in the field variables
-                        fv.setValue(escapedJson);
-                    }
-                }
-                fieldVariablesContent = mapper.writeValueAsString(acceptTypes);
-            } catch (Exception e) {
-                Logger.error(this.getClass(), "Error processing field variables: " + e.getMessage(), e);
-                fieldVariablesContent = "[]";
-            }
+            String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
+
             %>
             <script src="/html/showdown.min.js"></script>
             <div  id="block-editor-<%=field.getVelocityVarName()%>-container">
@@ -296,23 +280,11 @@
 
                         // Set current value in the hidden field
                         field.value = content || '';
-                        const DOUBLE_QUOTE = "*DOTCMS_DOUBLE_QUOTE*";
-
-                        // Fix field variables to avoid double quotes, so we can parse it as JSON
-                        const fieldVariablesFixed = '<%=fieldVariablesContent%>'.replace(/\\"/g, DOUBLE_QUOTE);
-
-                        // Parse the field variables and fix double quotes
-                        const finalFieldVariables = JSON.parse(fieldVariablesFixed).map((fieldVariable) => {
-                            if(fieldVariable.value.includes(DOUBLE_QUOTE)) {
-                                fieldVariable.value = fieldVariable.value.replace(/\*DOTCMS_DOUBLE_QUOTE\*/g, "\"");
-                            }
-                            return fieldVariable;
-                        });
 
                         const contentlet =  (<%=contentletObj%>);
                         const fieldData = {
                             ...(<%=jsonField%>),
-                            fieldVariables: finalFieldVariables
+                            fieldVariables: JSON.parse('<%=fieldVariablesContent%>')
                         }
 
                         /**
