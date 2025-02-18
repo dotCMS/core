@@ -54,7 +54,7 @@ import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
 
-import { DotUveErrorComponent } from './components/dot-uve-error/dot-uve-error.component';
+import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -121,7 +121,7 @@ import {
         DotResultsSeoToolComponent,
         DotUveToolbarComponent,
         DotBlockEditorSidebarComponent,
-        DotUveErrorComponent
+        DotUvePageVersionNotFoundComponent
     ],
     providers: [
         DotCopyContentModalService,

@@ -4,14 +4,14 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 @Component({
-    selector: 'dot-dot-uve-error',
+    selector: 'dot-uve-page-version-not-found',
     standalone: true,
     imports: [DotMessagePipe],
-    templateUrl: './dot-uve-error.component.html',
-    styleUrl: './dot-uve-error.component.scss',
+    templateUrl: './dot-uve-page-version-not-found.component.html',
+    styleUrl: './dot-uve-page-version-not-found.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUveErrorComponent {
+export class DotUvePageVersionNotFoundComponent {
     readonly #store = inject(UVEStore);
 
     readonly $info = computed(() => {

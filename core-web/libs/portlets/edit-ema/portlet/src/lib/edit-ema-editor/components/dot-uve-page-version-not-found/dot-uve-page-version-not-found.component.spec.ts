@@ -6,7 +6,7 @@ import { signal } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotUveErrorComponent } from './dot-uve-error.component';
+import { DotUvePageVersionNotFoundComponent } from './dot-uve-page-version-not-found.component';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 
@@ -17,10 +17,10 @@ const messagesMock = {
 };
 
 describe('DotUveErrorComponent', () => {
-    let spectator: Spectator<DotUveErrorComponent>;
+    let spectator: Spectator<DotUvePageVersionNotFoundComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotUveErrorComponent,
+        component: DotUvePageVersionNotFoundComponent,
         providers: [
             {
                 provide: UVEStore,

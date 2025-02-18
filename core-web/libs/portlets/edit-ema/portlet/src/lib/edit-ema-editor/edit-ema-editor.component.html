@@ -28,7 +28,7 @@
         }"
         class="iframe-wrapper">
         @if (uveStore.status() === UVE_STATUS.ERROR) {
-            <dot-dot-uve-error />
+            <dot-uve-page-version-not-found />
         }
         <iframe
             (load)="onIframePageLoad()"

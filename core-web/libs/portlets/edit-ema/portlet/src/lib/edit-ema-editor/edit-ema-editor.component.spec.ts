@@ -76,7 +76,7 @@ import {
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
-import { DotUveErrorComponent } from './components/dot-uve-error/dot-uve-error.component';
+import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -485,7 +485,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should show the error component when there is no live version', () => {
-                const errorComponent = spectator.query(DotUveErrorComponent);
+                const errorComponent = spectator.query(DotUvePageVersionNotFoundComponent);
 
                 spectator.detectChanges();
 
