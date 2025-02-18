@@ -141,8 +141,8 @@ public enum PageMode {
                 return DEFAULT_PAGE_MODE;
             }
         }
-
-        if(request.getSession(false)!=null) {
+        //here we're saying that... we want to set page mode in the request and not override the session actual value
+        if( setSession && null != request.getSession(false)) {
             request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
         }
         request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, mode);
