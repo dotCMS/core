@@ -313,16 +313,16 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
 };
 
 /**
- * Gets the UI state from localStorage or returns the initial state if not found
+ * Gets the UI state from sessionStorage or returns the initial state if not found
  */
 export const getStoredUIState = (): UIState => {
     try {
-        const storedState = localStorage.getItem(UI_STORAGE_KEY);
+        const storedState = sessionStorage.getItem(UI_STORAGE_KEY);
         if (storedState) {
             return JSON.parse(storedState);
         }
     } catch (e) {
-        console.warn('Error reading UI state from localStorage:', e);
+        console.warn('Error reading UI state from sessionStorage:', e);
     }
 
     return {
@@ -333,12 +333,24 @@ export const getStoredUIState = (): UIState => {
 };
 
 /**
- * Saves the UI state to localStorage
+ * Saves the UI state to sessionStorage
  */
 export const saveStoreUIState = (state: UIState): void => {
     try {
-        localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(state));
+        sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
-        console.warn('Error saving UI state to localStorage:', e);
+        console.warn('Error saving UI state to sessionStorage:', e);
     }
+};
+
+/**
+ * Initializes the UI state keeping only the isSidebarOpen value from storage
+ */
+export const initContentEditSessionStorage = (): UIState => {
+    const currentState = getStoredUIState();
+    return {
+        activeTab: 0,
+        isSidebarOpen: currentState?.isSidebarOpen ?? true,
+        activeSidebarTab: 0
+    };
 };

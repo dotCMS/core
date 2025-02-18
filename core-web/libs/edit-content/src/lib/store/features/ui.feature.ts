@@ -56,7 +56,12 @@ export function withUI() {
             /**
              * Computed property that returns the active sidebar tab
              */
-            activeSidebarTab: computed(() => store.uiState().activeSidebarTab)
+            activeSidebarTab: computed(() => {
+                const initialState = store.initialContentletState();
+                const uiState = store.uiState();
+
+                return initialState === 'new' ? 0 : uiState.activeSidebarTab;
+            })
         })),
         withMethods((store) => ({
             /**
@@ -106,6 +111,14 @@ export function withUI() {
                     });
                 });
             }
+            // onDestroy(store) {
+            //     const newState = {
+            //         ...store.uiState(),
+            //         activeTab: 0,
+            //         activeSidebarTab: 0
+            //     };
+            //     saveStoreUIState(newState);
+            // }
         })
     );
 }
