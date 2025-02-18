@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import javax.servlet.http.HttpServletRequest;
-import org.json.JSONObject;
 
 /**
  * Utility class for job-related operations.
@@ -184,24 +183,15 @@ public class JobUtil {
     }
 
     /**
-     * Converts the given object into a Map representation.
+     * Converts the given object into a Map representation. This method uses the configured
+     * ObjectMapper to transform the provided object into a Map with keys as strings and values as
+     * objects.
      *
-     * @param toTransform The object to be transformed into a Map. It should be serializable to a
-     *                    JSON string.
-     * @return A Map containing the data of the given object. If the object cannot be serialized or
-     * its representation is empty, an empty Map is returned.
-     * @throws JsonProcessingException If the object cannot be converted to a JSON string.
+     * @param toTransform The object to be converted into a Map
+     * @return A Map containing the key-value pairs representing the structure of the input object
      */
-    public static Map<String, Object> transformToMap(final Object toTransform)
-            throws JsonProcessingException {
-
-        final var asString = transformToString(toTransform);
-        if (!UtilMethods.isSet(asString)) {
-            return Map.of();
-        }
-
-        JSONObject resultJsonObject = new JSONObject(asString);
-        return resultJsonObject.toMap();
+    public static Map<String, Object> transformToMap(final Object toTransform) {
+        return objectMapper.get().convertValue(toTransform, Map.class);
     }
 
     /**

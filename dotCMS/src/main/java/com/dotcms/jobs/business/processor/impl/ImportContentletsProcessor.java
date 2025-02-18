@@ -403,8 +403,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
         Logger.info(this, String.format("-> Content Type: %s", contentType.variable()));
 
         return ImportUtil.importFileResult(importId, currentSiteId, contentType.id(), fields,
-                preview,
-                language == null, user, language == null ? -1 : language.getId(),
+                preview, language == null, user, language == null ? -1 : language.getId(),
                 headerInfo.headers, csvReader, headerInfo.languageCodeColumn,
                 headerInfo.countryCodeColumn, workflowActionId, fileTotalLines, httpReq,
                 progressCallback);
