@@ -39,7 +39,7 @@ public class DotGraphQLHttpServletTest {
     public void testing_GETRequestToGraphQLServer_returnResponseWithExpectedHeaders()
             throws ServletException, IOException {
 
-        MockHttpRequestIntegrationTest request = new MockHttpRequestIntegrationTest("localhost", "/");
+        MockHttpRequestIntegrationTest request = new MockHttpRequestIntegrationTest("localhost", "/?qid=123abc");
         MockHeaderResponse response = new MockHeaderResponse(new MockHttpResponse());
         DotGraphQLHttpServlet graphQLHttpServlet = new DotGraphQLHttpServlet();
         graphQLHttpServlet.init(null);
