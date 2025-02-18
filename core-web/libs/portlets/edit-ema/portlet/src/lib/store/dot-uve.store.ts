@@ -148,12 +148,6 @@ export const UVEStore = signalStore(
                     };
 
                     return normalizeQueryParams(params);
-                }),
-                $hasLiveVersion: computed<boolean>(() => {
-                    return (
-                        pageAPIResponse()?.urlContentMap?.hasLiveVersion ||
-                        pageAPIResponse()?.page?.hasLiveVersion
-                    );
                 })
             };
         }

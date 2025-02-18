@@ -19,7 +19,7 @@ export class DotUveErrorComponent {
 
         if (errorCode === 404) {
             return {
-                icon: 'pi-search',
+                icon: 'pi-stopwatch',
                 title: 'uve.editor.error.404.title',
                 description: 'uve.editor.error.404.description'
             };
