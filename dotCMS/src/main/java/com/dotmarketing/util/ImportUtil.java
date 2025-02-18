@@ -109,7 +109,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Provides utility methods to import content into dotCMS. The data source is a
@@ -407,7 +406,7 @@ public class ImportUtil {
                                         wfActionId, request, resultBuilder);
                                 final var lineResult = resultBuilder.build();
                                 parseLineResults(counters, lineResult, messages, savedInodes,
-                                        updatedInodes);
+                                        updatedInodes, true);
 
                                 //Storing the record keys we just imported for a later reference...
                                 if (!keyFields.isEmpty()) {
@@ -445,7 +444,7 @@ public class ImportUtil {
                                 if (resultBuilder != null) {
                                     final var lineResult = resultBuilder.build();
                                     parseLineResults(counters, lineResult, messages, savedInodes,
-                                            updatedInodes);
+                                            updatedInodes, false);
                                 }
                             }
 
@@ -527,7 +526,7 @@ public class ImportUtil {
      * @return an {@link ImportResult} object containing details about the operation, processed
      * data, validation messages, and summary information
      */
-    private static @NotNull ImportResult generateImportResult(final boolean preview,
+    private static ImportResult generateImportResult(final boolean preview,
             final String wfActionId, final long fileTotalLines, final int lineNumber,
             final int failedRows, final List<ValidationMessage> messages,
             final Builder fileInfoBuilder, final Counters counters,
@@ -609,31 +608,35 @@ public class ImportUtil {
      * Processes the results of a line import operation and updates the provided counters, messages
      * list, and inode lists with the relevant data from the line result.
      *
-     * @param counters      an instance of {@code Counters} to update with values from the line
-     *                      result
-     * @param lineResult    an instance of {@code LineImportResult} containing the results of a
-     *                      single line processing
-     * @param messages      a list of {@code ValidationMessage} to which validation messages from
-     *                      the line result are added
-     * @param savedInodes   a list of strings representing the inodes saved during processing; this
-     *                      list is updated with values from the line result
-     * @param updatedInodes a list of strings representing the inodes updated during processing;
-     *                      this list is updated with values from the line result
+     * @param counters       an instance of {@code Counters} to update with values from the line
+     *                       result
+     * @param lineResult     an instance of {@code LineImportResult} containing the results of a
+     *                       single line processing
+     * @param messages       a list of {@code ValidationMessage} to which validation messages from
+     *                       the line result are added
+     * @param savedInodes    a list of strings representing the inodes saved during processing; this
+     *                       list is updated with values from the line result
+     * @param updatedInodes  a list of strings representing the inodes updated during processing;
+     *                       this list is updated with values from the line result
+     * @param updateCounters If the counters needs or not to be updated. if we are colling the
+     *                       parseLineResults after an error we don't need to update them.
      */
     private static void parseLineResults(Counters counters, LineImportResult lineResult,
             List<ValidationMessage> messages, List<String> savedInodes,
-            List<String> updatedInodes) {
+            List<String> updatedInodes, final boolean updateCounters) {
 
-        counters.setContentToCreate(
-                counters.getContentToCreate() + lineResult.contentToCreate());
-        counters.setContentCreated(
-                counters.getContentCreated() + lineResult.createdContent());
-        counters.setContentToUpdate(
-                counters.getContentToUpdate() + lineResult.contentToUpdate());
-        counters.setContentUpdated(
-                counters.getContentUpdated() + lineResult.updatedContent());
-        counters.setContentUpdatedDuplicated(
-                counters.getContentUpdatedDuplicated() + lineResult.duplicateContent());
+        if (updateCounters) {
+            counters.setContentToCreate(
+                    counters.getContentToCreate() + lineResult.contentToCreate());
+            counters.setContentCreated(
+                    counters.getContentCreated() + lineResult.createdContent());
+            counters.setContentToUpdate(
+                    counters.getContentToUpdate() + lineResult.contentToUpdate());
+            counters.setContentUpdated(
+                    counters.getContentUpdated() + lineResult.updatedContent());
+            counters.setContentUpdatedDuplicated(
+                    counters.getContentUpdatedDuplicated() + lineResult.duplicateContent());
+        }
 
         // Update results from line processing
         messages.addAll(lineResult.messages());
@@ -4077,7 +4080,6 @@ public class ImportUtil {
      * @return
      * @throws DotDataException
      */
-    @NotNull
     private static ContentletRelationships loadRelationshipRecords(
             Map<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
             Map<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
