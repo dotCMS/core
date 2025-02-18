@@ -35,6 +35,7 @@ p-toolbar::ng-deep {
         color: $toolbar-color;
         height: $toolbar-height;
         padding: 0 $spacing-3 0 0;
+        border: 0;
     }
 }
 

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialog } from 'primeng/dynamicdialog';
 
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotApiLinkComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
@@ -20,7 +20,7 @@ import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.
         DotPortletBaseModule,
         DotTemplateCreateEditRoutingModule,
         DotTemplatePropsModule,
-        DynamicDialogModule,
+        DynamicDialog,
         DotMessagePipe,
         DotFieldRequiredDirective,
         DotTemplateBuilderModule

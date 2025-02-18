@@ -6,8 +6,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SidebarModule } from 'primeng/sidebar';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import {
@@ -45,8 +45,8 @@ interface CreateForm {
         DotFieldValidationMessageComponent,
         DotAutofocusDirective,
         // PrimeNg
-        InputTextareaModule,
         InputTextModule,
+        TextareaModule,
         SidebarModule,
         ButtonModule,
         DotFieldRequiredDirective,

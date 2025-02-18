@@ -19,7 +19,7 @@ export default [
             '/api/vtl',
             '/tinymce'
         ],
-        target: 'http://localhost:8080',
+        target: 'https://demo.dotcms.com',
         secure: false,
         logLevel: 'debug',
         pathRewrite: {

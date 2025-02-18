@@ -33,12 +33,16 @@
             [pageState]="pageState"
             [variant]="variant" />
 
-        <p-checkbox
-            *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
-            (onChange)="whatschange.emit($event.checked)"
-            [binary]="true"
-            [label]="'dot.common.whats.changed' | dm"
-            class="dot-edit__what-changed-button" />
+        <div class="flex items-center">
+            <p-checkbox
+                *ngIf="showWhatsChanged && isEnterpriseLicense$ | async"
+                (onChange)="whatschange.emit($event.checked)"
+                [binary]="true"
+                inputId="whatsChanged"
+                class="dot-edit__what-changed-button">
+            </p-checkbox>
+            <label for="whatsChanged" class="ml-2">{{'dot.common.whats.changed' | dm}}</label>
+        </div>
     </div>
 
     <div class="lower-toolbar-right w-5">

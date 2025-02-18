@@ -6,12 +6,12 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
 
 :host {
     ::ng-deep {
-        .p-tabview-nav {
+        .p-tabs-nav {
             position: relative;
             z-index: 1;
         }
 
-        > p-tabview > .p-tabview > .p-tabview-nav {
+        > p-tabview > .p-tabs > .p-tabs-nav {
             background-color: $color-palette-gray-200;
         }
 
