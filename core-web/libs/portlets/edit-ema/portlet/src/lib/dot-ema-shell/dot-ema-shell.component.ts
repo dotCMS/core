@@ -39,6 +39,7 @@ import {
     checkClientHostAccess,
     getAllowedPageParams,
     getTargetUrl,
+    normalizeQueryParams,
     sanitizeURL,
     shouldNavigate
 } from '../utils';
@@ -102,7 +103,14 @@ export class DotEmaShellComponent implements OnInit {
      */
     readonly $updateQueryParamsEffect = effect(() => {
         const params = this.uveStore.$friendlyParams();
-        this.#updateLocation(params);
+
+        const { data } = this.#activatedRoute.snapshot;
+
+        const baseClientHost = data?.uveConfig?.url;
+
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+
+        this.#updateLocation(cleanedParams);
     });
 
     ngOnInit(): void {

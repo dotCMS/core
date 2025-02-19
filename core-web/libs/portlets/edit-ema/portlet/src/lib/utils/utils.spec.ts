@@ -879,50 +879,107 @@ describe('utils functions', () => {
     });
 
     describe('normalizeQueryParams', () => {
-        it('should remove PERSONA_KEY if it equals DEFAULT_PERSONA.identifier', () => {
-            const params = {
-                [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
-                someOtherKey: 'someValue'
-            };
+        describe('persona handling', () => {
+            it('should remove PERSONA_KEY if it equals DEFAULT_PERSONA.identifier', () => {
+                const params = {
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                    someOtherKey: 'someValue'
+                };
 
-            const result = normalizeQueryParams(params);
+                const result = normalizeQueryParams(params);
 
-            expect(result).toEqual({
-                someOtherKey: 'someValue'
+                expect(result).toEqual({
+                    someOtherKey: 'someValue'
+                });
+            });
+
+            it('should rename PERSONA_KEY to personaId if not default', () => {
+                const params = {
+                    [PERSONA_KEY]: 'customPersonaId',
+                    anotherKey: 'anotherValue'
+                };
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual({
+                    personaId: 'customPersonaId',
+                    anotherKey: 'anotherValue'
+                });
             });
         });
 
-        it('should rename PERSONA_KEY to personaId if it is present and not default', () => {
-            const params = {
-                [PERSONA_KEY]: 'customPersonaId',
-                anotherKey: 'anotherValue'
-            };
+        describe('clientHost handling', () => {
+            it('should remove clientHost when it matches baseClientHost exactly', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
 
-            const result = normalizeQueryParams(params);
+                const result = normalizeQueryParams(params, 'http://example.com');
 
-            expect(result).toEqual({
-                personaId: 'customPersonaId',
-                anotherKey: 'anotherValue'
+                expect(result).toEqual({
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should remove clientHost when it matches baseClientHost with trailing slash', () => {
+                const params = {
+                    clientHost: 'http://example.com/',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params, 'http://example.com');
+
+                expect(result).toEqual({
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should keep clientHost if it differs from baseClientHost', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params, 'http://different.com');
+
+                expect(result).toEqual({
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should keep clientHost if baseClientHost is not provided', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual(params);
             });
         });
 
-        it('should not modify params if PERSONA_KEY is absent', () => {
-            const params = {
-                someKey: 'someValue',
-                anotherKey: 'anotherValue'
-            };
+        describe('edge cases', () => {
+            it('should handle empty params object', () => {
+                const params = {};
 
-            const result = normalizeQueryParams(params);
+                const result = normalizeQueryParams(params);
 
-            expect(result).toEqual(params);
-        });
+                expect(result).toEqual({});
+            });
 
-        it('should handle empty params object', () => {
-            const params = {};
+            it('should handle params with no special keys', () => {
+                const params = {
+                    someKey: 'someValue',
+                    anotherKey: 'anotherValue'
+                };
 
-            const result = normalizeQueryParams(params);
+                const result = normalizeQueryParams(params);
 
-            expect(result).toEqual({});
+                expect(result).toEqual(params);
+            });
         });
     });
 });

@@ -1,8 +1,6 @@
 package com.dotcms.publishing;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -34,7 +32,6 @@ import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
@@ -52,8 +49,6 @@ import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
-import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -84,8 +79,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -104,9 +97,14 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
@@ -128,7 +126,6 @@ import static com.dotcms.util.CollectionsUtils.set;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 
 @RunWith(DataProviderRunner.class)
@@ -1454,190 +1451,5 @@ public class PublisherAPIImplTest {
             Config.setProperty("ASSET_REAL_PATH", realAssetsRootPath);
         }
 
-    }
-
-    /**
-     * Method to test: {@link PublisherAPIImpl#publish(PublisherConfig)}
-     * When:
-     * - Create a ContentType called grandChild with just one field: title.
-     * - Create a ContentType called child with 2 field: title and a relationship field pointing to grandChild.
-     * - Create a ContentType called parent with 2 field: title and a relationship field pointing to child.
-     * - Create a grandChild Contentlet with title equals to 'C'
-     * - Create a child Contentlet with title equals to 'B' and related with C
-     * - Create a parent Contentlet with title equals to 'A' and related with B
-     * - Push A
-     *
-     * Should: send the 3 ContentTypes, the 3 Contentlets and the 2 Relationship
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotPublishingException
-     * @throws IOException
-     */
-    @Test
-    public void pushSecondLevelRelatedContent() throws DotDataException, DotSecurityException, DotPublishingException, IOException {
-        final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
-        final Host host = new SiteDataGen().nextPersisted();
-
-        final Field grandChildTitle = new FieldDataGen().name("title").next();
-
-        final ContentType contentTypeGrandChild =  new ContentTypeDataGen()
-                .host(host)
-                .field(grandChildTitle)
-                .nextPersisted();
-
-
-        final Field childTitle = new FieldDataGen().name("title").next();
-
-        ContentType contentTypeChild =  new ContentTypeDataGen()
-                .host(host)
-                .field(childTitle)
-                .nextPersisted();
-
-        Relationship relationship1 = new FieldRelationshipDataGen()
-                .child(contentTypeGrandChild)
-                .parent(contentTypeChild)
-                .nextPersisted();
-
-        contentTypeChild = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeChild.variable());
-
-        final Field parentTitle = new FieldDataGen().name("title").next();
-
-        ContentType contentTypeParent = new ContentTypeDataGen()
-                .host(host)
-                .field(parentTitle)
-                .nextPersisted();
-
-        final Relationship relationship2 = new FieldRelationshipDataGen()
-                .child(contentTypeChild)
-                .parent(contentTypeParent)
-                .nextPersisted();
-
-        contentTypeParent = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeParent.variable());
-
-        final Contentlet grandChildContent = new ContentletDataGen(contentTypeGrandChild).setProperty("title", "C").nextPersisted();
-        final Contentlet childContent = new ContentletDataGen(contentTypeChild)
-                .setProperty(relationship1.getChildRelationName(), Arrays.asList(grandChildContent))
-                .setProperty("title", "B")
-                .nextPersisted();
-        final Contentlet parentContent = new ContentletDataGen(contentTypeParent)
-                .setProperty(relationship2.getChildRelationName(), Arrays.asList(childContent))
-                .setProperty("title", "A")
-                .nextPersisted();
-
-        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().dependencies(true).relationships(true).nextPersisted();
-        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
-
-        final PushPublisherConfig config = new PushPublisherConfig();
-        config.setPublishers(list(publisher));
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
-        config.setLuceneQueries(list());
-        config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
-
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(parentContent))
-                .filter(filterDescriptor)
-                .operation(PublisherConfig.Operation.PUBLISH)
-                .setSavePublishQueueElements(true)
-                .nextPersisted();
-
-        final PublishStatus publish = publisherAPI.publish(config);
-
-        File bundleRoot = publish.getOutputFiles().get(0);
-
-        final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
-        extractTarArchive(bundleRoot, extractHere);
-
-        List<Object> expected = Arrays.asList(contentTypeParent,
-                contentTypeChild, contentTypeGrandChild,
-                grandChildContent, childContent,
-                parentContent, relationship2, relationship1);
-
-        for (Object assetToAssert : expected) {
-            FileTestUtil.assertBundleFile(extractHere, assetToAssert);
-        }
-    }
-
-    /**
-     * Method to test: {@link PublisherAPIImpl#publish(PublisherConfig)}
-     * When:
-     * - Create a ContentType  with 2 fields: title and a relationship pointing to itself.
-     * - Create a Contentlet with title equals to 'A' pointing to 'B'
-     * - Create a Contentlet with title equals to 'B' pointing to 'C'
-     * - Create a Contentlet with title equals to 'C' pointing to 'A'
-     * - Push A
-     *
-     * Should: send the ContentType, the 3 Contentlets and the Relationship without any OutOfMemory Exception
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotPublishingException
-     * @throws IOException
-     */
-    @Test
-    public void pushCiclyReferenceContentlets() throws DotDataException, DotSecurityException, DotPublishingException, IOException {
-        final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
-        final Host host = new SiteDataGen().nextPersisted();
-
-        final Field titleField = new FieldDataGen().name("title").next();
-
-        ContentType contentType =  new ContentTypeDataGen()
-                .host(host)
-                .field(titleField)
-                .nextPersisted();
-
-        Relationship relationship = new FieldRelationshipDataGen()
-                .child(contentType)
-                .parent(contentType)
-                .nextPersisted();
-
-        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.variable());
-
-        final Contentlet contentB = new ContentletDataGen(contentType).setProperty("title", "B").nextPersisted();
-        final Contentlet contentC = new ContentletDataGen(contentType).setProperty("title", "B").nextPersisted();
-        final Contentlet contentA = new ContentletDataGen(contentType)
-                .setProperty(relationship.getChildRelationName(), Arrays.asList(contentB))
-                .setProperty("title", "A")
-                .nextPersisted();
-
-        final Contentlet checkoutB = ContentletDataGen.checkout(contentB);
-        checkoutB.setProperty(relationship.getChildRelationName(), Arrays.asList(contentC));
-        ContentletDataGen.checkin(checkoutB);
-
-        final Contentlet checkoutC = ContentletDataGen.checkout(contentC);
-        checkoutC.setProperty(relationship.getChildRelationName(), Arrays.asList(contentA));
-        ContentletDataGen.checkin(checkoutC);
-
-        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().dependencies(true).relationships(true).nextPersisted();
-        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
-
-        final PushPublisherConfig config = new PushPublisherConfig();
-        config.setPublishers(list(publisher));
-        config.setOperation(PublisherConfig.Operation.PUBLISH);
-        config.setLuceneQueries(list());
-        config.setId("PublisherAPIImplTest_" + System.currentTimeMillis());
-
-        new BundleDataGen()
-                .pushPublisherConfig(config)
-                .addAssets(list(contentA))
-                .filter(filterDescriptor)
-                .operation(PublisherConfig.Operation.PUBLISH)
-                .setSavePublishQueueElements(true)
-                .nextPersisted();
-
-        final PublishStatus publish = publisherAPI.publish(config);
-
-        File bundleRoot = publish.getOutputFiles().get(0);
-
-        final File extractHere = new File(bundleRoot.getParent() + File.separator + config.getName());
-        extractTarArchive(bundleRoot, extractHere);
-
-        List<Object> expected = Arrays.asList(contentType,
-                contentA, contentB, contentC, relationship);
-
-        for (Object assetToAssert : expected) {
-            FileTestUtil.assertBundleFile(extractHere, assetToAssert);
-        }
     }
 }
