@@ -14,16 +14,16 @@
 }
 
 .title {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium-bold;
     color: $color-palette-gray-700;
     margin: 0;
     margin-top: $spacing-2;
 }
 
 .description {
-    font-size: 1rem;
-    font-weight: 400;
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-regular-bold;
     color: $color-palette-gray-700;
     margin: 0;
 }
