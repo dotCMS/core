@@ -1,6 +1,6 @@
+import { ClientOptions } from '../../../../deprecated/sdk-js-client';
 import { Equals } from '../../../../query-builder/lucene-syntax';
 import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
-import { ClientOptions } from '../../../sdk-js-client';
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
