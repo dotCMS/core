@@ -436,5 +436,4 @@ public class AnalyticsAPIImpl implements AnalyticsAPI, EventSubscriber<SystemTab
     private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
         return CircuitBreakerUrl.authHeaders(AnalyticsHelper.get().formatBearer(accessToken));
     }
-
 }
