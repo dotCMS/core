@@ -102,7 +102,26 @@ export class DotEmaShellComponent implements OnInit {
      */
     readonly $updateQueryParamsEffect = effect(() => {
         const params = this.uveStore.$friendlyParams();
-        this.#updateLocation(params);
+
+        const { data } = this.#activatedRoute.snapshot;
+
+        const baseClientHost = sanitizeURL(data?.uveConfig?.url);
+
+        // If there is no base client host, just update the location with the params
+        if (!baseClientHost) {
+            this.#updateLocation(params);
+
+            return;
+        }
+
+        const cleanedParams = {
+            ...params,
+            clientHost:
+                // If the base client host is the same as the current client host, don't include it
+                baseClientHost === sanitizeURL(params.clientHost) ? null : params.clientHost
+        };
+
+        this.#updateLocation(cleanedParams);
     });
 
     ngOnInit(): void {
