@@ -283,7 +283,6 @@ public class ImportUtil {
                 .getStructureByInode(contentTypeInode);
         List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
         List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<>();
-        List<Field> uniqueFields = new ArrayList<>();
 
         // Initialize processing variables
         int failedRows = 0;
@@ -302,11 +301,10 @@ public class ImportUtil {
         final Map<Integer, Boolean> onlyChild = new HashMap<>();
 
         // Get unique fields
-        for (Field field : FieldsCache.getFieldsByStructureInode(contentType.getInode())) {
-            if (field.isUnique()) {
-                uniqueFields.add(field);
-            }
-        }
+        final List<Field> uniqueFields = FieldsCache.getFieldsByStructureInode(contentType.getInode())
+                .stream()
+                .filter(Field::isUnique)
+                .collect(Collectors.toList());
 
         // Results builder
         final FileInfo.Builder fileInfoBuilder = FileInfo.builder();
