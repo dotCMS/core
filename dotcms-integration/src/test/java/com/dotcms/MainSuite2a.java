@@ -171,11 +171,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05350AddDotSaltClusterColumnTest.class,
         PostgresPubSubImplTest.class,
         DotParseTest.class,
-        TestWorkflowAction.class,
-        SamlConfigurationServiceTest.class,
-        ClusterFactoryTest.class,
-        ESMappingUtilHelperTest.class,
-        BundleResourceTest.class,
+        TestWorkflowAction.class
 })
 public class MainSuite2a {
 
