@@ -42,6 +42,7 @@ import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBa
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
+import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
@@ -75,6 +76,7 @@ import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
 import com.dotcms.publishing.BundlerUtilTest;
+import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
 import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
@@ -99,6 +101,7 @@ import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
+import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
@@ -131,6 +134,7 @@ import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
+import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
@@ -140,6 +144,7 @@ import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
@@ -420,6 +425,16 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05210CreateDefaultDotAssetTest.class,
 
 
+
+
+
+        PushPublishFiltersInitializerTest.class,
+        PushPublishFilterResourceTest.class,
+        PushNowActionletTest.class,
+        Task05305AddPushPublishFilterColumnTest.class,
+        CMSMaintenanceFactoryTest.class,
+        Task05350AddDotSaltClusterColumnTest.class,
+        PostgresPubSubImplTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,

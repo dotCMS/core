@@ -162,14 +162,7 @@ import org.junit.runners.Suite.SuiteClasses;
         LanguageUtilTest.class,
         FolderResourceTest.class,
         Task05225RemoveLoadRecordsToIndexTest.class,
-        PublisherFilterImplTest.class,
-        PushPublishFiltersInitializerTest.class,
-        PushPublishFilterResourceTest.class,
-        PushNowActionletTest.class,
-        Task05305AddPushPublishFilterColumnTest.class,
-        CMSMaintenanceFactoryTest.class,
-        Task05350AddDotSaltClusterColumnTest.class,
-        PostgresPubSubImplTest.class
+        PublisherFilterImplTest.class
 })
 public class MainSuite2a {
 
