@@ -36,6 +36,14 @@ function confirmQueryParams(queryParams: Params): {
 } {
     const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
         (acc, { key, value }) => {
+
+            if (key === 'url' && queryParams[key] === '') {
+                acc[key] = '/';
+                acc.missing = true;
+
+                return acc;
+            }
+
             if (!queryParams[key]) {
                 acc[key] = value;
                 acc.missing = true;
@@ -43,12 +51,7 @@ function confirmQueryParams(queryParams: Params): {
                 return acc;
             }
 
-            if (key === 'url' && queryParams[key] === '/') {
-                acc[key] = 'index';
-                acc.missing = true;
 
-                return acc;
-            }
 
             return acc;
         },
