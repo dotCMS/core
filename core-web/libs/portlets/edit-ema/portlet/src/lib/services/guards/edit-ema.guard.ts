@@ -36,7 +36,7 @@ function confirmQueryParams(queryParams: Params): {
 } {
     const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
         (acc, { key, value }) => {
-            if (key === 'url' && queryParams[key] === '') {
+            if (key === 'url' && queryParams[key]?.trim()?.length === 0) {
                 acc[key] = '/';
                 acc.missing = true;
 
@@ -77,7 +77,7 @@ const DEFAULT_QUERY_PARAMS = [
     },
     {
         key: 'url',
-        value: 'index'
+        value: '/'
     },
     {
         key: 'com.dotmarketing.persona.id',

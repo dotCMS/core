@@ -202,6 +202,10 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
  * @return {*}  {string}
  */
 export function sanitizeURL(url?: string): string {
+    if (url === '/') {
+        return '/';
+    }
+
     return url
         ?.replace(/^\/+|\/+$/g, '') // Remove starting and trailing slashes
         ?.replace(/^(index)$|(.*?)(?:\/)?index\/?$/, (_, g1, g2) => g1 || `${g2}/`); // Keep 'index' or add slash for paths
