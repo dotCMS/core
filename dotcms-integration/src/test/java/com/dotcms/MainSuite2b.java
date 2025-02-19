@@ -419,6 +419,9 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         Task05210CreateDefaultDotAssetTest.class,
 
+
+        DotParseTest.class,
+        TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,

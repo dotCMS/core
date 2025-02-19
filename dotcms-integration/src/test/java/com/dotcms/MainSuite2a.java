@@ -169,9 +169,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05305AddPushPublishFilterColumnTest.class,
         CMSMaintenanceFactoryTest.class,
         Task05350AddDotSaltClusterColumnTest.class,
-        PostgresPubSubImplTest.class,
-        DotParseTest.class,
-        TestWorkflowAction.class
+        PostgresPubSubImplTest.class
 })
 public class MainSuite2a {
 
