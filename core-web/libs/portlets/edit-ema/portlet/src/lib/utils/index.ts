@@ -277,9 +277,10 @@ export function getFullPageURL({
  *
  * @export
  * @param {Object} params - The raw query parameters to be processed.
+ * @param {string} baseClientHost - The base client host to be used to compare with the clientHost query param.
  * @return {Object} A cleaned and formatted version of the query parameters.
  */
-export function normalizeQueryParams(params) {
+export function normalizeQueryParams(params, baseClientHost?: string) {
     const queryParams = { ...params };
 
     if (queryParams[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
@@ -289,6 +290,10 @@ export function normalizeQueryParams(params) {
     if (queryParams[PERSONA_KEY]) {
         queryParams['personaId'] = params[PERSONA_KEY];
         delete queryParams[PERSONA_KEY];
+    }
+
+    if (baseClientHost && sanitizeURL(baseClientHost) === sanitizeURL(params.clientHost)) {
+        delete queryParams.clientHost;
     }
 
     return queryParams;

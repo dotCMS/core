@@ -39,6 +39,7 @@ import {
     checkClientHostAccess,
     getAllowedPageParams,
     getTargetUrl,
+    normalizeQueryParams,
     sanitizeURL,
     shouldNavigate
 } from '../utils';
@@ -105,21 +106,9 @@ export class DotEmaShellComponent implements OnInit {
 
         const { data } = this.#activatedRoute.snapshot;
 
-        const baseClientHost = sanitizeURL(data?.uveConfig?.url);
+        const baseClientHost = data?.uveConfig?.url;
 
-        // If there is no base client host, just update the location with the params
-        if (!baseClientHost) {
-            this.#updateLocation(params);
-
-            return;
-        }
-
-        const cleanedParams = {
-            ...params,
-            clientHost:
-                // If the base client host is the same as the current client host, don't include it
-                baseClientHost === sanitizeURL(params.clientHost) ? null : params.clientHost
-        };
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
 
         this.#updateLocation(cleanedParams);
     });
