@@ -1,4 +1,3 @@
-import { fakeAsync, tick } from '@angular/core/testing';
 import {
     byTestId,
     createComponentFactory,
@@ -9,6 +8,7 @@ import {
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -25,7 +25,6 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
