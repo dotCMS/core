@@ -1,18 +1,26 @@
 package com.dotcms.filters.interceptor.dotcms;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.CookieUtil;
 import io.vavr.control.Try;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.Optional;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -45,28 +53,44 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
 
-        Result result = Result.NEXT;
 
-        User user = Try.of(()-> PortalUtil.getUser(request)).getOrNull();
-        if (user==null) {
+        if (PortalUtil.getUser(request)!=null) {
+            return Result.SKIP;
+        }
+        final Cookie rememberMe = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
+        if(rememberMe==null) {
+            return Result.NEXT;
+        }
+        final int allowedMaxAgeDays = Config.getIntProperty(
+                LoginServiceAPI.JSON_WEB_TOKEN_DAYS_MAX_AGE,
+                LoginServiceAPI.JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT);
 
-            final String jwtCookieValue = CookieUtil.get(request.getCookies(), CookieKeys.JWT_ACCESS_TOKEN);
-            if (null != jwtCookieValue) {
-                user = this.jsonWebTokenUtils.getUser(jwtCookieValue, request.getRemoteAddr());
-                if(user==null) {
-                    // user is null because token is expired
-                    CookieUtil.deleteCookie(request, response, CookieKeys.JWT_ACCESS_TOKEN);
-                }else {
-                    if (this.loginServiceAPI.doCookieLogin(this.encryptor.encryptString(user.getUserId()), request, response)) {
-                        // if this login was successfully, do not need to do any other.
-                        result = Result.SKIP;
-                    }
-                }
+        int jwtMaxAgeInMillis = allowedMaxAgeDays * 24 * 60 * 60 * 1000;
 
-            }
+        final Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(rememberMe.getValue(), request.getRemoteAddr());
+        Optional<User> user= token.flatMap(JWToken::getActiveUser);
+        if(user.isEmpty()) {
+            // user is null because token is expired
+            CookieUtil.deleteCookie(request, response, CookieKeys.JWT_ACCESS_TOKEN);
+            return Result.NEXT;
         }
 
-        return result;
+        // if the token was expiry date is greater than the allowed EXPIREY date, reset it
+        // maybe someone updated the configured MAX_AGE_DAYS
+        if(token.get().getExpiresDate().after(Date.from(Instant.now().plus(jwtMaxAgeInMillis, ChronoUnit.MILLIS)))) {
+            // refresh the token
+            this.loginServiceAPI.doRememberMe(request, response,user.get(),allowedMaxAgeDays);
+            com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie(request, response,rememberMe.getValue(), Optional.of(allowedMaxAgeDays));
+        }
+
+        if (this.loginServiceAPI.doCookieLogin(token.get().getSubject(), request, response)) {
+            return Result.SKIP;
+        } else {
+            // user is null because token is expired
+            CookieUtil.deleteCookie(request, response, CookieKeys.JWT_ACCESS_TOKEN);
+            return Result.NEXT;
+        }
+
     } // intercept.
 
 

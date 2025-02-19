@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.beans;
 
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Optional;
@@ -67,7 +68,8 @@ public interface JWToken extends Serializable {
      */
     @JsonIgnore
     default Optional<User> getActiveUser() {
-        User user = Try.of(() -> APILocator.getUserAPI().loadUserById(getUserId())).getOrNull();
+        String userIdString = Try.of(()-> PublicEncryptionFactory.decryptString(getUserId())).getOrElse(this::getUserId);
+        User user = Try.of(() -> APILocator.getUserAPI().loadUserById(userIdString)).getOrNull();
         if (user != null && user.isActive()) {
             return Optional.of(user);
         }

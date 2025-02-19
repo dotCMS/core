@@ -39,6 +39,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
+import com.liferay.portal.util.PortalUtil;
 import java.util.Locale;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -390,42 +391,51 @@ public class LocaleUtil {
         Locale locale = null;
         String uId = null;
 
-        if (null != session) {
 
-            final Cookie[] cookies =
-                request.getCookies();
 
-            if (cookies != null) {
+        User user = PortalUtil.getUser(request);
+        if(user!=null) {
+            return user.getLocale();
+        }
 
-                final String jwtAccessToken =
-                        UtilMethods.getCookieValue(
-                                HttpServletRequest.class.cast(request).getCookies(),
-                                CookieKeys.JWT_ACCESS_TOKEN);
-                if (UtilMethods.isSet(jwtAccessToken)) {
 
-                    try {
 
-                        uId = getJsonWebTokenUtils().getUserIdFromJsonWebToken(jwtAccessToken);
 
-                    } catch (Exception e) {
-                        //Handling this invalid token exception
-                        JsonWebTokenUtils.getInstance()
-                                .handleInvalidTokenExceptions(LocaleUtil.class, e, request, null);
-                    }
+
+        final Cookie[] cookies =
+            request.getCookies();
+
+        if (cookies != null) {
+
+            final String jwtAccessToken =
+                    UtilMethods.getCookieValue(
+                            HttpServletRequest.class.cast(request).getCookies(),
+                            CookieKeys.JWT_ACCESS_TOKEN);
+            if (UtilMethods.isSet(jwtAccessToken)) {
+
+                try {
+
+                    uId = getJsonWebTokenUtils().getUserIdFromJsonWebToken(jwtAccessToken);
+
+                } catch (Exception e) {
+                    //Handling this invalid token exception
+                    JsonWebTokenUtils.getInstance()
+                            .handleInvalidTokenExceptions(LocaleUtil.class, e, request, null);
                 }
             }
-
-            if (UtilMethods.isSet(uId)) {
-
-                //DOTCMS-4943
-                final boolean respectFrontend =
-                    getUserWebAPI().isLoggedToBackend(request);
-                final com.liferay.portal.model.User loggedInUser =
-                    getUserAPI().loadUserById(uId, getUserAPI().getSystemUser(), respectFrontend);
-
-                locale = loggedInUser.getLocale();
-            }
         }
+
+        if (UtilMethods.isSet(uId)) {
+
+            //DOTCMS-4943
+            final boolean respectFrontend =
+                getUserWebAPI().isLoggedToBackend(request);
+            final com.liferay.portal.model.User loggedInUser =
+                getUserAPI().loadUserById(uId, getUserAPI().getSystemUser(), respectFrontend);
+
+            locale = loggedInUser.getLocale();
+        }
+
 
         return locale;
     } // processLocaleUserCookie.

@@ -608,10 +608,12 @@ public class LoginServiceAPIFactory implements Serializable {
                                  final HttpServletResponse res,
                                  final User user,
                                  final boolean rememberMe) {
-
-            int jwtMaxAge = rememberMe ? Config.getIntProperty(
+            if(!rememberMe){
+                return;
+            }
+            int jwtMaxAge = Config.getIntProperty(
                     JSON_WEB_TOKEN_DAYS_MAX_AGE,
-                    JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) : -1;
+                    JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) ;
 
             this.doRememberMe(req, res, user, jwtMaxAge);
         } // doRememberMe.
