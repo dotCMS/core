@@ -417,7 +417,14 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.startup.runalways.Task00001LoadSchemaIntegrationTest.class,
         com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class,
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
-        Task05210CreateDefaultDotAssetTest.class
+        Task05210CreateDefaultDotAssetTest.class,
+
+        IdentityProviderConfigurationFactoryTest.class,
+        EMAWebInterceptorTest.class,
+        GoogleTranslationServiceIntegrationTest.class,
+        Task240131UpdateLanguageVariableContentTypeTest.class,
+        PushedAssetUtilTest.class,
+        OpenAIAutoTagActionletTest.class
 })
 
 public class MainSuite2b {

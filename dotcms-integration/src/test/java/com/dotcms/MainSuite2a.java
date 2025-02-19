@@ -176,12 +176,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
-        IdentityProviderConfigurationFactoryTest.class,
-        EMAWebInterceptorTest.class,
-        GoogleTranslationServiceIntegrationTest.class,
-        Task240131UpdateLanguageVariableContentTypeTest.class,
-        PushedAssetUtilTest.class,
-        OpenAIAutoTagActionletTest.class
 })
 public class MainSuite2a {
 
