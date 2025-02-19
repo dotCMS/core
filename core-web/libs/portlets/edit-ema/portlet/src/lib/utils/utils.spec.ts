@@ -309,6 +309,10 @@ describe('utils functions', () => {
     });
 
     describe('url sanitize', () => {
+        it('should left the / as /', () => {
+            expect(sanitizeURL('/')).toEqual('/');
+        });
+
         it('should remove the slash from the start', () => {
             expect(sanitizeURL('/cool')).toEqual('cool');
         });
