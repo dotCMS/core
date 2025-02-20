@@ -119,7 +119,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.structure.model.ContentletRelationshipsTest.class,
         com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
-        com.dotmarketing.filters.FiltersTest.class
+        com.dotmarketing.filters.FiltersTest.class,
+        com.dotmarketing.factories.MultiTreeAPITest.class
 })
 public class MainSuite2a {
 
