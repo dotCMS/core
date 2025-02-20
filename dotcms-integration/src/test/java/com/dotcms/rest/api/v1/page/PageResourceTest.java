@@ -856,13 +856,14 @@ public class PageResourceTest {
     }
 
     /***
-     * Should return page for default persona
+     * Given Scenario: Page with /folder/example url is created and also Vanity urls with regex and forward to group matching parameters (${number})
+     * ExpectedResult: Should return the correct forwardTo value for the regex vanity url when the action is 301
      *
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
-    public void test()
+    public void testRenderWithVanityUrlWithRegex()
             throws DotDataException, DotSecurityException, SystemException, PortalException {
         final String modeParam = "PREVIEW_MODE";
         when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.get(modeParam));
@@ -883,16 +884,22 @@ public class PageResourceTest {
                 .pageURL("example")
                 .nextPersisted();
 
+        //Full path would be /folder/example/
+
         APILocator.getVersionableAPI().setWorking(pageAsset);
         APILocator.getVersionableAPI().setLive(pageAsset);
 
         Contentlet vanityURLContentlet = null;
         long i = System.currentTimeMillis();
         String title = "VanityURL" + i;
-        String uri = "(.*)/example.*";
         String forwardTo = "$1";
         int action = 301;
         int order = 1;
+
+
+        // First case - regex with group matching to the first group $1, should forward to what the url has to the left
+
+        String uri = "(.*)/example.*";
 
         vanityURLContentlet = filtersUtil.createVanityUrl(title, host, uri,
                 forwardTo, action, order, languageId);
@@ -910,6 +917,9 @@ public class PageResourceTest {
         assertEquals(pageView.getCachedVanityUrl().forwardTo, "/folder");
 
         filtersUtil.unpublishVanityURL(vanityURLContentlet);
+
+
+        //Second case - should forward to the left group, and should be the root
 
         uri = "(.*)/folder/.*";
 
