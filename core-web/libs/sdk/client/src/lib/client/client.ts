@@ -46,7 +46,7 @@ const defaultConfig: DotCMSClientConfig = {
 /**
  * `DotCMSClient` provides methods to interact with the DotCMS REST API.
  */
-export class DotCMSClient {
+class DotCMSClient {
     private config: DotCMSClientConfig;
     private requestOptions!: RequestOptions;
 
@@ -90,3 +90,5 @@ export class DotCMSClient {
         };
     }
 }
+
+export const dotCMSCreateClient = (config: DotCMSClientConfig) => new DotCMSClient(config);
