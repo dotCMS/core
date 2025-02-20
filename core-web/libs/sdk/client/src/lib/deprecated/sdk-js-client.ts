@@ -1,9 +1,9 @@
-import { Content } from './content/content-api';
-import { ErrorMessages } from './models';
-import { DotcmsClientListener } from './models/types';
+import { NOTIFY_CLIENT } from './editor/models/listeners.model';
+import { isInsideEditor } from './editor/sdk-editor';
 
-import { NOTIFY_CLIENT } from '../editor/models/listeners.model';
-import { isInsideEditor } from '../editor/sdk-editor';
+import { Content } from '../client/content/content-api';
+import { ErrorMessages } from '../client/models';
+import { DotcmsClientListener } from '../client/models/types';
 
 export type ClientOptions = Omit<RequestInit, 'body' | 'method'>;
 
