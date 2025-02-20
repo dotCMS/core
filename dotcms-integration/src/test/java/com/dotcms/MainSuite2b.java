@@ -71,7 +71,10 @@ import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPITest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
+import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
+import com.dotcms.publisher.bundle.business.BundleFactoryTest;
+import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
@@ -136,20 +139,24 @@ import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
+import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
+import com.dotmarketing.portlets.folders.model.FolderTest;
 import com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
+import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
+import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
@@ -165,9 +172,11 @@ import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.ITConfigTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
+import com.dotmarketing.util.TestConfig;
 import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
+import org.apache.felix.framework.OSGIUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -382,6 +391,21 @@ import org.junit.runners.Suite.SuiteClasses;
         AsyncVanitiesCollectorTest.class,
         HttpServletRequestImpersonatorTest.class,
         Task250107RemoveEsReadOnlyMonitorJobTest.class,
+
+
+
+
+
+        OSGIUtilTest.class,
+        CleanUpFieldReferencesJobTest.class,
+        CachedParameterDecoratorTest.class,
+        ContainerFactoryImplTest.class,
+        TemplateFactoryImplTest.class,
+        TestConfig.class,
+        FolderTest.class,
+        PublishAuditAPITest.class,
+        BundleFactoryTest.class,
+        com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
 
 
 

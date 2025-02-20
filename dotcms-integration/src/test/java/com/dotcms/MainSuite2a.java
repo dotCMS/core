@@ -137,17 +137,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         com.dotmarketing.factories.MultiTreeAPITest.class,
         FocalPointAPITest.class,
-        com.dotmarketing.tag.business.TagAPITest.class,
-        OSGIUtilTest.class,
-        CleanUpFieldReferencesJobTest.class,
-        CachedParameterDecoratorTest.class,
-        ContainerFactoryImplTest.class,
-        TemplateFactoryImplTest.class,
-        TestConfig.class,
-        FolderTest.class,
-        PublishAuditAPITest.class,
-        BundleFactoryTest.class,
-        com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class
+        com.dotmarketing.tag.business.TagAPITest.class
 })
 public class MainSuite2a {
 
