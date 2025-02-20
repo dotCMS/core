@@ -42,7 +42,8 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
      * @memberof DotAlertConfirmComponent
      */
     onClickConfirm(action: string): void {
-        action === 'accept' ? this.cd.accept() : this.cd.reject();
+        // TODO @fmontes: Investigate if this is the correct way to handle the confirmation dialog
+        action === 'accept' ? this.cd.onAccept() : this.cd.onReject();
         this.dotAlertConfirmService.clearConfirm();
     }
 }

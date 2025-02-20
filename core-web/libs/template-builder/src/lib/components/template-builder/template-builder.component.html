@@ -1,9 +1,9 @@
 @if (vm$ | async; as vm) {
     <p-toolbar>
-        <div class="p-toolbar-group-start">
+        <ng-template #start>
             <ng-content select="[toolbar-left]"></ng-content>
-        </div>
-        <div class="p-toolbar-group-end">
+        </ng-template>
+        <ng-template #end>
             <dotcms-add-widget
                 [label]="'dot.template.builder.add.row' | dm"
                 [icon]="rowIcon"
@@ -25,7 +25,7 @@
                 [layoutProperties]="vm.layoutProperties"
                 data-testId="template-builder-actions"></dotcms-template-builder-actions>
             <ng-content select="[toolbar-actions-right]"></ng-content>
-        </div>
+        </ng-template>
     </p-toolbar>
     <div
         (mousemove)="fixGridStackNodeOptions()"

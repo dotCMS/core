@@ -1,5 +1,5 @@
 <p-toolbar>
-    <div class="p-toolbar-group-left">
+    <ng-template #start>
         <div class="toolbar__dot-wrapper">
             <div class="toolbar__button-wrapper">
                 <p-button
@@ -27,8 +27,8 @@
             </div>
         </div>
         <dot-crumbtrail class="toolbar__crumbtrail"></dot-crumbtrail>
-    </div>
-    <div class="p-toolbar-group-right">
+    </ng-template>
+    <ng-template #end>
         <dot-site-selector
             (switch)="siteChange($event)"
             (hide)="iframeOverlayService.hide()"
@@ -40,5 +40,5 @@
             width="200px"></dot-site-selector>
         <dot-toolbar-notifications></dot-toolbar-notifications>
         <dot-toolbar-user></dot-toolbar-user>
-    </div>
+    </ng-template>
 </p-toolbar>

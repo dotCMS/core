@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -10,7 +10,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
     templateUrl: './dot-edit-content-text-area.component.html',
     styleUrls: ['./dot-edit-content-text-area.component.scss'],
     standalone: true,
-    imports: [InputTextareaModule, ReactiveFormsModule],
+    imports: [TextareaModule, ReactiveFormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {

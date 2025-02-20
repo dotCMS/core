@@ -8,7 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotIconModule, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
@@ -22,7 +22,7 @@ import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuratio
         CommonModule,
         DotIconModule,
         DropdownModule,
-        InputTextareaModule,
+        TextareaModule,
         InputTextModule,
         ReactiveFormsModule,
         TooltipModule,

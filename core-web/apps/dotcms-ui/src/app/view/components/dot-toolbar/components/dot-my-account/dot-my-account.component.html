@@ -65,13 +65,17 @@
         </div>
 
         <div class="field">
-            <p-checkbox
-                [(ngModel)]="showStarter"
-                [ngModelOptions]="{ standalone: true }"
-                #showStarterCheckbox
-                data-testid="showStarterBtn"
-                binary="true"
-                label="{{ 'starter.show.getting.started' | dm }}"></p-checkbox>
+            <div class="flex items-center">
+                <p-checkbox
+                    [(ngModel)]="showStarter"
+                    [ngModelOptions]="{ standalone: true }"
+                    #showStarterCheckbox
+                    data-testid="showStarterBtn"
+                    binary="true"
+                    inputId="showStarter">
+                </p-checkbox>
+                <label for="showStarter" class="ml-2">{{ 'starter.show.getting.started' | dm }}</label>
+            </div>
         </div>
 
         <div class="field">
@@ -95,11 +99,15 @@
             }
         </div>
         <div class="field">
-            <p-checkbox
-                (onChange)="toggleChangePasswordOption()"
-                id="dot-my-account-change-password-option"
-                binary="true"
-                label="{{ 'change-password' | dm }}"></p-checkbox>
+            <div class="flex items-center">
+                <p-checkbox
+                    (onChange)="toggleChangePasswordOption()"
+                    id="dot-my-account-change-password-option"
+                    binary="true"
+                    inputId="changePassword">
+                </p-checkbox>
+                <label for="changePassword" class="ml-2">{{ 'change-password' | dm }}</label>
+            </div>
         </div>
         <div class="field">
             <label for="dot-my-account-new-password-input">{{ 'new-password' | dm }}</label>
