@@ -32,7 +32,7 @@ import picocli.CommandLine.ExitCode;
         })
 public class StatusCommand implements Callable<Integer>, DotCommand {
 
-    static final String NAME = "status";
+    public static final String NAME = "status";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
