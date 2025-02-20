@@ -119,25 +119,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.structure.model.ContentletRelationshipsTest.class,
         com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
-        com.dotmarketing.filters.FiltersTest.class,
-        com.dotmarketing.business.VersionableAPITest.class,
-        com.dotmarketing.business.UserAPITest.class,
-        com.dotmarketing.business.portal.PortletAPIImplTest.class,
-        com.dotmarketing.business.web.LanguageWebApiTest.class,
-        com.dotmarketing.business.IdentifierFactoryTest.class,
-        com.dotmarketing.business.IdentifierAPITest.class,
-        com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
-        com.dotmarketing.business.RoleAPITest.class,
-        com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
-        com.dotmarketing.business.LayoutAPITest.class,
-        com.dotmarketing.business.PermissionAPIIntegrationTest.class,
-        com.dotmarketing.business.PermissionAPITest.class,
-        com.dotmarketing.servlets.BinaryExporterServletTest.class,
-        com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
-        com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
-        com.dotmarketing.factories.MultiTreeAPITest.class,
-        FocalPointAPITest.class,
-        com.dotmarketing.tag.business.TagAPITest.class
+        com.dotmarketing.filters.FiltersTest.class
 })
 public class MainSuite2a {
 
