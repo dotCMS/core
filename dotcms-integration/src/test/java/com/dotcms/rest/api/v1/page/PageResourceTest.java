@@ -46,6 +46,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
+import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Clickstream;
@@ -76,6 +77,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.EmptyPageView;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -158,6 +160,7 @@ public class PageResourceTest {
     private InitDataObject initDataObject;
     private ContentType contentGenericType;
     private HostWebAPI hostWebAPI;
+    private FiltersUtil filtersUtil;
 
     private final Map<String, Object> sessionAttributes = new ConcurrentHashMap<>(
             Map.of("clickstream",new Clickstream())
@@ -175,6 +178,7 @@ public class PageResourceTest {
         user = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
         hostName = "my.host.com" + System.currentTimeMillis();
         host = new SiteDataGen().name(hostName).nextPersisted();
+        filtersUtil = FiltersUtil.getInstance();
         initWith(user, host);
     }
 
@@ -849,6 +853,78 @@ public class PageResourceTest {
         PageRenderVerifier.verifyPageView(pageView, pageRenderTest, APILocator.systemUser());
 
         assertNull(pageView.getViewAs().getPersona());
+    }
+
+    /***
+     * Should return page for default persona
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void test()
+            throws DotDataException, DotSecurityException, SystemException, PortalException {
+        final String modeParam = "PREVIEW_MODE";
+        when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.get(modeParam));
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final Folder folder = new FolderDataGen()
+                .site(host)
+                .name("folder")
+                .nextPersisted();
+
+        final HTMLPageAsset pageAsset = (HTMLPageAsset) new HTMLPageDataGen(folder, template)
+                .host(host)
+                .languageId(1)
+                .pageURL("example")
+                .nextPersisted();
+
+        APILocator.getVersionableAPI().setWorking(pageAsset);
+        APILocator.getVersionableAPI().setLive(pageAsset);
+
+        Contentlet vanityURLContentlet = null;
+        long i = System.currentTimeMillis();
+        String title = "VanityURL" + i;
+        String uri = "(.*)/example.*";
+        String forwardTo = "$1";
+        int action = 301;
+        int order = 1;
+
+        vanityURLContentlet = filtersUtil.createVanityUrl(title, host, uri,
+                forwardTo, action, order, languageId);
+
+        filtersUtil.publishVanityUrl(vanityURLContentlet);
+
+        when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+
+        final Response response = pageResourceWithHelper
+                .render(request, this.response, pageAsset.getURI(), modeParam, null,
+                        String.valueOf(languageId), null, null);
+
+        final EmptyPageView pageView = (EmptyPageView) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        assertEquals(pageView.getCachedVanityUrl().forwardTo, "/folder");
+
+        filtersUtil.unpublishVanityURL(vanityURLContentlet);
+
+        uri = "(.*)/folder/.*";
+
+        Contentlet vanityURLContentlet2 = filtersUtil.createVanityUrl(title, host, uri,
+                forwardTo, action, order, languageId);
+
+        filtersUtil.publishVanityUrl(vanityURLContentlet2);
+
+        final Response response2 = pageResourceWithHelper
+                .render(request, this.response, pageAsset.getURI(), modeParam, null,
+                        String.valueOf(languageId), null, null);
+
+        final EmptyPageView pageView2 = (EmptyPageView) ((ResponseEntityView) response2.getEntity()).getEntity();
+
+        assertEquals(pageView2.getCachedVanityUrl().forwardTo, "/");
     }
 
     /***
