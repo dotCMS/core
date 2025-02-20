@@ -6,6 +6,7 @@ import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -72,12 +73,12 @@ public class JsonWebTokenUtils {
     /**
      * Gets from the json web access token, the user id decrypt.
      * This method is static just to keep an easier way to be access on a jsp.
-     * @param jwtAccessToken String
+     * @param rememberMeToken String
      * @return String returns the userId, null if it is not possible to get it.
      */
-    public static String getUserIdFromJsonWebToken(final String jwtAccessToken) {
+    public static String getUserIdFromJsonWebToken(final String rememberMeToken) {
 
-        final JWToken token = getInstance().jsonWebTokenService.parseToken(jwtAccessToken);
+        final JWToken token = getInstance().jsonWebTokenService.parseToken(rememberMeToken);
         return token!=null ? token.getUserId() : null;
     } // getUserIdFromJsonWebToken
 
@@ -93,7 +94,7 @@ public class JsonWebTokenUtils {
         // private UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
         return this.jsonWebTokenService.generateUserToken(
                 new UserToken.Builder().id(user.getRememberMeToken())
-                        .subject(user.getUserId())
+                        .subject(PublicEncryptionFactory.encryptString(user.getUserId()))
                         .modificationDate(user.getModificationDate())
                         .expiresDate(jwtMaxAge > 0 ?
                                 DateUtil.daysToMillis(jwtMaxAge) :
