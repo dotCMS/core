@@ -105,7 +105,7 @@ describe('DotCMSPageEditor', () => {
                 }
             });
         });
-        it('should update navigation if its null', () => {
+        it('should update navigation if its undefined', () => {
             updateNavigation(undefined as unknown as string);
             expect(postMessageToEditor).toHaveBeenCalledWith({
                 action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
