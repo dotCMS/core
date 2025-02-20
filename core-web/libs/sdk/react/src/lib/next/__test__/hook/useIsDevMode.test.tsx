@@ -1,12 +1,10 @@
 import { renderHook } from '@testing-library/react';
 
-import {
-    DotCMSPageContext,
-    DotCMSPageRendererMode
-} from '@dotcms/react/next/contexts/DotCMSPageContext';
-import { useIsDevMode } from '@dotcms/react/next/hooks/useIsDevMode';
 import { getUVEState } from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/uve/types';
+
+import { DotCMSPageContext, DotCMSPageRendererMode } from '../../contexts/DotCMSPageContext';
+import { useIsDevMode } from '../../hooks/useIsDevMode';
 
 const Wrapper = ({ children, mode = 'production' }: any) => {
     return (
