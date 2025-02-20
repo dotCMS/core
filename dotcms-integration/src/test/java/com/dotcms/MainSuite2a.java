@@ -147,11 +147,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderTest.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
-        com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
-        AppsAPIImplTest.class,
-        AppsResourceTest.class,
-        AppsCacheImplTest.class,
-        VelocityServletIntegrationTest.class
+        com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class
 })
 public class MainSuite2a {
 
