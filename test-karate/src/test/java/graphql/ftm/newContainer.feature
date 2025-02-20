@@ -16,6 +16,10 @@ Feature: Create a Container
           {
             "structureId":"#(contentTypeId)",
             "code":"<div class=\"contentlet-title\">$!{dotContentMap.title}</div>"
+          },
+          {
+          "structureId":"#(bannerContentTypeId)",
+          "code":"#dotParse(\"//default/application/containers/banner/banner.vtl\")"
           }
         ]
       }

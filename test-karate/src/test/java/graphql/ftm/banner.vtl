@@ -1,0 +1,113 @@
+<!-- Container Code: /application/containers/defualt/banner.vtl -->
+#set($imageURL = "/dA/"+$dotContentMap.identifier+"/image/1200maxw/1200cw/570ch/80q/13ro/"+$dotContentMap.image.name)
+#if($layout == 1)
+    <div class="bg-image-full bg-overlay-30 context-dark" style="background-image: url('$imageURL');">
+        <div class="container">
+            <div class="row justify-content-lg-center">
+                <div class="col-lg-9 text-center">
+                    <p
+                        class="banner-title"
+                        #if ($EDIT_MODE) 
+                            data-language="${CONTENT_LANGUAGE}"
+                            data-mode="minimal"
+                            data-inode="${ContentInode}"
+                            data-field-name="title"      
+                        #end
+                    >$!{title}</p>
+                    <h2 class="text-decoration-lines-2">
+                        <span
+                            #if ($EDIT_MODE)
+                                data-language="${CONTENT_LANGUAGE}"
+                                data-mode="minimal"
+                                data-inode="${ContentInode}"
+                                data-field-name="caption"      
+                            #end
+                        >
+                            $!{caption}
+                            <span class="text-decoration-line text-decoration-line-left"></span>
+                            <span class="text-decoration-line text-decoration-line-right"></span>
+                        </span>
+                    </h2>
+                    
+                    #if($UtilMethods.isSet($link) && $UtilMethods.isSet($buttonText))
+                    <div class="group-lg">
+                        <a class="button button-primary button-leaf" href="$link">$buttonText</a>
+                    </div>
+                    #end
+                </div>
+            </div>
+        </div>
+    </div>
+#elseif($layout == 2)
+    <div class="bg-image-full bg-overlay-20" style="background-image: url('$imageURL');">
+        <div class="container">
+            <div class="row justify-content-lg-start">
+                <div class="col-lg-7">
+                    <div class="bg-white-60 py-5 text-center">
+                        <p class="banner-title">$!{title}</p>
+                        <h2 class="text-decoration-lines-2" >
+                            <span>
+                                $!{caption}
+                                <span class="text-decoration-line text-decoration-line-left"></span>
+                                <span class="text-decoration-line text-decoration-line-right"></span>
+                            </span>
+                        </h2>
+                        #if($UtilMethods.isSet($link) && $UtilMethods.isSet($buttonText))
+                            <div class="group-lg">
+                                <a class="button button-primary button-leaf" href="$link">$buttonText</a>
+                            </div>
+                        #end
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+#elseif($layout == 3)
+    <div class="banner banner-3 context-dark" style="background-image: url('$imageURL');">
+        <div class="container">
+            <div class="row justify-content-center justify-content-lg-start">
+                <div class="col-md-12 col-lg-5 col-xl-5">
+                    <div class="p-lg-3 text-center">
+                        <p class="banner-title">$!{title}</p>
+                        <h2 class="text-decoration-lines-2" >
+                            <span>
+                                $!{caption}
+                                <span class="text-decoration-line text-decoration-line-left"></span>
+                                <span class="text-decoration-line text-decoration-line-right"></span>
+                            </span>
+                        </h2>
+                        #if($UtilMethods.isSet($link) && $UtilMethods.isSet($buttonText))
+                            <div class="group-lg">
+                                <a class="button button-white button-white-2 button-leaf" href="$link">$buttonText</a>
+                            </div>
+                        #end
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+#else
+    <div class="bg-image-full bg-overlay-20" style="background-image: url('$imageURL');">
+        <div class="container">
+            <div class="row justify-content-lg-end">
+                <div class="col-lg-7">
+                    <div class="bg-black-60 py-5 text-center">
+                        <p class="banner-title">$!{title}</p>
+                        <h2 class="text-decoration-lines-2" >
+                            <span>
+                                $!{caption}
+                                <span class="text-decoration-line text-decoration-line-left"></span>
+                                <span class="text-decoration-line text-decoration-line-right"></span>
+                            </span>
+                        </h2>
+                        #if($UtilMethods.isSet($link) && $UtilMethods.isSet($buttonText))
+                            <div class="group-lg">
+                                <a class="button button-primary button-leaf" href="$link">$buttonText</a>
+                            </div>
+                        #end
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+#end
