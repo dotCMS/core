@@ -757,6 +757,35 @@ export const BASE_SHELL_PROPS_RESPONSE = {
 };
 
 export const UVE_PAGE_RESPONSE_MAP = {
+    // URLContentMap with hasLiveVersion false
+    9: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canRead: true,
+            canSeeRules: true,
+            pageURI: 'page-one',
+            rendered: '<div>New Content - Hello World</div>',
+            canEdit: true,
+            hasLiveVersion: false
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 4,
+                language: 'German',
+                countryCode: 'DE',
+                languageCode: 'de',
+                country: 'Germany'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        urlContentMap: { ...URL_CONTENT_MAP_MOCK, hasLiveVersion: false },
+        containers: dotPageContainerStructureMock
+    }),
     // Locked without unlock permission
     8: of({
         page: {
