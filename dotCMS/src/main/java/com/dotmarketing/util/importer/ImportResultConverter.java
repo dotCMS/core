@@ -114,8 +114,8 @@ public class ImportResultConverter {
             final ResultData data = result.data();
             if (!preview) {
                 List<String> counters = legacyResults.get(KEY_COUNTERS);
-                counters.add("linesread=" + result.data().processed().parsedRows());
-                counters.add("errors=" + result.data().processed().failedRows());
+                counters.add("linesread=" + data.processed().parsedRows());
+                counters.add("errors=" + data.processed().failedRows());
                 counters.add("newContent=" + data.summary().toCreateContent());
                 counters.add("contentToUpdate=" + data.summary().updatedContent());
             }
@@ -133,7 +133,7 @@ public class ImportResultConverter {
 
             // Add error messages
             List<String> errorMessages = legacyResults.get(KEY_ERRORS);
-            int errorCount = result.data().processed().failedRows();
+            int errorCount = data.processed().failedRows();
             if (errorCount > 0) {
                 errorMessages.add(errorCount + " " + LanguageUtil.get(user,
                         "input-lines-had-errors"));
@@ -163,7 +163,7 @@ public class ImportResultConverter {
                 }
             }
 
-            messages.add(result.data().processed().parsedRows() + " " +
+            messages.add(data.processed().parsedRows() + " " +
                     LanguageUtil.get(user, "lines-of-data-were-read"));
 
             if (preview && !result.keyFields().isEmpty()) {
