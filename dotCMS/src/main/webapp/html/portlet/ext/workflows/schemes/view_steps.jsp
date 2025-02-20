@@ -22,10 +22,10 @@
 <script type="text/javascript">
 
 
-
+ 	//Steps Drag handler
 	dragula([document.querySelectorAll('.wfStepInDrag'), document.getElementById('wfStepInDragContainer')], {
 		  moves: function (el, source, handle, sibling) {
-
+		
 			  return handle.classList.contains('handle'); 
 		  },
 		  accepts: function (el, target, source, sibling) {
@@ -58,30 +58,32 @@
 			colorMeNot();
 			stepAdmin.reorderStep(stepID, index);
 		 });
-	
-	
-		var arr = new Array(<%=steps.size()%>);
-		<%for(WorkflowStep step : steps){ %>
-			arr.push(document.getElementById("jsNode<%=step.getId()%>"));
-		<%}%>
-		
-		
-	  dragula(arr, {
-		  moves: function (el, source, handle, sibling) {
 
+
+	   //Actions Drag handler
+	  var primaryContainers = document.querySelectorAll('.wf-pimary-action-wrapper');
+	  var secondaryContainers = document.querySelectorAll('.wf-secondary-action-wrapper');
+	  var containers = [...primaryContainers, ...secondaryContainers];
+
+	  dragula(containers, {
+		  moves: function (el, source, handle, sibling) {
 			  return el.classList.contains('wf-action-wrapper'); 
 		  },
 		  accepts: function (el, target, source, sibling) {
-
-		    return true;
+			  return target.classList.contains('wf-pimary-action-wrapper') || 
+					 target.classList.contains('wf-secondary-action-wrapper');
 		  },
 		  revertOnSpill: true,    
 		  copy: true,                       // elements are moved by default, not copied
 		  copySortSource: true,             // elements in copy-source containers can be reordered
 		  
-		}).on('drop', function (ele) {
+		}).on('drop', function (ele, target, source) {
 			colorMeNot();
+			const isSecondary = target.classList.contains('wf-secondary-action-wrapper');
+			
 			actionAdmin.copyOrReorderAction(ele);
+			actionAdmin.saveActionPriority(ele, isSecondary);
+			
 		 });
 
 
@@ -113,6 +115,7 @@
 
     dojo.ready(function(){
         var schemeId = '<%=scheme.getId()%>';
+		
         var whoCanUseFilteringSelect = new dijit.form.FilteringSelect({
                 id: "whoCanUseSelect",
                 name: "whoCanUseSelect",
