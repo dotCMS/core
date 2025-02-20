@@ -76,6 +76,7 @@ import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
 import com.dotcms.publishing.BundlerUtilTest;
+import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
@@ -427,7 +428,17 @@ import org.junit.runners.Suite.SuiteClasses;
 
 
 
-
+        DotAssetAPITest.class,
+        DotAssetBaseTypeToContentTypeStrategyImplTest.class,
+        FileAssetAPIImplIntegrationTest.class,
+        FileAssetFactoryIntegrationTest.class,
+        UserResourceIntegrationTest.class,
+        IntegrationResourceLinkTest.class,
+        HashBuilderTest.class,
+        LanguageUtilTest.class,
+        FolderResourceTest.class,
+        Task05225RemoveLoadRecordsToIndexTest.class,
+        PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
         PushPublishFilterResourceTest.class,
         PushNowActionletTest.class,

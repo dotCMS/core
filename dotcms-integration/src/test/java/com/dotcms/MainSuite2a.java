@@ -151,18 +151,7 @@ import org.junit.runners.Suite.SuiteClasses;
         AppsAPIImplTest.class,
         AppsResourceTest.class,
         AppsCacheImplTest.class,
-        VelocityServletIntegrationTest.class,
-        DotAssetAPITest.class,
-        DotAssetBaseTypeToContentTypeStrategyImplTest.class,
-        FileAssetAPIImplIntegrationTest.class,
-        FileAssetFactoryIntegrationTest.class,
-        UserResourceIntegrationTest.class,
-        IntegrationResourceLinkTest.class,
-        HashBuilderTest.class,
-        LanguageUtilTest.class,
-        FolderResourceTest.class,
-        Task05225RemoveLoadRecordsToIndexTest.class,
-        PublisherFilterImplTest.class
+        VelocityServletIntegrationTest.class
 })
 public class MainSuite2a {
 
