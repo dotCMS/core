@@ -82,4 +82,9 @@ public enum ImportLineValidationCodes {
      */
     PERMISSION_ERROR,
 
+    /**
+     * The language does not exist
+     */
+    LANGUAGE_NOT_FOUND
+
 }
