@@ -91,7 +91,26 @@ describe('DotCMSPageEditor', () => {
             expect(postMessageToEditor).toHaveBeenCalledWith({
                 action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
                 payload: {
-                    url: 'index'
+                    url: '/'
+                }
+            });
+        });
+
+        it('should update navigation if its empty', () => {
+            updateNavigation('');
+            expect(postMessageToEditor).toHaveBeenCalledWith({
+                action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
+                payload: {
+                    url: '/'
+                }
+            });
+        });
+        it('should update navigation if its undefined', () => {
+            updateNavigation(undefined as unknown as string);
+            expect(postMessageToEditor).toHaveBeenCalledWith({
+                action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
+                payload: {
+                    url: '/'
                 }
             });
         });

@@ -95,12 +95,12 @@ describe('EditEmaGuard', () => {
         expect(didEnteredPortlet).toBe(true);
     });
 
-    it('should navigate to "edit-page" with url as "index" when the initial url queryParam is "/"', () => {
+    it('should navigate to "edit-page" with url as "/" when the initial url queryParam is ""', () => {
         const route: ActivatedRouteSnapshot = {
             firstChild: {
                 url: [{ path: 'content' }]
             },
-            queryParams: { url: '/' }
+            queryParams: { url: '' }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any;
 
@@ -110,7 +110,7 @@ describe('EditEmaGuard', () => {
             queryParams: {
                 [PERSONA_KEY]: 'modes.persona.no.persona',
                 language_id: 1,
-                url: 'index'
+                url: '/'
             },
             replaceUrl: true
         });

@@ -370,7 +370,7 @@ describe('EditEmaEditorComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: 1, url: 'page-one' },
+                queryParams: { language_id: 1, url: 'index' },
                 data: {
                     data: {
                         url: 'http://localhost:3000'
@@ -2589,7 +2589,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/page-one?language_id=1'
+                        'http://localhost:3000/index?language_id=1'
                     );
                 });
 

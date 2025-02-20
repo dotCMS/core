@@ -605,8 +605,9 @@ public class PageResourceHelper implements Serializable {
         final Optional<CachedVanityUrl> vanityUrlOpt =
                 this.vanityUrlAPI.resolveVanityUrl(correctedUri, site, language);
         if (vanityUrlOpt.isPresent()) {
-            DotPreconditions.checkArgument(!this.vanityUrlAPI.isSelfReferenced(vanityUrlOpt.get()
-                    , correctedUri));
+            if (this.vanityUrlAPI.isSelfReferenced(vanityUrlOpt.get(), correctedUri)){
+                return Optional.empty();
+            }
             return vanityUrlOpt;
         }
         return Optional.empty();

@@ -244,11 +244,17 @@ describe('withEditor', () => {
                             ...MOCK_RESPONSE_HEADLESS.vanityUrl,
                             url: 'first'
                         }
+                    },
+                    pageParams: {
+                        language_id: '1',
+                        variantName: 'DEFAULT',
+                        url: 'first',
+                        [PERSONA_KEY]: 'dot:persona'
                     }
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
         });

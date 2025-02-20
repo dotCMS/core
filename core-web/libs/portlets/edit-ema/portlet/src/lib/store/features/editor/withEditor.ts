@@ -209,9 +209,7 @@ export function withEditor() {
                     };
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
-                    const page = store.pageAPIResponse().page;
-                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
-                    const sanitizedURL = sanitizeURL(vanityURL ?? page?.pageURI);
+                    const sanitizedURL = sanitizeURL(store.pageParams().url);
 
                     const url = buildIframeURL({
                         url: sanitizedURL,
