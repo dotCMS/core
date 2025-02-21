@@ -3820,7 +3820,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "/Users/jcastro-2022/dotCMS/git/dev/core/master/core/dotcms-postman/src/main/resources/postman/resources/testpdf.pdf"
+											"src": "resources/testpdf.pdf"
 										},
 										{
 											"key": "json",
@@ -3897,7 +3897,7 @@
 										{
 											"key": "file",
 											"type": "file",
-											"src": "dot_velocity_macros.vtl"
+											"src": "resources/dot_velocity_macros.vtl"
 										},
 										{
 											"key": "json",
@@ -5066,7 +5066,7 @@
 												{
 													"key": "file",
 													"type": "file",
-													"src": "dotcms.png"
+													"src": "resources/dotcms.png"
 												},
 												{
 													"key": "json",
@@ -5682,7 +5682,7 @@
 												{
 													"key": "file",
 													"type": "file",
-													"src": "dotcms.png"
+													"src": "resources/dotcms.png"
 												},
 												{
 													"key": "json",
@@ -5815,7 +5815,7 @@
 												{
 													"key": "file",
 													"type": "file",
-													"src": "/Users/jcastro-2022/dotCMS/git/dev/core/master/core/dotcms-postman/src/main/resources/postman/resources/testpdf.pdf"
+													"src": "resources/testpdf.pdf"
 												},
 												{
 													"key": "json",
