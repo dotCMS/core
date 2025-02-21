@@ -27,8 +27,8 @@
     "react-dom": ">=18"
   },
   "devDependencies": {
-    "@dotcms/client": "latest",
-    "@dotcms/uve": "latest",
-    "@dotcms/react": "latest"
+    "@dotcms/client": "next",
+    "@dotcms/uve": "next",
+    "@dotcms/react": "next"
   }
 }
