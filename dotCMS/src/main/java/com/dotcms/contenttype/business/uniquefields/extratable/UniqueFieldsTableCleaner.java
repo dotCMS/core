@@ -70,7 +70,7 @@ public class UniqueFieldsTableCleaner {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                     .find(contentlet.getContentTypeId());
 
-            Logger.info(UniqueFieldsTableCleaner.class, "Cleaning up Content Type with id " + contentlet.getContentTypeId());
+            Logger.debug(UniqueFieldsTableCleaner.class, "Cleaning up Content Type with id " + contentlet.getContentTypeId());
 
             boolean hasUniqueField = hasUniqueField(contentType);
 
