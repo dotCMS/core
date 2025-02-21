@@ -8,6 +8,10 @@
     "@dotcms/uve": "latest",
     "@tinymce/tinymce-react": "^5.1.1"
   },
+  "exports": {
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts"
+  },
   "description": "Official React Components library to render a dotCMS page.",
   "repository": {
     "type": "git",
