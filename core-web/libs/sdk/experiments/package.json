@@ -24,11 +24,9 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "react-dom": ">=18"
-  },
-  "devDependencies": {
+    "react-dom": ">=18",
     "@dotcms/client": "next",
-    "@dotcms/uve": "next",
-    "@dotcms/react": "next"
+    "@dotcms/react": "next",
+    "@dotcms/uve": "next"
   }
 }
