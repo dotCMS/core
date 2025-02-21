@@ -9,10 +9,14 @@ public enum HeaderValidationCodes {
 
     /** Indicates a header that doesn't match any content type field */
     INVALID_HEADER,
-    /** Indicates a system-level header (e.g., Identifier, Workflow Action) */
-    SYSTEM_HEADER,
-    /** Indicates malformed or unreadable header format */
-    INVALID_HEADER_FORMAT,
+    /**
+     * Indicates no header was found in the CSV file
+     */
+    HEADERS_NOT_FOUND,
+    /**
+     * Indicates there is a missing header in the CSV file
+     */
+    MISSING_HEADER,
     /** Indicates a header name that appears more than once */
     DUPLICATE_HEADER,
     /** Indicates not all required content type fields are present in headers */
@@ -24,14 +28,6 @@ public enum HeaderValidationCodes {
     /** Indicates a field marked as unique in the content type */
     UNIQUE_FIELD,
     /** Indicates an invalid key field specification */
-    INVALID_KEY_FIELD,
-    /** Indicates duplicate values found for unique fields */
-    DUPLICATE_VALUES,
-    /** Indicates issues with language-specific headers */
-    INVALID_LANGUAGE,
-    /** Indicates security-related validation failures */
-    SECURITY_ERROR,
-    /** Indicates general processing errors during validation */
-    PROCESSING_ERROR
+    INVALID_KEY_FIELD
 
 }

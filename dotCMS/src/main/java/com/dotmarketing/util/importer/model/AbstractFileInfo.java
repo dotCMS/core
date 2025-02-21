@@ -1,6 +1,7 @@
 package com.dotmarketing.util.importer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import org.immutables.value.Value;
@@ -22,12 +23,8 @@ public interface AbstractFileInfo extends Serializable {
     int totalRows();
 
     /**
-     * @return The number of rows successfully parsed from the import file
-     */
-    int parsedRows();
-
-    /**
      * @return Detailed information about the validated headers in the import file
      */
+    @JsonProperty("headers")
     HeaderInfo headerInfo();
 }

@@ -2,13 +2,13 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import { DotCMSLayoutBody } from '@dotcms/react/next/components/DotCMSLayoutBody/DotCMSLayoutBody';
 import * as dotcmsUVE from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/uve/types';
 
+import { DotCMSLayoutBody } from '../../components/DotCMSLayoutBody/DotCMSLayoutBody';
 import { MOCK_PAGE_ASSET } from '../mock';
 
-jest.mock('@dotcms/react/next/components/Row/Row', () => ({
+jest.mock('../../components/Row/Row', () => ({
     Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
 }));
 

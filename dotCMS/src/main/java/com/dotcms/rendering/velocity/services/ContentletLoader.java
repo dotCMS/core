@@ -646,9 +646,8 @@ public class ContentletLoader implements DotLoader {
             throw new ResourceNotFoundException("cannot find content version info for key: " + key);
         }
 
-        //if time machine is running, we need to force get the latest working version to guarantee the correct rendered content matching the json portion of the response
         final ContentletVersionInfo contentletVersionInfo = info.get();
-        final String inode = (key.mode.showLive && TimeMachineUtil.isNotRunning() )
+        final String inode = key.mode.showLive
                 ? contentletVersionInfo.getLiveInode()
                 : contentletVersionInfo.getWorkingInode();
 

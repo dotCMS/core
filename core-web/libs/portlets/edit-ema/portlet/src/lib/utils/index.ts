@@ -196,15 +196,19 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 }
 
 /**
- * Remove the index from the end of the url if it's nested and also remove extra slashes
+ * Sanitizes a URL by:
+ * 1. Removing extra leading/trailing slashes
+ * 2. Preserving 'index' in the URL path
  *
  * @param {string} url
  * @return {*}  {string}
  */
 export function sanitizeURL(url?: string): string {
-    return url
-        ?.replace(/^\/+|\/+$/g, '') // Remove starting and trailing slashes
-        ?.replace(/^(index)$|(.*?)(?:\/)?index\/?$/, (_, g1, g2) => g1 || `${g2}/`); // Keep 'index' or add slash for paths
+    if (!url || url === '/') {
+        return '/';
+    }
+
+    return url.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
 }
 
 /**
@@ -277,9 +281,10 @@ export function getFullPageURL({
  *
  * @export
  * @param {Object} params - The raw query parameters to be processed.
+ * @param {string} baseClientHost - The base client host to be used to compare with the clientHost query param.
  * @return {Object} A cleaned and formatted version of the query parameters.
  */
-export function normalizeQueryParams(params) {
+export function normalizeQueryParams(params, baseClientHost?: string) {
     const queryParams = { ...params };
 
     if (queryParams[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
@@ -289,6 +294,13 @@ export function normalizeQueryParams(params) {
     if (queryParams[PERSONA_KEY]) {
         queryParams['personaId'] = params[PERSONA_KEY];
         delete queryParams[PERSONA_KEY];
+    }
+
+    if (
+        baseClientHost &&
+        new URL(baseClientHost).toString() === new URL(params.clientHost).toString()
+    ) {
+        delete queryParams.clientHost;
     }
 
     return queryParams;
@@ -628,8 +640,8 @@ export const checkClientHostAccess = (
     }
 
     // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
-    const sanitizedClientHost = sanitizeURL(clientHost);
-    const sanitizedAllowedDevURLs = allowedDevURLs.map(sanitizeURL);
+    const sanitizedClientHost = new URL(clientHost).toString();
+    const sanitizedAllowedDevURLs = allowedDevURLs.map((url) => new URL(url).toString());
 
     return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
 };
