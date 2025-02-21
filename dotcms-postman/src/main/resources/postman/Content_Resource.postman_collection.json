@@ -3361,11 +3361,58 @@
 			]
 		},
 		{
-			"name": "Search Endpoint with ContentSearchForm",
+			"name": "Search endpoint with ContentSearchForm",
 			"item": [
 				{
 					"name": "Creating Global Test Data",
 					"item": [
+						{
+							"name": "Get default Site ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Getting 'default' Site ID\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.collectionVariables.set(\"defaultSiteId\", entity.identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\": \"default\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/_byname",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"_byname"
+									]
+								}
+							},
+							"response": []
+						},
 						{
 							"name": "Parent Category",
 							"event": [
@@ -3373,7 +3420,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Information Saved Correctly\", function () {",
+											"pm.test(\"Saving parent Category\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Parent Category\");",
 											"    pm.collectionVariables.set(\"parentCategoryName\", \"Test Parent Category\");",
@@ -3419,7 +3466,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Information Saved Correctly\", function () {",
+											"pm.test(\"Saving child Category One\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Child Category One\");",
 											"    pm.collectionVariables.set(\"testCategoryOneInode\", jsonData.entity.inode);",
@@ -3464,7 +3511,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Information Saved Correctly\", function () {",
+											"pm.test(\"Saving child Category One\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Child Category Two\");",
 											"    pm.collectionVariables.set(\"testCategoryTwoInode\", jsonData.entity.inode);",
@@ -3538,7 +3585,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"{{testTagOne}}\":{\n         \"siteId\":\"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n         \"persona\":false\n      },\n      \"{{testTagTwo}}\":{\n         \"siteId\":\"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n         \"persona\":false\n      }\n   }\n}"
+									"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"{{testTagOne}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      },\n      \"{{testTagTwo}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
 								},
 								"url": {
 									"raw": "{{serverURL}}/api/v2/tags/",
@@ -3942,7 +3989,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"binary\": \"test\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"binary\": \"test\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3991,7 +4038,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"blockEditor\": \"First Block editor\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"blockEditor\": \"First Block editor\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4038,7 +4085,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"category\": \"{{testCategoryTwoInode}},{{testCategoryOneInode}}\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"category\": \"{{testCategoryTwoInode}},{{testCategoryOneInode}}\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4087,7 +4134,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"checkbox\": \"1\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"checkbox\": \"1,2... and so on\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"checkbox\": \"1\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"checkbox\": \"1,2... and so on\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4136,7 +4183,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"custom\": \"second\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"custom\": \"second\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4185,7 +4232,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"date\": \"02/17/2025\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"date\": \"02/17/2025\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4234,7 +4281,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"date\": \"02/16/2025 TO 02/18/2025\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"date\": \"02/16/2025 TO 02/18/2025\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4283,7 +4330,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"dateAndTime\": \"02/19/2025 15:30:00\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"dateAndTime\": \"02/19/2025 15:30:00\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4332,7 +4379,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"dateAndTime\": \"02/19/2025 15:00:00 TO 02/19/2025 15:40:00\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"dateAndTime\": \"02/19/2025 15:00:00 TO 02/19/2025 15:40:00\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4381,7 +4428,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"json\": \"jsonFirstKey\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"json\": \"jsonFirstKey\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4430,7 +4477,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"keyValue\": \"second value\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"keyValue\": \"second value\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4479,7 +4526,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"multiSelect\": \"1\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"multiSelect\": \"1,2... and so on\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"multiSelect\": \"1\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"multiSelect\": \"1,2... and so on\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4528,7 +4575,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"radio\": \"2\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"radio\": \"2\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4577,7 +4624,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"relationships\": \"{{testFirstChildContentId}}\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"relationships\": \"{{testFirstChildContentId}}\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4626,7 +4673,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"select\": \"2\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"select\": \"2\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4675,7 +4722,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"tag\": \"{{testTagOne}}\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"multiSelect\": \"my-test-tag-1,my-test-tag-2... and so on\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"tag\": \"{{testTagOne}}\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"multiSelect\": \"my-test-tag-1,my-test-tag-2... and so on\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4724,7 +4771,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"title\": \"second\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"title\": \"second\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4773,7 +4820,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"textArea\": \"first text area\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"textArea\": \"first text area\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4822,7 +4869,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"time\": \"11:30 AM\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"time\": \"11:30 AM\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4871,7 +4918,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"time\": \"11:20 AM TO 11:40 AM\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"time\": \"11:20 AM TO 11:40 AM\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4920,7 +4967,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"wysiwyg\": \"first\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"wysiwyg\": \"first\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -5109,7 +5156,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5247,7 +5294,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5304,7 +5351,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5361,7 +5408,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1,\n        \"workflowSchemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1,\n        \"workflowSchemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5418,7 +5465,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1,\n        \"workflowSchemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n        \"workflowStepId\": \"dc3c9cd0-8467-404b-bf95-cb7df3fbc293\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1,\n        \"workflowSchemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n        \"workflowStepId\": \"dc3c9cd0-8467-404b-bf95-cb7df3fbc293\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5475,7 +5522,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1,\n        \"variantName\": \"non-existing variant name\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1,\n        \"variantName\": \"non-existing variant name\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5532,7 +5579,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"systemHostContent\": false\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"systemHostContent\": false\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5860,7 +5907,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\"\n    },\n    \"archivedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"archivedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5909,7 +5956,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\"\n    },\n    \"unpublishedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"unpublishedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5959,7 +6006,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\"\n    },\n    \"lockedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"lockedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -6038,7 +6085,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"globalSearch\": \"{{testFirstParentTitleSearch}}\",\n    \"systemSearchableFields\": {\n        \"siteId\": \"9b2a2ff9f2e4d47be477ee682f1a9dec\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+							"raw": "{\n    \"globalSearch\": \"{{testFirstParentTitleSearch}}\",\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 							"options": {
 								"raw": {
 									"language": "json"
