@@ -93,7 +93,7 @@ def main():
         team_label=team_label
     )
     
-    sprint_end = datetime(2025, 2, 18)
+    sprint_end = datetime.now()
     sprint_start = sprint_end - timedelta(days=14)
     
     report = metrics.generate_qa_failure_report(sprint_start, sprint_end)
