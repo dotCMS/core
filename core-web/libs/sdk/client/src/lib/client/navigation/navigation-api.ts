@@ -1,15 +1,6 @@
 import { DotCMSClientConfig, RequestOptions } from '../client';
 
-type NavigationApiOptions = {
-    /**
-     * The root path to begin traversing the folder tree.
-     * @example
-     * `/api/v1/nav/` starts from the root of the site
-     * @example
-     * `/about-us` starts from the "About Us" folder
-     */
-    path: string;
-
+interface NavRequestParams {
     /**
      * The depth of the folder tree to return.
      * @example
@@ -25,15 +16,16 @@ type NavigationApiOptions = {
      * `1` (or unspecified) returns content in the default language of the site.
      */
     languageId?: number;
-};
+}
 
 export class NavigationClient {
-    private config: DotCMSClientConfig;
     private requestOptions: RequestOptions;
 
+    private BASE_URL: string;
+
     constructor(config: DotCMSClientConfig, requestOptions: RequestOptions) {
-        this.config = config;
         this.requestOptions = requestOptions;
+        this.BASE_URL = `${config?.dotcmsUrl}/api/v1/nav`;
     }
 
     /**
@@ -42,21 +34,15 @@ export class NavigationClient {
      * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
      * @throws {Error} - Throws an error if the options are not valid.
      */
-    async getNavigation(
-        options: NavigationApiOptions = { depth: 0, path: '/', languageId: 1 }
-    ): Promise<unknown> {
-        const { path, ...queryParamsOptions } = options;
-        const queryParams: Record<string, string> = {};
+    async get(path: string, params: NavRequestParams): Promise<unknown> {
+        if (!path) {
+            throw new Error("The 'path' parameter is required for the Navigation API");
+        }
 
-        Object.entries(queryParamsOptions).forEach(([key, value]) => {
-            if (value !== undefined) {
-                queryParams[key] = String(value);
-            }
-        });
+        const navParams = this.mapToBackendParams(params);
 
-        const queryString = new URLSearchParams(queryParams).toString();
-        const formattedPath = path === '/' ? '/' : `/${path}`;
-        const url = `${this.config.dotcmsUrl}/api/v1/nav${formattedPath}${queryString ? `?${queryString}` : ''}`;
+        const urlParams = new URLSearchParams(navParams).toString();
+        const url = `${this.BASE_URL}/${path}${urlParams ? `?${urlParams}` : ''}`;
 
         const response = await fetch(url, this.requestOptions);
 
@@ -64,6 +50,13 @@ export class NavigationClient {
             throw new Error(`Failed to fetch navigation data: ${response.statusText}`);
         }
 
-        return response.json();
+        return response.json().then((data) => data.entity);
+    }
+
+    private mapToBackendParams(params: NavRequestParams): Record<string, string> {
+        return {
+            depth: params.depth ? String(params.depth) : '',
+            language_id: params.languageId ? String(params.languageId) : ''
+        };
     }
 }

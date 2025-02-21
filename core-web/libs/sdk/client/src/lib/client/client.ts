@@ -1,6 +1,6 @@
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
-import { PageClient } from './page/page-api';
+import { PageClient } from './page/page-client';
 
 export type RequestOptions = Omit<RequestInit, 'body' | 'method'>;
 
@@ -53,14 +53,16 @@ class DotCMSClient {
     dotcmsUrl?: string;
     content: Content;
     page: PageClient;
-    navigation: NavigationClient;
+    nav: NavigationClient;
 
     constructor(config: DotCMSClientConfig = defaultConfig) {
         this.config = this.initializeConfig(config);
         this.requestOptions = this.initializeRequestOptions(this.config);
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
+
+        // Initialize clients
         this.page = new PageClient(this.config, this.requestOptions);
-        this.navigation = new NavigationClient(this.config, this.requestOptions);
+        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
+        this.nav = new NavigationClient(this.config, this.requestOptions);
     }
 
     private initializeConfig(config: DotCMSClientConfig): DotCMSClientConfig {
