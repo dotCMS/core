@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "bfc1f961-0779-43f2-9721-9bafe3f8c9a6",
+		"_postman_id": "148b5d29-ef10-41d7-9628-5141da636109",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -4114,6 +4114,16 @@
 									"listen": "test",
 									"script": {
 										"exec": [
+											"/*",
+											"    For multiple options, just add comma-separated values. For instance:",
+											"",
+											"    \"searchableFieldsByContentType\": {",
+											"        \"{{testContentTypeVarName}}\": {",
+											"            \"checkbox\": \"1,2\"",
+											"        }",
+											"    },",
+											"*/",
+											"",
 											"pm.test(\"Test First Parent Content matched successfully\", function () {",
 											"    const jsonData = pm.response.json();",
 											"    const entity = jsonData.entity;",
@@ -4134,7 +4144,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"checkbox\": \"1\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"checkbox\": \"1,2... and so on\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"checkbox\": \"1\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4506,6 +4516,16 @@
 									"listen": "test",
 									"script": {
 										"exec": [
+											"/*",
+											"    For multiple options, just add comma-separated values. For instance:",
+											"",
+											"    \"searchableFieldsByContentType\": {",
+											"        \"{{testContentTypeVarName}}\": {",
+											"            \"multiSelect\": \"1,2\"",
+											"        }",
+											"    },",
+											"*/",
+											"",
 											"pm.test(\"Test First Parent Content matched successfully\", function () {",
 											"    const jsonData = pm.response.json();",
 											"    const entity = jsonData.entity;",
@@ -4526,7 +4546,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"multiSelect\": \"1\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"multiSelect\": \"1,2... and so on\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"multiSelect\": \"1\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4702,6 +4722,16 @@
 									"listen": "test",
 									"script": {
 										"exec": [
+											"/*",
+											"    For multiple options, just add comma-separated values. For instance:",
+											"",
+											"    \"searchableFieldsByContentType\": {",
+											"        \"{{testContentTypeVarName}}\": {",
+											"            \"tag\": \"my-test-tag-1,my-test-tag-2\"",
+											"        }",
+											"    },",
+											"*/",
+											"",
 											"pm.test(\"Test First Parent Content matched successfully\", function () {",
 											"    const jsonData = pm.response.json();",
 											"    const entity = jsonData.entity;",
@@ -4722,7 +4752,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"tag\": \"{{testTagOne}}\"\n            // For multiple options, just add comma-separated values. For instance:\n            //\"multiSelect\": \"my-test-tag-1,my-test-tag-2... and so on\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"tag\": \"{{testTagOne}}\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 									"options": {
 										"raw": {
 											"language": "json"
