@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';

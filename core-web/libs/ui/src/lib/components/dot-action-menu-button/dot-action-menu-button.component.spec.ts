@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -140,13 +140,13 @@ describe('ActionMenuButtonComponent', () => {
         spectator.setInput('item', mockContentType);
         spectator.detectChanges();
 
-        spyOn(fakeActions[0].menuItem, 'command');
+        const commandSpy = jest.spyOn(fakeActions[0].menuItem, 'command');
 
         const actionButtonTooltip = spectator.query(byTestId('dot-action-tooltip-button'));
         spectator.click(actionButtonTooltip);
 
-        expect(fakeActions[0].menuItem.command).toHaveBeenCalledTimes(1);
-        expect(fakeActions[0].menuItem.command).toHaveBeenCalledWith(mockContentType);
+        expect(commandSpy).toHaveBeenCalledTimes(1);
+        expect(commandSpy).toHaveBeenCalledWith(mockContentType);
     });
 
     it('should filter actions based on shouldShow field', () => {
@@ -238,16 +238,13 @@ describe('ActionMenuButtonComponent', () => {
     });
 
     it('should call menu option actions with item passed', () => {
-        const fakeCommand = jasmine.createSpy('fakeCommand');
-
+        const mockCommand = jest.fn();
         const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {
                     icon: 'fa fa-trash',
                     label: 'Remove',
-                    command: () => {
-                        //
-                    }
+                    command: mockCommand
                 }
             },
             {
@@ -255,11 +252,13 @@ describe('ActionMenuButtonComponent', () => {
                     icon: 'fa fa-check',
                     label: 'Test',
                     command: (item) => {
-                        fakeCommand(item);
+                        mockCommand(item);
                     }
                 }
             }
         ];
+
+        const fakeCommand = jest.spyOn(fakeActions[0].menuItem, 'command');
         const mockContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',

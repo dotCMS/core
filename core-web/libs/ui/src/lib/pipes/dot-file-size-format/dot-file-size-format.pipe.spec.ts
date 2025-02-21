@@ -1,4 +1,4 @@
-import { createPipeFactory, SpectatorPipe } from '@ngneat/spectator';
+import { createPipeFactory, SpectatorPipe } from '@ngneat/spectator/jest';
 
 import { DotFileSizeFormatPipe } from './dot-file-size-format.pipe';
 
