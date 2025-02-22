@@ -20,6 +20,7 @@ package org.apache.velocity.tools.generic;
 
 
 import java.lang.reflect.Field;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -827,6 +828,81 @@ public class DateTool implements ViewTool
             return null;
         }
     }
+
+    ////////////
+
+    /**
+     * Converts an object to an instance of {@link Timestamp} using the
+     * format returned by {@link #getFormat()},the {@link Locale} returned
+     * by {@link #getLocale()}, and the {@link TimeZone} returned by
+     * {@link #getTimeZone()} if the object is not already an instance
+     * of Date, Calendar, or Long.
+     *
+     * @param obj the date to convert
+     * @return the object as a {@link Timestamp} or <code>null</code> if no
+     *         conversion is possible
+     */
+    public Timestamp toTimestamp(final Object obj)
+    {
+        return new Timestamp(toDate(obj).getTime());
+    }
+
+    /**
+     * Converts an object to an instance of {@link Timestamp} using the
+     * specified format,the {@link Locale} returned by
+     * {@link #getLocale()}, and the {@link TimeZone} returned by
+     * {@link #getTimeZone()} if the object is not already an instance
+     * of Date, Calendar, or Long.
+     *
+     * @param format - the format the date is in
+     * @param obj - the date to convert
+     * @return the object as a {@link Timestamp} or <code>null</code> if no
+     *         conversion is possible
+     * @see #toDate(String format, Object obj, Locale locale)
+     */
+    public Timestamp toTimestamp(final String format, final Object obj)
+    {
+        return new Timestamp(toDate(format, obj).getTime());
+    }
+
+    /**
+     * Converts an object to an instance of {@link Timestamp} using the
+     * specified format and {@link Locale} if the object is not already
+     * an instance of Date, Calendar, or Long.
+     *
+     * @param format - the format the date is in
+     * @param obj - the date to convert
+     * @param locale - the {@link Locale}
+     * @return the object as a {@link Timestamp} or <code>null</code> if no
+     *         conversion is possible
+     * @see SimpleDateFormat#parse
+     */
+    public Timestamp toTimestamp(final String format, final Object obj, final Locale locale)
+    {
+        return new Timestamp(toDate(format, obj, locale).getTime());
+    }
+
+    /**
+     * Converts an object to an instance of {@link Timestamp} using the
+     * specified format, {@link Locale}, and {@link TimeZone} if the
+     * object is not already an instance of Date, Calendar, or Long.
+     *
+     * @param format - the format the date is in
+     * @param obj - the date to convert
+     * @param locale - the {@link Locale}
+     * @param timezone - the {@link TimeZone}
+     * @return the object as a {@link Timestamp} or <code>null</code> if no
+     *         conversion is possible
+     * @see #getDateFormat
+     * @see SimpleDateFormat#parse
+     */
+    public Timestamp toTimestamp(final String format, final Object obj,
+                       final Locale locale, final TimeZone timezone)
+    {
+        return new Timestamp(toDate(format, obj, locale, timezone).getTime());
+    }
+
+    ///////////
 
     /**
      * Converts an object to an instance of {@link Calendar} using the
