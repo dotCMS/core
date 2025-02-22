@@ -1,0 +1,70 @@
+{
+	"info": {
+		"_postman_id": "04e24c3e-7d51-4e2b-be4a-e63094ab158d",
+		"name": "DateTool",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
+	},
+	"item": [
+		{
+			"name": "TestToTimeStamp",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var text = pm.response.text()",
+							"",
+							"pm.test(\"Right date\", function () {",
+							"    pm.expect(text).to.be.eql('2025-02-06 00:00:00.0');",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "$date.toTimestamp('yyyy-MM-dd','2025-02-06')",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/vtl/dynamic/",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"vtl",
+						"dynamic",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
