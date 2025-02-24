@@ -5,20 +5,20 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.CountView;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
-import com.dotcms.rest.RESTParams;
-import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.SearchForm;
+import com.dotcms.rest.SearchView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.api.v1.content.search.LuceneQueryBuilder;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -52,8 +52,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.language.LanguageUtil;
@@ -103,6 +101,7 @@ public class ContentResource {
     private final IdentifierAPI  identifierAPI;
     private final LanguageWebAPI languageWebAPI;
     private final LanguageAPI languageAPI;
+    private final ContentHelper contentHelper;
 
     private final Lazy<Boolean> isDefaultContentToDefaultLanguageEnabled = Lazy.of(
             () -> Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false));
@@ -112,7 +111,8 @@ public class ContentResource {
                 APILocator.getContentletAPI(),
                 APILocator.getIdentifierAPI(),
                 WebAPILocator.getLanguageWebAPI(),
-                APILocator.getLanguageAPI());
+                APILocator.getLanguageAPI(),
+                ContentHelper.getInstance());
     }
 
     @VisibleForTesting
@@ -120,12 +120,14 @@ public class ContentResource {
                            final ContentletAPI   contentletAPI,
                            final IdentifierAPI  identifierAPI,
                            final LanguageWebAPI languageWebAPI,
-                           final LanguageAPI    languageAPI) {
+                           final LanguageAPI    languageAPI,
+                           final ContentHelper contentHelper) {
         this.webResource    = webResource;
         this.contentletAPI  = contentletAPI;
         this.identifierAPI  = identifierAPI;
         this.languageWebAPI = languageWebAPI;
         this.languageAPI = languageAPI;
+        this.contentHelper = contentHelper;
     }
 
     /**
@@ -820,6 +822,64 @@ public class ContentResource {
         allLanguages.forEach(language -> languagesForContent.add(new ExistingLanguagesForContentletView(language,
                 existingContentLanguages.contains(language.getId()))));
         return languagesForContent.build();
+    }
+
+    /**
+     * Allows you to retrieve contents via Elasticsearch by abstracting the generation of the Lucene
+     * query, and leaving it to dotCMS itself. This endpoint uses the {@link ContentSearchForm} to
+     * define the search parameters, and returns the same {@link SearchView} object that the
+     * {@link com.dotcms.rest.ContentResource#search(HttpServletRequest, HttpServletResponse,
+     * boolean, SearchForm)} endpoint returns.
+     *
+     * @param request           The current instance of the {@link HttpServletRequest}.
+     * @param response          The current instance of the {@link HttpServletResponse}.
+     * @param contentSearchForm The {@link ContentSearchForm} object containing the search
+     *                          parameters.
+     *
+     * @return The {@link SearchView} object containing the search results.
+     *
+     * @throws DotDataException     An error occurred when interacting with the database.
+     * @throws DotSecurityException The User accessing this endpoint doesn't have the required
+     *                              permissions.
+     */
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/search")
+    @Operation(operationId = "search", summary = "Retrieves content from the dotCMS repository",
+            description = "Abstracts the generation of the required Lucene query to look for user searchable fields " +
+                    "in a Content Type, and returns the expected results.",
+            tags = {"Content"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "The query has been executed. It's possible that " +
+                            "no contents matched the search criteria.",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = SearchView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request. Malformed JSON body"),
+                    @ApiResponse(responseCode = "401", description = "Invalid User, or not logged in"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public ResponseEntityView<SearchView> search(@Context final HttpServletRequest request,
+                             @Context final HttpServletResponse response,
+                             final ContentSearchForm contentSearchForm) throws DotDataException, DotSecurityException {
+        Logger.debug(this, () -> "Searching for contentlets with the following parameters: " + contentSearchForm);
+        final User user = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true)
+                .init()
+                .getUser();
+        final PageMode pageMode = PageMode.get(request);
+        final LuceneQueryBuilder luceneQueryBuilder = new LuceneQueryBuilder(contentSearchForm, user);
+        final SearchView searchView = this.contentHelper.pullContent(request, response, user,
+                luceneQueryBuilder.build(), contentSearchForm.offset(), contentSearchForm.perPage(),
+                luceneQueryBuilder.getOrderByClause(), pageMode);
+        return new ResponseEntityView<>(searchView);
     }
 
 }
