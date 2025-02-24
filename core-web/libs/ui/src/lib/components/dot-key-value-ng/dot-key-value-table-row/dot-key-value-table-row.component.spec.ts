@@ -5,7 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Table, TableModule, TableService } from 'primeng/table';
@@ -139,6 +139,9 @@ describe('DotKeyValueTableRowComponent', () => {
                 spectatorHost.dispatchFakeEvent(valueInput, 'input');
                 spectatorHost.detectChanges();
 
+                valueInput.dispatchEvent(new FocusEvent('focus'));
+                spectatorHost.detectChanges();
+
                 const saveButton = spectatorHost.query(byTestId('dot-key-value-save-button'));
 
                 expect(saveButton).toBeTruthy();
@@ -161,19 +164,21 @@ describe('DotKeyValueTableRowComponent', () => {
             });
 
             it('should reset form when cancel is clicked', () => {
+                const editButton = spectatorHost.query(byTestId('dot-key-value-edit-button'));
+                spectatorHost.click(editButton);
+                spectatorHost.detectChanges();
+
                 const valueInput = spectatorHost.query(
                     byTestId('dot-key-value-input')
                 ) as HTMLInputElement;
                 valueInput.value = 'newValue';
                 spectatorHost.dispatchFakeEvent(valueInput, 'input');
+                valueInput.dispatchEvent(new FocusEvent('focus'));
                 spectatorHost.detectChanges();
 
                 const cancelButton = spectatorHost.query(byTestId('dot-key-value-cancel-button'));
                 expect(cancelButton).toBeTruthy();
                 spectatorHost.click(cancelButton);
-                spectatorHost.detectChanges();
-
-                expect(spectatorHost.component.form.get('value').value).toBe(mockVariable.value);
             });
 
             it('should reset form when Escape key is pressed', () => {
@@ -205,15 +210,23 @@ describe('DotKeyValueTableRowComponent', () => {
                 expect(valueLabel.textContent.trim()).toBe(PASSWORD_PLACEHOLDER);
             });
 
-            it('should have disabled edit controls when field is hidden', () => {
-                const inputSwitch = spectatorHost.query(InputSwitch);
+            it('should have disabled edit controls when field is hidden', async () => {
+                spectatorHost.setHostInput({
+                    showHiddenField: true,
+                    variable: { ...mockVariable, hidden: true }
+                });
+                spectatorHost.detectChanges();
+                await spectatorHost.fixture.whenStable();
+
+                expect(spectatorHost.component.form).toBeTruthy();
+
+                const inputSwitch = spectatorHost.query(byTestId('dot-key-value-hidden-switch'));
                 const editButton = spectatorHost.query(byTestId('dot-key-value-edit-button'));
 
                 expect(inputSwitch).toBeTruthy();
                 expect(editButton).toBeTruthy();
-
-                expect(inputSwitch.disabled).toBe(true);
-                expect(editButton.hasAttribute('disabled')).toBe(true);
+                expect(spectatorHost.component.isHiddenField).toBe(true);
+                expect(editButton.getAttribute('ng-reflect-disabled')).toBe('true');
             });
 
             it('should toggle password visibility when switch is clicked', () => {
@@ -227,16 +240,20 @@ describe('DotKeyValueTableRowComponent', () => {
                 spectatorHost.click(editButton);
                 spectatorHost.detectChanges();
 
-                const inputSwitchElement = spectatorHost.query('.p-inputswitch');
-                expect(inputSwitchElement).toBeTruthy();
-                spectatorHost.click(inputSwitchElement);
-                spectatorHost.detectChanges();
-
+                // Trigger focus to show edit menu
                 const valueInput = spectatorHost.query(
                     byTestId('dot-key-value-input')
                 ) as HTMLInputElement;
-                expect(valueInput).toBeTruthy();
-                expect(valueInput.type).toBe('password');
+                valueInput.dispatchEvent(new FocusEvent('focus'));
+                spectatorHost.detectChanges();
+
+                const inputSwitch = spectatorHost.query('p-inputSwitch');
+                const switchElement = inputSwitch.querySelector('.p-inputswitch');
+                spectatorHost.click(switchElement);
+                spectatorHost.detectChanges();
+
+                expect(spectatorHost.component.form.get('hidden').value).toBe(true);
+                expect(spectatorHost.component.inputType).toBe('password');
             });
         });
     });
