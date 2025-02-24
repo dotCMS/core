@@ -393,25 +393,6 @@ import org.junit.runners.Suite.SuiteClasses;
         HttpServletRequestImpersonatorTest.class,
         Task250107RemoveEsReadOnlyMonitorJobTest.class,
 
-        com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIFTest.class,
-        com.dotmarketing.portlets.rules.conditionlet.CurrentSessionLanguageConditionletTest.class,
-        com.dotmarketing.portlets.rules.conditionlet.NumberOfTimesPreviouslyVisitedConditionletTest.class,
-        com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletTest.class,
-        com.dotmarketing.portlets.rules.conditionlet.UsersSiteVisitsConditionletTest.class,
-        com.dotmarketing.portlets.rules.conditionlet.VisitorOperatingSystemConditionletTest.class,
-        com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest.class,
-        com.dotmarketing.portlets.rules.business.RulesCacheFTest.class,
-        com.dotmarketing.portlets.templates.business.TemplateAPITest.class,
-        com.dotmarketing.portlets.containers.business.ContainerAPIImplTest.class,
-        com.dotmarketing.portlets.folders.business.FolderAPITest.class,
-        com.dotmarketing.portlets.containers.business.ContainerAPITest.class,
-        com.dotmarketing.portlets.containers.business.FileAssetContainerUtilTest.class,
-        com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest.class,
-        com.dotmarketing.portlets.structure.factories.StructureFactoryTest.class,
-        com.dotmarketing.portlets.structure.factories.FieldFactoryTest.class,
-        com.dotmarketing.portlets.structure.model.ContentletRelationshipsTest.class,
-        com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
-
         com.dotmarketing.business.VersionableAPITest.class,
         com.dotmarketing.business.UserAPITest.class,
         com.dotmarketing.business.portal.PortletAPIImplTest.class,
@@ -430,7 +411,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
 
-
         OSGIUtilTest.class,
         CleanUpFieldReferencesJobTest.class,
         CachedParameterDecoratorTest.class,
@@ -441,8 +421,6 @@ import org.junit.runners.Suite.SuiteClasses;
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
-
-
 
         AppsAPIImplTest.class,
         AppsResourceTest.class,
