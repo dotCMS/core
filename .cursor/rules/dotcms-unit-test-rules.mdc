@@ -10,7 +10,7 @@ globs: core-web/{apps,libs}/**/*.{spec.ts,html,ts,mock.ts}
 - **Testing Library**: Spectator + @testing-library/angular
 - **Coverage Tool**: Jest Coverage
 - **Mocking**: Jest + ts-mockito
-- **E2E**: Playwrite (when needed)
+- **E2E**: Playwright (when needed)
 
 ## File Structure and Naming
 
@@ -24,12 +24,12 @@ globs: core-web/{apps,libs}/**/*.{spec.ts,html,ts,mock.ts}
 
 ### Using data-testid
 
-1. **Always use data-testid for element selection**
+1. **ALWAYS use data-testid for element selection**
 ```html
-<!-- ❌ Don't use class selectors -->
+<!-- ❌ DON'T use class selectors -->
 <button class="submit-button">Submit</button>
 
-<!-- ✅ Use data-testid -->
+<!-- ✅ USE data-testid -->
 <button data-testid="submit-button">Submit</button>
 ```
 
@@ -50,11 +50,23 @@ globs: core-web/{apps,libs}/**/*.{spec.ts,html,ts,mock.ts}
 
 3. **Finding Elements**
 ```typescript
-// ❌ Don't use class selectors
+// ❌ DON'T use class selectors
 const button = fixture.debugElement.query(By.css('.submit-button'));
 
-// ✅ Use data-testid
-const button = screen.getByTestId('submit-button');
+// ❌ DON'T use data-testid directly
+const button = fixture.debugElement.query(By.css('[data-testid="submit-button"]'));
+
+// ✅ ALWAYS use byTestId with spectator.query
+const button = spectator.query(byTestId('submit-button'));
+```
+
+4. **CSS Class Verification**
+```typescript
+// ❌ DON'T use object notation for class verification
+expect(icon).toHaveClass({ pi: true, 'pi-update': true });
+
+// ✅ USE separate string arguments
+expect(icon).toHaveClass('pi', 'pi-update');
 ```
 
 ## Basic Test Suite Template with Spectator
@@ -220,7 +232,8 @@ export const userActions = {
    - Test error states and loading states
 
 2. **Element Selection**
-   - Always use data-testid
+   - ALWAYS use data-testid
+   - ALWAYS use byTestId() for element selection
    - Follow consistent naming convention
    - Add data-testid to elements that need testing
    - Avoid testing implementation details
@@ -243,15 +256,16 @@ export const userActions = {
    - Test field interactions
    - Test error states
 
+6. **CSS Class Verification**
+   - ALWAYS use multiple string parameters: toHaveClass('class1', 'class2')
+   - NEVER use object notation: toHaveClass({ class1: true })
+
 Remember:
 - Always think from the user's perspective
 - Add data-testid to elements that need testing
 - Use Spectator for better testing APIs
 - Test complete user flows, not just methods
 - Verify what the user sees and experiences
-
-
-
 
 ### File Organization Best Practices
 ```
@@ -271,4 +285,4 @@ Remember:
 - Include HTML templates in your searches for better context
 - Include mock files (*.mock.ts) when needed
 - Group related mocks in a `__mocks__` directory
-- Use `__tests__` directory for complex test scenarios 
+- Use `__tests__` directory for complex test scenarios
