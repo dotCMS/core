@@ -10,9 +10,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotContentSearchService, DotLanguagesService } from '@dotcms/data-access';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
+import { DotAssetCardComponent } from './components/dot-asset-card/dot-asset-card.component';
 import { DotAssetCardListComponent } from './components/dot-asset-card-list/dot-asset-card-list.component';
 import { DotAssetCardSkeletonComponent } from './components/dot-asset-card-skeleton/dot-asset-card-skeleton.component';
-import { DotAssetCardComponent } from './components/dot-asset-card/dot-asset-card.component';
 import { DotAssetSearchComponent } from './dot-asset-search.component';
 import { DotAssetSearchStore } from './store/dot-asset-search.store';
 

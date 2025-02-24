@@ -6,8 +6,8 @@ import { ScrollerModule } from 'primeng/scroller';
 
 import { DotAssetCardListComponent } from './dot-asset-card-list.component';
 
-import { DotAssetCardSkeletonComponent } from '../dot-asset-card-skeleton/dot-asset-card-skeleton.component';
 import { DotAssetCardComponent } from '../dot-asset-card/dot-asset-card.component';
+import { DotAssetCardSkeletonComponent } from '../dot-asset-card-skeleton/dot-asset-card-skeleton.component';
 
 describe('DotAssetCardListComponent', () => {
     let spectator: Spectator<DotAssetCardListComponent>;

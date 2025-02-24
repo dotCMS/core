@@ -1,30 +1,40 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { Sidebar } from 'primeng/sidebar';
+
 import { DotSidebarHeaderComponent } from './dot-sidebar-header.component';
 
 describe('DotSidebarHeaderComponent', () => {
     let spectator: Spectator<DotSidebarHeaderComponent>;
+
     const createComponent = createComponentFactory({
-        component: DotSidebarHeaderComponent
+        component: DotSidebarHeaderComponent,
+        providers: [
+            {
+                provide: Sidebar,
+                useValue: {
+                    hide: jest.fn()
+                }
+            }
+        ]
     });
 
-    it('should title', async () => {
+    it('should show title', () => {
         const title = 'My title';
         spectator = createComponent({
-            detectChanges: false
+            props: {
+                dotTitle: title
+            }
         });
 
-        spectator.setInput('dotTitle', title);
         spectator.detectChanges();
-        await spectator.fixture.whenStable();
 
         const titleElement = spectator.query(byTestId('header-title'));
-        console.log(titleElement);
-        expect(titleElement).toHaveText(title);
+        expect(titleElement?.textContent?.trim()).toBe(title);
     });
 
     it('should close icon', () => {
-        spectator.detectChanges();
+        spectator = createComponent();
         expect(spectator.query(byTestId('header-close-icon'))).toExist();
     });
 });

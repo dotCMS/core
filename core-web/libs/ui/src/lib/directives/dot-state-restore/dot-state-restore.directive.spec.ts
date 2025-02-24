@@ -43,6 +43,10 @@ describe('DotStateRestoreDirective', () => {
         sessionStorage.clear();
         localStorage.clear();
 
+        // Mock storage getItem to explicitly return null
+        jest.spyOn(sessionStorage, 'getItem').mockReturnValue(null);
+        jest.spyOn(localStorage, 'getItem').mockReturnValue(null);
+
         spectator = createDirective(
             `<p-table stateStorage="session" stateKey="no-key"  dotStateRestore></p-table>`
         );
@@ -50,8 +54,8 @@ describe('DotStateRestoreDirective', () => {
         const table = spectator.query(Table);
 
         // Check that no stored state is applied
-        expect(table.sortField).toBeFalsy();
-        expect(table.sortOrder).toBe(1); //default value
+        expect(table.sortField).toBeUndefined();
+        expect(table.sortOrder).toBe(1); //default value from PrimeNG Table
     });
 
     it('should warn if the stateStorage or stateKey is not found', () => {

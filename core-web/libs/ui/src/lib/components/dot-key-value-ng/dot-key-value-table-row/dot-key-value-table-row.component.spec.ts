@@ -8,7 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
-import { Table, TableModule } from 'primeng/table';
+import { Table, TableModule, TableService } from 'primeng/table';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -54,7 +54,8 @@ describe('DotKeyValueTableRowComponent', () => {
                 })
             },
             MockProvider(DotMessageDisplayService),
-            Table
+            Table,
+            TableService
         ]
     });
 
@@ -139,6 +140,8 @@ describe('DotKeyValueTableRowComponent', () => {
                 spectatorHost.detectChanges();
 
                 const saveButton = spectatorHost.query(byTestId('dot-key-value-save-button'));
+
+                expect(saveButton).toBeTruthy();
                 spectatorHost.click(saveButton);
 
                 expect(saveSpy).toHaveBeenCalledWith({
@@ -166,6 +169,7 @@ describe('DotKeyValueTableRowComponent', () => {
                 spectatorHost.detectChanges();
 
                 const cancelButton = spectatorHost.query(byTestId('dot-key-value-cancel-button'));
+                expect(cancelButton).toBeTruthy();
                 spectatorHost.click(cancelButton);
                 spectatorHost.detectChanges();
 
@@ -189,7 +193,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
         describe('Hidden Fields', () => {
             beforeEach(() => {
-                Object.assign(spectatorHost.component, {
+                spectatorHost.setHostInput({
                     showHiddenField: true,
                     variable: { ...mockVariable, hidden: true }
                 });
@@ -205,24 +209,33 @@ describe('DotKeyValueTableRowComponent', () => {
                 const inputSwitch = spectatorHost.query(InputSwitch);
                 const editButton = spectatorHost.query(byTestId('dot-key-value-edit-button'));
 
-                expect(inputSwitch.disabled).toBeTruthy();
-                expect(editButton.hasAttribute('disabled')).toBeTruthy();
+                expect(inputSwitch).toBeTruthy();
+                expect(editButton).toBeTruthy();
+
+                expect(inputSwitch.disabled).toBe(true);
+                expect(editButton.hasAttribute('disabled')).toBe(true);
             });
 
             it('should toggle password visibility when switch is clicked', () => {
-                Object.assign(spectatorHost.component, {
+                spectatorHost.setHostInput({
                     showHiddenField: true,
                     variable: { ...mockVariable, hidden: false }
                 });
                 spectatorHost.detectChanges();
 
+                const editButton = spectatorHost.query(byTestId('dot-key-value-edit-button'));
+                spectatorHost.click(editButton);
+                spectatorHost.detectChanges();
+
                 const inputSwitchElement = spectatorHost.query('.p-inputswitch');
+                expect(inputSwitchElement).toBeTruthy();
                 spectatorHost.click(inputSwitchElement);
                 spectatorHost.detectChanges();
 
                 const valueInput = spectatorHost.query(
                     byTestId('dot-key-value-input')
                 ) as HTMLInputElement;
+                expect(valueInput).toBeTruthy();
                 expect(valueInput.type).toBe('password');
             });
         });
