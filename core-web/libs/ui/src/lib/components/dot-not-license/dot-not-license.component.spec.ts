@@ -11,7 +11,6 @@ import {
 import { DotIconModule, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-
 const messageServiceMock = new MockDotMessageService({
     'portlet.title': 'Enterprise Portlet',
     'request.a.trial.license': 'Request License',

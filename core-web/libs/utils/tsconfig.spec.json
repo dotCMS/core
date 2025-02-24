@@ -3,17 +3,10 @@
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
         "module": "commonjs",
-        "types": [
-            "jest",
-            "node"
-        ],
+        "types": ["jest", "node"],
         "target": "ES2022",
         "useDefineForClassFields": false,
         "esModuleInterop": true
     },
-    "include": [
-        "**/*.spec.ts",
-        "**/*.test.ts",
-        "**/*.d.ts"
-    ]
+    "include": ["**/*.spec.ts", "**/*.test.ts", "**/*.d.ts"]
 }
