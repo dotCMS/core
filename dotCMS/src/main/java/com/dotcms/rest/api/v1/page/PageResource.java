@@ -61,12 +61,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -83,6 +78,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -479,7 +475,7 @@ public class PageResource {
      */
     private void setUpTimeMachineIfPresent(final PageRenderParams renderParams) {
         final Optional<Instant> timeMachineDate = renderParams.timeMachineDate();
-        if(timeMachineDate.isPresent()){
+        if(timeMachineDate.isPresent() && isOlderThanGraceWindow(timeMachineDate.get())){
             final String timeMachineEpochMillis = String.valueOf(timeMachineDate.get().toEpochMilli());
             final Optional<Host> host = currentHost(renderParams);
             if(host.isEmpty()){
@@ -499,6 +495,22 @@ public class PageResource {
                request.setAttribute(TM_HOST, host.get());
             }
         }
+    }
+
+
+    /**
+     * Determines if the FTM logic should be applied based on the given timeMachineDate.
+     * It checks if the date is older than the grace window (not too recent),
+     * using a configurable time limit.
+     *
+     * @param timeMachineDate The Time Machine date from the request.
+     * @return true if the timeMachineDate is older than the grace window, meaning FTM logic should be applied,
+     *         false otherwise (if within the grace window).
+     */
+    private boolean isOlderThanGraceWindow(final Instant timeMachineDate) {
+        final int graceWindowMinutes = Config.getIntProperty("FTM_GRACE_WINDOW_LIMIT", 5);
+        final Instant graceWindowTime = Instant.now().plus(Duration.ofMinutes(graceWindowMinutes));
+        return timeMachineDate.isAfter(graceWindowTime);
     }
 
     /**
