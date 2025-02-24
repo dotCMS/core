@@ -4,12 +4,11 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.util.PaginationUtil;
-import com.dotcms.rest.ContentResource;
+import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.VariantAPI;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -30,6 +29,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -40,8 +42,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * The purpose of this class is to abstract the methods called from the ContentTool Viewtool
@@ -817,7 +817,7 @@ public class ContentUtils {
 
 			try {
 
-				final JSONObject jsonWithRelationShips = ContentResource.addRelationshipsToJSON(request, response,
+				final JSONObject jsonWithRelationShips = ContentHelper.getInstance().addRelationshipsToJSON(request, response,
 						request.getParameter("render"), user, depth, mode.respectAnonPerms, contentlet,
 						new JSONObject(), null, languageId, mode.showLive, false,
 						true);
