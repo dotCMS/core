@@ -26,6 +26,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
@@ -78,7 +79,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -351,6 +351,12 @@ public class PageResource {
         if (null != deviceInode){
             builder.deviceInode(deviceInode);
         }
+        TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601).ifPresentOrElse(
+                builder::timeMachineDate,
+                () -> Logger.debug(this, () -> String.format(
+                        "Date %s is not older than the grace window. Skipping Time Machine setup.",
+                        timeMachineDateAsISO8601))
+        );
         if (null != timeMachineDateAsISO8601) {
             final Date date;
             try {
@@ -475,7 +481,7 @@ public class PageResource {
      */
     private void setUpTimeMachineIfPresent(final PageRenderParams renderParams) {
         final Optional<Instant> timeMachineDate = renderParams.timeMachineDate();
-        if(timeMachineDate.isPresent() && isOlderThanGraceWindow(timeMachineDate.get())){
+        if(timeMachineDate.isPresent()){
             final String timeMachineEpochMillis = String.valueOf(timeMachineDate.get().toEpochMilli());
             final Optional<Host> host = currentHost(renderParams);
             if(host.isEmpty()){
@@ -495,22 +501,6 @@ public class PageResource {
                request.setAttribute(TM_HOST, host.get());
             }
         }
-    }
-
-
-    /**
-     * Determines if the FTM logic should be applied based on the given timeMachineDate.
-     * It checks if the date is older than the grace window (not too recent),
-     * using a configurable time limit.
-     *
-     * @param timeMachineDate The Time Machine date from the request.
-     * @return true if the timeMachineDate is older than the grace window, meaning FTM logic should be applied,
-     *         false otherwise (if within the grace window).
-     */
-    private boolean isOlderThanGraceWindow(final Instant timeMachineDate) {
-        final int graceWindowMinutes = Config.getIntProperty("FTM_GRACE_WINDOW_LIMIT", 5);
-        final Instant graceWindowTime = Instant.now().plus(Duration.ofMinutes(graceWindowMinutes));
-        return timeMachineDate.isAfter(graceWindowTime);
     }
 
     /**
