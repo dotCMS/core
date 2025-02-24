@@ -82,10 +82,9 @@ export function withLoad() {
                                         }
 
                                         // Maybe we can use retryWhen() instead of this navigate.
-                                        const url = vanityUrl.forwardTo.replace('/', '');
                                         router.navigate([], {
                                             queryParamsHandling: 'merge',
-                                            queryParams: { url }
+                                            queryParams: { url: vanityUrl.forwardTo }
                                         });
 
                                         // EMPTY is a simple Observable that only emits the complete notification.

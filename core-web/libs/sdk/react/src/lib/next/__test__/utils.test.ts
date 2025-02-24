@@ -5,7 +5,7 @@ import {
     getContainersData,
     getContentletsInContainer,
     getDotContainerAttributes
-} from '@dotcms/react/next/utils';
+} from '../utils';
 
 describe('utils', () => {
     describe('combineClasses', () => {

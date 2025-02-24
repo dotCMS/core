@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Dependent;
@@ -69,13 +70,20 @@ public class UniqueFieldsTableCleaner {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                     .find(contentlet.getContentTypeId());
 
+            Logger.debug(UniqueFieldsTableCleaner.class, "Cleaning up Content Type with id " + contentlet.getContentTypeId());
+
             boolean hasUniqueField = hasUniqueField(contentType);
+
+            Logger.info(UniqueFieldsTableCleaner.class, "Has unique field: " + hasUniqueField);
 
             if (hasUniqueField) {
                 uniqueFieldValidationStrategyResolver.get().cleanUp(contentlet, event.isDeleteAllVariant());
             }
         } catch (DotSecurityException e) {
             throw new DotRuntimeException(e);
+        } catch (Exception e) {
+            Logger.error(UniqueFieldsTableCleaner.class, e);
+            throw new DotDataException(e);
         }
     }
 

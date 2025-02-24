@@ -18,14 +18,13 @@ public class DateTimeFieldStrategy implements FieldStrategy {
     public String generateQuery(final FieldContext fieldContext) {
         final String fieldName = fieldContext.fieldName();
         String value = fieldContext.fieldValue().toString();
-        if (!(value.contains(OPEN_BRACKET)
-                && value.toLowerCase().contains("to")
-                && value.contains(CLOSE_BRACKET))) {
-            value = OPEN_BRACKET + value + " TO " + value + CLOSE_BRACKET;
-        } else if (value.toLowerCase().contains("to")) {
+        if (value.toLowerCase().contains("to")) {
+            // Add brackets if they are not present
             value = !value.contains(OPEN_BRACKET) ? OPEN_BRACKET + value : value;
             value = !value.contains(CLOSE_BRACKET) ? value + CLOSE_BRACKET : value;
+        } else {
+            value = OPEN_BRACKET + value + " TO " + value + CLOSE_BRACKET;
         }
-        return "+" + fieldName + ":" + value;
+        return "+" + fieldName + ":" + value.toUpperCase();
     }
 }
