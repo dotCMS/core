@@ -357,19 +357,6 @@ public class PageResource {
                         "Date %s is not older than the grace window. Skipping Time Machine setup.",
                         timeMachineDateAsISO8601))
         );
-        if (null != timeMachineDateAsISO8601) {
-            final Date date;
-            try {
-                date = Try.of(() -> DateUtil.convertDate(timeMachineDateAsISO8601)).getOrElseThrow(
-                        e -> new IllegalArgumentException(
-                                String.format("Error Parsing date: %s", timeMachineDateAsISO8601),
-                                e));
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException(e);
-            }
-            final Instant instant = date.toInstant();
-            builder.timeMachineDate(instant);
-        }
         return builder.build();
     }
 
