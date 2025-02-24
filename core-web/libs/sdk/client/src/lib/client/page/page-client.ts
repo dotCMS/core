@@ -1,3 +1,10 @@
+import {
+    buildPageQuery,
+    buildQueries,
+    fetchGraphQL,
+    mapResponseData
+} from './get-personalized-page';
+
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
 
@@ -121,6 +128,65 @@ export class PageClient {
         }
 
         return response.json().then((data) => data.entity);
+    }
+
+    async getPersonalizedPage({
+        url,
+        languageId = '1',
+        mode = 'LIVE',
+        pageFragment,
+        content,
+        nav
+    }: {
+        url: string;
+        languageId: string;
+        mode: string;
+        pageFragment: string;
+        content: Record<string, string>;
+        nav: Record<string, string>;
+    }) {
+        const contentQueries = buildQueries(content);
+        const navQueries = buildQueries(nav);
+
+        const query = buildPageQuery({
+            pageFragment,
+            contentQueries,
+            navQueries
+        });
+
+        const variables = {
+            url,
+            mode,
+            languageId
+        };
+
+        const body = JSON.stringify({ query, variables });
+        const data = await fetchGraphQL({ body, requestOptions: this.requestOptions });
+
+        const page = data.page;
+        const contentResponse = mapResponseData(data, Object.keys(content || {}));
+        const navResponse = mapResponseData(data, Object.keys(nav || {}));
+
+        // Devolver Page Asset
+        /**
+         * const { template, viewAs, layout, container, ...restPage } = page;
+         * return {
+         *  pageAsset {
+         *      page: restPage,
+         *      tempalte
+         *      viewAs,
+         *      layout
+         *      container
+         *  }
+         * }
+         *
+         */
+        return {
+            page,
+            content: contentResponse,
+            nav: navResponse,
+            query
+        };
     }
 
     /**
