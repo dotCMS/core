@@ -58,7 +58,6 @@ import java.time.Instant;
 import java.util.Date;
 
 import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
-import static com.dotmarketing.servlets.BinaryExporterServlet.isDotAdminRequest;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -406,39 +405,6 @@ public class BinaryExporterServletTest {
         binaryExporterServlet.init();
         binaryExporterServlet.doGet(request, response);
 
-    }
-
-    /**
-     * Given scenario: Test the request comes from dotAdmin
-     * Expected result: Should return true if the referer is a valid dotAdmin referer
-     */
-    @Test
-    public void testDotAdminRequestValidReferer() {
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getHeader("referer")).thenReturn("http://localhost:8080/dotAdmin/somepage");
-        assertTrue( "Should be true for valid dotAdmin referer", isDotAdminRequest(request));
-    }
-
-    /**
-     * Given scenario: Test the request comes from dotAdmin
-     * Expected result: Should return true if the referer is a valid dotAdmin referer
-     */
-    @Test
-    public void testDotAdminRequestWithDifferentDomain() {
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getHeader("referer")).thenReturn("http://otherdomain.com/dotAdmin/somepage");
-        assertTrue( "Should be true for valid dotAdmin referer", isDotAdminRequest(request));
-    }
-
-    /**
-     * Given scenario: Test the request comes from dotAdmin
-     * Expected result: Should return true if the referer is a valid dotAdmin referer
-     */
-    @Test
-    public void testDotAdminRequestWithoutDotAdmin() {
-        HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getHeader("referer")).thenReturn("http://localhost:8080/anotherPath/somepage");
-        assertFalse("Should be false if /dotAdmin is not present", isDotAdminRequest(request));
     }
 
 

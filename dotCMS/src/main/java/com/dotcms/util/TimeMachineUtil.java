@@ -1,11 +1,11 @@
 package com.dotcms.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-
 import com.dotcms.rest.api.v1.page.PageResource;
+import java.util.Date;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.Optional;
 
 public final class TimeMachineUtil {
 
@@ -28,6 +28,19 @@ public final class TimeMachineUtil {
         }
         timeMachineObject = request.getAttribute(PageResource.TM_DATE);
         return Optional.ofNullable(timeMachineObject != null ? timeMachineObject.toString() : null);
+    }
+
+    /**
+     * If Time Machine is running return the timestamp of the Time Machine date as a Date
+     * @return Optional<Date>
+     */
+    public static Optional<Date> getTimeMachineDateAsDate() {
+        final Optional<String> timeMachine = getTimeMachineDate();
+        if (timeMachine.isPresent()) {
+            final String tmDate = timeMachine.get();
+            return Optional.of(new Date(Long.parseLong(tmDate)));
+        }
+        return Optional.empty();
     }
 
     /**

@@ -4,9 +4,12 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static com.dotmarketing.filters.CMSUrlUtil.isDotAdminRequest;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -73,6 +76,39 @@ public class CMSUrlUtilTest {
         assertNotNull(contentIdentifier4);
         assertEquals("d2e56042255158023d03164cd3852ead", contentIdentifier4);
 
+    }
+
+    /**
+     * Given scenario: Test the request comes from dotAdmin
+     * Expected result: Should return true if the referer is a valid dotAdmin referer
+     */
+    @Test
+    public void testDotAdminRequestValidReferer() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("referer")).thenReturn("http://localhost:8080/dotAdmin/somepage");
+        assertTrue( "Should be true for valid dotAdmin referer", isDotAdminRequest(request));
+    }
+
+    /**
+     * Given scenario: Test the request comes from dotAdmin
+     * Expected result: Should return true if the referer is a valid dotAdmin referer
+     */
+    @Test
+    public void testDotAdminRequestWithDifferentDomain() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("referer")).thenReturn("http://otherdomain.com/dotAdmin/somepage");
+        assertTrue( "Should be true for valid dotAdmin referer", isDotAdminRequest(request));
+    }
+
+    /**
+     * Given scenario: Test the request comes from dotAdmin
+     * Expected result: Should return true if the referer is a valid dotAdmin referer
+     */
+    @Test
+    public void testDotAdminRequestWithoutDotAdmin() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("referer")).thenReturn("http://localhost:8080/anotherPath/somepage");
+        assertFalse("Should be false if /dotAdmin is not present", isDotAdminRequest(request));
     }
 
 }
