@@ -18,6 +18,7 @@ export class DotClipboardUtil {
     async copy(text: string): Promise<boolean> {
         try {
             await navigator.clipboard.writeText(text);
+
             return true;
         } catch (err) {
             return this.fallbackCopyToClipboard(text);

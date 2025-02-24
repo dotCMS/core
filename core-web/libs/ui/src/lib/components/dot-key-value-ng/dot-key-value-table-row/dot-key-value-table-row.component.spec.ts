@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 
