@@ -26,6 +26,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
@@ -61,12 +62,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -355,19 +351,12 @@ public class PageResource {
         if (null != deviceInode){
             builder.deviceInode(deviceInode);
         }
-        if (null != timeMachineDateAsISO8601) {
-            final Date date;
-            try {
-                date = Try.of(() -> DateUtil.convertDate(timeMachineDateAsISO8601)).getOrElseThrow(
-                        e -> new IllegalArgumentException(
-                                String.format("Error Parsing date: %s", timeMachineDateAsISO8601),
-                                e));
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException(e);
-            }
-            final Instant instant = date.toInstant();
-            builder.timeMachineDate(instant);
-        }
+        TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601).ifPresentOrElse(
+                builder::timeMachineDate,
+                () -> Logger.debug(this, () -> String.format(
+                        "Date %s is not older than the grace window. Skipping Time Machine setup.",
+                        timeMachineDateAsISO8601))
+        );
         return builder.build();
     }
 
