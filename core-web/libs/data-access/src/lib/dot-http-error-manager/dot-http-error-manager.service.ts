@@ -200,19 +200,29 @@ export class DotHttpErrorManagerService {
         }
 
         const { error } = response;
+        let errorMessage = '';
 
-        // Handle array of errors case
-        if (Array.isArray(error)) {
-            return this.extractMessageFromErrorObject(error[0]);
+        // Handle array of errors
+        if (Array.isArray(error) && error.length > 0) {
+            errorMessage = this.extractMessageFromErrorObject(error[0]);
+        }
+        // Handle error object with nested errors array
+        else if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+            errorMessage = this.extractMessageFromErrorObject(error.errors[0]);
+        }
+        // Handle direct error object
+        else if (error && typeof error === 'object') {
+            errorMessage = this.extractMessageFromErrorObject(error);
+        }
+        // Handle string error
+        else if (error && typeof error === 'string') {
+            errorMessage = error;
         }
 
-        // Handle errors collection case
-        if (error?.errors && Array.isArray(error.errors)) {
-            return this.extractMessageFromErrorObject(error.errors[0]);
-        }
+        // Try to get localized message if it's a message key
+        const localizedMessage = this.dotMessageService.get(errorMessage);
 
-        // Handle single error object case
-        return this.extractMessageFromErrorObject(error);
+        return localizedMessage !== errorMessage ? localizedMessage : errorMessage;
     }
 
     /**
@@ -226,13 +236,50 @@ export class DotHttpErrorManagerService {
             return '';
         }
 
-        const message = typeof errorObj === 'object' && errorObj !== null
-            ? (errorObj as Record<string, unknown>)['message'] || (errorObj as Record<string, unknown>)['error'] || ''
-            : '';
+        // Handle string directly
+        if (typeof errorObj === 'string') {
+            return this.formatErrorMessage(errorObj);
+        }
 
-        // Trim message at first colon if present
-        return typeof message === 'string' && message.includes(':')
-            ? message.substring(0, message.indexOf(':'))
-            : String(message);
+        // Handle error object
+        if (typeof errorObj === 'object' && errorObj !== null) {
+            const errorRecord = errorObj as Record<string, unknown>;
+
+            // Try to extract message from common error properties in priority order
+            const message =
+                this.getStringProperty(errorRecord, 'message') ||
+                this.getStringProperty(errorRecord, 'error') ||
+                this.getStringProperty(errorRecord, 'detail') ||
+                this.getStringProperty(errorRecord, 'description') ||
+                '';
+
+            return this.formatErrorMessage(message);
+        }
+
+        return '';
+    }
+
+    /**
+     * Safely extracts a string property from an object
+     *
+     * @param obj The object to extract from
+     * @param prop The property name to extract
+     * @returns The string value or empty string
+     */
+    private getStringProperty(obj: Record<string, unknown>, prop: string): string {
+        const value = obj[prop];
+
+        return typeof value === 'string' ? value : '';
+    }
+
+    /**
+     * Formats an error message by trimming at first colon if present
+     *
+     * @param message The message to format
+     * @returns The formatted message
+     */
+    private formatErrorMessage(message: string): string {
+
+        return message.includes(':') ? message.substring(0, message.indexOf(':')) : message;
     }
 }
