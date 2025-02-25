@@ -112,31 +112,46 @@ public class ContentUtils {
 	 *
 	 * @return The requested {@link Contentlet} object.
 	 */
-	public static Contentlet find(final String inodeOrIdentifierIn, final User user, final String tmDate, final boolean EDIT_OR_PREVIEW_MODE,
+	public static Contentlet find(final String inodeOrIdentifierIn, final User user,
+			final String tmDate, final boolean EDIT_OR_PREVIEW_MODE,
 			final long sessionLang) {
 		final String inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifierIn);
 		final String[] recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
 		try {
-			// by inode
+			final PageMode pageMode = PageMode.get();
+			// Test by inode
 			Contentlet contentlet = conAPI.find(inodeOrIdentifier, user, true);
-			if (contentlet != null) {
-				// time-machine
-				if (tmDate != null) {
-					final PageMode pageMode = PageMode.get();
-					// This should take care of the rendering bits for the time machine
-					final Date ftmDate = new Date(Long.parseLong(tmDate));
+			if (contentlet != null) {  // Time machine by the identifier extracted from the contentlet we found through the inode
+				if (null != tmDate) {
+					final Date ffdate = new Date(Long.parseLong(tmDate));
 					final Optional<Contentlet> futureContent = conAPI.findContentletByIdentifierOrFallback(
-							contentlet.getIdentifier(), sessionLang, VariantAPI.DEFAULT_VARIANT.name(),
-							ftmDate, user, pageMode.respectAnonPerms);
+							contentlet.getIdentifier(), sessionLang,
+							VariantAPI.DEFAULT_VARIANT.name(),
+							ffdate, user, pageMode.respectAnonPerms);
 					if (futureContent.isPresent()) {
-						contentlet = futureContent.get();
+						return fixRecurringDates(futureContent.get(), recDates);
 					}
 				}
-				// If the content is not found or has expired
-				// No need to return null we continue to the next step to try to find the content in the live or working version
-				return fixRecurringDates(contentlet, recDates);
 			}
 
+			// okay if we failed retrieving the contentlet using inode we still need to test by identifier Cuz this method actually takes an identifier
+			if (null != tmDate) {
+				final Date ffdate = new Date(Long.parseLong(tmDate));
+				final Optional<Contentlet> futureContent = conAPI.findContentletByIdentifierOrFallback(
+						inodeOrIdentifier, sessionLang, VariantAPI.DEFAULT_VARIANT.name(),
+						ffdate, user, pageMode.respectAnonPerms);
+				if (futureContent.isPresent()) {
+					return fixRecurringDates(futureContent.get(), recDates);
+				}
+			}
+
+			// if We ran out of possibilities retrieving the contentlet via time machine we fall back on the current or present live contentlet
+			// if we already had one found by inode this is the one We should return
+			if (null != contentlet) {
+				return fixRecurringDates(contentlet, recDates);
+			}
+            // Fallbacks from here on...
+			//If not we try to get the contentlet by the identifier
 			final ContentletVersionInfo contentletVersionInfoByFallback = WebAPILocator.getVariantWebAPI()
 					.getContentletVersionInfoByFallback(sessionLang, inodeOrIdentifier,
 							EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE : PageMode.LIVE, user);
@@ -151,7 +166,8 @@ public class ContentUtils {
 		} catch (final Exception e) {
 			String msg = e.getMessage();
 			msg = (msg.contains("\n")) ? msg.substring(0, msg.indexOf("\n")) : msg;
-			final String errorMsg = String.format("An error occurred when User '%s' attempted to find Contentlet " +
+			final String errorMsg = String.format(
+					"An error occurred when User '%s' attempted to find Contentlet " +
 							"with Inode/ID '%s' [lang=%s, tmDate=%s]: %s",
 					user.getUserId(), inodeOrIdentifier, sessionLang, tmDate, msg);
 			Logger.warn(ContentUtils.class, errorMsg);
