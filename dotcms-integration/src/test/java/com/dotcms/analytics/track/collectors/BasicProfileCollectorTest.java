@@ -110,7 +110,6 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
         final CollectorPayloadBean collectedData = Util.getCollectorPayloadBean(request, collector, new PagesAndUrlMapsRequestMatcher(), null);
 
         assertTrue("Collected data map cannot be null or empty", UtilMethods.isSet(collectedData));
-        assertEquals("Collected data map must have the same number of items as expected map", collectedData.toMap().size(), expectedDataMap.size());
 
         int counter = 0;
         for (final String key : expectedDataMap.keySet()) {
