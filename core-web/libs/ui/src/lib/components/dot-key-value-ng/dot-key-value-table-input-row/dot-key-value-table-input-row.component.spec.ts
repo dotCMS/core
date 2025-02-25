@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -144,7 +144,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
         it('should reset form when press "Escape"', () => {
             spectatorHost.detectChanges();
-            const spyForm = spyOn(spectatorHost.component.form, 'reset');
+            const spyForm = jest.spyOn(spectatorHost.component.form, 'reset');
             const valueInput = spectatorHost.query(byTestId('value-input')) as HTMLInputElement;
             valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
             expect(spyForm).toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
         it('should disabled save button when new variable key added is duplicated', fakeAsync(() => {
             spectatorHost.detectChanges();
-            const spy = spyOn(dotMessageDisplayService, 'push');
+            const spy = jest.spyOn(dotMessageDisplayService, 'push');
             const element = spectatorHost.query(byTestId('key-input')) as HTMLInputElement;
 
             element.value = 'name';
@@ -173,7 +173,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
         it('should enable save button when new variable key added is valid', () => {
             spectatorHost.detectChanges();
-            const spy = spyOn(spectatorHost.component.save, 'emit');
+            const spy = jest.spyOn(spectatorHost.component.save, 'emit');
             const keyInput = spectatorHost.query(byTestId('key-input')) as HTMLInputElement;
             const valueInput = spectatorHost.query(byTestId('value-input')) as HTMLInputElement;
 
@@ -200,7 +200,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
         it('should emit reset form when cancel button is clicked', async () => {
             spectatorHost.detectChanges();
             const form = spectatorHost.component.form;
-            const spyForm = spyOn(form, 'reset');
+            const spyForm = jest.spyOn(form, 'reset');
             const keyInput = spectatorHost.query(byTestId('key-input')) as HTMLInputElement;
             const valueInput = spectatorHost.query(byTestId('value-input')) as HTMLInputElement;
 
