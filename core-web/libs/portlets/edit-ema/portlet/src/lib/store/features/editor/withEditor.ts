@@ -209,6 +209,12 @@ export function withEditor() {
                     };
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
+                    /*
+                        Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
+                        This should change in future UVE improvements. 
+                        The url should not depend on the PageAPI response since it does not change (In traditional).
+                        In the future we should have a function that updates the content, independent of the url
+                     */
                     const vanityURL = store.pageAPIResponse().vanityUrl?.url;
                     const sanitizedURL = sanitizeURL(vanityURL ?? store.pageParams().url);
 
