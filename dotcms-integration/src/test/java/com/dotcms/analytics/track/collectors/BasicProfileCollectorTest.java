@@ -4,13 +4,12 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.telemetry.business.MetricsAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -19,6 +18,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.net.UnknownHostException;
 import java.util.Map;
 
+import static com.dotcms.analytics.track.collectors.Collector.CUSTOMER_CATEGORY;
+import static com.dotcms.analytics.track.collectors.Collector.CUSTOMER_NAME;
+import static com.dotcms.analytics.track.collectors.Collector.ENVIRONMENT_NAME;
+import static com.dotcms.analytics.track.collectors.Collector.ENVIRONMENT_VERSION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -44,15 +47,6 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
 
         CLUSTER_ID = APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId());
         SERVER_ID = APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId());
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        // Re-setting the Telemetry env vars
-        Config.setProperty("TELEMETRY_CLIENT_NAME", null);
-        Config.setProperty("TELEMETRY_CLIENT_CATEGORY", null);
-        Config.setProperty("TELEMETRY_CLIENT_ENV", null);
-        Config.setProperty("TELEMETRY_CLIENT_ENV", null);
     }
 
     /**
@@ -92,10 +86,10 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
         // The values returned when running the Integration Tests are random. So, in this case,
         // we'll just verify that the attributes are present, and add any values in here
         expectedDataMap.putAll(Map.of(
-                Collector.CUSTOMER_NAME, "",
-                Collector.CUSTOMER_CATEGORY, "",
-                Collector.ENVIRONMENT_NAME, "",
-                Collector.ENVIRONMENT_VERSION, 0
+                CUSTOMER_NAME, "",
+                CUSTOMER_CATEGORY, "",
+                ENVIRONMENT_NAME, "",
+                ENVIRONMENT_VERSION, 0
         ));
         final Collector collector = new BasicProfileCollector();
         final CollectorPayloadBean collectedData = Util.getCollectorPayloadBean(request, collector, new PagesAndUrlMapsRequestMatcher(), null);
@@ -107,8 +101,8 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
             if (collectedData.toMap().containsKey(key)) {
                 final Object expectedValue = expectedDataMap.get(key);
                 final Object collectedValue = collectedData.toMap().get(key);
-                if ("TELEMETRY_CLIENT_NAME".equalsIgnoreCase(key) || "TELEMETRY_CLIENT_CATEGORY".equalsIgnoreCase(key) ||
-                        "TELEMETRY_CLIENT_ENV".equalsIgnoreCase(key) || "TELEMETRY_CLIENT_VERSION".equalsIgnoreCase(key)) {
+                if (CUSTOMER_NAME.equalsIgnoreCase(key) || CUSTOMER_CATEGORY.equalsIgnoreCase(key) ||
+                        ENVIRONMENT_NAME.equalsIgnoreCase(key) || ENVIRONMENT_VERSION.equalsIgnoreCase(key)) {
                     assertNotNull(String.format("Collected value '%s' cannot be null", key), collectedValue);
                 } else if (!Collector.UTC_TIME.equalsIgnoreCase(key)) {
                     assertEquals("Collected value must be equal to expected value for key: " + key, expectedValue, collectedValue);
@@ -116,7 +110,16 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
                 counter++;
             }
         }
-        assertEquals("Number of returned expected properties doesn't match", counter, expectedDataMap.size());
+        final MetricsAPI metricsAPI = APILocator.getMetricsAPI();
+        final MetricsAPI.Client client = metricsAPI.getClient();
+        // In local envs, the 'category_name' attribute maybe null, and is NOT added to the
+        // collected data map, so the assertion below would fail. This hack is just to make this
+        // test run locally without devs having to tweak it
+        final boolean areAllAttrsPresent = client.getVersion() >= 0 && UtilMethods.isSet(client.getEnvironment()) &&
+                UtilMethods.isSet(client.getCategory()) && UtilMethods.isSet(client.getClientName());
+        if (areAllAttrsPresent) {
+            assertEquals("Number of returned expected properties doesn't match", counter, expectedDataMap.size());
+        }
     }
 
 }
