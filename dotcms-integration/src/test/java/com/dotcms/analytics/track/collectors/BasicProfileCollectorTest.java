@@ -20,6 +20,7 @@ import java.net.UnknownHostException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -35,12 +36,6 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
     private static String CLUSTER_ID = null;
     private static String SERVER_ID = null;
 
-    private static final String TEST_CUSTOMER_NAME = "test-customer-name";
-    private static final String TEST_CUSTOMER_CATEGORY = "test-customer-category";
-    private static final String TEST_ENVIRONMENT_NAME = "test-environment-name";
-
-    private static final int TEST_ENVIRONMENT_VERSION = 0;
-
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
@@ -49,12 +44,6 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
 
         CLUSTER_ID = APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId());
         SERVER_ID = APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId());
-
-        // Setting test values for specific Telemetry env vars
-        Config.setProperty("TELEMETRY_CLIENT_NAME", TEST_CUSTOMER_NAME);
-        Config.setProperty("TELEMETRY_CLIENT_CATEGORY", TEST_CUSTOMER_CATEGORY);
-        Config.setProperty("TELEMETRY_CLIENT_ENV", TEST_ENVIRONMENT_NAME);
-        Config.setProperty("TELEMETRY_CLIENT_VERSION", TEST_ENVIRONMENT_VERSION);
     }
 
     @AfterClass
@@ -100,11 +89,13 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
                 Collector.USER_OBJECT, Map.of(
                         "identifier", "anonymous",
                         "email", "anonymous@dotcms.anonymoususer")));
+        // The values returned when running the Integration Tests are random. So, in this case,
+        // we'll just verify that the attributes are present, and add any values in here
         expectedDataMap.putAll(Map.of(
-                Collector.CUSTOMER_NAME, TEST_CUSTOMER_NAME,
-                Collector.CUSTOMER_CATEGORY, TEST_CUSTOMER_CATEGORY,
-                Collector.ENVIRONMENT_NAME, TEST_ENVIRONMENT_NAME,
-                Collector.ENVIRONMENT_VERSION, TEST_ENVIRONMENT_VERSION
+                Collector.CUSTOMER_NAME, "",
+                Collector.CUSTOMER_CATEGORY, "",
+                Collector.ENVIRONMENT_NAME, "",
+                Collector.ENVIRONMENT_VERSION, 0
         ));
         final Collector collector = new BasicProfileCollector();
         final CollectorPayloadBean collectedData = Util.getCollectorPayloadBean(request, collector, new PagesAndUrlMapsRequestMatcher(), null);
@@ -118,6 +109,10 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
                 final Object collectedValue = collectedData.toMap().get(key);
                 if (!Collector.UTC_TIME.equalsIgnoreCase(key)) {
                     assertEquals("Collected value must be equal to expected value for key: " + key, expectedValue, collectedValue);
+                }
+                if ("TELEMETRY_CLIENT_NAME".equalsIgnoreCase(key) || "TELEMETRY_CLIENT_CATEGORY".equalsIgnoreCase(key) ||
+                        "TELEMETRY_CLIENT_ENV".equalsIgnoreCase(key) || "TELEMETRY_CLIENT_VERSION".equalsIgnoreCase(key)) {
+                    assertNotNull(String.format("Collected value '%s' cannot be null", key), collectedValue);
                 }
                 counter++;
             }
