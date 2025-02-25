@@ -1,4 +1,4 @@
- Feature: Create a Page
+ Feature: Upload FileAsset
    Background:
 
      * def fileName = __arg.fileName
