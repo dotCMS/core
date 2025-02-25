@@ -279,7 +279,6 @@ export class DotHttpErrorManagerService {
      * @returns The formatted message
      */
     private formatErrorMessage(message: string): string {
-
         return message.includes(':') ? message.substring(0, message.indexOf(':')) : message;
     }
 }
