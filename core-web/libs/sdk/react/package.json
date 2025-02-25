@@ -1,6 +1,6 @@
 {
   "name": "@dotcms/react",
-  "version": "0.0.1-alpha.38",
+  "version": "0.0.1-beta-2",
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18",
@@ -27,5 +27,10 @@
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
   },
-  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/README.md"
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/README.md",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts"
+  }
 }
