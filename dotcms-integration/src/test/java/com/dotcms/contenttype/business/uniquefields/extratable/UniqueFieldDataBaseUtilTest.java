@@ -40,9 +40,7 @@ import java.util.stream.Collectors;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @ApplicationScoped
 @RunWith(JUnit4WeldRunner.class)
@@ -650,6 +648,47 @@ public class UniqueFieldDataBaseUtilTest {
     private List<Map<String, Object>> getUniqueFieldsRegisters(ContentType contentType) throws DotDataException {
         return new DotConnect().setSQL("SELECT * FROM unique_fields WHERE supporting_values->>'contentTypeId' = ?")
                 .addParam(contentType.id()).loadObjectResults();
+    }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#get(String, long)}
+     * when: Try to get the Unique value using a too long language ID
+     * should: get the register and not throw any exception
+     *
+     * @throws IOException
+     * @throws DotDataException
+     */
+    @Test
+    public void getUniqueValueWithLanguageWithTooLongId() throws IOException, DotDataException {
+        final String defaultUniqueValue = "default_variant_unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet defaultContentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), defaultUniqueValue)
+                .nextPersisted();
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        final String supportingValueJSON = "{\"live\": true, \"siteId\": \"SYSTEM_HOST\", \"variant\": \"DEFAULT\", \"fieldValue\": \"System Host\", \"languageId\": 1565640883097, \"contentTypeId\": \"855a2d72-f2f3-4169-8b04-ac5157c4380c\", \"contentletIds\": [\"" + defaultContentlet.getIdentifier() + "\"], \"uniquePerSite\": false, \"fieldVariableName\": \"hostName\"}";
+        final Map<String, Object> jsonFromString = JsonUtil.getJsonFromString(supportingValueJSON);
+
+        uniqueFieldDataBaseUtil.insert("1", jsonFromString);
+
+        List<Map<String, Object>> maps = uniqueFieldDataBaseUtil.get(defaultContentlet.getIdentifier(), language.getId());
+        assertNotNull(maps);
     }
 
 }

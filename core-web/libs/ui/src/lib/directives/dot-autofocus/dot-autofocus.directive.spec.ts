@@ -40,7 +40,7 @@ describe('Directive: DotAutofocus', () => {
     it('should call focus', async () => {
         fixture.detectChanges();
         inputEl = fixture.debugElement.query(By.css('input'));
-        spyOn(inputEl.nativeElement, 'focus');
+        jest.spyOn(inputEl.nativeElement, 'focus');
 
         await fixture.whenStable();
 
@@ -51,7 +51,7 @@ describe('Directive: DotAutofocus', () => {
         component.setDisabled(true);
         fixture.detectChanges();
         inputEl = fixture.debugElement.query(By.css('input'));
-        spyOn(inputEl.nativeElement, 'focus');
+        jest.spyOn(inputEl.nativeElement, 'focus');
 
         await fixture.whenStable();
         expect(inputEl.nativeElement.focus).not.toHaveBeenCalled();

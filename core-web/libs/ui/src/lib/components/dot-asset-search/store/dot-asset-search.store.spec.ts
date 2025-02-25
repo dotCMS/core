@@ -1,4 +1,4 @@
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
+import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import {
@@ -141,10 +141,10 @@ describe('DotAssetSearchStore', () => {
         it('should search contentlets', (done) => {
             const contentlets = CONTENTLETS_MOCK_WITH_LANG.splice(0, 2);
 
-            const spyLoading = spyOn(service, 'updateLoading');
-            const spySearch = spyOn(dotContentSearchService, 'get').and.returnValue(
-                of({ jsonObjectView: { contentlets } })
-            );
+            const spyLoading = jest.spyOn(service, 'updateLoading');
+            const spySearch = jest
+                .spyOn(dotContentSearchService, 'get')
+                .mockReturnValue(of({ jsonObjectView: { contentlets } }));
 
             const params = {
                 search: 'image',
@@ -176,9 +176,9 @@ describe('DotAssetSearchStore', () => {
 
         it('should load next banch', (done) => {
             const contentlets = CONTENTLETS_MOCK_WITH_LANG.splice(0, 2);
-            const spySearch = spyOn(dotContentSearchService, 'get').and.returnValue(
-                of({ jsonObjectView: { contentlets } })
-            );
+            const spySearch = jest
+                .spyOn(dotContentSearchService, 'get')
+                .mockReturnValue(of({ jsonObjectView: { contentlets } }));
 
             const params = {
                 search: 'image',

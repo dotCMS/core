@@ -26,7 +26,7 @@ export interface UIState {
 
 export const uiInitialState: UIState = {
     activeTab: 0,
-    isSidebarOpen: false,
+    isSidebarOpen: true,
     activeSidebarTab: 0
 };
 
@@ -56,7 +56,12 @@ export function withUI() {
             /**
              * Computed property that returns the active sidebar tab
              */
-            activeSidebarTab: computed(() => store.uiState().activeSidebarTab)
+            activeSidebarTab: computed(() => {
+                const initialState = store.initialContentletState();
+                const uiState = store.uiState();
+
+                return initialState === 'new' ? 0 : uiState.activeSidebarTab;
+            })
         })),
         withMethods((store) => ({
             /**
