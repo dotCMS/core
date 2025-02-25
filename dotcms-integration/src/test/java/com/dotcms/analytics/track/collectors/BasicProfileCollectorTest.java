@@ -39,7 +39,7 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
     private static final String TEST_CUSTOMER_CATEGORY = "test-customer-category";
     private static final String TEST_ENVIRONMENT_NAME = "test-environment-name";
 
-    private static final int TEST_ENVIRONMENT_VERSION = 123;
+    private static final int TEST_ENVIRONMENT_VERSION = 0;
 
     @BeforeClass
     public static void prepare() throws Exception {
