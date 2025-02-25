@@ -190,9 +190,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.dialog?.resetDialog();
         });
 
-        if (isTraditionalPage || !isClientReady) {
+        console.log("should reload iframe content");
+
+        if (!isClientReady) {
             return;
         }
+
+        if (isTraditionalPage) {
+            console.log('should reload iframe for traditional');
+            this.#insertPageContent();
+
+            return;
+        }
+
+        console.log('should reload iframe for headless');
 
         this.reloadIframeContent();
     });
@@ -444,11 +455,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad() {
+        console.log('onIframePageLoad');
         if (!this.uveStore.isTraditionalPage()) {
             return;
         }
 
         this.#insertPageContent();
+        this.handleInlineScripts();
         this.#setSeoData();
 
         if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
@@ -668,8 +681,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         const iframeElement = this.iframe?.nativeElement;
         const doc = iframeElement.contentDocument;
 
-        const enableInlineEdit = this.uveStore.$enableInlineEdit();
-        const pageRender = this.uveStore.$pageRender();
+        const pageRender = untracked(() => this.uveStore.$pageRender());
 
         const newDoc = this.inyectCodeToVTL(pageRender);
 
@@ -681,7 +693,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         doc.write(newDoc);
         doc.close();
 
-        this.handleInlineScripts(enableInlineEdit);
+        
     }
 
     /**
@@ -691,8 +703,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
-    handleInlineScripts(enableInlineEdit: boolean) {
+    handleInlineScripts() {
         const win = this.contentWindow;
+        const enableInlineEdit = untracked(() => this.uveStore.$enableInlineEdit());
 
         fromEvent(win, 'click').subscribe((e: MouseEvent) => {
             this.handleInternalNav(e);

@@ -209,6 +209,7 @@ export function withEditor() {
                     };
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
+                    // store.pageAPIResponse().page;
                     const sanitizedURL = sanitizeURL(store.pageParams().url);
 
                     const url = buildIframeURL({
@@ -216,6 +217,8 @@ export function withEditor() {
                         params: store.pageParams(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });
+
+                    console.log("computed $iframeURL");
 
                     return url;
                 }),

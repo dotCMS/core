@@ -142,6 +142,8 @@ export function withLoad() {
                                             );
                                             const isTraditionalPage = !pageParams.clientHost;
 
+                                            console.log("Called patchState");
+
                                             patchState(store, {
                                                 pageAPIResponse: pageAsset,
                                                 isEnterprise,
