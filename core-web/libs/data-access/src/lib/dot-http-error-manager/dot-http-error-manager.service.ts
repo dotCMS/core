@@ -188,15 +188,51 @@ export class DotHttpErrorManagerService {
         return false;
     }
 
+    /**
+     * Extracts a readable error message from an HttpErrorResponse
+     *
+     * @param response The HttpErrorResponse to extract the message from
+     * @returns A string containing the error message or empty string if no message found
+     */
     private getErrorMessage(response?: HttpErrorResponse): string {
-        let msg: string;
-        if (Array.isArray(response?.['error']) || Array.isArray(response?.error?.errors)) {
-            msg = response.error[0]?.message || response.error?.errors[0]?.message;
-        } else {
-            const error = response?.['error'];
-            msg = error?.message || error?.error;
+        if (!response) {
+            return '';
         }
 
-        return msg;
+        const { error } = response;
+
+        // Handle array of errors case
+        if (Array.isArray(error)) {
+            return this.extractMessageFromErrorObject(error[0]);
+        }
+
+        // Handle errors collection case
+        if (error?.errors && Array.isArray(error.errors)) {
+            return this.extractMessageFromErrorObject(error.errors[0]);
+        }
+
+        // Handle single error object case
+        return this.extractMessageFromErrorObject(error);
+    }
+
+    /**
+     * Extracts message from an error object and trims it if it contains a colon
+     *
+     * @param errorObj The error object to extract message from
+     * @returns The extracted message or empty string
+     */
+    private extractMessageFromErrorObject(errorObj: unknown): string {
+        if (!errorObj) {
+            return '';
+        }
+
+        const message = typeof errorObj === 'object' && errorObj !== null
+            ? (errorObj as Record<string, unknown>)['message'] || (errorObj as Record<string, unknown>)['error'] || ''
+            : '';
+
+        // Trim message at first colon if present
+        return typeof message === 'string' && message.includes(':')
+            ? message.substring(0, message.indexOf(':'))
+            : String(message);
     }
 }

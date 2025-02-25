@@ -101,7 +101,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 401 error when user is logout and redirect to login', () => {
-        loginService.auth.user = null;
+        loginService.auth.user = undefined as any;
         jest.spyOn(dotDialogService, 'alert');
         jest.spyOn(dotRouterService, 'goToLogin');
 
@@ -166,7 +166,7 @@ describe('DotHttpErrorManagerService', () => {
             'error-key': 'dotcms.api.error.license.required'
         });
 
-        const responseView: HttpErrorResponse = mockResponseView(403, null, headers);
+        const responseView: HttpErrorResponse = mockResponseView(403, undefined, headers);
 
         service.handle(responseView).subscribe((res) => {
             result = res;
@@ -186,7 +186,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 400 error on message', () => {
         jest.spyOn(dotDialogService, 'alert');
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             message: 'Error'
         });
 
@@ -210,7 +210,7 @@ describe('DotHttpErrorManagerService', () => {
         const CUSTOM_HEADER = 'Custom Header';
         const SERVER_MESSAGE = 'Server Error';
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             message: SERVER_MESSAGE,
             header: CUSTOM_HEADER
         });
@@ -233,7 +233,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 400 error on errors[0]', () => {
         jest.spyOn(dotDialogService, 'alert');
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, [
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, [
             { message: 'Server Error' }
         ]);
 
@@ -255,7 +255,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 400 error on error.errors[0]', () => {
         jest.spyOn(dotDialogService, 'alert');
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             errors: [{ message: 'Server Error' }]
         });
 
@@ -277,7 +277,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 400 error on error.error', () => {
         jest.spyOn(dotDialogService, 'alert');
 
-        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+        const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             error: 'Server Error'
         });
 
