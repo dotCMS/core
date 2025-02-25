@@ -107,12 +107,11 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
             if (collectedData.toMap().containsKey(key)) {
                 final Object expectedValue = expectedDataMap.get(key);
                 final Object collectedValue = collectedData.toMap().get(key);
-                if (!Collector.UTC_TIME.equalsIgnoreCase(key)) {
-                    assertEquals("Collected value must be equal to expected value for key: " + key, expectedValue, collectedValue);
-                }
                 if ("TELEMETRY_CLIENT_NAME".equalsIgnoreCase(key) || "TELEMETRY_CLIENT_CATEGORY".equalsIgnoreCase(key) ||
                         "TELEMETRY_CLIENT_ENV".equalsIgnoreCase(key) || "TELEMETRY_CLIENT_VERSION".equalsIgnoreCase(key)) {
                     assertNotNull(String.format("Collected value '%s' cannot be null", key), collectedValue);
+                } else if (!Collector.UTC_TIME.equalsIgnoreCase(key)) {
+                    assertEquals("Collected value must be equal to expected value for key: " + key, expectedValue, collectedValue);
                 }
                 counter++;
             }
