@@ -7,8 +7,10 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -22,6 +24,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
+ * Verifies that the {@link BasicProfileCollector} is able to collect the basic profile data and
+ * works as expected.
  *
  * @author Jose Castro
  * @since Oct 9th, 2024
@@ -31,6 +35,12 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
     private static String CLUSTER_ID = null;
     private static String SERVER_ID = null;
 
+    private static final String TEST_CUSTOMER_NAME = "test-customer-name";
+    private static final String TEST_CUSTOMER_CATEGORY = "test-customer-category";
+    private static final String TEST_ENVIRONMENT_NAME = "test-environment-name";
+
+    private static final int TEST_ENVIRONMENT_VERSION = 123;
+
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
@@ -39,13 +49,32 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
 
         CLUSTER_ID = APILocator.getShortyAPI().shortify(ClusterFactory.getClusterId());
         SERVER_ID = APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId());
+
+        // Setting test values for specific Telemetry env vars
+        Config.setProperty("TELEMETRY_CLIENT_NAME", TEST_CUSTOMER_NAME);
+        Config.setProperty("TELEMETRY_CLIENT_CATEGORY", TEST_CUSTOMER_CATEGORY);
+        Config.setProperty("TELEMETRY_CLIENT_ENV", TEST_ENVIRONMENT_NAME);
+        Config.setProperty("TELEMETRY_CLIENT_VERSION", TEST_ENVIRONMENT_VERSION);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        // Re-setting the Telemetry env vars
+        Config.setProperty("TELEMETRY_CLIENT_NAME", null);
+        Config.setProperty("TELEMETRY_CLIENT_CATEGORY", null);
+        Config.setProperty("TELEMETRY_CLIENT_ENV", null);
+        Config.setProperty("TELEMETRY_CLIENT_ENV", null);
     }
 
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link }</li>
-     *     <li><b>Given Scenario: </b></li>
-     *     <li><b>Expected Result: </b></li>
+     *     <li><b>Method to test:</b>
+     *     {@link BasicProfileCollector#collect(CollectorContextMap, CollectorPayloadBean)}</li>
+     *     <li><b>Given Scenario:</b> Simulate the collection of Basic Profile data, which is
+     *     data that is ALWAYS collected for any kind of Data Collector, and compare it with an
+     *     expected data map.</li>
+     *     <li><b>Expected Result:</b> Both the collected data map and the expected data must
+     *     match.</li>
      * </ul>
      */
     @Test
@@ -54,7 +83,7 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
         final String requestId = UUIDUtil.uuid();
         final HttpServletRequest request = Util.mockHttpRequestObj(response, "/", requestId,
                 APILocator.getUserAPI().getAnonymousUser());
-        final Map<String, Object> expectedDataMap = Map.of(
+        final Map<String, Object> expectedDataMap = new java.util.HashMap<>(Map.of(
                 Collector.CLUSTER, CLUSTER_ID,
                 Collector.SERVER, SERVER_ID,
                 Collector.PERSONA, "dot:default",
@@ -63,11 +92,25 @@ public class BasicProfileCollectorTest extends IntegrationTestBase {
                 Collector.USER_AGENT, Util.USER_AGENT,
                 Collector.SESSION_ID, "DAA3339CD687D9ABD4101CF9EDDD42DB",
                 Collector.REQUEST_ID, requestId
-        );
+        ));
+        expectedDataMap.putAll(Map.of(
+                Collector.EVENT_SOURCE, EventSource.DOT_CMS.getName(),
+                Collector.IS_TARGET_PAGE, false,
+                Collector.IS_EXPERIMENT_PAGE, false,
+                Collector.USER_OBJECT, Map.of(
+                        "identifier", "anonymous",
+                        "email", "anonymous@dotcms.anonymoususer")));
+        expectedDataMap.putAll(Map.of(
+                Collector.CUSTOMER_NAME, TEST_CUSTOMER_NAME,
+                Collector.CUSTOMER_CATEGORY, TEST_CUSTOMER_CATEGORY,
+                Collector.ENVIRONMENT_NAME, TEST_ENVIRONMENT_NAME,
+                Collector.ENVIRONMENT_VERSION, TEST_ENVIRONMENT_VERSION
+        ));
         final Collector collector = new BasicProfileCollector();
         final CollectorPayloadBean collectedData = Util.getCollectorPayloadBean(request, collector, new PagesAndUrlMapsRequestMatcher(), null);
 
         assertTrue("Collected data map cannot be null or empty", UtilMethods.isSet(collectedData));
+        assertEquals("Collected data map must have the same number of items as expected map", collectedData.toMap().size(), expectedDataMap.size());
 
         int counter = 0;
         for (final String key : expectedDataMap.keySet()) {
