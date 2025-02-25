@@ -22,15 +22,15 @@
     "React",
     "Components"
   ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts"
+  },
   "author": "dotcms <dev@dotcms.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
   },
-  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/README.md",
-  "exports": {
-    "./package.json": "./package.json",
-    ".": "./src/index.ts",
-    "./next": "./src/next.ts"
-  }
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/README.md"
 }
