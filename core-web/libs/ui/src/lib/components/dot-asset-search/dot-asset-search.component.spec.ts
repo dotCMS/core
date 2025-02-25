@@ -1,6 +1,7 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -46,6 +47,7 @@ describe('DotAssetSearchComponent', () => {
             }
         ],
         imports: [
+            CommonModule,
             HttpClientTestingModule,
             InputTextModule,
             DotAssetCardComponent,
@@ -77,7 +79,7 @@ describe('DotAssetSearchComponent', () => {
     });
 
     it('should call store nextBatch', fakeAsync(() => {
-        const spy = spyOn(store, 'nextBatch');
+        const spy = jest.spyOn(store, 'nextBatch');
         spectator.triggerEventHandler(DotAssetCardListComponent, 'nextBatch', 10);
         tick(1000);
         expect(spy).toHaveBeenCalledWith({
@@ -89,17 +91,28 @@ describe('DotAssetSearchComponent', () => {
     }));
 
     it('should call addAsset Output', fakeAsync(() => {
-        const spy = spyOn(spectator.component.addAsset, 'emit');
+        const spy = jest.spyOn(spectator.component.addAsset, 'emit');
         spectator.triggerEventHandler(DotAssetCardListComponent, 'selectedItem', EMPTY_CONTENTLET);
         tick(1000);
         expect(spy).toHaveBeenCalledWith(EMPTY_CONTENTLET);
     }));
 
     it('should call store searchContentlet', fakeAsync(() => {
-        const spy = spyOn(store, 'searchContentlet');
+        const spy = jest.spyOn(store, 'searchContentlet');
         const inputElement = spectator.query(byTestId('input-search')) as HTMLInputElement;
-        spectator.typeInElement('search', inputElement);
-        tick(1000);
+
+        inputElement.value = 'search';
+        const event = new InputEvent('input', {
+            bubbles: true,
+            cancelable: true,
+            data: 'search'
+        });
+        Object.defineProperty(event, 'target', { value: inputElement });
+        inputElement.dispatchEvent(event);
+
+        spectator.detectChanges();
+        tick(500); // Match the debounceTime in the component
+
         expect(spy).toHaveBeenCalledWith({
             languageId: '1',
             assetType: 'image',

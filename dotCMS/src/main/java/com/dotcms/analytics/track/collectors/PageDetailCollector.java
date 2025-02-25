@@ -9,6 +9,7 @@ import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -73,17 +74,17 @@ public class PageDetailCollector implements Collector {
                     .onFailure(e -> Logger.error(this, String.format("Error finding detail page " +
                             "'%s': %s", urlMapContentType.detailPage(), getErrorMessage(e)), e))
                     .getOrNull();
-
+            final HTMLPageAsset detailPageAsset = (HTMLPageAsset) detailPageContent;
             final HashMap<String, String> pageObject = new HashMap<>();
             pageObject.put(ID, detailPageContent.getIdentifier());
             pageObject.put(TITLE, detailPageContent.getTitle());
             pageObject.put(URL, uri);
-            pageObject.put(CONTENT_TYPE_ID, urlMapContentlet.getContentType().id());
-            pageObject.put(CONTENT_TYPE_NAME, urlMapContentlet.getContentType().name());
-            pageObject.put(CONTENT_TYPE_VAR_NAME, urlMapContentlet.getContentType().variable());
+            pageObject.put(CONTENT_TYPE_ID, detailPageAsset.getContentTypeId());
+            pageObject.put(CONTENT_TYPE_NAME, detailPageAsset.getContentType().name());
+            pageObject.put(CONTENT_TYPE_VAR_NAME, detailPageAsset.getContentType().variable());
             pageObject.put(BASE_TYPE, urlMapContentlet.getContentType().baseType().name());
-            pageObject.put(LIVE,    String.valueOf(Try.of(()->urlMapContentlet.isLive()).getOrElse(false)));
-            pageObject.put(WORKING, String.valueOf(Try.of(()->urlMapContentlet.isWorking()).getOrElse(false)));
+            pageObject.put(LIVE,    String.valueOf(Try.of(urlMapContentlet::isLive).getOrElse(false)));
+            pageObject.put(WORKING, String.valueOf(Try.of(urlMapContentlet::isWorking).getOrElse(false)));
             pageObject.put(DETAIL_PAGE_URL, Try.of(detailPageContent::getURI).getOrElse(StringPool.BLANK));
             collectorPayloadBean.put(OBJECT,  pageObject);
         }

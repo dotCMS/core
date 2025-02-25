@@ -4,10 +4,10 @@
             <button
                 (click)="closePrimeNgSidebar()"
                 class="p-button-rounded p-button-text"
-                data-testId="header-close-icon"
+                data-testid="header-close-icon"
                 icon="pi pi-times"
                 pButton></button>
-            <h2 [innerHTML]="dotTitle" data-testId="header-title"></h2>
+            <h2 data-testid="header-title">{{ dotTitle }}</h2>
         </div>
 
         @if (actionButtonTpl) {
