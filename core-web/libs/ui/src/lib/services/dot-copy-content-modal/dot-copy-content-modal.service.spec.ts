@@ -57,7 +57,7 @@ describe('DotCopyContentModalService', () => {
     });
 
     it('should not return anything if the user close the modal without select an option', (done) => {
-        spyOn(dialogService, 'open').and.returnValue({
+        jest.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of('')
         } as DynamicDialogRef);
 
@@ -72,7 +72,7 @@ describe('DotCopyContentModalService', () => {
     });
 
     it('should return false if the user select the first option', (done) => {
-        spyOn(dialogService, 'open').and.returnValue({
+        jest.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option1.value)
         } as DynamicDialogRef);
 
@@ -83,7 +83,7 @@ describe('DotCopyContentModalService', () => {
     });
 
     it('should return true if the user select the second option', (done) => {
-        spyOn(dialogService, 'open').and.returnValue({
+        jest.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option2.value)
         } as DynamicDialogRef);
 
@@ -93,15 +93,16 @@ describe('DotCopyContentModalService', () => {
         });
     });
 
-    it('shoud have be called one time with the correct data', () => {
-        spyOn(dialogService, 'open').and.returnValue({
+    it('should have been called one time with the correct data', () => {
+        jest.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of('')
         } as DynamicDialogRef);
-        service.open().subscribe();
-        expect(dialogService.open).toHaveBeenCalledTimes(1);
 
+        service.open().subscribe();
+
+        expect(dialogService.open).toHaveBeenCalledTimes(1);
         expect(dialogService.open).toHaveBeenCalledWith(
-            jasmine.any(Function),
+            expect.any(Function),
             DYNAMIC_DIALOG_CONFIG
         );
     });

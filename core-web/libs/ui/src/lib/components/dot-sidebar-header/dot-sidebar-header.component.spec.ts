@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Sidebar } from 'primeng/sidebar';
 
@@ -6,22 +6,35 @@ import { DotSidebarHeaderComponent } from './dot-sidebar-header.component';
 
 describe('DotSidebarHeaderComponent', () => {
     let spectator: Spectator<DotSidebarHeaderComponent>;
+
     const createComponent = createComponentFactory({
         component: DotSidebarHeaderComponent,
-        componentMocks: [Sidebar]
+        providers: [
+            {
+                provide: Sidebar,
+                useValue: {
+                    hide: jest.fn()
+                }
+            }
+        ]
     });
 
-    beforeEach(() => {
-        spectator = createComponent();
-    });
-
-    it('should title', () => {
+    it('should show title', () => {
         const title = 'My title';
-        spectator.setInput('dotTitle', title);
-        expect(spectator.query(byTestId('header-title'))).toContainText(title);
+        spectator = createComponent({
+            props: {
+                dotTitle: title
+            }
+        });
+
+        spectator.detectChanges();
+
+        const titleElement = spectator.query(byTestId('header-title'));
+        expect(titleElement?.textContent?.trim()).toBe(title);
     });
 
     it('should close icon', () => {
+        spectator = createComponent();
         expect(spectator.query(byTestId('header-close-icon'))).toExist();
     });
 });

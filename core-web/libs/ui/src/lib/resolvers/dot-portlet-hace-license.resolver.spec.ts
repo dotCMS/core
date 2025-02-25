@@ -32,7 +32,7 @@ describe('formResolver', () => {
         const resolver = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
             portletHaveLicenseResolver({}, { url: '' } as RouterStateSnapshot)
         );
-        spyOn(dotLicenseService, 'canAccessEnterprisePortlet').and.returnValue(of(true));
+        jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(true));
         resolver.subscribe((res) => {
             expect(res).toBe(true);
         });
@@ -42,7 +42,7 @@ describe('formResolver', () => {
         const resolver = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
             portletHaveLicenseResolver({}, { url: '' } as RouterStateSnapshot)
         );
-        spyOn(dotLicenseService, 'canAccessEnterprisePortlet').and.returnValue(of(false));
+        jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(false));
         resolver.subscribe((res) => {
             expect(res).toBe(true);
         });
