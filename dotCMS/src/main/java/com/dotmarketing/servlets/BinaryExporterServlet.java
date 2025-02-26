@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import static com.dotmarketing.filters.CMSUrlUtil.isDotAdminRequest;
 import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
@@ -682,16 +683,6 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		}
 
-	}
-
-	/**
-	 * Test the request to see if it is a dotAdmin request
-	 * @param request the request to test
-	 * @return true if the request is a dotAdmin request
-	 */
-	public static boolean isDotAdminRequest(HttpServletRequest request) {
-		final String referer = request.getHeader("referer");
-		return  referer != null && referer.contains("/dotAdmin");
 	}
 
 	private Contentlet getContentletByIdentifier(final PageMode pageMode,
