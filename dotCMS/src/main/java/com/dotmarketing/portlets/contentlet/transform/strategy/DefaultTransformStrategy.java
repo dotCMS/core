@@ -403,6 +403,13 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put("isLocked", contentlet.isLocked());
         }
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
+        final Optional<String> lockedByOpt = toolBox.versionableAPI.getLockedBy(contentlet);
+        if (lockedByOpt.isPresent()) {
+
+            final User user = toolBox.userAPI.loadUserById(lockedByOpt.get());
+            map.put("lockedBy", Map.of("userId", user.getUserId(),
+                    "firstName", user.getFirstName(), "lastName", user.getLastName()));
+        }
 
         final Optional<ContentletVersionInfo> versionInfo =
                 APILocator.getVersionableAPI().getContentletVersionInfo(
