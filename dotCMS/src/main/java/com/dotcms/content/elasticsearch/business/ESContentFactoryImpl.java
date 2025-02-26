@@ -949,12 +949,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        if (REFRESH_BLOCK_EDITOR_REFERENCES && cachedContentlet.getContentType().hasStoryBlockFields()) {
-
+        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != cachedContentlet.getContentType() && cachedContentlet.getContentType().hasStoryBlockFields()) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {
-                Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet '%s'",
+                Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet: '%s'",
                         cachedContentlet.getIdentifier()));
 
                 final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();

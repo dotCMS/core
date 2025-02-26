@@ -122,7 +122,7 @@ public class LuceneQueryBuilderTest extends IntegrationTestBase {
                         "{\n" +
                         "    \"globalSearch\": \"dummy search\"\n" +
                         "}",
-                        "+systemType:false -contentType:forms -contentType:Host title:'dummy search'^15title:dummy^5 title:search^5 title_dotraw:*dummy search*^5 +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true"),
+                        "+systemType:false -contentType:forms -contentType:Host +catchall:dummy search* title:'dummy search'^15 title:dummy^5 title:search^5 title_dotraw:*dummy search*^5 title:dummy search* +conHost:SYSTEM_HOST +variant:default +deleted:false +working:true"),
 
                 new TestCase("Published content",
                         "{\n" +

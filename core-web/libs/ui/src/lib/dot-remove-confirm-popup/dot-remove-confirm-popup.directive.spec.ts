@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
 
@@ -34,8 +34,15 @@ describe('DotRemoveConfirmPopupWithEscape', () => {
     });
 
     it('should close the confirmPopup with escape', () => {
-        spyOn(confirmationService, 'close');
-        spectator.dispatchKeyboardEvent(document, 'keydown', 'Escape');
+        jest.spyOn(confirmationService, 'close');
+
+        const event = new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            bubbles: true
+        });
+        document.dispatchEvent(event);
+
         expect(confirmationService.close).toHaveBeenCalledTimes(1);
     });
 });

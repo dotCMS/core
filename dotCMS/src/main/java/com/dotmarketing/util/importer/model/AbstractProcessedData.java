@@ -16,13 +16,16 @@ import org.immutables.value.Value;
 public interface AbstractProcessedData extends Serializable {
 
     /**
-     * @return The number of records that passed validation and were processed successfully
+     * @return The number of rows successfully parsed from the import file
      */
-    int valid();
+    int parsedRows();
 
     /**
-     * @return The number of records that failed validation or could not be processed
+     * Calculates and returns the number of rows in the import file
+     * that failed to be successfully parsed or processed.
+     *
+     * @return The number of rows that failed to be processed
      */
-    int invalid();
+    int failedRows();
 
 }

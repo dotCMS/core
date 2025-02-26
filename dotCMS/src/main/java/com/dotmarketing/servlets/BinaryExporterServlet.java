@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import static com.dotmarketing.filters.CMSUrlUtil.isDotAdminRequest;
 import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
@@ -466,10 +467,9 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			} else {
 
-
-
-			    // Set the expiration time
-				if (!mode.isAdmin) {
+				// Set the expiration time
+				// Sometimes when The PageMode flag is LIVE, and we are serving a live view of the page from within the admin tool we might end up caching images that we shouldn't
+				if (!isDotAdminRequest(req) && !mode.isAdmin) {
 
 				    int _daysCache = 365;
 				    GregorianCalendar expiration = new GregorianCalendar();

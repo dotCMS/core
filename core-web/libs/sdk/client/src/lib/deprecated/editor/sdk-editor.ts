@@ -23,7 +23,7 @@ export function updateNavigation(pathname: string): void {
     postMessageToEditor({
         action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
         payload: {
-            url: pathname === '/' ? 'index' : pathname?.replace('/', '')
+            url: pathname || '/'
         }
     });
 }

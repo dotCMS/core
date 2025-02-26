@@ -5,6 +5,12 @@ Feature: Test Time Machine functionality
     * def CONTENTLET_ONE_V1 = 'test 1'
     * def CONTENTLET_ONE_V2 = 'test 1 v2 (This ver will be publshed in the future)'
     * def CONTENTLET_TWO_V2 = 'test 2 v2'
+    * def CONTENTLET_THREE_V1 = 'test 3'
+    * def CONTENTLET_THREE_V2 = 'test 3 v2'
+
+    * def BANNER_CONTENTLET_ONE_V1 = 'banner 1'
+    * def BANNER_CONTENTLET_ONE_V2 = 'banner 1 v2'
+    * def NON_PUBLISHED_CONTENTLET = 'Working version Only! with publish date'
 
     * callonce read('classpath:graphql/ftm/setup.feature')
 
@@ -20,12 +26,79 @@ Feature: Test Time Machine functionality
     * match titles contains CONTENTLET_ONE_V1
     # This is the second version of the content, This one is already published therefore it should be displayed
     * match titles contains CONTENTLET_TWO_V2
+    # This is the first version of the banner content which is already published therefore it should be displayed
+    * match titles contains BANNER_CONTENTLET_ONE_V1
+
+    * match titles !contains CONTENTLET_ONE_V2
+    * match titles !contains NON_PUBLISHED_CONTENTLET
+    * match titles !contains BANNER_CONTENTLET_ONE_V2
+
     * karate.log('pageContents:', pageContents)
     # Check the rendered page. The same items included as contentlets should be displayed here too
     * def rendered = response.entity.page.rendered
     * karate.log('rendered:', rendered)
     * match rendered contains CONTENTLET_ONE_V1
     * match rendered contains CONTENTLET_TWO_V2
+    * match rendered contains BANNER_CONTENTLET_ONE_V1
+
+    * match rendered !contains NON_PUBLISHED_CONTENTLET
+    * match rendered !contains CONTENTLET_ONE_V2
+    * match rendered !contains BANNER_CONTENTLET_ONE_V2
+
+
+  @smoke @positive @ftm
+  Scenario: Test Time Machine functionality when publish date is provided with current date
+    Given url baseUrl + '/api/v1/page/render/'+pageUrl+'?language_id=1&mode=LIVE&publishDate='+formattedCurrentDateTime
+    And headers commonHeaders
+    When method GET
+    Then status 200
+    * def pageContents = extractContentlets (response)
+    * def titles = pageContents.map(x => x.title)
+    # This is the first version of the content, test 1 v2 as the title says it will be published in the future
+    * match titles contains CONTENTLET_ONE_V1
+    # This is the second version of the content, this one is already published therefore it should be displayed
+    * match titles contains CONTENTLET_TWO_V2
+    # This is the first version of the banner content which is already published therefore it should be displayed
+    * match titles contains BANNER_CONTENTLET_ONE_V1
+
+    * match titles !contains CONTENTLET_ONE_V2
+    * match titles !contains NON_PUBLISHED_CONTENTLET
+    * match titles !contains BANNER_CONTENTLET_ONE_V2
+
+    * karate.log('pageContents:', pageContents)
+    # Check the rendered page. The same items included as contentlets should be displayed here too
+    * def rendered = response.entity.page.rendered
+    * karate.log('rendered:', rendered)
+    * match rendered contains CONTENTLET_ONE_V1
+    * match rendered contains CONTENTLET_TWO_V2
+    * match rendered contains BANNER_CONTENTLET_ONE_V1
+
+    * match rendered !contains CONTENTLET_ONE_V2
+    * match rendered !contains NON_PUBLISHED_CONTENTLET
+    * match rendered !contains BANNER_CONTENTLET_ONE_V2
+
+  @positive @ftm
+  Scenario: Test Time Machine functionality when a publish date is provided within grace window expect the future content not to be displayed
+    Given url baseUrl + '/api/v1/page/render/'+pageUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTimeInGraceWindow
+    And headers commonHeaders
+    When method GET
+    Then status 200
+    * karate.log('request date now:: ', java.time.LocalDateTime.now())
+    * def pageContents = extractContentlets (response)
+    * def titles = pageContents.map(x => x.title)
+    # This is the first version of the content, this one is already published therefore it should be displayed
+    * match titles contains CONTENTLET_THREE_V1
+    # This is the second version of the content, this one is already published but is within the FTM grace window,
+    # therefore it should not be displayed
+    * match titles !contains CONTENTLET_THREE_V2
+
+    * karate.log('pageContents:', pageContents)
+    # Check the rendered page. The same items included as contentlets should be displayed here too
+    * def rendered = response.entity.page.rendered
+    * karate.log('rendered:', rendered)
+    * match rendered contains CONTENTLET_THREE_V1
+    * match rendered !contains CONTENTLET_THREE_V2
+
 
   @positive @ftm
   Scenario: Test Time Machine functionality when a publish date is provided expect the future content to be displayed
@@ -39,10 +112,22 @@ Feature: Test Time Machine functionality
     * def titles = pageContents.map(x => x.title)
     * match titles contains CONTENTLET_ONE_V2
     * match titles contains CONTENTLET_TWO_V2
-    * def rendered = response.entity.page.rendered
+    * match titles contains NON_PUBLISHED_CONTENTLET
+    * match titles contains BANNER_CONTENTLET_ONE_V2
+
+    * match titles !contains CONTENTLET_ONE_V1
+    * match titles !contains BANNER_CONTENTLET_ONE_V1
+
+    * karate.log('pageContents:', pageContents)
     # Check the rendered page. The same items included as contentlets should be displayed here too
+    * def rendered = response.entity.page.rendered
+    * karate.log('rendered:', rendered)
     * match rendered contains CONTENTLET_ONE_V2
     * match rendered contains CONTENTLET_TWO_V2
+
+    * match rendered contains NON_PUBLISHED_CONTENTLET
+
+    * match rendered contains BANNER_CONTENTLET_ONE_V2
 
   @smoke @positive @graphql @ftm
   Scenario: Send GraphQL query to fetch page details no publish date is sent

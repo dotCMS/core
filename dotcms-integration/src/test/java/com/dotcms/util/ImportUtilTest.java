@@ -1436,10 +1436,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results =
                     LocalTransaction.wrapReturnWithListeners( ()-> importFile(inode, titleField, csvreader2, reader2));
             //Validations
-            validate(results, false, false, true);
-            Logger.info(this, "results.get(\"warnings\"): " + results.get("warnings"));
-            assertEquals(results.get("warnings").size(), 3);
-            assertEquals(results.get("errors").size(), 0);
+            validate(results, false, false, false);
 
             Thread.sleep(2000);
 
@@ -1685,7 +1682,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     new String[]{
                             parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode()});
 
-            validate(results, false,false, true);
+            validate(results, false,false, false);
 
             //validate that related content was wiped out
             final List<Tree> childTrees = relationshipAPI
@@ -1757,7 +1754,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     new String[]{
                             parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode()});
 
-            validate(results, false,false, true);
+            validate(results, false,false, false);
             //validate that related content is kept
             final List<Tree> childTrees = relationshipAPI
                     .relatedContentTrees(relationship, parentContentlet, true);
@@ -2472,7 +2469,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Validations
             validate(results, true, true, false);
 
-            assertEquals(4,results.get("errors").size());//one for each line, and the fourth one is the summary
+            assertEquals(3,results.get("errors").size());//one for each line
 
             final List<Contentlet> savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);

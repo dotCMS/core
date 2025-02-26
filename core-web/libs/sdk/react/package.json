@@ -9,30 +9,9 @@
     "@tinymce/tinymce-react": "^5.1.1"
   },
   "description": "Official React Components library to render a dotCMS page.",
-  "main": "./index.js",
-  "module": "./index.js",
-  "types": "./index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": ["./dist/index.d.ts"],
-      "next": ["./dist/next.d.ts"]
-    }
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./next": {
-      "types": "./dist/next.d.ts",
-      "import": "./dist/next.js",
-      "require": "./dist/next.cjs"
-    }
   },
   "keywords": [
     "dotCMS",
