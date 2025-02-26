@@ -1,6 +1,4 @@
 import { ClientOptions } from '../../../../deprecated/sdk-js-client';
-import { Equals } from '../../../../query-builder/lucene-syntax';
-import { QueryBuilder } from '../../../../query-builder/sdk-query-builder';
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
@@ -12,6 +10,8 @@ import {
     OnRejected
 } from '../../shared/types';
 import { sanitizeQueryForContentType } from '../../shared/utils';
+import { Equals } from '../query/lucene-syntax';
+import { QueryBuilder } from '../query/query';
 
 /**
  * Creates a Builder to filter and fetch content from the content API for a specific content type.

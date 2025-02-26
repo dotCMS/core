@@ -19,15 +19,15 @@ export interface DotCMSClientConfig {
     dotcmsUrl: string;
 
     /**
-     * The id of the site you want to interact with. Defaults to the default site if not provided.
-     */
-    siteId?: string;
-
-    /**
      * The authentication token for requests.
      * Obtainable from the dotCMS UI.
      */
     authToken: string;
+
+    /**
+     * The id of the site you want to interact with. Defaults to the default site if not provided.
+     */
+    siteId?: string;
 
     /**
      * Additional options for the fetch request.
@@ -89,36 +89,13 @@ class DotCMSClient {
      * @throws Warning if dotcmsUrl is invalid or authToken is missing
      */
     constructor(config: DotCMSClientConfig = defaultConfig) {
-        this.config = this.validateAndNormalizeConfig(config);
+        this.config = config;
         this.requestOptions = this.createAuthenticatedRequestOptions(this.config);
 
         // Initialize clients
         this.page = new PageClient(this.config, this.requestOptions);
         this.nav = new NavigationClient(this.config, this.requestOptions);
         this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
-    }
-
-    /**
-     * Validates and normalizes the client configuration.
-     *
-     * @param config - The user-provided configuration
-     * @returns The validated and normalized configuration
-     */
-    private validateAndNormalizeConfig(config: DotCMSClientConfig): DotCMSClientConfig {
-        const dotcmsUrl = parseUrl(config.dotcmsUrl)?.origin;
-
-        if (!dotcmsUrl) {
-            console.warn("Invalid configuration - 'dotcmsUrl' must be a valid URL");
-        }
-
-        if (!config.authToken) {
-            console.warn("Invalid configuration - 'authToken' is required");
-        }
-
-        return {
-            ...config,
-            dotcmsUrl: dotcmsUrl ?? window.location.origin
-        };
     }
 
     /**
@@ -154,4 +131,23 @@ class DotCMSClient {
  * const pages = await client.page.get('/about-us');
  * ```
  */
-export const dotCMSCreateClient = (config: DotCMSClientConfig) => new DotCMSClient(config);
+export const dotCMSCreateClient = (clientConfig: DotCMSClientConfig) => {
+    const { dotcmsUrl, authToken } = clientConfig || {};
+    const instanceUrl = parseUrl(dotcmsUrl)?.origin;
+
+    if (!instanceUrl) {
+        throw new TypeError("Invalid configuration - 'dotcmsUrl' must be a valid URL");
+    }
+
+    if (!authToken) {
+        throw new TypeError("Invalid configuration - 'authToken' is required");
+    }
+
+    const config = {
+        ...clientConfig,
+        authToken,
+        dotcmsUrl: instanceUrl
+    };
+
+    return new DotCMSClient(config);
+};

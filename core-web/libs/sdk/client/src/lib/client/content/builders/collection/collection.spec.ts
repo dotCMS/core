@@ -3,9 +3,9 @@
 import { CollectionBuilder } from './collection';
 
 import { ClientOptions } from '../../../../deprecated/sdk-js-client';
-import { Equals } from '../../../../query-builder/lucene-syntax';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortBy } from '../../shared/types';
+import { Equals } from '../query/lucene-syntax';
 
 global.fetch = jest.fn().mockReturnValue(
     Promise.resolve({

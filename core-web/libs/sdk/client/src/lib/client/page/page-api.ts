@@ -3,7 +3,7 @@ import {
     buildQueries,
     fetchGraphQL,
     mapResponseData
-} from './get-personalized-page';
+} from './utils';
 
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
@@ -133,11 +133,11 @@ export class PageClient {
 
     async getPersonalizedPage({
         url,
+        nav,
+        content,
+        pageFragment,
         languageId = '1',
         mode = 'LIVE',
-        pageFragment,
-        content,
-        nav
     }: {
         url: string;
         languageId: string;
@@ -168,7 +168,6 @@ export class PageClient {
         const contentResponse = mapResponseData(data, Object.keys(content || {}));
         const navResponse = mapResponseData(data, Object.keys(nav || {}));
 
-        // Devolver Page Asset
         /**
          * const { template, viewAs, layout, container, ...restPage } = page;
          * return {
