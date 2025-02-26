@@ -13,10 +13,31 @@
     "UVE",
     "Universal Visual Editor"
   ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./src/types.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts",
+      "node": "./src/index.ts"
+    },
+    "./types": {
+      "types": "./src/types.ts",
+      "import": "./src/types.ts",
+      "require": "./src/types.ts",
+      "node": "./src/types.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      ".": ["./src/index.d.ts"],
+      "types": ["./src/types.d.ts"]
+    }
+  },
   "author": "dotcms <dev@dotcms.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
   },
-  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/client/README.md"
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/uve/README.md"
 }
