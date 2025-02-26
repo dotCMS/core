@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 
 import { Table, TableModule } from 'primeng/table';
@@ -57,9 +57,9 @@ describe('DotKeyValueComponent', () => {
             props: {
                 showHiddenField: false,
                 variables: mockKeyValue
-            },
-            detectChanges: false
+            }
         });
+        spectator.detectChanges();
     });
 
     it('should load the component with no rows', () => {
@@ -76,7 +76,6 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should load the component with data', () => {
-        spectator.detectChanges();
         const table = spectator.query(Table);
         const tableRow = spectator.queryAll(DotKeyValueTableRowComponent);
 
@@ -87,29 +86,29 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should call `event.stopPropagation()` when keydown.enter event is triggered', () => {
-        const event = new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' });
-        const stopPropagationSpy = spyOn(event, 'stopPropagation');
-        const table = spectator.query('p-table'); // Use Table directly
-        spectator.detectChanges();
+        const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+        const stopPropagationSpy = jest.spyOn(event, 'stopPropagation');
+        const table = spectator.query('p-table');
 
         table.dispatchEvent(event);
+        spectator.detectChanges();
 
         expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should update an existing variable', () => {
-        const spyUpdate = spyOn(spectator.component.update, 'emit');
-        const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
-
-        spectator.detectChanges();
-
+        const spyUpdate = jest.spyOn(spectator.component.update, 'emit');
+        const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
         const tableRow = spectator.query(DotKeyValueTableRowComponent);
+
         const update = {
             ...mockKeyValue[0],
             value: 'new value'
         };
 
         tableRow.save.emit(update);
+        spectator.detectChanges();
+
         expect(spyUpdate).toHaveBeenCalledWith({
             variable: update,
             oldVariable: mockKeyValue[0]
@@ -118,31 +117,29 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should save a new variable', () => {
-        const spySave = spyOn(spectator.component.save, 'emit');
-        const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
+        const spySave = jest.spyOn(spectator.component.save, 'emit');
+        const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
         const newVariable = {
             key: 'newKey',
             value: 'newValue',
             hidden: false
         };
 
-        spectator.detectChanges();
-
         const tableInput = spectator.query(DotKeyValueTableInputRowComponent);
         tableInput.save.emit(newVariable);
+        spectator.detectChanges();
 
         expect(spySave).toHaveBeenCalledWith(newVariable);
         expect(spyUpdatedList).toHaveBeenCalledWith([newVariable, ...mockKeyValue]);
     });
 
     it('should delete a variable from the list', () => {
-        const spyDelete = spyOn(spectator.component.delete, 'emit');
-        const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
-
-        spectator.detectChanges();
-
+        const spyDelete = jest.spyOn(spectator.component.delete, 'emit');
+        const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
         const tableRow = spectator.query(DotKeyValueTableRowComponent);
+
         tableRow.delete.emit(mockKeyValue[0]);
+        spectator.detectChanges();
 
         expect(spyDelete).toHaveBeenCalledWith(mockKeyValue[0]);
         expect(spyUpdatedList).toHaveBeenCalledWith([mockKeyValue[1]]);
@@ -162,38 +159,36 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should save a hidden variable', () => {
-            const spysave = spyOn(spectator.component.save, 'emit');
-            const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
-
+            const spySave = jest.spyOn(spectator.component.save, 'emit');
+            const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
             const newVariable = {
                 key: 'newKey',
                 value: 'newValue',
-                hidden: false
+                hidden: true
             };
-
-            spectator.detectChanges();
 
             const tableInput = spectator.query(DotKeyValueTableInputRowComponent);
             tableInput.save.emit(newVariable);
+            spectator.detectChanges();
 
-            expect(spysave).toHaveBeenCalledWith(newVariable);
+            expect(spySave).toHaveBeenCalledWith(newVariable);
             expect(spyUpdatedList).toHaveBeenCalledWith([newVariable, ...mockKeyValue]);
         });
 
         it('should update an existing variable', () => {
-            const spyupdate = spyOn(spectator.component.update, 'emit');
-            const spyUpdatedList = spyOn(spectator.component.updatedList, 'emit');
-
-            spectator.detectChanges();
-
+            const spyUpdate = jest.spyOn(spectator.component.update, 'emit');
+            const spyUpdatedList = jest.spyOn(spectator.component.updatedList, 'emit');
             const tableRow = spectator.query(DotKeyValueTableRowComponent);
+
             const update = {
                 ...mockKeyValue[0],
                 hidden: true
             };
 
             tableRow.save.emit(update);
-            expect(spyupdate).toHaveBeenCalledWith({
+            spectator.detectChanges();
+
+            expect(spyUpdate).toHaveBeenCalledWith({
                 variable: update,
                 oldVariable: mockKeyValue[0]
             });
