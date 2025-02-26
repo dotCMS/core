@@ -27,6 +27,12 @@
     ".": "./src/index.ts",
     "./next": "./src/next.ts"
   },
+  "typesVersions": {
+    "*": {
+      ".": ["./src/index.d.ts"],
+      "next": ["./src/next.d.ts"]
+    }
+  },
   "author": "dotcms <dev@dotcms.com>",
   "license": "MIT",
   "bugs": {
