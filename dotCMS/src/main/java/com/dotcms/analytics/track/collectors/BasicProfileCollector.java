@@ -1,13 +1,15 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.telemetry.business.MetricsAPI;
 import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.util.PageMode;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
@@ -15,12 +17,14 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 /**
- * Collects the basic profile information for a collector payload bean.
+ * Collects the basic profile information for a collector payload bean. It's worth noting that
+ * <b>ALL</b>ALL data collectors will include the information added by this one.
+ *
  * @author jsanca
+ * @since Sep 17th, 2024
  */
 public class BasicProfileCollector implements Collector {
 
@@ -56,6 +60,8 @@ public class BasicProfileCollector implements Collector {
         collectorPayloadBean.put(SESSION_ID, sessionId);
         collectorPayloadBean.put(SESSION_NEW, sessionNew);
 
+        this.setCustomerTelemetryData(collectorPayloadBean);
+
         if (UtilMethods.isSet(collectorContextMap.get(CollectorContextMap.REFERER))) {
             collectorPayloadBean.put(REFERER, collectorContextMap.get(CollectorContextMap.REFERER).toString());
         }
@@ -83,13 +89,34 @@ public class BasicProfileCollector implements Collector {
         return collectorPayloadBean;
     }
 
+    /**
+     * Sets the customer Telemetry data as part of the information that will be persisted to the
+     * Content Analytics database.
+     *
+     * @param collectorPayloadBean The {@link CollectorPayloadBean} that will be persisted to the
+     *                             Content Analytics database.
+     */
+    private void setCustomerTelemetryData(final CollectorPayloadBean collectorPayloadBean) {
+        final MetricsAPI metricsAPI = APILocator.getMetricsAPI();
+        try {
+            final MetricsAPI.Client client = metricsAPI.getClient();
+            collectorPayloadBean.put(CUSTOMER_NAME, client.getClientName());
+            collectorPayloadBean.put(CUSTOMER_CATEGORY, client.getCategory());
+            collectorPayloadBean.put(ENVIRONMENT_NAME, client.getEnvironment());
+            collectorPayloadBean.put(ENVIRONMENT_VERSION, client.getVersion());
+        } catch (final DotDataException e) {
+            Logger.warnAndDebug(BasicProfileCollector.class, String.format("Failed to retrieve customer Telemetry data: " +
+                    "%s", ExceptionUtil.getErrorMessage(e)), e);
+        }
+    }
+
     private void setUserInfo(final HttpServletRequest request, final CollectorPayloadBean collectorPayloadBean) {
 
         final User user = WebAPILocator.getUserWebAPI().getUser(request);
         if (Objects.nonNull(user)) {
 
             final HashMap<String, String> userObject = new HashMap<>();
-            userObject.put(ID, user.getUserId().toString());
+            userObject.put(ID, user.getUserId());
             userObject.put(EMAIL, user.getEmailAddress());
             collectorPayloadBean.put(USER_OBJECT, userObject);
         }

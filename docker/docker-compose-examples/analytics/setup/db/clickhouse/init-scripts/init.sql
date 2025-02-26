@@ -4,6 +4,10 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     _timestamp               DateTime,
     api_key                  String,
     cluster_id               String,
+    customer_name            String,
+    customer_category        String,
+    environment_name         String,
+    environment_version      String,
     customer_id              String,
     doc_encoding             String,
     doc_host                 String,
@@ -110,3 +114,9 @@ ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_detail_page_u
 ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_url;
 ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS object_forward_to;
 ALTER TABLE clickhouse_test_db.events DROP COLUMN IF EXISTS comefromvanityurl;
+
+
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS customer_name String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS customer_category String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS environment_name String;
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS environment_version String;
