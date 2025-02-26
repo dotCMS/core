@@ -42,21 +42,31 @@ export class NavigationClient {
         const navParams = params ? this.mapToBackendParams(params) : {};
         const urlParams = new URLSearchParams(navParams).toString();
 
-        const url = `${this.BASE_URL}/${path}${urlParams ? `?${urlParams}` : ''}`;
+        const pathWithoutSlash = path.replace(/^\//, '');
+        const url = `${this.BASE_URL}/${pathWithoutSlash}${urlParams ? `?${urlParams}` : ''}`;
 
         const response = await fetch(url, this.requestOptions);
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch navigation data: ${response.statusText}`);
+            throw new Error(
+                `Failed to fetch navigation data: ${response.statusText} - ${response.status}`
+            );
         }
 
         return response.json().then((data) => data.entity);
     }
 
     private mapToBackendParams(params: NavRequestParams): Record<string, string> {
-        return {
-            depth: params.depth ? String(params.depth) : '',
-            language_id: params.languageId ? String(params.languageId) : ''
-        };
+        const backendParams: Record<string, string> = {};
+
+        if (params.depth) {
+            backendParams['depth'] = String(params.depth);
+        }
+
+        if (params.languageId) {
+            backendParams['language_id'] = String(params.languageId);
+        }
+
+        return backendParams;
     }
 }
