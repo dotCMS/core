@@ -2,8 +2,8 @@
 
 import { CollectionBuilder } from './collection';
 
+import { ClientOptions } from '../../../../deprecated/sdk-js-client';
 import { Equals } from '../../../../query-builder/lucene-syntax';
-import { ClientOptions } from '../../../deprecated/sdk-js-client';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortBy } from '../../shared/types';
 

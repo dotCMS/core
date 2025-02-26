@@ -34,14 +34,14 @@ export class NavigationClient {
      * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
      * @throws {Error} - Throws an error if the options are not valid.
      */
-    async get(path: string, params: NavRequestParams): Promise<unknown> {
+    async get(path: string, params?: NavRequestParams): Promise<unknown> {
         if (!path) {
             throw new Error("The 'path' parameter is required for the Navigation API");
         }
 
-        const navParams = this.mapToBackendParams(params);
-
+        const navParams = params ? this.mapToBackendParams(params) : {};
         const urlParams = new URLSearchParams(navParams).toString();
+
         const url = `${this.BASE_URL}/${path}${urlParams ? `?${urlParams}` : ''}`;
 
         const response = await fetch(url, this.requestOptions);

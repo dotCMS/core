@@ -1,9 +1,15 @@
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
-import { PageClient } from './page/page-client';
+import { PageClient } from './page/page-api';
 
+/**
+ * Options for configuring fetch requests, excluding body and method properties.
+ */
 export type RequestOptions = Omit<RequestInit, 'body' | 'method'>;
 
+/**
+ * Configuration options for the DotCMS client.
+ */
 export interface DotCMSClientConfig {
     /**
      * The URL of the dotCMS instance.
@@ -25,10 +31,17 @@ export interface DotCMSClientConfig {
 
     /**
      * Additional options for the fetch request.
+     * @example `{ headers: { 'Content-Type': 'application/json' } }`
      */
     requestOptions?: RequestOptions;
 }
 
+/**
+ * Parses a string into a URL object.
+ *
+ * @param url - The URL string to parse
+ * @returns A URL object if parsing is successful, undefined otherwise
+ */
 function parseUrl(url: string): URL | undefined {
     try {
         return new URL(url);
@@ -37,6 +50,9 @@ function parseUrl(url: string): URL | undefined {
     }
 }
 
+/**
+ * Default configuration for the DotCMS client.
+ */
 const defaultConfig: DotCMSClientConfig = {
     dotcmsUrl: '',
     authToken: '',
@@ -44,53 +60,98 @@ const defaultConfig: DotCMSClientConfig = {
 };
 
 /**
- * `DotCMSClient` provides methods to interact with the DotCMS REST API.
+ * Client for interacting with the DotCMS REST API.
+ * Provides access to content, page, and navigation functionality.
  */
 class DotCMSClient {
     private config: DotCMSClientConfig;
     private requestOptions!: RequestOptions;
 
-    dotcmsUrl?: string;
+    /**
+     * Client for content-related operations.
+     */
     content: Content;
+
+    /**
+     * Client for page-related operations.
+     */
     page: PageClient;
+
+    /**
+     * Client for navigation-related operations.
+     */
     nav: NavigationClient;
 
+    /**
+     * Creates a new DotCMS client instance.
+     *
+     * @param config - Configuration options for the client
+     * @throws Warning if dotcmsUrl is invalid or authToken is missing
+     */
     constructor(config: DotCMSClientConfig = defaultConfig) {
-        this.config = this.initializeConfig(config);
-        this.requestOptions = this.initializeRequestOptions(this.config);
+        this.config = this.validateAndNormalizeConfig(config);
+        this.requestOptions = this.createAuthenticatedRequestOptions(this.config);
 
         // Initialize clients
         this.page = new PageClient(this.config, this.requestOptions);
-        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
         this.nav = new NavigationClient(this.config, this.requestOptions);
+        this.content = new Content(this.requestOptions, this.config.dotcmsUrl);
     }
 
-    private initializeConfig(config: DotCMSClientConfig): DotCMSClientConfig {
-        const dotcmsUrl = parseUrl(config.dotcmsUrl)?.origin ?? '';
+    /**
+     * Validates and normalizes the client configuration.
+     *
+     * @param config - The user-provided configuration
+     * @returns The validated and normalized configuration
+     */
+    private validateAndNormalizeConfig(config: DotCMSClientConfig): DotCMSClientConfig {
+        const dotcmsUrl = parseUrl(config.dotcmsUrl)?.origin;
 
         if (!dotcmsUrl) {
-            throw new Error("Invalid configuration - 'dotcmsUrl' must be a valid URL");
+            console.warn("Invalid configuration - 'dotcmsUrl' must be a valid URL");
         }
 
         if (!config.authToken) {
-            throw new Error("Invalid configuration - 'authToken' is required");
+            console.warn("Invalid configuration - 'authToken' is required");
         }
 
         return {
             ...config,
-            dotcmsUrl
+            dotcmsUrl: dotcmsUrl ?? window.location.origin
         };
     }
 
-    private initializeRequestOptions(config: DotCMSClientConfig): RequestOptions {
+    /**
+     * Creates request options with authentication headers.
+     *
+     * @param config - The client configuration
+     * @returns Request options with authorization headers
+     */
+    private createAuthenticatedRequestOptions(config: DotCMSClientConfig): RequestOptions {
         return {
             ...config.requestOptions,
             headers: {
-                Authorization: `Bearer ${config.authToken}`,
-                ...config.requestOptions?.headers
+                ...config.requestOptions?.headers,
+                Authorization: `Bearer ${config.authToken}`
             }
         };
     }
 }
 
+/**
+ * Creates and returns a new DotCMS client instance.
+ *
+ * @param config - Configuration options for the client
+ * @returns A configured DotCMS client instance
+ * @example
+ * ```typescript
+ * const client = dotCMSCreateClient({
+ *   dotcmsUrl: 'https://demo.dotcms.com',
+ *   authToken: 'your-auth-token'
+ * });
+ *
+ * // Use the client to fetch content
+ * const pages = await client.page.get('/about-us');
+ * ```
+ */
 export const dotCMSCreateClient = (config: DotCMSClientConfig) => new DotCMSClient(config);

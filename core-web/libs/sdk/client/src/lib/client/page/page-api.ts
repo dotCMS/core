@@ -92,12 +92,13 @@ export interface BackendPageParams {
 
 export class PageClient {
     private requestOptions: RequestOptions;
-
     private BASE_URL: string;
+    private siteId: string;
 
     constructor(config: DotCMSClientConfig, requestOptions: RequestOptions) {
         this.requestOptions = requestOptions;
         this.BASE_URL = `${config?.dotcmsUrl}/api/v1/page`;
+        this.siteId = config.siteId || '';
     }
 
     /**
@@ -196,7 +197,7 @@ export class PageClient {
      */
     private mapToBackendParams(params: PageRequestParams): BackendPageParams {
         return {
-            hostId: params.siteId,
+            hostId: params.siteId || this.siteId,
             mode: params.mode,
             language_id: params.languageId ? String(params.languageId) : '',
             'com.dotmarketing.persona.id': params.personaId,
