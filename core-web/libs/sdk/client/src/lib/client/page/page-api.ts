@@ -1,9 +1,4 @@
-import {
-    buildPageQuery,
-    buildQueries,
-    fetchGraphQL,
-    mapResponseData
-} from './utils';
+import { buildPageQuery, buildQueries, fetchGraphQL, mapResponseData } from './utils';
 
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
@@ -90,11 +85,50 @@ export interface BackendPageParams {
     publishDate?: string;
 }
 
+/**
+ * Client for interacting with the DotCMS Page API.
+ * Provides methods to retrieve and manipulate pages.
+ */
 export class PageClient {
+    /**
+     * Request options including authorization headers.
+     * @private
+     */
     private requestOptions: RequestOptions;
+
+    /**
+     * Base URL for page API endpoints.
+     * @private
+     */
     private BASE_URL: string;
+
+    /**
+     * Site ID for page requests.
+     * @private
+     */
     private siteId: string;
 
+    /**
+     * Creates a new PageClient instance.
+     *
+     * @param {DotCMSClientConfig} config - Configuration options for the DotCMS client
+     * @param {RequestOptions} requestOptions - Options for fetch requests including authorization headers
+     * @example
+     * ```typescript
+     * const pageClient = new PageClient(
+     *   {
+     *     dotcmsUrl: 'https://demo.dotcms.com',
+     *     authToken: 'your-auth-token',
+     *     siteId: 'demo.dotcms.com'
+     *   },
+     *   {
+     *     headers: {
+     *       Authorization: 'Bearer your-auth-token'
+     *     }
+     *   }
+     * );
+     * ```
+     */
     constructor(config: DotCMSClientConfig, requestOptions: RequestOptions) {
         this.requestOptions = requestOptions;
         this.BASE_URL = `${config?.dotcmsUrl}/api/v1/page`;
@@ -103,9 +137,28 @@ export class PageClient {
 
     /**
      * Retrieves all the elements of a Page in your dotCMS system in JSON format.
-     * @param {PageRequestParams} options - The options for the Page API call.
-     * @returns {Promise<unknown>} - A Promise that resolves to the response from the DotCMS API.
-     * @throws {Error} - Throws an error if the options are not valid.
+     *
+     * @param {string} path - The path of the page to retrieve
+     * @param {PageRequestParams} params - The options for the Page API call
+     * @returns {Promise<unknown>} A Promise that resolves to the page data
+     * @throws {Error} Throws an error if the path parameter is missing or if the fetch request fails
+     * @example
+     * ```typescript
+     * // Get a page with default parameters
+     * const homePage = await pageClient.get('/');
+     *
+     * // Get a page with specific language and mode
+     * const aboutPage = await pageClient.get('/about-us', {
+     *   languageId: 2,
+     *   mode: 'PREVIEW_MODE'
+     * });
+     *
+     * // Get a page with persona targeting
+     * const productPage = await pageClient.get('/products', {
+     *   personaId: 'persona-123',
+     *   depth: 2
+     * });
+     * ```
      */
     async get(path: string, params: PageRequestParams): Promise<unknown> {
         if (!path) {
@@ -131,13 +184,65 @@ export class PageClient {
         return response.json().then((data) => data.entity);
     }
 
+    /**
+     * Retrieves a personalized page with associated content and navigation.
+     *
+     * @param {Object} options - Options for the personalized page request
+     * @param {string} options.url - The URL of the page to retrieve
+     * @param {string} options.languageId - The language ID for the page content
+     * @param {string} options.mode - The rendering mode for the page
+     * @param {string} options.pageFragment - GraphQL fragment for page data
+     * @param {Record<string, string>} options.content - Content queries to include
+     * @param {Record<string, string>} options.nav - Navigation queries to include
+     * @returns {Promise<Object>} A Promise that resolves to the personalized page data with content and navigation
+     * @example
+     * ```typescript
+     * // Get a personalized page with content and navigation
+     * const personalizedPage = await pageClient.getPersonalizedPage({
+     *   url: '/about-us',
+     *   languageId: '1',
+     *   mode: 'LIVE',
+     *   pageFragment: `
+     *     fragment PageFields on Page {
+     *       title
+     *       description
+     *       modDate
+     *     }
+     *   `,
+     *   content: {
+     *     blogPosts: `
+     *       query BlogPosts {
+     *         BlogCollection(limit: 3) {
+     *           title
+     *           urlTitle
+     *           publishDate
+     *         }
+     *       }
+     *     `
+     *   },
+     *   nav: {
+     *     mainNav: `
+     *       query MainNav {
+     *         Nav(identifier: "main-nav") {
+     *           title
+     *           items {
+     *             label
+     *             url
+     *           }
+     *         }
+     *       }
+     *     `
+     *   }
+     * });
+     * ```
+     */
     async getPersonalizedPage({
         url,
         nav,
         content,
         pageFragment,
         languageId = '1',
-        mode = 'LIVE',
+        mode = 'LIVE'
     }: {
         url: string;
         languageId: string;
@@ -191,8 +296,24 @@ export class PageClient {
 
     /**
      * Maps public API parameters to private API parameters.
-     * @param {PageRequestParams} params - The public API parameters.
-     * @returns {BackendPageParams} - The private API parameters.
+     *
+     * @param {PageRequestParams} params - The public API parameters
+     * @returns {BackendPageParams} The private API parameters
+     * @private
+     * @example
+     * ```typescript
+     * // Internal usage
+     * const backendParams = this.mapToBackendParams({
+     *   siteId: 'demo.dotcms.com',
+     *   languageId: 1,
+     *   mode: 'LIVE'
+     * });
+     * // Returns: {
+     *   hostId: 'demo.dotcms.com',
+     *   language_id: '1',
+     *   mode: 'LIVE'
+     * }
+     * ```
      */
     private mapToBackendParams(params: PageRequestParams): BackendPageParams {
         return {

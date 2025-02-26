@@ -9,8 +9,8 @@ jest.mock('./navigation/navigation-api');
 jest.mock('./page/page-api');
 
 describe('DotCMSClient', () => {
-    const originalConsoleWarn = console.warn;
-
+    const originalTypeError = global.TypeError;
+    const mockTypeError = jest.fn().mockImplementation((...args) => new originalTypeError(...args));
     const validConfig: DotCMSClientConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',
         authToken: 'test-token',
@@ -24,11 +24,11 @@ describe('DotCMSClient', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        console.warn = jest.fn();
+        global.TypeError = mockTypeError as unknown as ErrorConstructor;
     });
 
     afterAll(() => {
-        console.warn = originalConsoleWarn;
+        global.TypeError = originalTypeError;
     });
 
     it('should initialize sub-clients with correct parameters', () => {
@@ -41,7 +41,6 @@ describe('DotCMSClient', () => {
             }
         };
 
-        // Verify PageClient was initialized correctly
         expect(PageClient).toHaveBeenCalledWith(
             expect.objectContaining({
                 dotcmsUrl: 'https://demo.dotcms.com',
@@ -96,28 +95,38 @@ describe('DotCMSClient', () => {
     });
 
     describe('validation and normalization', () => {
-        it('should warn when dotcmsUrl is invalid', () => {
+        it('should throw TypeError when dotcmsUrl is invalid', () => {
             const invalidConfig = {
                 ...validConfig,
                 dotcmsUrl: 'invalid-url'
             };
 
-            dotCMSCreateClient(invalidConfig);
+            try {
+                dotCMSCreateClient(invalidConfig);
+                fail('Expected TypeError to be thrown');
+            } catch (error) {
+                // This is expected, verify the error
+            }
 
-            expect(console.warn).toHaveBeenCalledWith(
+            expect(mockTypeError).toHaveBeenCalledWith(
                 "Invalid configuration - 'dotcmsUrl' must be a valid URL"
             );
         });
 
-        it('should warn when authToken is missing', () => {
+        it('should throw TypeError when authToken is missing', () => {
             const invalidConfig = {
                 ...validConfig,
                 authToken: ''
             };
 
-            dotCMSCreateClient(invalidConfig);
+            try {
+                dotCMSCreateClient(invalidConfig);
+                fail('Expected TypeError to be thrown');
+            } catch (error) {
+                // This is expected, verify the error
+            }
 
-            expect(console.warn).toHaveBeenCalledWith(
+            expect(mockTypeError).toHaveBeenCalledWith(
                 "Invalid configuration - 'authToken' is required"
             );
         });
@@ -131,28 +140,6 @@ describe('DotCMSClient', () => {
             dotCMSCreateClient(configWithPath);
 
             expect(Content).toHaveBeenCalledWith(expect.anything(), 'https://demo.dotcms.com');
-        });
-
-        it('should use window.location.origin as fallback for invalid URL', () => {
-            const originalLocationOrigin = window.location.origin;
-            Object.defineProperty(window, 'location', {
-                value: { origin: 'https://fallback-origin.com' },
-                writable: true
-            });
-
-            const invalidConfig = {
-                ...validConfig,
-                dotcmsUrl: 'invalid-url'
-            };
-
-            dotCMSCreateClient(invalidConfig);
-
-            expect(Content).toHaveBeenCalledWith(expect.anything(), 'https://fallback-origin.com');
-
-            Object.defineProperty(window, 'location', {
-                value: { origin: originalLocationOrigin },
-                writable: true
-            });
         });
     });
 });
