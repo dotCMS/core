@@ -81,3 +81,10 @@ export enum DotContentletDepths {
 }
 
 export type DotContentletDepth = `${DotContentletDepths}`;
+
+export interface DotContentletCanLock {
+    canLock: boolean;
+    id: string;
+    inode: string;
+    locked: boolean;
+}

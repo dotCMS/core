@@ -286,6 +286,8 @@ export function withContent() {
                                         const initialContentletState =
                                             !scheme || !step ? 'reset' : 'existing';
 
+                                        //console.log('contentType', contentType);
+
                                         patchState(store, {
                                             contentType,
                                             currentSchemeId,

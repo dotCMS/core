@@ -10,6 +10,8 @@
 @let currentLocaleId = currentLocale ? currentLocale.id.toString() : '';
 @let currentIdentifier = $store.currentIdentifier();
 
+@let isContentLocked = $store.isContentLocked();
+
 <!-- TODO: Handle the error, no form -->
 @if (form) {
     <form [formGroup]="form" class="p-fluid dot-edit-content-form h-100">
@@ -77,6 +79,7 @@
             icon="pi pi-chevron-left"
             class="p-button-tertiary p-button-rounded p-button-sm"></button>
     </div>
+    <p-message severity="info" text="messages"></p-message>
 </ng-template>
 
 <!-- Append template to add to the tabs -->
@@ -85,6 +88,17 @@
         class="dot-edit-content-actions"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
+        <!-- Add Content Lock Toggle here -->
+        <div
+            class="dot-edit-content-actions__lock flex align-items-center gap-2"
+            [class.locked]="isContentLocked">
+            <p-inputSwitch
+                [ngModel]="isContentLocked"
+                (onChange)="onContentLockChange($event)"
+                data-testId="content-lock-toggle"></p-inputSwitch>
+            <label class="text-sm">Content Locked</label>
+        </div>
+
         @if ($showPreviewLink()) {
             <button
                 pButton
