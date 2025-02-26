@@ -1,4 +1,4 @@
-import { dotCMSCreateClient, DotCMSClientConfig, RequestOptions } from './client';
+import { createDotCMSClient, DotCMSClientConfig, RequestOptions } from './client';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
 import { PageClient } from './page/page-api';
@@ -32,7 +32,7 @@ describe('DotCMSClient', () => {
     });
 
     it('should initialize sub-clients with correct parameters', () => {
-        dotCMSCreateClient(validConfig);
+        createDotCMSClient(validConfig);
 
         const expectedRequestOptions: RequestOptions = {
             headers: {
@@ -68,7 +68,7 @@ describe('DotCMSClient', () => {
             authToken: 'test-token'
         };
 
-        dotCMSCreateClient(configWithoutHeaders);
+        createDotCMSClient(configWithoutHeaders);
 
         expect(PageClient).toHaveBeenCalledWith(
             expect.anything(),
@@ -81,7 +81,7 @@ describe('DotCMSClient', () => {
     });
 
     it('should preserve existing headers when adding authorization', () => {
-        dotCMSCreateClient(validConfig);
+        createDotCMSClient(validConfig);
 
         expect(PageClient).toHaveBeenCalledWith(
             expect.anything(),
@@ -102,7 +102,7 @@ describe('DotCMSClient', () => {
             };
 
             try {
-                dotCMSCreateClient(invalidConfig);
+                createDotCMSClient(invalidConfig);
                 fail('Expected TypeError to be thrown');
             } catch (error) {
                 // This is expected, verify the error
@@ -120,7 +120,7 @@ describe('DotCMSClient', () => {
             };
 
             try {
-                dotCMSCreateClient(invalidConfig);
+                createDotCMSClient(invalidConfig);
                 fail('Expected TypeError to be thrown');
             } catch (error) {
                 // This is expected, verify the error
@@ -137,7 +137,7 @@ describe('DotCMSClient', () => {
                 dotcmsUrl: 'https://demo.dotcms.com/some/path'
             };
 
-            dotCMSCreateClient(configWithPath);
+            createDotCMSClient(configWithPath);
 
             expect(Content).toHaveBeenCalledWith(expect.anything(), 'https://demo.dotcms.com');
         });

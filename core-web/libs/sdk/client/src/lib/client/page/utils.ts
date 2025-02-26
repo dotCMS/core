@@ -1,5 +1,3 @@
-import { RequestOptions } from '../client';
-
 export const buildPageQuery = ({
     pageFragment,
     contentQueries,
@@ -169,15 +167,15 @@ export function mapResponseData(data: Record<string, string>, keys: string[]) {
 
 export async function fetchGraphQL({
     body,
-    requestOptions
+    headers
 }: {
     body: string;
-    requestOptions: RequestOptions;
+    headers: Record<string, string>;
 }) {
     const response = await fetch('http://localhost:8080/api/v1/graphql', {
         method: 'POST',
         body,
-        headers: requestOptions.headers
+        headers
     });
 
     if (!response.ok) {

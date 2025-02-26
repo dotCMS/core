@@ -160,14 +160,15 @@ export class PageClient {
      * });
      * ```
      */
-    async get(path: string, params: PageRequestParams): Promise<unknown> {
+    async getPageAPI(path: string, params?: PageRequestParams): Promise<unknown> {
         if (!path) {
             throw new Error("The 'path' parameter is required for the Page API");
         }
 
-        const pageParams = this.mapToBackendParams(params) as Record<string, string>;
-        const urlParams = new URLSearchParams(pageParams).toString();
-        const url = `${this.BASE_URL}/json/${path}${urlParams ? `?${urlParams}` : ''}`;
+        const pagePath = path.replace(/^\//, '');
+        const pageParams = this.mapToBackendParams(params || {});
+        const urlParams = new URLSearchParams(pageParams as Record<string, string>).toString();
+        const url = `${this.BASE_URL}/json/${pagePath}${urlParams ? `?${urlParams}` : ''}`;
 
         const response = await fetch(url, this.requestOptions);
 
@@ -236,21 +237,23 @@ export class PageClient {
      * });
      * ```
      */
-    async getPersonalizedPage({
-        url,
-        nav,
-        content,
-        pageFragment,
-        languageId = '1',
-        mode = 'LIVE'
-    }: {
-        url: string;
-        languageId: string;
-        mode: string;
-        pageFragment: string;
-        content: Record<string, string>;
-        nav: Record<string, string>;
-    }) {
+    async getPersonalizedPage(
+        url: string,
+        {
+            nav,
+            content,
+            pageFragment,
+            languageId = '1',
+            mode = 'LIVE'
+        }: {
+            url: string;
+            languageId: string;
+            mode: string;
+            pageFragment: string;
+            content: Record<string, string>;
+            nav: Record<string, string>;
+        }
+    ) {
         const contentQueries = buildQueries(content);
         const navQueries = buildQueries(nav);
 
@@ -266,31 +269,18 @@ export class PageClient {
             languageId
         };
 
+        const headers = this.requestOptions.headers as Record<string, string>;
         const body = JSON.stringify({ query, variables });
-        const data = await fetchGraphQL({ body, requestOptions: this.requestOptions });
+        const data = await fetchGraphQL({ body, headers });
 
         const page = data.page;
         const contentResponse = mapResponseData(data, Object.keys(content || {}));
         const navResponse = mapResponseData(data, Object.keys(nav || {}));
 
-        /**
-         * const { template, viewAs, layout, container, ...restPage } = page;
-         * return {
-         *  pageAsset {
-         *      page: restPage,
-         *      tempalte
-         *      viewAs,
-         *      layout
-         *      container
-         *  }
-         * }
-         *
-         */
         return {
             page,
             content: contentResponse,
-            nav: navResponse,
-            query
+            nav: navResponse
         };
     }
 
