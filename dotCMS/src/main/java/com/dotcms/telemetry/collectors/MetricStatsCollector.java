@@ -46,6 +46,7 @@ import com.dotcms.telemetry.collectors.contenttype.CountOfTextAreaFieldsMetricTy
 import com.dotcms.telemetry.collectors.contenttype.CountOfTextFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfTimeFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfWYSIWYGFieldsMetricType;
+import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricType;
 import com.dotcms.telemetry.collectors.language.HasChangeDefaultLanguagesDatabaseMetricType;
 import com.dotcms.telemetry.collectors.language.OldStyleLanguagesVarialeMetricType;
 import com.dotcms.telemetry.collectors.language.TotalLanguagesDatabaseMetricType;
@@ -223,6 +224,10 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new CountOfTimeFieldsMetricType());
         metricStatsCollectors.add(new CountOfWYSIWYGFieldsMetricType());
 
+        // adding experiments metrics
+        metricStatsCollectors.add(new ExperimentFeatureFlagMetricType());
+
+        // api ones
         metricStatsCollectors.addAll(ApiMetricTypes.INSTANCE.get());
     }
 
