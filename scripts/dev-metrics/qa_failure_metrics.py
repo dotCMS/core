@@ -7,6 +7,9 @@ from github_metrics_base import GitHubMetricsBase
 logger = logging.getLogger(__name__)
 
 class QAFailureMetrics(GitHubMetricsBase):
+    def __init__(self, token, owner, repo, team_label):
+        super().__init__(token=token, owner=owner, repo=repo, team_label=team_label)
+
     def count_qa_failures(self, issue_number, sprint_start, sprint_end):
         """Count how many times an issue received the QA Failed label during the sprint period"""
         events = self.get_issue_events(issue_number)
@@ -42,6 +45,7 @@ class QAFailureMetrics(GitHubMetricsBase):
             
             # Filter issues
             for issue in page_issues:
+                logger.info(f"Processing issue {issue['number']} - {issue['title']}")
                 if self.should_skip_issue(issue, sprint_end):
                     continue
                         

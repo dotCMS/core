@@ -75,8 +75,8 @@ describe('DotDialogComponent', () => {
         let hostComponent: TestHostComponent;
         let hostDe: DebugElement;
         let hostFixture: ComponentFixture<TestHostComponent>;
-        let accceptAction: jasmine.Spy;
-        let cancelAction: jasmine.Spy;
+        let accceptAction: jest.Mock;
+        let cancelAction: jest.Mock;
 
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule({
@@ -90,8 +90,8 @@ describe('DotDialogComponent', () => {
             hostFixture = TestBed.createComponent(TestHostComponent);
             hostDe = hostFixture.debugElement;
             hostComponent = hostFixture.componentInstance;
-            accceptAction = jasmine.createSpy('ok');
-            cancelAction = jasmine.createSpy('cancel');
+            accceptAction = jest.fn();
+            cancelAction = jest.fn();
         });
 
         describe('default', () => {
@@ -229,8 +229,8 @@ describe('DotDialogComponent', () => {
 
             describe('events', () => {
                 beforeEach(() => {
-                    spyOn(component.hide, 'emit').and.callThrough();
-                    spyOn(component.visibleChange, 'emit').and.callThrough();
+                    jest.spyOn(component.hide, 'emit');
+                    jest.spyOn(component.visibleChange, 'emit');
                 });
 
                 it('should close dialog and emit close', () => {
@@ -277,7 +277,7 @@ describe('DotDialogComponent', () => {
                 });
 
                 it('it should click target on content scroll', () => {
-                    const clickSpy = jasmine.createSpy('clickSpy');
+                    const clickSpy = jest.fn();
                     const content: DebugElement = de.query(By.css('.dialog__content'));
                     content.triggerEventHandler('scroll', {
                         target: {
@@ -492,8 +492,8 @@ describe('DotDialogComponent', () => {
             hostFixture.detectChanges();
             de = hostDe.query(By.css('dot-dialog'));
             component = de.componentInstance;
-            spyOn(component.visibleChange, 'emit').and.callThrough();
-            spyOn(component.beforeClose, 'emit').and.callThrough();
+            jest.spyOn(component.visibleChange, 'emit');
+            jest.spyOn(component.beforeClose, 'emit');
         });
 
         it('should emit beforeClose', () => {

@@ -26,6 +26,7 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
@@ -61,12 +62,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -142,6 +138,7 @@ public class PageResource {
     public static final String TM_LANG = "tm_lang";
     public static final String TM_HOST = "tm_host";
     public static final String DOT_CACHE = "dotcache";
+    public static final String IS_PAGE_RESOURCE = "pageResource";
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -355,19 +352,12 @@ public class PageResource {
         if (null != deviceInode){
             builder.deviceInode(deviceInode);
         }
-        if (null != timeMachineDateAsISO8601) {
-            final Date date;
-            try {
-                date = Try.of(() -> DateUtil.convertDate(timeMachineDateAsISO8601)).getOrElseThrow(
-                        e -> new IllegalArgumentException(
-                                String.format("Error Parsing date: %s", timeMachineDateAsISO8601),
-                                e));
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException(e);
-            }
-            final Instant instant = date.toInstant();
-            builder.timeMachineDate(instant);
-        }
+        TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601).ifPresentOrElse(
+                builder::timeMachineDate,
+                () -> Logger.debug(this, () -> String.format(
+                        "Date %s is not older than the grace window. Skipping Time Machine setup.",
+                        timeMachineDateAsISO8601))
+        );
         return builder.build();
     }
 
@@ -404,8 +394,16 @@ public class PageResource {
                         .isPermanentRedirect()) {
                     Logger.debug(this, () -> String.format("Incoming Vanity URL is a %d Redirect",
                             cachedVanityUrlOpt.get().response));
+
+                    final CachedVanityUrl cachedVanityUrl = cachedVanityUrlOpt.get();
+                    final String finalForwardTo = cachedVanityUrlOpt.get().handle(renderParams.uri()).getRewrite();
+                    final CachedVanityUrl finalCachedVanityUrl = new CachedVanityUrl( cachedVanityUrl.vanityUrlId,
+                    cachedVanityUrl.url, cachedVanityUrl.languageId, cachedVanityUrl.siteId, finalForwardTo, cachedVanityUrl.response, cachedVanityUrl.order);
+
+
                     final EmptyPageView emptyPageView =
-                            new EmptyPageView.Builder().vanityUrl(cachedVanityUrlOpt.get()).build();
+                            new EmptyPageView.Builder().vanityUrl(finalCachedVanityUrl).build();
+
                     return Response.ok(new ResponseEntityView<>(emptyPageView)).build();
                 } else {
                     final VanityUrlResult vanityUrlResult = cachedVanityUrlOpt.get()
@@ -484,12 +482,13 @@ public class PageResource {
                session.setAttribute(TM_LANG, renderParams.languageId());
                session.setAttribute(DOT_CACHE, "refresh");
                session.setAttribute(TM_HOST, host.get());
-            } else {
+               session.setAttribute(IS_PAGE_RESOURCE, true);
+            }
                request.setAttribute(TM_DATE, timeMachineEpochMillis);
                request.setAttribute(TM_LANG, renderParams.languageId());
                request.setAttribute(DOT_CACHE, "refresh");
                request.setAttribute(TM_HOST, host.get());
-            }
+               request.setAttribute(IS_PAGE_RESOURCE, true);
         }
     }
 
@@ -504,6 +503,8 @@ public class PageResource {
             session.removeAttribute(TM_LANG);
             session.removeAttribute(TM_HOST);
             session.removeAttribute(DOT_CACHE);
+            // we do not remove the IS_PAGE_RESOURCE attribute
+            //It'll get removed from the old from the time machine portal
         }
     }
 

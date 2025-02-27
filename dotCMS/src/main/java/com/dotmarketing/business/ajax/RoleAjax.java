@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -98,7 +99,7 @@ public class RoleAjax {
 	private final UserWebAPI userWebAPI;
 
 	private static final Lazy<Boolean> HIDE_OLD_LANGUAGES_PORTLET =
-			Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET", true));
+			Lazy.of(() -> Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET, true));
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();

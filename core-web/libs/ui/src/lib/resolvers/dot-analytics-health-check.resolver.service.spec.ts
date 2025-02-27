@@ -18,7 +18,7 @@ describe('dotAnalyticsHealthCheckResolver', () => {
             providers: [
                 {
                     provide: DotExperimentsService,
-                    useValue: { healthCheck: () => of(HealthStatusTypes.OK) }
+                    useValue: { healthCheck: jest.fn().mockReturnValue(of(HealthStatusTypes.OK)) }
                 }
             ]
         });
@@ -31,7 +31,7 @@ describe('dotAnalyticsHealthCheckResolver', () => {
             dotAnalyticsHealthCheckResolver(null, {} as RouterStateSnapshot)
         );
 
-        spyOn(dotExperimentsService, 'healthCheck').and.returnValue(of(HealthStatusTypes.OK));
+        jest.spyOn(dotExperimentsService, 'healthCheck').mockReturnValue(of(HealthStatusTypes.OK));
 
         resolver.subscribe((healthStatus) => {
             expect(healthStatus).toBe(HealthStatusTypes.OK);

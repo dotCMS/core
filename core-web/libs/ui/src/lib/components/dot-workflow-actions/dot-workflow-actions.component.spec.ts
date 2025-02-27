@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
@@ -98,8 +98,8 @@ describe('DotWorkflowActionsComponent', () => {
 
         it('should render the empty button with loading', () => {
             spectator.setInput('loading', true);
-
             spectator.detectChanges();
+
             const button = spectator.query(Button);
 
             expect(button.loading).toBeTruthy();
@@ -109,10 +109,9 @@ describe('DotWorkflowActionsComponent', () => {
 
         it('should render the empty button with disabled', () => {
             spectator.setInput('loading', false);
+            spectator.detectChanges();
 
             const button = spectator.query(Button);
-
-            spectator.detectChanges();
 
             expect(button.disabled).toBeTruthy();
             expect(button.loading).toBeFalsy();
@@ -128,7 +127,7 @@ describe('DotWorkflowActionsComponent', () => {
         });
 
         it('should emit the action when click on a split button', () => {
-            const spy = spyOn(spectator.component.actionFired, 'emit');
+            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const splitButton = spectator.query('.p-splitbutton > button');
             splitButton.dispatchEvent(new Event('click'));
 

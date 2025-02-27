@@ -2,10 +2,10 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
-        "types": ["jasmine", "node"],
-        "target": "ES2022",
-        "useDefineForClassFields": false
+        "module": "commonjs",
+        "target": "es2016",
+        "types": ["jest", "node"]
     },
-    "files": ["src/test.ts"],
-    "include": ["**/*.spec.ts", "**/*.d.ts"]
+    "files": ["src/test-setup.ts"],
+    "include": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts", "src/**/*.d.ts"]
 }

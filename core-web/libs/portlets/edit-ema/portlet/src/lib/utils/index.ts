@@ -196,15 +196,19 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 }
 
 /**
- * Remove the index from the end of the url if it's nested and also remove extra slashes
+ * Sanitizes a URL by:
+ * 1. Removing extra leading/trailing slashes
+ * 2. Preserving 'index' in the URL path
  *
  * @param {string} url
  * @return {*}  {string}
  */
 export function sanitizeURL(url?: string): string {
-    return url
-        ?.replace(/^\/+|\/+$/g, '') // Remove starting and trailing slashes
-        ?.replace(/^(index)$|(.*?)(?:\/)?index\/?$/, (_, g1, g2) => g1 || `${g2}/`); // Keep 'index' or add slash for paths
+    if (!url || url === '/') {
+        return '/';
+    }
+
+    return url.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
 }
 
 /**
@@ -292,7 +296,10 @@ export function normalizeQueryParams(params, baseClientHost?: string) {
         delete queryParams[PERSONA_KEY];
     }
 
-    if (baseClientHost && sanitizeURL(baseClientHost) === sanitizeURL(params.clientHost)) {
+    if (
+        baseClientHost &&
+        new URL(baseClientHost).toString() === new URL(params.clientHost).toString()
+    ) {
         delete queryParams.clientHost;
     }
 
@@ -633,8 +640,8 @@ export const checkClientHostAccess = (
     }
 
     // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
-    const sanitizedClientHost = sanitizeURL(clientHost);
-    const sanitizedAllowedDevURLs = allowedDevURLs.map(sanitizeURL);
+    const sanitizedClientHost = new URL(clientHost).toString();
+    const sanitizedAllowedDevURLs = allowedDevURLs.map((url) => new URL(url).toString());
 
     return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
 };
