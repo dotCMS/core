@@ -7,6 +7,8 @@ import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.util.TimeMachineUtil;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -34,6 +36,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.util.Date;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -203,17 +206,27 @@ public class HTMLPageAssetRenderedBuilder {
     }
 
     private Optional<Contentlet> findUrlContentlet(final HttpServletRequest request) throws DotDataException, DotSecurityException {
-
+        final Optional<Date> timeMachineDate = TimeMachineUtil.getTimeMachineDateAsDate();
         Contentlet contentlet = null;
-
         if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)) {
-
             final String inode = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-            contentlet         = this.contentletAPI.find(inode, user, false);
+            contentlet  = this.contentletAPI.find(inode, user, false);
+            if (timeMachineDate.isPresent() && null != contentlet) {
+                contentlet = contentletAPI.findContentletByIdentifier(contentlet.getIdentifier(),
+                        contentlet.getLanguageId(),
+                        VariantAPI.DEFAULT_VARIANT.name(), timeMachineDate.get(),
+                        user, false);
+            }
         } else if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET)) {
-
-            final String id    = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET);
-            contentlet         = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
+            final String id  = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            contentlet  = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
+            if (timeMachineDate.isPresent() && null != contentlet) {
+                Contentlet future = this.contentletAPI.findContentletByIdentifier(id, contentlet.getLanguageId(),
+                        VariantAPI.DEFAULT_VARIANT.name(), timeMachineDate.get(), user, false);
+                if (null != future) {
+                    contentlet = future;
+                }
+            }
         }
 
         return Optional.ofNullable(contentlet);
