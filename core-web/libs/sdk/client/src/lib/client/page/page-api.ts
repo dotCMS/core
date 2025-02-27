@@ -2,6 +2,7 @@ import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './uti
 
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
+import { DotCMSGraphQLPageResponse, DotCMSPageAsset } from '../models/types';
 
 /**
  * The parameters for the Page API.
@@ -21,7 +22,7 @@ export interface PageRequestParams {
     /**
      * The language id of the page you want to retrieve. Defaults to the site's default language if not provided.
      */
-    languageId?: number;
+    languageId?: number | string;
 
     /**
      * The id of the persona for which you want to retrieve the page.
@@ -31,12 +32,12 @@ export interface PageRequestParams {
     /**
      * Whether to fire the rules set on the page.
      */
-    fireRules?: boolean;
+    fireRules?: boolean | string;
 
     /**
      * Allows access to related content via the Relationship fields of contentlets on a Page; 0 (default).
      */
-    depth?: 0 | 1 | 2 | 3;
+    depth?: 0 | 1 | 2 | 3 | '0' | '1' | '2' | '3';
 
     /**
      * The publish date of the page you want to retrieve.
@@ -144,6 +145,46 @@ export class PageClient {
     }
 
     /**
+     * Retrieves a page from DotCMS using REST API.
+     *
+     * @param {string} url - The URL of the page to retrieve
+     * @param {PageRequestParams} [options] - Options for retrieving the page via REST API
+     * @returns {Promise<DotCMSPageAsset>} A Promise that resolves to the page data
+     */
+    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAsset>;
+
+    /**
+     * Retrieves a page from DotCMS using GraphQL.
+     *
+     * @param {string} url - The URL of the page to retrieve
+     * @param {GraphQLPageOptions} options - Options for retrieving the page via GraphQL
+     * @returns {Promise<{page: any, content: Record<string, any>, nav: Record<string, any>, errors?: any}>}
+     *          A Promise that resolves to the page data with content and navigation
+     */
+    get(url: string, options?: GraphQLPageOptions): Promise<unknown>;
+
+    /**
+     * Implementation of the get method that handles both REST API and GraphQL requests.
+     *
+     * @param {string} url - The URL of the page to retrieve
+     * @param {PageRequestParams | GraphQLPageOptions} [options] - Options for the request
+     * @returns {Promise<DotCMSPageAsset | {page: any, content: Record<string, any>, nav: Record<string, any>, errors?: any}>}
+     *          A Promise that resolves to the page data
+     */
+    async get(
+        url: string,
+        options?: PageRequestParams | GraphQLPageOptions
+    ): Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse> {
+        const isGraphQLRequest = !!(options as GraphQLPageOptions)?.['query'];
+
+        if (isGraphQLRequest) {
+            return this.getPageFromGraphQL(url, options as GraphQLPageOptions);
+        }
+
+        return this.getPageFromAPI(url, options);
+    }
+
+    /**
      * Retrieves all the elements of a Page in your dotCMS system in JSON format.
      *
      * @param {string} path - The path of the page to retrieve
@@ -168,7 +209,10 @@ export class PageClient {
      * });
      * ```
      */
-    private async getPageAsset(path: string, params?: PageRequestParams): Promise<unknown> {
+    private async getPageFromAPI(
+        path: string,
+        params?: PageRequestParams
+    ): Promise<DotCMSPageAsset> {
         if (!path) {
             throw new Error("The 'path' parameter is required for the Page API");
         }
@@ -186,7 +230,6 @@ export class PageClient {
                 message: ErrorMessages[response.status] || response.statusText
             };
 
-            console.error(error);
             throw error;
         }
 
@@ -245,7 +288,10 @@ export class PageClient {
      * });
      * ```
      */
-    async get(url: string, options?: GraphQLPageOptions) {
+    async getPageFromGraphQL(
+        url: string,
+        options?: GraphQLPageOptions
+    ): Promise<DotCMSGraphQLPageResponse> {
         const { languageId = '1', mode = 'LIVE', query = {} } = options || {};
         const { page = '', content = {}, nav = {} } = query;
 

@@ -62,7 +62,12 @@ export const buildPageQuery = (pageQuery: string, additionalQueries: string) => 
       identifier
       maxContentlets
       containerStructures {
+        id
+        code
+        structureId
+        containerId
         contentTypeVar
+        containerInode
       }
       containerContentlets {
         uuid
