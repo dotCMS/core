@@ -58,7 +58,7 @@ public class RelationshipFieldStrategy implements FieldStrategy {
                 ? this.getRelatedIdentifiers(currentUser, offset, sortBy, fieldValue, childRelationship.get())
                 : new ArrayList<>();
         return UtilMethods.isSet(relatedContent)
-                ? String.join(",", relatedContent).trim()
+                ? String.join(",", relatedContent)
                 : "+" + fieldName + ":" + fieldValue;
     }
 
