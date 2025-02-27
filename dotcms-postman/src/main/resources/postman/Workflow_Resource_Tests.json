@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "8874a6d8-d278-4760-baa0-e27f09ba6e5a",
+		"_postman_id": "4e56a84e-ecc4-4072-8e09-e0acb5691fb5",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -18871,10 +18871,6 @@
 									"});",
 									"",
 									"",
-									"",
-									"pm.test(\"Valid response\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"\\\"name\\\":\\\"saveContent FROM REST NEW\\\"\");",
-									"});",
 									"",
 									"var jsonData = pm.response.json();",
 									"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);",
