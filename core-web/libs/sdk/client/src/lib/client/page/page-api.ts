@@ -1,4 +1,4 @@
-import { buildPageQuery, buildQueries, fetchGraphQL, mapResponseData } from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
 
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
@@ -85,6 +85,14 @@ export interface BackendPageParams {
     publishDate?: string;
 }
 
+export interface GraphQLPageOptions extends PageRequestParams {
+    query: {
+        page?: string;
+        content?: Record<string, string>;
+        nav?: Record<string, string>;
+    };
+}
+
 /**
  * Client for interacting with the DotCMS Page API.
  * Provides methods to retrieve and manipulate pages.
@@ -160,7 +168,7 @@ export class PageClient {
      * });
      * ```
      */
-    async getPageAPI(path: string, params?: PageRequestParams): Promise<unknown> {
+    private async getPageAsset(path: string, params?: PageRequestParams): Promise<unknown> {
         if (!path) {
             throw new Error("The 'path' parameter is required for the Page API");
         }
@@ -237,51 +245,42 @@ export class PageClient {
      * });
      * ```
      */
-    async getPersonalizedPage(
-        url: string,
-        {
-            nav,
-            content,
-            pageFragment,
-            languageId = '1',
-            mode = 'LIVE'
-        }: {
-            url: string;
-            languageId: string;
-            mode: string;
-            pageFragment: string;
-            content: Record<string, string>;
-            nav: Record<string, string>;
-        }
-    ) {
-        const contentQueries = buildQueries(content);
-        const navQueries = buildQueries(nav);
+    async get(url: string, options?: GraphQLPageOptions) {
+        const { languageId = '1', mode = 'LIVE', query = {} } = options || {};
+        const { page = '', content = {}, nav = {} } = query;
 
-        const query = buildPageQuery({
-            pageFragment,
-            contentQueries,
-            navQueries
-        });
+        const contentQuery = buildQuery(content);
+        const navQuery = buildQuery(nav);
+        const completeQuery = buildPageQuery(page, `${contentQuery} ${navQuery}`);
 
-        const variables = {
+        const requestVariables = {
             url,
             mode,
             languageId
         };
 
-        const headers = this.requestOptions.headers as Record<string, string>;
-        const body = JSON.stringify({ query, variables });
-        const data = await fetchGraphQL({ body, headers });
+        const requestHeaders = this.requestOptions.headers as Record<string, string>;
+        const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
 
-        const page = data.page;
-        const contentResponse = mapResponseData(data, Object.keys(content || {}));
-        const navResponse = mapResponseData(data, Object.keys(nav || {}));
+        try {
+            const { data, errors } = await fetchGraphQL({
+                body: requestBody,
+                headers: requestHeaders
+            });
+            const pageResponse = data.page;
+            const contentResponse = mapResponseData(data, Object.keys(content));
+            const navResponse = mapResponseData(data, Object.keys(nav));
 
-        return {
-            page,
-            content: contentResponse,
-            nav: navResponse
-        };
+            return {
+                page: pageResponse,
+                content: contentResponse,
+                nav: navResponse,
+                errors
+            };
+        } catch (error) {
+            console.error('Error fetching page data:', error);
+            throw new Error('Failed to retrieve page data');
+        }
     }
 
     /**

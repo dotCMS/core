@@ -1,4 +1,4 @@
-import { dotCMSCreateClient } from './lib/client/client';
+import { createDotCMSClient } from './lib/client/client';
 import { CLIENT_ACTIONS, postMessageToEditor } from './lib/deprecated/editor/models/client.model';
 import {
     CustomClientParams,
@@ -51,5 +51,5 @@ export {
     CLIENT_ACTIONS,
     INLINE_EDITING_EVENT_KEY,
     NOTIFY_CLIENT,
-    dotCMSCreateClient
+    createDotCMSClient
 };

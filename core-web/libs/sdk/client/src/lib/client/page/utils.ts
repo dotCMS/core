@@ -1,12 +1,11 @@
-export const buildPageQuery = ({
-    pageFragment,
-    contentQueries,
-    navQueries
-}: {
-    pageFragment: string;
-    contentQueries: string;
-    navQueries: string;
-}) => `
+/**
+ * Builds a GraphQL query for retrieving page content from DotCMS.
+ *
+ * @param {string} pageQuery - Custom fragment fields to include in the ClientPage fragment
+ * @param {string} additionalQueries - Additional GraphQL queries to include in the main query
+ * @returns {string} Complete GraphQL query string for page content
+ */
+export const buildPageQuery = (pageQuery: string, additionalQueries: string) => `
   fragment DotCMSPage on DotPage {
     publishDate
     type
@@ -134,37 +133,64 @@ export const buildPageQuery = ({
     }
   }
 
-  ${pageFragment ? ` fragment ClientPage on DotPage { ${pageFragment} } ` : ''}
+  ${pageQuery ? ` fragment ClientPage on DotPage { ${pageQuery} } ` : ''}
 
   query PageContent($url: String!, $languageId: String, $mode: String) {
     page: page(url: $url, languageId: $languageId, pageMode: $mode) {
       ...DotCMSPage
-      ${pageFragment ? '...ClientPage' : ''}
+      ${pageQuery ? '...ClientPage' : ''}
     }
 
-    ${contentQueries}
-
-    ${navQueries}
+    ${additionalQueries}
   }
 `;
 
-export function buildQueries(data: Record<string, string>) {
-    return Object.entries(data || {})
+/**
+ * Converts a record of query strings into a single GraphQL query string.
+ *
+ * @param {Record<string, string>} queryData - Object containing named query strings
+ * @returns {string} Combined query string or empty string if no queryData provided
+ */
+export function buildQuery(queryData: Record<string, string>): string {
+    if (!queryData) return '';
+
+    return Object.entries(queryData)
         .map(([key, query]) => `${key}: ${query}`)
-        .join('');
+        .join(' ');
 }
 
-export function mapResponseData(data: Record<string, string>, keys: string[]) {
+/**
+ * Filters response data to include only specified keys.
+ *
+ * @param {Record<string, string>} responseData - Original response data object
+ * @param {string[]} keys - Array of keys to extract from the response data
+ * @returns {Record<string, string>} New object containing only the specified keys
+ */
+export function mapResponseData(
+    responseData: Record<string, string>,
+    keys: string[]
+): Record<string, string> {
     return keys.reduce(
-        (acc, key) => {
-            acc[key] = data[key];
+        (accumulator, key) => {
+            if (responseData[key] !== undefined) {
+                accumulator[key] = responseData[key];
+            }
 
-            return acc;
+            return accumulator;
         },
         {} as Record<string, string>
     );
 }
 
+/**
+ * Executes a GraphQL query against the DotCMS API.
+ *
+ * @param {Object} options - Options for the fetch request
+ * @param {string} options.body - GraphQL query string
+ * @param {Record<string, string>} options.headers - HTTP headers for the request
+ * @returns {Promise<any>} Parsed JSON response from the GraphQL API
+ * @throws {Error} If the HTTP response is not successful
+ */
 export async function fetchGraphQL({
     body,
     headers
@@ -182,11 +208,5 @@ export async function fetchGraphQL({
         throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const result = await response.json();
-
-    if (result.errors) {
-        throw new Error(result.errors);
-    }
-
-    return result.data;
+    return await response.json();
 }
