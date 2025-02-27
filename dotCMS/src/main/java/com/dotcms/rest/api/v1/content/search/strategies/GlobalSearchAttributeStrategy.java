@@ -36,7 +36,7 @@ public class GlobalSearchAttributeStrategy implements FieldStrategy {
         value = value.replaceAll("\\*", "");
         value = value.replaceAll(SPECIAL_CHARS_TO_ESCAPE, "\\\\$1");
         luceneQuery.append("title:").append(value).append("*");
-        return luceneQuery.toString().trim();
+        return luceneQuery.toString();
     }
 
 }

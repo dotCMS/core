@@ -4,7 +4,7 @@ import {
   iFramesLocators,
   fileAsset,
   pageAsset,
-} from "../locators/globalLocators";
+} from "@locators/globalLocators";
 import { waitForVisibleAndCallback } from "./dotCMSUtils";
 import {
   contentProperties,
