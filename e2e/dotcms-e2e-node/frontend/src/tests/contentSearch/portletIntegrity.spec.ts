@@ -2,18 +2,18 @@ import { expect, test } from "@playwright/test";
 import {
   dotCMSUtils,
   waitForVisibleAndCallback,
-} from "../../utils/dotCMSUtils";
+} from "@utils/dotCMSUtils";
 import { ContentUtils } from "../../utils/contentUtils";
 import {
   addContent,
   iFramesLocators,
   contentGeneric,
-} from "../../locators/globalLocators";
+} from "@locators/globalLocators";
 import {
   GroupEntriesLocators,
   MenuEntriesLocators,
   ToolEntriesLocators,
-} from "../../locators/navigation/menuLocators";
+} from "@locators/navigation/menuLocators";
 import { contentProperties, genericContent1 } from "./contentData";
 
 const cmsUtils = new dotCMSUtils();
