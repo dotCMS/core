@@ -1,0 +1,282 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { PageClient } from './page-api';
+import * as utils from './utils';
+
+import { DotCMSClientConfig, RequestOptions } from '../client';
+import { ErrorMessages } from '../models';
+
+describe('PageClient', () => {
+    const mockFetch = jest.fn();
+    const originalFetch = global.fetch;
+    const mockFetchGraphQL = jest.fn();
+
+    const validConfig: DotCMSClientConfig = {
+        dotcmsUrl: 'https://demo.dotcms.com',
+        authToken: 'test-token',
+        siteId: 'test-site'
+    };
+
+    const requestOptions: RequestOptions = {
+        headers: {
+            Authorization: 'Bearer test-token'
+        }
+    };
+
+    const mockPageData = {
+        entity: {
+            title: 'Test Page',
+            url: '/test-page',
+            contentType: 'htmlpage',
+            layout: {
+                body: {
+                    rows: []
+                }
+            }
+        }
+    };
+
+    const mockGraphQLResponse = {
+        data: {
+            page: {
+                title: 'GraphQL Page',
+                url: '/graphql-page'
+            },
+            testContent: {
+                items: [{ title: 'Content Item' }]
+            },
+            testNav: {
+                items: [{ label: 'Nav Item', url: '/nav' }]
+            }
+        },
+        errors: null
+    };
+
+    beforeEach(() => {
+        mockFetch.mockReset();
+        mockFetchGraphQL.mockReset();
+        global.fetch = mockFetch;
+        global.console.error = jest.fn(); // Mock console.error to prevent actual errors from being logged in the console when running tests
+
+        mockFetch.mockResolvedValue({
+            ok: true,
+            json: async () => mockPageData
+        });
+
+        jest.spyOn(utils, 'fetchGraphQL').mockImplementation(mockFetchGraphQL);
+        mockFetchGraphQL.mockResolvedValue(mockGraphQLResponse);
+
+        jest.spyOn(utils, 'buildPageQuery').mockReturnValue('mock-page-query');
+        jest.spyOn(utils, 'buildQuery').mockReturnValue('mock-query');
+        jest.spyOn(utils, 'mapResponseData').mockImplementation((data, keys) => {
+            const result: Record<string, any> = {};
+
+            keys.forEach((key) => {
+                result[key] = data[`test${key.charAt(0).toUpperCase() + key.slice(1)}`];
+            });
+
+            return result;
+        });
+    });
+
+    afterAll(() => {
+        global.fetch = originalFetch;
+        jest.restoreAllMocks();
+    });
+
+    describe('REST API', () => {
+        it('should fetch page successfully using REST API', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const result = await pageClient.get('/test-page');
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                'https://demo.dotcms.com/api/v1/page/json/test-page?hostId=test-site',
+                requestOptions
+            );
+
+            expect(result).toEqual(mockPageData.entity);
+        });
+
+        it('should throw error when path is not provided', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+
+            await expect(pageClient.get('')).rejects.toThrow(
+                "The 'path' parameter is required for the Page API"
+            );
+        });
+
+        it('should include all provided parameters in the request URL', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const params = {
+                siteId: 'custom-site',
+                languageId: 2,
+                mode: 'PREVIEW_MODE' as const,
+                personaId: 'test-persona',
+                fireRules: true,
+                depth: 2 as const,
+                publishDate: '2023-01-01'
+            };
+
+            await pageClient.get('/test-page', params);
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('https://demo.dotcms.com/api/v1/page/json/test-page?'),
+                requestOptions
+            );
+
+            const url = mockFetch.mock.calls[0][0];
+            expect(url).toContain('hostId=custom-site');
+            expect(url).toContain('mode=PREVIEW_MODE');
+            expect(url).toContain('language_id=2');
+            expect(url).toContain('com.dotmarketing.persona.id=test-persona');
+            expect(url).toContain('fireRules=true');
+            expect(url).toContain('depth=2');
+            expect(url).toContain('publishDate=2023-01-01');
+        });
+
+        it('should handle API error responses', async () => {
+            mockFetch.mockResolvedValue({
+                ok: false,
+                status: 404,
+                statusText: 'Not Found'
+            });
+
+            const pageClient = new PageClient(validConfig, requestOptions);
+
+            await expect(pageClient.get('/not-found')).rejects.toEqual({
+                status: 404,
+                message: ErrorMessages[404]
+            });
+        });
+
+        it('should normalize path by removing leading slash', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+
+            await pageClient.get('/about/');
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                'https://demo.dotcms.com/api/v1/page/json/about/?hostId=test-site',
+                expect.anything()
+            );
+        });
+    });
+
+    describe('GraphQL API', () => {
+        it('should fetch page using GraphQL when query option is provided', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                query: {
+                    page: 'fragment PageFields on Page { title url }',
+                    content: { content: 'query Content { items { title } }' },
+                    nav: { nav: 'query Nav { items { label url } }' }
+                },
+                languageId: '1',
+                mode: 'LIVE'
+            };
+
+            const result = await pageClient.get('/graphql-page', graphQLOptions as any);
+
+            expect(utils.buildPageQuery).toHaveBeenCalled();
+            expect(utils.buildQuery).toHaveBeenCalledTimes(2);
+            expect(utils.fetchGraphQL).toHaveBeenCalledWith({
+                body: expect.any(String),
+                headers: requestOptions.headers
+            });
+
+            expect(result).toEqual({
+                page: mockGraphQLResponse.data.page,
+                content: { content: mockGraphQLResponse.data.testContent },
+                nav: { nav: mockGraphQLResponse.data.testNav },
+                errors: null
+            });
+        });
+
+        it('should pass correct variables to GraphQL query', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                query: { page: 'fragment PageFields on Page { title }' },
+                languageId: '2',
+                mode: 'PREVIEW_MODE'
+            };
+
+            await pageClient.get('/custom-page', graphQLOptions as any);
+
+            const requestBody = JSON.parse(mockFetchGraphQL.mock.calls[0][0].body);
+            expect(requestBody.variables).toEqual({
+                url: '/custom-page',
+                mode: 'PREVIEW_MODE',
+                languageId: '2'
+            });
+        });
+
+        it('should handle GraphQL errors', async () => {
+            mockFetchGraphQL.mockRejectedValue(new Error('GraphQL error'));
+
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                query: { page: 'fragment PageFields on Page { title }' }
+            };
+
+            await expect(pageClient.get('/page', graphQLOptions)).rejects.toThrow(
+                'Failed to retrieve page data'
+            );
+        });
+
+        it('should include GraphQL errors in the response if present', async () => {
+            mockFetchGraphQL.mockResolvedValue({
+                data: { page: { title: 'Error Page' } },
+                errors: [{ message: 'Field error' }]
+            });
+
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                query: { page: 'fragment PageFields on Page { title }' }
+            };
+
+            const result = await pageClient.get('/error-page', graphQLOptions);
+
+            expect(result).toEqual({
+                page: { title: 'Error Page' },
+                content: {},
+                nav: {},
+                errors: [{ message: 'Field error' }]
+            });
+        });
+
+        it('should use default values for languageId and mode if not provided', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            const graphQLOptions = {
+                query: { page: 'fragment PageFields on Page { title }' }
+            };
+
+            await pageClient.get('/default-page', graphQLOptions);
+
+            const requestBody = JSON.parse(mockFetchGraphQL.mock.calls[0][0].body);
+            expect(requestBody.variables).toEqual({
+                url: '/default-page',
+                mode: 'LIVE',
+                languageId: '1'
+            });
+        });
+    });
+
+    describe('Client initialization', () => {
+        it('should initialize with correct base URL', () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+
+            // We need to access private property for testing
+            const baseUrl = (pageClient as any).BASE_URL;
+            expect(baseUrl).toBe('https://demo.dotcms.com/api/v1/page');
+        });
+
+        it('should use siteId from config when not provided in params', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+
+            await pageClient.get('/test-page');
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                'https://demo.dotcms.com/api/v1/page/json/test-page?hostId=test-site',
+                requestOptions
+            );
+        });
+    });
+});

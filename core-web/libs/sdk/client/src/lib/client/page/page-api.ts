@@ -351,14 +351,19 @@ export class PageClient {
      * ```
      */
     private mapToBackendParams(params: PageRequestParams): BackendPageParams {
-        return {
+        const backendParams = {
             hostId: params.siteId || this.siteId,
             mode: params.mode,
-            language_id: params.languageId ? String(params.languageId) : '',
+            language_id: params.languageId ? String(params.languageId) : undefined,
             'com.dotmarketing.persona.id': params.personaId,
-            fireRules: params.fireRules ? String(params.fireRules) : '',
-            depth: params.depth ? String(params.depth) : '',
+            fireRules: params.fireRules ? String(params.fireRules) : undefined,
+            depth: params.depth ? String(params.depth) : undefined,
             publishDate: params.publishDate
         };
+
+        // Remove undefined values
+        return Object.fromEntries(
+            Object.entries(backendParams).filter(([_, value]) => value !== undefined)
+        );
     }
 }
