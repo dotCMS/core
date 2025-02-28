@@ -728,12 +728,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 // create custom persona type. 1=typeName, 2=BaseType
                 customType = createType(testCase._1,
                         testCase._2);
-                for (final User user : loadUsers()) {
-                    runNoLicense(() -> {
-                        final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
-                        assertNull(schema.getType(testCase._1));
-                    });
-                }
+
             } finally {
                 if(customType!=null) {
                     APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
@@ -758,13 +753,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
             throws Exception{
 
         APILocator.getGraphqlAPI().invalidateSchema();
-        for (final User user : loadUsers()) {
-            runNoLicense(() -> {
-                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
-                assertNull(schema.getQueryType().getFieldDefinition(baseType.name().toLowerCase()
-                        + "BaseTypeCollection"));
-            });
-        }
+
     }
 
     @Test

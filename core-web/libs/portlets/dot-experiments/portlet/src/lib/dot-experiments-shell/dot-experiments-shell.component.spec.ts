@@ -6,9 +6,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { Toast } from 'primeng/toast';
 
+import { UVE_MODE } from '@dotcms/uve/types';
+
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 import { DotExperimentsStore } from './store/dot-experiments.store';
-
 const routerParamsPageId = '1111-1111-111';
 const ActivatedRouteMock = {
     snapshot: {
@@ -17,7 +18,7 @@ const ActivatedRouteMock = {
         },
         parent: { parent: { data: { content: { page: { title: 'Experiment page title' } } } } },
         queryParams: {
-            mode: 'edit',
+            mode: UVE_MODE.EDIT,
             variantName: 'variantName',
             experimentId: 'experimentId'
         }

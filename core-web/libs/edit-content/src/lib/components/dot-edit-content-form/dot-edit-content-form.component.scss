@@ -87,7 +87,10 @@ $tab-min-height: 52px;
             border: solid 1px $color-palette-gray-300;
             border-right: none;
             overflow: initial;
-            position: initial;
+            position: sticky;
+            top: 0;
+            background-color: $white;
+            z-index: 1000;
         }
 
         .p-tabview-nav-content .p-tabview-nav {

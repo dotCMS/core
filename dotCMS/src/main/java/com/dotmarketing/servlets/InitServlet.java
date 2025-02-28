@@ -1,6 +1,7 @@
 package com.dotmarketing.servlets;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
 import com.dotcms.util.GeoIp2CityDbUtil;
@@ -233,11 +234,18 @@ public class InitServlet extends HttpServlet {
         };
         
         if(Config.getBooleanProperty("START_CLIENT_OSGI_IN_SEPARATE_THREAD", true)) {
-            new Thread(task).start();
+            DotConcurrentFactory.getInstance().getSubmitter().submit(task);
         }else {
             task.run();
         }
-        
+
+        //Deleting old licenses
+        final Runnable oldLicenses = () -> {
+            Logger.debug(InitServlet.class,"Sweeping old nodes");
+            LicenseUtil.deleteOldLicenses();
+        };
+
+        DotConcurrentFactory.getInstance().getSubmitter().submit(oldLicenses);
         
 
         // Starting the re-indexation thread

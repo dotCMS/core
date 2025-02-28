@@ -1,12 +1,12 @@
-import { isInsideEditor } from "@dotcms/client";
-import { BlockEditorRenderer } from "@dotcms/react";
+import { isEditMode } from '@/utils/isEditMode';
+import { BlockEditorRenderer } from '@dotcms/react';
 
 const CustomParagraph = ({ content }) => {
     if (!content) {
         return null;
     }
     const [{ text }] = content;
-    return <p style={{ color: "#333" }}>{text}</p>;
+    return <p style={{ color: '#333' }}>{text}</p>;
 };
 
 const ActivityBlock = (props) => {
@@ -21,9 +21,7 @@ const ActivityBlock = (props) => {
 };
 
 function Blog({ blogContent, ...contentlet }) {
-    const twActives = isInsideEditor()
-        ? "border-2 border-solid border-cyan-400 cursor-pointer"
-        : "";
+    const twActives = isEditMode() ? 'border-2 border-solid border-cyan-400 cursor-pointer' : '';
 
     return (
         <BlockEditorRenderer
@@ -33,9 +31,9 @@ function Blog({ blogContent, ...contentlet }) {
             fieldName="blogContent"
             customRenderers={{
                 Activity: ActivityBlock,
-                paragraph: CustomParagraph,
+                paragraph: CustomParagraph
             }}
-            style={{ padding: "10px" }}
+            style={{ padding: '10px' }}
             className={`blog-styles ${twActives}`}
         />
     );

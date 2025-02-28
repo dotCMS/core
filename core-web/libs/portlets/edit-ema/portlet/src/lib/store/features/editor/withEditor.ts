@@ -9,8 +9,8 @@ import {
 
 import { computed, untracked } from '@angular/core';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
     EditorProps,
@@ -135,7 +135,7 @@ export function withEditor() {
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
 
-                    const isPreview = params?.editorMode === UVE_MODE.PREVIEW;
+                    const isPreview = params?.mode === UVE_MODE.PREVIEW;
                     const isPageReady = isTraditionalPage || isClientReady || isPreview;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
@@ -209,9 +209,15 @@ export function withEditor() {
                     };
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
-                    const page = store.pageAPIResponse().page;
+                    /*
+                        Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
+                        This should change in future UVE improvements. 
+                        The url should not depend on the PageAPI response since it does not change (In traditional).
+                        In the future we should have a function that updates the content, independent of the url.
+                        More info: https://github.com/dotCMS/core/issues/31475
+                     */
                     const vanityURL = store.pageAPIResponse().vanityUrl?.url;
-                    const sanitizedURL = sanitizeURL(vanityURL ?? page?.pageURI);
+                    const sanitizedURL = sanitizeURL(vanityURL ?? store.pageParams().url);
 
                     const url = buildIframeURL({
                         url: sanitizedURL,

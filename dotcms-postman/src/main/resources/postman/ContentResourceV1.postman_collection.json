@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "3a7f408a-7661-4715-8cf8-35f9305b3f73",
+		"_postman_id": "15e5191d-c7ec-4e91-aded-f855ce7d4f00",
 		"name": "ContentResourceV1",
 		"description": "This folder contains a comprehensive set of API requests related to the `ContentResourceV1` API endpoints. These requests cover various operations such as creating, retrieving and updating content. The folder is organized to help developers and testers efficiently validate and interact with the content resource endpoints in the system.\n\n#### Objectives:\n\n1. **Create Content**:\n    \n    - Test the creation of new content items with valid and invalid data.\n        \n    - Ensure that the response includes all necessary details for the created content.\n        \n2. **Retrieve Content**:\n    \n    - Validate the retrieval of content items by ID.\n        \n    - Ensure the response contains accurate and complete content details.\n        \n3. **Update Content**:\n    \n    - Test updating existing content items with valid and invalid data.\n        \n    - Verify that the response reflects the updated content accurately.\n        \n    - Ensure that only authorized users can update content.\n        \n4. **Error Handling**:\n    \n    - Verify that the API returns appropriate error messages for invalid requests.\n        \n    - Ensure the correct HTTP status codes are used for different error scenarios.\n        \n5. **Security**:\n    \n    - Validate that only authorized users can perform operations on the content.\n        \n    - Ensure that all security protocols are enforced during API interactions.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -2787,7 +2787,7 @@
 									"",
 									"pm.test(\"Valid response\", function () {",
 									"    pm.response.to.have.status(200);",
-									"    pm.expect(responseJson.entity).to.eql(true);",
+									"    pm.expect(responseJson.entity.locked).to.eql(true);",
 									"});",
 									"",
 									"",
@@ -2882,6 +2882,60 @@
 					"response": []
 				},
 				{
+					"name": "GetContentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let id = pm.collectionVariables.get('contentletIdentifier');",
+									"const responseJson = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(responseJson.entity.identifier).to.eql(id);",
+									"    pm.expect(responseJson.entity.locked).to.eql(true);",
+									"    pm.expect(responseJson.entity.lockedBy.firstName).to.eql(\"Admin\");",
+									"    pm.expect(responseJson.entity.lockedBy.userId).to.eql(\"dotcms.org.1\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/{{contentletIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{contentletIdentifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Unlock",
 					"event": [
 						{
@@ -2893,7 +2947,7 @@
 									"",
 									"pm.test(\"Valid response\", function () {",
 									"    pm.response.to.have.status(200);",
-									"    pm.expect(responseJson.entity).to.eql(true);",
+									"    pm.expect(responseJson.entity.locked).to.eql(false);",
 									"});",
 									"",
 									"",
@@ -2986,6 +3040,68 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"if (!pm.environment.get('jwt')) {",
+							"    console.log(\"generating....\")",
+							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"",
+							"    if (!pm.environment.get('jwt')) {",
+							"        const username = pm.environment.get(\"user\");",
+							"        const password = pm.environment.get(\"password\");",
+							"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+							"",
+							"        const requestOptions = {",
+							"            url: apiUrl,",
+							"            method: \"POST\",",
+							"            header: {",
+							"                \"accept\": \"*/*\",",
+							"                \"content-type\": \"application/json\",",
+							"                \"Authorization\": `Basic ${basicAuth}`",
+							"            },",
+							"            body: {",
+							"                mode: \"raw\",",
+							"                raw: JSON.stringify({",
+							"                    \"expirationSeconds\": 7200,",
+							"                    \"userId\": \"dotcms.org.1\",",
+							"                    \"network\": \"0.0.0.0/0\",",
+							"                    \"claims\": {\"label\": \"postman-tests\"}",
+							"                })",
+							"            }",
+							"        };",
+							"",
+							"        pm.sendRequest(requestOptions, function (err, response) {",
+							"            if (err) {",
+							"                console.log(err);",
+							"            } else {",
+							"                const jwt = response.json().entity.jwt;",
+							"                pm.environment.set('jwt', jwt);",
+							"                console.log(jwt);",
+							"            }",
+							"        });",
+							"    }",
+							"}",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		}

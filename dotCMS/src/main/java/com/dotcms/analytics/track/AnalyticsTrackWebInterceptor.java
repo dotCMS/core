@@ -7,6 +7,7 @@ import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
 import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.system.event.local.model.EventSubscriber;
@@ -38,7 +39,7 @@ import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubscriber<SystemTableUpdatedKeyEvent> {
 
     private static final  String[] DEFAULT_BLACKLISTED_PROPS = new String[]{StringPool.BLANK};
-    private static final  String ANALYTICS_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS";
+    private static final  String ANALYTICS_TURNED_ON_KEY = FeatureFlagName.FEATURE_FLAG_CONTENT_ANALYTICS;
     private static final  Map<String, RequestMatcher> requestMatchersMap = new ConcurrentHashMap<>();
     private transient final AnalyticsWebAPI analyticsWebAPI;
     private final WhiteBlackList whiteBlackList;

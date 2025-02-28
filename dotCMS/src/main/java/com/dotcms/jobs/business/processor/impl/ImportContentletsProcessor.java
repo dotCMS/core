@@ -29,6 +29,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.importer.model.ImportResult;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
@@ -158,7 +159,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
         // Handle the import operation based on the command, by default any command that is not
         // "publish" is considered preview.
         final boolean isPublish = CMD_PUBLISH.equals(command);
-        handleImport(!isPublish, job, fileToImport, user, progressCallback);
+        handleImport(!isPublish, job, fileToImport, totalLines, user, progressCallback);
 
         if (!cancellationRequested.get()) {
             // Ensure the progress is at 100% when the job is done
@@ -325,11 +326,12 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      * @param preview          Flag indicating whether the operation is a preview or publish
      * @param job              The import job configuration
      * @param fileToImport     The CSV file to be imported
+     * @param fileTotalLines   The total number of lines in the file being processed
      * @param user             The user performing the import
      * @param progressCallback Callback for tracking import progress
      */
     private void handleImport(final boolean preview, final Job job, final File fileToImport,
-            final User user, final LongConsumer progressCallback) {
+            final long fileTotalLines, final User user, final LongConsumer progressCallback) {
 
         if (!preview) {
             AdminLogger.log(
@@ -343,9 +345,10 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
 
             CsvReader csvReader = createCsvReader(reader);
 
-            final var importResults = processImport(preview, job, user, csvReader,
-                    progressCallback);
-            resultMetadata = new HashMap<>(importResults);
+            final var importResults = processImport(
+                    preview, job, user, csvReader, fileTotalLines, progressCallback
+            );
+            resultMetadata = JobUtil.transformToMap(importResults);
         } catch (Exception e) {
 
             try {
@@ -372,14 +375,16 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      * @param job                      - The {@link Job} being processed.
      * @param user                     - The {@link User} performing this action.
      * @param csvReader                - The actual data contained in the CSV file.
+     * @param fileTotalLines           - The total number of lines in the file being processed
      * @param progressCallback         - The callback function to update the progress of the job.
      * @return The status of the content import performed by dotCMS. This provides information
      * regarding inconsistencies, errors, warnings and/or precautions to the user.
      * @throws DotDataException An error occurred when importing the CSV file.
      */
-    private Map<String, List<String>> processImport(final boolean preview, final Job job,
-            final User user, final CsvReader csvReader, final LongConsumer progressCallback)
-            throws DotDataException, IOException, DotSecurityException {
+    private ImportResult processImport(final boolean preview, final Job job,
+            final User user, final CsvReader csvReader, final long fileTotalLines,
+            final LongConsumer progressCallback
+    ) throws DotDataException, IOException, DotSecurityException {
 
         final var currentSiteId = getSiteIdentifier(job);
         final var currentSiteName = getSiteName(job);
@@ -397,10 +402,11 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                 preview ? "Preview" : "Process"));
         Logger.info(this, String.format("-> Content Type: %s", contentType.variable()));
 
-        return ImportUtil.importFile(importId, currentSiteId, contentType.id(), fields, preview,
-                language == null, user, language == null ? -1 : language.getId(),
+        return ImportUtil.importFileResult(importId, currentSiteId, contentType.id(), fields,
+                preview, language == null, user, language == null ? -1 : language.getId(),
                 headerInfo.headers, csvReader, headerInfo.languageCodeColumn,
-                headerInfo.countryCodeColumn, workflowActionId, httpReq, progressCallback);
+                headerInfo.countryCodeColumn, workflowActionId, fileTotalLines, httpReq,
+                progressCallback);
     }
 
     /**

@@ -1,0 +1,90 @@
+package com.dotmarketing.util.importer;
+
+/**
+ * Enumeration of validation codes used to identify specific types of line validation issues during
+ * the import process. These codes provide a standardized way to categorize and handle different
+ * validation scenarios when processing individual lines from the import file.
+ */
+public enum ImportLineValidationCodes {
+
+    /**
+     * Line does not contain all required columns
+     */
+    INCOMPLETE_LINE,
+
+    /**
+     * Invalid date format found
+     */
+    INVALID_DATE_FORMAT,
+
+    /**
+     * Required key field is missing
+     */
+    MISSING_KEY_FIELD,
+
+    /**
+     * Invalid category key found
+     */
+    INVALID_CATEGORY_KEY,
+
+    /**
+     * Invalid site/folder reference
+     */
+    INVALID_LOCATION,
+
+    /**
+     * Invalid binary field URL
+     */
+    INVALID_BINARY_URL,
+
+    /**
+     * Invalid image file type
+     */
+    INVALID_IMAGE_TYPE,
+
+    /**
+     * File not found in content repository
+     */
+    FILE_NOT_FOUND,
+
+    /**
+     * Content not found by identifier
+     */
+    CONTENT_NOT_FOUND,
+
+    /**
+     * Invalid parent folder for URL
+     */
+    INVALID_URL_FOLDER,
+
+    /**
+     * Invalid workflow action
+     */
+    INVALID_WORKFLOW_ACTION,
+
+    /**
+     * User lacks workflow permissions
+     */
+    WORKFLOW_PERMISSION_ERROR,
+
+    /**
+     * Duplicate unique field value
+     */
+    DUPLICATE_UNIQUE_VALUE,
+
+    /**
+     * Relationship validation error
+     */
+    RELATIONSHIP_VALIDATION_ERROR,
+
+    /**
+     * User lacks required permissions
+     */
+    PERMISSION_ERROR,
+
+    /**
+     * The language does not exist
+     */
+    LANGUAGE_NOT_FOUND
+
+}

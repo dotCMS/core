@@ -76,6 +76,7 @@ import {
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
+import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -369,7 +370,7 @@ describe('EditEmaEditorComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: 1, url: 'page-one' },
+                queryParams: { language_id: 1, url: 'index' },
                 data: {
                     data: {
                         url: 'http://localhost:3000'
@@ -476,11 +477,26 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should relaod when Block editor is saved', () => {
+            it('should reload when Block editor is saved', () => {
                 const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
                 const spy = jest.spyOn(store, 'reloadCurrentPage');
                 blockEditorSidebar.onSaved.emit();
                 expect(spy).toHaveBeenCalled();
+            });
+
+            it('should show the error component when there is no live version', () => {
+                const errorComponent = spectator.query(DotUvePageVersionNotFoundComponent);
+
+                spectator.detectChanges();
+
+                store.loadPageAsset({
+                    url: 'index',
+                    language_id: '9'
+                });
+
+                spectator.detectChanges();
+
+                expect(errorComponent).toBeDefined();
             });
         });
 
@@ -2573,7 +2589,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/page-one?language_id=1'
+                        'http://localhost:3000/index?language_id=1'
                     );
                 });
 

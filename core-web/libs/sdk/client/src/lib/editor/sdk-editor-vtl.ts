@@ -4,7 +4,7 @@ import {
     preserveScrollOnIframe,
     scrollHandler
 } from './listeners/listeners';
-import { isInsideEditor, addClassToEmptyContentlets, initDotUVE } from './sdk-editor';
+import { addClassToEmptyContentlets, initDotUVE, isInsideEditor } from './sdk-editor';
 import { listenBlockEditorInlineEvent } from './utils/traditional-vtl.utils';
 
 /**

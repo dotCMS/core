@@ -10,7 +10,8 @@ import {
     inject,
     Output,
     viewChild,
-    Signal
+    Signal,
+    signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -24,7 +25,6 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { map } from 'rxjs/operators';
 
-import { UVE_MODE } from '@dotcms/client';
 import {
     DotContentletLockerService,
     DotDevicesService,
@@ -38,6 +38,7 @@ import {
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -130,15 +131,7 @@ export class DotUveToolbarComponent {
     readonly $workflowLoding = this.#store.workflowLoading;
 
     defaultDevices = DEFAULT_DEVICES;
-    get MIN_DATE() {
-        const currentDate = new Date();
-
-        // We need to set this to 0 so the minDate does not collide with the previewDate value when we are initializing
-        // This prevents the input from being empty on init
-        currentDate.setHours(0, 0, 0, 0);
-
-        return currentDate;
-    }
+    $MIN_DATE = signal(this.#getMinDate());
 
     /**
      * Fetch the page on a given date
@@ -147,7 +140,7 @@ export class DotUveToolbarComponent {
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
         this.#store.loadPageAsset({
-            editorMode: UVE_MODE.LIVE,
+            mode: UVE_MODE.LIVE,
             publishDate: publishDate?.toISOString()
         });
     }
@@ -304,6 +297,24 @@ export class DotUveToolbarComponent {
                 this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
             }
         });
+    }
+
+    /**
+     * Gets the minimum allowed date for the calendar component.
+     * Sets hours/minutes/seconds/milliseconds to 0 to avoid collisions with preview date
+     * when initializing, which would cause the input to be empty.
+     *
+     * @returns {Date} The minimum allowed date with time set to midnight
+     * @private
+     */
+    #getMinDate() {
+        const currentDate = new Date();
+
+        // We need to set this to 0 so the minDate does not collide with the previewDate value when we are initializing
+        // This prevents the input from being empty on init
+        currentDate.setHours(0, 0, 0, 0);
+
+        return currentDate;
     }
 
     /**

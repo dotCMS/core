@@ -120,9 +120,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Verify preview results
             Map<String, Object> metadata = processor.getResultMetadata(testJob);
             assertNotNull(metadata, "Preview metadata should not be null");
-            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
-            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
-            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+            assertNotNull(metadata.get("error"), "Preview metadata errors should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("error")).size(),
                     "Preview metadata errors should be empty");
 
             // Verify no content was created
@@ -211,9 +210,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Verify preview results
             Map<String, Object> metadata = processor.getResultMetadata(testJob);
             assertNotNull(metadata, "Preview metadata should not be null");
-            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
-            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
-            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+            assertNotNull(metadata.get("error"), "Preview metadata errors should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("error")).size(),
                     "Preview metadata errors should be empty");
 
             // Verify no content was created
@@ -701,9 +699,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Verify preview results
             Map<String, Object> metadata = processor.getResultMetadata(testJob);
             assertNotNull(metadata, "Preview metadata should not be null");
-            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
-            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
-            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+            assertNotNull(metadata.get("error"), "Preview metadata errors should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("error")).size(),
                     "Preview metadata errors should be empty");
 
             // Verify no content was created
@@ -772,9 +769,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Verify preview results
             Map<String, Object> metadata = processor.getResultMetadata(testJob);
             assertNotNull(metadata, "Preview metadata should not be null");
-            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
-            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
-            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+            assertNotNull(metadata.get("error"), "Preview metadata errors should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("error")).size(),
                     "Preview metadata errors should be empty");
 
             // Verify no content was created
@@ -843,9 +839,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Verify preview results
             Map<String, Object> metadata = processor.getResultMetadata(testJob);
             assertNotNull(metadata, "Preview metadata should not be null");
-            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
-            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
-            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+            assertNotNull(metadata.get("error"), "Preview metadata errors should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("error")).size(),
                     "Preview metadata errors should be empty");
 
             // Verify no content was created
@@ -903,9 +898,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Verify preview results
             Map<String, Object> metadata = processor.getResultMetadata(testJob);
             assertNotNull(metadata, "Preview metadata should not be null");
-            assertNotNull(metadata.get("errors"), "Preview metadata errors should not be null");
-            assertNotNull(metadata.get("results"), "Preview metadata results should not be null");
-            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+            assertNotNull(metadata.get("error"), "Preview metadata errors should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("error")).size(),
                     "Preview metadata errors should be empty");
 
             // Verify no content was created
@@ -962,9 +956,8 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             // Verify preview results
             Map<String, Object> metadata = processor.getResultMetadata(testJob);
             assertNotNull(metadata, "Publish metadata should not be null");
-            assertNotNull(metadata.get("errors"), "Publish metadata errors should not be null");
-            assertNotNull(metadata.get("results"), "Publish metadata results should not be null");
-            assertEquals(0, ((ArrayList) metadata.get("errors")).size(),
+            assertNotNull(metadata.get("error"), "Publish metadata errors should not be null");
+            assertEquals(0, ((ArrayList) metadata.get("error")).size(),
                     "Publish metadata errors should be empty");
 
             // Verify the content was actually created

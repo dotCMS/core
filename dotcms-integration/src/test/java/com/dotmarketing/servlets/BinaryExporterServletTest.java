@@ -60,8 +60,11 @@ import java.util.Date;
 import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class BinaryExporterServletTest {
@@ -332,15 +335,15 @@ public class BinaryExporterServletTest {
 
             final String fileURI = "/contentAsset/image/" + fileContentlet.getInode()
                     + "/fileAsset/byInode/true/quality_q/75/resize_w/600/quality_q/75/quality_q/75";
-            final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-            Mockito.when(request.getHeader("user-agent")).thenReturn(userAgent);
-            Mockito.when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
-            Mockito.when(request.getRequestURI()).thenReturn(fileURI);
-            Mockito.when(request.getServletPath()).thenReturn("/contentAsset");
-            Mockito.when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getHeader("user-agent")).thenReturn(userAgent);
+            when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+            when(request.getRequestURI()).thenReturn(fileURI);
+            when(request.getServletPath()).thenReturn("/contentAsset");
+            when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
                     .thenReturn("image/webp");
 
-            Mockito.when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
+            when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
                     .thenReturn("image/jpeg");
 
             final HttpServletResponse response = new MockHttpContentTypeResponse(
@@ -389,7 +392,7 @@ public class BinaryExporterServletTest {
     private HttpServletResponse mockServletResponse(final TmpBinaryFile tmpTargetFile) {
         try {
             return new MockHttpStatusResponse(new MockHttpCaptureResponse(
-                    Mockito.mock(HttpServletResponse.class), new FileOutputStream(tmpTargetFile.getFile())));
+                    mock(HttpServletResponse.class), new FileOutputStream(tmpTargetFile.getFile())));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -403,5 +406,6 @@ public class BinaryExporterServletTest {
         binaryExporterServlet.doGet(request, response);
 
     }
+
 
 }

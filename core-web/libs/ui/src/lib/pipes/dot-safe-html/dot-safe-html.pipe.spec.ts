@@ -7,7 +7,9 @@ describe('SafeHtmlPipe', () => {
     let sanitizer: DomSanitizer;
 
     beforeEach(() => {
-        sanitizer = jasmine.createSpyObj('DomSanitizer', ['bypassSecurityTrustHtml']);
+        sanitizer = {
+            bypassSecurityTrustHtml: jest.fn()
+        } as unknown as DomSanitizer;
         pipe = new DotSafeHtmlPipe(sanitizer);
     });
 

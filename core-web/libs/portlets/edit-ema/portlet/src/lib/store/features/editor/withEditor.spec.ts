@@ -6,9 +6,9 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { UVE_MODE } from '@dotcms/client';
 import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withEditor } from './withEditor';
 
@@ -244,11 +244,17 @@ describe('withEditor', () => {
                             ...MOCK_RESPONSE_HEADLESS.vanityUrl,
                             url: 'first'
                         }
+                    },
+                    pageParams: {
+                        language_id: '1',
+                        variantName: 'DEFAULT',
+                        url: 'first',
+                        [PERSONA_KEY]: 'dot:persona'
                     }
                 });
 
                 expect(store.$iframeURL()).toBe(
-                    'http://localhost:3000/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
+                    'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
         });
@@ -286,7 +292,7 @@ describe('withEditor', () => {
 
             it('should not have opacity or progressBar in preview mode', () => {
                 patchState(store, {
-                    pageParams: { ...emptyParams, editorMode: UVE_MODE.PREVIEW }
+                    pageParams: { ...emptyParams, mode: UVE_MODE.PREVIEW }
                 });
 
                 expect(store.$editorProps().iframe.opacity).toBe('1');
@@ -483,7 +489,7 @@ describe('withEditor', () => {
                         canEditPage: true,
                         pageParams: {
                             ...emptyParams,
-                            editorMode: UVE_MODE.PREVIEW
+                            mode: UVE_MODE.PREVIEW
                         },
                         state: EDITOR_STATE.IDLE
                     });

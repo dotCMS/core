@@ -94,13 +94,6 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
-        describe('addData', () => {
-            it('should add new data', () => {
-                store.addData(mockData);
-                expect(store.data()).toEqual(mockData);
-            });
-        });
-
         describe('deleteItem', () => {
             it('should delete item by inode', () => {
                 store.setData(mockData);
@@ -128,67 +121,6 @@ describe('RelationshipFieldStore', () => {
                     currentPage: 1,
                     rowsPerPage: 6
                 });
-            });
-        });
-
-        describe('reorderData', () => {
-            beforeEach(() => {
-                store.setData(mockData);
-            });
-
-            it('should reorder data when moving item up', () => {
-                const currentIndex = 1;
-                const newIndex = 0;
-                store.reorderData(currentIndex, newIndex);
-
-                const reorderedData = store.data();
-                expect(reorderedData[0].inode).toBe('inode2');
-                expect(reorderedData[1].inode).toBe('inode1');
-                expect(reorderedData[2].inode).toBe('inode3');
-            });
-
-            it('should reorder data when moving item down', () => {
-                const currentIndex = 0;
-                const newIndex = 2;
-                store.reorderData(currentIndex, newIndex);
-
-                const reorderedData = store.data();
-                expect(reorderedData[0].inode).toBe('inode2');
-                expect(reorderedData[1].inode).toBe('inode3');
-                expect(reorderedData[2].inode).toBe('inode1');
-            });
-
-            it('should not change data when current and new index are the same', () => {
-                const currentIndex = 1;
-                const newIndex = 1;
-                store.reorderData(currentIndex, newIndex);
-
-                const reorderedData = store.data();
-                expect(reorderedData[0].inode).toBe('inode1');
-                expect(reorderedData[1].inode).toBe('inode2');
-                expect(reorderedData[2].inode).toBe('inode3');
-            });
-
-            it('should handle edge case when moving first item to last position', () => {
-                const currentIndex = 0;
-                const newIndex = mockData.length - 1;
-                store.reorderData(currentIndex, newIndex);
-
-                const reorderedData = store.data();
-                expect(reorderedData[0].inode).toBe('inode2');
-                expect(reorderedData[1].inode).toBe('inode3');
-                expect(reorderedData[2].inode).toBe('inode1');
-            });
-
-            it('should handle edge case when moving last item to first position', () => {
-                const currentIndex = mockData.length - 1;
-                const newIndex = 0;
-                store.reorderData(currentIndex, newIndex);
-
-                const reorderedData = store.data();
-                expect(reorderedData[0].inode).toBe('inode3');
-                expect(reorderedData[1].inode).toBe('inode1');
-                expect(reorderedData[2].inode).toBe('inode2');
             });
         });
     });

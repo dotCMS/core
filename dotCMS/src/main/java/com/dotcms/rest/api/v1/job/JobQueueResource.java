@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.job;
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
@@ -69,7 +70,8 @@ public class JobQueueResource {
         try {
             final String jobId = helper.createJob(
                     queueName, form, initDataObject.getUser(), request);
-            return Response.ok(new ResponseEntityView<>(jobId)).build();
+            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException e) {
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
         }
@@ -94,7 +96,8 @@ public class JobQueueResource {
         try {
             final String jobId = helper.createJob(
                     queueName, parameters, initDataObject.getUser(), request);
-            return Response.ok(new ResponseEntityView<>(jobId)).build();
+            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException e) {
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
         }

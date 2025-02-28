@@ -1,8 +1,9 @@
 @let contentType = $store.contentType();
 @let contentlet = $store.contentlet();
-@let showSidebar = $store.showSidebar();
+@let showSidebar = $store.isSidebarOpen();
 @let actions = $store.getActions();
 @let showWorkflowActions = $store.showWorkflowActions();
+@let activeIndex = $store.activeTab();
 
 <!--Locales-->
 @let currentLocale = $store.currentLocale();
@@ -16,6 +17,8 @@
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
             [class.dot-edit-content-tabview--single-tab]="$hasSingleTab()"
+            (onChange)="onActiveIndexChange($event)"
+            [activeIndex]="activeIndex"
             class="dot-edit-content-tabview">
             <!-- Add prepend and append areas to the tabs -->
             <ng-template

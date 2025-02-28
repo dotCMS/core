@@ -259,7 +259,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((items: DotCMSContentlet[]) => {
-                this.store.addData(items);
+                this.store.setData(items);
             });
     }
 
@@ -272,6 +272,6 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
             return;
         }
 
-        this.store.reorderData(event.dragIndex, event.dropIndex);
+        this.store.setData(this.store.data());
     }
 }

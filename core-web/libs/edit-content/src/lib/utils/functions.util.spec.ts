@@ -1,9 +1,10 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
-    DotLanguage
+    DotLanguage,
+    UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
@@ -13,10 +14,9 @@ import {
     createPaths,
     generatePreviewUrl,
     getFieldVariablesParsed,
-    getPersistSidebarState,
+    getStoredUIState,
     isFilteredType,
     isValidJson,
-    setPersistSidebarState,
     sortLocalesTranslatedFirst,
     stringToJson
 } from './functions.util';
@@ -25,7 +25,6 @@ import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './moc
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
-import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 describe('Utils Functions', () => {
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
@@ -613,34 +612,75 @@ describe('Utils Functions', () => {
         });
     });
 
-    describe('Sidebar State Persistence', () => {
+    describe('UI State Storage', () => {
         beforeEach(() => {
-            localStorage.clear();
+            sessionStorage.clear();
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            jest.spyOn(console, 'warn').mockImplementation(() => {});
         });
 
-        describe('getPersistSidebarState', () => {
-            it('should return true when localStorage is empty', () => {
-                expect(getPersistSidebarState()).toBe(true);
-            });
-
-            it('should return true when localStorage value is "true"', () => {
-                localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, 'true');
-                expect(getPersistSidebarState()).toBe(true);
-            });
-
-            it('should return false when localStorage value is "false"', () => {
-                localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, 'false');
-                expect(getPersistSidebarState()).toBe(false);
-            });
+        afterEach(() => {
+            jest.restoreAllMocks();
         });
 
-        describe('setPersistSidebarState', () => {
-            it('should set the value in localStorage', () => {
-                setPersistSidebarState('true');
-                expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('true');
+        describe('getStoredUIState', () => {
+            it('should return default state when sessionStorage is empty', () => {
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+            });
 
-                setPersistSidebarState('false');
-                expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('false');
+            it('should return stored state from sessionStorage', () => {
+                const mockState = {
+                    activeTab: 2,
+                    isSidebarOpen: false,
+                    activeSidebarTab: 1
+                };
+                sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
+
+                const state = getStoredUIState();
+                expect(state).toEqual(mockState);
+            });
+
+            it('should return default state and warn when sessionStorage has invalid JSON', () => {
+                sessionStorage.setItem(UI_STORAGE_KEY, 'invalid-json');
+
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+                expect(console.warn).toHaveBeenCalledWith(
+                    'Error reading UI state from sessionStorage:',
+                    expect.any(Error)
+                );
+            });
+
+            it('should return default state and warn when sessionStorage throws error', () => {
+                const mockGetItem = jest.fn(() => {
+                    throw new Error('Storage error');
+                });
+
+                Object.defineProperty(window, 'sessionStorage', {
+                    value: {
+                        getItem: mockGetItem
+                    }
+                });
+
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+                expect(console.warn).toHaveBeenCalledWith(
+                    'Error reading UI state from sessionStorage:',
+                    expect.any(Error)
+                );
             });
         });
     });
@@ -727,7 +767,7 @@ describe('Utils Functions', () => {
             });
 
             const expectedUrl =
-                'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Fpost%2F5-snow-sports-to-try-this-winter%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&editorMode=edit';
+                'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Fpost%2F5-snow-sports-to-try-this-winter%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE';
 
             expect(generatePreviewUrl(contentlet)).toBe(expectedUrl);
         });

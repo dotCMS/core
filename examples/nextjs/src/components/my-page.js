@@ -19,7 +19,6 @@ import Navigation from './layout/navigation';
 import NotFound from '@/app/not-found';
 import { withExperiments } from '@dotcms/experiments';
 import { usePageAsset } from '../hooks/usePageAsset';
-
 /**
  * Configure experiment settings below. If you are not using experiments,
  * you can ignore or remove the experiment-related code and imports.

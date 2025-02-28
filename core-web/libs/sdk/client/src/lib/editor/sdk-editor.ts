@@ -23,7 +23,7 @@ export function updateNavigation(pathname: string): void {
     postMessageToEditor({
         action: CLIENT_ACTIONS.NAVIGATION_UPDATE,
         payload: {
-            url: pathname === '/' ? 'index' : pathname?.replace('/', '')
+            url: pathname || '/'
         }
     });
 }
@@ -92,6 +92,8 @@ export function reorderMenu(config?: ReorderMenuConfig): void {
 }
 
 /**
+ * @deprecated Use `getUVEState` function on {@link https://npmjs.com/package/@dotcms/uve|@dotcms/uve} instead, this function will be removed on future versions.
+ *
  * Checks if the code is running inside the DotCMS Universal Visual Editor (UVE).
  *
  * The function checks three conditions:

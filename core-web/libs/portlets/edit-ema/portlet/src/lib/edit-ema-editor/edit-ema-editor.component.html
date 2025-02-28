@@ -27,6 +27,9 @@
             height: $editorProps().iframe?.wrapper?.height
         }"
         class="iframe-wrapper">
+        @if (uveStore.status() === UVE_STATUS.ERROR) {
+            <dot-uve-page-version-not-found />
+        }
         <iframe
             (load)="onIframePageLoad()"
             [src]="uveStore.$iframeURL() | safeUrl"
@@ -40,6 +43,7 @@
             data-testId="iframe"
             width="100%"
             height="100%"></iframe>
+
         @if ($editorProps().progressBar) {
             <p-progressBar
                 [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"

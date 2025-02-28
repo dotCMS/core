@@ -1,53 +1,15 @@
-/* 
-* Licensed to dotCMS LLC under the dotCMS Enterprise License (the
-* “Enterprise License”) found below 
-* 
-* Copyright (c) 2023 dotCMS Inc.
-* 
-* With regard to the dotCMS Software and this code:
-* 
-* This software, source code and associated documentation files (the
-* "Software")  may only be modified and used if you (and any entity that
-* you represent) have:
-* 
-* 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
-* of Service, available at https://www.dotcms.com/terms (the “Enterprise
-* Terms”) or have another agreement governing the licensing and use of the
-* Software between you and dotCMS. 2. Each dotCMS instance that uses
-* enterprise features enabled by the code in this directory is licensed
-* under these agreements and has a separate and valid dotCMS Enterprise
-* server key issued by dotCMS.
-* 
-* Subject to these terms, you are free to modify this Software and publish
-* patches to the Software if you agree that dotCMS and/or its licensors
-* (as applicable) retain all right, title and interest in and to all such
-* modifications and/or patches, and all such modifications and/or patches
-* may only be used, copied, modified, displayed, distributed, or otherwise
-* exploited with a valid dotCMS Enterprise license for the correct number
-* of dotCMS instances.  You agree that dotCMS and/or its licensors (as
-* applicable) retain all right, title and interest in and to all such
-* modifications.  You are not granted any other rights beyond what is
-* expressly stated herein.  Subject to the foregoing, it is forbidden to
-* copy, merge, publish, distribute, sublicense, and/or sell the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* 
-* For all third party components incorporated into the dotCMS Software,
-* those components are licensed under the original license provided by the
-* owner of the applicable component.
+/*
+*
+* Copyright (c) 2025 dotCMS LLC
+* Use of this software is governed by the Business Source License included
+* in the LICENSE file found at in the root directory of software.
+* SPDX-License-Identifier: BUSL-1.1
+*
 */
 
 package com.dotcms.enterprise.cache.provider;
 
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotmarketing.business.APILocator;
+
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.CacheOSGIService;
 import com.dotmarketing.business.cache.provider.CacheProvider;
@@ -94,29 +56,7 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
         }).onFailure(e -> Logger.error(this, "Error creating CacheProvider [" + providerClassName + "].", e)).toJavaOptional();
     }
 
-    /**
-     * Verifies if the server have a valid Enterprise License
-     *
-     * @return
-     */
-    private boolean isCommunity () {
 
-         /*
-         Validate if we can get use the LicenseUtil, the CacheLocator and CacheProviders
-         are one of the first elements to be created, using the LicenseUtil here on a clean install
-         can throw errors as the DB could not be even been loaded or a server id file could not be created
-         and we don't want to stop the execution here for those expected cases.
-         */
-        String serverId = APILocator.getServerAPI().readServerId();
-        if ( serverId == null ) {
-            //We can continue, probably a first start
-            Logger.debug(this, "Unable to get License level [server id is null].");
-            return true;
-        }
-
-        return LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level ;
-
-    }
 
     /**
      * Return all the registered CacheProviders, there are cases when is required to iterate over all the Providers, like on
@@ -138,7 +78,7 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
 
 
     private List<String> getProviderNamesPerRegion(String group){
-        if ( isCommunity() || null == group ) {
+        if (null == group ) {
             return noLicenseProviders;
         }
         //Read from the properties the cache chain to use for this region, if nothing found the default chain will be used

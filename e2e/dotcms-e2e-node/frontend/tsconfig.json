@@ -2,8 +2,11 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@pages/*": ["pages/*"],
-      "@utils/*": ["utils/*"]
+      "@pages/*": ["./src/pages/*"],
+      "@locators/*": ["./src/locators/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@data/*": ["./src/data/*"],
+      "@models/*": ["./src/models/*"]
     }
   }
 }

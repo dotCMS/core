@@ -54,6 +54,7 @@ import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
 
+import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-palette.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
@@ -119,7 +120,8 @@ import {
         ProgressBarModule,
         DotResultsSeoToolComponent,
         DotUveToolbarComponent,
-        DotBlockEditorSidebarComponent
+        DotBlockEditorSidebarComponent,
+        DotUvePageVersionNotFoundComponent
     ],
     providers: [
         DotCopyContentModalService,
@@ -161,6 +163,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
+
+    readonly UVE_STATUS = UVE_STATUS;
 
     get contentWindow(): Window {
         return this.iframe.nativeElement.contentWindow;
@@ -1081,8 +1085,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet, container } = payload;
         const { onNumberOfPages = '1', title } = contentlet;
-
-        // console.log("LLAMADO", this.$editorProps().showDialogs);
 
         if (Number(onNumberOfPages) <= 1) {
             this.dialog?.editContentlet(contentlet);

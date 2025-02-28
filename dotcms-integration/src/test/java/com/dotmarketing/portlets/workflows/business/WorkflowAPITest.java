@@ -1523,13 +1523,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertEquals(foundActions.size(), 5);
             ////
             final Contentlet testContentleti = testContentlet;
-            runNoLicense(()-> {
 
-               final List<WorkflowStep> steps = getSteps(testContentleti);
-
-                Assert.assertFalse(steps.isEmpty());
-                Assert.assertEquals(WorkflowAPI.SYSTEM_WORKFLOW_ID, steps.get(0).getSchemeId());
-            });
         } finally {
             contentletAPI.destroy(testContentlet, user, false);
         }

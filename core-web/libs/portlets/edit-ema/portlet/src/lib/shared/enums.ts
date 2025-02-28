@@ -32,12 +32,6 @@ export enum EDITOR_STATE {
     INLINE_EDITING = 'inline-editing'
 }
 
-export enum PAGE_MODE {
-    EDIT = 'EDIT_MODE',
-    PREVIEW = 'PREVIEW_MODE',
-    LIVE = 'LIVE'
-}
-
 export enum CommonErrors {
     'NOT_FOUND' = '404',
     'ACCESS_DENIED' = '403'

@@ -13,8 +13,8 @@ import NotFound from "./components/notFound";
 import type { DotcmsNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
 export type MyPageProps = {
-  pageAsset: DotCMSPageAsset | undefined;
-  nav: DotcmsNavigationItem[] | undefined;
+  pageAsset?: DotCMSPageAsset;
+  nav?: DotcmsNavigationItem[];
 };
 
 export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {

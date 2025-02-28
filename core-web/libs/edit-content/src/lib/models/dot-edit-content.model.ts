@@ -26,3 +26,15 @@ export interface DotWorkflowState extends DotCMSWorkflowStatus {
     contentState: DotContentletState;
     resetAction?: DotCMSWorkflowAction;
 }
+
+/**
+ * UIState interface
+ *
+ * @export
+ * @interface UIState
+ */
+export interface UIState {
+    activeTab: number;
+    isSidebarOpen: boolean;
+    activeSidebarTab: number;
+}

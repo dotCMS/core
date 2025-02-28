@@ -90,32 +90,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     }
 
-    /**
-     * Runs a delegate on non-license mode
-     *
-     * @param delegate
-     * @throws Exception
-     */
-    protected static void runNoLicense(final VoidDelegate delegate) throws Exception {
 
-        final String licenseSerial = LicenseUtil.getSerial();
-
-        try {
-
-            LicenseUtil.freeLicenseOnRepo();
-            Assert.assertFalse(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
-
-            delegate.execute();
-        } finally {
-            try {
-                LicenseUtil.pickLicense(licenseSerial);
-                Assert.assertTrue(LicenseUtil.getLevel() > LicenseLevel.STANDARD.level);
-            } catch (Exception e) {
-                Assert.fail(e.getMessage());
-            }
-        }
-
-    } // runNoLicense.
 
     @Before
     public void beforeBase() {

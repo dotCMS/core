@@ -32,17 +32,20 @@ public class ContextLifecycleListener implements ServletContextListener {
     public void contextDestroyed(ServletContextEvent arg0) {
         Logger.info(this, "Shutdown : Started, executing a clean shutdown.");
 
-        Try.run(() -> QuartzUtils.stopSchedulers())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
-        
+
         Try.run(() -> LicenseUtil.freeLicenseOnRepo())
                         .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
 
-        
+        Try.run(() -> APILocator.getServerAPI().removeServerFromClusterTable(APILocator.getServerAPI().readServerId()))
+                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+
+        Try.run(() -> QuartzUtils.stopSchedulers())
+                .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+
+
+
         Try.run(() -> CacheLocator.getCacheAdministrator().shutdown())
                         .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
-        
-
 
         Try.run(() -> DotConcurrentFactory.getInstance().shutdownAndDestroy())
                         .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
