@@ -12,6 +12,9 @@ Feature: Test Time Machine functionality
     * def BANNER_CONTENTLET_ONE_V2 = 'banner 1 v2'
     * def NON_PUBLISHED_CONTENTLET = 'Working version Only! with publish date'
 
+    * def URL_CONTENT_MAP_TITLE_V1 = 'url-content-map-test-1-v1'
+    * def URL_CONTENT_MAP_TITLE_V2 = 'url-content-map-test-1-v2'
+
     * callonce read('classpath:graphql/ftm/setup.feature')
 
   @smoke @positive @ftm
@@ -128,6 +131,48 @@ Feature: Test Time Machine functionality
     * match rendered contains NON_PUBLISHED_CONTENTLET
 
     * match rendered contains BANNER_CONTENTLET_ONE_V2
+
+
+  @positive @ftm
+  Scenario: Test Time Machine functionality in UrlContentMap when the current date is provided expect urlContentMap
+  title to match rendered one.
+
+    Given url baseUrl + '/api/v1/page/render/'+urlMapContentPieceOneUrl+'?language_id=1&mode=LIVE&publishDate='+formattedCurrentDateTime
+    And headers commonHeaders
+    When method GET
+    Then status 200
+    * karate.log('response:: ', response)
+
+    * def urlContentMap = response.entity.urlContentMap
+    * def urlContentMapTitle = urlContentMap.title
+    # Expect the first version of the content to be displayed
+    * match urlContentMapTitle contains URL_CONTENT_MAP_TITLE_V1
+
+    # Check the rendered page. The same items included as contentlets should be displayed here too
+    * def rendered = response.entity.page.rendered
+    * karate.log('rendered:', rendered)
+    * match rendered contains URL_CONTENT_MAP_TITLE_V1
+
+  @positive @ftm
+  Scenario: Test Time Machine functionality in UrlContentMap when a publish date is provided expect urlContentMap
+  title to match rendered one.
+
+    Given url baseUrl + '/api/v1/page/render/'+urlMapContentPieceOneUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTime
+    And headers commonHeaders
+    When method GET
+    Then status 200
+    * karate.log('response:: ', response)
+
+    * def urlContentMap = response.entity.urlContentMap
+    * def urlContentMapTitle = urlContentMap.title
+    # Expect the second version of the content to be displayed
+    * match urlContentMapTitle contains URL_CONTENT_MAP_TITLE_V2
+
+    # Check the rendered page. The same items included as contentlets should be displayed here too
+    * def rendered = response.entity.page.rendered
+    * karate.log('rendered:', rendered)
+    * match rendered contains URL_CONTENT_MAP_TITLE_V2
+
 
   @smoke @positive @graphql @ftm
   Scenario: Send GraphQL query to fetch page details no publish date is sent

@@ -9,12 +9,13 @@ Background:
     * def publishDate = __arg.publishDate
     * def expiresOn = __arg.expiresOn
     * def action = __arg.action ? __arg.action : 'PUBLISH'
+    * def urlTitle = __arg.urlTitle
     # Default to PUBLISH if action is not provided
 
     Given url baseUrl + '/api/v1/workflow/actions/default/fire/' + action + '?indexPolicy=WAIT_FOR'
     And headers commonHeaders
 
-    * def requestPayload = buildContentRequestPayload (contentTypeId, title, publishDate, expiresOn)
+    * def requestPayload = buildContentRequestPayload (contentTypeId, title, publishDate, expiresOn, urlTitle)
     And request requestPayload
 
     When method POST
