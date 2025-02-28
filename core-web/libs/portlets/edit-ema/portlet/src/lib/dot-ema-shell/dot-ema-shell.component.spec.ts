@@ -329,9 +329,9 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'index' });
+                expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: '/index' });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
+                    '/?language_id=1&url=%2Findex&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
@@ -342,7 +342,7 @@ describe('DotEmaShellComponent', () => {
 
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
-                    url: '/some-url/some-nested-url/'
+                    url: '/some-url/some-nested-url'
                 };
 
                 overrideRouteSnashot(
@@ -353,10 +353,10 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith({
                     ...params,
-                    url: 'some-url/some-nested-url'
+                    url: '/some-url/some-nested-url'
                 });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2Fsome-nested-url&variantName=DEFAULT&mode=EDIT_MODE'
+                    '/?language_id=1&url=%2Fsome-url%2Fsome-nested-url&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
@@ -375,9 +375,12 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: 'some-url/' });
+                expect(spyloadPageAsset).toHaveBeenCalledWith({
+                    ...params,
+                    url: '/some-url/index'
+                });
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?language_id=1&url=some-url%2F&variantName=DEFAULT&mode=EDIT_MODE'
+                    '/?language_id=1&url=%2Fsome-url%2Findex&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
@@ -392,7 +395,7 @@ describe('DotEmaShellComponent', () => {
                 };
 
                 const expectedParams = {
-                    url: 'some-url/',
+                    url: '/some-url/index',
                     [PERSONA_KEY]: 'someCoolDude',
                     mode: UVE_MODE.EDIT,
                     language_id: 1
@@ -406,7 +409,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
                 expect(spyloadPageAsset).toHaveBeenCalledWith(expectedParams);
                 expect(spyLocation).toHaveBeenCalledWith(
-                    '/?url=some-url%2F&language_id=1&mode=EDIT_MODE&personaId=someCoolDude'
+                    '/?url=%2Fsome-url%2Findex&language_id=1&mode=EDIT_MODE&personaId=someCoolDude'
                 );
             });
         });
@@ -587,6 +590,100 @@ describe('DotEmaShellComponent', () => {
                 expect(spyStoreLoadPage).toHaveBeenCalledWith(pageParams);
                 expect(spyUrlTree).toHaveBeenCalledWith([], { queryParams: userParams });
                 expect(spyLocation).toHaveBeenCalledWith(expectURL.toString());
+            });
+
+            it('should not include clientHost in location when it matches base client host', () => {
+                const spyLocation = jest.spyOn(location, 'go');
+                const baseClientHost = 'http://localhost:3000';
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: baseClientHost
+                };
+
+                // Set up route with matching uveConfig.url
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: params,
+                        data: {
+                            uveConfig: {
+                                url: baseClientHost,
+                                options: BASIC_OPTIONS
+                            }
+                        }
+                    })
+                );
+
+                store.loadPageAsset(params);
+                spectator.detectChanges();
+
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
+                );
+            });
+
+            it('should include clientHost in location when it differs from base client host', () => {
+                const spyLocation = jest.spyOn(location, 'go');
+                const baseClientHost = 'http://localhost:3000';
+                const differentClientHost = 'http://localhost:4000';
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: differentClientHost
+                };
+
+                // Set up route with different uveConfig.url
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: params,
+                        data: {
+                            uveConfig: {
+                                url: baseClientHost,
+                                options: {
+                                    allowedDevURLs: [differentClientHost]
+                                }
+                            }
+                        }
+                    })
+                );
+
+                store.loadPageAsset(params);
+                spectator.detectChanges();
+
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE&clientHost=http:%2F%2Flocalhost:4000'
+                );
+            });
+
+            it('should handle sanitized URLs in clientHost comparison', () => {
+                const spyLocation = jest.spyOn(location, 'go');
+                const baseClientHost = 'http://localhost:3000/';
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:3000/' // No trailing slash
+                };
+
+                // Set up route with uveConfig.url that has trailing slash
+                overrideRouteSnashot(
+                    activatedRoute,
+                    SNAPSHOT_MOCK({
+                        queryParams: params,
+                        data: {
+                            uveConfig: {
+                                url: baseClientHost,
+                                options: BASIC_OPTIONS
+                            }
+                        }
+                    })
+                );
+
+                store.loadPageAsset(params);
+                spectator.detectChanges();
+
+                // Should treat these as the same URL and not include clientHost
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
+                );
             });
         });
 

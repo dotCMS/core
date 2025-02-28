@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
@@ -41,7 +42,7 @@ import java.util.Optional;
  *
  */
 public interface FieldAPI {
-	String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
+	String FULLSCREEN_FIELD_FEATURE_FLAG = FeatureFlagName.FULLSCREEN_FIELD_FEATURE_FLAG;
 
 	/**
 	 * Retrieves the list of the base Fields Types

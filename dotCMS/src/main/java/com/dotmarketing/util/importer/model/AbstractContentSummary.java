@@ -1,13 +1,21 @@
 package com.dotmarketing.util.importer.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import org.immutables.value.Value;
 
 /**
- * Immutable data structure that holds summary information about content processing results.
- * This includes counts of created and updated content, as well as the content type identifier.
+ * AbstractContentSummary represents a summary of content operation statistics,
+ * including counts of created, updated, to be created, to be updated, and duplicate content.
+ * It is an abstract representation meant to be extended by concrete implementations.
+ * This class provides mechanisms to serialize and deserialize content summary data,
+ * with JSON mappings for specific fields.
+ *
+ * Implementations of this interface are expected to capture various metrics related to
+ * content management operations, allowing the encoding and decoding of the state of these metrics.
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
@@ -16,18 +24,76 @@ import org.immutables.value.Value;
 public interface AbstractContentSummary extends Serializable {
 
     /**
-     * @return The number of new content items created during the import process
+     * Retrieves the count of content items that were successfully created during the import
+     * process.
+     *
+     * @return The number of content items created
      */
-    int created();
+    @JsonIgnore
+    int createdContent();
 
     /**
-     * @return The number of existing content items updated during the import process
+     * Returns the count of content items that were updated during the operation. This value
+     * represents the number of existing content entries successfully modified.
+     *
+     * @return The count of updated content items
      */
-    int updated();
+    @JsonIgnore
+    int updatedContent();
 
     /**
-     * @return The identifier of the content type being processed
+     * Gets the count of content items to be created during the import operation. This represents
+     * content items that do not currently exist and need to be created based on the import data.
+     *
+     * @return The number of content items marked for creation
      */
-    String contentType();
+    @JsonIgnore
+    int toCreateContent();
+
+    /**
+     * Gets the count of content items that are marked to be updated during the processing
+     * operation. This represents content that requires updates due to changes detected in the
+     * import data or other processing logic.
+     *
+     * @return The count of content items marked for update
+     */
+    @JsonIgnore
+    int toUpdateContent();
+
+    /**
+     * Gets the count of duplicate content items encountered during processing. This represents
+     * content that was identified as duplicate based on the import data.
+     *
+     * @return Count of duplicate content items
+     */
+    @JsonIgnore
+    int duplicateContent();
+
+    /**
+     * Retrieves the count of content items that were successfully created during the import
+     * operation. This value reflects the number of newly added content items.
+     *
+     * @return The count of content items created
+     */
+    @JsonProperty("created")
+    int createdDisplay();
+
+    /**
+     * Retrieves the count of content items that were updated during the operation for display
+     * purposes. This value might represent a user-facing view of the number of updated items.
+     *
+     * @return The count of content items updated for display purposes
+     */
+    @JsonProperty("updated")
+    int updatedDisplay();
+
+    /**
+     * Retrieves the count of content items that failed during the operation. This represents the
+     * number of items that encountered issues and could not be processed successfully.
+     *
+     * @return The count of failed content items
+     */
+    @JsonProperty("failed")
+    int failedDisplay();
 
 }

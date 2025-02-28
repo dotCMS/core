@@ -12,6 +12,11 @@ Feature: Add pieces of content then Publish the Page
       """
       [
         {
+          "contentletsId": "#(banner_content_ids)",
+          "identifier": "#(container_id)",
+          "uuid": "1"
+        },
+        {
           "contentletsId": "#(content_ids)",
           "identifier": "#(container_id)",
           "uuid": "1"

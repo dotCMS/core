@@ -1,5 +1,5 @@
 import { Page, expect, Locator } from "@playwright/test";
-import { loginLocators } from "../locators/globalLocators";
+import { loginLocators } from "@locators/globalLocators";
 
 export class dotCMSUtils {
   /**

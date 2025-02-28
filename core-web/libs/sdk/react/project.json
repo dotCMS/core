@@ -16,16 +16,18 @@
             "executor": "@nx/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
+                "main": "libs/sdk/react/src/index.ts",
+                "additionalEntryPoints": ["libs/sdk/react/src/next.ts"],
+                "generateExportsField": true,
                 "outputPath": "dist/libs/sdk/react",
                 "tsConfig": "libs/sdk/react/tsconfig.lib.json",
                 "project": "libs/sdk/react/package.json",
                 "entryFile": "libs/sdk/react/src/index.ts",
-                "additionalEntryPoints": ["libs/sdk/react/src/next.ts"],
                 "external": ["react/jsx-runtime"],
                 "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
                 "compiler": "babel",
-                "extractCss": false,
                 "format": ["esm"],
+                "extractCss": false,
                 "assets": [
                     {
                         "glob": "libs/sdk/react/README.md",

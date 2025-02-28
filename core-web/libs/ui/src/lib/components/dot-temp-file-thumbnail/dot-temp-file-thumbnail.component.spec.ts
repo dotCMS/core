@@ -1,10 +1,10 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import {
-    DotTempFileThumbnailComponent,
-    CONTENT_THUMBNAIL_TYPE
+    CONTENT_THUMBNAIL_TYPE,
+    DotTempFileThumbnailComponent
 } from './dot-temp-file-thumbnail.component';
 
 const METADATA_MOCK = {

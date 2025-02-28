@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.util.PageMode;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
@@ -85,9 +86,8 @@ public class FilesCollector implements Collector {
                 final String actualUri = uri.substring(0, uri.lastIndexOf('.')) + ".scss";
                 return Optional.ofNullable(this.fileAssetAPI.getFileByPath(actualUri, host, languageId, true));
             } else if (uri.startsWith("/dA") || uri.startsWith("/contentAsset") || uri.startsWith("/dotAsset")) {
-                final String[] split = uri.split(StringPool.FORWARD_SLASH);
-                final String id = uri.startsWith("/contentAsset") ? split[3] : split[2];
-                return getFileAsset(languageId, id);
+                final FieldNameIdentifier fieldNameIdentifier = getIdentifierAndFieldName(uri);
+                return getFileAsset(languageId, fieldNameIdentifier);
             } else {
                 return Optional.ofNullable(this.fileAssetAPI.getFileByPath(uri, host, languageId, true));
             }
@@ -96,15 +96,47 @@ public class FilesCollector implements Collector {
         }
     }
 
-    private Optional<Contentlet> getFileAsset(final Long languageId, final String id) throws DotDataException, DotSecurityException {
+    private static FieldNameIdentifier getIdentifierAndFieldName(String uri) {
+        final String[] split = uri.split(StringPool.FORWARD_SLASH);
 
-        return Optional.ofNullable(contentletAPI.findContentletByIdentifier(id, true, languageId,
-                APILocator.systemUser(), false));
+        final int idIndex =  uri.startsWith("/contentAsset") ? 3 : 2;
+        final int fieldNameIndex =  uri.startsWith("/contentAsset") ? 4 : 3;
+
+        return new FieldNameIdentifier(split[idIndex],
+                fieldNameIndex < split.length || !uri.startsWith("/dotAsset")? split[fieldNameIndex] : null);
+    }
+
+    private Optional<Contentlet> getFileAsset(final Long languageId, final FieldNameIdentifier fieldNameIdentifier)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet contentletByIdentifier = contentletAPI.findContentletByIdentifier(fieldNameIdentifier.identifier,
+                PageMode.get().showLive, languageId,
+                APILocator.systemUser(), false);
+
+        if (Objects.nonNull(fieldNameIdentifier.fieldName)) {
+            final String binaryFileId = contentletByIdentifier.getStringProperty(fieldNameIdentifier.fieldName);
+
+            return Optional.ofNullable(contentletAPI.findContentletByIdentifier(binaryFileId,
+                    PageMode.get().showLive, languageId,
+                    APILocator.systemUser(), false));
+        } else {
+            return Optional.ofNullable(contentletByIdentifier);
+        }
     }
 
     @Override
     public boolean isAsync() {
         return true;
+    }
+
+    private static class FieldNameIdentifier {
+        final String fieldName;
+        final String identifier;
+
+        FieldNameIdentifier(final String identifier, final String fieldName) {
+            this.fieldName = fieldName;
+            this.identifier = identifier;
+        }
     }
 
 }

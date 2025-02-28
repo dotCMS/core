@@ -17,21 +17,26 @@ public class GlobalSearchAttributeStrategy implements FieldStrategy {
 
     /** This is the RegEx used to split the values of the field into tokens */
     private static final String VALUE_SPLIT_REGEX = "[,|\\s+]";
+    private static final String SPECIAL_CHARS_TO_ESCAPE = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 
     @Override
     public String generateQuery(final FieldContext fieldContext) {
         final String fieldName = fieldContext.fieldName();
-        final String value = fieldContext.fieldValue().toString();
+        String value = fieldContext.fieldValue().toString();
         final StringBuilder luceneQuery = new StringBuilder();
-        luceneQuery.append(fieldName).append(":'").append(value).append("'^15");
+        luceneQuery.append("+catchall:").append(value).append("*").append(" ");
+        luceneQuery.append(fieldName).append(":'").append(value).append("'^15").append(" ");
         final String[] titleSplit = value.split(VALUE_SPLIT_REGEX);
         if (titleSplit.length > 1) {
             for (final String term : titleSplit) {
-                luceneQuery.append(fieldName).append(":").append(term).append("^5 ");
+                luceneQuery.append(fieldName).append(":").append(term).append("^5").append(" ");
             }
         }
-        luceneQuery.append(fieldName).append("_dotraw:*").append(value).append("*^5");
-        return luceneQuery.toString().trim();
+        luceneQuery.append(fieldName).append("_dotraw:*").append(value).append("*^5").append(" ");
+        value = value.replaceAll("\\*", "");
+        value = value.replaceAll(SPECIAL_CHARS_TO_ESCAPE, "\\\\$1");
+        luceneQuery.append("title:").append(value).append("*");
+        return luceneQuery.toString();
     }
 
 }

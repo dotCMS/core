@@ -54,17 +54,6 @@ public interface AbstractFieldProcessingResult extends Serializable {
     Optional<UniqueFieldBean> uniqueField();
 
     /**
-     * Indicates whether this line should be ignored during import.
-     * Lines may be ignored due to validation failures or other processing issues.
-     *
-     * @return true if the line should be ignored, false otherwise
-     */
-    @Value.Default
-    default boolean ignoreLine() {
-        return false;
-    }
-
-    /**
      * @return The line number in the CSV file that produced these results
      */
     int lineNumber();

@@ -1,0 +1,11 @@
+{
+    "workspaceIndexing": {
+        "ignorePatterns": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/.nx/**",
+            "**/*.timestamp-*",
+            "**/.vite/**"
+        ]
+    }
+}

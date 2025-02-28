@@ -30,7 +30,7 @@ public class TagFieldStrategy implements FieldStrategy {
             luceneQuery.append("+").append(fieldName).append(":")
                     .append(valueDelimiter).append(valueForQuery).append(valueDelimiter).append(SPACE);
         }
-        return luceneQuery.toString().trim();
+        return luceneQuery.toString();
     }
 
 }
