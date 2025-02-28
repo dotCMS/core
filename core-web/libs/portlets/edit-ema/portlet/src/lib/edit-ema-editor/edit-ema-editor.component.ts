@@ -26,12 +26,7 @@ import { ProgressBarModule } from 'primeng/progressbar';
 
 import { takeUntil, catchError, filter, map, switchMap, tap, take } from 'rxjs/operators';
 
-import {
-    CLIENT_ACTIONS,
-    NOTIFY_CLIENT,
-    INLINE_EDITING_EVENT_KEY,
-    InlineEditEventData
-} from '@dotcms/client';
+import { CLIENT_ACTIONS, INLINE_EDITING_EVENT_KEY, InlineEditEventData } from '@dotcms/client';
 import {
     DotMessageService,
     DotCopyContentService,
@@ -53,6 +48,7 @@ import {
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
+import { NOTIFY_CLIENT } from '@dotcms/uve/internal';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
