@@ -3,6 +3,7 @@
 @let showPagination = store.totalPages() > 1;
 @let data = store.data();
 @let hitText = attributes.hitText;
+@let isDisabled = $isDisabled();
 
 <p-table
     [value]="data"
@@ -10,7 +11,6 @@
     [paginator]="data.length > pagination.rowsPerPage"
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
-    [reorderableColumns]="true"
     [scrollable]="true"
     (onRowReorder)="onRowReorder($event)">
     <ng-template pTemplate="header" styleClass="relative">
@@ -32,7 +32,8 @@
                     (onClick)="menu.toggle($event)"
                     size="small"
                     icon="pi pi-plus"
-                    [text]="true" />
+                    [text]="true"
+                    [disabled]="disabled" />
             </th>
         </tr>
     </ng-template>
@@ -47,26 +48,41 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-item let-index="rowIndex">
-        <tr [pReorderableRow]="index">
+        <tr
+            [pReorderableRow]="index"
+            [class.opacity-50]="isDisabled"
+            [class.cursor-not-allowed]="isDisabled">
             <td>
-                <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
+                @if (!isDisabled) {
+                    <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
+                } @else {
+                    <span class="pi pi-bars text-gray-500 cursor-not-allowed"></span>
+                }
             </td>
-            <td class="max-w-12rem" style="min-width: 13rem">
+            <td
+                class="max-w-12rem"
+                style="min-width: 13rem"
+                [class.cursor-not-allowed]="isDisabled">
                 <p class="truncate-text">{{ item.title }}</p>
             </td>
-            <td style="min-width: 8rem">
+            <td style="min-width: 8rem" [class.cursor-not-allowed]="isDisabled">
                 {{ item.language | language }}
             </td>
-            <td style="min-width: 8rem">
+            <td style="min-width: 8rem" [class.cursor-not-allowed]="isDisabled">
                 @let status = item | contentletStatus;
                 <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
             </td>
-            <td pFrozenColumn alignFrozen="right" [frozen]="true">
+            <td
+                pFrozenColumn
+                alignFrozen="right"
+                [frozen]="true"
+                [class.cursor-not-allowed]="isDisabled">
                 <p-button
                     size="small"
                     icon="pi pi-times"
                     severity="secondary"
                     [text]="true"
+                    [disabled]="isDisabled"
                     (onClick)="deleteItem(item.inode)" />
             </td>
         </tr>
