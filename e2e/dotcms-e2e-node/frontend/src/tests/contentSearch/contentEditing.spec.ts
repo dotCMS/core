@@ -2,12 +2,12 @@ import { expect, test } from "@playwright/test";
 import {
   dotCMSUtils,
   waitForVisibleAndCallback,
-} from "../../utils/dotCMSUtils";
+} from "@utils/dotCMSUtils";
 import {
   GroupEntriesLocators,
   MenuEntriesLocators,
   ToolEntriesLocators,
-} from "../../locators/navigation/menuLocators";
+} from "@locators/navigation/menuLocators";
 import { ContentUtils } from "../../utils/contentUtils";
 import {
   iFramesLocators,
