@@ -5,7 +5,7 @@ import {
   fileAsset,
   pageAsset,
 } from "@locators/globalLocators";
-import { waitForVisibleAndCallback } from "./dotCMSUtils";
+import { waitForVisibleAndCallback } from "@utils/utils";
 import {
   contentProperties,
   fileAssetContent,

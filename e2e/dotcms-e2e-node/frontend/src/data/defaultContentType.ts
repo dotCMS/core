@@ -9,7 +9,7 @@ export function createDefaultContentType() {
     {
       title: "Site or Folder Field",
       fieldType: "siteOrFolder",
-    }
+    },
   ];
   return defaultTypes;
 }

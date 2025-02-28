@@ -1,8 +1,7 @@
 import { expect, test } from "@playwright/test";
-import {
-  dotCMSUtils,
-  waitForVisibleAndCallback,
-} from "@utils/dotCMSUtils";
+import { LoginPage, SideMenuPage } from "@pages/index";
+import { waitForVisibleAndCallback } from "@utils/utils";
+
 import {
   GroupEntriesLocators,
   MenuEntriesLocators,
@@ -20,7 +19,6 @@ import {
   contentProperties,
   fileAssetContent,
   pageAssetContent,
-  accessibilityReport,
 } from "./contentData";
 import { assert } from "console";
 
@@ -29,23 +27,16 @@ import { assert } from "console";
  * @param page
  */
 test.beforeEach("Navigate to content portlet", async ({ page }) => {
-  const cmsUtils = new dotCMSUtils();
-
-  const menuLocators = new MenuEntriesLocators(page);
-  const groupsLocators = new GroupEntriesLocators(page);
-  const toolsLocators = new ToolEntriesLocators(page);
+  const loginPage = new LoginPage(page);
+  const sideMenuPage = new SideMenuPage(page);
 
   // Get the username and password from the environment variables
   const username = process.env.USERNAME as string;
   const password = process.env.PASSWORD as string;
 
   // Login to dotCMS
-  await cmsUtils.login(page, username, password);
-  await cmsUtils.navigate(
-    menuLocators.EXPAND,
-    groupsLocators.CONTENT,
-    toolsLocators.SEARCH_ALL,
-  );
+  await loginPage.login(username, password);
+  await sideMenuPage.navigate("Content", "Search All");
 
   // Validate the portlet title
   const breadcrumbLocator = page.locator("p-breadcrumb");
@@ -282,10 +273,7 @@ test("Validate you are able to delete file on binary fields", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
-  await waitForVisibleAndCallback(
-    mainFrame.locator("#contentWrapper"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
   const contentElement = await contentUtils.getContentElement(
     page,
     fileAssetContent.newFileName,
@@ -299,7 +287,6 @@ test("Validate you are able to delete file on binary fields", async ({
   await detailFrame.getByRole("button", { name: " Remove" }).click();
   await waitForVisibleAndCallback(
     detailFrame.getByTestId("ui-message-icon-container"),
-    async () => {},
   );
   await detailFrame.getByText("Publish", { exact: true }).click();
   await expect(detailFrame.getByText("The field File Asset is")).toBeVisible();
@@ -315,10 +302,7 @@ test("Validate file assets show corresponding information", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
-  await waitForVisibleAndCallback(
-    mainFrame.locator("#contentWrapper"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
   await (
     await contentUtils.getContentElement(page, fileAssetContent.newFileName)
   ).click();
@@ -328,10 +312,7 @@ test("Validate file assets show corresponding information", async ({
 
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await detailFrame.getByTestId("info-btn").click();
-  await waitForVisibleAndCallback(
-    detailFrame.getByText("Bytes"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(detailFrame.getByText("Bytes"));
   await expect(detailFrame.getByText("Bytes")).toBeVisible();
   await expect(detailFrame.getByTestId("resource-link-FileLink")).toContainText(
     "http",
@@ -353,10 +334,7 @@ test("Validate the download of binary fields on file assets", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(page, fileAsset.locator);
-  await waitForVisibleAndCallback(
-    mainFrame.locator("#contentWrapper"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
   await (
     await contentUtils.getContentElement(page, fileAssetContent.newFileName)
   ).click();
@@ -387,10 +365,7 @@ test("Validate the required on file asset fields", async ({ page }) => {
     title: fileAssetContent.title,
     action: contentProperties.publishWfAction,
   });
-  await waitForVisibleAndCallback(
-    detailsFrame.getByText("Error x"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(detailsFrame.getByText("Error x"));
   const errorMessage = detailsFrame.getByText("The field File Asset is");
   await waitForVisibleAndCallback(errorMessage, () =>
     expect(errorMessage).toBeVisible(),
@@ -567,10 +542,7 @@ test("Validate required fields on page asset", async ({ page }) => {
     showOnMenu: pageAssetContent.showOnMenu,
     action: contentProperties.publishWfAction,
   });
-  await waitForVisibleAndCallback(
-    detailFrame.getByText("Error x"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(detailFrame.getByText("Error x"));
 
   await expect(
     detailFrame.getByText("The field Title is required."),

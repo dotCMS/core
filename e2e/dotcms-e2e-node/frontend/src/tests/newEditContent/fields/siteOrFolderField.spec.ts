@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { faker } from "@faker-js/faker";
-import { ListingContentTypesPage } from "@pages/listingContentTypes.pages";
+import { ListingContentTypesPage } from "@pages/listingContentTypes.page";
 import { ContentTypeFormPage } from "@pages/contentTypeForm.page";
 import { NewEditContentFormPage } from "@pages/newEditContentForm.page";
-import { ListingContentPage } from "@pages/listngContent.page";
-import { dotCMSUtils } from "@utils/dotCMSUtils";
+import { ListingContentPage } from "@pages/listingContent.page";
+import { dotCMSUtils } from "@pages/login.page";
 import { createDefaultContentType } from "@data/defaultContentType";
 
 const contentTypeName = faker.lorem.word().toLocaleLowerCase();
