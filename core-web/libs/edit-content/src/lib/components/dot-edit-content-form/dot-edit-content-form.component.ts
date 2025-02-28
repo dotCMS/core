@@ -274,9 +274,6 @@ export class DotEditContentFormComponent implements OnInit {
         );
 
         this.form = this.#fb.group(controls);
-        // TODO: remove this after the form is refactored
-        this.form.disable();
-        console.log('disable form');
     }
 
     /**
