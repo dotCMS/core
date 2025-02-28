@@ -91,6 +91,7 @@ export interface GraphQLPageOptions extends PageRequestParams {
         page?: string;
         content?: Record<string, string>;
         nav?: Record<string, string>;
+        variables?: Record<string, string>;
     };
 }
 
@@ -293,7 +294,7 @@ export class PageClient {
         options?: GraphQLPageOptions
     ): Promise<DotCMSGraphQLPageResponse> {
         const { languageId = '1', mode = 'LIVE', query = {} } = options || {};
-        const { page = '', content = {}, nav = {} } = query;
+        const { page = '', content = {}, nav = {}, variables = {} } = query;
 
         const contentQuery = buildQuery(content);
         const navQuery = buildQuery(nav);
@@ -302,7 +303,8 @@ export class PageClient {
         const requestVariables = {
             url,
             mode,
-            languageId
+            languageId,
+            ...variables
         };
 
         const requestHeaders = this.requestOptions.headers as Record<string, string>;
