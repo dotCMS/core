@@ -4,7 +4,7 @@ import { ListingContentTypesPage } from "@pages/listingContentTypes.page";
 import { ContentTypeFormPage } from "@pages/contentTypeForm.page";
 import { NewEditContentFormPage } from "@pages/newEditContentForm.page";
 import { ListingContentPage } from "@pages/listingContent.page";
-import { dotCMSUtils } from "@pages/login.page";
+import { LoginPage } from "@pages/index";
 import { createDefaultContentType } from "@data/defaultContentType";
 
 const contentTypeName = faker.lorem.word().toLocaleLowerCase();
@@ -18,9 +18,9 @@ test.beforeEach("Navigate to content types", async ({ page, request }) => {
   const password = process.env.PASSWORD as string;
 
   // Login to dotCMS
-  const cmsUtils = new dotCMSUtils();
-  await cmsUtils.login(page, username, password);
+  const loginPage = new LoginPage(page);
 
+  await loginPage.login(username, password);
   await listingContentTypesPage.toggleNewContentEditor(true);
   await listingContentTypesPage.goToUrl();
   await listingContentTypesPage.addNewContentType(contentTypeName);

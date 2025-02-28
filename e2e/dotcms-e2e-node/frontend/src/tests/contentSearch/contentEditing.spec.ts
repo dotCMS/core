@@ -1,13 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { LoginPage, SideMenuPage } from "@pages/index";
 import { waitForVisibleAndCallback } from "@utils/utils";
-
-import {
-  GroupEntriesLocators,
-  MenuEntriesLocators,
-  ToolEntriesLocators,
-} from "@locators/navigation/menuLocators";
-import { ContentUtils } from "../../utils/contentUtils";
+import { ContentUtils } from "@utils/contentUtils";
 import {
   iFramesLocators,
   contentGeneric,
@@ -482,10 +476,7 @@ test("Add a new page", async ({ page }) => {
     action: contentProperties.publishWfAction,
   });
   const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
-  await waitForVisibleAndCallback(
-    dataFrame.getByRole("banner"),
-    async () => {},
-  );
+  await waitForVisibleAndCallback(dataFrame.getByRole("banner"));
   await expect(page.locator("ol")).toContainText(
     "Pages" + pageAssetContent.title,
   );

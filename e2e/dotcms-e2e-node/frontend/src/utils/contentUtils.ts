@@ -72,7 +72,6 @@ export class ContentUtils {
         await editFrame.getByRole("button", { name: " Edit" }).click();
         await waitForVisibleAndCallback(
           editFrame.getByLabel("Editor content;Press Alt+F1"),
-          async () => {},
         );
         const editor = editFrame.getByLabel("Editor content;Press Alt+F1");
         await editor.click(); // Focus on the editor
@@ -108,7 +107,6 @@ export class ContentUtils {
       await dotIframe.getByRole("button", { name: " Import" }).click();
       await waitForVisibleAndCallback(
         dotIframe.getByRole("button", { name: " Remove" }),
-        async () => {},
       );
     }
 
@@ -166,10 +164,7 @@ export class ContentUtils {
       iframe.locator("#dijit_form_DropDownButton_0"),
       () => iframe.locator("#dijit_form_DropDownButton_0").click(),
     );
-    await waitForVisibleAndCallback(
-      iframe.getByLabel("actionPrimaryMenu"),
-      async () => {},
-    );
+    await waitForVisibleAndCallback(iframe.getByLabel("actionPrimaryMenu"));
     await iframe.getByLabel("▼").getByText("Add New Content").click();
     const headingLocator = page.getByRole("heading");
     await waitForVisibleAndCallback(headingLocator, () =>
@@ -192,10 +187,7 @@ export class ContentUtils {
       structureINodeDivLocator.click(),
     );
 
-    await waitForVisibleAndCallback(
-      iframe.getByLabel("structure_inode_popup"),
-      async () => {},
-    );
+    await waitForVisibleAndCallback(iframe.getByLabel("structure_inode_popup"));
 
     const typeLocatorByText = iframe.getByText(typeLocator);
     await waitForVisibleAndCallback(typeLocatorByText, () =>
@@ -235,7 +227,6 @@ export class ContentUtils {
 
     await waitForVisibleAndCallback(
       iframe.locator("#results_table tbody tr:nth-of-type(2)"),
-      async () => {},
     );
     await page.waitForTimeout(1000);
 
@@ -330,10 +321,7 @@ export class ContentUtils {
         await waitForVisibleAndCallback(dropDownMenu, () =>
           dropDownMenu.click(),
         );
-        await waitForVisibleAndCallback(
-          iframe.locator("#contentWrapper"),
-          async () => {},
-        );
+        await waitForVisibleAndCallback(iframe.locator("#contentWrapper"));
       } else if (contentState === "archived") {
         await this.performWorkflowAction(
           page,
