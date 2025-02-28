@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { LoginPage, SideMenuPage } from "@pages/index";
+import { LoginPage, SideMenuPage } from "@pages";
 import { waitForVisibleAndCallback } from "@utils/utils";
 import { ContentUtils } from "@utils/contentUtils";
 import {

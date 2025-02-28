@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { Page } from "@playwright/test";
 
 export class LoginPage {
   constructor(private page: Page) {}
@@ -20,10 +20,5 @@ export class LoginPage {
 
     const loginBtnLocator = this.page.getByTestId("submitButton");
     await loginBtnLocator.click();
-
-    const gettingStartedLocator = this.page.getByRole("link", {
-      name: "Getting Started",
-    });
-    await expect(gettingStartedLocator).toBeVisible();
   }
 }

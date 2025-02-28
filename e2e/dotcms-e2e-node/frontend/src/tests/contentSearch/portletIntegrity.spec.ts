@@ -8,7 +8,7 @@ import {
   contentGeneric,
 } from "@locators/globalLocators";
 import { contentProperties, genericContent1 } from "./contentData";
-import { SideMenuPage, LoginPage } from "@pages/index";
+import { SideMenuPage, LoginPage } from "@pages";
 
 /**
  * Test to navigate to the content portlet and login to the dotCMS instance
