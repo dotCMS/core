@@ -1,6 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { faker } from "@faker-js/faker";
-import { ListingContentTypesPage, ContentTypeFormPage, NewEditContentFormPage, ListingContentPage, LoginPage } from "@pages";
+import {
+  ListingContentTypesPage,
+  ContentTypeFormPage,
+  NewEditContentFormPage,
+  ListingContentPage,
+  LoginPage,
+} from "@pages";
 import { createDefaultContentType } from "@data/defaultContentType";
 
 const contentTypeName = faker.lorem.word().toLocaleLowerCase();

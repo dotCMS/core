@@ -4,3 +4,4 @@ export { ListingContentPage } from "./listingContent.page";
 export { LoginPage } from "./login.page";
 export { NewEditContentFormPage } from "./newEditContentForm.page";
 export { SideMenuPage } from "./sideMenu.page";
+export { ContentPage } from "./content.page";

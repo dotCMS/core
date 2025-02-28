@@ -11,24 +11,20 @@ import {
   fileAssetContent,
 } from "../tests/contentSearch/contentData";
 
-export class ContentUtils {
-  page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
-  }
+export class ContentPage {
+  constructor(private page: Page) {}
 
   /**
    * Fill the rich text form
    * @param params
    */
   async fillRichTextForm(params: RichTextFormParams) {
-    const { page, title, body, action, newBody, newTitle } = params;
-    const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
+    const { title, body, action, newBody, newTitle } = params;
+    const dotIframe = this.page.frameLocator(iFramesLocators.dot_iframe);
 
-    await waitForVisibleAndCallback(page.getByRole("heading"), () =>
+    await waitForVisibleAndCallback(this.page.getByRole("heading"), () =>
       expect
-        .soft(page.getByRole("heading"))
+        .soft(this.page.getByRole("heading"))
         .toContainText(contentGeneric.label),
     );
 
@@ -55,7 +51,6 @@ export class ContentUtils {
    */
   async fillFileAssetForm(params: FileAssetFormParams) {
     const {
-      page,
       host,
       editContent,
       title,
@@ -64,29 +59,34 @@ export class ContentUtils {
       binaryFileName,
       binaryFileText,
     } = params;
-    const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
+    const dotIframe = this.page.frameLocator(iFramesLocators.dot_iframe);
 
     if (binaryFileName && binaryFileText) {
       if (editContent) {
-        const editFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
+        const editFrame = this.page.frameLocator(
+          iFramesLocators.dot_edit_iframe,
+        );
         await editFrame.getByRole("button", { name: " Edit" }).click();
         await waitForVisibleAndCallback(
           editFrame.getByLabel("Editor content;Press Alt+F1"),
         );
         const editor = editFrame.getByLabel("Editor content;Press Alt+F1");
         await editor.click(); // Focus on the editor
-        await page.keyboard.press("Control+A"); // Select all text (Cmd+A for Mac)
-        await page.keyboard.press("Backspace");
+        await this.page.keyboard.press("Control+A"); // Select all text (Cmd+A for Mac)
+        await this.page.keyboard.press("Backspace");
         await editFrame
           .getByLabel("Editor content;Press Alt+F1")
           .fill(fileAssetContent.newFileTextEdited);
         await editFrame.getByRole("button", { name: "Save" }).click();
       } else {
-        await waitForVisibleAndCallback(page.getByRole("heading"), async () => {
-          await expect
-            .soft(page.getByRole("heading"))
-            .toContainText(fileAsset.label);
-        });
+        await waitForVisibleAndCallback(
+          this.page.getByRole("heading"),
+          async () => {
+            await expect
+              .soft(this.page.getByRole("heading"))
+              .toContainText(fileAsset.label);
+          },
+        );
         await dotIframe.locator("#HostSelector-hostFolderSelect").fill(host);
         await dotIframe
           .getByRole("button", { name: " Create New File" })
@@ -124,8 +124,8 @@ export class ContentUtils {
    * @param page
    * @param message
    */
-  async workflowExecutionValidationAndClose(page: Page, message: string) {
-    const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
+  async workflowExecutionValidationAndClose(message: string) {
+    const dotIframe = this.page.frameLocator(iFramesLocators.dot_iframe);
 
     const executionConfirmation = dotIframe.getByText(message);
     await waitForVisibleAndCallback(executionConfirmation, () =>
@@ -133,7 +133,7 @@ export class ContentUtils {
     );
     await expect(executionConfirmation).toBeHidden();
     //Click on close
-    const closeBtnLocator = page
+    const closeBtnLocator = this.page
       .getByTestId("close-button")
       .getByRole("button");
     await waitForVisibleAndCallback(closeBtnLocator, () =>
@@ -147,18 +147,14 @@ export class ContentUtils {
    * @param typeLocator
    * @param typeString
    */
-  async addNewContentAction(
-    page: Page,
-    typeLocator: string,
-    typeString: string,
-  ) {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+  async addNewContentAction(typeLocator: string, typeString: string) {
+    const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
     const structureINodeLocator = iframe.locator("#structure_inode");
     await waitForVisibleAndCallback(structureINodeLocator, () =>
       expect(structureINodeLocator).toBeVisible(),
     );
-    await this.selectTypeOnFilter(page, typeLocator);
+    await this.selectTypeOnFilter(typeLocator);
 
     await waitForVisibleAndCallback(
       iframe.locator("#dijit_form_DropDownButton_0"),
@@ -166,7 +162,7 @@ export class ContentUtils {
     );
     await waitForVisibleAndCallback(iframe.getByLabel("actionPrimaryMenu"));
     await iframe.getByLabel("▼").getByText("Add New Content").click();
-    const headingLocator = page.getByRole("heading");
+    const headingLocator = this.page.getByRole("heading");
     await waitForVisibleAndCallback(headingLocator, () =>
       expect(headingLocator).toHaveText(typeString),
     );
@@ -177,8 +173,8 @@ export class ContentUtils {
    * @param page
    * @param typeLocator
    */
-  async selectTypeOnFilter(page: Page, typeLocator: string) {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+  async selectTypeOnFilter(typeLocator: string) {
+    const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
     const structureINodeDivLocator = iframe
       .locator("#widget_structure_inode div")
@@ -222,13 +218,13 @@ export class ContentUtils {
    * @param page
    * @param text
    */
-  async validateContentExist(page: Page, text: string) {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+  async validateContentExist(text: string) {
+    const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
     await waitForVisibleAndCallback(
       iframe.locator("#results_table tbody tr:nth-of-type(2)"),
     );
-    await page.waitForTimeout(1000);
+    await this.page.waitForTimeout(1000);
 
     const cells = iframe.locator("#results_table tbody tr:nth-of-type(2) td");
     const cellCount = await cells.count();
@@ -252,8 +248,8 @@ export class ContentUtils {
    * @param page
    * @param title
    */
-  async getContentElement(page: Page, title: string): Promise<Locator | null> {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+  async getContentElement(title: string): Promise<Locator | null> {
+    const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
     await iframe
       .locator("#results_table tbody tr")
@@ -279,8 +275,8 @@ export class ContentUtils {
    * @param params
    */
   async editContent(params: RichTextFormParams) {
-    const { page, title, action } = params;
-    const contentElement = await this.getContentElement(page, title);
+    const { title, action } = params;
+    const contentElement = await this.getContentElement(title);
     if (!contentElement) {
       console.log("Content not found");
       return;
@@ -288,7 +284,7 @@ export class ContentUtils {
     await contentElement.click();
     await this.fillRichTextForm(params);
     if (action) {
-      await this.workflowExecutionValidationAndClose(page, "Content saved");
+      await this.workflowExecutionValidationAndClose("Content saved");
     }
   }
 
@@ -297,21 +293,19 @@ export class ContentUtils {
    * @param page
    * @param title
    */
-  async deleteContent(page: Page, title: string) {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+  async deleteContent(title: string) {
+    const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
-    while ((await this.getContentState(page, title)) !== null) {
-      const contentState = await this.getContentState(page, title);
+    while ((await this.getContentState(title)) !== null) {
+      const contentState = await this.getContentState(title);
 
       if (contentState === "published") {
         await this.performWorkflowAction(
-          page,
           title,
           contentProperties.unpublishWfAction,
         );
       } else if (contentState === "draft") {
         await this.performWorkflowAction(
-          page,
           title,
           contentProperties.archiveWfAction,
         );
@@ -324,14 +318,13 @@ export class ContentUtils {
         await waitForVisibleAndCallback(iframe.locator("#contentWrapper"));
       } else if (contentState === "archived") {
         await this.performWorkflowAction(
-          page,
           title,
           contentProperties.deleteWfAction,
         );
         return;
       }
 
-      await page.waitForLoadState();
+      await this.page.waitForLoadState();
     }
   }
 
@@ -341,9 +334,9 @@ export class ContentUtils {
    * @param title
    * @param action
    */
-  async performWorkflowAction(page: Page, title: string, action: string) {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
-    const contentElement = await this.getContentElement(page, title);
+  async performWorkflowAction(title: string, action: string) {
+    const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
+    const contentElement = await this.getContentElement(title);
     if (contentElement) {
       await contentElement.click({
         button: "right",
@@ -367,8 +360,8 @@ export class ContentUtils {
    * @param page
    * @param title
    */
-  async getContentState(page: Page, title: string): Promise<string | null> {
-    const iframe = page.frameLocator(iFramesLocators.main_iframe);
+  async getContentState(title: string): Promise<string | null> {
+    const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
     await iframe
       .locator("#results_table tbody tr")
@@ -398,7 +391,6 @@ export class ContentUtils {
    */
   async fillPageAssetForm(params: PageAssetFormParams) {
     const {
-      page,
       title,
       action,
       url,
@@ -409,10 +401,12 @@ export class ContentUtils {
       sortOrder,
       cacheTTL,
     } = params;
-    const dotIframe = page.frameLocator(iFramesLocators.dot_iframe);
+    const dotIframe = this.page.frameLocator(iFramesLocators.dot_iframe);
 
-    await waitForVisibleAndCallback(page.getByRole("heading"), () =>
-      expect.soft(page.getByRole("heading")).toContainText(pageAsset.label),
+    await waitForVisibleAndCallback(this.page.getByRole("heading"), () =>
+      expect
+        .soft(this.page.getByRole("heading"))
+        .toContainText(pageAsset.label),
     );
     await dotIframe.locator("#titleBox").fill(title);
 
@@ -443,9 +437,9 @@ export class ContentUtils {
    * @param page
    * @param downloadTriggerSelector
    */
-  async validateDownload(page: Page, downloadTriggerSelector: Locator) {
+  async validateDownload(downloadTriggerSelector: Locator) {
     // Start waiting for the download event
-    const downloadPromise = page.waitForEvent("download");
+    const downloadPromise = this.page.waitForEvent("download");
 
     // Trigger the download
     await downloadTriggerSelector.click();
@@ -464,7 +458,6 @@ export class ContentUtils {
  * Base form params
  */
 interface BaseFormParams {
-  page: Page;
   title: string;
   action?: string;
 }

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { ContentUtils } from "@utils/contentUtils";
+import { ContentPage } from "@pages";
 import { waitForVisibleAndCallback } from "@utils/utils";
 import {
   addContent,
@@ -46,22 +46,20 @@ test("Validate portlet title", async ({ page }) => {
  * @param page
  */
 test("Search filter", async ({ page }) => {
-  const contentUtils = new ContentUtils(page);
+  const contentUtils = new ContentPage(page);
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
 
   // Adding new rich text content
   await contentUtils.addNewContentAction(
-    page,
     contentGeneric.locator,
     contentGeneric.label,
   );
   await contentUtils.fillRichTextForm({
-    page,
     title: genericContent1.title,
     body: genericContent1.body,
     action: contentProperties.publishWfAction,
   });
-  await contentUtils.workflowExecutionValidationAndClose(page, "Content saved");
+  await contentUtils.workflowExecutionValidationAndClose("Content saved");
 
   // Validate the content has been created
   await expect
@@ -141,7 +139,7 @@ test("Validate bulk Workflow actions", async ({ page }) => {
  */
 test("Validate the search query", async ({ page }) => {
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
-  await new ContentUtils(page).showQuery(iframe);
+  await new ContentPage(page).showQuery(iframe);
   await expect(iframe.locator("#queryResults")).toBeVisible();
 });
 
@@ -153,7 +151,7 @@ test("Validate the API link in search query modal is working", async ({
   page,
 }) => {
   const iframe = page.frameLocator(iFramesLocators.main_iframe);
-  await new ContentUtils(page).showQuery(iframe);
+  await new ContentPage(page).showQuery(iframe);
 
   // Wait for the new tab to open
   const queryModal = page.waitForEvent("popup");
