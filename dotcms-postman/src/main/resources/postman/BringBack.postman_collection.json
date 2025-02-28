@@ -56,6 +56,11 @@
 									"key": "password",
 									"value": "admin",
 									"type": "string"
+								},
+								{
+									"key": "rememberMe",
+									"value": "true",
+									"type": "string"
 								}
 							]
 						},
