@@ -1,3 +1,3 @@
-import { getUVEState } from './lib/utils';
+import { getUVEState, createUVESubscription } from './lib/utils';
 
-export { getUVEState };
+export { getUVEState, createUVESubscription };

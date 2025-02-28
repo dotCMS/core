@@ -1,3 +1,10 @@
-import { UVE_MODE, UVEState } from './lib/types';
+import {
+    UVE_MODE,
+    UVEState,
+    UnsubscribeUVE,
+    UVESubscription,
+    UVEEvent,
+    UVECallback
+} from './lib/types';
 
-export { UVE_MODE, UVEState };
+export { UVE_MODE, UVEState, UnsubscribeUVE, UVESubscription, UVEEvent, UVECallback };

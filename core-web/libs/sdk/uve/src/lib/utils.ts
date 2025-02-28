@@ -1,4 +1,6 @@
-import { UVE_MODE, UVEState } from './types';
+import { UVE_MODE, UVECallback, UVEState, UVESubscription } from './types';
+
+import { UVE_EVENTS } from '../internal/constants';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
@@ -56,4 +58,46 @@ export function getUVEState(): UVEState | undefined {
         experimentId,
         publishDate
     };
+}
+
+/**
+ * Creates a subscription to a UVE event.
+ *
+ * @param {string} event - The event to subscribe to.
+ * @param {UVECallback} callback - The callback to call when the event is triggered.
+ * @return {UnsubscribeUVE | undefined} The unsubscribe function if the event is valid, undefined otherwise.
+ *
+ * @example
+ * ```ts
+ * const unsubscribeChanges = createUVESubscription('changes', (payload) => {
+ *   console.log(payload);
+ * });
+ * ```
+ */
+export function createUVESubscription(event: string, callback: UVECallback): UVESubscription {
+    if (!getUVEState()) {
+        console.warn('UVE Subscription: Not running inside UVE');
+
+        return {
+            unsubscribe: () => {
+                /* */
+            },
+            event
+        };
+    }
+
+    const eventCallback = UVE_EVENTS[event];
+
+    if (!eventCallback) {
+        console.error(`UVE Subscription: Event ${event} not found`);
+
+        return {
+            unsubscribe: () => {
+                /* */
+            },
+            event
+        };
+    }
+
+    return eventCallback(callback);
 }
