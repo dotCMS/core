@@ -211,11 +211,11 @@ public class HTMLPageAssetRenderedBuilder {
         Contentlet contentlet = null;
 
         if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)) {
-            String inode = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-            contentlet = contentletAPI.find(inode, user, false);
+            String inode = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+            contentlet = this.contentletAPI.find(inode, user, false);
         } else if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET)) {
-            String id = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
-            contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(id);
+            String id = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            contentlet = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
         }
 
         return Optional.ofNullable(getContentletForTimeMachine(contentlet));
