@@ -125,6 +125,11 @@
 									"key": "username",
 									"value": "admin@dotcms.com",
 									"type": "string"
+								},
+								{
+									"key": "rememberMe",
+									"value": "true",
+									"type": "string"
 								}
 							]
 						},
@@ -221,6 +226,11 @@
 									"key": "username",
 									"value": "admin@dotcms.com",
 									"type": "string"
+								},
+								{
+									"key": "rememberMe",
+									"value": "true",
+									"type": "string"
 								}
 							]
 						},
@@ -273,6 +283,11 @@
 								{
 									"key": "password",
 									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "rememberMe",
+									"value": "true",
 									"type": "string"
 								}
 							]
@@ -358,6 +373,11 @@
 									"key": "username",
 									"value": "admin@dotcms.com",
 									"type": "string"
+								},
+								{
+									"key": "rememberMe",
+									"value": "true",
+									"type": "string"
 								}
 							]
 						},
@@ -426,6 +446,11 @@
 									"key": "username",
 									"value": "admin@dotcms.com",
 									"type": "string"
+								},
+								{
+									"key": "rememberMe",
+									"value": "true",
+									"type": "string"
 								}
 							]
 						},
@@ -482,6 +507,11 @@
 									"key": "username",
 									"value": "not_valid_uset",
 									"type": "string"
+								},
+								{
+									"key": "rememberMe",
+									"value": "true",
+									"type": "string"
 								}
 							]
 						},
@@ -534,6 +564,11 @@
 								{
 									"key": "username",
 									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "rememberMe",
+									"value": "true",
 									"type": "string"
 								}
 							]
