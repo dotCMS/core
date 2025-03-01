@@ -90,10 +90,9 @@ Feature: Setting up the Future Time Machine Test
 
     # Create a couple of new pieces of content for the UrlMap Content Type
     * def createUrlMapContentPieceOneResult = callonce read('classpath:graphql/ftm/newContent.feature') { contentTypeId: '#(urlMapContentTypeId)', title: 'url-content-map-test-1-v1', urlTitle: 'url-content-map-test-1' }
-    * def urlMapContentPieceOne = createContentPieceOneResult.response.entity.results
-    * def urlMapContentPieceOneId = contentPieceOne.map(result => Object.keys(result)[0])
-    * def urlMapContentPieceOneId = contentPieceOneId[0]
-    * def urlMapContentPieceOneUrl = contentPieceOneId[0]["urlMap"]
+    * def urlMapContentPieceOne = createUrlMapContentPieceOneResult.response.entity.results[0]
+    * def urlMapContentPieceOneId = karate.keysOf(urlMapContentPieceOne)[0]
+    * def urlMapContentPieceOneUrl = urlMapContentPieceOne[urlMapContentPieceOneId].urlMap
 
     # Create new version of the content for the UrlMap Content Type with future publishDate
     * def newUrlMapContentPiceOneVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(urlMapContentTypeId)', identifier: '#(urlMapContentPieceOneId)', title: 'url-content-map-test-1-v2', publishDate: '#(formattedFutureDateTime)' }

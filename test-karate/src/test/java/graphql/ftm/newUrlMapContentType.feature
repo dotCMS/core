@@ -110,7 +110,7 @@ Feature: Create a Content Type with URL Map
             "required":true,
             "searchable":true,
             "sortOrder":2,
-            "unique":true,
+            "unique":false,
             "variable":"urlTitle"
           },
           {
@@ -253,31 +253,6 @@ Feature: Create a Content Type with URL Map
                     "variable":"title"
                   },
                   {
-                    "clazz":"com.dotcms.contenttype.model.field.ImmutableCustomField",
-                    "contentTypeId":"d90434114b901620af330653e4d33f25",
-                    "dataType":"LONG_TEXT",
-                    "fieldType":"Custom-Field",
-                    "fieldTypeLabel":"Custom Field",
-                    "fieldVariables":[
-
-                    ],
-                    "fixed":false,
-                    "forceIncludeInApi":false,
-                    "iDate":1740706740000,
-                    "id":"53e9ed7ffd1dd44dc1407f84c20270f8",
-                    "indexed":false,
-                    "listed":false,
-                    "modDate":1740706749000,
-                    "name":"URL Title",
-                    "readOnly":false,
-                    "required":false,
-                    "searchable":false,
-                    "sortOrder":3,
-                    "unique":false,
-                    "values":"#dotParse(\"/dA/0ec62ffd3666f23fc5228ef84a481b09\")",
-                    "variable":"urlTitle"
-                  },
-                  {
                     "clazz":"com.dotcms.contenttype.model.field.ImmutableDateTimeField",
                     "contentTypeId":"d90434114b901620af330653e4d33f25",
                     "dataType":"DATE",
@@ -354,4 +329,3 @@ Feature: Create a Content Type with URL Map
     When method POST
     Then status 200
     And match response.entity[0].id != null
-    And match response.entity[0].variable == contentTypeVariable

@@ -145,6 +145,8 @@ Feature: Test Time Machine functionality
 
     * def urlContentMap = response.entity.urlContentMap
     * def urlContentMapTitle = urlContentMap.title
+    * karate.log('urlContentMapTitle:', urlContentMapTitle)
+
     # Expect the first version of the content to be displayed
     * match urlContentMapTitle contains URL_CONTENT_MAP_TITLE_V1
 
@@ -165,6 +167,8 @@ Feature: Test Time Machine functionality
 
     * def urlContentMap = response.entity.urlContentMap
     * def urlContentMapTitle = urlContentMap.title
+    * karate.log('urlContentMapTitle:', urlContentMapTitle)
+
     # Expect the second version of the content to be displayed
     * match urlContentMapTitle contains URL_CONTENT_MAP_TITLE_V2
 
