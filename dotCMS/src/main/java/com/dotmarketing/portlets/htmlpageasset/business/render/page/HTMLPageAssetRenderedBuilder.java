@@ -210,10 +210,10 @@ public class HTMLPageAssetRenderedBuilder {
 
         Contentlet contentlet = null;
 
-        if (request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE) != null) {
+        if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)) {
             String inode = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
             contentlet = contentletAPI.find(inode, user, false);
-        } else if (request.getAttribute(WebKeys.WIKI_CONTENTLET) != null) {
+        } else if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET)) {
             String id = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
             contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(id);
         }
