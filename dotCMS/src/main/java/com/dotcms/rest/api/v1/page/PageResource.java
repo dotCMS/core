@@ -258,8 +258,7 @@ public class PageResource {
 
         final Optional<Instant> timeMachineDateInstant = TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601);
         //Logging analytics for FTM if the publishing date is older than five minutes now
-        collectAnalyticsIfNeeded(originalRequest, response, uri, modeParam, personaId, languageId,
-                deviceInode, user, timeMachineDateInstant);
+        collectAnalyticsIfNeeded(originalRequest, response, timeMachineDateInstant);
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
                 languageId, deviceInode, timeMachineDateInstant, timeMachineDateAsISO8601, builder);
         return getPageRender(renderParams);
@@ -270,33 +269,14 @@ public class PageResource {
      *
      * @param originalRequest      The original HTTP request.
      * @param response            The HTTP response.
-     * @param uri                 The requested URI.
-     * @param modeParam           The mode parameter.
-     * @param personaId           The persona ID associated with the request.
-     * @param languageId          The language ID for the request.
-     * @param deviceInode         The device inode identifier.
      * @param timeMachineDateInstant An optional instant representing a time machine date, if applicable.
      */
     private void collectAnalyticsIfNeeded(
             final HttpServletRequest originalRequest,
             final HttpServletResponse response,
-            final String uri,
-            final String modeParam,
-            final String personaId,
-            final String languageId,
-            final String deviceInode, User user,
             final Optional<Instant> timeMachineDateInstant) {
         if (timeMachineDateInstant.isPresent() && isOlderThanFiveMinutes(timeMachineDateInstant.get())) {
             Map<String, Serializable> userEventPayload = new HashMap<>();
-            userEventPayload.put(USER, user);
-            userEventPayload.put(URI, uri);
-            userEventPayload.put(MODE_PARAM, modeParam);
-            userEventPayload.put(LANGUAGE_ID, languageId);
-            userEventPayload.put(PERSONA_ID, personaId);
-
-            if (null != deviceInode){
-                userEventPayload.put(DEVICE_INODE, deviceInode);
-            }
 
             userEventPayload.put(TIME_MACHINE_DATE, timeMachineDateInstant.get());
             userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST.getType());
@@ -402,8 +382,7 @@ public class PageResource {
 
 
         //Logging analytics for FTM if the publishing date is older than five minutes now
-        collectAnalyticsIfNeeded(originalRequest, response, uri, modeParam, personaId, languageId,
-                deviceInode, user, timeMachineDateInstant);
+        collectAnalyticsIfNeeded(originalRequest, response, timeMachineDateInstant);
         return getPageRender(renderParams);
     }
 
