@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.transform.contenttype;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotmarketing.beans.Host;
@@ -9,6 +10,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -42,8 +44,11 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
                 final var detailPageURI = new URI(detailPage);
                 var path = detailPageURI.getRawPath();
 
+                final boolean respectRoles = null != HttpServletRequestThreadLocal.INSTANCE.getRequest() ?
+                        PageMode.get(HttpServletRequestThreadLocal.INSTANCE.getRequest()).respectAnonPerms : false;
+
                 final Host site = APILocator.getHostAPI()
-                        .findByName(detailPageURI.getRawAuthority(), user, false);
+                        .findByName(detailPageURI.getRawAuthority(), user, respectRoles);
                 if (null == site) {
                     throw new IllegalArgumentException(
                             String.format("Site [%s] in detail page URL [%s] not found.",
@@ -83,8 +88,11 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
             var detailPageIdentifier = APILocator.getIdentifierAPI().find(detailPage);
             if (null != detailPageIdentifier && detailPageIdentifier.exists()) {
 
+                final boolean respectRoles = null != HttpServletRequestThreadLocal.INSTANCE.getRequest() ?
+                        PageMode.get(HttpServletRequestThreadLocal.INSTANCE.getRequest()).respectAnonPerms : false;
+
                 final Host detailPageSite = APILocator.getHostAPI().find(
-                        detailPageIdentifier.getHostId(), user, false);
+                        detailPageIdentifier.getHostId(), user, respectRoles);
 
                 // Building the detail page URI
                 var detailPageURL = String.format(

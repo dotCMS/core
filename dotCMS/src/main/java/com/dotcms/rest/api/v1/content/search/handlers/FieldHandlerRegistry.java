@@ -81,7 +81,7 @@ public class FieldHandlerRegistry {
         final FieldStrategy strategy = FieldStrategyFactory.getStrategy(fieldHandlerId);
         fieldTypes.forEach(fieldType -> handlers.put(fieldType,
                 context -> strategy.checkRequiredValues(context)
-                        ? strategy.generateQuery(context)
+                        ? strategy.generateQuery(context).trim()
                         : BLANK));
     }
 
