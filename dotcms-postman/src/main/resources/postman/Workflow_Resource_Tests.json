@@ -19050,7 +19050,7 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"pm.test(\"Archive Template Check\", function () {",
+									"pm.test(\"hasMoveActionletActionlet Check\", function () {",
 									"    pm.expect(jsonData.entity.hasMoveActionletActionlet).to.be.eql(true);",
 									"});",
 									""
@@ -19074,7 +19074,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/1952954b-0af4-43e7-ae5a-44c5986f404b",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -19083,7 +19083,7 @@
 								"v1",
 								"workflow",
 								"actions",
-								"1952954b-0af4-43e7-ae5a-44c5986f404b"
+								"{{actionId}}"
 							]
 						}
 					},
