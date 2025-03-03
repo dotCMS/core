@@ -6178,6 +6178,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
             }
+            //if any change on the publish, expire dates occurs, we better kick it out from TM cache
+            CacheLocator.getContentletCache().invalidateTimeMachine(contentlet);
         }
     }
 
