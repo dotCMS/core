@@ -1,22 +1,17 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { UploadPlaceholderComponent } from './upload-placeholder.component';
 
 describe('UploadPlaceholderComponent', () => {
-    let component: UploadPlaceholderComponent;
-    let fixture: ComponentFixture<UploadPlaceholderComponent>;
-
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [UploadPlaceholderComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(UploadPlaceholderComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    let spectator: Spectator<UploadPlaceholderComponent>;
+    const createComponent = createComponentFactory({
+        component: UploadPlaceholderComponent,
+        providers: []
     });
 
+    beforeEach(() => (spectator = createComponent()));
+
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(spectator.component).toBeTruthy();
     });
 });
