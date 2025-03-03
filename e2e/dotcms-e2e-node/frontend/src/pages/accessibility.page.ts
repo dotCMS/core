@@ -3,15 +3,13 @@ import { Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { createHtmlReport } from "axe-html-reporter";
 
-export class accessibilityUtils {
-  page: Page;
+export class AccessibilityPage {
+  constructor(private page: Page) {}
 
-  constructor(page: Page) {
-    this.page = page;
-  }
-
-  async generateReport(page: Page, description: string) {
-    const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+  async generateReport(description: string) {
+    const accessibilityScanResults = await new AxeBuilder({
+      page: this.page,
+    }).analyze();
     const reportHTML = createHtmlReport({
       results: accessibilityScanResults,
       options: {
