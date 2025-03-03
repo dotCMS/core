@@ -471,6 +471,7 @@ public class ApiTokenResource implements Serializable {
             return ExceptionMapperUtil.createResponse(new DotStateException("Invalid expirationSeconds"), Response.Status.BAD_REQUEST);
         }
 
+        Date expires = Date.from(Instant.now().plus(expirationSeconds, ChronoUnit.SECONDS));
         ApiToken token = ApiToken.builder()
                 .withAllowNetwork(netmask)
                 .withIssueDate(new Date())

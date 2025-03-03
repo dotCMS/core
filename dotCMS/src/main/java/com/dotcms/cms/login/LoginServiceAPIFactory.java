@@ -591,13 +591,13 @@ public class LoginServiceAPIFactory implements Serializable {
          * @throws SystemException
          *             An error occurred during the user ID encryption.
          */
-        private void processJsonWebToken(final HttpServletRequest req,
+        private void createRememberMeCookie(final HttpServletRequest req,
                                          final HttpServletResponse res,
                                          final User user,
                                          final int maxAge) throws PortalException, SystemException {
 
-            final String jwtAccessToken = this.jsonWebTokenUtils.createUserToken(user, Math.abs(maxAge));
-            createJsonWebTokenCookie(req, res, jwtAccessToken, Optional.of(maxAge));
+            final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, Math.abs(maxAge));
+            createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(maxAge));
         }
 
 
@@ -608,10 +608,12 @@ public class LoginServiceAPIFactory implements Serializable {
                                  final HttpServletResponse res,
                                  final User user,
                                  final boolean rememberMe) {
-
-            int jwtMaxAge = rememberMe ? Config.getIntProperty(
+            if(!rememberMe){
+                return;
+            }
+            int jwtMaxAge = Config.getIntProperty(
                     JSON_WEB_TOKEN_DAYS_MAX_AGE,
-                    JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) : -1;
+                    JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) ;
 
             this.doRememberMe(req, res, user, jwtMaxAge);
         } // doRememberMe.
@@ -624,7 +626,7 @@ public class LoginServiceAPIFactory implements Serializable {
 
             try {
 
-                this.processJsonWebToken(req, res, user, maxAge);
+                this.createRememberMeCookie(req, res, user, maxAge);
             } catch (Exception e) {
 
                 Logger.debug(this, e.getMessage(), e);
