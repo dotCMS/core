@@ -570,4 +570,187 @@ public class FilesCollectorIntegrationTest {
         assertNull( fileObject.get(CONTENT_TYPE_VAR_NAME));
         assertNull( fileObject.get(BASE_TYPE));
     }
+
+    /**
+     * Method to test: {@link FilesCollector#collect(CollectorContextMap, CollectorPayloadBean)}
+     * when:
+     * - Create a Image Contentlet
+     * - Try to collect the Analytics data pretending that the Image was hit using a
+     *
+     * /dA/[Shorty ID]/[COntentlet's title]?language_id=[language's id]
+     *
+     * Should: collect the data using the Image Contentlet
+     */
+    @Test
+    public void usingDAURLWithTitleAndShortyID() throws IOException, DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+
+        final FilesCollector filesCollector = new FilesCollector();
+
+        final CollectorContextMap collectorContextMap = mock(CollectorContextMap.class);
+        final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBeanWithBaseMap(new HashMap<>());
+
+        final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+
+        File tempFile = File.createTempFile("contentWithImageBundleTest", ".jpg");
+        URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
+        File testImage = new File(url.getFile());
+        FileUtils.copyFile(testImage, tempFile);
+
+        final Contentlet imageFileAsset = new FileAssetDataGen(tempFile)
+                .host(host)
+                .languageId(language.getId())
+                .folder(imageFolder).nextPersisted();
+
+        ContentletDataGen.publish(imageFileAsset);
+
+        final String imageContentletShortify = APILocator.getShortyAPI().shortify(imageFileAsset.getIdentifier());
+
+        final String uri = String.format("/dA/%s/$s?language_id=%s", imageContentletShortify, imageFileAsset.getTitle(),
+                imageFileAsset.getLanguageId());
+
+        when(collectorContextMap.get(CollectorContextMap.URI)).thenReturn(uri);
+        when(collectorContextMap.get(CollectorContextMap.HOST)).thenReturn(host.getIdentifier());
+        when(collectorContextMap.get(CollectorContextMap.CURRENT_HOST)).thenReturn(host);
+        when(collectorContextMap.get(CollectorContextMap.LANG_ID)).thenReturn(language.getId());
+        when(collectorContextMap.get(CollectorContextMap.LANG)).thenReturn(language.getLanguageCode());
+
+        CollectorPayloadBean collect = filesCollector.collect(collectorContextMap, collectorPayloadBean);
+
+        assertEquals(collectorPayloadBean.get(EVENT_TYPE), EventType.FILE_REQUEST.getType());
+        final HashMap<String, String> fileObjectFromPayload = (HashMap<String, String>) collectorPayloadBean.get(OBJECT);
+
+        final ContentType imageContentType = imageFileAsset.getContentType();
+
+        assertEquals( imageFileAsset.getIdentifier(), fileObjectFromPayload.get(ID));
+        assertEquals(imageFileAsset.getTitle(), fileObjectFromPayload.get(TITLE));
+        assertEquals( uri, fileObjectFromPayload.get(URL));
+        assertEquals(imageContentType.id(), fileObjectFromPayload.get(CONTENT_TYPE_ID));
+        assertEquals(imageContentType.name(), fileObjectFromPayload.get(CONTENT_TYPE_NAME));
+        assertEquals(imageContentType.variable(), fileObjectFromPayload.get(CONTENT_TYPE_VAR_NAME));
+        assertEquals(imageContentType.baseType().name(), fileObjectFromPayload.get(BASE_TYPE));
+    }
+
+    /**
+     * Method to test: {@link FilesCollector#collect(CollectorContextMap, CollectorPayloadBean)}
+     * when:
+     * - Create a Image Contentlet
+     * - Try to collect the Analytics data pretending that the Image was hit using a
+     *
+     * /dA/[Shorty INODE]/asset/20250215_161621.jpg
+     *
+     * Should: collect the data using the Image Contentlet
+     */
+    @Test
+    public void usingDAURLWithTitleAndShortyInode() throws IOException, DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+
+        final FilesCollector filesCollector = new FilesCollector();
+
+        final CollectorContextMap collectorContextMap = mock(CollectorContextMap.class);
+        final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBeanWithBaseMap(new HashMap<>());
+
+        final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+
+        File tempFile = File.createTempFile("contentWithImageBundleTest", ".jpg");
+        URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
+        File testImage = new File(url.getFile());
+        FileUtils.copyFile(testImage, tempFile);
+
+        final Contentlet imageFileAsset = new FileAssetDataGen(tempFile)
+                .host(host)
+                .languageId(language.getId())
+                .folder(imageFolder).nextPersisted();
+
+        ContentletDataGen.publish(imageFileAsset);
+
+        final String imageContentletShortify = APILocator.getShortyAPI().shortify(imageFileAsset.getInode());
+
+        final String uri = String.format("/dA/%s/$s?language_id=%s", imageContentletShortify, imageFileAsset.getTitle(),
+                imageFileAsset.getLanguageId());
+
+        when(collectorContextMap.get(CollectorContextMap.URI)).thenReturn(uri);
+        when(collectorContextMap.get(CollectorContextMap.HOST)).thenReturn(host.getIdentifier());
+        when(collectorContextMap.get(CollectorContextMap.CURRENT_HOST)).thenReturn(host);
+        when(collectorContextMap.get(CollectorContextMap.LANG_ID)).thenReturn(language.getId());
+        when(collectorContextMap.get(CollectorContextMap.LANG)).thenReturn(language.getLanguageCode());
+
+        CollectorPayloadBean collect = filesCollector.collect(collectorContextMap, collectorPayloadBean);
+
+        assertEquals(collectorPayloadBean.get(EVENT_TYPE), EventType.FILE_REQUEST.getType());
+        final HashMap<String, String> fileObjectFromPayload = (HashMap<String, String>) collectorPayloadBean.get(OBJECT);
+
+        final ContentType imageContentType = imageFileAsset.getContentType();
+
+        assertEquals( imageFileAsset.getIdentifier(), fileObjectFromPayload.get(ID));
+        assertEquals(imageFileAsset.getTitle(), fileObjectFromPayload.get(TITLE));
+        assertEquals( uri, fileObjectFromPayload.get(URL));
+        assertEquals(imageContentType.id(), fileObjectFromPayload.get(CONTENT_TYPE_ID));
+        assertEquals(imageContentType.name(), fileObjectFromPayload.get(CONTENT_TYPE_NAME));
+        assertEquals(imageContentType.variable(), fileObjectFromPayload.get(CONTENT_TYPE_VAR_NAME));
+        assertEquals(imageContentType.baseType().name(), fileObjectFromPayload.get(BASE_TYPE));
+    }
+
+    /**
+     * Method to test: {@link FilesCollector#collect(CollectorContextMap, CollectorPayloadBean)}
+     * when:
+     * - Create a Image Contentlet
+     * - Try to collect the Analytics data pretending that the Image was hit using a
+     *
+     * /dA/[Shorty INODE]/asset/20250215_161621.jpg
+     *
+     * Should: collect the data using the Image Contentlet
+     */
+    @Test
+    public void usingDAURLWithTitleAndShortyIDAndAssetWord() throws IOException, DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+
+        final FilesCollector filesCollector = new FilesCollector();
+
+        final CollectorContextMap collectorContextMap = mock(CollectorContextMap.class);
+        final CollectorPayloadBean collectorPayloadBean = new ConcurrentCollectorPayloadBeanWithBaseMap(new HashMap<>());
+
+        final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+
+        File tempFile = File.createTempFile("contentWithImageBundleTest", ".jpg");
+        URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
+        File testImage = new File(url.getFile());
+        FileUtils.copyFile(testImage, tempFile);
+
+        final Contentlet imageFileAsset = new FileAssetDataGen(tempFile)
+                .host(host)
+                .languageId(language.getId())
+                .folder(imageFolder).nextPersisted();
+
+        ContentletDataGen.publish(imageFileAsset);
+
+        final String imageContentletShortify = APILocator.getShortyAPI().shortify(imageFileAsset.getInode());
+
+        final String uri = String.format("/dA/%s/asset/$s?language_id=%s", imageContentletShortify, imageFileAsset.getTitle(),
+                imageFileAsset.getLanguageId());
+
+        when(collectorContextMap.get(CollectorContextMap.URI)).thenReturn(uri);
+        when(collectorContextMap.get(CollectorContextMap.HOST)).thenReturn(host.getIdentifier());
+        when(collectorContextMap.get(CollectorContextMap.CURRENT_HOST)).thenReturn(host);
+        when(collectorContextMap.get(CollectorContextMap.LANG_ID)).thenReturn(language.getId());
+        when(collectorContextMap.get(CollectorContextMap.LANG)).thenReturn(language.getLanguageCode());
+
+        CollectorPayloadBean collect = filesCollector.collect(collectorContextMap, collectorPayloadBean);
+
+        assertEquals(collectorPayloadBean.get(EVENT_TYPE), EventType.FILE_REQUEST.getType());
+        final HashMap<String, String> fileObjectFromPayload = (HashMap<String, String>) collectorPayloadBean.get(OBJECT);
+
+        final ContentType imageContentType = imageFileAsset.getContentType();
+
+        assertEquals( imageFileAsset.getIdentifier(), fileObjectFromPayload.get(ID));
+        assertEquals(imageFileAsset.getTitle(), fileObjectFromPayload.get(TITLE));
+        assertEquals( uri, fileObjectFromPayload.get(URL));
+        assertEquals(imageContentType.id(), fileObjectFromPayload.get(CONTENT_TYPE_ID));
+        assertEquals(imageContentType.name(), fileObjectFromPayload.get(CONTENT_TYPE_NAME));
+        assertEquals(imageContentType.variable(), fileObjectFromPayload.get(CONTENT_TYPE_VAR_NAME));
+        assertEquals(imageContentType.baseType().name(), fileObjectFromPayload.get(BASE_TYPE));
+    }
 }
