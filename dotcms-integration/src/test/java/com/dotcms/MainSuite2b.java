@@ -119,6 +119,12 @@ import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithRunningExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithScheduledExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTypeTest;
 import com.dotcms.timemachine.business.TimeMachineAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
@@ -497,7 +503,13 @@ import org.junit.runners.Suite.SuiteClasses;
         GoogleTranslationServiceIntegrationTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
         PushedAssetUtilTest.class,
-        OpenAIAutoTagActionletTest.class
+        OpenAIAutoTagActionletTest.class,
+        ExperimentFeatureFlagMetricTypeTest.class,
+        CountPagesWithAllEndedExperimentsMetricTypeTest.class,
+        CountPagesWithArchivedExperimentsMetricTypeTest.class,
+        CountPagesWithDraftExperimentsMetricTypeTest.class,
+        CountPagesWithRunningExperimentsMetricTypeTest.class,
+        CountPagesWithScheduledExperimentsMetricTypeTest.class
 })
 
 public class MainSuite2b {
