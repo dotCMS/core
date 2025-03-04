@@ -63,11 +63,14 @@ export function withLock() {
              */
             lockWarningMessage: computed(() => {
                 const contentlet = store.contentlet();
-                if (!contentlet?.locked) {
+                const canUserLock = store.canLock();
+                const lockedBy = contentlet?.lockedBy;
+
+                // content is not locked.
+                if (!lockedBy) {
                     return '';
                 }
 
-                const lockedBy = contentlet.lockedBy;
                 const currentUser = store.currentUser();
                 const isLockedByCurrentUser = currentUser.userId === lockedBy.userId;
 
@@ -75,7 +78,12 @@ export function withLock() {
                     ? dotMessageService.get('edit.content.locked.by.you')
                     : lockedBy.firstName + ' ' + lockedBy.lastName;
 
-                return dotMessageService.get('edit.content.locked.toolbar.message', userDisplay);
+                return dotMessageService.get(
+                    canUserLock
+                        ? 'edit.content.locked.toolbar.message'
+                        : 'edit.content.locked.no.permission.user',
+                    userDisplay
+                );
             })
         })),
 

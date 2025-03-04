@@ -573,9 +573,9 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
             });
 
-            it('should disable the lock switch when user can not lock', () => {
+            it('should hide the lock switch when user can not lock', () => {
                 const lockSwitch = spectator.query(InputSwitch);
-                expect(lockSwitch.disabled).toBe(true);
+                expect(lockSwitch).toBe(null);
             });
         });
     });

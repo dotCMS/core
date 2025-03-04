@@ -14,7 +14,7 @@ import {
 import { DotCMSContentlet, DotContentletCanLock, DotCurrentUser } from '@dotcms/dotcms-models';
 
 import { contentInitialState } from './content.feature';
-import { withLock } from './lock.feature';
+import { initialLockState, withLock } from './lock.feature';
 import { userInitialState } from './user.feature';
 
 import { initialRootState } from '../edit-content.store';
@@ -31,7 +31,8 @@ describe('LockFeature', () => {
             withState({
                 ...contentInitialState,
                 ...userInitialState,
-                ...initialRootState
+                ...initialRootState,
+                ...initialLockState
             }),
             withMethods((store) => ({
                 updateContent: (contentlet: DotCMSContentlet) => {
@@ -39,6 +40,9 @@ describe('LockFeature', () => {
                 },
                 updateCurrentUser: (currentUser: DotCurrentUser) => {
                     patchState(store, { currentUser });
+                },
+                updateCanLock: (canLock: boolean) => {
+                    patchState(store, { canLock });
                 }
             }))
         );
@@ -59,6 +63,11 @@ describe('LockFeature', () => {
             if (key === 'edit.content.locked.by.you') return 'You';
             if (key === 'edit.content.locked.toolbar.message')
                 return `Content is locked by ${args[0]}`;
+            if (key === 'edit.content.locked.no.permission.user')
+                return `Content is locked by ${args[0]}. You don't have permissions to unlock this content.`;
+            if (key === 'edit.content.locked.no.permission') {
+                return 'You dont have permissions to unlock this content.';
+            }
 
             return key;
         });
@@ -90,12 +99,31 @@ describe('LockFeature', () => {
                 lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
             });
 
+            store.updateCanLock(true);
+
             expect(store.lockWarningMessage()).toBe('Content is locked by You');
         });
 
-        it('should generate correct lock warning message when locked by another user', () => {
+        it('should generate correct lock warning message when dont have lock permissions but the content is locked by other user', () => {
             // Set current user
             store.updateCurrentUser({ userId: '456' });
+
+            // Update with content locked by another user
+            store.updateContent({
+                locked: true,
+                lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+            });
+
+            expect(store.lockWarningMessage()).toEqual(
+                "Content is locked by John Doe. You don't have permissions to unlock this content."
+            );
+        });
+
+        it('should generate correct lock warning message when locked by other user', () => {
+            // Set current user
+            store.updateCurrentUser({ userId: '456' });
+            // When user has permission to unlock
+            store.updateCanLock(true);
 
             // Update with content locked by another user
             store.updateContent({
@@ -107,6 +135,7 @@ describe('LockFeature', () => {
         });
 
         it('should return empty message when content is not locked', () => {
+            store.updateCanLock(true);
             store.updateContent({ locked: false });
             expect(store.lockWarningMessage()).toBe('');
         });
