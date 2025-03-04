@@ -16,49 +16,66 @@ import { computed, effect, inject, untracked } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotContentletService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DotContentletService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
 
 import { ContentState } from './content.feature';
-
-/**
- * Enum representing the possible states of content locking
- */
-export enum LockStatus {
-    LOCKED = 'LOCKED',
-    UNLOCKED = 'UNLOCKED'
-}
+import { UserState } from './user.feature';
 
 export interface LockState {
-    lockStatus: LockStatus;
     lockError: string | null;
     canLock: boolean;
+    lockSwitchLabel: string;
 }
 
 export const initialLockState: LockState = {
-    lockStatus: LockStatus.UNLOCKED,
     lockError: null,
-    canLock: false
+    canLock: false,
+    lockSwitchLabel: 'edit.content.unlocked'
 };
 
 export function withLock() {
     return signalStoreFeature(
-        { state: type<ContentState>() },
+        { state: type<ContentState & UserState>() },
         withState(initialLockState),
 
-        withComputed((store) => ({
+        withComputed((store, dotMessageService = inject(DotMessageService)) => ({
             /**
-             * Whether the content is currently locked
+             * Determines if the content is currently locked
+             *
+             * @returns boolean - True if content is locked and not in copy locale mode
              */
             isContentLocked: computed(() => {
                 const contentlet = store.contentlet();
-                const isCopyingLocale = store.initialContentletState() === 'copy';
-                //LockStatus will be removed when the lock/unlock endpoint response is updated.
-                const lockStatus = store.lockStatus();
+                const isCopyingLocale = store.initialContentletState?.() === 'copy';
 
-                // console.log('contentlet isContentLocked', contentlet);
+                return contentlet?.locked && !isCopyingLocale;
+            }),
 
-                return lockStatus === LockStatus.LOCKED || (contentlet?.locked && !isCopyingLocale);
+            /**
+             * Generates a user-friendly message about who has locked the content
+             *
+             * @returns string - Localized message indicating who locked the content or empty string if not locked
+             */
+            lockWarningMessage: computed(() => {
+                const contentlet = store.contentlet();
+                if (!contentlet?.locked) {
+                    return '';
+                }
+
+                const lockedBy = contentlet.lockedBy;
+                const currentUser = store.currentUser();
+                const isLockedByCurrentUser = currentUser.userId === lockedBy.userId;
+
+                const userDisplay = isLockedByCurrentUser
+                    ? dotMessageService.get('edit.content.locked.by.you')
+                    : lockedBy.firstName + ' ' + lockedBy.lastName;
+
+                return dotMessageService.get('edit.content.locked.toolbar.message', userDisplay);
             })
         })),
 
@@ -69,7 +86,10 @@ export function withLock() {
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
             ) => ({
                 /**
-                 * Locks the content using the identifier from the current contentlet
+                 * Locks the current content
+                 *
+                 * Makes an API call to lock the content and updates the store with the returned contentlet
+                 * Clears any previous lock errors before attempting to lock
                  */
                 lockContent: rxMethod<void>(
                     pipe(
@@ -81,10 +101,9 @@ export function withLock() {
                         switchMap(() =>
                             dotContentletService.lockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
-                                    next: (_contentlet: DotCMSContentlet) => {
-                                        //TODO will update the contentlet in the store when the endpoint response is updated.
+                                    next: (contentlet: DotCMSContentlet) => {
                                         patchState(store, {
-                                            lockStatus: LockStatus.LOCKED
+                                            contentlet
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -100,7 +119,10 @@ export function withLock() {
                 ),
 
                 /**
-                 * Unlocks the content using the identifier from the current contentlet
+                 * Unlocks the current content
+                 *
+                 * Makes an API call to unlock the content and updates the store with the returned contentlet
+                 * Clears any previous lock errors before attempting to unlock
                  */
                 unlockContent: rxMethod<void>(
                     pipe(
@@ -112,9 +134,9 @@ export function withLock() {
                         switchMap(() =>
                             dotContentletService.unlockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
-                                    next: (_contentlet: DotCMSContentlet) => {
+                                    next: (contentlet: DotCMSContentlet) => {
                                         patchState(store, {
-                                            lockStatus: LockStatus.UNLOCKED
+                                            contentlet
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -130,24 +152,36 @@ export function withLock() {
                 ),
 
                 /**
-                 * Effect to check if content can be locked whenever contentlet changes
+                 * Checks if the current content can be locked by the user
+                 *
+                 * Makes an API call to determine if the user has permission to lock the content
+                 * Updates the store with the lock status and appropriate label for the lock switch
                  */
                 checkCanLock: rxMethod<void>(
                     pipe(
                         switchMap(() => {
                             const contentlet = store.contentlet();
-                            // console.log('contentlet checkCanLock', contentlet);
                             if (!contentlet?.inode) {
-                                patchState(store, { canLock: false });
+                                patchState(store, {
+                                    canLock: false,
+                                    lockSwitchLabel: 'edit.content.unlocked'
+                                });
 
                                 return [];
                             }
 
                             return dotContentletService.canLock(contentlet.inode).pipe(
                                 tapResponse({
-                                    next: ({ canLock }) => {
-                                        // console.log('canLock', canLock);
-                                        patchState(store, { canLock });
+                                    next: (response: DotContentletCanLock) => {
+                                        // Set the appropriate label based on lock status
+                                        const lockSwitchLabel = response.locked
+                                            ? 'edit.content.locked'
+                                            : 'edit.content.unlocked';
+
+                                        patchState(store, {
+                                            canLock: response.canLock,
+                                            lockSwitchLabel
+                                        });
                                     },
                                     error: (error: HttpErrorResponse) => {
                                         dotHttpErrorManagerService.handle(error);
@@ -158,24 +192,14 @@ export function withLock() {
                         })
                     )
                 )
-
-                // /**
-                //  * Updates the lock state directly
-                //  * @param isLocked Whether the content is locked
-                //  */
-                // updateLockState: (_isLocked: boolean) => {
-                //     patchState(store, {
-                //         lockStatus: store.isContentLocked()
-                //             ? LockStatus.LOCKED
-                //             : LockStatus.UNLOCKED
-                //     });
-                // }
             })
         ),
         withHooks({
             onInit(store) {
                 /**
-                 * Effect to check if content can be locked whenever contentlet changes
+                 * Effect that automatically checks if content can be locked whenever the contentlet changes
+                 *
+                 * Uses untracked to prevent circular dependencies in the effect
                  */
                 effect(() => {
                     const contentlet = store.contentlet();

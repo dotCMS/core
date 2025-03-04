@@ -23,7 +23,7 @@ import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { InputSwitchChangeEvent, InputSwitchModule } from 'primeng/inputswitch';
-import { MessageModule } from 'primeng/message';
+import { MessagesModule } from 'primeng/messages';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -86,7 +86,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         DotMessagePipe,
         InputSwitchModule,
         FormsModule,
-        MessageModule
+        MessagesModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
