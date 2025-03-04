@@ -802,4 +802,28 @@ describe('Utils Functions', () => {
             expect(generatePreviewUrl(contentlet)).toBe('');
         });
     });
+
+    describe('prepareContentletForCopy', () => {
+        it('should prepare a contentlet for copying by setting locked to false and removing lockedBy', () => {
+            // Arrange
+            const contentlet = createFakeContentlet({
+                locked: true,
+                lockedBy: {
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    userId: 'user123'
+                }
+            });
+
+            // Act
+            const result = functionsUtil.prepareContentletForCopy(contentlet);
+
+            // Assert
+            expect(result).toEqual({
+                ...contentlet,
+                locked: false,
+                lockedBy: undefined
+            });
+        });
+    });
 });

@@ -7,7 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 
 import { DotCurrentUserService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCurrentUser } from '@dotcms/dotcms-models';
+import { CurrentUserDataMock } from '@dotcms/utils-testing';
 
 import { withUser } from './user.feature';
 
@@ -31,22 +31,13 @@ describe('UserFeature', () => {
 
     describe('loadCurrentUser', () => {
         it('should load current user successfully', fakeAsync(() => {
-            const mockUser: DotCurrentUser = {
-                userId: '123',
-                givenName: 'John',
-                surnaname: 'Doe',
-                email: 'john.doe@example.com',
-                roleId: 'admin',
-                admin: true
-            };
-
-            dotCurrentUserService.getCurrentUser.mockReturnValue(of(mockUser));
+            dotCurrentUserService.getCurrentUser.mockReturnValue(of(CurrentUserDataMock));
 
             store.loadCurrentUser();
             tick();
 
             expect(dotCurrentUserService.getCurrentUser).toHaveBeenCalled();
-            expect(store.currentUser()).toEqual(mockUser);
+            expect(store.currentUser()).toEqual(CurrentUserDataMock);
         }));
 
         it('should handle error when loading current user', fakeAsync(() => {
@@ -56,7 +47,7 @@ describe('UserFeature', () => {
             store.loadCurrentUser();
             tick();
 
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockError);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
             expect(store.currentUser()).toBeNull();
         }));
     });

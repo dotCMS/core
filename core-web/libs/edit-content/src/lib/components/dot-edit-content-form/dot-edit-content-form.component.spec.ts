@@ -19,6 +19,7 @@ import { TabPanel, TabView } from 'primeng/tabview';
 import {
     DotContentletService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
@@ -26,7 +27,11 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
+import {
+    DotCMSWorkflowAction,
+    DotContentletCanLock,
+    DotContentletDepths
+} from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
@@ -58,6 +63,7 @@ describe('DotFormComponent', () => {
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
+    let dotContentletService: SpyObject<DotContentletService>;
     let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
@@ -75,8 +81,8 @@ describe('DotFormComponent', () => {
             mockProvider(DotMessageService),
             mockProvider(Router),
             mockProvider(DotWorkflowService),
-            mockProvider(MessageService),
             mockProvider(DotContentletService),
+            mockProvider(MessageService),
             mockProvider(DialogService),
 
             {
@@ -87,6 +93,16 @@ describe('DotFormComponent', () => {
                     get snapshot() {
                         return { params: { id: undefined, contentType: undefined } };
                     }
+                }
+            },
+            {
+                provide: DotCurrentUserService,
+                useValue: {
+                    getCurrentUser: () =>
+                        of({
+                            userId: '123',
+                            userName: 'John Doe'
+                        })
                 }
             }
         ]
@@ -104,7 +120,10 @@ describe('DotFormComponent', () => {
         dotEditContentService = spectator.inject(DotEditContentService);
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
+        dotContentletService = spectator.inject(DotContentletService);
         router = spectator.inject(Router);
+
+        dotContentletService.canLock.mockReturnValue(of({ canLock: true } as DotContentletCanLock));
     });
 
     afterEach(() => {
@@ -122,6 +141,10 @@ describe('DotFormComponent', () => {
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
 
             store.initializeExistingContent({
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,

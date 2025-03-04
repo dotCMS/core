@@ -180,7 +180,7 @@ export class DotEditContentFormComponent implements OnInit {
         effect(() => {
             const isLoading = this.$store.isLoading();
             const isLocked = this.$store.isContentLocked();
-            // console.log('disable', isLoading, isLocked);
+
             if (isLoading || isLocked) {
                 this.form.disable();
             } else {
@@ -437,6 +437,12 @@ export class DotEditContentFormComponent implements OnInit {
         this.$store.setActiveTab(index);
     }
 
+    /**
+     * Handles the change event for the content lock input switch.
+     *
+     * @param {InputSwitchChangeEvent} event - The event object containing the checked state.
+     * @memberof DotEditContentFormComponent
+     */
     onContentLockChange(event: InputSwitchChangeEvent) {
         event.checked ? this.$store.lockContent() : this.$store.unlockContent();
     }

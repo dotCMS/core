@@ -24,7 +24,7 @@ export interface DotCMSContentlet {
     language?: string | DotLanguage;
     live: boolean;
     locked: boolean;
-    lockedBy?: DotContentletLock;
+    lockedBy?: DotContentletLockUser;
     mimeType?: string;
     modDate: string;
     modUser: string;
@@ -53,7 +53,7 @@ export interface DotContentletPermissions {
     CAN_ADD_CHILDREN?: string[];
 }
 
-export interface DotContentletLock {
+export interface DotContentletLockUser {
     firstName: string;
     lastName: string;
     userId: string;
