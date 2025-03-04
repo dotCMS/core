@@ -28,7 +28,10 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import { DotEditContentSidebarUntranslatedLocaleComponent } from '@dotcms/edit-content/components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
-import { sortLocalesTranslatedFirst } from '@dotcms/edit-content/utils/functions.util';
+import {
+    prepareContentletForCopy,
+    sortLocalesTranslatedFirst
+} from '@dotcms/edit-content/utils/functions.util';
 
 import { ContentState } from './content.feature';
 import { FormState } from './form.feature';
@@ -254,7 +257,6 @@ export function withLocales() {
                                         const parsedCurrentActions = parseCurrentActions(
                                             parsedSchemes[defaultSchemeId]?.actions || []
                                         );
-
                                         patchState(store, {
                                             currentLocale: locale,
                                             schemes: parsedSchemes,
@@ -265,7 +267,9 @@ export function withLocales() {
                                             error: null,
                                             formValues: null,
                                             contentlet:
-                                                copyType === 'populate' ? store.contentlet() : null
+                                                copyType === 'populate'
+                                                    ? prepareContentletForCopy(store.contentlet())
+                                                    : null
                                         });
                                     });
 

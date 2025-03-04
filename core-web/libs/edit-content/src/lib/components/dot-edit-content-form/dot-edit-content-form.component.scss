@@ -40,6 +40,10 @@ $tab-min-height: 52px;
     flex-wrap: wrap;
     align-items: center;
     gap: $spacing-4;
+
+    &__lock {
+        margin-right: 1rem;
+    }
 }
 
 .dot-edit-content-actions__sidebar-toggle {

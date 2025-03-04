@@ -35,7 +35,7 @@ describe('DotCurrentUserService', () => {
             email: 'admin@dotcms.com',
             givenName: 'TEST',
             roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
-            surnaname: 'User',
+            surname: 'User',
             userId: 'testId'
         };
         dotCurrentUserService.getCurrentUser().subscribe((user: DotCurrentUser) => {

@@ -65,7 +65,7 @@ const routeDatamock = {
             email: 'admin@dotcms.com',
             givenName: 'Admin',
             roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
-            surnaname: 'User',
+            surname: 'User',
             userId: 'testId'
         },
         permissions: {
@@ -326,7 +326,7 @@ describe('DotStarterComponent', () => {
                             email: 'admin@dotcms.com',
                             givenName: 'Admin',
                             roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
-                            surnaname: 'User',
+                            surname: 'User',
                             userId: 'testId'
                         },
                         permissions: {

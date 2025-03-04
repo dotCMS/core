@@ -21,6 +21,7 @@ import { MessagesModule } from 'primeng/messages';
 import {
     DotContentletService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotWorkflowActionsFireService,
@@ -75,6 +76,16 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(MessageService),
             mockProvider(DialogService),
             mockProvider(DotLanguagesService),
+            {
+                provide: DotCurrentUserService,
+                useValue: {
+                    getCurrentUser: () =>
+                        of({
+                            userId: '123',
+                            userName: 'John Doe'
+                        })
+                }
+            },
             {
                 provide: ActivatedRoute,
                 useValue: {

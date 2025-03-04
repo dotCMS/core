@@ -342,3 +342,15 @@ export const saveStoreUIState = (state: UIState): void => {
         console.warn('Error saving UI state to sessionStorage:', e);
     }
 };
+
+/**
+ * Prepares a contentlet for copying by ensuring it's not locked and removing any previous lock owner.
+ *
+ * @param contentlet - The original contentlet to be copied
+ * @returns The contentlet with locked=false and no lockedBy property
+ */
+export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSContentlet => ({
+    ...contentlet,
+    locked: false,
+    lockedBy: undefined
+});

@@ -18,6 +18,7 @@ import { TabView } from 'primeng/tabview';
 import {
     DotContentletService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
@@ -25,6 +26,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
+import { DotContentletCanLock } from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
@@ -41,6 +43,7 @@ describe('DotEditContentSidebarComponent', () => {
     let spectator: Spectator<DotEditContentSidebarComponent>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
+    let dotContentletService: SpyObject<DotContentletService>;
     let store: SpyObject<InstanceType<typeof DotEditContentStore>>;
 
     const createComponent = createComponentFactory({
@@ -64,6 +67,16 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotLanguagesService),
             mockProvider(DialogService),
             {
+                provide: DotCurrentUserService,
+                useValue: {
+                    getCurrentUser: () =>
+                        of({
+                            userId: '123',
+                            userName: 'John Doe'
+                        })
+                }
+            },
+            {
                 provide: ActivatedRoute,
                 useValue: {
                     get snapshot() {
@@ -81,6 +94,7 @@ describe('DotEditContentSidebarComponent', () => {
         store = spectator.inject(DotEditContentStore, true);
         dotEditContentService = spectator.inject(DotEditContentService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
+        dotContentletService = spectator.inject(DotContentletService);
 
         // Mock the initial UI state
         jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
@@ -91,6 +105,7 @@ describe('DotEditContentSidebarComponent', () => {
 
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
         dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+        dotContentletService.canLock.mockReturnValue(of({ canLock: true } as DotContentletCanLock));
 
         spectator.detectChanges();
     });
@@ -183,6 +198,9 @@ describe('DotEditContentSidebarComponent', () => {
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ locked: false, canLock: true } as DotContentletCanLock)
+            );
 
             // Initialize existing content
             store.initializeExistingContent('123');
