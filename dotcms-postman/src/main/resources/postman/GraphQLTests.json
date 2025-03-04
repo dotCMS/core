@@ -6,6 +6,21 @@
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "30436704"
 	},
+	"request": {
+		"method": "GET",
+		"header": [],
+		"url": {
+			"raw": "{{serverURL}}/api/v1/logout",
+			"host": [
+				"{{serverURL}}"
+			],
+			"path": [
+				"api",
+				"v1",
+				"logout"
+			]
+		}
+	},
 	"item": [
 		{
 			"name": "Pre-Execution Requests",

@@ -955,13 +955,22 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "admin",
+							"value": "=F5cp%@kvcAr9E+?",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin@dotcms.com",
+							"value": "admin@dotCMS.com",
 							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
 						}
 					]
 				},

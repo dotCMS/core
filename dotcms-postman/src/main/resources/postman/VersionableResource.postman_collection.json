@@ -961,6 +961,15 @@
 											"key": "username",
 											"value": "admin@dotcms.com",
 											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -1010,6 +1019,15 @@
 											"key": "username",
 											"value": "admin@dotcms.com",
 											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -1453,21 +1471,6 @@
 										"{{identifier}}",
 										"working"
 									]
-								},
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
 								}
 							},
 							"response": []
@@ -1533,6 +1536,15 @@
 											"key": "username",
 											"value": "admin@dotcms.com",
 											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
