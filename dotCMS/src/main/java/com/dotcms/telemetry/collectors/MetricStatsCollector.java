@@ -46,6 +46,21 @@ import com.dotcms.telemetry.collectors.contenttype.CountOfTextAreaFieldsMetricTy
 import com.dotcms.telemetry.collectors.contenttype.CountOfTextFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfTimeFieldsMetricType;
 import com.dotcms.telemetry.collectors.contenttype.CountOfWYSIWYGFieldsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountExperimentsEditedInThePast30DaysMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountExperimentsWithBounceRateGoalMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountExperimentsWithExitRateGoalMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountExperimentsWithReachPageGoalMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountExperimentsWithURLParameterGoalMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithRunningExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountPagesWithScheduledExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllArchivedExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllDraftExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllEndedExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllRunningExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExperimentsMetricType;
 import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricType;
 import com.dotcms.telemetry.collectors.language.HasChangeDefaultLanguagesDatabaseMetricType;
 import com.dotcms.telemetry.collectors.language.OldStyleLanguagesVarialeMetricType;
@@ -226,6 +241,21 @@ public final class MetricStatsCollector {
 
         // adding experiments metrics
         metricStatsCollectors.add(new ExperimentFeatureFlagMetricType());
+        metricStatsCollectors.add(new CountVariantsInAllScheduledExperimentsMetricType());
+        metricStatsCollectors.add(new CountVariantsInAllRunningExperimentsMetricType());
+        metricStatsCollectors.add(new CountVariantsInAllEndedExperimentsMetricType());
+        metricStatsCollectors.add(new CountVariantsInAllDraftExperimentsMetricType());
+        metricStatsCollectors.add(new CountVariantsInAllArchivedExperimentsMetricType());
+        metricStatsCollectors.add(new CountPagesWithScheduledExperimentsMetricType());
+        metricStatsCollectors.add(new CountPagesWithRunningExperimentsMetricType());
+        metricStatsCollectors.add(new CountPagesWithDraftExperimentsMetricType());
+        metricStatsCollectors.add(new CountPagesWithArchivedExperimentsMetricType());
+        metricStatsCollectors.add(new CountPagesWithAllEndedExperimentsMetricType());
+        metricStatsCollectors.add(new CountExperimentsWithURLParameterGoalMetricType());
+        metricStatsCollectors.add(new CountExperimentsWithReachPageGoalMetricType());
+        metricStatsCollectors.add(new CountExperimentsWithExitRateGoalMetricType());
+        metricStatsCollectors.add(new CountExperimentsWithBounceRateGoalMetricType());
+        metricStatsCollectors.add(new CountExperimentsEditedInThePast30DaysMetricType());
 
         // api ones
         metricStatsCollectors.addAll(ApiMetricTypes.INSTANCE.get());
