@@ -124,6 +124,11 @@ import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperime
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithRunningExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithScheduledExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllArchivedExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllDraftExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllEndedExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllRunningExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExperimentsMetricType;
 import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTypeTest;
 import com.dotcms.timemachine.business.TimeMachineAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
@@ -505,6 +510,16 @@ import org.junit.runners.Suite.SuiteClasses;
         PushedAssetUtilTest.class,
         OpenAIAutoTagActionletTest.class,
         ExperimentFeatureFlagMetricTypeTest.class,
+        CountPagesWithAllEndedExperimentsMetricTypeTest.class,
+        CountPagesWithArchivedExperimentsMetricTypeTest.class,
+        CountPagesWithDraftExperimentsMetricTypeTest.class,
+        CountPagesWithRunningExperimentsMetricTypeTest.class,
+        CountPagesWithScheduledExperimentsMetricTypeTest.class,
+        CountVariantsInAllArchivedExperimentsMetricType.class,
+        CountVariantsInAllDraftExperimentsMetricType.class,
+        CountVariantsInAllEndedExperimentsMetricType.class,
+        CountVariantsInAllRunningExperimentsMetricType.class,
+        CountVariantsInAllScheduledExperimentsMetricType.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,
