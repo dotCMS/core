@@ -6,6 +6,21 @@
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
 	},
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "username",
+				"value": "admin@dotcms.com",
+				"type": "string"
+			},
+			{
+				"key": "password",
+				"value": "admin",
+				"type": "string"
+			}
+		]
+	},
 	"item": [
 		{
 			"name": "Get All Filters",
@@ -494,6 +509,21 @@
 						"filters",
 						"NoWorkflow.yml"
 					]
+				},
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
 				}
 			},
 			"response": []
@@ -533,6 +563,21 @@
 						"pushpublish",
 						"filters",
 						"TestPPFilter.yml"
+					]
+				},
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
 					]
 				}
 			},

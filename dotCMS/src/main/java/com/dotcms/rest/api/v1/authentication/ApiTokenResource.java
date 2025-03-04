@@ -466,6 +466,8 @@ public class ApiTokenResource implements Serializable {
         final Map<String, Object> claims = formData.claims;
         final int expirationSeconds      = formData.expirationSeconds;
 
+
+
         if(expirationSeconds < 0) {
 
             return ExceptionMapperUtil.createResponse(new DotStateException("Invalid expirationSeconds"), Response.Status.BAD_REQUEST);
