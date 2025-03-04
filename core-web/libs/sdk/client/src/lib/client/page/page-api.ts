@@ -45,46 +45,23 @@ export interface PageRequestParams {
     publishDate?: string;
 }
 
+type StringifyParam<T> = T extends string | number | boolean ? string : never;
+
+type PageToBackendParamsMapping = {
+    siteId: 'hostId';
+    languageId: 'language_id';
+    personaId: 'com.dotmarketing.persona.id';
+};
+
 /**
  * The private parameters for the Page API.
  * @internal
  */
-export interface BackendPageParams {
-    /**
-     * The id of the site you want to interact with.
-     */
-    hostId?: string;
-
-    /**
-     * The mode of the page you want to retrieve.
-     */
-    mode?: string;
-
-    /**
-     * The id of the persona for which you want to retrieve the page.
-     */
-    'com.dotmarketing.persona.id'?: string;
-
-    /**
-     * The language id of the page you want to retrieve.
-     */
-    language_id?: string;
-
-    /**
-     * Whether to fire the rules set on the page.
-     */
-    fireRules?: string;
-
-    /**
-     * The depth of the page you want to retrieve.
-     */
-    depth?: string;
-
-    /**
-     * The publish date of the page you want to retrieve.
-     */
-    publishDate?: string;
-}
+export type BackendPageParams = {
+    [K in keyof PageRequestParams as K extends keyof PageToBackendParamsMapping
+        ? PageToBackendParamsMapping[K]
+        : K]?: StringifyParam<PageRequestParams[K]>;
+};
 
 export interface GraphQLPageOptions extends PageRequestParams {
     query: {
@@ -146,113 +123,25 @@ export class PageClient {
     }
 
     /**
-     * Retrieves a page from DotCMS using REST API.
-     *
-     * @param {string} url - The URL of the page to retrieve
-     * @param {PageRequestParams} [options] - Options for retrieving the page via REST API
-     * @returns {Promise<DotCMSPageAsset>} A Promise that resolves to the page data
-     */
-    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAsset>;
-
-    /**
-     * Retrieves a page from DotCMS using GraphQL.
-     *
-     * @param {string} url - The URL of the page to retrieve
-     * @param {GraphQLPageOptions} options - Options for retrieving the page via GraphQL
-     * @returns {Promise<{page: any, content: Record<string, any>, nav: Record<string, any>, errors?: any}>}
-     *          A Promise that resolves to the page data with content and navigation
-     */
-    get(url: string, options?: GraphQLPageOptions): Promise<unknown>;
-
-    /**
-     * Implementation of the get method that handles both REST API and GraphQL requests.
+     * Retrieves a page from DotCMS using either REST API or GraphQL.
+     * This method is polymorphic and can handle both REST API and GraphQL requests based on the options provided.
      *
      * @param {string} url - The URL of the page to retrieve
      * @param {PageRequestParams | GraphQLPageOptions} [options] - Options for the request
-     * @returns {Promise<DotCMSPageAsset | {page: any, content: Record<string, any>, nav: Record<string, any>, errors?: any}>}
-     *          A Promise that resolves to the page data
-     */
-    async get(
-        url: string,
-        options?: PageRequestParams | GraphQLPageOptions
-    ): Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse> {
-        const isGraphQLRequest = !!(options as GraphQLPageOptions)?.['query'];
-
-        if (isGraphQLRequest) {
-            return this.getPageFromGraphQL(url, options as GraphQLPageOptions);
-        }
-
-        return this.getPageFromAPI(url, options);
-    }
-
-    /**
-     * Retrieves all the elements of a Page in your dotCMS system in JSON format.
+     * @returns {Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse>} A Promise that resolves to the page data
      *
-     * @param {string} path - The path of the page to retrieve
-     * @param {PageRequestParams} params - The options for the Page API call
-     * @returns {Promise<unknown>} A Promise that resolves to the page data
-     * @throws {Error} Throws an error if the path parameter is missing or if the fetch request fails
-     * @example
+     * @example Using REST API with options
      * ```typescript
-     * // Get a page with default parameters
-     * const homePage = await pageClient.get('/');
-     *
-     * // Get a page with specific language and mode
-     * const aboutPage = await pageClient.get('/about-us', {
-     *   languageId: 2,
-     *   mode: 'PREVIEW_MODE'
-     * });
-     *
-     * // Get a page with persona targeting
-     * const productPage = await pageClient.get('/products', {
-     *   personaId: 'persona-123',
-     *   depth: 2
+     * const page = await pageClient.get('/about-us', {
+     *   mode: 'PREVIEW_MODE',
+     *   languageId: 1,
+     *   siteId: 'demo.dotcms.com'
      * });
      * ```
-     */
-    private async getPageFromAPI(
-        path: string,
-        params?: PageRequestParams
-    ): Promise<DotCMSPageAsset> {
-        if (!path) {
-            throw new Error("The 'path' parameter is required for the Page API");
-        }
-
-        const pagePath = path.replace(/^\//, '');
-        const pageParams = this.mapToBackendParams(params || {});
-        const urlParams = new URLSearchParams(pageParams as Record<string, string>).toString();
-        const url = `${this.BASE_URL}/json/${pagePath}${urlParams ? `?${urlParams}` : ''}`;
-
-        const response = await fetch(url, this.requestOptions);
-
-        if (!response.ok) {
-            const error = {
-                status: response.status,
-                message: ErrorMessages[response.status] || response.statusText
-            };
-
-            throw error;
-        }
-
-        return response.json().then((data) => data.entity);
-    }
-
-    /**
-     * Retrieves a personalized page with associated content and navigation.
      *
-     * @param {Object} options - Options for the personalized page request
-     * @param {string} options.url - The URL of the page to retrieve
-     * @param {string} options.languageId - The language ID for the page content
-     * @param {string} options.mode - The rendering mode for the page
-     * @param {string} options.pageFragment - GraphQL fragment for page data
-     * @param {Record<string, string>} options.content - Content queries to include
-     * @param {Record<string, string>} options.nav - Navigation queries to include
-     * @returns {Promise<Object>} A Promise that resolves to the personalized page data with content and navigation
-     * @example
+     * @example Using GraphQL
      * ```typescript
-     * // Get a personalized page with content and navigation
-     * const personalizedPage = await pageClient.getPersonalizedPage({
-     *   url: '/about-us',
+     * const page = await pageClient.get('/about-us', {
      *   languageId: '1',
      *   mode: 'LIVE',
      *   pageFragment: `
@@ -289,7 +178,187 @@ export class PageClient {
      * });
      * ```
      */
-    async getPageFromGraphQL(
+    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAsset>;
+    get(url: string, options?: GraphQLPageOptions): Promise<DotCMSGraphQLPageResponse>;
+    get(
+        url: string,
+        options?: PageRequestParams | GraphQLPageOptions
+    ): Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse> {
+        if (!options) {
+            return this.#getPageFromAPI(url);
+        }
+
+        if (this.#isGraphQLRequest(options)) {
+            return this.#getPageFromGraphQL(url, options);
+        }
+
+        if (this.#isPageRequestParams(options)) {
+            return this.#getPageFromAPI(url, options);
+        }
+
+        console.warn('Invalid options provided to get method:', options);
+
+        return this.#getPageFromAPI(url);
+    }
+
+    /**
+     * Determines if the provided options object is for a GraphQL request.
+     *
+     * @param {PageRequestParams | GraphQLPageOptions} options - The options object to check
+     * @returns {boolean} True if the options are for a GraphQL request, false otherwise
+     * @internal
+     */
+    #isGraphQLRequest(
+        options: PageRequestParams | GraphQLPageOptions
+    ): options is GraphQLPageOptions {
+        const isPageRequestParams = this.#isPageRequestParams(options);
+
+        if (isPageRequestParams) {
+            return false;
+        }
+
+        return !!options?.['query'];
+    }
+
+    /**
+     * Type guard that checks if the provided options object matches the PageRequestParams interface.
+     *
+     * @param {unknown} options - The options object to check
+     * @returns {boolean} True if the options match PageRequestParams, false otherwise
+     * @internal
+     *
+     * @example
+     * ```typescript
+     * const options = {
+     *   siteId: '123',
+     *   mode: 'PREVIEW_MODE',
+     *   languageId: 1
+     * };
+     *
+     * if (this.#isPageRequestParams(options)) {
+     *   // options is typed as PageRequestParams
+     * }
+     * ```
+     */
+    #isPageRequestParams(options: unknown): options is PageRequestParams {
+        if (typeof options !== 'object' || options === null) {
+            return false;
+        }
+
+        const validKeys = [
+            'siteId',
+            'mode',
+            'languageId',
+            'personaId',
+            'fireRules',
+            'depth',
+            'publishDate'
+        ];
+
+        return Object.keys(options).every((key) => validKeys.includes(key));
+    }
+
+    /**
+     * Retrieves all the elements of a Page in your dotCMS system in JSON format.
+     *
+     * @param {string} path - The path of the page to retrieve
+     * @param {PageRequestParams} params - The options for the Page API call
+     * @returns {Promise<unknown>} A Promise that resolves to the page data
+     * @throws {Error} Throws an error if the path parameter is missing or if the fetch request fails
+     * @example
+     * ```typescript
+     * // Get a page with default parameters
+     * const homePage = await pageClient.get('/');
+     *
+     * // Get a page with specific language and mode
+     * const aboutPage = await pageClient.get('/about-us', {
+     *   languageId: 2,
+     *   mode: 'PREVIEW_MODE'
+     * });
+     *
+     * // Get a page with persona targeting
+     * const productPage = await pageClient.get('/products', {
+     *   personaId: 'persona-123',
+     *   depth: 2
+     * });
+     * ```
+     */
+    async #getPageFromAPI(path: string, params?: PageRequestParams): Promise<DotCMSPageAsset> {
+        if (!path) {
+            throw new Error("The 'path' parameter is required for the Page API");
+        }
+
+        const pagePath = path.replace(/^\//, '');
+        const pageParams = this.#mapToBackendParams(params || {});
+        const urlParams = new URLSearchParams(pageParams as Record<string, string>).toString();
+        const url = `${this.BASE_URL}/json/${pagePath}${urlParams ? `?${urlParams}` : ''}`;
+
+        const response = await fetch(url, this.requestOptions);
+
+        if (!response.ok) {
+            const error = {
+                status: response.status,
+                message: ErrorMessages[response.status] || response.statusText
+            };
+
+            throw error;
+        }
+
+        return response.json().then((data) => data.entity);
+    }
+
+    /**
+     * Retrieves a personalized page with associated content and navigation.
+     *
+     * @param {Object} options - Options for the personalized page request
+     * @param {string} options.url - The URL of the page to retrieve
+     * @param {string} options.languageId - The language ID for the page content
+     * @param {string} options.mode - The rendering mode for the page
+     * @param {string} options.pageFragment - GraphQL fragment for page data
+     * @param {Record<string, string>} options.content - Content queries to include
+     * @param {Record<string, string>} options.nav - Navigation queries to include
+     * @returns {Promise<Object>} A Promise that resolves to the personalized page data with content and navigation
+     * @example
+     * ```typescript
+     * // Get a personalized page with content and navigation
+     * const personalizedPage = await pageClient.getPageFromGraphQL({
+     *   url: '/about-us',
+     *   languageId: '1',
+     *   mode: 'LIVE',
+     *   pageFragment: `
+     *     fragment PageFields on Page {
+     *       title
+     *       description
+     *       modDate
+     *     }
+     *   `,
+     *   content: {
+     *     blogs: `
+     *       search(query: "+contentType: blog", limit: 3) {
+     *         title
+     *         ...on Blog {
+     *             author {
+     *                 title
+     *             }
+     *         }
+                                }
+     *   nav: {
+     *     mainNav: `
+     *       query MainNav {
+     *         Nav(identifier: "main-nav") {
+     *           title
+     *           items {
+     *             label
+     *             url
+     *           }
+     *         }
+     *       }
+     *     `
+     *   }
+     * });
+     * ```
+     */
+    async #getPageFromGraphQL(
         url: string,
         options?: GraphQLPageOptions
     ): Promise<DotCMSGraphQLPageResponse> {
@@ -315,6 +384,7 @@ export class PageClient {
                 body: requestBody,
                 headers: requestHeaders
             });
+
             const pageResponse = data.page;
             const contentResponse = mapResponseData(data, Object.keys(content));
             const navResponse = mapResponseData(data, Object.keys(nav));
@@ -352,7 +422,7 @@ export class PageClient {
      * }
      * ```
      */
-    private mapToBackendParams(params: PageRequestParams): BackendPageParams {
+    #mapToBackendParams(params: PageRequestParams): BackendPageParams {
         const backendParams = {
             hostId: params.siteId || this.siteId,
             mode: params.mode,

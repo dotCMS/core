@@ -131,7 +131,7 @@ class DotCMSClient {
  * const pages = await client.page.get('/about-us');
  * ```
  */
-export const createDotCMSClient = (clientConfig: DotCMSClientConfig) => {
+export const createDotCMSClient = (clientConfig: DotCMSClientConfig): DotCMSClient => {
     const { dotcmsUrl, authToken } = clientConfig || {};
     const instanceUrl = parseUrl(dotcmsUrl)?.origin;
 
