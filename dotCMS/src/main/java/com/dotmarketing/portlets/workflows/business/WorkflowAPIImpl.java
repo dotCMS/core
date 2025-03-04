@@ -1644,7 +1644,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @param action
 	 * @param actionClasses
 	 */
-    protected void fillActionInfo(final WorkflowAction action,
+	@Override
+    public void fillActionInfo(final WorkflowAction action,
                                 final List<WorkflowActionClass> actionClasses) {
 
 	    boolean isSave        = false;

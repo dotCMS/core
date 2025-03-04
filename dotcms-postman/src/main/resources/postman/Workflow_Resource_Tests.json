@@ -19088,6 +19088,59 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "CheckExportScheme",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"hasMoveActionletActionlet Check\", function () {",
+									"    pm.expect(jsonData.entity.workflowObject.actions[0].hasMoveActionletActionlet).to.be.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}/export",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"{{schemeId}}",
+								"export"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		}
