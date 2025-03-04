@@ -102,26 +102,34 @@ public class FilesCollector implements Collector {
         final int idIndex =  uri.startsWith("/contentAsset") ? 3 : 2;
         final int fieldNameIndex =  uri.startsWith("/contentAsset") ? 4 : 3;
 
-        return new FieldNameIdentifier(split[idIndex],
-                fieldNameIndex < split.length || !uri.startsWith("/dotAsset")? split[fieldNameIndex] : null);
+        if (uri.startsWith("/dotAsset")) {
+            return new FieldNameIdentifier(split[idIndex], null);
+        }
+
+        return new FieldNameIdentifier(fieldNameIndex < split.length ? split[idIndex] : null,
+                fieldNameIndex < split.length ? split[fieldNameIndex] : null);
     }
 
     private Optional<Contentlet> getFileAsset(final Long languageId, final FieldNameIdentifier fieldNameIdentifier)
             throws DotDataException, DotSecurityException {
 
+        if (Objects.isNull(fieldNameIdentifier.identifier)) {
+            return Optional.empty();
+        }
+
         final Contentlet contentletByIdentifier = contentletAPI.findContentletByIdentifier(fieldNameIdentifier.identifier,
                 PageMode.get().showLive, languageId,
                 APILocator.systemUser(), false);
 
-        if (Objects.nonNull(fieldNameIdentifier.fieldName)) {
+        if (Objects.nonNull(fieldNameIdentifier.fieldName) && Objects.nonNull(contentletByIdentifier)) {
             final String binaryFileId = contentletByIdentifier.getStringProperty(fieldNameIdentifier.fieldName);
 
             return Optional.ofNullable(contentletAPI.findContentletByIdentifier(binaryFileId,
                     PageMode.get().showLive, languageId,
                     APILocator.systemUser(), false));
-        } else {
-            return Optional.ofNullable(contentletByIdentifier);
         }
+
+        return Optional.ofNullable(contentletByIdentifier);
     }
 
     @Override
