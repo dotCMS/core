@@ -75,7 +75,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
             return Result.NEXT;
         }
 
-        // if the token was expiry date is greater than the allowed EXPIREY date, reset it
+        // if the token was expiry date is greater than the allowed EXPIRY date, reset it
         // maybe someone updated the configured MAX_AGE_DAYS
         if(token.get().getExpiresDate().after(Date.from(Instant.now().plus(jwtMaxAgeInMillis, ChronoUnit.MILLIS)))) {
             // refresh the token
