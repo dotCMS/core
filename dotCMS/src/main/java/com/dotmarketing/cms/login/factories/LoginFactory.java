@@ -6,7 +6,6 @@ import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.enterprise.BaseAuthenticator;
 import com.dotcms.enterprise.LDAPImpl;
 import com.dotcms.enterprise.PasswordFactoryProxy;
-import com.dotcms.enterprise.cas.CASAuthUtils;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DuplicateUserException;
@@ -28,9 +27,11 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.Validator;
 
+import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
 
 /**
  * @author will
@@ -41,43 +42,68 @@ public class LoginFactory {
 
 	public static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 
-	/*Custom Code*/
-	public static final boolean USE_CAS_LOGIN_FILTER = Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
-	/*End of Custom Code*/
 
     private static final String LOCK_PREFIX = "UserIdLogin:";
     private static final DotKeyLockManager<String> lockManager = DotKeyLockManagerBuilder.newLockManager("LOGIN_LOCK");
     
 
-    public static boolean doCookieLogin(String encryptedId, HttpServletRequest request, HttpServletResponse response) {
+    public static boolean doCookieLogin(String userId, HttpServletRequest request, HttpServletResponse response) {
 
         try {
-            return lockManager.tryLock(LOCK_PREFIX + encryptedId, () -> {
-            
-                String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
+            return lockManager.tryLock(LOCK_PREFIX + userId, () -> {
+
+				// if multiple threads are stuck trying to login with the same encryptedId, we need to check if the user is already logged in
+				if(PortalUtil.getUserId(request) != null) {
+					return true;
+				}
+                String decryptedId = Try.of(()->PublicEncryptionFactory.decryptString(userId)).getOrElse(userId);
                 if(decryptedId.equals(PortalUtil.getUserId(request))) {
                     return true;
                 }
                 
                 /*Custom Code*/
-                User user = null;
-                if(Validator.isEmailAddress(decryptedId))
-                    user = APILocator.getUserAPI().loadByUserByEmail(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
-                 else
-                    user = APILocator.getUserAPI().loadUserById(decryptedId,APILocator.getUserAPI().getSystemUser(),false);
-                /* End of Custom Code */
-                try {
-                    String userName = user.getEmailAddress();
-                    Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-                    if (comp.getAuthType().equals(Company.AUTH_TYPE_ID)) {
-                    	userName = user.getUserId();
-                    }
-                    return doLogin(userName, null, true, request, response, true);
-                } catch (Exception e) { // $codepro.audit.disable logExceptions
-            		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login (No user found) from IP: " + request.getRemoteAddr() + " :  " + e );
-    
-                	return false;
-                }
+				User user = null;
+				if (Validator.isEmailAddress(decryptedId)) {
+					user = APILocator.getUserAPI()
+							.loadByUserByEmail(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
+				} else {
+					user = APILocator.getUserAPI()
+							.loadUserById(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
+				}
+
+				if(user == null) {
+					SecurityLogger.logInfo(LoginFactory.class,"Auto login failed (No user found) from  id: " + userId);
+					return false;
+				}
+
+				if(!user.isActive()){
+					SecurityLogger.logInfo(LoginFactory.class,"Auto login failed (User is not active) for user: "+ user.getEmailAddress() + " id: " +user.getUserId());
+					return false;
+				}
+
+
+				final HttpSession session = PreventSessionFixationUtil.getInstance().preventSessionFixation(request, true);
+
+				if(user.isBackendUser() || user.isAdmin()){
+					session.setAttribute(WebKeys.CMS_USER, user);
+					session.removeAttribute(com.dotmarketing.util.WebKeys.VISITOR);
+					session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+					session.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+					request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+					request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+					session.setAttribute(WebKeys.CMS_USER, user);
+					SecurityLogger.logInfo(LoginFactory.class,"Successful login name:" + user.getFullName() + " id:+" + user.getUserId() +" email:" + user.getEmailAddress());
+					session.setAttribute(WebKeys.CMS_USER, user);
+					return true;
+				}
+
+				if(user.isFrontendUser()){
+					SecurityLogger.logInfo(LoginFactory.class,"Successful front end login name:" + user.getFullName() + " id:+" + user.getUserId() +" email:" + user.getEmailAddress());
+					session.setAttribute(WebKeys.CMS_USER, user);
+					return true;
+				}
+				return false;
+
             });
         } catch (Throwable e) {
     		SecurityLogger.logInfo(LoginFactory.class,"Auto login failed (No user found) from : " + request.getRemoteAddr() + " :  " + e );
@@ -137,8 +163,7 @@ public class LoginFactory {
 
         	if ((PRE_AUTHENTICATOR != null) &&
         		(0 < PRE_AUTHENTICATOR.length()) &&
-        		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION")) &&
-        		!USE_CAS_LOGIN_FILTER) {
+        		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"))) {
 
 				int auth = 0;
 
@@ -199,24 +224,12 @@ public class LoginFactory {
 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 
 	            } else {
-	            	/*Custom code*/
-					if(USE_CAS_LOGIN_FILTER){
-	            		
-	            		String userIdFromCAS = (String)request.getSession(false).getAttribute("edu.yale.its.tp.cas.client.filter.user");
-	            		
-						if(UtilMethods.isSet(userIdFromCAS)){
-							user = CASAuthUtils.syncExistingUser(user);
-							match=true;
-						}
-	            	}
 
-	            	/* end of custom code*/
-	            	else{
-	            		match = false;
-		            	user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
-		            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
-		        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
-	            	}
+					match = false;
+					user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
+					APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
+					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
+
 	            }
         	}
 
