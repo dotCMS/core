@@ -7,7 +7,6 @@
  * SAVING = Status of an action of the component loaded (delete, saving, editing)
  *      |-> IDLE = Finished delete, saving, editing
  * ERROR = Error state for the component
- * LOCKED = component is locked
  **/
 export enum ComponentStatus {
     INIT = 'INIT',
@@ -15,8 +14,7 @@ export enum ComponentStatus {
     LOADED = 'LOADED',
     SAVING = 'SAVING',
     IDLE = 'IDLE',
-    ERROR = 'ERROR',
-    LOCKED = 'LOCKED'
+    ERROR = 'ERROR'
 }
 
 export const enum FeaturedFlags {

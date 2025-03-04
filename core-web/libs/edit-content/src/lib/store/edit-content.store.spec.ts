@@ -68,6 +68,7 @@ describe('DotEditContentStore', () => {
         expect(store.contentlet).toBeDefined();
         expect(store.information).toBeDefined();
         expect(store.locales).toBeDefined();
+        expect(store.canLock).toBeDefined();
         expect(store.systemDefaultLocale).toBeDefined();
         expect(store.currentLocale).toBeDefined();
         expect(store.currentIdentifier).toBeDefined();
