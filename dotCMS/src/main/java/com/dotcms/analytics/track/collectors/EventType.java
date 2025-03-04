@@ -5,12 +5,14 @@ package com.dotcms.analytics.track.collectors;
  * @author jsanca
  */
 public enum EventType {
+    FUTURE_TIME_MACHINE_REQUEST("FUTURE_TIME_MACHINE_REQUEST"),
     VANITY_REQUEST("VANITY_REQUEST"),
     FILE_REQUEST("FILE_REQUEST"),
     PAGE_REQUEST("PAGE_REQUEST"),
     CUSTOM_USER_EVENT("CUSTOM_USER_EVENT"),
+    URL_MAP("URL_MAP"),
+    CMD_EXECUTED("CMD_EXECUTED");
 
-    URL_MAP("URL_MAP");
 
     private final String type;
     private EventType(String type) {

@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.page;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
+import com.dotcms.analytics.track.collectors.Collector;
+import com.dotcms.analytics.track.collectors.EventType;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -17,6 +19,7 @@ import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.page.ImmutablePageRenderParams.Builder;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPaginator;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
@@ -79,6 +82,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.io.Serializable;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,6 +144,14 @@ public class PageResource {
     public static final String TM_HOST = "tm_host";
     public static final String DOT_CACHE = "dotcache";
     public static final String IS_PAGE_RESOURCE = "pageResource";
+
+    private static final String URI = "uri";
+    private static final String MODE_PARAM = "modeParam";
+    private static final String LANGUAGE_ID = "languageId";
+    private static final String PERSONA_ID = "personaId";
+    private static final String DEVICE_INODE = "deviceInode";
+    private static final String TIME_MACHINE_DATE = "timeMachineDate";
+    public static final String USER = "user";
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -242,9 +255,45 @@ public class PageResource {
                 .user(user)
                 .uri(uri)
                 .asJson(true);
+
+        final Optional<Instant> timeMachineDateInstant = TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601);
+        //Logging analytics for FTM if the publishing date is older than five minutes now
+        collectAnalyticsIfNeeded(originalRequest, response, timeMachineDateInstant);
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
-                languageId, deviceInode, timeMachineDateAsISO8601, builder);
+                languageId, deviceInode, timeMachineDateInstant, timeMachineDateAsISO8601, builder);
         return getPageRender(renderParams);
+    }
+
+    /**
+     * Collects analytics data if needed based on the given request parameters.
+     *
+     * @param originalRequest      The original HTTP request.
+     * @param response            The HTTP response.
+     * @param timeMachineDateInstant An optional instant representing a time machine date, if applicable.
+     */
+    private void collectAnalyticsIfNeeded(
+            final HttpServletRequest originalRequest,
+            final HttpServletResponse response,
+            final Optional<Instant> timeMachineDateInstant) {
+        if (timeMachineDateInstant.isPresent() && isOlderThanFiveMinutes(timeMachineDateInstant.get())) {
+            Map<String, Serializable> userEventPayload = new HashMap<>();
+
+            userEventPayload.put(TIME_MACHINE_DATE, timeMachineDateInstant.get());
+            userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST.getType());
+
+            ContentAnalyticsUtil.registerContentAnalyticsRestEvent(originalRequest, response,
+                    userEventPayload);
+        }
+    }
+
+
+    /**
+     * Verifies that a given date is older than five minutes now
+     * @param dateToCheck
+     * @return
+     */
+    private static boolean isOlderThanFiveMinutes(Instant dateToCheck) {
+        return Duration.between(Instant.now(), dateToCheck).toMinutes() >= 5;
     }
 
     /**
@@ -320,6 +369,8 @@ public class PageResource {
                         .rejectWhenNoUser(true)
                         .init();
         final User user = initData.getUser();
+
+        final Optional<Instant> timeMachineDateInstant = TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601);
         final Builder builder = ImmutablePageRenderParams.builder();
         builder.originalRequest(originalRequest)
                 .request(request)
@@ -327,7 +378,11 @@ public class PageResource {
                 .user(user)
                 .uri(uri);
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
-                languageId, deviceInode, timeMachineDateAsISO8601, builder);
+                languageId, deviceInode, timeMachineDateInstant, timeMachineDateAsISO8601, builder);
+
+
+        //Logging analytics for FTM if the publishing date is older than five minutes now
+        collectAnalyticsIfNeeded(originalRequest, response, timeMachineDateInstant);
         return getPageRender(renderParams);
     }
 
@@ -336,12 +391,14 @@ public class PageResource {
      * @param modeParam      The current {@link PageMode} used to render the page.
      * @param languageId    The {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s
      * @param deviceInode  The {@link java.lang.String}'s inode to render the page.
-     * @param timeMachineDateAsISO8601 The date to set the Time Machine to.
+     * @param timeMachineDateInstant The date to set the Time Machine to as an Optional Instant.
+     * @param timeMachineDateAsISO8601 {@link String} with the date to set the Time Machine to in ISO8601 format.
      * @param builder The builder to use to create the {@link PageRenderParams}.
      * @return The {@link PageRenderParams} object.
      */
     private PageRenderParams optionalRenderParams(final String modeParam,
-            final String languageId, final String deviceInode, final String timeMachineDateAsISO8601,
+            final String languageId, final String deviceInode, final Optional<Instant> timeMachineDateInstant,
+            final String timeMachineDateAsISO8601,
             Builder builder) {
         if (null != languageId){
             builder.languageId(languageId);
@@ -352,7 +409,7 @@ public class PageResource {
         if (null != deviceInode){
             builder.deviceInode(deviceInode);
         }
-        TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601).ifPresentOrElse(
+        timeMachineDateInstant.ifPresentOrElse(
                 builder::timeMachineDate,
                 () -> Logger.debug(this, () -> String.format(
                         "Date %s is not older than the grace window. Skipping Time Machine setup.",

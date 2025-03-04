@@ -1,10 +1,18 @@
 package com.dotcms.cli.common;
 
+import com.dotcms.api.AnalyticsAPI;
+import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.command.LoginCommand;
+import com.dotcms.cli.command.StatusCommand;
+import com.dotcms.model.analytics.DotCliEvent;
 import com.dotcms.model.config.ServiceBean;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.ArcContainer;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -12,6 +20,8 @@ import java.nio.file.WatchEvent;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.ExitCode;
@@ -38,6 +48,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private final ServiceManager serviceManager;
 
+    private final RestClientFactory clientFactory;
 
     /**
      * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
@@ -51,6 +62,22 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         this.processor = processor;
         this.watchService = watchService;
         this.serviceManager = serviceManager;
+        this.clientFactory = null;
+    }
+
+    /**
+     * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
+     *
+     * @param underlyingStrategy the underlying strategy to use for execution
+     */
+    public DotExecutionStrategy(final IExecutionStrategy underlyingStrategy,
+            final SubcommandProcessor processor, final DirectoryWatcherService watchService,
+            final ServiceManager serviceManager, final RestClientFactory clientFactory) {
+        this.underlyingStrategy = underlyingStrategy;
+        this.processor = processor;
+        this.watchService = watchService;
+        this.serviceManager = serviceManager;
+        this.clientFactory = clientFactory;
     }
 
     /**
@@ -84,18 +111,69 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             // If the dotCMS URL and token are set, we can proceed with the command execution, we
             // can bypass the configuration check as we have everything we need for a remote call
             if (isRemoteURLSet(commandsChain, parseResult.commandSpec().commandLine())) {
-                return internalExecute(commandsChain, underlyingStrategy, parseResult);
+                return executeInParallel(commandsChain, underlyingStrategy, parseResult);
             }
 
             //If no remote URL is set, we need to check if there is a configuration
             verifyConfigExists(parseResult, commandsChain);
 
             //If we have a configuration, we can proceed with the command execution
-            return internalExecute(commandsChain, underlyingStrategy, parseResult);
+            return executeInParallel(commandsChain, underlyingStrategy, parseResult);
 
         }
 
         return underlyingStrategy.execute(parseResult);
+    }
+
+    /**
+     * Executes the command in parallel with event analytics recording.
+     *
+     * @param commandsChain
+     * @param underlyingStrategy
+     * @param parseResult
+     * @return
+     * @throws ExecutionException
+     */
+    private int executeInParallel(CommandsChain commandsChain,
+            IExecutionStrategy underlyingStrategy,
+            CommandLine.ParseResult parseResult) throws ExecutionException {
+
+        try {
+            // Create a CompletableFuture for the event recording
+            CompletableFuture<Void> eventFuture = CompletableFuture.runAsync(() -> {
+                try {
+                    recordEvent(commandsChain);
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Error recording event asynchronously", e);
+                }
+            });
+
+            // Create a CompletableFuture for the command execution
+            CompletableFuture<Integer> executeFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return internalExecute(commandsChain, underlyingStrategy, parseResult);
+                } catch (Exception e) {
+                    if (e instanceof RuntimeException) {
+                        throw (RuntimeException) e;
+                    }
+                    throw new RuntimeException(e);
+                }
+            });
+
+            // Wait for both futures to complete
+            CompletableFuture.allOf(eventFuture, executeFuture).join();
+
+            // Return the result from internalExecute
+            return executeFuture.get();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                    "Parallel execution interrupted", e);
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                    "Error in parallel execution", e.getCause());
+        }
     }
 
     /**
@@ -184,6 +262,39 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         } finally {
             // Decrement the call depth and remove ThreadLocal if it's zero
             decCallDepth();
+        }
+    }
+
+    @ActivateRequestContext
+    void recordEvent(CommandsChain commandsChain) {
+
+        final String command = commandsChain.command();
+
+        final String parentCommand = commandsChain.firstSubcommand()
+                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+
+        if (!ConfigCommand.NAME.equals(parentCommand)
+                && !LoginCommand.NAME.equals(parentCommand)
+                && !StatusCommand.NAME.equals(parentCommand)) {
+
+            ArcContainer container = Arc.container();
+            var requestContext = container.requestContext();
+            requestContext.activate();
+            if (clientFactory != null) {
+                try {
+                    final var analyticsAPI = clientFactory.getClient(AnalyticsAPI.class);
+                    analyticsAPI.fireCliEvent(
+                            DotCliEvent.builder()
+                                    .command(command)
+                                    .eventType("CMD_EXECUTED")
+                                    .user("UNKNOWN")
+                                    .site("UNKNOWN")
+                                    .build());
+                    LOGGER.log(Level.INFO, "Event recorded for command: {0}", command);
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Error recording event for command: " + command, e);
+                }
+            }
         }
     }
 
