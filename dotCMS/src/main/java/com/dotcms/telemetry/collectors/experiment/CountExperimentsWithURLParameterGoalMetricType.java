@@ -22,7 +22,7 @@ public class CountExperimentsWithURLParameterGoalMetricType implements DBMetricT
 
     @Override
     public String getSqlQuery() {
-        return "SELECT COUNT(*) AS experiment_count FROM experiment WHERE goals->'primary'->'metric'->>'type' = 'URL_PARAMETER'";
+        return "SELECT COUNT(*) AS experiment_count FROM experiment WHERE goals->'primary'->>'type' = 'URL_PARAMETER'";
     }
 
     @Override

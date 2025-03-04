@@ -22,7 +22,7 @@ public class CountExperimentsWithReachPageGoalMetricType implements DBMetricType
 
     @Override
     public String getSqlQuery() {
-        return "SELECT COUNT(*) AS experiment_count FROM experiment WHERE goals->'primary'->'metric'->>'type' = 'REACH_PAGE'";
+        return "SELECT COUNT(*) AS experiment_count FROM experiment WHERE goals->'primary'->>'type' = 'REACH_PAGE'";
     }
 
     @Override

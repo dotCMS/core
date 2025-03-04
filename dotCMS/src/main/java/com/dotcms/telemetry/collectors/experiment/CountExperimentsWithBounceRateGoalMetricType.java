@@ -22,7 +22,7 @@ public class CountExperimentsWithBounceRateGoalMetricType implements DBMetricTyp
 
     @Override
     public String getSqlQuery() {
-        return "SELECT COUNT(*) AS experiment_count FROM experiment WHERE goals->'primary'->'metric'->>'type' = 'BOUNCE_RATE'";
+        return "SELECT COUNT(*) AS experiment_count FROM experiment WHERE goals->'primary'->>'type' = 'BOUNCE_RATE'";
     }
 
     @Override
