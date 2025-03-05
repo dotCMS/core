@@ -13,7 +13,7 @@ public class CountVariantsInAllArchivedExperimentsMetricType implements DBMetric
 
     @Override
     public String getName() {
-        return "COUNT_PAGES_WITH_ARCHIVED_EXPERIMENTS";
+        return "COUNT_VARIANTS_IN_ALL_ARCHIVED_EXPERIMENTS";
     }
 
     @Override

@@ -13,7 +13,7 @@ public class CountVariantsInAllScheduledExperimentsMetricType implements DBMetri
 
     @Override
     public String getName() {
-        return "COUNT_PAGES_WITH_SCHEDULED_EXPERIMENTS";
+        return "COUNT_VARIANTS_IN_ALL_SCHEDULED_EXPERIMENTS";
     }
 
     @Override
