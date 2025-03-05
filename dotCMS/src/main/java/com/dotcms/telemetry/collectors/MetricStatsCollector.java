@@ -116,6 +116,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * This class collects and generates all the different Metrics that will be reported to a User or
@@ -274,6 +275,14 @@ public final class MetricStatsCollector {
      * @return the {@link MetricsSnapshot} with all the calculated metrics.
      */
     public static MetricsSnapshot getStats() {
+        return getStats(Set.of());
+    }
+    /**
+     * Calculate a MetricSnapshot by iterating through all the MetricType collections.
+     *
+     * @return the {@link MetricsSnapshot} with all the calculated metrics.
+     */
+    public static MetricsSnapshot getStats(final Set<String> metricNameSet) {
 
         final Collection<MetricValue> stats = new ArrayList<>();
         final Collection<MetricValue> noNumberStats = new ArrayList<>();
@@ -283,6 +292,11 @@ public final class MetricStatsCollector {
             openDBConnection();
 
             for (final MetricType metricType : metricStatsCollectors) {
+
+                // If the metricNameSet is not empty and the metricNameSet does not contain the metricType name, skip it
+                if (!metricNameSet.isEmpty() && !metricNameSet.contains(metricType.getName())) {
+                    continue;
+                }
                 try {
                     getMetricValue(metricType).ifPresent(metricValue -> {
                         if (metricValue.isNumeric()) {

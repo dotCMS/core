@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.collectors.experiment;
 
+import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
@@ -22,7 +23,7 @@ public class CountExperimentsWithBounceRateGoalMetricType implements DBMetricTyp
 
     @Override
     public String getSqlQuery() {
-        return "SELECT COUNT(*) AS experiment_count FROM experiment WHERE goals->'primary'->>'type' = 'BOUNCE_RATE'";
+        return "SELECT COUNT(*) AS Value FROM experiment WHERE goals->'primary'->>'type' = '" + MetricType.BOUNCE_RATE.name() + "'";
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.collectors.experiment;
 
+import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
@@ -22,7 +23,7 @@ public class CountVariantsInAllScheduledExperimentsMetricType implements DBMetri
 
     @Override
     public String getSqlQuery() {
-        return "SELECT COALESCE(SUM(jsonb_array_length(traffic_proportion->'variants')),0) AS Value FROM experiment where experiment.status = 'SCHEDULED'";
+        return "SELECT COALESCE(SUM(jsonb_array_length(traffic_proportion->'variants')),0) AS Value FROM experiment where experiment.status = '"+ AbstractExperiment.Status.SCHEDULED.name() +"'";
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.collectors.experiment;
 
+import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
@@ -22,7 +23,7 @@ public class CountPagesWithRunningExperimentsMetricType  implements DBMetricType
 
     @Override
     public String getSqlQuery() {
-        return "select count(*) as Value from experiment where status = 'RUNNING'";
+        return "select count(*) as Value from experiment where status = '"+ AbstractExperiment.Status.RUNNING.name() + "'";
     }
 
     @Override

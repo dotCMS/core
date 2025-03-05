@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.collectors.experiment;
 
+import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
@@ -22,7 +23,7 @@ public class CountPagesWithScheduledExperimentsMetricType implements DBMetricTyp
 
     @Override
     public String getSqlQuery() {
-        return "select count(*) as Value from experiment where scheduling IS NOT NULL AND status = 'SCHEDULED'";
+        return "select count(*) as Value from experiment where scheduling IS NOT NULL AND status = '"+ AbstractExperiment.Status.SCHEDULED.name() + "'";
     }
 
     @Override
