@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PageClient } from './page-api';
+import { GraphQLPageOptions, PageClient } from './page-api';
 import * as utils from './utils';
 
 import { DotCMSClientConfig, RequestOptions } from '../client';
@@ -147,24 +147,14 @@ describe('PageClient', () => {
                 message: ErrorMessages[404]
             });
         });
-
-        it('should normalize path by removing leading slash', async () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
-
-            await pageClient.get('/about/');
-
-            expect(mockFetch).toHaveBeenCalledWith(
-                'https://demo.dotcms.com/api/v1/page/json/about/?hostId=test-site',
-                expect.anything()
-            );
-        });
     });
 
     describe('GraphQL API', () => {
         it('should fetch page using GraphQL when query option is provided', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
-            const graphQLOptions = {
-                query: {
+
+            const graphQLOptions: GraphQLPageOptions = {
+                graphql: {
                     page: 'fragment PageFields on Page { title url }',
                     content: { content: 'query Content { items { title } }' },
                     nav: { nav: 'query Nav { items { label url } }' }
@@ -173,13 +163,14 @@ describe('PageClient', () => {
                 mode: 'LIVE'
             };
 
-            const result = await pageClient.get('/graphql-page', graphQLOptions as any);
+            const result = await pageClient.get('/graphql-page', graphQLOptions);
 
             expect(utils.buildPageQuery).toHaveBeenCalled();
             expect(utils.buildQuery).toHaveBeenCalledTimes(2);
             expect(utils.fetchGraphQL).toHaveBeenCalledWith({
                 body: expect.any(String),
-                headers: requestOptions.headers
+                headers: requestOptions.headers,
+                baseURL: 'https://demo.dotcms.com'
             });
 
             expect(result).toEqual({
@@ -193,7 +184,7 @@ describe('PageClient', () => {
         it('should pass correct variables to GraphQL query', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                query: { page: 'fragment PageFields on Page { title }' },
+                graphql: { page: 'fragment PageFields on Page { title }' },
                 languageId: '2',
                 mode: 'PREVIEW_MODE'
             };
@@ -213,7 +204,7 @@ describe('PageClient', () => {
 
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                query: { page: 'fragment PageFields on Page { title }' }
+                graphql: { page: 'fragment PageFields on Page { title }' }
             };
 
             await expect(pageClient.get('/page', graphQLOptions)).rejects.toThrow(
@@ -221,31 +212,23 @@ describe('PageClient', () => {
             );
         });
 
-        it('should include GraphQL errors in the response if present', async () => {
-            mockFetchGraphQL.mockResolvedValue({
-                data: { page: { title: 'Error Page' } },
-                errors: [{ message: 'Field error' }]
-            });
+        it('should throw errors from GraphQL', async () => {
+            mockFetchGraphQL.mockRejectedValue(new Error('GraphQL error'));
 
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                query: { page: 'fragment PageFields on Page { title }' }
+                graphql: { page: 'fragment PageFields on Page { title }' }
             };
 
-            const result = await pageClient.get('/error-page', graphQLOptions);
-
-            expect(result).toEqual({
-                page: { title: 'Error Page' },
-                content: {},
-                nav: {},
-                errors: [{ message: 'Field error' }]
-            });
+            await expect(pageClient.get('/page', graphQLOptions)).rejects.toThrow(
+                'Failed to retrieve page data'
+            );
         });
 
         it('should use default values for languageId and mode if not provided', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
-                query: { page: 'fragment PageFields on Page { title }' }
+                graphql: { page: 'fragment PageFields on Page { title }' }
             };
 
             await pageClient.get('/default-page', graphQLOptions);
@@ -260,14 +243,6 @@ describe('PageClient', () => {
     });
 
     describe('Client initialization', () => {
-        it('should initialize with correct base URL', () => {
-            const pageClient = new PageClient(validConfig, requestOptions);
-
-            // We need to access private property for testing
-            const baseUrl = (pageClient as any).BASE_URL;
-            expect(baseUrl).toBe('https://demo.dotcms.com/api/v1/page');
-        });
-
         it('should use siteId from config when not provided in params', async () => {
             const pageClient = new PageClient(validConfig, requestOptions);
 

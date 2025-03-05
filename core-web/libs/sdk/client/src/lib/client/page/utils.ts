@@ -1,3 +1,37 @@
+import { ErrorMessages } from '../models';
+
+const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
+          publishDate
+          inode
+          identifier
+          archived
+          urlMap
+          urlMap
+          locked
+          contentType
+          creationDate
+          modDate
+          title
+          baseType
+          working
+          live
+          publishUser {
+            firstName
+            lastName
+          }
+          owner {
+            lastName
+          }
+          conLanguage {
+            language
+            languageCode
+          }
+          modUser {
+            firstName
+            lastName
+          }
+`;
+
 /**
  * Builds a GraphQL query for retrieving page content from DotCMS.
  *
@@ -5,7 +39,22 @@
  * @param {string} additionalQueries - Additional GraphQL queries to include in the main query
  * @returns {string} Complete GraphQL query string for page content
  */
-export const buildPageQuery = (pageQuery: string, additionalQueries: string) => `
+export const buildPageQuery = ({
+    page,
+    fragments,
+    additionalQueries
+}: {
+    page?: string;
+    fragments?: string[];
+    additionalQueries?: string;
+}) => {
+    if (!page) {
+        console.warn(
+            'No page query provided. The query will be used by fetching all content with _map. This may mean poor performance in the query. We suggest you provide a detailed query on page attribute.'
+        );
+    }
+
+    return `
   fragment DotCMSPage on DotPage {
     publishDate
     type
@@ -72,35 +121,7 @@ export const buildPageQuery = (pageQuery: string, additionalQueries: string) => 
       containerContentlets {
         uuid
         contentlets {
-          publishDate
-          inode
-          identifier
-          archived
-          urlMap
-          urlMap
-          locked
-          contentType
-          creationDate
-          modDate
-          title
-          baseType
-          working
-          live
-          publishUser {
-            firstName
-            lastName
-          }
-          owner {
-            lastName
-          }
-          conLanguage {
-            language
-            languageCode
-          }
-          modUser {
-            firstName
-            lastName
-          }
+          ${page ? DEFAULT_PAGE_CONTENTLETS_CONTENT : '_map'}
         }
       }
     }
@@ -138,17 +159,20 @@ export const buildPageQuery = (pageQuery: string, additionalQueries: string) => 
     }
   }
 
-  ${pageQuery ? ` fragment ClientPage on DotPage { ${pageQuery} } ` : ''}
+  ${page ? ` fragment ClientPage on DotPage { ${page} } ` : ''}
+
+  ${fragments ? fragments.join(' ') : ''}
 
   query PageContent($url: String!, $languageId: String, $mode: String) {
     page: page(url: $url, languageId: $languageId, pageMode: $mode) {
       ...DotCMSPage
-      ${pageQuery ? '...ClientPage' : ''}
+      ${page ? '...ClientPage' : ''}
     }
 
     ${additionalQueries}
   }
-`;
+  `;
+};
 
 /**
  * Converts a record of query strings into a single GraphQL query string.
@@ -197,20 +221,27 @@ export function mapResponseData(
  * @throws {Error} If the HTTP response is not successful
  */
 export async function fetchGraphQL({
+    baseURL,
     body,
     headers
 }: {
+    baseURL: string;
     body: string;
     headers: Record<string, string>;
 }) {
-    const response = await fetch('http://localhost:8080/api/v1/graphql', {
+    const response = await fetch(`${baseURL}/api/v1/graphql`, {
         method: 'POST',
         body,
         headers
     });
 
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const error = {
+            status: response.status,
+            message: ErrorMessages[response.status] || response.statusText
+        };
+
+        throw error;
     }
 
     return await response.json();

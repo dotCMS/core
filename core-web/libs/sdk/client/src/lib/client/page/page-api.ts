@@ -64,11 +64,12 @@ export type BackendPageParams = {
 };
 
 export interface GraphQLPageOptions extends PageRequestParams {
-    query: {
+    graphql: {
         page?: string;
         content?: Record<string, string>;
         nav?: Record<string, string>;
         variables?: Record<string, string>;
+        fragments?: string[];
     };
 }
 
@@ -84,16 +85,16 @@ export class PageClient {
     private requestOptions: RequestOptions;
 
     /**
-     * Base URL for page API endpoints.
-     * @private
-     */
-    private BASE_URL: string;
-
-    /**
      * Site ID for page requests.
      * @private
      */
     private siteId: string;
+
+    /**
+     * DotCMS URL for page requests.
+     * @private
+     */
+    private dotcmsUrl: string;
 
     /**
      * Creates a new PageClient instance.
@@ -118,8 +119,8 @@ export class PageClient {
      */
     constructor(config: DotCMSClientConfig, requestOptions: RequestOptions) {
         this.requestOptions = requestOptions;
-        this.BASE_URL = `${config?.dotcmsUrl}/api/v1/page`;
         this.siteId = config.siteId || '';
+        this.dotcmsUrl = config.dotcmsUrl;
     }
 
     /**
@@ -217,7 +218,7 @@ export class PageClient {
             return false;
         }
 
-        return !!options?.['query'];
+        return !!options?.['graphql'];
     }
 
     /**
@@ -288,10 +289,12 @@ export class PageClient {
             throw new Error("The 'path' parameter is required for the Page API");
         }
 
-        const pagePath = path.replace(/^\//, '');
+        // Remove leading and trailing slashes from the path.
+        // Add a leading slash if it's missing.
+        const pagePath = `/${path.replace(/^\/+/, '').replace(/\/+/g, '/')}${path.endsWith('/') ? '/' : ''}`;
         const pageParams = this.#mapToBackendParams(params || {});
         const urlParams = new URLSearchParams(pageParams as Record<string, string>).toString();
-        const url = `${this.BASE_URL}/json/${pagePath}${urlParams ? `?${urlParams}` : ''}`;
+        const url = `${this.dotcmsUrl}/api/v1/page/json${pagePath}${urlParams ? `?${urlParams}` : ''}`;
 
         const response = await fetch(url, this.requestOptions);
 
@@ -362,12 +365,16 @@ export class PageClient {
         url: string,
         options?: GraphQLPageOptions
     ): Promise<DotCMSGraphQLPageResponse> {
-        const { languageId = '1', mode = 'LIVE', query = {} } = options || {};
-        const { page = '', content = {}, nav = {}, variables = {} } = query;
+        const { languageId = '1', mode = 'LIVE', graphql = {} } = options || {};
+        const { page, content = {}, nav = {}, variables, fragments } = graphql;
 
         const contentQuery = buildQuery(content);
         const navQuery = buildQuery(nav);
-        const completeQuery = buildPageQuery(page, `${contentQuery} ${navQuery}`);
+        const completeQuery = buildPageQuery({
+            page,
+            fragments,
+            additionalQueries: `${contentQuery} ${navQuery}`
+        });
 
         const requestVariables = {
             url,
@@ -381,11 +388,23 @@ export class PageClient {
 
         try {
             const { data, errors } = await fetchGraphQL({
+                baseURL: this.dotcmsUrl,
                 body: requestBody,
                 headers: requestHeaders
             });
 
+            if (errors) {
+                errors.forEach((error: { message: string }) => {
+                    throw new Error(error.message);
+                });
+            }
+
             const pageResponse = data.page;
+
+            if (!pageResponse) {
+                throw new Error('No page data found');
+            }
+
             const contentResponse = mapResponseData(data, Object.keys(content));
             const navResponse = mapResponseData(data, Object.keys(nav));
 
@@ -396,8 +415,14 @@ export class PageClient {
                 errors
             };
         } catch (error) {
-            console.error('Error fetching page data:', error);
-            throw new Error('Failed to retrieve page data');
+            const errorMessage = {
+                error,
+                message: 'Failed to retrieve page data',
+                query: completeQuery,
+                variables: requestVariables
+            };
+
+            throw errorMessage;
         }
     }
 

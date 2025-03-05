@@ -42,8 +42,8 @@ export class NavigationClient {
         const navParams = params ? this.mapToBackendParams(params) : {};
         const urlParams = new URLSearchParams(navParams).toString();
 
-        const pathWithoutSlash = path.replace(/^\//, '');
-        const url = `${this.BASE_URL}/${pathWithoutSlash}${urlParams ? `?${urlParams}` : ''}`;
+        const parsedPath = path.replace(/^\/+/, '/').replace(/\/+$/, '/');
+        const url = `${this.BASE_URL}${parsedPath}${urlParams ? `?${urlParams}` : ''}`;
 
         const response = await fetch(url, this.requestOptions);
 

@@ -42,10 +42,12 @@ export interface DotCMSClientConfig {
  * @param url - The URL string to parse
  * @returns A URL object if parsing is successful, undefined otherwise
  */
-function parseUrl(url: string): URL | undefined {
+function parseURL(url: string): URL | undefined {
     try {
         return new URL(url);
     } catch {
+        console.error('Invalid URL:', url);
+
         return undefined;
     }
 }
@@ -133,7 +135,7 @@ class DotCMSClient {
  */
 export const createDotCMSClient = (clientConfig: DotCMSClientConfig): DotCMSClient => {
     const { dotcmsUrl, authToken } = clientConfig || {};
-    const instanceUrl = parseUrl(dotcmsUrl)?.origin;
+    const instanceUrl = parseURL(dotcmsUrl)?.origin;
 
     if (!instanceUrl) {
         throw new TypeError("Invalid configuration - 'dotcmsUrl' must be a valid URL");
