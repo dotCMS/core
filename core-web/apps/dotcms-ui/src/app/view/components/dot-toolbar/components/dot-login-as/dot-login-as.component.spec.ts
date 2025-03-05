@@ -126,7 +126,7 @@ describe('DotLoginAsComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotLoginAsComponent, DotSearchableDropdownMockComponent],
+            declarations: [DotSearchableDropdownMockComponent],
             imports: [
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
@@ -134,7 +134,8 @@ describe('DotLoginAsComponent', () => {
                 ReactiveFormsModule,
                 DotDialogModule,
                 RouterTestingModule,
-                DotMessagePipe
+                DotMessagePipe,
+                DotLoginAsComponent
             ],
             providers: [
                 {
@@ -210,7 +211,7 @@ describe('DotLoginAsComponent', () => {
         fixture.detectChanges();
 
         comp.form.get('loginAsUser').setValue(mockUser());
-        comp.dialogActions.accept.action();
+        comp.doLoginAs();
 
         expect(loginService.loginAs).toHaveBeenCalledTimes(1);
     });
@@ -228,7 +229,7 @@ describe('DotLoginAsComponent', () => {
         const passwordInputElem = de.query(By.css('#dot-login-as-password'));
         spyOn(passwordInputElem.nativeElement, 'focus');
 
-        comp.dialogActions.accept.action();
+        comp.doLoginAs();
 
         expect(passwordInputElem.nativeElement.focus).toHaveBeenCalled();
     });
@@ -248,7 +249,7 @@ describe('DotLoginAsComponent', () => {
         comp.form.get('loginAsUser').setValue(mockUser());
         fixture.detectChanges();
 
-        comp.dialogActions.accept.action();
+        comp.doLoginAs();
 
         await fixture.whenStable();
 

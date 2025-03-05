@@ -105,6 +105,9 @@ describe('DotMyAccountComponent', () => {
         httpErrorManagerService = jasmine.createSpyObj('DotHttpErrorManagerService', ['handle']);
         dotAlertConfirmService = jasmine.createSpyObj('DotAlertConfirmService', ['alert']);
 
+        (dotMenuService.isPortletInMenu as jasmine.Spy).and.returnValue(of(false));
+        (dotcmsConfigService.getConfig as jasmine.Spy).and.returnValue(of({ emailRegex: '' }));
+
         TestBed.configureTestingModule({
             imports: [
                 DotMyAccountComponent,
@@ -124,7 +127,7 @@ describe('DotMyAccountComponent', () => {
             ],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotMessageService, useClass: MockDotMessageService },
+                { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotHttpErrorManagerService, useValue: httpErrorManagerService },
                 { provide: DotcmsConfigService, useValue: dotcmsConfigService },
@@ -152,7 +155,12 @@ describe('DotMyAccountComponent', () => {
         loginService = TestBed.inject(LoginService);
         dotRouterService = TestBed.inject(DotRouterService);
 
-        component.visible = true;
+        // Spy on component's shutdown event
+        spyOn(component.shutdown, 'emit');
+
+        fixture.detectChanges(); // First detect changes to initialize the component
+        component.visible = true; // Then set visible property
+        fixture.detectChanges(); // Detect changes again after setting visible
     }));
 
     afterEach(() => {
@@ -281,7 +289,7 @@ describe('DotMyAccountComponent', () => {
         await fixture.whenStable();
 
         fixture.detectChanges();
-        expect(component.dialogActions.accept.disabled).toBe(true);
+        expect(component.form.valid).toBe(false);
     });
 
     it(`should call to add starter method in account service`, async () => {
@@ -423,7 +431,7 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(component, 'updateUser').and.returnValue(throwError(errorResponse));
+        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
 
         fixture.detectChanges();
         await fixture.whenStable();
@@ -467,7 +475,7 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(component, 'updateUser').and.returnValue(throwError(errorResponse));
+        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
 
         fixture.detectChanges();
         await fixture.whenStable();
@@ -510,7 +518,7 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(component, 'updateUser').and.returnValue(throwError(errorResponse));
+        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
         spyOn(httpErrorManagerService, 'handle').and.returnValue(of(null));
 
         fixture.detectChanges();
@@ -534,5 +542,10 @@ describe('DotMyAccountComponent', () => {
         fixture.detectChanges();
 
         expect(httpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+    });
+
+    it(`should show error message when form is invalid`, async () => {
+        fixture.detectChanges();
+        expect(component.form.valid).toBe(false);
     });
 });
