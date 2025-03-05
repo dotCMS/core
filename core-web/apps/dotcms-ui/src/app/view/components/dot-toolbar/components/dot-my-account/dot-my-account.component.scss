@@ -3,11 +3,56 @@
 
 .my-account,
 .error-message {
-    width: 300px;
+    width: 100%;
 }
 
 .my-account {
     .md-inputtext {
         width: 100%;
+    }
+}
+
+.my-account-container {
+    position: relative;
+    min-height: 200px;
+    
+    .my-account-loading {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 2;
+        border-radius: 4px;
+    }
+}
+
+:host ::ng-deep {
+    .dot-my-account-dialog {
+        .p-dialog-content {
+            overflow-y: auto;
+            max-height: 80vh;
+            padding: 1rem;
+        }
+        
+        .p-progressspinner {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .field {
+            margin-bottom: 1rem;
+        }
+        
+        .p-dialog-footer {
+            padding: 1rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
     }
 }

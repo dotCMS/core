@@ -1,10 +1,15 @@
-<dot-dialog
-    (hide)="close()"
+<p-dialog
     [(visible)]="visible"
     [header]="'login-as' | dm"
-    [actions]="dialogActions">
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '400px' }"
+    [baseZIndex]="10000"
+    appendTo="body"
+    styleClass="dot-login-as-dialog"
+    (onHide)="close()">
     <div class="login-as">
-        <!--TODO: manage errors on required fields and errors messages -->
         @if (errorMessage) {
             <p class="login-as__error-message">{{ errorMessage }}</p>
         }
@@ -16,20 +21,29 @@
             novalidate
             class="p-fluid">
             <div class="field">
-                <!--TODO: get rid of this let autoComplete when this is fixed: https://github.com/primefaces/primeng/issues/745-->
-                <dot-searchable-dropdown
-                    (switch)="userSelectedHandler($event)"
-                    (filterChange)="handleFilterChange($event)"
-                    (pageChange)="handlePageChange($event)"
-                    [data]="userCurrentPage"
-                    [pageLinkSize]="paginationService.maxLinksPage"
-                    [rows]="paginationService.paginationPerPage"
-                    [totalRecords]="paginationService.totalRecords"
-                    #searchableDropdown
-                    placeholder="{{ 'loginas.select.loginas.user' | dm }}"
+                <p-dropdown
+                    #dropdown
                     formControlName="loginAsUser"
-                    labelPropertyName="fullName"
-                    overlayWidth="300px" />
+                    [options]="userCurrentPage"
+                    [filter]="true"
+                    [filterBy]="'fullName'"
+                    [placeholder]="'loginas.select.loginas.user' | dm"
+                    optionLabel="fullName"
+                    (onChange)="userSelectedHandler($event.value)"
+                    (onFilter)="handleFilterChange($event)"
+                    (onClear)="clearSelection()"
+                    appendTo="body">
+                    <ng-template pTemplate="selectedItem" let-user>
+                        <div class="user-item selected" *ngIf="user">
+                            {{ user.fullName }}
+                        </div>
+                    </ng-template>
+                    <ng-template let-user pTemplate="item">
+                        <div class="user-item">
+                            {{ user.fullName }}
+                        </div>
+                    </ng-template>
+                </p-dropdown>
             </div>
             @if (needPassword) {
                 <div class="field">
@@ -46,4 +60,16 @@
             }
         </form>
     </div>
-</dot-dialog>
+    <ng-template pTemplate="footer">
+        <button
+            pButton
+            class="p-button-outlined"
+            [label]="'cancel' | dm"
+            (click)="close()"></button>
+        <button
+            pButton
+            [label]="'Change' | dm"
+            [disabled]="!form.valid"
+            (click)="doLoginAs()"></button>
+    </ng-template>
+</p-dialog>

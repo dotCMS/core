@@ -1,15 +1,52 @@
 @use "variables" as *;
 @import "mixins";
 
-.login-as {
-    width: 300px;
-}
-
-.login-as__error-message {
-    color: $red;
-    margin-top: 0;
-}
 
 input[type="password"] {
     width: 100%;
+}
+
+:host {
+    display: block;
+}
+
+.login-as {
+    &__error-message {
+        color: $error;
+        margin-bottom: $spacing-3;
+    }
+}
+
+.user-item {
+    padding: $spacing-1 0;
+    
+    &.selected {
+        font-weight: 500;
+    }
+}
+
+::ng-deep {
+    .dot-login-as-dialog {
+        .p-dialog {
+            width: 400px;
+            max-width: 90vw;
+        }
+
+        .p-dialog-content {
+            padding: $spacing-3;
+        }
+
+        .p-dialog-mask {
+            z-index: 1000;
+        }
+
+        p-dropdown {
+            display: block;
+            width: 100%;
+
+            .p-dropdown {
+                width: 100%;
+            }
+        }
+    }
 }
