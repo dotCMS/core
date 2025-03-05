@@ -11,9 +11,12 @@ import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
@@ -33,7 +36,12 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotDialogModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotDialogModule,
+    DotFieldRequiredDirective,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotMessageDisplayServiceMock,
@@ -46,104 +54,116 @@ import {
 import { DotMyAccountComponent } from './dot-my-account.component';
 
 class DotAccountServiceMock {
-    addStarterPage() {}
+    addStarterPage() {
+        return of({});
+    }
 
-    removeStarterPage() {}
+    removeStarterPage() {
+        return of({});
+    }
 
-    updateUser() {}
+    updateUser() {
+        return of({});
+    }
 }
 
 describe('DotMyAccountComponent', () => {
+    let component: DotMyAccountComponent;
     let fixture: ComponentFixture<DotMyAccountComponent>;
-    let comp: DotMyAccountComponent;
     let de: DebugElement;
+    let dotMenuService: DotMenuService;
+    let dotcmsConfigService: DotcmsConfigService;
+    let httpErrorManagerService: DotHttpErrorManagerService;
+    let dotAlertConfirmService: DotAlertConfirmService;
     let dotAccountService: DotAccountService;
     let loginService: LoginService;
     let dotRouterService: DotRouterService;
-    let dotMenuService: DotMenuService;
-    let dotAlertConfirmService: DotAlertConfirmService;
-    let httpErrorManagerService: DotHttpErrorManagerService;
 
     const messageServiceMock = new MockDotMessageService({
-        'my-account': 'My Account',
-        'modes.Close': 'Close',
-        save: 'Save',
-        'error.form.mandatory': 'This is mandatory',
-        'errors.email': 'Wrong email',
         'First-Name': 'First Name',
         'Last-Name': 'Last Name',
         'email-address': 'Email',
-        'new-password': 'New password',
-        're-enter-new-password': 'Confirm password',
-        'error.forgot.password.passwords.dont.match': 'Passwords do no match',
-        'message.createaccount.success': 'Success',
-        'Error-communicating-with-server-Please-try-again': 'Server error, try again!',
-        'change-password': 'Change Password',
+        Password: 'Password',
         'current-password': 'Current Password',
-        'starter.show.getting.started': 'Show starter'
+        'new-password': 'New Password',
+        're-enter-new-password': 'Re-enter New Password',
+        'error.form.mandatory': 'This field is required',
+        'message.createaccount.success': 'Account created successfully',
+        'change-password': 'Change Password',
+        'reset-password': 'Reset Password',
+        'error.forgot.password.passwords.dont.match': "Passwords don't match",
+        save: 'Save',
+        cancel: 'Cancel',
+        'errors.email': 'Please enter a valid email address',
+        'my-account': 'My account',
+        'starter.show.getting.started': 'Show Getting Started'
     });
 
     beforeEach(waitForAsync(() => {
+        dotMenuService = jasmine.createSpyObj('DotMenuService', ['isPortletInMenu']);
+        dotcmsConfigService = jasmine.createSpyObj('DotcmsConfigService', ['getConfig']);
+        httpErrorManagerService = jasmine.createSpyObj('DotHttpErrorManagerService', ['handle']);
+        dotAlertConfirmService = jasmine.createSpyObj('DotAlertConfirmService', ['alert']);
+
         TestBed.configureTestingModule({
-            declarations: [DotMyAccountComponent],
             imports: [
+                DotMyAccountComponent,
+                HttpClientTestingModule,
+                CommonModule,
+                FormsModule,
+                ButtonModule,
                 PasswordModule,
                 InputTextModule,
-                FormsModule,
-                DotDialogModule,
-                CommonModule,
+                DialogModule,
                 CheckboxModule,
+                ProgressSpinnerModule,
                 DotSafeHtmlPipe,
+                DotFieldRequiredDirective,
                 DotMessagePipe,
-                HttpClientTestingModule
+                DotDialogModule
             ],
             providers: [
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotAccountService, useClass: DotAccountServiceMock },
-                {
-                    provide: DotMessageDisplayService,
-                    useClass: DotMessageDisplayServiceMock
-                },
-                StringFormat,
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: DotMessageService, useClass: MockDotMessageService },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotHttpErrorManagerService, useValue: httpErrorManagerService },
+                { provide: DotcmsConfigService, useValue: dotcmsConfigService },
+                { provide: DotMenuService, useValue: dotMenuService },
+                { provide: DotAccountService, useClass: DotAccountServiceMock },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotcmsConfigService,
+                { provide: DotAlertConfirmService, useValue: dotAlertConfirmService },
+                ConfirmationService,
                 LoggerService,
                 StringUtils,
-                DotMenuService,
-                UserModel,
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService
+                StringFormat,
+                UserModel
             ]
-        });
+        }).compileComponents();
 
         fixture = TestBed.createComponent(DotMyAccountComponent);
-        comp = fixture.componentInstance;
+        component = fixture.componentInstance;
         de = fixture.debugElement;
+        dotMenuService = TestBed.inject(DotMenuService);
+        dotcmsConfigService = TestBed.inject(DotcmsConfigService);
+        httpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
         dotAccountService = TestBed.inject(DotAccountService);
         loginService = TestBed.inject(LoginService);
         dotRouterService = TestBed.inject(DotRouterService);
-        dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
-        dotMenuService = TestBed.inject(DotMenuService);
-        httpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
-        comp.visible = true;
+        component.visible = true;
     }));
 
     afterEach(() => {
-        comp.visible = false;
+        component.visible = false;
         fixture.detectChanges();
     });
 
     it(`should have right labels`, async () => {
         fixture.detectChanges();
         await fixture.whenStable();
-        comp.form.setValue({
+        component.form.setValue({
             givenName: 'Admin',
             surname: 'Admin',
             email: 'admin@dotcms.com',
@@ -197,7 +217,7 @@ describe('DotMyAccountComponent', () => {
         fixture.detectChanges();
         await fixture.whenStable();
 
-        comp.form.setValue({
+        component.form.setValue({
             givenName: 'Admin',
             surname: 'Admin',
             email: 'admin@dotcms.com',
@@ -208,7 +228,7 @@ describe('DotMyAccountComponent', () => {
         fixture.detectChanges();
         const save = de.nativeElement.querySelector('.dialog__button-accept');
 
-        expect(comp.form.valid).toBe(true);
+        expect(component.form.valid).toBe(true);
         expect(
             de.query(By.css('[data-testid="showStarterBtn"]')).attributes['ng-reflect-model']
         ).toBe('true');
@@ -218,7 +238,7 @@ describe('DotMyAccountComponent', () => {
     it(`should enable new passwords inputs when checked change password option`, async () => {
         fixture.detectChanges();
         await fixture.whenStable();
-        comp.form.setValue({
+        component.form.setValue({
             givenName: 'Admin',
             surname: 'Admin',
             email: 'admin@dotcms.com',
@@ -245,7 +265,7 @@ describe('DotMyAccountComponent', () => {
     it(`should disabled SAVE when new passwords don't match`, async () => {
         fixture.detectChanges();
         await fixture.whenStable();
-        comp.form.setValue({
+        component.form.setValue({
             givenName: 'Admin2',
             surname: 'Admi2',
             email: 'admin@dotcms.com',
@@ -261,7 +281,7 @@ describe('DotMyAccountComponent', () => {
         await fixture.whenStable();
 
         fixture.detectChanges();
-        expect(comp.dialogActions.accept.disabled).toBe(true);
+        expect(component.dialogActions.accept.disabled).toBe(true);
     });
 
     it(`should call to add starter method in account service`, async () => {
@@ -270,21 +290,21 @@ describe('DotMyAccountComponent', () => {
         spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
             of({ entity: { user: mockUser() } })
         );
+
         fixture.detectChanges();
         await fixture.whenStable();
+
         const user = {
-            givenName: 'Admin',
-            surname: 'Admin',
+            givenName: 'Admin2',
+            surname: 'Admi2',
             email: 'admin@dotcms.com',
             password: 'admin',
             newPassword: 'newPassword',
             confirmPassword: 'newPassword'
         };
-        comp.form.setValue(user);
+        component.form.setValue(user);
         fixture.detectChanges();
-        de.query(
-            By.css('[data-testid="showStarterBtn"] input[type="checkbox"]')
-        ).nativeElement.click();
+        de.query(By.css('[data-testid="showStarterBtn"]')).componentInstance.onChange.emit(true);
         fixture.detectChanges();
         de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
         expect(dotAccountService.addStarterPage).toHaveBeenCalledTimes(1);
@@ -306,7 +326,7 @@ describe('DotMyAccountComponent', () => {
             newPassword: 'newPassword',
             confirmPassword: 'newPassword'
         };
-        comp.form.setValue(user);
+        component.form.setValue(user);
         fixture.detectChanges();
         de.query(
             By.css('[data-testid="showStarterBtn"] input[type="checkbox"]')
@@ -323,32 +343,29 @@ describe('DotMyAccountComponent', () => {
             of({ entity: { user: mockUser() } })
         );
         spyOn(loginService, 'setAuth');
-        spyOn(comp.shutdown, 'emit');
+        spyOn(component.shutdown, 'emit');
 
         fixture.detectChanges();
         await fixture.whenStable();
+
         const user = {
-            givenName: 'Admin',
-            surname: 'Admin',
+            givenName: 'Admin2',
+            surname: 'Admi2',
             email: 'admin@dotcms.com',
             password: 'admin',
             newPassword: 'newPassword',
             confirmPassword: 'newPassword'
         };
-        comp.form.setValue(user);
+        component.form.setValue(user);
         fixture.detectChanges();
         const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('click', {});
-        fixture.detectChanges();
-
-        await fixture.whenStable();
-
+        changePassword.triggerEventHandler('onChange', {});
         fixture.detectChanges();
         const save = de.query(By.css('.dialog__button-accept'));
         save.triggerEventHandler('click', {});
         fixture.detectChanges();
-        expect(comp.shutdown.emit).toHaveBeenCalledTimes(1);
-        expect(dotAccountService.updateUser).toHaveBeenCalledWith(comp.dotAccountUser);
+        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+        expect(dotAccountService.updateUser).toHaveBeenCalledWith(component.dotAccountUser);
         expect(loginService.setAuth).toHaveBeenCalledWith({
             loginAsUser: null,
             user: mockUser()
@@ -362,31 +379,30 @@ describe('DotMyAccountComponent', () => {
             of({ entity: { reauthenticate: true } })
         );
         spyOn(dotAlertConfirmService, 'alert');
-        spyOn(comp.shutdown, 'emit');
+        spyOn(component.shutdown, 'emit');
+        spyOn(dotRouterService, 'doLogOut');
 
         fixture.detectChanges();
         await fixture.whenStable();
+
         const user = {
-            givenName: 'Admin',
-            surname: 'Admin',
+            givenName: 'Admin2',
+            surname: 'Admi2',
             email: 'admin@dotcms.com',
             password: 'admin',
             newPassword: 'newPassword',
             confirmPassword: 'newPassword'
         };
-        comp.form.setValue(user);
+        component.form.setValue(user);
         fixture.detectChanges();
         const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('click', {});
-        fixture.detectChanges();
-        await fixture.whenStable();
-
+        changePassword.triggerEventHandler('onChange', {});
         fixture.detectChanges();
         const save = de.query(By.css('.dialog__button-accept'));
         save.triggerEventHandler('click', {});
         fixture.detectChanges();
-        expect(comp.shutdown.emit).toHaveBeenCalledTimes(1);
-        expect(dotAccountService.updateUser).toHaveBeenCalledWith(comp.dotAccountUser);
+        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+        expect(dotAccountService.updateUser).toHaveBeenCalledWith(component.dotAccountUser);
         expect(dotAlertConfirmService.alert).toHaveBeenCalledWith({
             header: messageServiceMock.get('my-account'),
             message: messageServiceMock.get('message.createaccount.success')
@@ -407,12 +423,12 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+        spyOn(component, 'updateUser').and.returnValue(throwError(errorResponse));
 
         fixture.detectChanges();
         await fixture.whenStable();
 
-        comp.form.setValue({
+        component.form.setValue({
             givenName: 'Admin2',
             surname: 'Admi2',
             email: 'admin@dotcms.com',
@@ -451,12 +467,12 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+        spyOn(component, 'updateUser').and.returnValue(throwError(errorResponse));
 
         fixture.detectChanges();
         await fixture.whenStable();
 
-        comp.form.setValue({
+        component.form.setValue({
             givenName: 'Admin2',
             surname: 'Admi2',
             email: 'admin@dotcms.com',
@@ -494,13 +510,13 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+        spyOn(component, 'updateUser').and.returnValue(throwError(errorResponse));
         spyOn(httpErrorManagerService, 'handle').and.returnValue(of(null));
 
         fixture.detectChanges();
         await fixture.whenStable();
 
-        comp.form.setValue({
+        component.form.setValue({
             givenName: 'abc',
             surname: 'abc',
             email: 'admin@dotcms.com',
