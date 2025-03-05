@@ -1,5 +1,6 @@
 package com.dotcms.cli.command;
 
+import com.dotcms.api.client.analytics.AnalyticsService;
 import com.dotcms.api.client.model.AuthenticationParam;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.contenttype.ContentTypeCommand;
@@ -63,6 +64,9 @@ public class EntryCommand implements DotCommand {
 
     @Inject
     DirectoryWatcherService directoryWatcherService;
+
+    @Inject
+    AnalyticsService analyticsService;
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;

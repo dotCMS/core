@@ -306,6 +306,8 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
                 analyticsService.recordCommand(command, arguments);
             }
+        } else {
+            LOGGER.warn("No analytics service available. Event will not be recorded.");
         }
     }
 

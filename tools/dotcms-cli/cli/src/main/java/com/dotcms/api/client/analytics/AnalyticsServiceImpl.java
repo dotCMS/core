@@ -15,11 +15,14 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     static final String COMMAND_EVENT_TYPE = "CMD_EXECUTED";
 
-    @Inject
-    protected RestClientFactory clientFactory;
+    private final RestClientFactory clientFactory;
+    private final Logger logger;
 
     @Inject
-    Logger logger;
+    public AnalyticsServiceImpl(final RestClientFactory clientFactory, final Logger logger) {
+        this.clientFactory = clientFactory;
+        this.logger = logger;
+    }
 
     @Override
     @ActivateRequestContext
