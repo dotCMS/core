@@ -26,12 +26,12 @@ const mockRelationships = [
     createFakeContentlet({
         title: 'Relationship 1',
         inode: '1',
-        identifier: 'id-1',
+        identifier: 'id-1'
     }),
     createFakeContentlet({
         title: 'Relationship 2',
         inode: '2',
-        identifier: 'id-2',
+        identifier: 'id-2'
     })
 ];
 
@@ -50,11 +50,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             RelationshipFieldStore,
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],
-        providers: [
-            FormGroupDirective,
-            mockProvider(DotMessageService),
-            DialogService
-        ],
+        providers: [FormGroupDirective, mockProvider(DotMessageService), DialogService],
         detectChanges: false
     });
 
@@ -162,7 +158,9 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             close: jest.fn()
         };
 
-        jest.spyOn(dialogService, 'open').mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
+        jest.spyOn(dialogService, 'open').mockReturnValue(
+            mockDialogRef as unknown as DynamicDialogRef
+        );
         const setDataSpy = jest.spyOn(store, 'setData');
 
         spectator.detectChanges();
