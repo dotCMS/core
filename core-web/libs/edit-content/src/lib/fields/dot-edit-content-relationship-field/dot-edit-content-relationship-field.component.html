@@ -7,6 +7,7 @@
 
 <p-table
     [value]="data"
+    data-testid="relationship-field-table"
     styleClass="dotTable p-datatable-relationship"
     [paginator]="data.length > pagination.rowsPerPage"
     [first]="pagination.offset"
