@@ -1,6 +1,9 @@
 package com.dotcms.analytics.track;
 
 import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.track.collectors.WebEventsCollectorService;
+import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
+import com.dotcms.analytics.track.matchers.HttpResponseMatcher;
 import com.dotcms.analytics.track.matchers.RequestMatcher;
 import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotcms.security.apps.AppSecrets;
@@ -11,6 +14,7 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -24,6 +28,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 
 /**
  * This test is for the AnalyticsTrackWebInterceptor class.
@@ -146,6 +154,41 @@ public class AnalyticsTrackWebInterceptorTest {
         }catch (Exception e) {}
 
         Assert.assertTrue("The test matcher should be called", testMatcher.wasCalled());
+    }
+
+    /**
+     * Method to test: {@link AnalyticsTrackWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
+     *                  and {@link AnalyticsTrackWebInterceptor#afterIntercept(HttpServletRequest, HttpServletResponse)}
+     * When:
+     * should:
+     */
+    @Test
+    public void httpResponse() throws IOException {
+        Config.CONTEXT = Mockito.mock(ServletContext.class);
+        final AnalyticsWebAPI analyticsWebAPI = Mockito.mock(AnalyticsWebAPI.class);
+        final WhiteBlackList whiteBlackList  = new WhiteBlackList.Builder()
+                .addWhitePatterns(new String[]{StringPool.BLANK}) // allows everything
+                .addBlackPatterns(new String[]{StringPool.BLANK}).build();
+        final AtomicBoolean isTurnedOn = new AtomicBoolean(true); // turn on the feature flag
+        final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+        final HttpResponseMatcher httpResponseMatcher = new HttpResponseMatcher();
+        final WebEventsCollectorServiceFactory webEventsCollectorServiceFactory = Mockito.mock(WebEventsCollectorServiceFactory.class);
+        final WebEventsCollectorService webEventsCollectorService = Mockito.mock(WebEventsCollectorService.class);
+
+        Mockito.when(request.getRequestURI()).thenReturn("/some-uri");
+        Mockito.when(analyticsWebAPI.anyAnalyticsConfig(request)).thenReturn(true);
+        Mockito.when(webEventsCollectorServiceFactory.getWebEventsCollectorService()).thenReturn(webEventsCollectorService);
+
+        final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
+                whiteBlackList, isTurnedOn, analyticsWebAPI, webEventsCollectorServiceFactory, httpResponseMatcher);
+
+        interceptor.intercept(request, response);
+
+        interceptor.afterIntercept(request, response);
+
+        verify(request).setAttribute(eq("requestId"), anyString());
+        verify(webEventsCollectorService).fireCollectors(request, response, httpResponseMatcher);
     }
 
 }
