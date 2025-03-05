@@ -1,6 +1,6 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.analytics.AnalyticsService;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.common.DirectoryWatcherService;
 import com.dotcms.cli.common.DotExceptionHandler;
@@ -24,7 +24,7 @@ import picocli.CommandLine.Model.OptionSpec;
 class CustomConfigurationUtil {
 
     @Inject
-    protected RestClientFactory clientFactory;
+    protected AnalyticsService analyticsService;
 
     /**
      * Customizes a CommandLine object.
@@ -40,7 +40,7 @@ class CustomConfigurationUtil {
                         new CommandLine.RunLast(), new SubcommandProcessor(),
                         Arc.container().instance(DirectoryWatcherService.class).get(),
                         Arc.container().instance(ServiceManager.class).get(),
-                        clientFactory)
+                        analyticsService)
                 )
                 .setExecutionExceptionHandler(new DotExceptionHandler())
                 .setExitCodeExceptionMapper(new DotExitCodeExceptionMapper());

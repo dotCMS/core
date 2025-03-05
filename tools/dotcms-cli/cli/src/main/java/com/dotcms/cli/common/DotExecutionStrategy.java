@@ -1,18 +1,13 @@
 package com.dotcms.cli.common;
 
-import com.dotcms.api.AnalyticsAPI;
-import com.dotcms.api.client.model.RestClientFactory;
+import com.dotcms.api.client.analytics.AnalyticsService;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
 import com.dotcms.cli.command.LoginCommand;
 import com.dotcms.cli.command.StatusCommand;
-import com.dotcms.model.analytics.DotCliEvent;
 import com.dotcms.model.config.ServiceBean;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.ArcContainer;
-import jakarta.enterprise.context.control.ActivateRequestContext;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -21,7 +16,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.ExitCode;
@@ -35,8 +29,9 @@ import picocli.CommandLine.ParseResult;
  */
 public class DotExecutionStrategy implements IExecutionStrategy {
 
-    private static final java.util.logging.Logger LOGGER = java.util.logging.Logger.getLogger(
-            DotExecutionStrategy.class.getName());
+    private static final org.jboss.logging.Logger LOGGER = org.jboss.logging.Logger.getLogger(
+            DotExecutionStrategy.class.getName()
+    );
 
     private static final ThreadLocal<Integer> callDepth = ThreadLocal.withInitial(() -> 0);
 
@@ -48,7 +43,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private final ServiceManager serviceManager;
 
-    private final RestClientFactory clientFactory;
+    private final AnalyticsService analyticsService;
 
     /**
      * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
@@ -62,7 +57,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         this.processor = processor;
         this.watchService = watchService;
         this.serviceManager = serviceManager;
-        this.clientFactory = null;
+        this.analyticsService = null;
     }
 
     /**
@@ -72,12 +67,12 @@ public class DotExecutionStrategy implements IExecutionStrategy {
      */
     public DotExecutionStrategy(final IExecutionStrategy underlyingStrategy,
             final SubcommandProcessor processor, final DirectoryWatcherService watchService,
-            final ServiceManager serviceManager, final RestClientFactory clientFactory) {
+            final ServiceManager serviceManager, final AnalyticsService analyticsService) {
         this.underlyingStrategy = underlyingStrategy;
         this.processor = processor;
         this.watchService = watchService;
         this.serviceManager = serviceManager;
-        this.clientFactory = clientFactory;
+        this.analyticsService = analyticsService;
     }
 
     /**
@@ -103,22 +98,31 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                return underlyingStrategy.execute(parseResult);
             }
 
+            if (LOGGER.isDebugEnabled()) {
+                final List<String> arguments = parseResult.expandedArgs();
+                final String debugCommand = String.format(
+                        "Executing command [%s]", String.join(" ", arguments)
+                );
+                LOGGER.debug(debugCommand);
+            } else {
+                final String command = commandsChain.command();
+                final String format = String.format("Executing command: %s", command);
+                LOGGER.info(format);
+            }
+
             //Everything here is a sub command of EntryCommand
-            final String command = commandsChain.command();
-            final String format = String.format("Executing command: %s", command);
-            LOGGER.info(format);
 
             // If the dotCMS URL and token are set, we can proceed with the command execution, we
             // can bypass the configuration check as we have everything we need for a remote call
             if (isRemoteURLSet(commandsChain, parseResult.commandSpec().commandLine())) {
-                return executeInParallel(commandsChain, underlyingStrategy, parseResult);
+                return internalExecute(commandsChain, underlyingStrategy, parseResult);
             }
 
             //If no remote URL is set, we need to check if there is a configuration
             verifyConfigExists(parseResult, commandsChain);
 
             //If we have a configuration, we can proceed with the command execution
-            return executeInParallel(commandsChain, underlyingStrategy, parseResult);
+            return internalExecute(commandsChain, underlyingStrategy, parseResult);
 
         }
 
@@ -126,15 +130,17 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     }
 
     /**
-     * Executes the command in parallel with event analytics recording.
+     * Executes the given command chain using the specified execution strategy and parse result.
+     * This method performs the operation asynchronously, handling both event recording and command
+     * execution. It waits for both tasks to complete before returning the execution result.
      *
-     * @param commandsChain
-     * @param underlyingStrategy
-     * @param parseResult
-     * @return
-     * @throws ExecutionException
+     * @param commandsChain      the chain of commands to be executed
+     * @param underlyingStrategy the execution strategy used to process the commands
+     * @param parseResult        the parse result containing the command context and options
+     * @return the exit code resulting from the execution of the command
+     * @throws ExecutionException if an error occurs during execution or processing
      */
-    private int executeInParallel(CommandsChain commandsChain,
+    int internalExecute(CommandsChain commandsChain,
             IExecutionStrategy underlyingStrategy,
             CommandLine.ParseResult parseResult) throws ExecutionException {
 
@@ -142,21 +148,26 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             // Create a CompletableFuture for the event recording
             CompletableFuture<Void> eventFuture = CompletableFuture.runAsync(() -> {
                 try {
-                    recordEvent(commandsChain);
+                    recordEvent(commandsChain, parseResult);
                 } catch (Exception e) {
-                    LOGGER.log(Level.WARNING, "Error recording event asynchronously", e);
+                    LOGGER.error("Error recording event asynchronously", e);
                 }
             });
 
             // Create a CompletableFuture for the command execution
             CompletableFuture<Integer> executeFuture = CompletableFuture.supplyAsync(() -> {
                 try {
-                    return internalExecute(commandsChain, underlyingStrategy, parseResult);
+                    return processCommandExecution(commandsChain, underlyingStrategy, parseResult);
                 } catch (Exception e) {
-                    if (e instanceof RuntimeException) {
-                        throw (RuntimeException) e;
+
+                    LOGGER.error("Error executing command", e);
+
+                    if (e instanceof ExecutionException) {
+                        throw (ExecutionException) e;
                     }
-                    throw new RuntimeException(e);
+                    throw new ExecutionException(
+                            parseResult.commandSpec().commandLine(), "Error executing command", e
+                    );
                 }
             });
 
@@ -236,7 +247,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
      * @throws ExecutionException if an exception occurs during command execution
      * @throws ParameterException if there is an error with the command parameters
      */
-    int internalExecute(final CommandsChain commandsChain,
+    int processCommandExecution(final CommandsChain commandsChain,
             final IExecutionStrategy underlyingStrategy,
             final ParseResult parseResult)
             throws ExecutionException, ParameterException {
@@ -265,35 +276,32 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         }
     }
 
-    @ActivateRequestContext
-    void recordEvent(CommandsChain commandsChain) {
+    /**
+     * Records an event by sending the command and arguments to the analytics service, if
+     * available.
+     *
+     * @param commandsChain the chain of commands that holds the context of the command to be
+     *                      recorded
+     * @param parseResult   the result of the command parsing which contains detailed information,
+     *                      such as expanded arguments
+     * @throws IOException if an I/O error occurs during the recording process
+     */
+    void recordEvent(CommandsChain commandsChain, final ParseResult parseResult)
+            throws IOException {
 
-        final String command = commandsChain.command();
+        if (analyticsService != null) {
 
-        final String parentCommand = commandsChain.firstSubcommand()
-                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+            final String parentCommand = commandsChain.firstSubcommand()
+                    .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
 
-        if (!ConfigCommand.NAME.equals(parentCommand)
-                && !LoginCommand.NAME.equals(parentCommand)
-                && !StatusCommand.NAME.equals(parentCommand)) {
+            if (!ConfigCommand.NAME.equals(parentCommand)
+                    && !LoginCommand.NAME.equals(parentCommand)
+                    && !StatusCommand.NAME.equals(parentCommand)) {
 
-            ArcContainer container = Arc.container();
-            var requestContext = container.requestContext();
-            requestContext.activate();
-            if (clientFactory != null) {
-                try {
-                    final var analyticsAPI = clientFactory.getClient(AnalyticsAPI.class);
-                    analyticsAPI.fireCliEvent(
-                            DotCliEvent.builder()
-                                    .command(command)
-                                    .eventType("CMD_EXECUTED")
-                                    .user("UNKNOWN")
-                                    .site("UNKNOWN")
-                                    .build());
-                    LOGGER.log(Level.INFO, "Event recorded for command: {0}", command);
-                } catch (Exception e) {
-                    LOGGER.log(Level.WARNING, "Error recording event for command: " + command, e);
-                }
+                final String command = commandsChain.command();
+                final List<String> arguments = parseResult.expandedArgs();
+
+                analyticsService.recordCommand(command, arguments);
             }
         }
     }

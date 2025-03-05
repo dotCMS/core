@@ -119,6 +119,7 @@ class DotExecutionStrategyTest {
         //Verify that the command was executed and the watch service was started
         verify(mockUnderlyingStrategy, atMostOnce()).execute(parseResult);
         verify(dotExecutionStrategy, atLeastOnce()).internalExecute(any(),any(),any());
+        verify(dotExecutionStrategy, atLeastOnce()).processCommandExecution(any(),any(),any());
         verify(dotExecutionStrategy, atLeastOnce()).handleWatchPush(any(), any(), any());
 
         verify(mockSubcommandProcessor).process(parseResult);
