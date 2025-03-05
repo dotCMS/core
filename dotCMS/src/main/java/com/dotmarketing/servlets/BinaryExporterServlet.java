@@ -116,8 +116,12 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	
 	private final boolean ASSETS_USE_WEAK_ETAGS = Config.getBooleanProperty("ASSETS_USE_WEAK_ETAGS", true);
-	
-	
+
+	/**
+	 * A boolean constant indicating whether anonymous user permissions should always be respected.
+	 * Set to true because the binary servlet is for delivery and should respect front-end roles.
+	 */
+	private static final boolean ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS = true;
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -262,7 +266,9 @@ public class BinaryExporterServlet extends HttpServlet {
 						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
 					else {
 						try {
-							content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
+							content = contentAPI.find(
+									assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+							);
 						} catch(DotSecurityException e) {
 							if (!mode.respectAnonPerms) {
 								content = getContentletLiveVersion(assetInode, user, lang);
@@ -302,7 +308,10 @@ public class BinaryExporterServlet extends HttpServlet {
 							query.append("+working:true ");
 						}
 
-						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, mode.respectAnonPerms);
+						List<Contentlet> foundContentlets = contentletAPI.search(
+								query.toString(), 2, -1, null, user,
+								ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+						);
 						if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
 							//Prefer the contentlet with the session language
 							content = foundContentlets.get(0);
@@ -691,14 +700,19 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(identifier,
-				pageMode.showLive, languageId, currentVariantId, user, pageMode.respectAnonPerms);
+		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(
+				identifier, pageMode.showLive, languageId, currentVariantId, user,
+				ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+		);
 
 		if (UtilMethods.isSet(contentletByIdentifier)) {
 			return contentletByIdentifier;
 		}
 
-		return contentAPI.findContentletByIdentifier(identifier, pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
+		return contentAPI.findContentletByIdentifier(
+				identifier, pageMode.showLive, languageId, user,
+				ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+		);
 	}
 
 	private boolean isBrowserSafariAndVersionBelow14(final UserAgent userAgent) {
