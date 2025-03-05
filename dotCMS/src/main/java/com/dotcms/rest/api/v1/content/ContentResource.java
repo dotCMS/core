@@ -13,6 +13,7 @@ import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityCountView;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.SearchForm;
 import com.dotcms.rest.SearchView;
@@ -492,7 +493,7 @@ public class ContentResource {
      * @param response           the HTTP servlet response, used for setting response parameters.
      * @param inodeOrIdentifier  the inode or identifier of the contentlet to be checked.
      * @param language           the language ID of the contentlet (optional, defaults to -1 for fallback).
-     * @return a ResponseEntityBooleanView true if the unlock was sucessful.
+     * @return a ResponseEntityMapView return the contentlet unlock
      *
      * @throws DotDataException        if there is a data access issue.
      * @throws DotSecurityException    if the user does not have the required permissions.
@@ -508,7 +509,7 @@ public class ContentResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully unlocked contentlet",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityBooleanView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -518,7 +519,7 @@ public class ContentResource {
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
-    public ResponseEntityBooleanView unlockContent(@Context HttpServletRequest request,
+    public ResponseEntityMapView unlockContent(@Context HttpServletRequest request,
                                   @Context final HttpServletResponse response,
                                   @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
                                   @DefaultValue("-1") @QueryParam("language") final String language)
@@ -538,7 +539,9 @@ public class ContentResource {
 
         APILocator.getContentletAPI().unlock(contentlet, user, mode.respectAnonPerms);
 
-        return new ResponseEntityBooleanView(true);
+        final Contentlet contentletHydrated = new DotTransformerBuilder().contentResourceOptions(false)
+                .content(contentlet).build().hydrate().get(0);
+        return new ResponseEntityMapView(WorkflowHelper.getInstance().contentletToMap(contentlet));
     }
 
     /**
@@ -548,7 +551,7 @@ public class ContentResource {
      * @param response           the HTTP servlet response, used for setting response parameters.
      * @param inodeOrIdentifier  the inode or identifier of the contentlet to be checked.
      * @param language           the language ID of the contentlet (optional, defaults to -1 for fallback).
-     * @return a ResponseEntityBooleanView true if the lock was sucessful.
+     * @return a ResponseEntityMapView return the contentlet locked
      *
      * @throws DotDataException        if there is a data access issue.
      * @throws DotSecurityException    if the user does not have the required permissions.
@@ -564,7 +567,7 @@ public class ContentResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully locked contentlet",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityBooleanView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -574,10 +577,10 @@ public class ContentResource {
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
-    public ResponseEntityBooleanView lockContent(@Context HttpServletRequest request,
-                                                @Context HttpServletResponse response,
-                                                 @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
-                                                 @DefaultValue("-1") @QueryParam("language") final String language)
+    public ResponseEntityMapView lockContent(@Context HttpServletRequest request,
+                                             @Context HttpServletResponse response,
+                                             @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
+                                             @DefaultValue("-1") @QueryParam("language") final String language)
             throws DotDataException, DotSecurityException {
 
         final User user =
@@ -593,7 +596,10 @@ public class ContentResource {
         final Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
 
         APILocator.getContentletAPI().lock(contentlet, user, mode.respectAnonPerms);
-        return new ResponseEntityBooleanView(true);
+
+        final Contentlet contentletHydrated = new DotTransformerBuilder().contentResourceOptions(false)
+                .content(contentlet).build().hydrate().get(0);
+        return new ResponseEntityMapView(WorkflowHelper.getInstance().contentletToMap(contentlet));
     }
 
     /**

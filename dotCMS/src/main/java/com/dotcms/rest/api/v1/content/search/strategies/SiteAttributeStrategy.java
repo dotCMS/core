@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.content.search.strategies;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotmarketing.util.UtilMethods;
 
+import java.util.Objects;
+
 import static com.dotmarketing.beans.Host.SYSTEM_HOST;
 import static com.liferay.util.StringPool.BLANK;
 
@@ -20,28 +22,32 @@ public class SiteAttributeStrategy implements FieldStrategy {
 
     @Override
     public boolean checkRequiredValues(final FieldContext fieldContext) {
-        return (null != fieldContext.fieldValue() && !fieldContext.fieldValue().toString().isEmpty())
-                || (boolean) fieldContext.extraParams().getOrDefault("systemHostContent", true);
+        return true;
     }
 
     @Override
     public String generateQuery(final FieldContext queryContext) {
         final String fieldName = queryContext.fieldName();
         final Object fieldValue = queryContext.fieldValue();
+        if (Objects.isNull(fieldValue) || UtilMethods.isNotSet(fieldValue.toString())) {
+            return BLANK;
+        }
         final boolean includeSystemHostContent = (boolean) queryContext.extraParams().getOrDefault("systemHostContent", true);
-        final String value = UtilMethods.isSet(fieldValue) && !fieldValue.toString().isEmpty()
+        final String value = UtilMethods.isSet(fieldValue.toString())
                 ? fieldValue.toString()
                 : includeSystemHostContent
                     ? SYSTEM_HOST
                     : BLANK;
         final StringBuilder luceneQuery = new StringBuilder();
         if (includeSystemHostContent && UtilMethods.isSet(value) && !value.equals(SYSTEM_HOST)) {
-            luceneQuery.append("+(").append(fieldName).append(":").append(value)
-                    .append(" ").append(fieldName).append(":").append(SYSTEM_HOST).append(")");
+            luceneQuery.append("+(")
+                    .append(fieldName).append(":").append(value).append(" ")
+                    .append(fieldName).append(":").append(SYSTEM_HOST)
+                    .append(")");
         } else if (UtilMethods.isSet(value)) {
             luceneQuery.append("+").append(fieldName).append(":").append(value).append(!value.equals(SYSTEM_HOST) ? "*" : BLANK);
         }
-        return luceneQuery.toString().trim();
+        return luceneQuery.toString();
     }
 
 }
