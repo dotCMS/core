@@ -65,11 +65,13 @@
             pButton
             class="p-button-outlined"
             [label]="'cancel' | dm"
+            [disabled]="loading"
             (click)="close()"></button>
         <button
             pButton
             [label]="'Change' | dm"
-            [disabled]="!form.valid"
+            [loading]="loading"
+            [disabled]="!form.valid || loading"
             (click)="doLoginAs()"></button>
     </ng-template>
 </p-dialog>

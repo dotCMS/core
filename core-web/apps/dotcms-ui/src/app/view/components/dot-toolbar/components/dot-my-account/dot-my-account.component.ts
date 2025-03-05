@@ -18,7 +18,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { map, take } from 'rxjs/operators';
 
@@ -46,7 +45,6 @@ import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
         InputTextModule,
         DialogModule,
         CheckboxModule,
-        ProgressSpinnerModule,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],
@@ -143,6 +141,12 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
 
     toggleChangePasswordOption(): void {
         this.changePasswordOption = !this.changePasswordOption;
+
+        if (!this.changePasswordOption) {
+            this.dotAccountUser.newPassword = '';
+            this.passwordConfirm = '';
+            this.newPasswordFailedMsg = '';
+        }
     }
 
     /**
@@ -173,8 +177,15 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
 
     save(): void {
         this.isSaving$.next(true);
+
+        const userToUpdate = { ...this.dotAccountUser };
+
+        if (!this.changePasswordOption) {
+            delete userToUpdate.newPassword;
+        }
+
         this.dotAccountService
-            .updateUser(this.dotAccountUser)
+            .updateUser(userToUpdate)
             .pipe(take(1))
             .subscribe(
                 (response) => {
