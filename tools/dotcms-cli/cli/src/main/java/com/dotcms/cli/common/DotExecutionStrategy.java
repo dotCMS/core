@@ -5,6 +5,7 @@ import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.command.InstanceCommand;
 import com.dotcms.cli.command.LoginCommand;
 import com.dotcms.cli.command.StatusCommand;
 import com.dotcms.model.config.ServiceBean;
@@ -296,7 +297,9 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
             if (!ConfigCommand.NAME.equals(parentCommand)
                     && !LoginCommand.NAME.equals(parentCommand)
-                    && !StatusCommand.NAME.equals(parentCommand)) {
+                    && !StatusCommand.NAME.equals(parentCommand)
+                    && !InstanceCommand.NAME.equals(parentCommand)
+            ) {
 
                 final String command = commandsChain.command();
                 final List<String> arguments = parseResult.expandedArgs();

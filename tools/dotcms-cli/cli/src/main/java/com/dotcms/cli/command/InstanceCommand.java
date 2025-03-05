@@ -35,7 +35,7 @@ import picocli.CommandLine.ExitCode;
 )
 public class InstanceCommand implements Callable<Integer>, DotCommand {
 
-    static final String NAME = "instance";
+    public static final String NAME = "instance";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
