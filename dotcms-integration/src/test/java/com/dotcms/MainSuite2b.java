@@ -126,7 +126,6 @@ import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;
 import com.dotcms.variant.business.VariantCacheTest;
 import com.dotmarketing.beans.HostTest;
-import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.IdentifierCacheImplTest;
 import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.VersionableFactoryImplTest;
@@ -240,7 +239,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CookieToolTest.class,
         CSVManifestBuilderTest.class,
         MoveContentActionletTest.class,
-        DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
         ContentletCacheImplTest.class,
         HostTest.class,
@@ -392,7 +390,6 @@ import org.junit.runners.Suite.SuiteClasses;
         AsyncVanitiesCollectorTest.class,
         HttpServletRequestImpersonatorTest.class,
         Task250107RemoveEsReadOnlyMonitorJobTest.class,
-
         com.dotmarketing.business.VersionableAPITest.class,
         com.dotmarketing.business.UserAPITest.class,
         com.dotmarketing.business.portal.PortletAPIImplTest.class,
@@ -410,7 +407,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
-
         OSGIUtilTest.class,
         CleanUpFieldReferencesJobTest.class,
         CachedParameterDecoratorTest.class,
@@ -421,7 +417,6 @@ import org.junit.runners.Suite.SuiteClasses;
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
-
         AppsAPIImplTest.class,
         AppsResourceTest.class,
         AppsCacheImplTest.class,
@@ -435,7 +430,6 @@ import org.junit.runners.Suite.SuiteClasses;
         HashBuilderTest.class,
         LanguageUtilTest.class,
         FolderResourceTest.class,
-
         com.dotmarketing.common.reindex.ReindexThreadTest.class,
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
@@ -464,10 +458,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class,
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         Task05210CreateDefaultDotAssetTest.class,
-
-
-
-
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
         FileAssetAPIImplIntegrationTest.class,

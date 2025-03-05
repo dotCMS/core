@@ -438,6 +438,7 @@
                     <includes>
                         <include>**/MainSuite1*.java</include>
                         <include>**/MainSuite2*.java</include>
+                        <include>**/MainSuite3*.java</include>
                         <include>**/Junit5Suite*.java</include>
                     </includes>
                 </configuration>

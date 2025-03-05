@@ -70,13 +70,17 @@ export class ContentTypeFormPage {
     const dialogInputLocator = this.page.locator("input#name");
     await dialogInputLocator.fill(field.title);
 
-    const selectContentTypeLocator = this.page.locator("dot-searchable-dropdown");
+    const selectContentTypeLocator = this.page.locator(
+      "dot-searchable-dropdown",
+    );
     await selectContentTypeLocator.click();
 
     const entityToRelateLocator = this.page.getByLabel(field.entityToRelate);
     await entityToRelateLocator.click();
 
-    const cardinalitySelectorLocator = this.page.locator("dot-cardinality-selector");
+    const cardinalitySelectorLocator = this.page.locator(
+      "dot-cardinality-selector",
+    );
     await cardinalitySelectorLocator.click();
 
     const cardinalityOptionLocator = this.page.getByLabel(field.cardinality);
