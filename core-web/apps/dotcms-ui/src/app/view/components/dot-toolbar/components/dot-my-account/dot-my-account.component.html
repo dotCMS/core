@@ -10,11 +10,6 @@
     styleClass="dot-my-account-dialog"
     (onHide)="handleClose()">
     <div class="my-account-container">
-        @if (isSaving$ | async) {
-            <div class="my-account-loading">
-                <p-progressSpinner></p-progressSpinner>
-            </div>
-        }
         <form class="my-account p-fluid" #myAccountForm="ngForm">
             <div class="field">
                 <label dotFieldRequired for="dot-my-account-first-name-input">
@@ -157,13 +152,16 @@
             pButton
             class="p-button-outlined"
             [label]="'modes.Close' | dm"
+            [disabled]="isSaving$ | async"
             (click)="handleClose()"></button>
         <button
             pButton
             [label]="'save' | dm"
+            [loading]="isSaving$ | async"
             [disabled]="
                 (changePasswordOption && dotAccountUser.newPassword !== passwordConfirm) ||
-                !form.valid
+                !form.valid ||
+                (isSaving$ | async)
             "
             (click)="save()"></button>
     </ng-template>

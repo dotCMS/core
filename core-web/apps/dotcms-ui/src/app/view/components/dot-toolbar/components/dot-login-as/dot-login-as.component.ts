@@ -70,6 +70,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     needPassword = false;
     userCurrentPage: User[];
     errorMessage: string;
+    loading = false;
 
     private readonly destroy$ = new Subject<boolean>();
     private readonly location = inject(LOCATION_TOKEN);
@@ -106,6 +107,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
      */
     doLoginAs(): void {
         if (this.form.valid) {
+            this.loading = true;
             this.errorMessage = '';
             const password: string = this.form.value.password;
             const user: User = this.form.value.loginAsUser;
@@ -119,8 +121,11 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
                                 this.location.reload();
                             });
                         }
+
+                        this.loading = false;
                     },
                     error: (response) => {
+                        this.loading = false;
                         if (response.errorsMessages) {
                             this.errorMessage = response.errorsMessages;
                         } else {

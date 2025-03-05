@@ -16,7 +16,6 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
@@ -119,7 +118,6 @@ describe('DotMyAccountComponent', () => {
                 InputTextModule,
                 DialogModule,
                 CheckboxModule,
-                ProgressSpinnerModule,
                 DotSafeHtmlPipe,
                 DotFieldRequiredDirective,
                 DotMessagePipe,
