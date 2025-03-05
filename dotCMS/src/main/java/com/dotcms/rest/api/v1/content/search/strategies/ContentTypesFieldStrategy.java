@@ -33,7 +33,7 @@ public class ContentTypesFieldStrategy implements FieldStrategy {
                     .map(Object::toString)
                     .map(String::trim)
                     .collect(Collectors.joining(" OR "));
-        return luceneQuery.append("+").append(fieldName).append(":(").append(value).append(")").toString().trim();
+        return luceneQuery.append("+").append(fieldName).append(":(").append(value).append(")").toString();
     }
 
 }

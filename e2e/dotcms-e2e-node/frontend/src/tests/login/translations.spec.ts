@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { assert } from "console";
-import { waitForVisibleAndCallback } from "../../utils/dotCMSUtils";
+import { waitForVisibleAndCallback } from "@utils/utils";
 
 const languages = [
   { language: "español (España)", translation: "¡Bienvenido!" },
