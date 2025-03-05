@@ -8,6 +8,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import {
     DotContentletService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
@@ -46,6 +47,7 @@ describe('DotEditContentStore', () => {
             mockProvider(DotMessageService),
             mockProvider(DotContentletService),
             mockProvider(DotLanguagesService),
+            mockProvider(DotCurrentUserService),
             mockProvider(DialogService)
         ]
     });
@@ -66,6 +68,7 @@ describe('DotEditContentStore', () => {
         expect(store.contentlet).toBeDefined();
         expect(store.information).toBeDefined();
         expect(store.locales).toBeDefined();
+        expect(store.canLock).toBeDefined();
         expect(store.systemDefaultLocale).toBeDefined();
         expect(store.currentLocale).toBeDefined();
         expect(store.currentIdentifier).toBeDefined();
@@ -76,5 +79,7 @@ describe('DotEditContentStore', () => {
         expect(store.isSidebarOpen).toBeDefined();
         expect(store.activeTab).toBeDefined();
         expect(store.activeSidebarTab).toBeDefined();
+        // User Feature
+        expect(store.currentUser).toBeDefined();
     });
 });

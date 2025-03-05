@@ -1,6 +1,10 @@
 package com.dotcms.analytics.track.collectors;
 
 import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.uuid.shorty.ShortType;
+import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -16,6 +20,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
+
 /**
  * This collector collects the file information
  * @author jsanca
@@ -24,16 +29,19 @@ public class FilesCollector implements Collector {
 
     private final FileAssetAPI fileAssetAPI;
     private final ContentletAPI contentletAPI;
+    private final ShortyIdAPI shortyIdAPI;
 
     public FilesCollector() {
-        this(APILocator.getFileAssetAPI(), APILocator.getContentletAPI());
+        this(APILocator.getFileAssetAPI(), APILocator.getContentletAPI(), APILocator.getShortyAPI());
     }
 
     public FilesCollector(final FileAssetAPI fileAssetAPI,
-                          final ContentletAPI contentletAPI) {
+                          final ContentletAPI contentletAPI,
+                          final ShortyIdAPI shortyIdAPI) {
 
         this.fileAssetAPI = fileAssetAPI;
         this.contentletAPI = contentletAPI;
+        this.shortyIdAPI = shortyIdAPI;
     }
 
     @Override
@@ -106,8 +114,16 @@ public class FilesCollector implements Collector {
             return new FieldNameIdentifier(split[idIndex], null);
         }
 
+        //return new FieldNameIdentifier(fieldNameIndex < split.length ? getIdentifier(split[idIndex]) : null,
+          //      fieldNameIndex < split.length ? split[fieldNameIndex] : null);
         return new FieldNameIdentifier(fieldNameIndex < split.length ? split[idIndex] : null,
-                fieldNameIndex < split.length ? split[fieldNameIndex] : null);
+              fieldNameIndex < split.length ? split[fieldNameIndex] : null);
+    }
+
+    private static String getIdentifier(final String idOrShortId) {
+        return APILocator.getShortyAPI().getShorty(idOrShortId)
+                .map(shortyId -> shortyId.shortId)
+                .orElse(null);
     }
 
     private Optional<Contentlet> getFileAsset(final Long languageId, final FieldNameIdentifier fieldNameIdentifier)
@@ -117,19 +133,32 @@ public class FilesCollector implements Collector {
             return Optional.empty();
         }
 
-        final Contentlet contentletByIdentifier = contentletAPI.findContentletByIdentifier(fieldNameIdentifier.identifier,
-                PageMode.get().showLive, languageId,
-                APILocator.systemUser(), false);
+        final ShortyId shortId = this.shortyIdAPI.getShorty(fieldNameIdentifier.identifier).orElse(null);
 
-        if (Objects.nonNull(fieldNameIdentifier.fieldName) && Objects.nonNull(contentletByIdentifier)) {
-            final String binaryFileId = contentletByIdentifier.getStringProperty(fieldNameIdentifier.fieldName);
+        if (Objects.isNull(shortId)) {
+            return Optional.empty();
+        }
+
+        final Contentlet contentlet = (shortId.type == ShortType.IDENTIFIER)
+                ? contentletAPI.findContentletByIdentifier(shortId.longId,
+                    PageMode.get().showLive, languageId,
+                    APILocator.systemUser(), false)
+                : contentletAPI.find(shortId.longId, APILocator.systemUser(), false);
+
+        if (Objects.nonNull(fieldNameIdentifier.fieldName) && Objects.nonNull(contentlet) && !isBinaryField(contentlet)) {
+            final String binaryFileId = contentlet.getStringProperty(fieldNameIdentifier.fieldName);
 
             return Optional.ofNullable(contentletAPI.findContentletByIdentifier(binaryFileId,
                     PageMode.get().showLive, languageId,
                     APILocator.systemUser(), false));
         }
 
-        return Optional.ofNullable(contentletByIdentifier);
+        return Optional.ofNullable(contentlet);
+    }
+
+    private static boolean isBinaryField(Contentlet contentlet) {
+        return BaseContentType.FILEASSET == contentlet.getBaseType().get() ||
+                BaseContentType.DOTASSET == contentlet.getBaseType().get();
     }
 
     @Override
