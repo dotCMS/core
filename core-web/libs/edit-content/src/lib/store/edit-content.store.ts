@@ -9,8 +9,10 @@ import { withContent } from './features/content.feature';
 import { withForm } from './features/form.feature';
 import { withInformation } from './features/information.feature';
 import { withLocales } from './features/locales.feature';
+import { withLock } from './features/lock.feature';
 import { withSidebar } from './features/sidebar.feature';
 import { withUI } from './features/ui.feature';
+import { withUser } from './features/user.feature';
 import { withWorkflow } from './features/workflow.feature';
 
 export interface EditContentRootState {
@@ -31,17 +33,21 @@ export const initialRootState: EditContentRootState = {
 export const DotEditContentStore = signalStore(
     withState(initialRootState),
     withContent(),
+    withUser(),
     withUI(),
     withSidebar(),
     withInformation(),
+    withLock(),
     withWorkflow(),
     withForm(),
     withLocales(),
-
     withHooks({
         onInit(store) {
             const activatedRoute = inject(ActivatedRoute);
             const params = activatedRoute.snapshot?.params;
+
+            // Load the current user
+            store.loadCurrentUser();
 
             if (params) {
                 const contentType = params['contentType'];

@@ -159,7 +159,12 @@ describe('LocalesFeature', () => {
 
             expect(store.currentLocale()).toEqual(MOCK_LANGUAGES[2]);
             expect(store.initialContentletState()).toEqual('copy');
-            expect(store.contentlet()).toEqual({ identifier: '123', languageId: 1 });
+            expect(store.contentlet()).toEqual({
+                identifier: '123',
+                languageId: 1,
+                locked: false,
+                lockedBy: undefined
+            });
             expect(store.formValues()).toEqual(null);
         }));
 
