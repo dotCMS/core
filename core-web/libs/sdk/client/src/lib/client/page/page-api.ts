@@ -44,6 +44,11 @@ export interface PageRequestParams {
      * The publish date of the page you want to retrieve.
      */
     publishDate?: string;
+
+    /**
+     * The variant name of the page you want to retrieve.
+     */
+    variantName?: string;
 }
 
 type StringifyParam<T> = T extends string | number | boolean ? string : never;
@@ -254,7 +259,8 @@ export class PageClient {
             'personaId',
             'fireRules',
             'depth',
-            'publishDate'
+            'publishDate',
+            'variantName'
         ];
 
         return Object.keys(options).every((key) => validKeys.includes(key));
