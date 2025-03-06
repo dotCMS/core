@@ -126,8 +126,8 @@ public class CSVManifestBuilder implements ManifestBuilder {
 
         String title = manifestInfo.title().contains("\"") ? manifestInfo.title().replace("\"", "\"\"") : manifestInfo.title();
 
-        // Enclose the title in quotes so the csv reads the title correctly
-        title = "\"" + title + "\"";
+        // If the title contains a comma or double quote, it should be enclosed in quotes
+        title = title.contains(",") || title.contains("\"") ? "\"" + title + "\"" : title;
 
         return list(
                 includeExclude,
