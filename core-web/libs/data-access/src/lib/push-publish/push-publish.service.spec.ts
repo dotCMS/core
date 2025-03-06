@@ -59,7 +59,7 @@ describe('PushPublishService', () => {
             admin: false,
             email: 'test@example.com',
             givenName: 'John',
-            surnaname: 'Doe',
+            surname: 'Doe',
             userId: '1234',
             roleId: '1234'
         };
