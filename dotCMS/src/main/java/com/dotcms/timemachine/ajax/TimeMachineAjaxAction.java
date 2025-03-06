@@ -8,6 +8,7 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -42,6 +43,7 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 public class TimeMachineAjaxAction extends IndexAjaxAction {
 
@@ -66,6 +68,12 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
     @Override
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+         final HttpSession session = request.getSession(false);
+         if(null != session){
+            //Clean up attribute so TimeMachineFilter can operate
+            session.removeAttribute(PageResource.IS_PAGE_RESOURCE);
+         }
+
         Map<String, String> map = getURIParams();
         String cmd = map.get("cmd");
         java.lang.reflect.Method meth = null;

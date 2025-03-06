@@ -24,14 +24,17 @@
             "executor": "@nx/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "format": ["esm", "cjs"],
-                "compiler": "tsc",
+                "main": "libs/sdk/uve/src/index.ts",
+                "additionalEntryPoints": ["libs/sdk/uve/src/types.ts"],
                 "generateExportsField": true,
-                "assets": [{ "input": "libs/sdk/uve", "output": ".", "glob": "*.md" }],
                 "outputPath": "dist/libs/sdk/uve",
-                "main": "libs/sdk/uve/src/public/index.ts",
-                "additionalEntryPoints": ["libs/sdk/uve/src/public/types.ts"],
-                "tsConfig": "libs/sdk/uve/tsconfig.lib.json"
+                "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
+                "project": "libs/sdk/uve/package.json",
+                "entryFile": "libs/sdk/uve/src/index.ts",
+                "compiler": "babel",
+                "format": ["esm", "cjs"],
+                "extractCss": false,
+                "assets": [{ "input": "libs/sdk/uve", "output": ".", "glob": "*.md" }]
             }
         }
     }

@@ -3,6 +3,7 @@ package com.dotcms.analytics.web;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -31,7 +32,7 @@ import java.util.function.Supplier;
 public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
 
     private static final  String ANALYTICS_JS_CODE_CLASS_PATH = "/ca/html/analytics_head.html";
-    private static final  String ANALYTICS_AUTO_INJECT_TURNED_ON_KEY = "FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT";
+    private static final  String ANALYTICS_AUTO_INJECT_TURNED_ON_KEY = FeatureFlagName.FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT;
     private final AtomicBoolean isAutoInjectTurnedOn;
     private final HostWebAPI hostWebAPI;
     private final AppsAPI appsAPI;

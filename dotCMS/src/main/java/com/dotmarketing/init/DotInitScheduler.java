@@ -2,6 +2,7 @@ package com.dotmarketing.init;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
@@ -504,7 +505,7 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
 	 * process.
 	 */
 	private static void addTelemetryMetricsStatsJob(final Scheduler scheduler) {
-		if (Config.getBooleanProperty("FEATURE_FLAG_TELEMETRY_CORE_ENABLED", false)) {
+		if (Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false)) {
 			final String triggerName  = "trigger36";
 			final String triggerGroup = "group36";
 			final JobBuilder telemetryMetricsStatsJob = new JobBuilder()

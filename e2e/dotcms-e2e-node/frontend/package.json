@@ -36,6 +36,7 @@
     "post-testing": "PLAYWRIGHT_JUNIT_OUTPUT_FILE='../target/failsafe-reports/TEST-e2e-node-results.xml' node index.js",
     "format": "prettier --write .",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "ts:check": "tsc -p tsconfig.json --noEmit"
   }
 }

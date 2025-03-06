@@ -192,6 +192,7 @@ export interface DotPage {
     stInode?: string;
     working?: boolean;
     workingInode?: string;
+    hasLiveVersion?: boolean;
 }
 
 export type CommonErrorsInfo = Record<CommonErrors, InfoPage>;

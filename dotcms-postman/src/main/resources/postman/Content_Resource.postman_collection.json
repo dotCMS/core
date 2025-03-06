@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "cc82cd2a-3672-4485-9f9b-a8129c683055",
+		"_postman_id": "dd2afcb5-bb50-4718-acce-83a05dd215c6",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "30436704"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -3361,6 +3361,2952 @@
 			]
 		},
 		{
+			"name": "Search endpoint with ContentSearchForm",
+			"item": [
+				{
+					"name": "Creating Global Test Data",
+					"item": [
+						{
+							"name": "Get default Site ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Getting 'default' Site ID\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.collectionVariables.set(\"defaultSiteId\", entity.identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\": \"default\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/_byname",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"_byname"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Parent Category",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Saving parent Category\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Parent Category\");",
+											"    pm.collectionVariables.set(\"parentCategoryName\", \"Test Parent Category\");",
+											"    pm.collectionVariables.set(\"categoryINodeId\", jsonData.entity.inode);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"key\": \"Test parent key\",\n    \"categoryName\": \"Test Parent Category\",\n    \"keywords\": \"This is a test category\",\n    \"categoryVelocityVarName\": \"TestParentKey\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/categories",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"categories"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Child Category One",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Saving child Category One\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Child Category One\");",
+											"    pm.collectionVariables.set(\"testCategoryOneInode\", jsonData.entity.inode);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"key\": \"Test Child One key\",\n    \"categoryName\": \"Test Child Category One\",\n    \"keywords\": \"This is a child test category\",\n    \"categoryVelocityVarName\": \"TestChildOneKey\",\n    \"parent\": \"{{categoryINodeId}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/categories",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"categories"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Child Category Two",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Saving child Category One\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Child Category Two\");",
+											"    pm.collectionVariables.set(\"testCategoryTwoInode\", jsonData.entity.inode);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"key\": \"Test Child Two key\",\n    \"categoryName\": \"Test Child Category Two\",\n    \"keywords\": \"This is a child test category\",\n    \"categoryVelocityVarName\": \"TestChildTwoKey\",\n    \"parent\": \"{{categoryINodeId}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/categories",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"categories"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Tags",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"testTagOne\", \"my-test-tag-1\");",
+											"pm.collectionVariables.set(\"testTagTwo\", \"my-test-tag-2\");"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"ownerId\":\"dotcms.org.1\",\n   \"tags\":{\n      \"{{testTagOne}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      },\n      \"{{testTagTwo}}\":{\n         \"siteId\":\"{{defaultSiteId}}\",\n         \"persona\":false\n      }\n   }\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/tags/",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"tags",
+										""
+									]
+								},
+								"description": "This tests the endpoint that brings back one specific App given the App-key."
+							},
+							"response": []
+						},
+						{
+							"name": "Content Type",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content Type created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    pm.collectionVariables.set(\"testContentTypeVarName\", jsonData.entity[0].variable);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"defaultType\": false,\n    \"icon\": null,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\": \"\",\n    \"host\": \"default\",\n    \"name\": \"My Test CT\",\n    \"metadata\": {\n        \"edit_mode\": true\n    },\n    \"systemActionMappings\": {\n        \"NEW\": \"\"\n    },\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ],\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Host-Folder\",\n            \"fieldTypeLabel\": \"Site or Folder\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736189485000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736189485000,\n            \"name\": \"Site\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 0,\n            \"unique\": false,\n            \"variable\": \"site\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableBinaryField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Binary\",\n            \"fieldTypeLabel\": \"Binary\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188076000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Binary\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"binary\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Story-Block\",\n            \"fieldTypeLabel\": \"Block Editor\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188086000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Block Editor\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"blockEditor\"\n        },\n        {\n            \"categories\": {\n                \"categoryName\": \"{{testParentCategoryName}}\",\n                \"description\": null,\n                \"inode\": \"{{categoryINodeId}}\",\n                \"key\": \"Test parent key\",\n                \"keywords\": \"\",\n                \"sortOrder\": 0\n            },\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCategoryField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Category\",\n            \"fieldTypeLabel\": \"Category\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188106000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Category\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"values\": \"9e882f2a-ada2-47e3-a441-bdf9a7254216\",\n            \"variable\": \"category\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCheckboxField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Checkbox\",\n            \"fieldTypeLabel\": \"Checkbox\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188132000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Checkbox\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 4,\n            \"unique\": false,\n            \"values\": \"check 1|1\\r\\ncheck 2|2\",\n            \"variable\": \"checkbox\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableCustomField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Custom-Field\",\n            \"fieldTypeLabel\": \"Custom Field\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188192000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Custom\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 5,\n            \"unique\": false,\n            \"values\": \"<h1>Custom</h1>\",\n            \"variable\": \"custom\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateField\",\n            \"dataType\": \"DATE\",\n            \"fieldType\": \"Date\",\n            \"fieldTypeLabel\": \"Date\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188203000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Date\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 6,\n            \"unique\": false,\n            \"variable\": \"date\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",\n            \"dataType\": \"DATE\",\n            \"fieldType\": \"Date-and-Time\",\n            \"fieldTypeLabel\": \"Date and Time\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188223000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Date and Time\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 7,\n            \"unique\": false,\n            \"variable\": \"dateAndTime\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableJSONField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"JSON-Field\",\n            \"fieldTypeLabel\": \"JSON Field\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188276000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"JSON\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 8,\n            \"unique\": false,\n            \"variable\": \"json\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableKeyValueField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Key-Value\",\n            \"fieldTypeLabel\": \"Key/Value\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188291000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Key Value\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 9,\n            \"unique\": false,\n            \"variable\": \"keyValue\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableMultiSelectField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Multi-Select\",\n            \"fieldTypeLabel\": \"Multi Select\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188326000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Multi select\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 10,\n            \"unique\": false,\n            \"values\": \"multi 1|1\\r\\nmulti 2|2\",\n            \"variable\": \"multiSelect\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRadioField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Radio\",\n            \"fieldTypeLabel\": \"Radio\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188357000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Radio\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 11,\n            \"unique\": false,\n            \"values\": \"radio 1|1\\r\\nradio 2|2\",\n            \"variable\": \"radio\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Relationship\",\n            \"fieldTypeLabel\": \"Relationships Field\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736189224000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Relationships\",\n            \"readOnly\": false,\n            \"relationships\": {\n                \"cardinality\": 1,\n                \"isParentField\": true,\n                \"velocityVar\": \"webPageContent\"\n            },\n            \"required\": false,\n            \"searchable\": true,\n            \"skipRelationshipCreation\": false,\n            \"sortOrder\": 12,\n            \"unique\": false,\n            \"variable\": \"relationships\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableSelectField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Select\",\n            \"fieldTypeLabel\": \"Select\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188384000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Select\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 13,\n            \"unique\": false,\n            \"values\": \"select 1|1\\r\\nselect 2|2\",\n            \"variable\": \"select\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTagField\",\n            \"dataType\": \"SYSTEM\",\n            \"fieldType\": \"Tag\",\n            \"fieldTypeLabel\": \"Tag\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188421000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Tag\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 14,\n            \"unique\": false,\n            \"variable\": \"tag\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"dataType\": \"TEXT\",\n            \"fieldType\": \"Text\",\n            \"fieldTypeLabel\": \"Text\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188059000,\n            \"indexed\": true,\n            \"listed\": true,\n            \"modDate\": 1736188060000,\n            \"name\": \"Title\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 15,\n            \"unique\": false,\n            \"variable\": \"title\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextAreaField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"Textarea\",\n            \"fieldTypeLabel\": \"Textarea\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188459000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Text Area\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 16,\n            \"unique\": false,\n            \"variable\": \"textArea\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTimeField\",\n            \"dataType\": \"DATE\",\n            \"fieldType\": \"Time\",\n            \"fieldTypeLabel\": \"Time\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188473000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Time\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 17,\n            \"unique\": false,\n            \"variable\": \"time\"\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableWysiwygField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"fieldType\": \"WYSIWYG\",\n            \"fieldTypeLabel\": \"WYSIWYG\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"forceIncludeInApi\": false,\n            \"iDate\": 1736188536000,\n            \"indexed\": true,\n            \"listed\": false,\n            \"modDate\": 1736195131000,\n            \"name\": \"Wysiwyg\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 18,\n            \"unique\": false,\n            \"variable\": \"wysiwyg\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Child Content 1",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Child Content was created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test First Child Content\");",
+											"    pm.expect(jsonData.entity.summary.failCount).to.eql(0, \"An error occurred when creating the Test First Child Content\");",
+											"    pm.expect(jsonData.entity.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"    const testContentId = Object.keys(jsonData.entity.results[0])[0];",
+											"    pm.collectionVariables.set(\"testFirstChildContentId\", testContentId);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"contentHost\": \"default\",\n            \"title\": \"Test First Child Content\",\n            \"body\": \"Description 1\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "Creates a test Contentlet of the previously generated Content Type."
+							},
+							"response": []
+						},
+						{
+							"name": "Child Content 2",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Child Content was created successfully\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Second Child Content\");",
+											"    pm.expect(jsonData.entity.summary.failCount).to.eql(0, \"An error occurred when creating the Test Second Child Content\");",
+											"    pm.expect(jsonData.entity.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"    const testContentId = Object.keys(jsonData.entity.results[0])[0];",
+											"    pm.collectionVariables.set(\"testSecondChildContentId\", testContentId);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"contentHost\": \"default\",\n            \"title\": \"Test Second Child Content\",\n            \"body\": \"Description 2\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "Creates a test Contentlet of the previously generated Content Type."
+							},
+							"response": []
+						},
+						{
+							"name": "Parent Content 1",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content created successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test First Parent Content\");",
+											"    //const testContentId = Object.keys(jsonData.results[0])[0];",
+											"    const testContentId = jsonData.entity.identifier;",
+											"    const firstParentTitleSearch = \"Content\" + pm.collectionVariables.get(\"randomNumber\");",
+											"    pm.collectionVariables.set(\"testFirstParentTitleSearch\", firstParentTitleSearch);",
+											"    pm.collectionVariables.set(\"testFirstParentContentId\", testContentId);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+											"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/testpdf.pdf"
+										},
+										{
+											"key": "json",
+											"value": "{\n    \"contentlet\":\n        {\n            \"contentType\": \"{{testContentTypeVarName}}\",\n            \"site\": \"default\",\n            \"blockEditor\": \"First Block editor\",\n            \"category\": \"{{testCategoryOneInode}}\",\n            \"checkbox\": \"1\",\n            \"custom\": \"first custom\",\n            \"date\": \"02/17/2025\",\n            \"dateAndTime\": \"02/17/2025 13:15:00\",\n            \"json\": \"{ \\\"jsonFirstKey\\\": \\\"First JSON value\\\" }\",\n            \"keyValue\": \"{ \\\"firstKey\\\": \\\"First value\\\" }\",\n            \"multiSelect\": \"1\",\n            \"radio\": \"1\",\n            \"relationships\": \"+identifier:{{testFirstChildContentId}}\",\n            \"select\": \"1\",\n            \"tag\": \"{{testTagOne}}\",\n            \"title\": \"Test First Parent Content{{randomNumber}}\",\n            \"textArea\": \"First text area\",\n            \"time\": \"10:30:00\",\n            \"wysiwyg\": \"First WYSIWYG\"\n        }\n}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "Creates a test Contentlet of the previously generated Content Type."
+							},
+							"response": []
+						},
+						{
+							"name": "Parent Content 2",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content created successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Second Parent Content\");",
+											"    const testContentId = jsonData.entity.identifier;",
+											"    const secondParentTitleSearch = \"Content\" + pm.collectionVariables.get(\"randomNumber\");",
+											"    pm.collectionVariables.set(\"testSecondParentTitleSearch\", secondParentTitleSearch);",
+											"    pm.collectionVariables.set(\"testSecondParentContentId\", testContentId);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+											"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/dot_velocity_macros.vtl"
+										},
+										{
+											"key": "json",
+											"value": "{\n    \"contentlet\":\n        {\n            \"contentType\": \"{{testContentTypeVarName}}\",\n            \"site\": \"default\",\n            \"blockEditor\": \"Second Block editor\",\n            \"category\": \"{{testCategoryTwoInode}}\",\n            \"checkbox\": \"2\",\n            \"custom\": \"second custom\",\n            \"date\": \"02/19/2025\",\n            \"dateAndTime\": \"02/19/2025 15:30:00\",\n            \"json\": \"{ \\\"jsonSecondKey\\\": \\\"Second JSON value\\\" }\",\n            \"keyValue\": \"{ \\\"secondKey\\\": \\\"Second value\\\" }\",\n            \"multiSelect\": \"2\",\n            \"radio\": \"2\",\n            \"relationships\": \"+identifier:{{testSecondChildContentId}}\",\n            \"select\": \"2\",\n            \"tag\": \"{{testTagTwo}}\",\n            \"title\": \"Test Second Parent Content{{randomNumber}}\",\n            \"textArea\": \"Second text area\",\n            \"time\": \"11:30:00\",\n            \"wysiwyg\": \"Second WYSIWYG\"\n        }\n}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "Creates a test Contentlet of the previously generated Content Type."
+							},
+							"response": []
+						}
+					],
+					"description": "Generating test data for these tests. This part of the verification process includes:\n\n- Creating a parent Category and two child Categories for it.\n    \n- Creating two test Tags.\n    \n- Creating a test Content Type with absolutely ALL fields that can be flagged as \"User Searchable\".\n    \n- Creating two test child Contentlets of type \"Rich Text\" that will be used in the \"Relationships\" fields.\n    \n- Creating two test parent Contentlets that will be used to test the new REST Endpoint.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "By Content Type Fields",
+					"item": [
+						{
+							"name": "By Binary Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"binary\": \"test\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Block Editor Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"blockEditor\": \"First Block editor\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Category Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test both Parent Contents matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(2, \"Two results should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"category\": \"{{testCategoryTwoInode}},{{testCategoryOneInode}}\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Checkbox Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"/*",
+											"    For multiple options, just add comma-separated values. For instance:",
+											"",
+											"    \"searchableFieldsByContentType\": {",
+											"        \"{{testContentTypeVarName}}\": {",
+											"            \"checkbox\": \"1,2\"",
+											"        }",
+											"    },",
+											"*/",
+											"",
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"checkbox\": \"1\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Custom Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Second Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"custom\": \"second\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Date Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"date\": \"02/17/2025\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Date Field With Range",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"date\": \"02/16/2025 TO 02/18/2025\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Date And Time Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Second Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"dateAndTime\": \"02/19/2025 15:30:00\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Date And Time Field With Range",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Second Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"dateAndTime\": \"02/19/2025 15:00:00 TO 02/19/2025 15:40:00\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By JSON Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"json\": \"jsonFirstKey\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Key/Value Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"One result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Second Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"keyValue\": \"second value\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Multi-Select Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"/*",
+											"    For multiple options, just add comma-separated values. For instance:",
+											"",
+											"    \"searchableFieldsByContentType\": {",
+											"        \"{{testContentTypeVarName}}\": {",
+											"            \"multiSelect\": \"1,2\"",
+											"        }",
+											"    },",
+											"*/",
+											"",
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"multiSelect\": \"1\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Radio Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Second Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"radio\": \"2\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Relationships Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"relationships\": \"{{testFirstChildContentId}}\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Select Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Second Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"select\": \"2\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Tag Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"/*",
+											"    For multiple options, just add comma-separated values. For instance:",
+											"",
+											"    \"searchableFieldsByContentType\": {",
+											"        \"{{testContentTypeVarName}}\": {",
+											"            \"tag\": \"my-test-tag-1,my-test-tag-2\"",
+											"        }",
+											"    },",
+											"*/",
+											"",
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"tag\": \"{{testTagOne}}\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Text Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"title\": \"second\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Text Area Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"textArea\": \"first text area\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Time Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"time\": \"11:30 AM\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By Time Field With Range",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Second Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Second Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"time\": \"11:20 AM TO 11:40 AM\"\n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "By WYSIWYG Field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test First Parent Content matched successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    const entity = jsonData.entity;",
+											"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+											"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+											"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test First Parent Content ID should've been returned\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {\n            \"wysiwyg\": \"first\"\n            \n        }\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/search",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"search"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Uses the new REST Endpoint to retrieve contents based on the test Content Type's searchable fields.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "By System Searchable Fields",
+					"item": [
+						{
+							"name": "Creating Test Data",
+							"item": [
+								{
+									"name": "Parent Content in System Host",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test System Parent Content created successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test System Parent Content\");",
+													"    const testContentId = jsonData.entity.identifier;",
+													"    const systemParentTitleSearch = \"Content\" + pm.collectionVariables.get(\"randomNumber\");",
+													"    pm.collectionVariables.set(\"testSystemParentTitleSearch\", systemParentTitleSearch);",
+													"    pm.collectionVariables.set(\"testSystemParentContentId\", testContentId);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "file",
+													"type": "file",
+													"src": "resources/dotcms.png"
+												},
+												{
+													"key": "json",
+													"value": "{\n    \"contentlet\":\n        {\n            \"contentType\": \"{{testContentTypeVarName}}\",\n            \"site\": \"SYSTEM_HOST\",\n            \"blockEditor\": \"System Block editor\",\n            \"category\": \"{{testCategoryOneInode}}\",\n            \"checkbox\": \"1\",\n            \"custom\": \"System custom\",\n            \"date\": \"02/20/2025\",\n            \"dateAndTime\": \"02/20/2025 14:20:00\",\n            \"json\": \"{ \\\"jsonSystemKey\\\": \\\"System JSON value\\\" }\",\n            \"keyValue\": \"{ \\\"systemKey\\\": \\\"System value\\\" }\",\n            \"multiSelect\": \"1\",\n            \"radio\": \"1\",\n            \"relationships\": \"+identifier:{{testFirstChildContentId}}\",\n            \"select\": \"1\",\n            \"tag\": \"{{testTagOne}}\",\n            \"title\": \"Test System Parent Content{{randomNumber}}\",\n            \"textArea\": \"System text area\",\n            \"time\": \"09:30:00\",\n            \"wysiwyg\": \"System WYSIWYG\"\n        }\n}\n",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								},
+								{
+									"name": "Test Site",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Site created successfully\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"testSiteName\", jsonData.entity.siteName);",
+													"    pm.expect(jsonData.entity.siteName).to.eql('www.mytestsiteforcontentsearch.com');",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"siteName\":\"www.mytestsiteforcontentsearch.com\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/site",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"site"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Parent Content 3 in test Site",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Third Parent Content created successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Third Parent Content\");",
+													"    const testContentId = jsonData.entity.identifier;",
+													"    pm.collectionVariables.set(\"testThirdParentContentId\", testContentId);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "file",
+													"type": "file",
+													"src": "resources/testpdf.pdf"
+												},
+												{
+													"key": "json",
+													"value": "{\n    \"contentlet\":\n        {\n            \"contentType\": \"{{testContentTypeVarName}}\",\n            \"site\": \"{{testSiteName}}\",\n            \"blockEditor\": \"Third Block editor\",\n            \"category\": \"{{testCategoryOneInode}}\",\n            \"checkbox\": \"1\",\n            \"custom\": \"Third custom\",\n            \"date\": \"02/27/2025\",\n            \"dateAndTime\": \"02/27/2025 16:25:00\",\n            \"json\": \"{ \\\"jsonThirdKey\\\": \\\"Third JSON value\\\" }\",\n            \"keyValue\": \"{ \\\"thirdKey\\\": \\\"Third value\\\" }\",\n            \"multiSelect\": \"1\",\n            \"radio\": \"1\",\n            \"relationships\": \"+identifier:{{testFirstChildContentId}}\",\n            \"select\": \"1\",\n            \"tag\": \"{{testTagOne}}\",\n            \"title\": \"Test Third Parent Content{{randomNumber}}\",\n            \"textArea\": \"Third text area\",\n            \"time\": \"7:30:00\",\n            \"wysiwyg\": \"Third WYSIWYG\"\n        }\n}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								}
+							],
+							"description": "Generating test data for these tests. This part of the verification process includes:\n\n- Creating a test Contentlet that lives under System Host.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "All Content Types",
+							"item": [
+								{
+									"name": "By Site ID",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Returning ALL Contentlets under the 'default' Site successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving all Contentlets under 'default'\");",
+													"    pm.expect(entity.resultsSize).to.be.greaterThan(1, \"At least one result should've been returned\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Retrieving Contentlets **of ALL types** under a given Site.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Test Content Type",
+							"item": [
+								{
+									"name": "In ALL Sites",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Parent Contents -- including System Host content -- matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testFirstParentContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+													"    const testSecondParentContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+													"    const testSystemParentContentId = pm.collectionVariables.get(\"testSystemParentContentId\");",
+													"    const testThirdParentContentId = pm.collectionVariables.get(\"testThirdParentContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Parent Contents\");",
+													"    pm.expect(entity.resultsSize).to.eql(4, \"Four results should've been returned\");",
+													"    var count = 0;",
+													"    entity.jsonObjectView.contentlets.forEach(function(item) {",
+													"        if (item.identifier == testFirstParentContentId || item.identifier == testSecondParentContentId || item.identifier == testSystemParentContentId || item.identifier == testThirdParentContentId) {",
+													"            count += 1;",
+													"        }",
+													"    });",
+													"    pm.expect(count).to.equal(4, \"The returned Contents are missing one or more of the 4 expected Contentlet IDs\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										},
+										"description": "When no Site is specified, the Contentlets of the specified type in ALL Sites must be returned."
+									},
+									"response": []
+								},
+								{
+									"name": "By Site ID - with System Host content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Parent Contents -- including System Host content -- matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testFirstParentContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+													"    const testSecondParentContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+													"    const testSystemParentContentId = pm.collectionVariables.get(\"testSystemParentContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Parent Contents\");",
+													"    pm.expect(entity.resultsSize).to.eql(3, \"Three results should've been returned\");",
+													"    var count = 0;",
+													"    entity.jsonObjectView.contentlets.forEach(function(item) {",
+													"        if (item.identifier == testFirstParentContentId || item.identifier == testSecondParentContentId || item.identifier == testSystemParentContentId) {",
+													"            count += 1;",
+													"        }",
+													"    });",
+													"    pm.expect(count).to.equal(3, \"The returned Contents are missing an expected Contentlet ID\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "By Language ID",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Parent Contents matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testFirstParentContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+													"    const testSecondParentContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+													"    const testSystemParentContentId = pm.collectionVariables.get(\"testSystemParentContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Parent Contents\");",
+													"    pm.expect(entity.resultsSize).to.eql(3, \"Three results should've been returned\");",
+													"    var count = 0;",
+													"    entity.jsonObjectView.contentlets.forEach(function(item) {",
+													"        if (item.identifier == testFirstParentContentId || item.identifier == testSecondParentContentId || item.identifier == testSystemParentContentId) {",
+													"            count += 1;",
+													"        }",
+													"    });",
+													"    pm.expect(count).to.equal(3, \"The returned Contents are missing an expected Contentlet ID\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "By Workflow Scheme ID",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Parent Contents matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testFirstParentContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+													"    const testSecondParentContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+													"    const testSystemParentContentId = pm.collectionVariables.get(\"testSystemParentContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Parent Contents\");",
+													"    pm.expect(entity.resultsSize).to.eql(3, \"Three results should've been returned\");",
+													"    var count = 0;",
+													"    entity.jsonObjectView.contentlets.forEach(function(item) {",
+													"        if (item.identifier == testFirstParentContentId || item.identifier == testSecondParentContentId || item.identifier == testSystemParentContentId) {",
+													"            count += 1;",
+													"        }",
+													"    });",
+													"    pm.expect(count).to.equal(3, \"The returned Contents are missing an expected Contentlet ID\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1,\n        \"workflowSchemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "By Workflow Step ID",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Parent Contents matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testFirstParentContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+													"    const testSecondParentContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+													"    const testSystemParentContentId = pm.collectionVariables.get(\"testSystemParentContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Parent Contents\");",
+													"    pm.expect(entity.resultsSize).to.eql(3, \"Three results should've been returned\");",
+													"    var count = 0;",
+													"    entity.jsonObjectView.contentlets.forEach(function(item) {",
+													"        if (item.identifier == testFirstParentContentId || item.identifier == testSecondParentContentId || item.identifier == testSystemParentContentId) {",
+													"            count += 1;",
+													"        }",
+													"    });",
+													"    pm.expect(count).to.equal(3, \"The returned Contents are missing an expected Contentlet ID\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1,\n        \"workflowSchemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n        \"workflowStepId\": \"dc3c9cd0-8467-404b-bf95-cb7df3fbc293\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "By Variant Name",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Parent Contents matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testFirstParentContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+													"    const testSecondParentContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+													"    const testSystemParentContentId = pm.collectionVariables.get(\"testSystemParentContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Parent Contents\");",
+													"    pm.expect(entity.resultsSize).to.eql(3, \"Three results should've been returned\");",
+													"    var count = 0;",
+													"    entity.jsonObjectView.contentlets.forEach(function(item) {",
+													"        if (item.identifier == testFirstParentContentId || item.identifier == testSecondParentContentId || item.identifier == testSystemParentContentId) {",
+													"            count += 1;",
+													"        }",
+													"    });",
+													"    pm.expect(count).to.equal(3, \"The returned Contents are missing an expected Contentlet ID\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1,\n        \"variantName\": \"non-existing variant name\"\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										},
+										"description": "The siteId attribute is included as the test Contentlets were created under the default Site. When such an attribute is NOT included, the Lucene query must include all Contentlets from System Host by default."
+									},
+									"response": []
+								},
+								{
+									"name": "By Excluding System Host Contents",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Parent Contents matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testFirstParentContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+													"    const testSecondParentContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Parent Contents\");",
+													"    pm.expect(entity.resultsSize).to.eql(2, \"Two results should've been returned\");",
+													"    var count = 0;",
+													"    entity.jsonObjectView.contentlets.forEach(function(item) {",
+													"        if (item.identifier == testFirstParentContentId || item.identifier == testSecondParentContentId) {",
+													"            count += 1;",
+													"        }",
+													"    });",
+													"    pm.expect(count).to.equal(2, \"The returned Contents are missing an expected Contentlet ID\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"systemHostContent\": false\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										},
+										"description": "The siteId attribute is included as the test Contentlets were created under the default Site. When such an attribute is NOT included, the Lucene query must include all Contentlets from System Host by default."
+									},
+									"response": []
+								}
+							],
+							"description": "Retrieving Contentlets **of the specified Test Content Type** with the specified System Searchable attributes.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						}
+					],
+					"description": "Uses the new REST Endpoint to retrieve contents based on the System Searchable fields. That is, fields or attributes that are **NOT** Content Type fields per se, but are used by Lucene queries to filter contents. For instance:\n\n- +conhost\n    \n- +languageId\n    \n- +wfscheme\n    \n- +wfstep\n    \n- +variant"
+				},
+				{
+					"name": "By Content Status Fields",
+					"item": [
+						{
+							"name": "Creating Test Data",
+							"item": [
+								{
+									"name": "Unpublished Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Unpublished Content created successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Unpublished Content\");",
+													"    const testContentId = jsonData.entity.identifier;",
+													"    const unpublishedTitleSearch = \"Content\" + pm.collectionVariables.get(\"randomNumber\");",
+													"    pm.collectionVariables.set(\"testUnpublishedTitleSearch\", unpublishedTitleSearch);",
+													"    pm.collectionVariables.set(\"testUnpublishedContentId\", testContentId);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "file",
+													"type": "file",
+													"src": "resources/dotcms.png"
+												},
+												{
+													"key": "json",
+													"value": "{\n    \"contentlet\":\n        {\n            \"contentType\": \"{{testContentTypeVarName}}\",\n            \"site\": \"default\",\n            \"blockEditor\": \"Unpublished Block editor\",\n            \"category\": \"{{testCategoryTwoInode}}\",\n            \"checkbox\": \"2\",\n            \"custom\": \"Unpublished custom\",\n            \"date\": \"02/22/2025\",\n            \"dateAndTime\": \"02/22/2025 19:45:00\",\n            \"json\": \"{ \\\"jsonUnpublishedKey\\\": \\\"Unpublished JSON value\\\" }\",\n            \"keyValue\": \"{ \\\"unpublishedKey\\\": \\\"Unpublished value\\\" }\",\n            \"multiSelect\": \"2\",\n            \"radio\": \"2\",\n            \"relationships\": \"+identifier:{{testSecondChildContentId}}\",\n            \"select\": \"2\",\n            \"tag\": \"{{testTagTwo}}\",\n            \"title\": \"Test Unpublished Content{{randomNumber}}\",\n            \"textArea\": \"Unpublished text area\",\n            \"time\": \"05:15:00\",\n            \"wysiwyg\": \"Unpublished WYSIWYG\"\n        }\n}\n",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"NEW"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								},
+								{
+									"name": "Locked Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Locking the Unpublished Content successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Unpublished Content\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/_lock/{{testUnpublishedContentId}}?language=1",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"_lock",
+												"{{testUnpublishedContentId}}"
+											],
+											"query": [
+												{
+													"key": "language",
+													"value": "1"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								},
+								{
+									"name": "Archived Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Archived Content created successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Archived Content\");",
+													"    const testContentId = jsonData.entity.identifier;",
+													"    const archivedTitleSearch = \"Content\" + pm.collectionVariables.get(\"randomNumber\");",
+													"    pm.collectionVariables.set(\"testArchivedTitleSearch\", archivedTitleSearch);",
+													"    pm.collectionVariables.set(\"testArchivedContentId\", testContentId);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "file",
+													"type": "file",
+													"src": "resources/testpdf.pdf"
+												},
+												{
+													"key": "json",
+													"value": "{\n    \"contentlet\":\n        {\n            \"contentType\": \"{{testContentTypeVarName}}\",\n            \"site\": \"default\",\n            \"blockEditor\": \"Archived Block editor\",\n            \"category\": \"{{testCategoryOneInode}}\",\n            \"checkbox\": \"1\",\n            \"custom\": \"Archived custom\",\n            \"date\": \"02/25/2025\",\n            \"dateAndTime\": \"02/25/2025 16:35:00\",\n            \"json\": \"{ \\\"jsonFirstKey\\\": \\\"Archived JSON value\\\" }\",\n            \"keyValue\": \"{ \\\"firstKey\\\": \\\"Archived value\\\" }\",\n            \"multiSelect\": \"1\",\n            \"radio\": \"1\",\n            \"relationships\": \"+identifier:{{testFirstChildContentId}}\",\n            \"select\": \"1\",\n            \"tag\": \"{{testTagOne}}\",\n            \"title\": \"Test Archived Content{{randomNumber}}\",\n            \"textArea\": \"Archived text area\",\n            \"time\": \"17:50:00\",\n            \"wysiwyg\": \"Archived WYSIWYG\"\n        }\n}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"ARCHIVE"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
+								}
+							],
+							"description": "Generating test data for these tests. This part of the verification process includes:\n\n- Creating a test Contentlet that is **Unpublished** and **Locked**.\n    \n- Creating a test Contentlet that is **Archived**.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Content Statuses",
+							"item": [
+								{
+									"name": "By Archived Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Archived Content matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testContentId = pm.collectionVariables.get(\"testArchivedContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Archived Content\");",
+													"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+													"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Archived Content ID should've been returned\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"archivedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "By Unpublished Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Unpublished Content matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    const testContentId = pm.collectionVariables.get(\"testUnpublishedContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Unpublished Content\");",
+													"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+													"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Unpublished Content ID should've been returned\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"unpublishedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "By Locked Content",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Locked Content matched successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    const entity = jsonData.entity;",
+													"    // Using the same unpublished content for the locked check",
+													"    const testContentId = pm.collectionVariables.get(\"testUnpublishedContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Locked Content\");",
+													"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+													"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Test Locked Content ID should've been returned\");",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\"\n    },\n    \"lockedContent\": true,\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/content/search",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"content",
+												"search"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Retrieving the Contentlets based on its status:\n\n- Archived.\n    \n- Unpulbished.\n    \n- Locked.",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											""
+										]
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"packages": {},
+										"exec": [
+											"pm.test(\"HTTP Status code must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "By Global Search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test First Parent Content matched successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const entity = jsonData.entity;",
+									"    const testContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+									"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test First Parent Content\");",
+									"    pm.expect(entity.resultsSize).to.eql(1, \"Only one result should've been returned\");",
+									"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testContentId, \"Only one result should've been returned\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"globalSearch\": \"{{testFirstParentTitleSearch}}\",\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"search"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This new REST Endpoint uses the `ContentSearchForm` class to allow users to retrieve content by abstracting the complexity o creting their own Lucene queries for it. It's based on the same business rules as the `Search` portlet in the back-end.\n\nBy default, the Lucene query will include all Contentlets:\n\n- Living under system Host.\n    \n- Live and Working.\n    \n- Unarchived.\n    \n- Locked and Unlocked.\n    \n\nIn case other business rules were missed or new ones must be included, it's very important to keep these test suite up to date with them.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
 			"name": "invalidateSession",
 			"event": [
 				{
@@ -3902,116 +6848,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "contentTypeID",
-			"value": ""
-		},
-		{
-			"key": "contentTypeVAR",
-			"value": ""
-		},
-		{
-			"key": "contentTypeFieldID",
-			"value": ""
-		},
-		{
-			"key": "page_id",
-			"value": ""
-		},
-		{
-			"key": "contentTypeId",
-			"value": ""
-		},
-		{
-			"key": "contentTypeName",
-			"value": ""
-		},
-		{
-			"key": "fieldId",
-			"value": ""
-		},
-		{
-			"key": "testContentOneId",
-			"value": ""
-		},
-		{
-			"key": "testContentOneInode",
-			"value": ""
-		},
-		{
-			"key": "testContentTwoId",
-			"value": ""
-		},
-		{
-			"key": "testContentTwoInode",
-			"value": ""
-		},
-		{
-			"key": "testContentThreeId",
-			"value": ""
-		},
-		{
-			"key": "testContentThreeInode",
-			"value": ""
-		},
-		{
-			"key": "relatedContentTypeId",
-			"value": ""
-		},
-		{
-			"key": "relatedContentTypeName",
-			"value": ""
-		},
-		{
-			"key": "relatedContentTypeVarName",
-			"value": ""
-		},
-		{
-			"key": "innerContentTypeId",
-			"value": ""
-		},
-		{
-			"key": "innerContentTypeName",
-			"value": ""
-		},
-		{
-			"key": "innerContentTypeVarName",
-			"value": ""
-		},
-		{
-			"key": "parentContentTypeId",
-			"value": ""
-		},
-		{
-			"key": "parentContentTypeVarName",
-			"value": ""
-		},
-		{
-			"key": "relatedTestContentId",
-			"value": ""
-		},
-		{
-			"key": "relatedTestContentInode",
-			"value": ""
-		},
-		{
-			"key": "innerTestContentId",
-			"value": ""
-		},
-		{
-			"key": "innerTestContentInode",
-			"value": ""
-		},
-		{
-			"key": "parentContentId",
-			"value": ""
-		},
-		{
-			"key": "parentContentInode",
-			"value": ""
 		}
 	]
 }

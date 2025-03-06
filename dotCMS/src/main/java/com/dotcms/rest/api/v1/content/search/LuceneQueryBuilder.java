@@ -96,8 +96,10 @@ public class LuceneQueryBuilder {
         final Set<String> relatedContentIDs = new HashSet<>();
         final List<String> queryTerms = new ArrayList<>();
         final List<ContentType> contentTypeList = this.getContentTypes();
+        queryTerms.add(this.createQuery(ESMappingConstants.TITLE, contentSearchForm.globalSearch(), GLOBAL_SEARCH));
         queryTerms.add(this.getContentTypeQuery(contentTypeList));
         queryTerms.add(String.join(SPACE, this.getSystemSearchableQueryTerms()));
+        queryTerms.add(String.join(SPACE, this.getContentStatusQueryTerms()));
         final String orderByClause = this.getOrderByClause();
         final FieldContext.Builder fieldContextBuilder = new FieldContext.Builder()
                 .withUser(user)
@@ -195,21 +197,17 @@ public class LuceneQueryBuilder {
     }
 
     /**
-     * Generates the Lucene query for the system searchable fields specified in the
+     * Generates the Lucene query for the system searchable attributes specified in the
      * {@link ContentSearchForm}. These fields represent query parameters that don't belong to a
-     * specific Content Type, for instance:
+     * specific Content Type. For instance:
      * <ul>
-     *     <li>The global search; i.e., when users type in the search bar.</li>
+     *     <li>The global search; i.e., when users type in characters the search field.</li>
      *     <li>The site ID.</li>
      *     <li>The language ID.</li>
      *     <li>The workflow scheme ID.</li>
      *     <li>The workflow step ID.</li>
      *     <li>The variant name.</li>
-     *     <li>The return deleted content flag.</li>
-     *     <li>The return locked content flag.</li>
-     *     <li>The return unpublished content flag.</li>
-     *     <li>The return working content flag.</li>
-     *     <li>The return System Host content flag.</li>
+     *     <li>The System Host content flag.</li>
      * </ul>
      *
      * @return The Lucene query for the system searchable fields specified in the
@@ -217,22 +215,44 @@ public class LuceneQueryBuilder {
      */
     private List<String> getSystemSearchableQueryTerms() {
         final List<String> systemSearchableQueryTerms = Stream.of(
-                        this.createQuery(ESMappingConstants.TITLE, contentSearchForm.globalSearch(), GLOBAL_SEARCH),
                         this.createQuery(ESMappingConstants.CONTENTLET_HOST, contentSearchForm.siteId(), SITE_ID,
                                 Map.of("systemHostContent", contentSearchForm.systemHostContent())),
                         this.createQuery(ESMappingConstants.LANGUAGE_ID, contentSearchForm.languageId(), LANGUAGE),
                         this.createQuery(ESMappingConstants.WORKFLOW_SCHEME, contentSearchForm.workflowSchemeId(), WORKFLOW_SCHEME),
                         this.createQuery(ESMappingConstants.WORKFLOW_STEP, contentSearchForm.workflowStepId(), WORKFLOW_STEP),
-                        this.createQuery(ESMappingConstants.VARIANT, contentSearchForm.variantName(), VARIANT),
-                        this.createQuery(ESMappingConstants.DELETED, contentSearchForm.archivedContent(), ARCHIVED_CONTENT),
-                        this.createQuery(ESMappingConstants.LOCKED, contentSearchForm.lockedContent(), LOCKED_CONTENT),
-                        this.createQuery(ESMappingConstants.LIVE, contentSearchForm.unpublishedContent(), LIVE_CONTENT),
-                        "+working:true")
+                        this.createQuery(ESMappingConstants.VARIANT, contentSearchForm.variantName(), VARIANT))
                 .filter(UtilMethods::isSet)
                 .collect(Collectors.toList());
         Logger.debug(this, String.format("System Searchable query terms: %s", systemSearchableQueryTerms));
         return systemSearchableQueryTerms;
     }
+
+
+     /**
+      * Generates the Lucene query for the content status attributes specified in the
+      * {@link ContentSearchForm}. These fields represent query parameters that don't belong to a
+      * specific Content Type. For instance:
+      * <ul>
+      *     <li>The deleted content term.</li>
+      *     <li>The locked content term.</li>
+      *     <li>The unpublished content term.</li>
+      *     <li>The working content term.</li>
+      * </ul>
+      *
+      * @return The Lucene query for the content status attributes specified in the
+      * {@link ContentSearchForm}.
+      */
+     private List<String> getContentStatusQueryTerms() {
+         final List<String> contentStatusQueryTerms = Stream.of(
+                         this.createQuery(ESMappingConstants.DELETED, contentSearchForm.archivedContent(), ARCHIVED_CONTENT),
+                         this.createQuery(ESMappingConstants.LOCKED, contentSearchForm.lockedContent(), LOCKED_CONTENT),
+                         this.createQuery(ESMappingConstants.LIVE, contentSearchForm.unpublishedContent(), LIVE_CONTENT),
+                         "+working:true")
+                 .filter(UtilMethods::isSet)
+                 .collect(Collectors.toList());
+         Logger.debug(this, String.format("Content Status query terms: %s", contentStatusQueryTerms));
+         return contentStatusQueryTerms;
+     }
 
      /**
       * Creates a Lucene query based on the field name, value, and Field Handler ID.

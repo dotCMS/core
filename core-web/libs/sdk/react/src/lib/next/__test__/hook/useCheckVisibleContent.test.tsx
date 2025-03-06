@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { useRef } from 'react';
 
-import { useCheckVisibleContent } from '@dotcms/react/next/hooks/useCheckVisibleContent';
+import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 
 const MOCK_DOM_RECT = {
     height: 0,

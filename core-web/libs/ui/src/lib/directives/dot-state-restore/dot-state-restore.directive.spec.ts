@@ -1,4 +1,4 @@
-import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator';
+import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator/jest';
 
 import { Table, TableModule } from 'primeng/table';
 
@@ -16,7 +16,7 @@ describe('DotStateRestoreDirective', () => {
     const savedState = { sortField: 'name', sortOrder: 1 };
 
     it('should apply the saved state from localStorage', () => {
-        spyOn(localStorage, 'getItem').and.returnValue(JSON.stringify(savedState));
+        jest.spyOn(localStorage, 'getItem').mockReturnValue(JSON.stringify(savedState));
         spectator = createDirective(
             `<p-table stateStorage="local" stateKey="test-key"  dotStateRestore></p-table>`
         );
@@ -28,7 +28,7 @@ describe('DotStateRestoreDirective', () => {
     });
 
     it('should apply the saved state from sessionStorage', () => {
-        spyOn(sessionStorage, 'getItem').and.returnValue(JSON.stringify(savedState));
+        jest.spyOn(sessionStorage, 'getItem').mockReturnValue(JSON.stringify(savedState));
 
         spectator = createDirective();
 
@@ -39,24 +39,33 @@ describe('DotStateRestoreDirective', () => {
     });
 
     it('should not apply state if no state is saved', () => {
+        // Clear any stored state
+        sessionStorage.clear();
+        localStorage.clear();
+
+        // Mock storage getItem to explicitly return null
+        jest.spyOn(sessionStorage, 'getItem').mockReturnValue(null);
+        jest.spyOn(localStorage, 'getItem').mockReturnValue(null);
+
         spectator = createDirective(
             `<p-table stateStorage="session" stateKey="no-key"  dotStateRestore></p-table>`
         );
 
         const table = spectator.query(Table);
 
-        expect(table.sortField).toEqual(undefined);
-        expect(table.sortOrder).toEqual(1); //default value
+        // Check that no stored state is applied
+        expect(table.sortField).toBeUndefined();
+        expect(table.sortOrder).toBe(1); //default value from PrimeNG Table
     });
 
     it('should warn if the stateStorage or stateKey is not found', () => {
-        spyOn(console, 'warn');
+        const consoleSpy = jest.spyOn(console, 'warn');
 
         spectator = createDirective(`<div dotStateRestore></div>`, {
             providers: [{ provide: Table, useValue: null }]
         });
 
-        expect(console.warn).toHaveBeenCalledWith(
+        expect(consoleSpy).toHaveBeenCalledWith(
             'DotStateRestoreDirective: stateStorage or stateKey not found'
         );
     });

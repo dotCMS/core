@@ -24,6 +24,7 @@ export interface DotCMSContentlet {
     language?: string | DotLanguage;
     live: boolean;
     locked: boolean;
+    lockedBy?: DotContentletLockUser;
     mimeType?: string;
     modDate: string;
     modUser: string;
@@ -50,6 +51,12 @@ export interface DotContentletPermissions {
     EDIT?: string[];
     PUBLISH?: string[];
     CAN_ADD_CHILDREN?: string[];
+}
+
+export interface DotContentletLockUser {
+    firstName: string;
+    lastName: string;
+    userId: string;
 }
 
 /**
@@ -81,3 +88,11 @@ export enum DotContentletDepths {
 }
 
 export type DotContentletDepth = `${DotContentletDepths}`;
+
+export interface DotContentletCanLock {
+    canLock: boolean;
+    id: string;
+    inode: string;
+    locked: boolean;
+    lockedBy: string;
+}

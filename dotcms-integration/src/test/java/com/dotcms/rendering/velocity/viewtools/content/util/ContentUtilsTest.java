@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DateField;
@@ -13,7 +14,9 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE_FILTER;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.PUBLISH_TYPE_FILTER;
@@ -40,6 +43,9 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.TimeZone;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1224,5 +1230,106 @@ public class ContentUtilsTest {
         Assert.assertTrue(childrenIds.contains(child1.getIdentifier()));
         Assert.assertTrue(childrenIds.contains(child2.getIdentifier()));
         Assert.assertTrue(childrenIds.contains(child3.getIdentifier()));
+    }
+
+    /**
+     * Test method: testFuturePublishDateContentRetrieval
+     *
+     * Given:
+     *   - Two versions of the same content (same identifier, different inodes)
+     *   - V1 is published immediately
+     *   - V2 has a publish date set 10 days in the future
+     *   - A query is made with a date after V2's publish date
+     *
+     * Scenario:
+     *   - Content is searched by identifier and by inode with a specific future date
+     *   - Content is searched in EDIT mode without specifying a date
+     *   - Content is searched in LIVE mode without specifying a date
+     *
+     * Expected Results:
+     *   - When searching with a future date (after the publish date),
+     *     it should return V2 regardless of whether searching by identifier or inode
+     *   - When searching in EDIT mode without a date, it should return V2 (most recent version)
+     *   - When searching in LIVE mode without a date, it should return V1 (currently published version)
+     */
+    @Test
+    public void testFuturePublishDateContentRetrieval() {
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+
+            final Host host = new SiteDataGen().nextPersisted();
+            final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+            final ContentType blogLikeContentType = TestDataUtils.getBlogLikeContentType();
+            final ContentletDataGen blogsDataGen = new ContentletDataGen(blogLikeContentType.id())
+                    .languageId(language.getId())
+                    .host(host)
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .languageId(language.getId())
+                    .setProperty(Contentlet.IS_TEST_MODE, true);
+
+            //Ten days from now
+            final LocalDateTime relativeDate = LocalDateTime.now().plusDays(10).plusHours(1);
+            final Instant relativeInstant = relativeDate.atZone(utc.toZoneId()).toInstant();
+            final Date publishDate = Date.from(relativeInstant);
+
+            //Any date after publish date
+            final LocalDateTime relativeDate2 = LocalDateTime.now().plusDays(11).plusHours(1);
+            final Instant relativeInstant2 = relativeDate2.atZone(utc.toZoneId()).toInstant();
+            final Date futureDate = Date.from(relativeInstant2);
+
+
+            //Let's create two versions of a content they must share the same identifier
+            blogsDataGen
+                    .setProperty("title", "v1");
+            final Contentlet blogV1 =
+                    blogsDataGen.nextPersistedAndPublish();
+
+            blogsDataGen
+                    .setProperty("identifier", blogV1.getIdentifier())
+                    .setProperty("title", "v2")
+                    .setProperty("publishDate", publishDate);  // Set the publish-date in the future
+            final Contentlet blogV2 = blogsDataGen.nextPersisted();
+
+            final MockAttributeRequest mockAttributeRequest = new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/?mode=LIVE").request());
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(mockAttributeRequest);
+
+            //Let's make sure that the identifier is the same
+            Assert.assertEquals(blogV1.getIdentifier(), blogV2.getIdentifier());
+
+            //Now, lets for the future version of the content. That's V2
+            final String dateAsString = String.valueOf(futureDate.getTime());
+
+            //Find by identifier and inode
+            final Contentlet blogV1ByIdentifier = ContentUtils.find(blogV1.getIdentifier(), user, dateAsString, true, language.getId());
+            final Contentlet blogV1ByInode = ContentUtils.find(blogV1.getInode(), user, dateAsString, true, language.getId());
+            Assert.assertNotNull(blogV1ByIdentifier);
+            Assert.assertNotNull(blogV1ByInode);
+            //Here we should always get v2 regardless of the identifier or inode because they both have a future version matching the publish-date
+            Assert.assertEquals("v2",blogV1ByIdentifier.getTitle());
+            Assert.assertEquals("v2",blogV1ByInode.getTitle());
+            //Here again we should always get v2 regardless of the identifier or inode because they both have a future version matching the publish-date
+            final Contentlet blogV2ByIdentifier = ContentUtils.find(blogV2.getIdentifier(), user, dateAsString, true, language.getId());
+            final Contentlet blogV2ByInode = ContentUtils.find(blogV2.getInode(), user, dateAsString, true, language.getId());
+            Assert.assertNotNull(blogV2ByIdentifier);
+            Assert.assertNotNull(blogV2ByInode);
+            Assert.assertEquals("v2",blogV2ByIdentifier.getTitle());
+            Assert.assertEquals("v2",blogV2ByInode.getTitle());
+
+            //If we request Preview or Edit we should continue to get the same unpublished version
+            final Contentlet blogByIdentifierNoDateEdit = ContentUtils.find(blogV2.getIdentifier(), user, null, true, language.getId());
+            Assert.assertNotNull(blogByIdentifierNoDateEdit);
+            Assert.assertEquals("v2",blogByIdentifierNoDateEdit.getTitle());
+
+            //Now if we request the live version we should get the v1
+            final Contentlet blogByIdentifierNoDateLive = ContentUtils.find(blogV2.getIdentifier(), user, null, false, language.getId());
+            Assert.assertNotNull(blogByIdentifierNoDateLive);
+            Assert.assertEquals("v1",blogByIdentifierNoDateLive.getTitle());
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
     }
 }

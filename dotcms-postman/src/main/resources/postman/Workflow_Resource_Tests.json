@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "c6b0fcb8-b713-4dee-941f-5aba04d2711b",
+		"_postman_id": "4e56a84e-ecc4-4072-8e09-e0acb5691fb5",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -18739,6 +18739,410 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "CheckActionletHasMovePropsWhenMoveActionlet",
+			"item": [
+				{
+					"name": "CreateTestScheme",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200, Scheme already exist\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"schemeName\": \"REST1\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes"
+							]
+						},
+						"description": "Creates a new scheme \n\n@Path(\"/schemes\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CreateTestStep",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"stepId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"stepIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"schemeId\": \"{{schemeId}}\",\n    \"stepName\": \"My Move step\",\n    \"enableEscalation\": false,\n    \"escalationAction\": \"\",\n    \"escalationTime\": \"0\",\n    \"stepResolved\": false\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/steps",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"steps"
+							]
+						},
+						"description": "Add a new workflow step \n\n@Path(\"/steps\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CreateWfAction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"actionIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"stepId\": \"{{stepId}}\",\n      \"actionName\": \"Move Test\",\n      \"schemeId\": \"{{schemeId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions"
+							]
+						},
+						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
+					},
+					"response": []
+				},
+				{
+					"name": "RelActionToStep",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Ok\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"actionId\": \"{{actionId}}\" }"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/steps/{{stepId}}/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"steps",
+								"{{stepId}}",
+								"actions"
+							]
+						},
+						"description": "This method saves the actions and associate to a specific step\n\n@Path(\"/steps/{stepId}/actions\")"
+					},
+					"response": []
+				},
+				{
+					"name": "AddMoveActionletToTheAction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionletClass\":\"com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/actionlets",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"{{actionId}}",
+								"actionlets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckMoveAttrsOn",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"hasMoveActionletActionlet Check\", function () {",
+									"    pm.expect(jsonData.entity.hasMoveActionletActionlet).to.be.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"{{actionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckExportScheme",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"hasMoveActionletActionlet Check\", function () {",
+									"    pm.expect(jsonData.entity.workflowObject.actions[0].hasMoveActionletActionlet).to.be.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}/export",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"{{schemeId}}",
+								"export"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -18844,6 +19248,22 @@
 		},
 		{
 			"key": "frenchLanguageId",
+			"value": ""
+		},
+		{
+			"key": "stepId",
+			"value": ""
+		},
+		{
+			"key": "stepIdShorty",
+			"value": ""
+		},
+		{
+			"key": "actionId",
+			"value": ""
+		},
+		{
+			"key": "actionIdShorty",
 			"value": ""
 		}
 	]

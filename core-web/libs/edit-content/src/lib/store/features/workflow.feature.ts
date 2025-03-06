@@ -38,6 +38,7 @@ import {
 import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
 import { ContentState } from './content.feature';
+import { LockState } from './lock.feature';
 
 import { parseCurrentActions } from '../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
@@ -83,7 +84,7 @@ export const workflowInitialState: WorkflowState = {
  */
 export function withWorkflow() {
     return signalStoreFeature(
-        { state: type<EditContentRootState & ContentState>() },
+        { state: type<EditContentRootState & ContentState & LockState>() },
         withState(workflowInitialState),
         withComputed((store) => ({
             /**

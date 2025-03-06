@@ -3,6 +3,7 @@ package com.dotmarketing.filters;
 import com.dotcms.analytics.track.AnalyticsTrackWebInterceptor;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.ema.EMAWebInterceptor;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
@@ -30,10 +31,10 @@ import javax.servlet.ServletException;
 public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
 
     private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
-            Config.getBooleanProperty("FEATURE_FLAG_TELEMETRY_CORE_ENABLED", false));
+            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false));
 
     private static final Lazy<Boolean> TELEMETRY_API_METRICS_ENABLED = Lazy.of(() ->
-            Config.getBooleanProperty("TELEMETRY_API_METRICS_ENABLED", false));
+            Config.getBooleanProperty(FeatureFlagName.TELEMETRY_API_METRICS_ENABLED, false));
 
     @Override
     public void init(final FilterConfig config) throws ServletException {

@@ -204,7 +204,7 @@ describe('DotUveWorkflowActionsComponent', () => {
             expect(spySetWorkflowActionLoading).toHaveBeenCalledWith(true);
             expect(spyLoadPageAsset).toHaveBeenCalledWith({
                 language_id: dotcmsContentletMock.languageId.toString(),
-                url: dotcmsContentletMock.url
+                url: '/'
             });
             expect(spyMessage).toHaveBeenCalledTimes(2);
 

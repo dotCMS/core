@@ -2,7 +2,7 @@ package com.dotcms.rest.elasticsearch;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.rest.BaseRestPortlet;
-import com.dotcms.rest.ContentResource;
+import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.WebResource;
@@ -108,15 +108,15 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			for(Object x : esresult){
 				final Contentlet c = (Contentlet) x;
 				try {
-
-					final JSONObject jsonObject = ContentResource
-							.contentletToJSON(c, request, response,
+					final ContentHelper contentHelper = ContentHelper.getInstance();
+					final JSONObject jsonObject = contentHelper
+							.contentletToJSON(c, response,
 									"false", user, allCategoriesInfo);
 					jsonCons.put(jsonObject);
 
 					//load relationships
 					if (depth!= -1){
-						ContentResource
+						contentHelper
 								.addRelationshipsToJSON(request, response,
 										"false", user, depth, true, c,
 										jsonObject, null, -1, liveParam, allCategoriesInfo);

@@ -309,49 +309,29 @@ describe('utils functions', () => {
     });
 
     describe('url sanitize', () => {
-        it('should remove the slash from the start', () => {
-            expect(sanitizeURL('/cool')).toEqual('cool');
+        it('should left the / as /', () => {
+            expect(sanitizeURL('/')).toEqual('/');
         });
 
-        it("should remove the slash from the end if it's not the only character", () => {
-            expect(sanitizeURL('super-cool/')).toEqual('super-cool');
+        it('should clean multiple slashes', () => {
+            expect(sanitizeURL('//////')).toEqual('/');
         });
 
-        it('should remove the slash from the end and the beggining', () => {
-            expect(sanitizeURL('/hello-there/')).toEqual('hello-there');
-        });
-
-        it('should leave as it is for valid url', () => {
-            expect(sanitizeURL('this-is-where-the-fun-begins')).toEqual(
-                'this-is-where-the-fun-begins'
-            );
-        });
-
-        it('should return index if the url is index without nested path', () => {
-            expect(sanitizeURL('index')).toEqual('index');
-            expect(sanitizeURL('index/')).toEqual('index');
-            expect(sanitizeURL('/index/')).toEqual('index');
+        it('should clean multiple slashes', () => {
+            expect(sanitizeURL('//index////')).toEqual('/index/');
         });
 
         describe('nested url', () => {
             it('should leave as it is for a nested valid url', () => {
-                expect(sanitizeURL('hello-there/general-kenobi')).toEqual(
-                    'hello-there/general-kenobi'
+                expect(sanitizeURL('hello-there/general-kenobi/')).toEqual(
+                    'hello-there/general-kenobi/'
                 );
             });
 
-            it('should remove index from the end of the url but keep the slash if is a nested path', () => {
-                expect(sanitizeURL('my-nested-path/index/')).toEqual('my-nested-path/');
-            });
-
-            it('should remove the index if a nested path', () => {
-                expect(sanitizeURL('i-have-the-high-ground/index')).toEqual(
-                    'i-have-the-high-ground/'
+            it('should clean multiple slashes in a nested url', () => {
+                expect(sanitizeURL('hello-there////general-kenobi//////')).toEqual(
+                    'hello-there/general-kenobi/'
                 );
-            });
-
-            it('should remove the index if a nested path with slash', () => {
-                expect(sanitizeURL('no-index-please/index/')).toEqual('no-index-please/');
             });
         });
     });
@@ -879,50 +859,107 @@ describe('utils functions', () => {
     });
 
     describe('normalizeQueryParams', () => {
-        it('should remove PERSONA_KEY if it equals DEFAULT_PERSONA.identifier', () => {
-            const params = {
-                [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
-                someOtherKey: 'someValue'
-            };
+        describe('persona handling', () => {
+            it('should remove PERSONA_KEY if it equals DEFAULT_PERSONA.identifier', () => {
+                const params = {
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                    someOtherKey: 'someValue'
+                };
 
-            const result = normalizeQueryParams(params);
+                const result = normalizeQueryParams(params);
 
-            expect(result).toEqual({
-                someOtherKey: 'someValue'
+                expect(result).toEqual({
+                    someOtherKey: 'someValue'
+                });
+            });
+
+            it('should rename PERSONA_KEY to personaId if not default', () => {
+                const params = {
+                    [PERSONA_KEY]: 'customPersonaId',
+                    anotherKey: 'anotherValue'
+                };
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual({
+                    personaId: 'customPersonaId',
+                    anotherKey: 'anotherValue'
+                });
             });
         });
 
-        it('should rename PERSONA_KEY to personaId if it is present and not default', () => {
-            const params = {
-                [PERSONA_KEY]: 'customPersonaId',
-                anotherKey: 'anotherValue'
-            };
+        describe('clientHost handling', () => {
+            it('should remove clientHost when it matches baseClientHost exactly', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
 
-            const result = normalizeQueryParams(params);
+                const result = normalizeQueryParams(params, 'http://example.com');
 
-            expect(result).toEqual({
-                personaId: 'customPersonaId',
-                anotherKey: 'anotherValue'
+                expect(result).toEqual({
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should remove clientHost when it matches baseClientHost with trailing slash', () => {
+                const params = {
+                    clientHost: 'http://example.com/',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params, 'http://example.com');
+
+                expect(result).toEqual({
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should keep clientHost if it differs from baseClientHost', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params, 'http://different.com');
+
+                expect(result).toEqual({
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should keep clientHost if baseClientHost is not provided', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual(params);
             });
         });
 
-        it('should not modify params if PERSONA_KEY is absent', () => {
-            const params = {
-                someKey: 'someValue',
-                anotherKey: 'anotherValue'
-            };
+        describe('edge cases', () => {
+            it('should handle empty params object', () => {
+                const params = {};
 
-            const result = normalizeQueryParams(params);
+                const result = normalizeQueryParams(params);
 
-            expect(result).toEqual(params);
-        });
+                expect(result).toEqual({});
+            });
 
-        it('should handle empty params object', () => {
-            const params = {};
+            it('should handle params with no special keys', () => {
+                const params = {
+                    someKey: 'someValue',
+                    anotherKey: 'anotherValue'
+                };
 
-            const result = normalizeQueryParams(params);
+                const result = normalizeQueryParams(params);
 
-            expect(result).toEqual({});
+                expect(result).toEqual(params);
+            });
         });
     });
 });

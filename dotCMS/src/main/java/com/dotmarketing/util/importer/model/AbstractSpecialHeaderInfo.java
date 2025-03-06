@@ -16,22 +16,13 @@ import org.immutables.value.Value;
 public interface AbstractSpecialHeaderInfo extends Serializable {
 
     /**
-     * @return The header type found (Identifier, Workflow Action, etc)
+     * @return The header name
      */
-    SpecialHeaderType type();
+    String header();
 
     /**
      * @return Column index where this special header was found
      */
     int columnIndex();
-
-    /**
-     * Special header types supported in import
-     */
-    enum SpecialHeaderType {
-        IDENTIFIER,
-        WORKFLOW_ACTION,
-        NONE
-    }
 
 }

@@ -1,6 +1,7 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.cdi.CDIUtils;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.telemetry.rest.TelemetryResource;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -52,7 +53,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 public class DotRestApplication extends ResourceConfig {
 
 	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
-			Config.getBooleanProperty("FEATURE_FLAG_TELEMETRY_CORE_ENABLED", false));
+			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false));
 
 	public DotRestApplication() {
 		final List<String> packages = new ArrayList<>(List.of(

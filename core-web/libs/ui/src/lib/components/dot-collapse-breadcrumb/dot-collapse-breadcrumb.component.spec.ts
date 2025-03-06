@@ -1,4 +1,4 @@
-import { byTestId, createRoutingFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createRoutingFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -72,7 +72,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
         ]);
         spectator.detectChanges();
 
-        const itemClickSpy = spyOn(spectator.component.onItemClick, 'emit');
+        const itemClickSpy = jest.spyOn(spectator.component.onItemClick, 'emit');
         const firstEl = spectator.query('.p-menuitem-link');
         spectator.click(firstEl);
         spectator.detectChanges();
@@ -91,7 +91,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
         ]);
         spectator.detectChanges();
 
-        const itemClickSpy = spyOn(spectator.component.onItemClick, 'emit');
+        const itemClickSpy = jest.spyOn(spectator.component.onItemClick, 'emit');
         const firstEl = spectator.query('.p-menuitem-link');
         spectator.click(firstEl);
         spectator.detectChanges();

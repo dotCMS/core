@@ -3,6 +3,7 @@ package com.dotcms.experiments.business;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -21,7 +22,7 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
 
     INSTANCE;
 
-    private static final String FEATURE_FLAG_EXPERIMENTS_KEY = "FEATURE_FLAG_EXPERIMENTS";
+    private static final String FEATURE_FLAG_EXPERIMENTS_KEY = FeatureFlagName.FEATURE_FLAG_EXPERIMENTS;
     private static final String ENABLE_EXPERIMENTS_AUTO_JS_INJECTION_KEY = "ENABLE_EXPERIMENTS_AUTO_JS_INJECTION";
 
     private final AtomicBoolean featureFlagExperiments;

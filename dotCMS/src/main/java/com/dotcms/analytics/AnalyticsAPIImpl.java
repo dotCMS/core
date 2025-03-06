@@ -66,6 +66,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI, EventSubscriber<SystemTab
 
     @Override
     public void notify(final SystemTableUpdatedKeyEvent event) {
+        Logger.info(this, String.format("Received event with key [%s]", event.getKey()));
         if (event.getKey().contains(ANALYTICS_IDP_URL_KEY)) {
             analyticsIdpUrl.set(resolveAnalyticsIdpUrl());
         } else if (event.getKey().contains(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY)) {
@@ -436,5 +437,4 @@ public class AnalyticsAPIImpl implements AnalyticsAPI, EventSubscriber<SystemTab
     private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
         return CircuitBreakerUrl.authHeaders(AnalyticsHelper.get().formatBearer(accessToken));
     }
-
 }

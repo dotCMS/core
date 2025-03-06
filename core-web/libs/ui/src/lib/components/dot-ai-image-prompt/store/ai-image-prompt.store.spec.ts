@@ -1,4 +1,4 @@
-import { SpyObject, mockProvider } from '@ngneat/spectator';
+import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
@@ -87,7 +87,7 @@ describe('DotAiImagePromptStore', () => {
         });
 
         it('should handle generateImage correctly on success', () => {
-            dotAiService.generateAndPublishImage.and.returnValue(of(MOCK_AI_IMAGE_CONTENT));
+            dotAiService.generateAndPublishImage.mockReturnValue(of(MOCK_AI_IMAGE_CONTENT));
 
             store.setFormValue({
                 text: 'prompt',
@@ -105,7 +105,7 @@ describe('DotAiImagePromptStore', () => {
         });
 
         it('should handle generateImage correctly on error', () => {
-            dotAiService.generateAndPublishImage.and.returnValue(throwError('error'));
+            dotAiService.generateAndPublishImage.mockReturnValue(throwError('error'));
 
             store.setFormValue({
                 text: 'prompt',

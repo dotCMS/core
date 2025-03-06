@@ -19,7 +19,7 @@ import static com.liferay.util.StringPool.BLANK;
  * <pre>
  *     <code>
  * {
- *         "globalSearch": "",
+ *         "globalSearch": "{{STRING}}",
  *         "searchableFieldsByContentType": {
  *             "{{CONTENT_TYPE_ID_OR_VAR_NAME}}": {
  *                 "binary": "{{STRING}}",
@@ -27,25 +27,23 @@ import static com.liferay.util.StringPool.BLANK;
  *                 "category": "{{STRING: Comma-separated list of Category IDs}}",
  *                 "checkbox": "{{STRING: Comma-separated list of values}}",
  *                 "custom": "{{STRING}}",
- *                 "date": "{{STRING}}: Can use ranges by including the [ and ] characters",
- *                 "dateAndTime": "{{STRING}}: Date or date and time. Can use ranges by including
- *                 the [ and ] characters",
+ *                 "date": "{{STRING}}: Can use ranges by including the TO between dates. Brackets are optional",
+ *                 "dateAndTime": "{{STRING}}: Date or date and time. Can use ranges by including the TO between dates. Brackets are optional",
  *                 "json": "{{STRING}: Matches any String in the JSON object}",
- *                 "keyValue": "{{STRING}: Matches keys and values in
- *                 "multiSelect": "{{STRING: Comma-separated list of values, not labels}}",
- *                 "radio": "{{STRING}: Matches values, not labels}",
- *                 "relationships": "{{STRING:ID of the contentlet that must be referenced by the
- *                 content(s) you want to query}}",
- *                 "select": "{{STRING}: Matches values, not labels}",
+ *                 "keyValue": "{{STRING}: Matches keys and values in the JSON object}}",
+ *                 "multiSelect": "{{STRING: Comma-separated list of values, NOT labels}}",
+ *                 "radio": "{{STRING}: Matches values, NOT labels}",
+ *                 "relationships": "{{STRING: ID of the child Contentlet that must be referenced by the Contentlet(s) you want to retrieve}}",
+ *                 "select": "{{STRING}: Matches values, NOT labels}",
  *                 "tag": "{{STRING:comma-separated list of Tag names}}",
  *                 "title": "{{STRING}}",
  *                 "textArea": "{{STRING}}",
- *                 "time": "{{STRING}: Can use ranges by including the [ and ] characters}",
+ *                 "time": "{{STRING}: Can use ranges by including the TO string between times. Brackets are optional}",
  *                 "wysiwyg": "{{STRING}}"
  *             }
  *         },
  *         "systemSearchableFields": {
- *             "siteId": "{{STRING}}",
+ *             "siteId": "{{STRING: When NOT set, and the 'systemHostContent' is NOT set either, the search will include contents under System Host}}",
  *             "languageId": {{INTEGER}},
  *             "workflowSchemeId": "{{STRING}}",
  *             "workflowStepId": "{{STRING}}",

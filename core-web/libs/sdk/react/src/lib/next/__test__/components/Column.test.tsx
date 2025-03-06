@@ -2,11 +2,10 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import { Column } from '@dotcms/react/next/components/Column/Column';
-
+import { Column } from '../../components/Column/Column';
 import { MOCK_COLUMN } from '../mock';
 
-jest.mock('@dotcms/react/next/components/Container/Container', () => ({
+jest.mock('../../components/Container/Container', () => ({
     Container: ({ container }: any) => (
         <div data-testid="mock-container" data-container-id={container.identifier}>
             Mock Container

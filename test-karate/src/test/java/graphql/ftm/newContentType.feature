@@ -106,10 +106,7 @@ Feature: Create a Content Type
         "system":false,
         "variable":"#(contentTypeVariable)",
         "versionable":true,
-        "workflows" : [ {
-          "id" : "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
-          "variableName" : "SystemWorkflow"
-        } ]
+        "workflows" : ["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]
       }
       """
     When method POST

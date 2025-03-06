@@ -1,4 +1,4 @@
-import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator';
+import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator/jest';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 
@@ -7,8 +7,8 @@ import { DotSelectItemDirective } from './dot-select-item.directive';
 describe('DotSelectItemDirective', () => {
     let spectator: SpectatorDirective<DotSelectItemDirective>;
     let autoComplete: AutoComplete;
-    let onKeyUpMock: jasmine.Spy;
-    let onOptionSelect: jasmine.Spy;
+    let onKeyUpMock: jest.SpyInstance;
+    let onOptionSelect: jest.SpyInstance;
 
     const createDirective = createDirectiveFactory({
         directive: DotSelectItemDirective,
@@ -19,8 +19,8 @@ describe('DotSelectItemDirective', () => {
     beforeEach(() => {
         spectator = createDirective();
         autoComplete = spectator.query(AutoComplete);
-        onKeyUpMock = spyOn(spectator.directive, 'onKeyUp').and.callThrough();
-        onOptionSelect = spyOn(autoComplete, 'onOptionSelect').and.callThrough();
+        onKeyUpMock = jest.spyOn(spectator.directive, 'onKeyUp');
+        onOptionSelect = jest.spyOn(autoComplete, 'onOptionSelect');
     });
 
     it('should call onKeyUp from the directive', () => {
@@ -31,7 +31,8 @@ describe('DotSelectItemDirective', () => {
 
         spectator.triggerEventHandler('p-autoComplete[dotSelectItem]', 'onKeyUp', event);
 
-        expect(onKeyUpMock).toHaveBeenCalledOnceWith(event);
+        expect(onKeyUpMock).toHaveBeenCalledWith(event);
+        expect(onKeyUpMock).toHaveBeenCalledTimes(1);
     });
 
     it('should call autoComplete selectItem when key is "Enter"', () => {
@@ -42,7 +43,8 @@ describe('DotSelectItemDirective', () => {
 
         spectator.triggerEventHandler('p-autoComplete[dotSelectItem]', 'onKeyUp', event);
 
-        expect(onOptionSelect).toHaveBeenCalledOnceWith(event, event.target.value);
+        expect(onOptionSelect).toHaveBeenCalledWith(event, event.target.value);
+        expect(onOptionSelect).toHaveBeenCalledTimes(1);
     });
 
     it('should not call autoComplete selectItem when key is not "Enter"', () => {

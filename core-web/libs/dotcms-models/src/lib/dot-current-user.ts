@@ -26,7 +26,7 @@ export interface DotCurrentUser {
     email: string;
     givenName: string;
     roleId: string;
-    surnaname: string;
+    surname: string;
     userId: string;
 }
 

@@ -18,10 +18,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class GitHubMetricsBase:
-    def __init__(self, token, owner, repo):
+    def __init__(self, token, owner, repo, team_label):
         self.token = token
         self.owner = owner 
         self.repo = repo
+        self.team_label = team_label
         self.base_url = f"https://api.github.com/repos/{owner}/{repo}"
         self.headers = {
             'Authorization': f'token {token}',
@@ -90,13 +91,22 @@ class GitHubMetricsBase:
 
     def should_skip_issue(self, issue, sprint_end):
         """Common logic for filtering issues"""
-        update_time = datetime.strptime(issue['updated_at'], '%Y-%m-%dT%H:%M:%SZ')
         current_labels = [label['name'] for label in issue['labels']]
         
-        # Skip if updated after sprint end or has NW Removed label
-        if update_time > sprint_end or 'NW Removed' in current_labels:
+        # Skip if has NW Removed label
+        if 'NW Removed' in current_labels:
             return True
-            
+        
+        # If "QA : Failed Internal" is in current labels, check when it was added
+        if 'QA : Failed Internal' in current_labels:
+            events = self.get_issue_events(issue['number'])
+            for event in reversed(events):  # Check events from newest to oldest
+                if (event.get('event') == 'labeled' and 
+                    event.get('label', {}).get('name') == 'QA : Failed Internal'):
+                    label_time = datetime.strptime(event['created_at'], '%Y-%m-%dT%H:%M:%SZ')
+                    logger.info(f"QA Failed label time {label_time} - sprint_end {sprint_end}")
+                    return label_time > sprint_end
+                
         return False
 
     def format_issue_details(self, issue):

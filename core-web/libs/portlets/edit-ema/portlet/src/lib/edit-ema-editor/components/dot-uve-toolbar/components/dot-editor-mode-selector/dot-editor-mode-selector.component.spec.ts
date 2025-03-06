@@ -31,6 +31,7 @@ describe('DotEditorModeSelectorComponent', () => {
                 live: true
             }
         },
+        hasLiveVersion: true,
         pageParams
     };
 
@@ -38,6 +39,7 @@ describe('DotEditorModeSelectorComponent', () => {
         canEditPage: signal(mockStoreState.canEditPage),
         pageAPIResponse: signal(mockStoreState.pageAPIResponse),
         pageParams: signal(mockStoreState.pageParams),
+        $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
         clearDeviceAndSocialMedia: jest.fn(),
         loadPageAsset: jest.fn()
     };
@@ -79,22 +81,6 @@ describe('DotEditorModeSelectorComponent', () => {
             expect(menuItems).toHaveLength(2);
             expect(menuItems.map((item) => item.id)).not.toContain(UVE_MODE.EDIT);
         });
-
-        it('should exclude LIVE mode when page has no live version', () => {
-            mockStore.pageAPIResponse.set({
-                ...MOCK_RESPONSE_HEADLESS,
-                page: {
-                    ...MOCK_RESPONSE_HEADLESS.page,
-                    live: false
-                }
-            });
-            mockStore.canEditPage.set(true);
-
-            spectator.detectChanges();
-            const menuItems = component.$menuItems();
-            expect(menuItems).toHaveLength(2);
-            expect(menuItems.map((item) => item.id)).not.toContain(UVE_MODE.LIVE);
-        });
     });
 
     describe('$currentModeLabel', () => {
@@ -135,27 +121,16 @@ describe('DotEditorModeSelectorComponent', () => {
     });
 
     describe('$modeGuardEffect', () => {
-        it('should switch to PREVIEW mode when in EDIT mode without edit permission', () => {
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
-            mockStore.canEditPage.set(false);
-
-            spectator.detectChanges();
-
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                mode: UVE_MODE.PREVIEW,
-                publishDate: undefined
-            });
+        beforeEach(() => {
+            // Reset mock store to initial state
+            mockStore.canEditPage.set(true);
+            mockStore.pageParams.set(pageParams);
+            jest.clearAllMocks();
         });
 
-        it('should switch to PREVIEW mode when in LIVE mode without live version', () => {
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.LIVE });
-            mockStore.pageAPIResponse.set({
-                ...MOCK_RESPONSE_HEADLESS,
-                page: {
-                    ...MOCK_RESPONSE_HEADLESS.page,
-                    live: false
-                }
-            });
+        it('should switch to PREVIEW mode when in EDIT mode without edit permission', () => {
+            mockStore.canEditPage.set(false);
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
 
             spectator.detectChanges();
 
@@ -172,6 +147,7 @@ describe('DotEditorModeSelectorComponent', () => {
             mockStore.canEditPage.set(true);
             mockStore.pageAPIResponse.set(MOCK_RESPONSE_HEADLESS);
             mockStore.pageParams.set(pageParams);
+            mockStore.$hasLiveVersion.set(true);
         });
 
         it('should show menu when clicking the button', () => {

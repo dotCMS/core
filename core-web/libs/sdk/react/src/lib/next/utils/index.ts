@@ -3,7 +3,7 @@ import {
     DotCMSContentlet,
     DotCMSColumnContainer,
     DotCMSPageAsset
-} from '@dotcms/react/next/types';
+} from '../types';
 
 /**
  * @internal

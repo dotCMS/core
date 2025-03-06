@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import static com.dotmarketing.filters.CMSUrlUtil.isDotAdminRequest;
 import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
@@ -115,8 +116,12 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	
 	private final boolean ASSETS_USE_WEAK_ETAGS = Config.getBooleanProperty("ASSETS_USE_WEAK_ETAGS", true);
-	
-	
+
+	/**
+	 * A boolean constant indicating whether anonymous user permissions should always be respected.
+	 * Set to true because the binary servlet is for delivery and should respect front-end roles.
+	 */
+	private static final boolean ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS = true;
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -261,7 +266,9 @@ public class BinaryExporterServlet extends HttpServlet {
 						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
 					else {
 						try {
-							content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
+							content = contentAPI.find(
+									assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+							);
 						} catch(DotSecurityException e) {
 							if (!mode.respectAnonPerms) {
 								content = getContentletLiveVersion(assetInode, user, lang);
@@ -301,7 +308,10 @@ public class BinaryExporterServlet extends HttpServlet {
 							query.append("+working:true ");
 						}
 
-						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, mode.respectAnonPerms);
+						List<Contentlet> foundContentlets = contentletAPI.search(
+								query.toString(), 2, -1, null, user,
+								ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+						);
 						if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
 							//Prefer the contentlet with the session language
 							content = foundContentlets.get(0);
@@ -684,30 +694,25 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	}
 
-	/**
-	 * Test the request to see if it is a dotAdmin request
-	 * @param request the request to test
-	 * @return true if the request is a dotAdmin request
-	 */
-	public static boolean isDotAdminRequest(HttpServletRequest request) {
-		final String referer = request.getHeader("referer");
-		return  referer != null && referer.contains("/dotAdmin");
-	}
-
 	private Contentlet getContentletByIdentifier(final PageMode pageMode,
 			final String identifier, final long languageId, final User user)
 			throws DotDataException, DotSecurityException {
 
 		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(identifier,
-				pageMode.showLive, languageId, currentVariantId, user, pageMode.respectAnonPerms);
+		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(
+				identifier, pageMode.showLive, languageId, currentVariantId, user,
+				ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+		);
 
 		if (UtilMethods.isSet(contentletByIdentifier)) {
 			return contentletByIdentifier;
 		}
 
-		return contentAPI.findContentletByIdentifier(identifier, pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
+		return contentAPI.findContentletByIdentifier(
+				identifier, pageMode.showLive, languageId, user,
+				ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+		);
 	}
 
 	private boolean isBrowserSafariAndVersionBelow14(final UserAgent userAgent) {

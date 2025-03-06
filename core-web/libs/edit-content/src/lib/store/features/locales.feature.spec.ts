@@ -13,9 +13,11 @@ import {
     DotContentletService,
     DotHttpErrorManagerService,
     DotLanguagesService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotLanguage } from '@dotcms/dotcms-models';
+import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { contentInitialState } from './content.feature';
 import { withLocales } from './locales.feature';
@@ -44,6 +46,7 @@ describe('LocalesFeature', () => {
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dialogService: SpyObject<DialogService>;
     let router: SpyObject<Router>;
+    let workflowActionService: SpyObject<DotWorkflowsActionsService>;
 
     const withTest = () =>
         signalStoreFeature(
@@ -71,7 +74,8 @@ describe('LocalesFeature', () => {
             DialogService,
             DynamicDialogConfig,
             DynamicDialogRef,
-            Router
+            Router,
+            DotWorkflowsActionsService
         ]
     });
 
@@ -83,6 +87,9 @@ describe('LocalesFeature', () => {
         dotEditContentService = spectator.inject(DotEditContentService);
         dialogService = spectator.inject(DialogService);
         router = spectator.inject(Router);
+        workflowActionService = spectator.inject(DotWorkflowsActionsService);
+
+        workflowActionService.getDefaultActions.mockReturnValue(of(MOCK_SINGLE_WORKFLOW_ACTIONS));
     });
 
     it('should load locales when a new contentlet is loaded', fakeAsync(() => {
@@ -152,7 +159,12 @@ describe('LocalesFeature', () => {
 
             expect(store.currentLocale()).toEqual(MOCK_LANGUAGES[2]);
             expect(store.initialContentletState()).toEqual('copy');
-            expect(store.contentlet()).toEqual({ identifier: '123', languageId: 1 });
+            expect(store.contentlet()).toEqual({
+                identifier: '123',
+                languageId: 1,
+                locked: false,
+                lockedBy: undefined
+            });
             expect(store.formValues()).toEqual(null);
         }));
 

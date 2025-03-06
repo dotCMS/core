@@ -1,5 +1,6 @@
 package com.dotcms.filters.interceptor;
 
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.config.DotRestApplication;
 import com.dotmarketing.util.Config;
@@ -35,7 +36,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
             new AtomicBoolean(false);
 
     private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
-            Config.getBooleanProperty("FEATURE_FLAG_TELEMETRY_CORE_ENABLED", false));
+            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false));
 
     @Override
     public void addBefore(final String webInterceptorName, final WebInterceptor webInterceptor) {

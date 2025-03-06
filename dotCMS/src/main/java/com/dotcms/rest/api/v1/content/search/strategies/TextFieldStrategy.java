@@ -49,7 +49,7 @@ public class TextFieldStrategy implements FieldStrategy {
                             fieldName, finalWildcard, token, finalWildcard))
                     .collect(Collectors.joining(SPACE));
         }
-        return luceneQuery.trim();
+        return luceneQuery;
     }
 
     /**

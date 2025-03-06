@@ -35,15 +35,11 @@ describe('DotCopyButtonComponent', () => {
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotCopyButtonComponent);
-
         de = fixture.debugElement;
-
         dotClipboardUtil = de.injector.get(DotClipboardUtil);
 
-        spyOn(dotClipboardUtil, 'copy').and.callFake(() => {
-            return new Promise((resolve) => {
-                resolve(true);
-            });
+        jest.spyOn(dotClipboardUtil, 'copy').mockImplementation(() => {
+            return Promise.resolve(true);
         });
         fixture.componentRef.setInput('copy', 'Text to copy');
     });
@@ -72,7 +68,7 @@ describe('DotCopyButtonComponent', () => {
         });
 
         it('should copy text to clipboard', () => {
-            const stopPropagation = jasmine.createSpy('stopPropagation');
+            const stopPropagation = jest.fn();
 
             button.triggerEventHandler('click', {
                 stopPropagation: stopPropagation

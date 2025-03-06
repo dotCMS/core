@@ -46,6 +46,15 @@ const mockContentletByInodeResponse = {
     } as unknown as DotCMSContentlet
 };
 
+export const mockDotContentletCanLock = {
+    entity: {
+        canLock: true,
+        id: '1',
+        inode: '1',
+        locked: true
+    }
+};
+
 describe('DotContentletService', () => {
     let spectator: SpectatorHttp<DotContentletService>;
     const createHttp = createHttpFactory(DotContentletService);
@@ -92,5 +101,32 @@ describe('DotContentletService', () => {
 
         const req = spectator.expectOne('/api/v1/content/1/languages', HttpMethod.GET);
         req.flush(mockLanguagesResponse);
+    });
+
+    it('should lock a contentlet', () => {
+        spectator.service.lockContent('1').subscribe((res) => {
+            expect(res).toEqual(mockContentletByInodeResponse.entity);
+        });
+
+        const req = spectator.expectOne('/api/v1/content/_lock/1', HttpMethod.PUT);
+        req.flush(mockContentletByInodeResponse);
+    });
+
+    it('should unlock a contentlet', () => {
+        spectator.service.unlockContent('1').subscribe((res) => {
+            expect(res).toEqual(mockContentletByInodeResponse.entity);
+        });
+
+        const req = spectator.expectOne('/api/v1/content/_unlock/1', HttpMethod.PUT);
+        req.flush(mockContentletByInodeResponse);
+    });
+
+    it('should check if a contentlet can be locked', () => {
+        spectator.service.canLock('1').subscribe((res) => {
+            expect(res).toEqual(mockDotContentletCanLock.entity);
+        });
+
+        const req = spectator.expectOne('/api/v1/content/_canlock/1', HttpMethod.GET);
+        req.flush(mockDotContentletCanLock);
     });
 });

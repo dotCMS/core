@@ -3,7 +3,7 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { Component, DebugElement } from '@angular/core';
-import { waitForAsync, ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
@@ -50,8 +50,8 @@ xdescribe('DotAddToBundleComponent', () => {
         de = fixture.debugElement.query(By.css('dot-add-to-bundle'));
         comp = de.componentInstance;
 
-        spyOn(addToBundleServiceMock, 'addToBundle').and.callThrough();
-        spyOn(comp, 'submitBundle').and.callThrough();
+        jest.spyOn(addToBundleServiceMock, 'addToBundle');
+        jest.spyOn(comp, 'submitBundle');
     });
 
     it('should have a form', () => {
@@ -79,7 +79,7 @@ xdescribe('DotAddToBundleComponent', () => {
         );
         expect(cancelButton).toBeDefined();
 
-        spyOn(comp, 'close');
+        jest.spyOn(comp, 'close');
 
         cancelButton.nativeElement.click();
         expect(comp.close).toHaveBeenCalledTimes(1);
@@ -150,7 +150,7 @@ xdescribe('DotAddToBundleComponent', () => {
     }));
 
     it('should set placeholder "Select or type bundle" if bundles exist', waitForAsync(() => {
-        spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
+        jest.spyOn(addToBundleServiceMock, 'getBundles').mockReturnValue(
             observableOf([
                 {
                     id: '1234',
@@ -165,7 +165,7 @@ xdescribe('DotAddToBundleComponent', () => {
     }));
 
     it('should set as default Bundle previously selected', () => {
-        spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
+        jest.spyOn(addToBundleServiceMock, 'getBundles').mockReturnValue(
             observableOf([
                 {
                     id: '1234',

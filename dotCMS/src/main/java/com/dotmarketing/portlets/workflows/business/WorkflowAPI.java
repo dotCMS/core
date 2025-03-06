@@ -11,7 +11,6 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -33,6 +32,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.liferay.portal.model.User;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
@@ -470,6 +470,13 @@ public interface WorkflowAPI {
 	 */
 	public WorkflowAction findAction(String actionId, String stepId, User user) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Friend method for the Export in order to allow to complete the actions meta info
+	 * @param action
+	 * @param actionClasses
+	 */
+	void fillActionInfo(final WorkflowAction action,
+				   final List<WorkflowActionClass> actionClasses);
 	/**
 	 * Finds an action associated to the steps and the user permissions over the permissionable.
 	 * The action will be validated against the user permissions.

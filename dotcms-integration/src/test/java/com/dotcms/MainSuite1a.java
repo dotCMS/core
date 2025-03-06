@@ -101,7 +101,25 @@ import org.junit.runners.Suite.SuiteClasses;
         Task240306MigrateLegacyLanguageVariablesTest.class,
         EmailActionletTest.class,
         OpenAIGenerateImageActionletTest.class,
-        RequestMatcherTest.class
+        RequestMatcherTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIFTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.CurrentSessionLanguageConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.NumberOfTimesPreviouslyVisitedConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.UsersSiteVisitsConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.VisitorOperatingSystemConditionletTest.class,
+        com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest.class,
+        com.dotmarketing.portlets.rules.business.RulesCacheFTest.class,
+        com.dotmarketing.portlets.templates.business.TemplateAPITest.class,
+        com.dotmarketing.portlets.containers.business.ContainerAPIImplTest.class,
+        com.dotmarketing.portlets.folders.business.FolderAPITest.class,
+        com.dotmarketing.portlets.containers.business.ContainerAPITest.class,
+        com.dotmarketing.portlets.containers.business.FileAssetContainerUtilTest.class,
+        com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest.class,
+        com.dotmarketing.portlets.structure.factories.StructureFactoryTest.class,
+        com.dotmarketing.portlets.structure.factories.FieldFactoryTest.class,
+        com.dotmarketing.portlets.structure.model.ContentletRelationshipsTest.class,
+        com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
 })
 
 public class MainSuite1a {

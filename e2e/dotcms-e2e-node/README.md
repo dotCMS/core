@@ -58,6 +58,40 @@ Two advantages of running E2E tests this way is that:
 Disadvantages:
 - Could take longer if you are adding E2E tests to a feature you are working so probably for that matter the "FrontEnd guy" approach works better for you.
 
+### Using POM pattern 
+
+To create reusable tests, we can use the POM pattern. This pattern allows us to create tests that can be reused across different projects.
+
+There are a short import in typescript that allows us to use the POM pattern:
+
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@pages": ["./src/pages/index"],
+      "@locators/*": ["./src/locators/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@data/*": ["./src/data/*"],
+      "@models/*": ["./src/models/*"]
+    }
+  }
+}
+```
+
+And then you can use the pages, locators, utils, data and models in your tests. Pages are the main entry point for each feature and they are the ones that will be used to create the tests.
+
+```typescript
+import { LoginPage } from '@pages';
+
+test('should login', async () => {
+  await loginPage.login();
+});
+```
+
+
+
+
 ## FrontEnd guys way
 E2E tests are implemented using Playwright so you will need the following as pre-requisites:
 - Node & NPM

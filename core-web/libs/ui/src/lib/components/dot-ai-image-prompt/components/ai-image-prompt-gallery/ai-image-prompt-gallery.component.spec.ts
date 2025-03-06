@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
@@ -74,7 +74,7 @@ describe('DotAiImagePromptGalleryComponent', () => {
     });
 
     it('should emit activeIndexChange event when galleria active index changes', () => {
-        const emitterSpy = spyOn(spectator.component.activeIndexChange, 'emit');
+        const emitterSpy = jest.spyOn(spectator.component.activeIndexChange, 'emit');
 
         spectator.setInput({
             isLoading: false,
@@ -88,7 +88,7 @@ describe('DotAiImagePromptGalleryComponent', () => {
     });
 
     it('should emit regenerate event when regenerate button is clicked', () => {
-        const emitterSpy = spyOn(spectator.component.regenerate, 'emit');
+        const emitterSpy = jest.spyOn(spectator.component.regenerate, 'emit');
 
         spectator.setInput({
             isLoading: false,

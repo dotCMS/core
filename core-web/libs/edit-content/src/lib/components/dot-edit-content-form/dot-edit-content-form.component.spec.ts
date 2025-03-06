@@ -14,11 +14,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
+import { InputSwitch, InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { TabPanel, TabView } from 'primeng/tabview';
 
+import { DotCMSContentlet } from '@dotcms/angular';
 import {
     DotContentletService,
     DotContentTypeService,
+    DotCurrentUserService,
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
@@ -26,7 +29,11 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
+import {
+    DotCMSWorkflowAction,
+    DotContentletCanLock,
+    DotContentletDepths
+} from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
@@ -58,6 +65,7 @@ describe('DotFormComponent', () => {
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
+    let dotContentletService: SpyObject<DotContentletService>;
     let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
@@ -75,8 +83,8 @@ describe('DotFormComponent', () => {
             mockProvider(DotMessageService),
             mockProvider(Router),
             mockProvider(DotWorkflowService),
-            mockProvider(MessageService),
             mockProvider(DotContentletService),
+            mockProvider(MessageService),
             mockProvider(DialogService),
 
             {
@@ -87,6 +95,16 @@ describe('DotFormComponent', () => {
                     get snapshot() {
                         return { params: { id: undefined, contentType: undefined } };
                     }
+                }
+            },
+            {
+                provide: DotCurrentUserService,
+                useValue: {
+                    getCurrentUser: () =>
+                        of({
+                            userId: '123',
+                            userName: 'John Doe'
+                        })
                 }
             }
         ]
@@ -104,6 +122,7 @@ describe('DotFormComponent', () => {
         dotEditContentService = spectator.inject(DotEditContentService);
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
+        dotContentletService = spectator.inject(DotContentletService);
         router = spectator.inject(Router);
     });
 
@@ -122,6 +141,9 @@ describe('DotFormComponent', () => {
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
 
             store.initializeExistingContent({
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
@@ -161,6 +183,10 @@ describe('DotFormComponent', () => {
             );
             workflowActionsService.getWorkFlowActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
             );
 
             store.initializeNewContent('TestMock');
@@ -203,6 +229,9 @@ describe('DotFormComponent', () => {
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
 
             store.initializeExistingContent({
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
@@ -300,6 +329,9 @@ describe('DotFormComponent', () => {
             );
             dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
             workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
 
             store.initializeExistingContent({
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
@@ -407,6 +439,9 @@ describe('DotFormComponent', () => {
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );
                 dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
 
                 store.initializeExistingContent({
                     inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
@@ -454,6 +489,9 @@ describe('DotFormComponent', () => {
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );
                 dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
 
                 store.initializeExistingContent({
                     inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
@@ -465,6 +503,79 @@ describe('DotFormComponent', () => {
             it('should not render the preview button when $showPreviewLink is false', () => {
                 const previewButton = spectator.query(byTestId('preview-button'));
                 expect(previewButton).toBeFalsy();
+            });
+        });
+    });
+
+    describe('Lock functionality', () => {
+        beforeEach(() => {
+            dotContentTypeService.getContentType.mockReturnValue(of(MOCK_CONTENTTYPE_1_TAB));
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(MOCK_CONTENTLET_1_OR_2_TABS));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+        });
+
+        describe('Locked / Unlocked State', () => {
+            beforeEach(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                dotContentletService.lockContent.mockReturnValue(
+                    of({ inode: '123' } as DotCMSContentlet)
+                );
+
+                dotContentletService.unlockContent.mockReturnValue(
+                    of({ inode: '123' } as DotCMSContentlet)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+            });
+
+            it('should call lockContent when switch is turned on', () => {
+                const lockSwitch = spectator.query(InputSwitch);
+
+                lockSwitch.onChange.emit({ checked: true } as InputSwitchChangeEvent);
+
+                expect(dotContentletService.lockContent).toHaveBeenCalled();
+            });
+
+            it('should call unlockContent when switch is turned off', () => {
+                const lockSwitch = spectator.query(InputSwitch);
+
+                lockSwitch.onChange.emit({ checked: false } as InputSwitchChangeEvent);
+
+                expect(dotContentletService.unlockContent).toHaveBeenCalled();
+            });
+        });
+
+        describe('cant lock', () => {
+            beforeEach(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: false } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                }); // called with the inode of the contentlet
+
+                spectator.detectChanges();
+            });
+
+            it('should hide the lock switch when user can not lock', () => {
+                const lockSwitch = spectator.query(InputSwitch);
+                expect(lockSwitch).toBe(null);
             });
         });
     });
