@@ -76,7 +76,7 @@ const meta: Meta<DotDeviceSelectorSeoComponent> = {
                                 email: 'admin@adminc.com',
                                 givenName: 'admin',
                                 roleId: '1',
-                                surnaname: 'admin',
+                                surname: 'admin',
                                 userId: '1'
                             })
                     }
