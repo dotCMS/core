@@ -11,6 +11,7 @@ import com.dotcms.ai.viewtool.EmbeddingsToolTest;
 import com.dotcms.ai.viewtool.SearchToolTest;
 import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
 import com.dotcms.ai.workflow.OpenAIContentPromptActionletTest;
+import com.dotcms.analytics.bayesian.BayesianAPIImplIT;
 import com.dotcms.analytics.track.collectors.AsyncVanitiesCollectorTest;
 import com.dotcms.analytics.track.collectors.BasicProfileCollectorTest;
 import com.dotcms.analytics.track.collectors.FilesCollectorTest;
@@ -21,7 +22,6 @@ import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceImplTest;
 import com.dotcms.api.web.HttpServletRequestImpersonatorTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
-import com.dotcms.analytics.bayesian.BayesianAPIImplIT;
 import com.dotcms.business.SystemAPITest;
 import com.dotcms.business.SystemTableFactoryTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -36,7 +36,10 @@ import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
+import com.dotcms.contenttype.business.ContentTypeInitializerTest;
+import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.business.uniquefields.extratable.DBUniqueFieldValidationStrategyTest;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtilTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
@@ -124,11 +127,11 @@ import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperime
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithRunningExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithScheduledExperimentsMetricTypeTest;
-import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllArchivedExperimentsMetricType;
-import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllDraftExperimentsMetricType;
-import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllEndedExperimentsMetricType;
-import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllRunningExperimentsMetricType;
-import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExperimentsMetricType;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllArchivedExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllDraftExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllEndedExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllRunningExperimentsMetricTypeTest;
+import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTypeTest;
 import com.dotcms.timemachine.business.TimeMachineAPITest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
@@ -175,9 +178,7 @@ import com.dotmarketing.quartz.job.PruneTimeMachineBackupJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
-
 import com.dotmarketing.startup.runonce.*;
-
 import com.dotmarketing.util.ConfigUtilsTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.ITConfigTest;
@@ -505,11 +506,11 @@ import org.junit.runners.Suite.SuiteClasses;
         CountPagesWithDraftExperimentsMetricTypeTest.class,
         CountPagesWithRunningExperimentsMetricTypeTest.class,
         CountPagesWithScheduledExperimentsMetricTypeTest.class,
-        CountVariantsInAllArchivedExperimentsMetricType.class,
-        CountVariantsInAllDraftExperimentsMetricType.class,
-        CountVariantsInAllEndedExperimentsMetricType.class,
-        CountVariantsInAllRunningExperimentsMetricType.class,
-        CountVariantsInAllScheduledExperimentsMetricType.class,
+        CountVariantsInAllArchivedExperimentsMetricTypeTest.class,
+        CountVariantsInAllDraftExperimentsMetricTypeTest.class,
+        CountVariantsInAllEndedExperimentsMetricTypeTest.class,
+        CountVariantsInAllRunningExperimentsMetricTypeTest.class,
+        CountVariantsInAllScheduledExperimentsMetricTypeTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,
