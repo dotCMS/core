@@ -275,36 +275,42 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     void recordEvent(CommandsChain commandsChain, final ParseResult parseResult)
             throws IOException {
 
-        // Validate if the analytics tracking is enabled
-        Config config = ConfigProvider.getConfig();
-        final var analyticsEnabledOpt = config.getOptionalValue(
-                "analytic.enabled", Boolean.class
-        );
+        // Make sure we are not executing this code when running tests
+        final var testProfile = System.getProperty("quarkus.test.profile");
+        LOGGER.debug("Test profile: " + testProfile);
+        if (testProfile == null) {
 
-        final var analyticsEnabled = analyticsEnabledOpt.orElse(false);
-        if (analyticsEnabled) {
+            // Validate if the analytics tracking is enabled
+            Config config = ConfigProvider.getConfig();
+            final var analyticsEnabledOpt = config.getOptionalValue(
+                    "analytic.enabled", Boolean.class
+            );
 
-            try (var handle = Arc.container().instance(AnalyticsService.class)) {
+            final var analyticsEnabled = analyticsEnabledOpt.orElse(false);
+            if (analyticsEnabled) {
 
-                AnalyticsService analyticsService = handle.get();
-                if (analyticsService != null) {
+                try (var handle = Arc.container().instance(AnalyticsService.class)) {
 
-                    final String parentCommand = commandsChain.firstSubcommand()
-                            .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+                    AnalyticsService analyticsService = handle.get();
+                    if (analyticsService != null) {
 
-                    if (!ConfigCommand.NAME.equals(parentCommand)
-                            && !LoginCommand.NAME.equals(parentCommand)
-                            && !StatusCommand.NAME.equals(parentCommand)
-                            && !InstanceCommand.NAME.equals(parentCommand)
-                    ) {
+                        final String parentCommand = commandsChain.firstSubcommand()
+                                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
 
-                        final String command = commandsChain.command();
-                        final List<String> arguments = parseResult.expandedArgs();
+                        if (!ConfigCommand.NAME.equals(parentCommand)
+                                && !LoginCommand.NAME.equals(parentCommand)
+                                && !StatusCommand.NAME.equals(parentCommand)
+                                && !InstanceCommand.NAME.equals(parentCommand)
+                        ) {
 
-                        analyticsService.recordCommand(command, arguments);
+                            final String command = commandsChain.command();
+                            final List<String> arguments = parseResult.expandedArgs();
+
+                            analyticsService.recordCommand(command, arguments);
+                        }
+                    } else {
+                        LOGGER.warn("No analytics service available. Event will not be recorded.");
                     }
-                } else {
-                    LOGGER.warn("No analytics service available. Event will not be recorded.");
                 }
             }
         }
