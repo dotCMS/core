@@ -275,41 +275,43 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     void recordEvent(CommandsChain commandsChain, final ParseResult parseResult)
             throws IOException {
 
-        // Make sure we are not executing this code when running tests
-        final var testProfile = System.getProperty("quarkus.test.profile");
-        LOGGER.debug("Test profile: " + testProfile);
-        if (testProfile == null) {
+        final String parentCommand = commandsChain.firstSubcommand()
+                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
 
-            // Validate if the analytics tracking is enabled
-            Config config = ConfigProvider.getConfig();
-            final var analyticsEnabledOpt = config.getOptionalValue(
-                    "analytic.enabled", Boolean.class
-            );
+        if (!parentCommand.isEmpty()
+                && !ConfigCommand.NAME.equals(parentCommand)
+                && !LoginCommand.NAME.equals(parentCommand)
+                && !StatusCommand.NAME.equals(parentCommand)
+                && !InstanceCommand.NAME.equals(parentCommand)
+        ) {
 
-            final var analyticsEnabled = analyticsEnabledOpt.orElse(false);
-            if (analyticsEnabled) {
+            // Make sure we are not executing this code when running tests
+            final var testProfile = System.getProperty("quarkus.test.profile");
+            LOGGER.debug("Test profile: " + testProfile);
+            if (testProfile == null) {
 
-                try (var handle = Arc.container().instance(AnalyticsService.class)) {
+                // Validate if the analytics tracking is enabled
+                Config config = ConfigProvider.getConfig();
+                final var analyticsEnabledOpt = config.getOptionalValue(
+                        "analytic.enabled", Boolean.class
+                );
 
-                    AnalyticsService analyticsService = handle.get();
-                    if (analyticsService != null) {
+                final var analyticsEnabled = analyticsEnabledOpt.orElse(false);
+                if (analyticsEnabled) {
 
-                        final String parentCommand = commandsChain.firstSubcommand()
-                                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+                    try (var handle = Arc.container().instance(AnalyticsService.class)) {
 
-                        if (!ConfigCommand.NAME.equals(parentCommand)
-                                && !LoginCommand.NAME.equals(parentCommand)
-                                && !StatusCommand.NAME.equals(parentCommand)
-                                && !InstanceCommand.NAME.equals(parentCommand)
-                        ) {
+                        AnalyticsService analyticsService = handle.get();
+                        if (analyticsService != null) {
 
                             final String command = commandsChain.command();
                             final List<String> arguments = parseResult.expandedArgs();
 
                             analyticsService.recordCommand(command, arguments);
+                        } else {
+                            LOGGER.warn(
+                                    "No analytics service available. Event will not be recorded.");
                         }
-                    } else {
-                        LOGGER.warn("No analytics service available. Event will not be recorded.");
                     }
                 }
             }
