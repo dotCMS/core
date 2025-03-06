@@ -114,7 +114,7 @@ public class CSVManifestReader implements ManifestReader{
             //If the title contains a quote, it means it has a comma
             final boolean containsCommas = lineSplit[4].contains("'");
             //If it contains a comma, then get the whole title without separating it by commas
-            final String title = containsCommas ? line.substring(line.indexOf("'") + 1, line.lastIndexOf("'")) : lineSplit[4];
+            final String title = containsCommas ? line.substring(line.indexOf("\"") + 1, line.lastIndexOf("\"")) : lineSplit[4];
             //Also get the number of commas in the title, to know how many columns to skip
             final int numberOfCommas = containsCommas ? title.length() - title.replace(",", "").length() : 0;
             this.manifestInfo = new ManifestInfoBuilder()
