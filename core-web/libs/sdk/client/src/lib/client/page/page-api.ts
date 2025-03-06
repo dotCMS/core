@@ -1,5 +1,6 @@
 import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
 
+import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
 import { DotCMSGraphQLPageResponse, DotCMSPageAsset } from '../models/types';
@@ -399,7 +400,7 @@ export class PageClient {
                 });
             }
 
-            const pageResponse = data.page;
+            const pageResponse = graphqlToPageEntity(data);
 
             if (!pageResponse) {
                 throw new Error('No page data found');

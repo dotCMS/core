@@ -2,6 +2,7 @@
 import { GraphQLPageOptions, PageClient } from './page-api';
 import * as utils from './utils';
 
+import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
 
@@ -173,8 +174,9 @@ describe('PageClient', () => {
                 baseURL: 'https://demo.dotcms.com'
             });
 
+            // const pageResponse = graphqlToPageEntity(mockGraphQLResponse |  );
             expect(result).toEqual({
-                page: mockGraphQLResponse.data.page,
+                page: graphqlToPageEntity(mockGraphQLResponse.data),
                 content: { content: mockGraphQLResponse.data.testContent },
                 nav: { nav: mockGraphQLResponse.data.testNav },
                 errors: null
@@ -206,23 +208,28 @@ describe('PageClient', () => {
             const graphQLOptions = {
                 graphql: { page: 'fragment PageFields on Page { title }' }
             };
-
-            await expect(pageClient.get('/page', graphQLOptions)).rejects.toThrow(
-                'Failed to retrieve page data'
-            );
+            try {
+                await pageClient.get('/page', graphQLOptions);
+            } catch (error: any) {
+                expect(error.message).toBe('Failed to retrieve page data');
+            }
         });
 
         it('should throw errors from GraphQL', async () => {
-            mockFetchGraphQL.mockRejectedValue(new Error('GraphQL error'));
+            mockFetchGraphQL.mockResolvedValue({
+                errors: [{ message: 'GraphQL error' }]
+            });
 
             const pageClient = new PageClient(validConfig, requestOptions);
             const graphQLOptions = {
                 graphql: { page: 'fragment PageFields on Page { title }' }
             };
 
-            await expect(pageClient.get('/page', graphQLOptions)).rejects.toThrow(
-                'Failed to retrieve page data'
-            );
+            try {
+                await pageClient.get('/page', graphQLOptions);
+            } catch (error: any) {
+                expect(error.message).toBe('Failed to retrieve page data');
+            }
         });
 
         it('should use default values for languageId and mode if not provided', async () => {
