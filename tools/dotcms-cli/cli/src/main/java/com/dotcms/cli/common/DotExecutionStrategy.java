@@ -9,6 +9,7 @@ import com.dotcms.cli.command.InstanceCommand;
 import com.dotcms.cli.command.LoginCommand;
 import com.dotcms.cli.command.StatusCommand;
 import com.dotcms.model.config.ServiceBean;
+import io.quarkus.arc.Arc;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -17,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.ExitCode;
@@ -44,8 +47,6 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private final ServiceManager serviceManager;
 
-    private final AnalyticsService analyticsService;
-
     /**
      * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
      *
@@ -58,22 +59,6 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         this.processor = processor;
         this.watchService = watchService;
         this.serviceManager = serviceManager;
-        this.analyticsService = null;
-    }
-
-    /**
-     * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
-     *
-     * @param underlyingStrategy the underlying strategy to use for execution
-     */
-    public DotExecutionStrategy(final IExecutionStrategy underlyingStrategy,
-            final SubcommandProcessor processor, final DirectoryWatcherService watchService,
-            final ServiceManager serviceManager, final AnalyticsService analyticsService) {
-        this.underlyingStrategy = underlyingStrategy;
-        this.processor = processor;
-        this.watchService = watchService;
-        this.serviceManager = serviceManager;
-        this.analyticsService = analyticsService;
     }
 
     /**
@@ -290,24 +275,38 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     void recordEvent(CommandsChain commandsChain, final ParseResult parseResult)
             throws IOException {
 
-        if (analyticsService != null) {
+        // Validate if the analytics tracking is enabled
+        Config config = ConfigProvider.getConfig();
+        final var analyticsEnabledOpt = config.getOptionalValue(
+                "analytic.enabled", Boolean.class
+        );
 
-            final String parentCommand = commandsChain.firstSubcommand()
-                    .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+        final var analyticsEnabled = analyticsEnabledOpt.orElse(false);
+        if (analyticsEnabled) {
 
-            if (!ConfigCommand.NAME.equals(parentCommand)
-                    && !LoginCommand.NAME.equals(parentCommand)
-                    && !StatusCommand.NAME.equals(parentCommand)
-                    && !InstanceCommand.NAME.equals(parentCommand)
-            ) {
+            try (var handle = Arc.container().instance(AnalyticsService.class)) {
 
-                final String command = commandsChain.command();
-                final List<String> arguments = parseResult.expandedArgs();
+                AnalyticsService analyticsService = handle.get();
+                if (analyticsService != null) {
 
-                analyticsService.recordCommand(command, arguments);
+                    final String parentCommand = commandsChain.firstSubcommand()
+                            .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+
+                    if (!ConfigCommand.NAME.equals(parentCommand)
+                            && !LoginCommand.NAME.equals(parentCommand)
+                            && !StatusCommand.NAME.equals(parentCommand)
+                            && !InstanceCommand.NAME.equals(parentCommand)
+                    ) {
+
+                        final String command = commandsChain.command();
+                        final List<String> arguments = parseResult.expandedArgs();
+
+                        analyticsService.recordCommand(command, arguments);
+                    }
+                } else {
+                    LOGGER.warn("No analytics service available. Event will not be recorded.");
+                }
             }
-        } else {
-            LOGGER.warn("No analytics service available. Event will not be recorded.");
         }
     }
 

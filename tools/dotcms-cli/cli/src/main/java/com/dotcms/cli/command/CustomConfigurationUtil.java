@@ -1,6 +1,5 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.api.client.analytics.AnalyticsService;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.common.DirectoryWatcherService;
 import com.dotcms.cli.common.DotExceptionHandler;
@@ -12,7 +11,6 @@ import io.quarkus.arc.Arc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
-import jakarta.inject.Inject;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
@@ -22,9 +20,6 @@ import picocli.CommandLine.Model.OptionSpec;
  */
 @ApplicationScoped
 class CustomConfigurationUtil {
-
-    @Inject
-    AnalyticsService analyticsService;
 
     /**
      * Customizes a CommandLine object.
@@ -39,8 +34,7 @@ class CustomConfigurationUtil {
                 .setExecutionStrategy(new DotExecutionStrategy(
                         new CommandLine.RunLast(), new SubcommandProcessor(),
                         Arc.container().instance(DirectoryWatcherService.class).get(),
-                        Arc.container().instance(ServiceManager.class).get(),
-                        analyticsService)
+                        Arc.container().instance(ServiceManager.class).get())
                 )
                 .setExecutionExceptionHandler(new DotExceptionHandler())
                 .setExitCodeExceptionMapper(new DotExitCodeExceptionMapper());
