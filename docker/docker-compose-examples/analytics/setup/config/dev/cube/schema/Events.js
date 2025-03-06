@@ -121,7 +121,7 @@ cube('HttpResponses', {
         WHERE event_type = 'HTTP_RESPONSE'`,
   dimensions: {
     requestId: { sql: 'request_id', type: `string` },
-    httpResponseCode: { sql: 'http_response_code', type: `string` }
+    httpResponseCode: { sql: 'http_response_code', type: `number` }
   }
 });
 
@@ -187,7 +187,7 @@ cube('request', {
   },*/
   dimensions: {
     id: {
-      sql: `CONCAT(${CUBE}.request_id, '-', ${CUBE}.event_type)`,
+      sql: `CONCAT(${CUBE}.request_id, '-', ${CUBE}.event_type, '-', ${CUBE}.object_identifier)`,
       type: `string`,
       primaryKey: true
     },
@@ -218,10 +218,7 @@ cube('request', {
     action: { sql: 'object_action', type: `string` },
     eventType: { sql: 'event_type', type: `string` },
     eventSource: { sql: 'event_source', type: `string` },
-    httpResponseCode: {
-      sql: `${HttpResponses.httpResponseCode}`,
-      type: `string`
-    }
+    httpResponseCode: { sql: `${HttpResponses.httpResponseCode}`, type: `number` }
   },
   measures: {
     count: {

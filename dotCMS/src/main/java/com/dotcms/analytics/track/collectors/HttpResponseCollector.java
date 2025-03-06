@@ -5,6 +5,9 @@ import com.dotcms.api.web.HttpServletResponseThreadLocal;
 
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Collect the HTTP Response code
+ */
 public class HttpResponseCollector implements Collector {
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {

@@ -10,7 +10,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Objects;
 
 /**
- * Matcher to be executed all the time before response
+ * Matcher to be executed all the time before response, it allows us to include Response data
+ * in the Analytics Events
  * @author jsanca
  */
 public class HttpResponseMatcher implements RequestMatcher {
