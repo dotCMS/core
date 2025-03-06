@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "148b5d29-ef10-41d7-9628-5141da636109",
+		"_postman_id": "dd2afcb5-bb50-4718-acce-83a05dd215c6",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -5129,6 +5129,141 @@
 										"description": "Creates a test Contentlet of the previously generated Content Type."
 									},
 									"response": []
+								},
+								{
+									"name": "Test Site",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Site created successfully\", function () {",
+													"    var jsonData = pm.response.json();",
+													"    pm.collectionVariables.set(\"testSiteName\", jsonData.entity.siteName);",
+													"    pm.expect(jsonData.entity.siteName).to.eql('www.mytestsiteforcontentsearch.com');",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "basic",
+											"basic": [
+												{
+													"key": "password",
+													"value": "admin",
+													"type": "string"
+												},
+												{
+													"key": "username",
+													"value": "admin@dotcms.com",
+													"type": "string"
+												}
+											]
+										},
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"siteName\":\"www.mytestsiteforcontentsearch.com\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/site",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"site"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Parent Content 3 in test Site",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"pm.test(\"Test Third Parent Content created successfully\", function () {",
+													"    const jsonData = pm.response.json();",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the Test Third Parent Content\");",
+													"    const testContentId = jsonData.entity.identifier;",
+													"    pm.collectionVariables.set(\"testThirdParentContentId\", testContentId);",
+													"});",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										},
+										{
+											"listen": "prerequest",
+											"script": {
+												"exec": [
+													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
+													""
+												],
+												"type": "text/javascript",
+												"packages": {}
+											}
+										}
+									],
+									"request": {
+										"method": "PUT",
+										"header": [],
+										"body": {
+											"mode": "formdata",
+											"formdata": [
+												{
+													"key": "file",
+													"type": "file",
+													"src": "resources/testpdf.pdf"
+												},
+												{
+													"key": "json",
+													"value": "{\n    \"contentlet\":\n        {\n            \"contentType\": \"{{testContentTypeVarName}}\",\n            \"site\": \"{{testSiteName}}\",\n            \"blockEditor\": \"Third Block editor\",\n            \"category\": \"{{testCategoryOneInode}}\",\n            \"checkbox\": \"1\",\n            \"custom\": \"Third custom\",\n            \"date\": \"02/27/2025\",\n            \"dateAndTime\": \"02/27/2025 16:25:00\",\n            \"json\": \"{ \\\"jsonThirdKey\\\": \\\"Third JSON value\\\" }\",\n            \"keyValue\": \"{ \\\"thirdKey\\\": \\\"Third value\\\" }\",\n            \"multiSelect\": \"1\",\n            \"radio\": \"1\",\n            \"relationships\": \"+identifier:{{testFirstChildContentId}}\",\n            \"select\": \"1\",\n            \"tag\": \"{{testTagOne}}\",\n            \"title\": \"Test Third Parent Content{{randomNumber}}\",\n            \"textArea\": \"Third text area\",\n            \"time\": \"7:30:00\",\n            \"wysiwyg\": \"Third WYSIWYG\"\n        }\n}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+											"host": [
+												"{{serverURL}}"
+											],
+											"path": [
+												"api",
+												"v1",
+												"workflow",
+												"actions",
+												"default",
+												"fire",
+												"PUBLISH"
+											],
+											"query": [
+												{
+													"key": "indexPolicy",
+													"value": "WAIT_FOR"
+												}
+											]
+										},
+										"description": "Creates a test Contentlet of the previously generated Content Type."
+									},
+									"response": []
 								}
 							],
 							"description": "Generating test data for these tests. This part of the verification process includes:\n\n- Creating a test Contentlet that lives under System Host.",
@@ -5240,19 +5375,28 @@
 							"name": "Test Content Type",
 							"item": [
 								{
-									"name": "By System Host - Default",
+									"name": "In ALL Sites",
 									"event": [
 										{
 											"listen": "test",
 											"script": {
 												"exec": [
-													"pm.test(\"Test Sytem Content matched successfully\", function () {",
+													"pm.test(\"Test Parent Contents -- including System Host content -- matched successfully\", function () {",
 													"    const jsonData = pm.response.json();",
 													"    const entity = jsonData.entity;",
-													"    const testSystemContentId = pm.collectionVariables.get(\"testSystemParentContentId\");",
-													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Test Sytem Content\");",
-													"    pm.expect(entity.resultsSize).to.eql(1, \"One Contentlet should've been returned\");",
-													"    pm.expect(entity.jsonObjectView.contentlets[0].identifier).to.eql(testSystemContentId, \"Test System Content ID should've been returned\");",
+													"    const testFirstParentContentId = pm.collectionVariables.get(\"testFirstParentContentId\");",
+													"    const testSecondParentContentId = pm.collectionVariables.get(\"testSecondParentContentId\");",
+													"    const testSystemParentContentId = pm.collectionVariables.get(\"testSystemParentContentId\");",
+													"    const testThirdParentContentId = pm.collectionVariables.get(\"testThirdParentContentId\");",
+													"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when retrieving the Parent Contents\");",
+													"    pm.expect(entity.resultsSize).to.eql(4, \"Four results should've been returned\");",
+													"    var count = 0;",
+													"    entity.jsonObjectView.contentlets.forEach(function(item) {",
+													"        if (item.identifier == testFirstParentContentId || item.identifier == testSecondParentContentId || item.identifier == testSystemParentContentId || item.identifier == testThirdParentContentId) {",
+													"            count += 1;",
+													"        }",
+													"    });",
+													"    pm.expect(count).to.equal(4, \"The returned Contents are missing one or more of the 4 expected Contentlet IDs\");",
 													"});",
 													""
 												],
@@ -5266,7 +5410,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {},\n    \"page\": 0,\n    \"perPage\": 40\n}",
+											"raw": "{\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -5285,7 +5429,7 @@
 												"search"
 											]
 										},
-										"description": "When no `siteId` is specified, Contentlets living under System Host are returned by default **UNLESS** the `systemHostContent` attribute is set to `false`."
+										"description": "When no Site is specified, the Contentlets of the specified type in ALL Sites must be returned."
 									},
 									"response": []
 								},
@@ -5633,7 +5777,7 @@
 									"response": []
 								}
 							],
-							"description": "Retrieving Contentlets **of the specified Test Content Type** under a given Site.",
+							"description": "Retrieving Contentlets **of the specified Test Content Type** with the specified System Searchable attributes.",
 							"event": [
 								{
 									"listen": "prerequest",
@@ -6138,7 +6282,7 @@
 					"response": []
 				}
 			],
-			"description": "This new REST Endpoint uses the `ContentSearchForm` class to allow users to retrieve content by abstracting the complexity o creting their own Lucene queries for it. It's based on the same business rules as the `Search` portlet in the back-end.\n\nBy default, the Lucene query will include all Contentlets:\n\n- Living under system Host.\n    \n- Live and Working.\n    \n- Unarchived.\n    \n\nIn case other business rules were missed or new ones must be included, it's very important to keep these test suite up to date with them.",
+			"description": "This new REST Endpoint uses the `ContentSearchForm` class to allow users to retrieve content by abstracting the complexity o creting their own Lucene queries for it. It's based on the same business rules as the `Search` portlet in the back-end.\n\nBy default, the Lucene query will include all Contentlets:\n\n- Living under system Host.\n    \n- Live and Working.\n    \n- Unarchived.\n    \n- Locked and Unlocked.\n    \n\nIn case other business rules were missed or new ones must be included, it's very important to keep these test suite up to date with them.",
 			"event": [
 				{
 					"listen": "prerequest",

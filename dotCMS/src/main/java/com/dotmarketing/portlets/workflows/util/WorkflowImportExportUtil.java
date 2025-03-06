@@ -386,6 +386,7 @@ public class WorkflowImportExportUtil {
             int actionClassOrder = 0;
             final List<WorkflowActionClass> myActionClasses = wapi.findActionClasses(myAction);
 
+			APILocator.getWorkflowAPI().fillActionInfo(myAction, myActionClasses);
             for (WorkflowActionClass myActionClass : myActionClasses) {
 
                 myActionClass.setOrder(actionClassOrder++);

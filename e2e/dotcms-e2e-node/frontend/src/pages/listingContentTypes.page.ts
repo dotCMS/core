@@ -1,5 +1,5 @@
 import { APIRequestContext, Page } from "@playwright/test";
-import { updateFeatureFlag } from "../utils/api";
+import { updateFeatureFlag } from "@utils/api";
 
 export class ListingContentTypesPage {
   constructor(

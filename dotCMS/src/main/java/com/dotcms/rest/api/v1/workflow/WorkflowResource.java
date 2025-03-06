@@ -687,6 +687,9 @@ public class WorkflowResource {
         workflowActionView.setMetadata(workflowAction.getMetadata());
         workflowActionView.setCommentActionlet(workflowAction.hasCommentActionlet());
         workflowActionView.setResetable(workflowAction.hasResetActionlet());
+        workflowActionView.setMoveActionletHashPath(workflowAction.hasMoveActionletHasPathActionlet());
+        workflowActionView.setMoveActionlet(workflowAction.hasMoveActionletActionlet());
+
         return workflowActionView;
     }
 

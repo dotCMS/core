@@ -10,6 +10,12 @@
 @let currentLocaleId = currentLocale ? currentLocale.id.toString() : '';
 @let currentIdentifier = $store.currentIdentifier();
 
+<!--Lock-->
+@let isContentLocked = $store.isContentLocked();
+@let canLock = $store.canLock();
+@let lockSwitchLabel = $store.lockSwitchLabel();
+@let lockWarningMessage = $store.lockWarningMessage();
+
 <!-- TODO: Handle the error, no form -->
 @if (form) {
     <form [formGroup]="form" class="p-fluid dot-edit-content-form h-100">
@@ -47,6 +53,16 @@
         <!-- Template for the tab tabPanel -->
         <ng-template #tabPanelTemplate let-tab="tab">
             <div class="dot-edit-content-form__layout">
+                @if (lockWarningMessage) {
+                    <p-messages severity="info" styleClass="mb-3" [@fadeIn]>
+                        <ng-template pTemplate>
+                            <div class="flex gap-2 justify-content-start">
+                                <i class="pi pi-info-circle"></i>
+                                <span [innerHTML]="lockWarningMessage"></span>
+                            </div>
+                        </ng-template>
+                    </p-messages>
+                }
                 @for (row of tab.layout; track row) {
                     <div class="dot-edit-content-form__layout-row" data-testId="row">
                         @for (column of row.columns; track column) {
@@ -85,6 +101,21 @@
         class="dot-edit-content-actions"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
+        <!-- Add Content Lock Toggle here -->
+        <div
+            class="dot-edit-content-actions__lock flex align-items-center gap-2"
+            [class.locked]="isContentLocked">
+            @if (canLock) {
+                <p-inputSwitch
+                    [ngModel]="isContentLocked"
+                    [disabled]="!canLock"
+                    (onChange)="onContentLockChange($event)"
+                    inputId="lockSwitch"
+                    data-testId="content-lock-switch"></p-inputSwitch>
+                <label for="lockSwitch" class="text-sm">{{ lockSwitchLabel | dm }}</label>
+            }
+        </div>
+
         @if ($showPreviewLink()) {
             <button
                 pButton
