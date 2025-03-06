@@ -1,15 +1,10 @@
 package com.dotcms.cli.common;
 
-import com.dotcms.api.client.analytics.AnalyticsService;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
-import com.dotcms.cli.command.InstanceCommand;
-import com.dotcms.cli.command.LoginCommand;
-import com.dotcms.cli.command.StatusCommand;
 import com.dotcms.model.config.ServiceBean;
-import io.quarkus.arc.Arc;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -18,8 +13,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.ExitCode;
@@ -278,44 +271,12 @@ public class DotExecutionStrategy implements IExecutionStrategy {
         final String parentCommand = commandsChain.firstSubcommand()
                 .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
 
-        if (!parentCommand.isEmpty()
-                && !ConfigCommand.NAME.equals(parentCommand)
-                && !LoginCommand.NAME.equals(parentCommand)
-                && !StatusCommand.NAME.equals(parentCommand)
-                && !InstanceCommand.NAME.equals(parentCommand)
-        ) {
+        final String command = commandsChain.command();
+        final List<String> arguments = parseResult.expandedArgs();
 
-            // Make sure we are not executing this code when running tests
-            final var testProfile = System.getProperty("quarkus.test.profile");
-            LOGGER.debug("Test profile: " + testProfile);
-            if (testProfile == null) {
-
-                // Validate if the analytics tracking is enabled
-                Config config = ConfigProvider.getConfig();
-                final var analyticsEnabledOpt = config.getOptionalValue(
-                        "analytic.enabled", Boolean.class
-                );
-
-                final var analyticsEnabled = analyticsEnabledOpt.orElse(false);
-                if (analyticsEnabled) {
-
-                    try (var handle = Arc.container().instance(AnalyticsService.class)) {
-
-                        AnalyticsService analyticsService = handle.get();
-                        if (analyticsService != null) {
-
-                            final String command = commandsChain.command();
-                            final List<String> arguments = parseResult.expandedArgs();
-
-                            analyticsService.recordCommand(command, arguments);
-                        } else {
-                            LOGGER.warn(
-                                    "No analytics service available. Event will not be recorded.");
-                        }
-                    }
-                }
-            }
-        }
+        LOGGER.debug(String.format("parentCommand [%s==", parentCommand));
+        LOGGER.debug(String.format("command [%s]", command));
+        LOGGER.debug(String.format("arguments [%s]", String.join(" ", arguments)));
     }
 
     /**
