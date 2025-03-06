@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -53,7 +54,10 @@ class DotExecutionStrategyTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        dotExecutionStrategy = spy(new DotExecutionStrategy(mockUnderlyingStrategy, mockSubcommandProcessor, mockWatchService, mockServiceManager));
+        dotExecutionStrategy = spy(new DotExecutionStrategy(
+                mockUnderlyingStrategy, mockSubcommandProcessor, mockWatchService,
+                mockServiceManager, ManagedExecutor.builder().build()
+        ));
     }
 
     /**

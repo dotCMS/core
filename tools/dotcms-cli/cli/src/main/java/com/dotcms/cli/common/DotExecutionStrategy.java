@@ -1,10 +1,15 @@
 package com.dotcms.cli.common;
 
+import com.dotcms.api.client.analytics.AnalyticsService;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.ConfigCommand;
 import com.dotcms.cli.command.DotCommand;
 import com.dotcms.cli.command.DotPush;
+import com.dotcms.cli.command.InstanceCommand;
+import com.dotcms.cli.command.LoginCommand;
+import com.dotcms.cli.command.StatusCommand;
 import com.dotcms.model.config.ServiceBean;
+import io.quarkus.arc.Arc;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -13,6 +18,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.ExitCode;
@@ -40,18 +48,25 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private final ServiceManager serviceManager;
 
+    private final ManagedExecutor executor;
+
     /**
-     * Constructs a new instance of LoggingExecutionStrategy with the provided underlying strategy.
+     * Constructs a new instance of DotExecutionStrategy with the provided dependencies.
      *
-     * @param underlyingStrategy the underlying strategy to use for execution
+     * @param underlyingStrategy the underlying execution strategy to delegate to
+     * @param processor          the processor for handling subcommands and their results
+     * @param watchService       the service responsible for directory watching
+     * @param serviceManager     the manager for controlling application services
+     * @param executor           the executor for managing asynchronous tasks
      */
     public DotExecutionStrategy(final IExecutionStrategy underlyingStrategy,
             final SubcommandProcessor processor, final DirectoryWatcherService watchService,
-            final ServiceManager serviceManager) {
+            final ServiceManager serviceManager, final ManagedExecutor executor) {
         this.underlyingStrategy = underlyingStrategy;
         this.processor = processor;
         this.watchService = watchService;
         this.serviceManager = serviceManager;
+        this.executor = executor;
     }
 
     /**
@@ -124,8 +139,9 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             CommandLine.ParseResult parseResult) throws ExecutionException {
 
         try {
+
             // Create a CompletableFuture for the event recording
-            CompletableFuture<Void> eventFuture = CompletableFuture.runAsync(() -> {
+            CompletableFuture<Void> eventFuture = executor.runAsync(() -> {
                 try {
                     recordEvent(commandsChain, parseResult);
                 } catch (Exception e) {
@@ -134,7 +150,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             });
 
             // Create a CompletableFuture for the command execution
-            CompletableFuture<Integer> executeFuture = CompletableFuture.supplyAsync(() -> {
+            CompletableFuture<Integer> executeFuture = executor.supplyAsync(() -> {
                 try {
                     return processCommandExecution(commandsChain, underlyingStrategy, parseResult);
                 } catch (Exception e) {
@@ -268,15 +284,39 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     void recordEvent(CommandsChain commandsChain, final ParseResult parseResult)
             throws IOException {
 
-        final String parentCommand = commandsChain.firstSubcommand()
-                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+        // Validate if the analytics tracking is enabled
+        Config config = ConfigProvider.getConfig();
+        final var analyticsEnabledOpt = config.getOptionalValue(
+                "analytic.enabled", Boolean.class
+        );
 
-        final String command = commandsChain.command();
-        final List<String> arguments = parseResult.expandedArgs();
+        final var analyticsEnabled = analyticsEnabledOpt.orElse(false);
+        if (analyticsEnabled) {
 
-        LOGGER.debug(String.format("parentCommand [%s==", parentCommand));
-        LOGGER.debug(String.format("command [%s]", command));
-        LOGGER.debug(String.format("arguments [%s]", String.join(" ", arguments)));
+            try (var handle = Arc.container().instance(AnalyticsService.class)) {
+
+                AnalyticsService analyticsService = handle.get();
+                if (analyticsService != null) {
+
+                    final String parentCommand = commandsChain.firstSubcommand()
+                            .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+
+                    if (!ConfigCommand.NAME.equals(parentCommand)
+                            && !LoginCommand.NAME.equals(parentCommand)
+                            && !StatusCommand.NAME.equals(parentCommand)
+                            && !InstanceCommand.NAME.equals(parentCommand)
+                    ) {
+
+                        final String command = commandsChain.command();
+                        final List<String> arguments = parseResult.expandedArgs();
+
+                        analyticsService.recordCommand(command, arguments);
+                    }
+                } else {
+                    LOGGER.warn("No analytics service available. Event will not be recorded.");
+                }
+            }
+        }
     }
 
     /**
