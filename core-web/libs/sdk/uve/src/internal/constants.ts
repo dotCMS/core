@@ -7,6 +7,7 @@ import { UVECallback, UVEEvent } from '../lib/types';
 /**
  * Events that can be subscribed to in the UVE
  *
+ * @internal
  * @type {Record<string, UVEEvent>}
  */
 export const __UVE_EVENTS__: Record<string, UVEEvent> = {

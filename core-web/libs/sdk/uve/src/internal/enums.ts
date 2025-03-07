@@ -1,7 +1,7 @@
 /**
  * Actions received from the dotCMS UVE
  *
- * @export
+ * @internal
  * @enum {string}
  */
 export enum __NOTIFY_CLIENT__ {
