@@ -17,6 +17,7 @@ import io.quarkus.picocli.runtime.annotations.TopCommand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
 
 @TopCommand
@@ -64,6 +65,9 @@ public class EntryCommand implements DotCommand {
 
     @Inject
     DirectoryWatcherService directoryWatcherService;
+
+    @Inject
+    ManagedExecutor executor;
 
     @Inject
     AnalyticsService analyticsService;

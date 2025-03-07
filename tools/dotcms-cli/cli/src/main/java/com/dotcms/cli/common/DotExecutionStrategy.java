@@ -48,8 +48,6 @@ public class DotExecutionStrategy implements IExecutionStrategy {
 
     private final ServiceManager serviceManager;
 
-    private final ManagedExecutor executor;
-
     /**
      * Constructs a new instance of DotExecutionStrategy with the provided dependencies.
      *
@@ -57,16 +55,14 @@ public class DotExecutionStrategy implements IExecutionStrategy {
      * @param processor          the processor for handling subcommands and their results
      * @param watchService       the service responsible for directory watching
      * @param serviceManager     the manager for controlling application services
-     * @param executor           the executor for managing asynchronous tasks
      */
     public DotExecutionStrategy(final IExecutionStrategy underlyingStrategy,
             final SubcommandProcessor processor, final DirectoryWatcherService watchService,
-            final ServiceManager serviceManager, final ManagedExecutor executor) {
+            final ServiceManager serviceManager) {
         this.underlyingStrategy = underlyingStrategy;
         this.processor = processor;
         this.watchService = watchService;
         this.serviceManager = serviceManager;
-        this.executor = executor;
     }
 
     /**
@@ -138,7 +134,9 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             IExecutionStrategy underlyingStrategy,
             CommandLine.ParseResult parseResult) throws ExecutionException {
 
-        try {
+        try (var handle = Arc.container().instance(ManagedExecutor.class)) {
+
+            final var executor = handle.get();
 
             // Create a CompletableFuture for the event recording
             CompletableFuture<Void> eventFuture = executor.runAsync(() -> {

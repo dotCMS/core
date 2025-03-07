@@ -55,8 +55,7 @@ class DotExecutionStrategyTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         dotExecutionStrategy = spy(new DotExecutionStrategy(
-                mockUnderlyingStrategy, mockSubcommandProcessor, mockWatchService,
-                mockServiceManager, ManagedExecutor.builder().build()
+                mockUnderlyingStrategy, mockSubcommandProcessor, mockWatchService, mockServiceManager
         ));
     }
 

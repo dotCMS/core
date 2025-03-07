@@ -35,8 +35,7 @@ class CustomConfigurationUtil {
                 .setExecutionStrategy(new DotExecutionStrategy(
                         new CommandLine.RunLast(), new SubcommandProcessor(),
                         Arc.container().instance(DirectoryWatcherService.class).get(),
-                        Arc.container().instance(ServiceManager.class).get(),
-                        Arc.container().instance(ManagedExecutor.class).get())
+                        Arc.container().instance(ServiceManager.class).get())
                 )
                 .setExecutionExceptionHandler(new DotExceptionHandler())
                 .setExitCodeExceptionMapper(new DotExitCodeExceptionMapper());
