@@ -102,13 +102,7 @@ export class DotEditContentSidebarComponent {
     fireWorkflowAction(actionId: string): void {
         this.$store.fireWorkflowAction({
             actionId,
-            inode: this.$contentlet().inode,
-            data: {
-                contentlet: {
-                    ...this.$formValues(),
-                    contentType: this.$contentType().variable
-                }
-            }
+            inode: this.$contentlet().inode
         });
     }
 

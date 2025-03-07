@@ -248,7 +248,7 @@ export function withWorkflow() {
                  * @param options The options required to fire the workflow action.
                  */
                 fireWorkflowAction: rxMethod<
-                    DotFireActionOptions<{ [key: string]: string | object }>
+                    DotFireActionOptions<{ [key: string]: string | object | string[] }>
                 >(
                     pipe(
                         tap(() => {
