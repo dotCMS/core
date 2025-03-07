@@ -6,6 +6,16 @@ from statistics import mean
 from github_metrics_base import GitHubMetricsBase
 import requests
 import re
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
+
+# Load environment variables from .env.local file (overrides .env)
+env_local_path = os.path.join(os.path.dirname(__file__), '.env.local')
+if os.path.exists(env_local_path):
+    load_dotenv(env_local_path, override=True)
 
 logger = logging.getLogger(__name__)
 
@@ -345,21 +355,27 @@ class DeploymentLeadTimeMetrics(GitHubMetricsBase):
 def main():
     logger.info("Starting GitHub deployment lead time metrics collection...")
     
+    # Get environment variables
     token = os.getenv('GITHUB_TOKEN')
     if not token:
         raise ValueError("Please set GITHUB_TOKEN environment variable")
     
+    owner = os.getenv('GITHUB_OWNER', 'dotcms')
+    repo = os.getenv('GITHUB_REPO', 'core')
     team_label = os.getenv('TEAM_LABEL', 'Team : Falcon')
+    
+    # Get the number of days from environment variable, default to 30 if not set
+    days = int(os.getenv('REPORT_DAYS', '30'))
     
     metrics = DeploymentLeadTimeMetrics(
         token=token,
-        owner='dotcms',
-        repo='core',
+        owner=owner,
+        repo=repo,
         team_label=team_label
     )
     
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=30)
+    start_date = end_date - timedelta(days=days)
     
     report = metrics.generate_lead_time_report(start_date, end_date)
     
