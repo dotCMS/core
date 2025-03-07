@@ -544,12 +544,8 @@ export interface DotCMSGraphQLError {
  * @template TContent - The type of the content data
  * @template TNav - The type of the navigation data
  */
-export interface DotCMSGraphQLPageResponse<
-    TContent = Record<string, any>,
-    TNav = Record<string, any>
-> {
+export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
     page: DotCMSBasicGraphQLPage;
     content?: TContent;
-    nav?: TNav;
     errors?: DotCMSGraphQLError;
 }

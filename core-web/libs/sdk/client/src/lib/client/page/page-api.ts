@@ -73,7 +73,6 @@ export interface GraphQLPageOptions extends PageRequestParams {
     graphql: {
         page?: string;
         content?: Record<string, string>;
-        nav?: Record<string, string>;
         variables?: Record<string, string>;
         fragments?: string[];
     };
@@ -148,42 +147,43 @@ export class PageClient {
      *
      * @example Using GraphQL
      * ```typescript
-     * const page = await pageClient.get('/about-us', {
-     *   languageId: '1',
-     *   mode: 'LIVE',
-     *   pageFragment: `
-     *     fragment PageFields on Page {
-     *       title
-     *       description
-     *       modDate
-     *     }
-     *   `,
-     *   content: {
-     *     blogPosts: `
-     *       query BlogPosts {
-     *         BlogCollection(limit: 3) {
-     *           title
-     *           urlTitle
-     *           publishDate
-     *         }
-     *       }
-     *     `
-     *   },
-     *   nav: {
-     *     mainNav: `
-     *       query MainNav {
-     *         Nav(identifier: "main-nav") {
-     *           title
-     *           items {
-     *             label
-     *             url
-     *           }
-     *         }
-     *       }
-     *     `
-     *   }
-     * });
-     * ```
+     * const page = await pageClient.get('/index', {
+     *      languageId: '1',
+     *      mode: 'LIVE',
+     *      graphql: {
+     *          page: `
+     *              containers {
+     *                  containerContentlets {
+     *                      contentlets {
+     *                          ... on 	Banner {
+     *                              ...bannerFragment
+     *                          }
+     *                      }
+     *                  }
+     *              `,
+     *              content: {
+     *                  blogPosts: `
+     *                      BlogCollection(limit: 3) {
+     *                          ...blogFragment
+     *                      }
+     *                  `,
+     *              },
+     *              fragments: [
+     *                  `
+     *                      fragment bannerFragment on Banner {
+     *                          caption
+     *                      }
+     *                  `,
+     *                  `
+     *                      fragment blogFragment on Blog {
+     *                          title
+     *                          urlTitle
+     *                      }
+     *                  `
+     *              ]
+     *          }
+     *      });
+     *```
      */
     get(url: string, options?: PageRequestParams): Promise<DotCMSPageAsset>;
     get(url: string, options?: GraphQLPageOptions): Promise<DotCMSGraphQLPageResponse>;
@@ -199,13 +199,7 @@ export class PageClient {
             return this.#getPageFromGraphQL(url, options);
         }
 
-        if (this.#isPageRequestParams(options)) {
-            return this.#getPageFromAPI(url, options);
-        }
-
-        console.warn('Invalid options provided to get method:', options);
-
-        return this.#getPageFromAPI(url);
+        return this.#getPageFromAPI(url, options);
     }
 
     /**
@@ -218,13 +212,7 @@ export class PageClient {
     #isGraphQLRequest(
         options: PageRequestParams | GraphQLPageOptions
     ): options is GraphQLPageOptions {
-        const isPageRequestParams = this.#isPageRequestParams(options);
-
-        if (isPageRequestParams) {
-            return false;
-        }
-
-        return !!options?.['graphql'];
+        return 'graphql' in options;
     }
 
     /**
@@ -373,14 +361,13 @@ export class PageClient {
         options?: GraphQLPageOptions
     ): Promise<DotCMSGraphQLPageResponse> {
         const { languageId = '1', mode = 'LIVE', graphql = {} } = options || {};
-        const { page, content = {}, nav = {}, variables, fragments } = graphql;
+        const { page, content = {}, variables, fragments } = graphql;
 
         const contentQuery = buildQuery(content);
-        const navQuery = buildQuery(nav);
         const completeQuery = buildPageQuery({
             page,
             fragments,
-            additionalQueries: `${contentQuery} ${navQuery}`
+            additionalQueries: contentQuery
         });
 
         const requestVariables = {
@@ -413,12 +400,10 @@ export class PageClient {
             }
 
             const contentResponse = mapResponseData(data, Object.keys(content));
-            const navResponse = mapResponseData(data, Object.keys(nav));
 
             return {
                 page: pageResponse,
                 content: contentResponse,
-                nav: navResponse,
                 errors
             };
         } catch (error) {

@@ -161,7 +161,7 @@ export const buildPageQuery = ({
 
   ${page ? ` fragment ClientPage on DotPage { ${page} } ` : ''}
 
-  ${fragments ? fragments.join(' ') : ''}
+  ${fragments ? fragments.join('\n\n') : ''}
 
   query PageContent($url: String!, $languageId: String, $mode: String) {
     page: page(url: $url, languageId: $languageId, pageMode: $mode) {
@@ -229,7 +229,10 @@ export async function fetchGraphQL({
     body: string;
     headers: Record<string, string>;
 }) {
-    const response = await fetch(`${baseURL}/api/v1/graphql`, {
+    const url = new URL(baseURL);
+    url.pathname = '/api/v1/graphql';
+
+    const response = await fetch(url.toString(), {
         method: 'POST',
         body,
         headers

@@ -157,8 +157,7 @@ describe('PageClient', () => {
             const graphQLOptions: GraphQLPageOptions = {
                 graphql: {
                     page: 'fragment PageFields on Page { title url }',
-                    content: { content: 'query Content { items { title } }' },
-                    nav: { nav: 'query Nav { items { label url } }' }
+                    content: { content: 'query Content { items { title } }' }
                 },
                 languageId: '1',
                 mode: 'LIVE'
@@ -167,7 +166,7 @@ describe('PageClient', () => {
             const result = await pageClient.get('/graphql-page', graphQLOptions);
 
             expect(utils.buildPageQuery).toHaveBeenCalled();
-            expect(utils.buildQuery).toHaveBeenCalledTimes(2);
+            expect(utils.buildQuery).toHaveBeenCalledTimes(1);
             expect(utils.fetchGraphQL).toHaveBeenCalledWith({
                 body: expect.any(String),
                 headers: requestOptions.headers,
@@ -178,7 +177,6 @@ describe('PageClient', () => {
             expect(result).toEqual({
                 page: graphqlToPageEntity(mockGraphQLResponse.data),
                 content: { content: mockGraphQLResponse.data.testContent },
-                nav: { nav: mockGraphQLResponse.data.testNav },
                 errors: null
             });
         });
