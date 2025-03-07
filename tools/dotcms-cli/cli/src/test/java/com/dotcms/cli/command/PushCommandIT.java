@@ -10,8 +10,6 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.cli.command.files.FilesCommand;
-import com.dotcms.cli.command.files.FilesPull;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -33,6 +31,7 @@ import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -346,6 +345,7 @@ class PushCommandIT extends CommandTest {
      * @throws IOException
      * @throws InterruptedException
      */
+    @Disabled("Temporal ignore, the CTRL-C simulation is blocking the tests execution, never finishes.")
     @Test
     void testSimplePushInWatchMode() throws IOException, InterruptedException {
 
