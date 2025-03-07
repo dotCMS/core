@@ -267,7 +267,7 @@ describe('createUVESubscription', () => {
         consoleErrorSpy.mockRestore();
     });
 
-    it('should return a no-op subscription when not running inside UVE', () => {
+    it('should throw error when not running inside UVE', () => {
         mockWindow = {
             ...window,
             parent: window
@@ -277,15 +277,12 @@ describe('createUVESubscription', () => {
         spy.mockReturnValue(mockWindow as Window & typeof globalThis);
 
         const callback = jest.fn();
-        const subscription = createUVESubscription('changes', callback);
-
-        expect(subscription).toBeDefined();
-        expect(subscription.event).toBe('changes');
-        expect(subscription.unsubscribe).toBeDefined();
-        expect(consoleWarnSpy).toHaveBeenCalledWith('UVE Subscription: Not running inside UVE');
+        expect(() => createUVESubscription('changes', callback)).toThrow(
+            'UVE Subscription: Not running inside UVE'
+        );
     });
 
-    it('should return a no-op subscription when an invalid event is provided', () => {
+    it('should throw error when an invalid event is provided', () => {
         mockWindow = {
             ...window,
             parent: {
@@ -300,12 +297,7 @@ describe('createUVESubscription', () => {
         spy.mockReturnValue(mockWindow as Window & typeof globalThis);
 
         const callback = jest.fn();
-        const subscription = createUVESubscription('invalid_event', callback);
-
-        expect(subscription).toBeDefined();
-        expect(subscription.event).toBe('invalid_event');
-        expect(subscription.unsubscribe).toBeDefined();
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect(() => createUVESubscription('invalid_event', callback)).toThrow(
             'UVE Subscription: Event invalid_event not found'
         );
     });

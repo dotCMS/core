@@ -76,27 +76,13 @@ export function getUVEState(): UVEState | undefined {
  */
 export function createUVESubscription(event: string, callback: UVECallback): UVESubscription {
     if (!getUVEState()) {
-        console.warn('UVE Subscription: Not running inside UVE');
-
-        return {
-            unsubscribe: () => {
-                /* */
-            },
-            event
-        };
+        throw new Error('UVE Subscription: Not running inside UVE');
     }
 
     const eventCallback = UVE_EVENTS[event];
 
     if (!eventCallback) {
-        console.error(`UVE Subscription: Event ${event} not found`);
-
-        return {
-            unsubscribe: () => {
-                /* */
-            },
-            event
-        };
+        throw new Error(`UVE Subscription: Event ${event} not found`);
     }
 
     return eventCallback(callback);
