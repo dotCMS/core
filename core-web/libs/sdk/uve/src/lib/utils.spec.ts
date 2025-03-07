@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/gl
 import { UVE_MODE } from './types';
 import { getUVEState, createUVESubscription } from './utils';
 
-import { NOTIFY_CLIENT } from '../internal';
+import { __NOTIFY_CLIENT__ } from '../internal';
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
@@ -357,7 +357,7 @@ describe('createUVESubscription', () => {
         // Create and dispatch a message event
         const messageEvent = new MessageEvent('message', {
             data: {
-                name: NOTIFY_CLIENT.UVE_SET_PAGE_DATA,
+                name: __NOTIFY_CLIENT__.UVE_SET_PAGE_DATA,
                 payload: { test: 'data' }
             }
         });

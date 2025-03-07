@@ -1,6 +1,6 @@
 import { UVE_MODE, UVECallback, UVEState, UVESubscription } from './types';
 
-import { UVE_EVENTS } from '../internal/constants';
+import { __UVE_EVENTS__ } from '../internal/constants';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
@@ -79,7 +79,7 @@ export function createUVESubscription(event: string, callback: UVECallback): UVE
         throw new Error('UVE Subscription: Not running inside UVE');
     }
 
-    const eventCallback = UVE_EVENTS[event];
+    const eventCallback = __UVE_EVENTS__[event];
 
     if (!eventCallback) {
         throw new Error(`UVE Subscription: Event ${event} not found`);

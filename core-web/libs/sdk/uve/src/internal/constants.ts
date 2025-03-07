@@ -1,4 +1,4 @@
-import { NOTIFY_CLIENT } from './enums';
+import { __NOTIFY_CLIENT__ } from './enums';
 
 import { UVECallback, UVEEvent } from '../lib/types';
 
@@ -9,10 +9,10 @@ import { UVECallback, UVEEvent } from '../lib/types';
  *
  * @type {Record<string, UVEEvent>}
  */
-export const UVE_EVENTS: Record<string, UVEEvent> = {
+export const __UVE_EVENTS__: Record<string, UVEEvent> = {
     changes: (callback: UVECallback) => {
         const messageCallback = (event: MessageEvent) => {
-            if (event.data.name === NOTIFY_CLIENT.UVE_SET_PAGE_DATA) {
+            if (event.data.name === __NOTIFY_CLIENT__.UVE_SET_PAGE_DATA) {
                 callback(event.data.payload);
             }
         };

@@ -4,7 +4,7 @@
  * @export
  * @enum {string}
  */
-export enum NOTIFY_CLIENT {
+export enum __NOTIFY_CLIENT__ {
     /**
      * Request to page to reload
      */

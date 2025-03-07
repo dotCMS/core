@@ -48,7 +48,7 @@ import {
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
 import { isEqual } from '@dotcms/utils';
-import { NOTIFY_CLIENT } from '@dotcms/uve/internal';
+import { __NOTIFY_CLIENT__ } from '@dotcms/uve/internal';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -200,7 +200,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.contentWindow?.postMessage({ name: NOTIFY_CLIENT.UVE_REQUEST_BOUNDS }, this.host);
+        this.contentWindow?.postMessage({ name: __NOTIFY_CLIENT__.UVE_REQUEST_BOUNDS }, this.host);
     });
 
     ngOnInit(): void {
@@ -305,7 +305,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
                 this.contentWindow?.postMessage(
                     {
-                        name: NOTIFY_CLIENT.UVE_REQUEST_BOUNDS
+                        name: __NOTIFY_CLIENT__.UVE_REQUEST_BOUNDS
                     },
                     this.host
                 );
@@ -372,7 +372,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.updateEditorScrollDragState();
 
                 this.contentWindow?.postMessage(
-                    { name: NOTIFY_CLIENT.UVE_SCROLL_INSIDE_IFRAME, direction },
+                    { name: __NOTIFY_CLIENT__.UVE_SCROLL_INSIDE_IFRAME, direction },
                     this.host
                 );
             });
@@ -737,7 +737,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET) {
                     this.contentWindow?.postMessage(
                         {
-                            name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
+                            name: __NOTIFY_CLIENT__.UVE_RELOAD_PAGE
                         },
                         this.host
                     );
@@ -816,7 +816,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // we should change this with a new SDK reload strategy
                 this.contentWindow?.postMessage(
                     {
-                        name: NOTIFY_CLIENT.UVE_RELOAD_PAGE
+                        name: __NOTIFY_CLIENT__.UVE_RELOAD_PAGE
                     },
                     this.host
                 );
@@ -945,7 +945,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                         if (!this.uveStore.isTraditionalPage()) {
                             const message = {
-                                name: NOTIFY_CLIENT.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                name: __NOTIFY_CLIENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: data
                             };
 
@@ -1052,7 +1052,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     reloadIframeContent() {
         this.iframe?.nativeElement?.contentWindow?.postMessage(
-            { name: NOTIFY_CLIENT.UVE_SET_PAGE_DATA, payload: this.uveStore.pageAPIResponse() },
+            { name: __NOTIFY_CLIENT__.UVE_SET_PAGE_DATA, payload: this.uveStore.pageAPIResponse() },
             this.host
         );
     }
