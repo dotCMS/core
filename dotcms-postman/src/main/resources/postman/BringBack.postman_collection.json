@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "efab28ac-05b9-4e7a-a2de-7cf08474e962",
+		"_postman_id": "18216787-b625-461d-86a4-422100d42d98",
 		"name": "BringBack",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -55,7 +55,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -132,7 +131,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -209,7 +207,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -286,7 +283,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -477,7 +473,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -552,7 +547,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -627,7 +621,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -702,7 +695,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -884,7 +876,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -957,7 +948,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -1030,7 +1020,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -1103,7 +1092,6 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json",
-						"name": "Content-Type",
 						"type": "text"
 					}
 				],
@@ -1198,7 +1186,7 @@
 							"    ",
 							"    var jsonData = pm.response.json();",
 							"      pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
-							"    pm.expect(jsonData.entity.notes).to.eql(\"Notes 1\");",
+							"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
 							"});",
 							"",
 							"",

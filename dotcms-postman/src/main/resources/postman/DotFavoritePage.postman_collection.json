@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "256da9a7-a2a0-40ed-9ce9-c21947f9d67c",
+		"_postman_id": "09cde3f1-989e-41c4-8175-c3a754f1fa5f",
 		"name": "DotFavoritePage",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -10,16 +10,11 @@
 			"name": "CreateNewLimitedRole",
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -67,22 +62,18 @@
 							"var jsonData = pm.response.json();",
 							"pm.collectionVariables.set(\"firstLayoutId\", jsonData.entity[0].id);"
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -116,22 +107,18 @@
 							"});",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -208,11 +195,22 @@
 							"",
 							""
 						],
-						"type": "text/javascript"
+						"type": "text/javascript",
+						"packages": {}
 					}
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -366,6 +364,16 @@
 		{
 			"name": "ReloginAsAnAdminAtTheEnd",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
 				"method": "POST",
 				"header": [],
 				"body": {
@@ -390,6 +398,68 @@
 				}
 			},
 			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"// If we are unable to get the JWT we need to generate a new one",
+					"   if (!pm.environment.get('jwt')) {",
+					"       const username = pm.environment.get(\"user\");",
+					"       const password = pm.environment.get(\"password\");",
+					"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"",
+					"       const requestOptions = {",
+					"           url: apiUrl,",
+					"           method: \"POST\",",
+					"           header: {",
+					"               \"accept\": \"*/*\",",
+					"               \"content-type\": \"application/json\",",
+					"               \"Authorization\": `Basic ${basicAuth}`",
+					"           },",
+					"           body: {",
+					"               mode: \"raw\",",
+					"               raw: JSON.stringify({",
+					"                   \"expirationSeconds\": 7200,",
+					"                   \"userId\": \"dotcms.org.1\",",
+					"                   \"network\": \"0.0.0.0/0\",",
+					"                   \"claims\": {\"label\": \"postman-tests\"}",
+					"               })",
+					"           }",
+					"       };",
+					"",
+					"",
+					"       pm.sendRequest(requestOptions, function (err, response) {",
+					"           if (err) {",
+					"               console.log(err);",
+					"           } else {",
+					"               const jwt = response.json().entity.jwt;",
+					"               pm.environment.set('jwt', jwt);",
+					"               console.log(jwt);",
+					"           }",
+					"       });",
+					"   }",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	],
 	"variable": [
