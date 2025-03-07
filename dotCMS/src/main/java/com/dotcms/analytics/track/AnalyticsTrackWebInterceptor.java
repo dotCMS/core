@@ -42,7 +42,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     private transient final AnalyticsWebAPI analyticsWebAPI;
     private final WhiteBlackList whiteBlackList;
     private final AtomicBoolean isTurnedOn;
-    private final WebEventsCollectorServiceFactory webEventsCollectorServiceFactory;
+    private final Lazy<WebEventsCollectorServiceFactory> webEventsCollectorServiceFactory;
 
     private static final String AUTO_INJECT_LIB_WEB_PATH = "/s/ca-lib.js";
     private static final String AUTO_INJECT_LIB_CLASS_PATH = "/ca/ca-lib.js";
@@ -57,11 +57,11 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                                 "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build(),
                 new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true)),
                 WebAPILocator.getAnalyticsWebAPI(),
-                WebEventsCollectorServiceFactory.getInstance(),
+                Lazy.of(WebEventsCollectorServiceFactory::getInstance),
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
                 //       new RulesRedirectsRequestMatcher(),
-                //new HttpResponseMatcher(),
+                new HttpResponseMatcher(),
                 new VanitiesRequestMatcher());
 
     }
@@ -72,13 +72,14 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                                         final AnalyticsWebAPI analyticsWebAPI,
                                         final RequestMatcher... requestMatchers) {
 
-        this(whiteBlackList, isTurnedOn, analyticsWebAPI, WebEventsCollectorServiceFactory.getInstance(), requestMatchers);
+        this(whiteBlackList, isTurnedOn, analyticsWebAPI, Lazy.of(WebEventsCollectorServiceFactory::getInstance),
+                requestMatchers);
     }
 
     public AnalyticsTrackWebInterceptor(final WhiteBlackList whiteBlackList,
                                         final AtomicBoolean isTurnedOn,
                                         final AnalyticsWebAPI analyticsWebAPI,
-                                        final WebEventsCollectorServiceFactory webEventsCollectorServiceFactory,
+                                        final Lazy<WebEventsCollectorServiceFactory> webEventsCollectorServiceFactory,
                                         final RequestMatcher... requestMatchers) {
 
         this.whiteBlackList = whiteBlackList;
@@ -215,7 +216,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
         Logger.debug(this, ()-> "fireNext, uri: " + request.getRequestURI() +
                 " requestMatcher: " + requestMatcher.getId());
-        webEventsCollectorServiceFactory.getWebEventsCollectorService().fireCollectors(request, response, requestMatcher);
+        webEventsCollectorServiceFactory.get().getWebEventsCollectorService().fireCollectors(request, response, requestMatcher);
     }
 
 

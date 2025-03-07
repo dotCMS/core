@@ -17,6 +17,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Assert;
 import org.junit.Test;
@@ -181,7 +182,7 @@ public class AnalyticsTrackWebInterceptorTest {
         Mockito.when(webEventsCollectorServiceFactory.getWebEventsCollectorService()).thenReturn(webEventsCollectorService);
 
         final AnalyticsTrackWebInterceptor interceptor = new AnalyticsTrackWebInterceptor(
-                whiteBlackList, isTurnedOn, analyticsWebAPI, webEventsCollectorServiceFactory, httpResponseMatcher);
+                whiteBlackList, isTurnedOn, analyticsWebAPI, Lazy.of(() -> webEventsCollectorServiceFactory), httpResponseMatcher);
 
         interceptor.intercept(request, response);
 
