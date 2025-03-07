@@ -282,13 +282,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
     void recordEvent(CommandsChain commandsChain, final ParseResult parseResult)
             throws IOException {
 
-        // Validate if the analytics tracking is enabled
-        Config config = ConfigProvider.getConfig();
-        final var analyticsEnabledOpt = config.getOptionalValue(
-                "analytic.enabled", Boolean.class
-        );
-
-        final var analyticsEnabled = analyticsEnabledOpt.orElse(false);
+        final var analyticsEnabled = isAnalyticsEnabled();
         if (analyticsEnabled) {
 
             try (var handle = Arc.container().instance(AnalyticsService.class)) {
@@ -296,14 +290,8 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                 AnalyticsService analyticsService = handle.get();
                 if (analyticsService != null) {
 
-                    final String parentCommand = commandsChain.firstSubcommand()
-                            .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
-
-                    if (!ConfigCommand.NAME.equals(parentCommand)
-                            && !LoginCommand.NAME.equals(parentCommand)
-                            && !StatusCommand.NAME.equals(parentCommand)
-                            && !InstanceCommand.NAME.equals(parentCommand)
-                    ) {
+                    final var trackCommand = trackCommand(commandsChain);
+                    if (trackCommand) {
 
                         final String command = commandsChain.command();
                         final List<String> arguments = parseResult.expandedArgs();
@@ -315,6 +303,43 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                 }
             }
         }
+    }
+
+    /**
+     * Determines whether the given command chain should be tracked for analytics purposes.
+     * Excludes specific commands like ConfigCommand, LoginCommand, StatusCommand, and InstanceCommand
+     * from being tracked.
+     *
+     * @param commandsChain the chain of commands to check for tracking eligibility
+     * @return true if the command in the chain should be tracked, false otherwise
+     */
+    private boolean trackCommand(CommandsChain commandsChain) {
+
+        final String parentCommand = commandsChain.firstSubcommand()
+                .map(p -> p.commandSpec().name()).orElse("UNKNOWN");
+
+        return !ConfigCommand.NAME.equals(parentCommand)
+                && !LoginCommand.NAME.equals(parentCommand)
+                && !StatusCommand.NAME.equals(parentCommand)
+                && !InstanceCommand.NAME.equals(parentCommand);
+    }
+
+    /**
+     * Determines whether analytics tracking is enabled based on the configuration. The
+     * configuration is retrieved through the ConfigProvider, and the value is fetched using the key
+     * "analytic.enabled". If the key is not defined in the configuration, it defaults to false.
+     *
+     * @return true if analytics tracking is enabled; false otherwise
+     */
+    private Boolean isAnalyticsEnabled() {
+
+        // Validate if the analytics tracking is enabled
+        Config config = ConfigProvider.getConfig();
+        final var analyticsEnabledOpt = config.getOptionalValue(
+                "analytic.enabled", Boolean.class
+        );
+
+        return analyticsEnabledOpt.orElse(false);
     }
 
     /**
