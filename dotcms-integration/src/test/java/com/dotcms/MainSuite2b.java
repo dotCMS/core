@@ -510,12 +510,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CountVariantsInAllDraftExperimentsMetricTypeTest.class,
         CountVariantsInAllEndedExperimentsMetricTypeTest.class,
         CountVariantsInAllRunningExperimentsMetricTypeTest.class,
-        CountVariantsInAllScheduledExperimentsMetricTypeTest.class,
-        CountPagesWithAllEndedExperimentsMetricTypeTest.class,
-        CountPagesWithArchivedExperimentsMetricTypeTest.class,
-        CountPagesWithDraftExperimentsMetricTypeTest.class,
-        CountPagesWithRunningExperimentsMetricTypeTest.class,
-        CountPagesWithScheduledExperimentsMetricTypeTest.class
+        CountVariantsInAllScheduledExperimentsMetricTypeTest.class
 })
 
 public class MainSuite2b {

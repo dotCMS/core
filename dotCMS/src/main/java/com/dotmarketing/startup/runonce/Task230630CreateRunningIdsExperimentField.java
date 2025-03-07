@@ -32,7 +32,7 @@ public class Task230630CreateRunningIdsExperimentField implements StartupTask  {
         while(resultSet.next()){
             final String columnName = resultSet.getString("COLUMN_NAME");
 
-            if (columnName.equals("running_ids")) {
+            if (columnName.equalsIgnoreCase("running_ids")) {
                 existsRunningIds = true;
                 break;
             }
