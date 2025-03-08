@@ -7,6 +7,7 @@ import { Component, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import * as dotcmsClient from '@dotcms/client';
+import * as dotcmsUVE from '@dotcms/uve';
 
 import { PageResponseMock, PageResponseOneRowMock } from './../../utils/testing.utils';
 import { DotcmsLayoutComponent } from './dotcms-layout.component';
@@ -14,18 +15,6 @@ import { DotcmsLayoutComponent } from './dotcms-layout.component';
 import { DotCMSContentlet, DotCMSPageAsset } from '../../models';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
 import { RowComponent } from '../row/row.component';
-
-interface Callback {
-    [key: string]: (data: unknown) => void;
-}
-
-interface DotCmsClientMock extends dotcmsClient.DotCmsClient {
-    editor: {
-        on: (type: string, callbackFn: (data: unknown) => void) => void;
-        off: jest.Mock;
-        callbacks: Callback;
-    };
-}
 
 @Component({
     selector: 'dotcms-mock-component',
@@ -41,24 +30,20 @@ jest.mock('@dotcms/client', () => ({
     isInsideEditor: jest.fn().mockReturnValue(true),
     initEditor: jest.fn(),
     updateNavigation: jest.fn(),
-    postMessageToEditor: jest.fn(),
-    DotCmsClient: {
-        instance: {
-            editor: {
-                on: function (type: string, callbackFn: (data: unknown) => void): void {
-                    this.callbacks[type] = callbackFn;
-                },
-                off: jest.fn(),
-                callbacks: {} as Callback
-            }
-        }
-    },
-    CLIENT_ACTIONS: {
-        GET_PAGE_DATA: 'get-page-data'
-    }
+    postMessageToEditor: jest.fn()
 }));
 
-const { DotCmsClient } = dotcmsClient as jest.Mocked<typeof dotcmsClient>;
+jest.mock('@dotcms/uve', () => ({
+    ...jest.requireActual('@dotcms/uve'),
+    createUVESubscription: jest.fn(),
+    getUVEState: jest.fn().mockReturnValue({
+        mode: 'preview',
+        languageId: 'en',
+        persona: 'admin',
+        variantName: 'default',
+        experimentId: '123'
+    })
+}));
 
 describe('DotcmsLayoutComponent', () => {
     let spectator: Spectator<DotcmsLayoutComponent>;
@@ -114,11 +99,11 @@ describe('DotcmsLayoutComponent', () => {
         });
 
         describe('onReload', () => {
-            const client = DotCmsClient.instance;
-            let editorOnSpy: jest.SpyInstance;
+            let uveSubscriptionSpy: jest.SpyInstance;
 
             beforeEach(() => {
-                editorOnSpy = jest.spyOn(client.editor, 'on');
+                uveSubscriptionSpy = jest.spyOn(dotcmsUVE, 'createUVESubscription');
+
                 spectator.setInput('onReload', () => {
                     /* do nothing */
                 });
@@ -126,14 +111,14 @@ describe('DotcmsLayoutComponent', () => {
             });
 
             it('should subscribe to the `CHANGE` event', () => {
-                expect(editorOnSpy).toHaveBeenCalled();
+                expect(uveSubscriptionSpy).toHaveBeenCalled();
             });
 
             it('should remove listener on unmount', () => {
                 spectator.component.ngOnDestroy();
                 spectator.detectChanges();
 
-                expect(client.editor.off).toHaveBeenCalledWith('changes');
+                expect(uveSubscriptionSpy).toHaveBeenCalledWith('changes', expect.any(Function));
             });
         });
 
@@ -155,12 +140,14 @@ describe('DotcmsLayoutComponent', () => {
         });
 
         describe('onChange', () => {
-            const client = DotCmsClient.instance;
             beforeEach(() => spectator.detectChanges());
 
             it('should update the page asset when changes are made in the editor', () => {
-                const editorOnSpy = jest.spyOn(client.editor, 'on');
-                expect(editorOnSpy).toHaveBeenCalledWith('changes', expect.any(Function));
+                const createUVESubscriptionSpy = jest.spyOn(dotcmsUVE, 'createUVESubscription');
+                expect(createUVESubscriptionSpy).toHaveBeenCalledWith(
+                    'changes',
+                    expect.any(Function)
+                );
             });
         });
     });
@@ -183,11 +170,18 @@ describe('DotcmsLayoutComponent', () => {
         });
 
         it('should update the page asset when changes are made in the editor', () => {
-            const { editor } = DotCmsClient.instance as DotCmsClientMock;
-            editor.callbacks['changes'](PageResponseOneRowMock);
+            const createUVESubscriptionSpy = jest.spyOn(dotcmsUVE, 'createUVESubscription');
             spectator.detectChanges();
+
+            // Get the callback function that was passed to createUVESubscription
+            const [[, callback]] = createUVESubscriptionSpy.mock.calls;
+
+            // Simulate the changes event
+            callback(PageResponseOneRowMock);
+            spectator.detectChanges();
+
             const rowComponents = spectator.queryAll(RowComponent);
-            const rows = PageResponseMock.layout.body.rows;
+            const rows = PageResponseOneRowMock.layout.body.rows;
             expect(rowComponents.length).toBe(1);
             expect(rowComponents[0].row).toEqual(rows[0]);
         });
