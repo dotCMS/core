@@ -4,12 +4,16 @@
     </label>
 
     <div class="formgroup-inline">
-        <div *ngFor="let radio of radioInputs" class="field-checkbox">
-            <p-radioButton
-                [label]="radio.text | dm"
-                [name]="property.name"
-                [value]="radio.value"
-                [formControlName]="property.name"></p-radioButton>
+        <div *ngFor="let radio of radioInputs; let i = index" class="field-checkbox">
+            <div class="flex items-center">
+                <p-radioButton
+                    [name]="property.name"
+                    [value]="radio.value"
+                    [formControlName]="property.name"
+                    [inputId]="property.name + i">
+                </p-radioButton>
+                <label [for]="property.name + i" class="ml-2">{{radio.text | dm}}</label>
+            </div>
         </div>
     </div>
 </div>

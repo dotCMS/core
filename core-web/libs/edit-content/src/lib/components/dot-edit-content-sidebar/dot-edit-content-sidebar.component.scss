@@ -19,7 +19,7 @@
             display: flex;
             align-items: center;
         }
-        .p-tabview-nav-container {
+        .p-tabs-nav-container {
             padding: 0;
             border: solid 1px $color-palette-gray-300;
             border-right: none;
@@ -28,13 +28,13 @@
             border-left: none;
         }
 
-        .p-tabview-nav-content .p-tabview-nav {
+        .p-tabs-nav-content .p-tabs-nav {
             border: none;
             min-height: 52px;
             min-width: auto;
         }
 
-        .p-tabview-nav-content {
+        .p-tabs-nav-content {
             display: flex;
             align-items: center;
             width: 100%;
@@ -51,8 +51,8 @@
             }
         }
 
-        .p-tabview {
-            .p-tabview-nav-container {
+        .p-tabs {
+            .p-tabs-nav-container {
                 position: sticky;
                 top: 0;
                 z-index: 2;

@@ -1,7 +1,11 @@
 <div [formGroup]="group" class="field-checkbox">
-    <p-checkbox
-        [label]="setCheckboxLabel(property.name) | dm"
-        [value]="property.value"
-        [formControlName]="property.name"
-        binary="true"></p-checkbox>
+    <div class="flex items-center">
+        <p-checkbox
+            [value]="property.value"
+            [formControlName]="property.name"
+            binary="true"
+            [inputId]="property.name">
+        </p-checkbox>
+        <label [for]="property.name" class="ml-2">{{setCheckboxLabel(property.name) | dm}}</label>
+    </div>
 </div>
