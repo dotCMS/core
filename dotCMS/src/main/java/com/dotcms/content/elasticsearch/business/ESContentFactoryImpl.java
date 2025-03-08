@@ -232,6 +232,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             "bool24", "bool25"};
 
     private static final int MAX_FIELDS_ALLOWED = 25;
+    private static final int OLD_CONTENT_BATCH_SIZE = 8192;
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -710,20 +711,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
         final int before = Integer.parseInt(result.get(0).get("count"));
-        dc = new DotConnect();
-        final String query = new StringBuilder("SELECT DISTINCT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND ")
-                .append(" inode NOT IN (SELECT working_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode)")
-                .append(" AND ")
-                .append(" inode NOT IN (SELECT live_inode FROM contentlet_version_info WHERE live_inode = contentlet.inode)")
-                .toString();
-        dc.setSQL(query);
-        dc.addParam(date);
-        result = dc.loadResults();
-        int oldInodesCount = result.size();
-        if (oldInodesCount > 0) {
-            final List<String> inodeList = result.stream().map(row -> row.get("inode")).collect(Collectors.toList());
-            deleteContentData(inodeList);
-        }
+        final String query = "SELECT DISTINCT c.inode FROM contentlet c"
+                + " LEFT JOIN contentlet_version_info vi_w ON vi_w.working_inode = c.inode"
+                + " LEFT JOIN contentlet_version_info vi_l ON vi_l.live_inode = c.inode"
+                + " WHERE c.identifier <> 'SYSTEM_HOST' AND c.mod_date < ?"
+                + " AND vi_w.working_inode IS NULL AND vi_l.live_inode IS NULL"
+                + " LIMIT ?";
+
+        int oldInodesCount;
+        do {
+            dc = new DotConnect();
+            dc.setSQL(query);
+            dc.addParam(date);
+            dc.addParam(OLD_CONTENT_BATCH_SIZE);
+            result = dc.loadResults();
+            oldInodesCount = result.size();
+            if (oldInodesCount > 0) {
+                final List<String> inodeList = result.stream().map(row -> row.get("inode")).collect(Collectors.toList());
+                deleteContentData(inodeList);
+            }
+        } while (oldInodesCount == OLD_CONTENT_BATCH_SIZE);
+
         dc = new DotConnect();
         dc.setSQL(countSQL);
         result = dc.loadResults();
