@@ -1,6 +1,6 @@
 import { CollectionBuilder } from './builders/collection/collection';
 
-import { ClientOptions } from '../sdk-js-client';
+import { ClientOptions } from '../../deprecated/sdk-js-client';
 
 /**
  * Creates a builder to filter and fetch a collection of content items.
