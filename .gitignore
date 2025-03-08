@@ -21,6 +21,25 @@ bin/*.sh
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Environment files #
+######################
+# Exclude .env.local files (contain sensitive data)
+.env.local
+*.env.local
+**/.env.local
+# But allow .env files (templates with default values)
+!.env
+!**/.env
+
+# Python cache files #
+######################
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
 # none enterprise stuff should make it here #
 #######################################
 dotCMS/src/main/enterprise
