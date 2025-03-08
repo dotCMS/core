@@ -126,15 +126,15 @@ build-core-only:
 test-integration-ide:
     ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false -Dtomcat.port=8080
 
+# Stops integration test services
+test-integration-stop:
+    ./mvnw -pl :dotcms-integration -Pdocker-stop -Dcoreit.test.skip=false
+
 test-postman-ide:
     ./mvnw -pl :dotcms-test-karate pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
 
 test-karate-ide:
     ./mvnw -pl :dotcms-test-karate pre-integration-test -Dkarate.test.skip=false -Dtomcat.port=8080
-
-# Stops integration test services
-test-integration-stop:
-    ./mvnw -pl :dotcms-integration -Pdocker-stop -Dcoreit.test.skip=false
 
 # Executes Java E2E tests
 test-e2e-java:

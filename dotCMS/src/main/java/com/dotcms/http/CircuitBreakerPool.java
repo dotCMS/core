@@ -1,6 +1,5 @@
 package com.dotcms.http;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -11,7 +10,7 @@ import com.google.common.cache.CacheBuilder;
 
 import net.jodah.failsafe.CircuitBreaker;
 
-public class CurcuitBreakerPool {
+public class CircuitBreakerPool {
     
 
     final static int FAIL_AFTER = Config.getIntProperty("CIRCUIT_BREAKER_URL_MAX_FAILURES", 5);
@@ -27,15 +26,10 @@ public class CurcuitBreakerPool {
     @VisibleForTesting
     public static CircuitBreaker getBreaker(final String key)  {
         try {
-            return pool.get(key, new Callable<CircuitBreaker>() {
-                @Override
-                public CircuitBreaker call() {
-                    return new CircuitBreaker()
-                                    .withFailureThreshold(FAIL_AFTER)
-                                    .withSuccessThreshold(TRY_AGAIN_ATTEMPTS)
-                                    .withDelay(TRY_AGAIN_DELAY_SEC, TimeUnit.SECONDS);
-                }
-            });
+            return pool.get(key, () -> new CircuitBreaker()
+                            .withFailureThreshold(FAIL_AFTER)
+                            .withSuccessThreshold(TRY_AGAIN_ATTEMPTS)
+                            .withDelay(TRY_AGAIN_DELAY_SEC, TimeUnit.SECONDS));
         } catch (ExecutionException e) {
             throw new DotExecutionException(e);
         }
@@ -44,15 +38,10 @@ public class CurcuitBreakerPool {
     @VisibleForTesting
     public static CircuitBreaker getBreaker(final String key, int failAfter, int tryAgainAfter, int workAgainAfter)  {
         try {
-            return pool.get(key, new Callable<CircuitBreaker>() {
-                @Override
-                public CircuitBreaker call() {
-                    return new CircuitBreaker()
-                                    .withFailureThreshold(failAfter)
-                                    .withSuccessThreshold(tryAgainAfter)
-                                    .withDelay(workAgainAfter, TimeUnit.SECONDS);
-                }
-            });
+            return pool.get(key, () -> new CircuitBreaker()
+                            .withFailureThreshold(failAfter)
+                            .withSuccessThreshold(tryAgainAfter)
+                            .withDelay(workAgainAfter, TimeUnit.SECONDS));
         } catch (ExecutionException e) {
             throw new DotExecutionException(e);
         }
