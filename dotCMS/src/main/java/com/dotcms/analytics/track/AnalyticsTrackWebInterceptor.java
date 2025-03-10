@@ -1,10 +1,7 @@
 package com.dotcms.analytics.track;
 
 import com.dotcms.analytics.track.collectors.WebEventsCollectorServiceFactory;
-import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
-import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
-import com.dotcms.analytics.track.matchers.RequestMatcher;
-import com.dotcms.analytics.track.matchers.VanitiesRequestMatcher;
+import com.dotcms.analytics.track.matchers.*;
 import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.featureflag.FeatureFlagName;
@@ -17,6 +14,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -44,6 +42,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
     private transient final AnalyticsWebAPI analyticsWebAPI;
     private final WhiteBlackList whiteBlackList;
     private final AtomicBoolean isTurnedOn;
+    private final Lazy<WebEventsCollectorServiceFactory> webEventsCollectorServiceFactory;
 
     private static final String AUTO_INJECT_LIB_WEB_PATH = "/s/ca-lib.js";
     private static final String AUTO_INJECT_LIB_CLASS_PATH = "/ca/ca-lib.js";
@@ -58,16 +57,29 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                                 "ANALYTICS_BLACKLISTED_KEYS", new String[]{}), DEFAULT_BLACKLISTED_PROPS)).build(),
                 new AtomicBoolean(Config.getBooleanProperty(ANALYTICS_TURNED_ON_KEY, true)),
                 WebAPILocator.getAnalyticsWebAPI(),
+                Lazy.of(WebEventsCollectorServiceFactory::getInstance),
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
                 //       new RulesRedirectsRequestMatcher(),
+                new HttpResponseMatcher(),
                 new VanitiesRequestMatcher());
 
+    }
+
+    @VisibleForTesting
+    public AnalyticsTrackWebInterceptor(final WhiteBlackList whiteBlackList,
+                                        final AtomicBoolean isTurnedOn,
+                                        final AnalyticsWebAPI analyticsWebAPI,
+                                        final RequestMatcher... requestMatchers) {
+
+        this(whiteBlackList, isTurnedOn, analyticsWebAPI, Lazy.of(WebEventsCollectorServiceFactory::getInstance),
+                requestMatchers);
     }
 
     public AnalyticsTrackWebInterceptor(final WhiteBlackList whiteBlackList,
                                         final AtomicBoolean isTurnedOn,
                                         final AnalyticsWebAPI analyticsWebAPI,
+                                        final Lazy<WebEventsCollectorServiceFactory> webEventsCollectorServiceFactory,
                                         final RequestMatcher... requestMatchers) {
 
         this.whiteBlackList = whiteBlackList;
@@ -75,7 +87,9 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
         addRequestMatcher(requestMatchers);
         this.caLib = Lazy.of(() -> FileUtil.toStringFromResourceAsStreamNoThrown(AUTO_INJECT_LIB_CLASS_PATH));
         this.analyticsWebAPI = analyticsWebAPI;
+        this.webEventsCollectorServiceFactory = webEventsCollectorServiceFactory;
     }
+
 
     /**
      * Add a request matchers
@@ -202,7 +216,7 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
 
         Logger.debug(this, ()-> "fireNext, uri: " + request.getRequestURI() +
                 " requestMatcher: " + requestMatcher.getId());
-        WebEventsCollectorServiceFactory.getInstance().getWebEventsCollectorService().fireCollectors(request, response, requestMatcher);
+        webEventsCollectorServiceFactory.get().getWebEventsCollectorService().fireCollectors(request, response, requestMatcher);
     }
 
 

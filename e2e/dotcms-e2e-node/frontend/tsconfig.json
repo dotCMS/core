@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@pages/*": ["./src/pages/*"],
+      "@pages": ["./src/pages/index"],
       "@locators/*": ["./src/locators/*"],
       "@utils/*": ["./src/utils/*"],
       "@data/*": ["./src/data/*"],

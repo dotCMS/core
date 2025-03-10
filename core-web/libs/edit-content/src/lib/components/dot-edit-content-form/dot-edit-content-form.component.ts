@@ -16,11 +16,14 @@ import {
     FormGroup,
     ReactiveFormsModule,
     ValidatorFn,
-    Validators
+    Validators,
+    FormsModule
 } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { InputSwitchChangeEvent, InputSwitchModule } from 'primeng/inputswitch';
+import { MessagesModule } from 'primeng/messages';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -80,7 +83,10 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         DotWorkflowActionsComponent,
         TabViewInsertDirective,
         NgTemplateOutlet,
-        DotMessagePipe
+        DotMessagePipe,
+        InputSwitchModule,
+        FormsModule,
+        MessagesModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -169,16 +175,21 @@ export class DotEditContentFormComponent implements OnInit {
 
     constructor() {
         /**
-         * Effect that enables or disables the form based on the loading state.
+         * Effect that enables or disables the form based on the loading or locked state.
          */
-        effect(() => {
-            const isLoading = this.$store.isLoading();
-            if (isLoading) {
-                this.form.disable();
-            } else {
-                this.form.enable();
-            }
-        });
+        effect(
+            () => {
+                const isLoading = this.$store.isLoading();
+                const isLocked = this.$store.isContentLocked();
+
+                if (isLoading || isLocked) {
+                    this.form.disable();
+                } else {
+                    this.form.enable();
+                }
+            },
+            { allowSignalWrites: true }
+        );
 
         /**
          * Effect that initializes the form and form listener when copying locale.
@@ -427,5 +438,15 @@ export class DotEditContentFormComponent implements OnInit {
      */
     onActiveIndexChange({ index }: TabViewChangeEvent) {
         this.$store.setActiveTab(index);
+    }
+
+    /**
+     * Handles the change event for the content lock input switch.
+     *
+     * @param {InputSwitchChangeEvent} event - The event object containing the checked state.
+     * @memberof DotEditContentFormComponent
+     */
+    onContentLockChange(event: InputSwitchChangeEvent) {
+        event.checked ? this.$store.lockContent() : this.$store.unlockContent();
     }
 }
