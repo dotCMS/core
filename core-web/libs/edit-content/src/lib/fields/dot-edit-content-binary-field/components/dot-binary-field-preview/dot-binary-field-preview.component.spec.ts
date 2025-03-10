@@ -264,7 +264,7 @@ describe('DotBinaryFieldPreviewComponent', () => {
 
             expect(spyResourceLinks).toHaveBeenCalledWith({
                 fieldVariable: 'Binary',
-                inodeOrIdentifier: CONTENTLET_MOCK.identifier
+                inode: CONTENTLET_MOCK.inode
             });
         });
 
@@ -283,7 +283,7 @@ describe('DotBinaryFieldPreviewComponent', () => {
             expect(resourceLinkElement).toBeNull();
             expect(spyResourceLinks).toHaveBeenCalledWith({
                 fieldVariable: 'Binary',
-                inodeOrIdentifier: CONTENTLET_MOCK.identifier
+                inode: CONTENTLET_MOCK.inode
             });
         });
 
@@ -304,7 +304,7 @@ describe('DotBinaryFieldPreviewComponent', () => {
 
             expect(spyResourceLinks).toHaveBeenCalledWith({
                 fieldVariable: 'Binary',
-                inodeOrIdentifier: CONTENTLET_MOCK.identifier
+                inode: CONTENTLET_MOCK.inode
             });
         }));
 
