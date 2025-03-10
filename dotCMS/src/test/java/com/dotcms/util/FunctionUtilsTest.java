@@ -81,11 +81,28 @@ public class FunctionUtilsTest extends UnitTestBase {
      * </ul>
      */
     @Test
-    public void getOrDefault() {
-        final Supplier<Long> trueSupplier = () -> System.currentTimeMillis() - 50000L;
-        final Supplier<Long> falseSupplier = System::currentTimeMillis;
+    public void getOrDefaultReturnsTrueSupplier() {
+        final Supplier<Boolean> trueSupplier = () -> true;
+        final Supplier<Boolean> falseSupplier = () -> false;
         assertEquals("The value of 'time' should be returned", trueSupplier.get(),
-                FunctionUtils.getOrDefault(trueSupplier.get() < falseSupplier.get(), trueSupplier, falseSupplier));
+                FunctionUtils.getOrDefault(trueSupplier.get(), trueSupplier, falseSupplier));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link FunctionUtils#getOrDefault(Supplier, Supplier)}</li>
+     *     <li><b>Given Scenario: </b>Returns the expected {@code Supplier} based on the result
+     *     of the boolean condition.</li>
+     *     <li><b>Expected Result: </b>The condition evaluates to {@code true}, so the {@code
+     *     trueSupplier} is returned.</li>
+     * </ul>
+     */
+    @Test
+    public void getOrDefaultReturnsFalseSupplier() {
+        final Supplier<Boolean> trueSupplier = () -> true;
+        final Supplier<Boolean> falseSupplier = () -> false;
+        assertEquals("The value of 'time' should be returned", falseSupplier.get(),
+                FunctionUtils.getOrDefault(falseSupplier.get(), trueSupplier, falseSupplier));
     }
 
 }
