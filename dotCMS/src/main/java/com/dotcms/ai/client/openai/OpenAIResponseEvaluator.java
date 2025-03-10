@@ -6,10 +6,12 @@ import com.dotcms.ai.domain.AIResponseData;
 import com.dotcms.ai.domain.ModelStatus;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.exception.DotAIModelNotOperationalException;
+import com.dotcms.rest.exception.GenericHttpStatusCodeException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.json.JSONObject;
 import io.vavr.Lazy;
 
+import javax.ws.rs.core.Response;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -34,8 +36,7 @@ public class OpenAIResponseEvaluator implements AIResponseEvaluator {
         return INSTANCE.get();
     }
 
-    private OpenAIResponseEvaluator() {
-    }
+    private OpenAIResponseEvaluator() {}
 
     /**
      * {@inheritDoc}
@@ -85,7 +86,15 @@ public class OpenAIResponseEvaluator implements AIResponseEvaluator {
             return ModelStatus.INVALID;
         }
 
+
+        if (throwable instanceof GenericHttpStatusCodeException) {
+            final GenericHttpStatusCodeException statusCodeException = (GenericHttpStatusCodeException) throwable;
+            final Response.Status status = Response.Status.fromStatusCode(statusCodeException.getResponse().getStatus());
+            if (status == Response.Status.NOT_FOUND) {
+                return ModelStatus.INVALID;
+            }
+        }
+
         return ModelStatus.UNKNOWN;
     }
-
 }

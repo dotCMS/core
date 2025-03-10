@@ -2,16 +2,20 @@ package com.dotcms.ai.app;
 
 import com.dotcms.ai.AiTest;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.security.apps.AppDescriptorHelper;
+import com.dotcms.security.apps.AppsAPIImpl;
+import com.dotcms.security.apps.SecretsStore;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.InvalidLicenseException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -49,21 +53,22 @@ public class ConfigServiceTest {
     /**
      * Given a ConfigService with an invalid license
      * When the config method is called with a host
-     * Then the models should not be operational.
+     * Then an InvalidLicenseException should be thrown.
      */
-    @Test
+    @Test(expected = InvalidLicenseException.class)
     public void test_invalidLicense() {
-        configService = new ConfigService(new LicenseValiditySupplier() {
-            @Override
-            public boolean hasValidLicense() {
-                return false;
-            }
-        });
-        final AppConfig appConfig = configService.config(host);
-
-        assertFalse(appConfig.getModel().isOperational());
-        assertFalse(appConfig.getImageModel().isOperational());
-        assertFalse(appConfig.getEmbeddingsModel().isOperational());
+        configService = new ConfigService(
+                new AppsAPIImpl(
+                        APILocator.getLayoutAPI(),
+                        APILocator.getHostAPI(), SecretsStore.INSTANCE.get(),
+                        CacheLocator.getAppsCache(), APILocator.getLocalSystemEventsAPI(), new AppDescriptorHelper(),
+                        new LicenseValiditySupplier() {
+                            public boolean hasValidLicense() {
+                                return false;
+                            }
+                        })
+        );
+        configService.config(host);
     }
 
     /**

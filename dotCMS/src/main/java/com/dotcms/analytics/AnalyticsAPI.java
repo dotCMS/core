@@ -17,6 +17,7 @@ import java.time.Instant;
  */
 public interface AnalyticsAPI {
 
+    String BEARER = "Bearer ";
     String ANALYTICS_IDP_URL_KEY = "ANALYTICS_IDP_URL";
     String ANALYTICS_USE_DUMMY_TOKEN_KEY = "ANALYTICS_USE_DUMMY_TOKEN";
     String ANALYTICS_ACCESS_TOKEN_KEY_PREFIX = "ANALYTICS_ACCESS_TOKEN";
@@ -31,7 +32,7 @@ public interface AnalyticsAPI {
     AccessToken DUMMY_TOKEN = AccessToken.builder()
         .accessToken("dummy_token")
         .clientId("dummy")
-        .tokenType("Bearer")
+        .tokenType(BEARER.trim())
         .expiresIn(Integer.MAX_VALUE)
         .status(AccessTokenStatus.builder().tokenStatus(TokenStatus.OK).build())
         .issueDate(Instant.now())

@@ -51,6 +51,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
     private static final int AI_MODELS_CACHE_TTL = 28800;  // 8 hours
     private static final int AI_MODELS_CACHE_SIZE = 256;
     private static final Lazy<AIModels> INSTANCE = Lazy.of(AIModels::new);
+    public static final String BEARER = "Bearer ";
 
     private final ConcurrentMap<String, List<Tuple2<AIModelType, AIModel>>> internalModels;
     private final ConcurrentMap<Tuple3<String, Model, AIModelType>, AIModel> modelsByName;
@@ -69,6 +70,10 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
 
     private static long resolveModelsFetchTimeout() {
         return Config.getLongProperty(AI_MODELS_FETCH_TIMEOUT_KEY, 4000);
+    }
+
+    private static String resolveAiModelsApiUrl() {
+        return Config.getStringProperty(AI_MODELS_API_URL_KEY, AI_MODELS_API_URL_DEFAULT);
     }
 
     private AIModels() {
@@ -115,7 +120,10 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
                     }
                     modelsByName.putIfAbsent(key, aiModel);
                 }));
-        activateModels(host, added == null);
+
+        if (added == null) {
+            activateModels(host);
+        }
     }
 
     /**
@@ -268,6 +276,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
 
     @Override
     public void notify(final SystemTableUpdatedKeyEvent event) {
+        Logger.info(this, String.format("Notify for event [%s]", event.getKey()));
         if (event.getKey().contains(AI_MODELS_FETCH_ATTEMPTS_KEY)) {
             modelsFetchAttempts.set(resolveModelsFetchAttempts());
         } else if (event.getKey().contains(AI_MODELS_FETCH_TIMEOUT_KEY)) {
@@ -282,18 +291,14 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
         supportedModelsCache.invalidate(SUPPORTED_MODELS_KEY);
     }
 
-    private String resolveAiModelsApiUrl() {
-        return Config.getStringProperty(AI_MODELS_API_URL_KEY, AI_MODELS_API_URL_DEFAULT);
-    }
-
     private CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final AppConfig appConfig) {
         final CircuitBreakerUrl.Response<OpenAIModels> response = CircuitBreakerUrl.builder()
                 .setMethod(CircuitBreakerUrl.Method.GET)
                 .setUrl(aiModelsApiUrl.get())
                 .setTimeout(modelsFetchTimeout.get())
                 .setTryAgainAttempts(modelsFetchAttempts.get())
-                .setHeaders(CircuitBreakerUrl.authHeaders("Bearer " + appConfig.getApiKey()))
-                .setThrowWhenNot2xx(true)
+                .setAuthHeaders(BEARER + appConfig.getApiKey())
+                .setThrowWhenError(true)
                 .build()
                 .doResponse(OpenAIModels.class);
 
@@ -310,11 +315,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
         return response;
     }
 
-    private void activateModels(final String host, boolean wasAdded) {
-        if (!wasAdded) {
-            return;
-        }
-
+    private void activateModels(final String host) {
         final List<AIModel> aiModels = internalModels.get(host)
                 .stream()
                 .map(tuple -> tuple._2)
@@ -323,8 +324,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
         aiModels.forEach(aiModel ->
             aiModel.getModels().forEach(model -> {
                 final String modelName = model.getName().trim().toLowerCase();
-                final ModelStatus status;
-                status = ModelStatus.ACTIVE;
+                final ModelStatus status = ModelStatus.ACTIVE;
                 if (aiModel.getCurrentModelIndex() == AIModel.NOOP_INDEX) {
                     aiModel.setCurrentModelIndex(model.getIndex());
                 }

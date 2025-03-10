@@ -104,7 +104,7 @@ public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent>
                     .setUrl(cubeJsUrl)
                     .setParams(new HashMap<>(Map.of("query", queryAsString)))
                     .setTimeout(cubeJsClientTimeout.get())
-                    .setThrowWhenNot2xx(false)
+                    .setThrowWhenError(false)
                     .build();
         } catch (AnalyticsException e) {
             throw new RuntimeException(e);
@@ -138,15 +138,14 @@ public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent>
     private Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient,
                                                final String cubeJsUrl,
                                                final String queryAsString) {
-            final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
 
         Logger.debug(this, String.format("Getting results from CubeJs [%s] with query [%s]", cubeJsUrl, queryAsString));
         final Response<String> response = cubeJSClient.doResponse();
 
         timeMetric.stop();
 
-        if (!CircuitBreakerUrl.isWithin2xx(response.getStatusCode())) {
-
+        if (cubeJSClient.isError()) {
             if (400 == response.getStatusCode()) {
                 throw new IllegalArgumentException(response.getResponse());
             }
