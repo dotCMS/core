@@ -31,6 +31,18 @@ export class DotResourceLinksService {
     private readonly httpClient = inject(HttpClient);
 
     /**
+     * Helper method to get resource links with common HTTP GET and entity plucking logic
+     *
+     * @private
+     * @param {string} url - The complete URL to make the GET request
+     * @return {*}  {Observable<DotResourceLinks>}
+     * @memberof DotResourceLinksService
+     */
+    private getResourceLinks(url: string): Observable<DotResourceLinks> {
+        return this.httpClient.get(url).pipe(pluck('entity'));
+    }
+
+    /**
      * It returns the source links for a file
      *
      * @param {DotSourceLinksProps}
@@ -41,9 +53,7 @@ export class DotResourceLinksService {
         fieldVariable,
         identifier
     }: DotSourceLinksProps): Observable<DotResourceLinks> {
-        return this.httpClient
-            .get(`${this.basePath}/${fieldVariable}?identifier=${identifier}`)
-            .pipe(pluck('entity'));
+        return this.getResourceLinks(`${this.basePath}/${fieldVariable}?identifier=${identifier}`);
     }
 
     /**
@@ -57,8 +67,6 @@ export class DotResourceLinksService {
         fieldVariable,
         inode
     }: DotSourceLinksByInodeProps): Observable<DotResourceLinks> {
-        return this.httpClient
-            .get(`${this.basePath}/${fieldVariable}?inode=${inode}`)
-            .pipe(pluck('entity'));
+        return this.getResourceLinks(`${this.basePath}/${fieldVariable}?inode=${inode}`);
     }
 }
