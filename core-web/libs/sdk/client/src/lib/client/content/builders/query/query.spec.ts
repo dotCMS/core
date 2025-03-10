@@ -1,4 +1,4 @@
-import { QueryBuilder } from './sdk-query-builder';
+import { QueryBuilder } from './query';
 
 describe('QueryBuilder', () => {
     let queryBuilder: QueryBuilder;
