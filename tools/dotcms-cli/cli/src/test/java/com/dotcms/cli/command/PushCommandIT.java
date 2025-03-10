@@ -345,7 +345,6 @@ class PushCommandIT extends CommandTest {
      * @throws IOException
      * @throws InterruptedException
      */
-    @Disabled("Temporal ignore, the CTRL-C simulation is blocking the tests execution, never finishes.")
     @Test
     void testSimplePushInWatchMode() throws IOException, InterruptedException {
 
@@ -487,7 +486,6 @@ class PushCommandIT extends CommandTest {
                 //Now let's create a relative path to the workspace
                 final Path folderToWatchPath = Path.of("files", "live", "en-us", "default", "folder-to-watch");
                 final Path resolvedFolderToWatchPath = tempFolder.resolve(folderToWatchPath);
-                final Path relativePath = tempFolder.relativize(resolvedFolderToWatchPath);
                 //Create the directory we're going to watch
                 Files.createDirectories(resolvedFolderToWatchPath);
 
@@ -506,9 +504,7 @@ class PushCommandIT extends CommandTest {
                         commandStartLatch.countDown(); // Signal that the command has started
                         commandLine.execute(PushCommand.NAME,
                                 // Path to the files folder
-                                relativePath.toString(),
-                                // Path to the workspace
-                                "--workspace", tempFolder.toAbsolutePath().toString(),
+                                resolvedFolderToWatchPath.toString(),
                                 "--watch", "1");
                     } catch (Exception e) {
                         // Quietly ignore exceptions
@@ -527,7 +523,7 @@ class PushCommandIT extends CommandTest {
                 // Simulate changes in the tempFolder with a delay
                 Runnable changeTask = () -> {
                     try {
-                        final Path newFile = tempFolder.resolve("newFile.txt");
+                        final Path newFile = resolvedFolderToWatchPath.resolve("newFile.txt");
                         Files.createFile(newFile);
                         for (int i = 0; i < 5; i++) {
                             // Create a new file

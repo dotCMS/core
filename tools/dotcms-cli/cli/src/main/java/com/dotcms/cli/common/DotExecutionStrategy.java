@@ -88,14 +88,14 @@ public class DotExecutionStrategy implements IExecutionStrategy {
                return underlyingStrategy.execute(parseResult);
             }
 
+            final String command = commandsChain.command();
             if (LOGGER.isDebugEnabled()) {
                 final List<String> arguments = parseResult.expandedArgs();
                 final String debugCommand = String.format(
-                        "Executing command [%s]", String.join(" ", arguments)
+                        "Executing command [%s][%s]", command, String.join(" ", arguments)
                 );
                 LOGGER.debug(debugCommand);
             } else {
-                final String command = commandsChain.command();
                 final String format = String.format("Executing command: %s", command);
                 LOGGER.info(format);
             }
@@ -134,12 +134,18 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             IExecutionStrategy underlyingStrategy,
             CommandLine.ParseResult parseResult) throws ExecutionException {
 
+        CompletableFuture<Void> eventFuture = null;
+        CompletableFuture<Integer> executeFuture = null;
+
         try (var handle = Arc.container().instance(ManagedExecutor.class)) {
 
             final var executor = handle.get();
 
+            // Capture the current call depth for this thread
+            final int currentCallDepth = callDepth.get();
+
             // Create a CompletableFuture for the event recording
-            CompletableFuture<Void> eventFuture = executor.runAsync(() -> {
+            eventFuture = executor.runAsync(() -> {
                 try {
                     recordEvent(commandsChain, parseResult);
                 } catch (Exception e) {
@@ -148,35 +154,63 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             });
 
             // Create a CompletableFuture for the command execution
-            CompletableFuture<Integer> executeFuture = executor.supplyAsync(() -> {
+            executeFuture = executor.supplyAsync(() -> {
                 try {
+                    // Set the callDepth in this new thread
+                    callDepth.set(currentCallDepth);
                     return processCommandExecution(commandsChain, underlyingStrategy, parseResult);
-                } catch (Exception e) {
-
-                    LOGGER.error("Error executing command", e);
-
-                    if (e instanceof ExecutionException) {
-                        throw (ExecutionException) e;
-                    }
-                    throw new ExecutionException(
-                            parseResult.commandSpec().commandLine(), "Error executing command", e
-                    );
+                } finally {
+                    // Clean up the ThreadLocal in this thread
+                    callDepth.remove();
                 }
             });
 
-            // Wait for both futures to complete
-            CompletableFuture.allOf(eventFuture, executeFuture).join();
-
-            // Return the result from internalExecute
+            // Wait for both futures to complete, handling interruption properly
+            CompletableFuture.allOf(eventFuture, executeFuture).get();
             return executeFuture.get();
-
         } catch (InterruptedException e) {
+            LOGGER.debug("Thread was interrupted during execution");
+            cancelFuturesSafely(eventFuture, executeFuture);
+
             Thread.currentThread().interrupt();
             throw new ExecutionException(parseResult.commandSpec().commandLine(),
                     "Parallel execution interrupted", e);
         } catch (java.util.concurrent.ExecutionException e) {
             throw new ExecutionException(parseResult.commandSpec().commandLine(),
                     "Error in parallel execution", e.getCause());
+        } catch (java.util.concurrent.CancellationException |
+                 java.util.concurrent.CompletionException e) {
+            cancelFuturesSafely(eventFuture, executeFuture);
+            if (e.getCause() instanceof InterruptedException || Thread.currentThread()
+                    .isInterrupted()) {
+                LOGGER.debug("Thread was interrupted during execution");
+                Thread.currentThread().interrupt();
+            }
+
+            throw new ExecutionException(parseResult.commandSpec().commandLine(),
+                    "Error in parallel execution", e.getCause() != null ? e.getCause() : e);
+        }
+    }
+
+    /**
+     * Cancels the provided CompletableFuture instances safely. If a future is not null and not
+     * completed, it attempts to cancel it. Logs any exceptions that occur during cancellation.
+     *
+     * @param eventFuture   the CompletableFuture representing an event to be cancelled
+     * @param executeFuture the CompletableFuture representing an execution task to be cancelled
+     */
+    private void cancelFuturesSafely(CompletableFuture<?> eventFuture,
+            CompletableFuture<?> executeFuture) {
+        try {
+            if (eventFuture != null && !eventFuture.isDone()) {
+                eventFuture.cancel(true);
+            }
+
+            if (executeFuture != null && !executeFuture.isDone()) {
+                executeFuture.cancel(true);
+            }
+        } catch (Exception ex) {
+            LOGGER.debug("Error cancelling futures", ex);
         }
     }
 
@@ -246,8 +280,8 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             throws ExecutionException, ParameterException {
         try {
             if (isWatchModeAlreadyRunning()) {
-                   incCallDepth();
-                   return underlyingStrategy.execute(parseResult);
+                incCallDepth();
+                return underlyingStrategy.execute(parseResult);
             }
 
             if (commandsChain.isWatchMode()) {
@@ -422,6 +456,7 @@ public class DotExecutionStrategy implements IExecutionStrategy {
             } finally {
                 //Re-engage the watch mode
                 watchService.resume();
+                decCallDepth();
             }
         }
         return result;

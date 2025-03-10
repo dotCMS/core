@@ -58,15 +58,15 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                                 .build());
                 logger.debug(
                         String.format(
-                                "Event recorded: URL [%s] - user [%s] - command [%s]",
-                                url, user, String.join(" ", arguments)
+                                "Event recorded: URL [%s] - user [%s] - command [%s][%s]",
+                                url, user, command, String.join(" ", arguments)
                         )
                 );
             } catch (Exception e) {
                 logger.error(
                         String.format(
-                                "Error recording event: URL [%s] - user [%s] - command [%s]",
-                                url, user, String.join(" ", arguments)
+                                "Error recording event: URL [%s] - user [%s] - command [%s][%s]",
+                                url, user, command, String.join(" ", arguments)
                         ), e
                 );
             }
