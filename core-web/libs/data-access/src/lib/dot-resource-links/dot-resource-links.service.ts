@@ -15,7 +15,12 @@ export interface DotResourceLinks {
 
 interface DotSourceLinksProps {
     fieldVariable: string;
-    inodeOrIdentifier: string;
+    identifier: string;
+}
+
+interface DotSourceLinksByInodeProps {
+    fieldVariable: string;
+    inode: string;
 }
 
 @Injectable({
@@ -32,12 +37,28 @@ export class DotResourceLinksService {
      * @return {*}  {Observable<DotResourceLinks>}
      * @memberof DotResourceLinksService
      */
-    getFileResourceLinks({
+    getFileResourceLinksByIdentifier({
         fieldVariable,
-        inodeOrIdentifier
+        identifier
     }: DotSourceLinksProps): Observable<DotResourceLinks> {
         return this.httpClient
-            .get(`${this.basePath}/${fieldVariable}?identifier=${inodeOrIdentifier}`)
+            .get(`${this.basePath}/${fieldVariable}?identifier=${identifier}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * It returns the source links for a file by inode
+     *
+     * @param {DotSourceLinksByInodeProps}
+     * @return {*}  {Observable<DotResourceLinks>}
+     * @memberof DotResourceLinksService
+     */
+    getFileResourceLinksByInode({
+        fieldVariable,
+        inode
+    }: DotSourceLinksByInodeProps): Observable<DotResourceLinks> {
+        return this.httpClient
+            .get(`${this.basePath}/${fieldVariable}?inode=${inode}`)
             .pipe(pluck('entity'));
     }
 }
