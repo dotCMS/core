@@ -293,6 +293,7 @@ export class DotEditContentFormComponent implements OnInit {
             return;
         }
 
+        // Check if there are any publish environments available if not fire a notification.
         this.#dotWorkflowEventHandlerService
             .checkPublishEnvironments()
             .pipe(take(1))
