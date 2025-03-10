@@ -10,8 +10,8 @@ import re
 logger = logging.getLogger(__name__)
 
 class DeploymentLeadTimeMetrics(GitHubMetricsBase):
-    def __init__(self, token, owner, repo, team_label, iteration_field_id='120606020'):
-        super().__init__(token, owner, repo, team_label)
+    def __init__(self, token, owner, repo, team_labels, iteration_field_id='120606020'):
+        super().__init__(token, owner, repo, team_labels)
         self.iteration_field_id = iteration_field_id
         
     def get_deployment_label_date(self, issue_number):
@@ -349,13 +349,23 @@ def main():
     if not token:
         raise ValueError("Please set GITHUB_TOKEN environment variable")
     
-    team_label = os.getenv('TEAM_LABEL', 'Team : Falcon')
+    # Define default team labels
+    default_team_labels = [
+        "Team : Falcon",
+        "Team : Scout",
+        "Team : Platform",
+        "Team : Bug Fixers"
+    ]
+    
+    # Get team labels from environment variable if set, otherwise use defaults
+    team_labels_env = os.getenv('TEAM_LABELS')
+    team_labels = team_labels_env.split(',') if team_labels_env else default_team_labels
     
     metrics = DeploymentLeadTimeMetrics(
         token=token,
         owner='dotcms',
         repo='core',
-        team_label=team_label
+        team_labels=team_labels  # Pass the list of team labels
     )
     
     end_date = datetime.now()
@@ -364,7 +374,7 @@ def main():
     report = metrics.generate_lead_time_report(start_date, end_date)
     
     # Print results
-    print(f"\nDeployment Lead Time Report for Team Falcon ({start_date.date()} to {end_date.date()})")
+    print(f"\nDeployment Lead Time Report for Teams {', '.join(team_labels)} ({start_date.date()} to {end_date.date()})")
     print("=" * 80)
     print(f"Average Lead Time: {report['average_lead_time']:.2f} days")
     print("\nIssues analyzed:")
