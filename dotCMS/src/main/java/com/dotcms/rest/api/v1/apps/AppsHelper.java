@@ -303,11 +303,13 @@ class AppsHelper {
             throw new IllegalArgumentException("Required Param siteId isn't set.");
         }
         final Host host = hostAPI.find(siteId, user, false);
+        Logger.info(this.getClass(), "Site ID: "+host.getIdentifier());
         if(null == host) {
             throw new DoesNotExistException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
         }
         final Optional<AppDescriptor> optionalAppDescriptor = appsAPI
                 .getAppDescriptor(key, user);
+        Logger.info(this.getClass(), "App Descriptor: "+optionalAppDescriptor.get().getKey());
         if (optionalAppDescriptor.isEmpty()) {
             throw new DoesNotExistException(  String.format("Unable to find an app descriptor bound to the  Key `%s`. You must upload a yml descriptor.",key));
         }
@@ -332,26 +334,32 @@ class AppsHelper {
      */
     private void saveSecretForm(final String key, final Host host,
             final AppDescriptor appDescriptor, final SecretForm form, final User user) throws DotSecurityException, DotDataException {
+        Logger.info(this.getClass(), "Save Secret Form");
         final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
-
+        Logger.info(this.getClass(), "Got Secrets");
         final Map<String, Input> params = validateFormForSave(form, appDescriptor, appSecretsOptional);
         //Create a brand new secret for the present app.
         final AppSecrets.Builder builder = new AppSecrets.Builder();
         builder.withKey(key);
+        Logger.info(this.getClass(), "Building Secrets ");
         for (final Entry<String, Input> stringParamEntry : params.entrySet()) {
+            Logger.info(this.getClass(), "Building Secrets: "+stringParamEntry);
             final String name = stringParamEntry.getKey();
             final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
             final Input inputParam = stringParamEntry.getValue();
+            Logger.info(this.getClass(), "Input Param: "+inputParam.getValue());
             final Optional<Secret> secret;
 
             if (Objects.isNull(describedParam)) {
+                Logger.info(this.getClass(), "Dynamic Secret ");
                 secret = AppsUtil.dynamicSecret(key, name, inputParam);
             } else {
                 //If we're dealing with a hidden param and there's a secret already saved...
                 //The param must be overridden and replaced for that reason we must delete the existing saved secret.
                 //In order to keep all existing secrets we grab the saved one and push it into the new.
-                Logger.debug(AppsHelper.class, () -> "found hidden secret sent with no value.");
+                Logger.info(AppsHelper.class, () -> "found hidden secret sent with no value.");
                 if (isHidden(describedParam, inputParam)) {
+                    Logger.info(AppsHelper.class, () -> "found hidden secret");
                     secret = appSecretsOptional
                             .flatMap(appSecrets -> {
                                 Logger.debug(
@@ -360,11 +368,14 @@ class AppsHelper {
                                 return AppsUtil.hiddenSecret(key, name, describedParam, appSecrets);
                             });
                 } else {
+                    Logger.info(AppsHelper.class, () -> "is not hidden secret");
                     secret = AppsUtil.paramSecret(key, name, inputParam.getValue(), describedParam);
                 }
             }
+            Logger.info(this.getClass(), "Secret: " + secret.get().getValue());
             secret.ifPresent(s -> builder.withSecret(name, s));
         }
+        Logger.info(this.getClass(), "Saving Secrets ");
 
         // Make sure if omitted params correspond to secrets which have their values managed by an env-vars and that
         // they're not editable.
@@ -374,15 +385,19 @@ class AppsHelper {
                 .stream()
                 .filter(entry -> !entry.getValue().isEditable() && !params.containsKey(entry.getKey()))
                 .forEach(entry -> builder.withSecret(entry.getKey(), entry.getValue()));
+        Logger.info(this.getClass(), "Saving Secrets - 2");
 
         // We're gonna build the secret upfront and have it ready.
         // Since the next step is potentially risky (delete a secret that already exist).
         final AppSecrets secrets = builder.build();
+        Logger.info(this.getClass(), "Saving Secrets - 3");
         if (appSecretsOptional.isPresent()) {
-            Logger.debug(AppsHelper.class, () -> "Secrets already exist in storage. We must override it.");
+            Logger.info(AppsHelper.class, () -> "Secrets already exist in storage. We must override it.");
             appsAPI.deleteSecrets(key, host, user);
         }
+        Logger.info(this.getClass(), "Saving Secrets - 4");
         appsAPI.saveSecrets(secrets, host, user);
+        Logger.info(this.getClass(), "Saving Secrets - 5");
         securityLoggerAPI.logInfo(this.getClass(),
                 String.format("User `%s` saved secret for app `%s` on host `%s`", user, key, host.getIdentifier()));
         //This operation needs to be executed at the very end.
