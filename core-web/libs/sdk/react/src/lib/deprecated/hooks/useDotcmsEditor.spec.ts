@@ -1,6 +1,8 @@
 import { renderHook } from '@testing-library/react-hooks';
 
 import * as sdkClient from '@dotcms/client';
+import * as sdkUVE from '@dotcms/uve';
+import { UVE_MODE, UVEState, UVESubscription } from '@dotcms/uve/types';
 
 import { useDotcmsEditor } from './useDotcmsEditor';
 
@@ -22,17 +24,28 @@ jest.mock('@dotcms/client', () => ({
     }
 }));
 
-const { DotCmsClient } = sdkClient as jest.Mocked<typeof sdkClient>;
+jest.mock('@dotcms/uve', () => ({
+    ...jest.requireActual('@dotcms/uve'),
+    getUVEState: jest.fn(),
+    createUVESubscription: jest.fn().mockReturnValue({
+        event: 'changes',
+        unsubscribe: jest.fn()
+    })
+}));
 
 describe('useDotcmsEditor', () => {
     let isInsideEditorSpy: jest.SpyInstance<boolean>;
+    let getUVEStateSpy: jest.SpyInstance<UVEState | undefined>;
+    let createUVESubscriptionSpy: jest.SpyInstance<UVESubscription>;
     let initEditorSpy: jest.SpyInstance<void>;
     let destroyEditorSpy: jest.SpyInstance<void>;
 
     beforeEach(() => {
         isInsideEditorSpy = jest.spyOn(sdkClient, 'isInsideEditor');
+        getUVEStateSpy = jest.spyOn(sdkUVE, 'getUVEState');
         initEditorSpy = jest.spyOn(sdkClient, 'initEditor');
         destroyEditorSpy = jest.spyOn(sdkClient, 'destroyEditor');
+        createUVESubscriptionSpy = jest.spyOn(sdkUVE, 'createUVESubscription');
     });
 
     afterEach(() => {
@@ -58,6 +71,14 @@ describe('useDotcmsEditor', () => {
     describe('when inside editor', () => {
         it('should call initEditor when inside editor', () => {
             isInsideEditorSpy.mockReturnValueOnce(true);
+            getUVEStateSpy.mockReturnValueOnce({
+                mode: UVE_MODE.EDIT,
+                persona: null,
+                variantName: null,
+                experimentId: null,
+                publishDate: null,
+                languageId: null
+            });
 
             renderHook(() =>
                 useDotcmsEditor({
@@ -97,24 +118,37 @@ describe('useDotcmsEditor', () => {
 
             beforeEach(() => {
                 isInsideEditorSpy.mockReturnValueOnce(true);
+                getUVEStateSpy.mockReturnValueOnce({
+                    mode: UVE_MODE.EDIT,
+                    persona: null,
+                    variantName: null,
+                    experimentId: null,
+                    publishDate: null,
+                    languageId: null
+                });
             });
 
             it('should subscribe to the `CHANGE` event', () => {
-                const client = DotCmsClient.instance;
-
                 renderHook(() => useDotcmsEditor(dotCMSPagePropsMock));
 
-                expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
+                expect(sdkUVE.createUVESubscription).toHaveBeenCalledWith(
+                    'changes',
+                    expect.any(Function)
+                );
             });
 
             it('should remove listener on unmount', () => {
-                const client = DotCmsClient.instance;
+                const removeListenerSpy = jest.fn();
+                createUVESubscriptionSpy.mockReturnValue({
+                    event: 'changes',
+                    unsubscribe: removeListenerSpy
+                });
 
                 const { unmount } = renderHook(() => useDotcmsEditor(dotCMSPagePropsMock));
 
                 unmount();
 
-                expect(client.editor.off).toHaveBeenCalledWith('changes');
+                expect(removeListenerSpy).toHaveBeenCalled();
             });
         });
 
@@ -164,12 +198,25 @@ describe('useDotcmsEditor', () => {
                 }
             };
 
-            it('should update the page asset when changes are made in the editor', () => {
-                const client = DotCmsClient.instance;
+            beforeEach(() => {
+                isInsideEditorSpy.mockReturnValueOnce(true);
+                getUVEStateSpy.mockReturnValueOnce({
+                    mode: UVE_MODE.EDIT,
+                    persona: null,
+                    variantName: null,
+                    experimentId: null,
+                    publishDate: null,
+                    languageId: null
+                });
+            });
 
+            it('should update the page asset when changes are made in the editor', () => {
                 renderHook(() => useDotcmsEditor(dotCMSPagePropsMock as DotcmsPageProps));
 
-                expect(client.editor.on).toHaveBeenCalledWith('changes', expect.any(Function));
+                expect(sdkUVE.createUVESubscription).toHaveBeenCalledWith(
+                    'changes',
+                    expect.any(Function)
+                );
             });
         });
     });

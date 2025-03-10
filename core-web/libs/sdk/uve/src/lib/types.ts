@@ -32,3 +32,33 @@ export enum UVE_MODE {
     LIVE = 'LIVE',
     UNKNOWN = 'UNKNOWN'
 }
+
+/**
+ * Callback function for UVE events
+ * @callback UVECallback
+ * @param {unknown} payload - The payload of the event
+ */
+export type UVECallback = (payload: unknown) => void;
+
+/**
+ * Unsubscribe function for UVE events
+ * @callback UnsubscribeUVE
+ */
+export type UnsubscribeUVE = () => void;
+
+/**
+ * UVESubscription type
+ * @typedef {Object} UVESubscription
+ * @property {UnsubscribeUVE} unsubscribe - The unsubscribe function for the UVE event
+ * @property {string} event - The event name
+ */
+export type UVESubscription = {
+    unsubscribe: UnsubscribeUVE;
+    event: string;
+};
+
+/**
+ * UVE event type
+ * @typedef {function} UVEEvent
+ */
+export type UVEEvent = (callback: UVECallback) => UVESubscription;
