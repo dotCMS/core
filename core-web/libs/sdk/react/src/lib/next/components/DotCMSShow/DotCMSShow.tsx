@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
-
-import { getUVEState } from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/uve/types';
+
+import { useShowInUVE } from '../../hooks/useShowInUVE';
 
 /**
  * Props for the DotCMSShow component.
@@ -50,11 +49,7 @@ type DotCMSShowProps = {
  * // LiveContentComponent will only be rendered if the UVE is in live mode.
  */
 export const DotCMSShow = ({ children, when = UVE_MODE.EDIT }: DotCMSShowProps) => {
-    const [show, setShow] = useState(false);
-
-    useEffect(() => {
-        setShow(getUVEState()?.mode === when);
-    }, [when]);
+    const show = useShowInUVE(when);
 
     if (!show) {
         return null;
