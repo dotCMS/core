@@ -10,9 +10,13 @@
             "options": {
                 "format": ["esm", "cjs"],
                 "compiler": "tsc",
+                "additionalEntryPoints": [
+                    "libs/sdk/client/src/next.ts",
+                    "libs/sdk/client/src/types.ts"
+                ],
                 "generateExportsField": true,
-                "assets": [{ "input": "libs/sdk/client", "output": ".", "glob": "*.md" }],
                 "outputPath": "dist/libs/sdk/client",
+                "assets": [{ "input": "libs/sdk/client", "output": ".", "glob": "*.md" }],
                 "main": "libs/sdk/client/src/index.ts",
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json"
             }
@@ -26,7 +30,7 @@
                 "format": ["esm"],
                 "tsConfig": "libs/sdk/client/tsconfig.lib.json",
                 "project": "libs/sdk/client/package.json",
-                "entryFile": "libs/sdk/client/src/lib/editor/sdk-editor-vtl.ts",
+                "entryFile": "libs/sdk/client/src/lib/deprecated/editor/sdk-editor-vtl.ts",
                 "external": ["react/jsx-runtime"],
                 "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
                 "compiler": "tsc",

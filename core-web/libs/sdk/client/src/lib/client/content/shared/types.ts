@@ -1,5 +1,5 @@
-import { Equals } from '../../../query-builder/lucene-syntax';
-import { QueryBuilder } from '../../../query-builder/sdk-query-builder';
+import { Equals } from '../builders/query/lucene-syntax';
+import { QueryBuilder } from '../builders/query/query';
 
 /**
  * Model to sort by fields.
