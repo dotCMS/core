@@ -4,13 +4,13 @@ import { render, screen } from '@testing-library/react';
 import * as dotcmsUVE from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/uve/types';
 
-import { DotCMSShowControl } from '../../components/DotCMSShowControl/DotCMSShowControl';
+import { DotCMSShow } from '../../components/DotCMSShow/DotCMSShow';
 
 jest.mock('@dotcms/uve', () => ({
     getUVEState: jest.fn()
 }));
 
-describe('DotCMSShowControl', () => {
+describe('DotCMSShow', () => {
     const getUVEStateMock = dotcmsUVE.getUVEState as jest.Mock;
 
     beforeEach(() => {
@@ -21,9 +21,9 @@ describe('DotCMSShowControl', () => {
         getUVEStateMock.mockReturnValue({ mode: UVE_MODE.EDIT });
 
         render(
-            <DotCMSShowControl>
+            <DotCMSShow>
                 <div data-testid="edit-content">Edit Mode Content</div>
-            </DotCMSShowControl>
+            </DotCMSShow>
         );
 
         expect(screen.getByTestId('edit-content')).toBeInTheDocument();
@@ -33,9 +33,9 @@ describe('DotCMSShowControl', () => {
         getUVEStateMock.mockReturnValue({ mode: UVE_MODE.PREVIEW });
 
         const { container } = render(
-            <DotCMSShowControl>
+            <DotCMSShow>
                 <div data-testid="edit-content">Edit Mode Content</div>
-            </DotCMSShowControl>
+            </DotCMSShow>
         );
 
         expect(container.innerHTML).toBe('');
@@ -45,11 +45,37 @@ describe('DotCMSShowControl', () => {
         getUVEStateMock.mockReturnValue(undefined);
 
         const { container } = render(
-            <DotCMSShowControl>
+            <DotCMSShow>
                 <div data-testid="edit-content">Edit Mode Content</div>
-            </DotCMSShowControl>
+            </DotCMSShow>
         );
 
         expect(container.innerHTML).toBe('');
+    });
+
+    describe('when when prop is provided', () => {
+        test('should render children when UVE is in the provided mode', () => {
+            getUVEStateMock.mockReturnValue({ mode: UVE_MODE.PREVIEW });
+
+            render(
+                <DotCMSShow when={UVE_MODE.PREVIEW}>
+                    <div data-testid="preview-content">Preview Mode Content</div>
+                </DotCMSShow>
+            );
+
+            expect(screen.getByTestId('preview-content')).toBeInTheDocument();
+        });
+
+        test('should not render children when UVE is not in the provided mode', () => {
+            getUVEStateMock.mockReturnValue({ mode: UVE_MODE.EDIT });
+
+            const { container } = render(
+                <DotCMSShow when={UVE_MODE.PREVIEW}>
+                    <div data-testid="preview-content">Preview Mode Content</div>
+                </DotCMSShow>
+            );
+
+            expect(container.innerHTML).toBe('');
+        });
     });
 });
