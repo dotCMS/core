@@ -120,3 +120,7 @@ ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS customer_name Str
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS customer_category String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS environment_name String;
 ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS environment_version String;
+
+ALTER TABLE clickhouse_test_db.events ADD COLUMN IF NOT EXISTS http_response_code UInt16;
+
+ALTER TABLE clickhouse_test_db.events ADD INDEX IF NOT EXISTS idx_request_event (request_id, event_type) TYPE minmax GRANULARITY 1;
