@@ -11,8 +11,8 @@ public enum EventType {
     PAGE_REQUEST("PAGE_REQUEST"),
     CUSTOM_USER_EVENT("CUSTOM_USER_EVENT"),
     URL_MAP("URL_MAP"),
-    CMD_EXECUTED("CMD_EXECUTED");
-
+    CMD_EXECUTED("CMD_EXECUTED"),
+    HTTP_RESPONSE("HTTP_RESPONSE");
 
     private final String type;
     private EventType(String type) {

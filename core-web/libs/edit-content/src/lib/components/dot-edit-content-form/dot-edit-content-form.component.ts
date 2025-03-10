@@ -177,16 +177,19 @@ export class DotEditContentFormComponent implements OnInit {
         /**
          * Effect that enables or disables the form based on the loading or locked state.
          */
-        effect(() => {
-            const isLoading = this.$store.isLoading();
-            const isLocked = this.$store.isContentLocked();
+        effect(
+            () => {
+                const isLoading = this.$store.isLoading();
+                const isLocked = this.$store.isContentLocked();
 
-            if (isLoading || isLocked) {
-                this.form.disable();
-            } else {
-                this.form.enable();
-            }
-        });
+                if (isLoading || isLocked) {
+                    this.form.disable();
+                } else {
+                    this.form.enable();
+                }
+            },
+            { allowSignalWrites: true }
+        );
 
         /**
          * Effect that initializes the form and form listener when copying locale.
