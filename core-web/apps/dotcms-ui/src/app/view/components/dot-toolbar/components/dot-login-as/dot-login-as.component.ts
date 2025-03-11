@@ -28,7 +28,6 @@ import { PasswordModule } from 'primeng/password';
 
 import { take } from 'rxjs/operators';
 
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
@@ -47,7 +46,6 @@ import { DotMessagePipe } from '@dotcms/ui';
         DialogModule,
         ButtonModule,
         PasswordModule,
-        SearchableDropDownModule,
         DropdownModule,
         DotMessagePipe
     ]

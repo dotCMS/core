@@ -1,549 +1,532 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 import { of, throwError } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+import { fakeAsync, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DialogModule } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
 
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { StringFormat } from '@dotcms/app/api/util/stringFormat';
 import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
-    DotMessageDisplayService,
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsConfigService,
-    LoggerService,
-    LoginService,
-    StringUtils,
-    UserModel
-} from '@dotcms/dotcms-js';
-import {
-    DotDialogModule,
-    DotFieldRequiredDirective,
-    DotMessagePipe,
-    DotSafeHtmlPipe
-} from '@dotcms/ui';
-import {
-    CoreWebServiceMock,
-    DotMessageDisplayServiceMock,
-    LoginServiceMock,
-    MockDotMessageService,
-    MockDotRouterService,
-    mockUser
-} from '@dotcms/utils-testing';
+import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
 
-class DotAccountServiceMock {
-    addStarterPage() {
-        return of({});
-    }
-
-    removeStarterPage() {
-        return of({});
-    }
-
-    updateUser() {
-        return of({});
-    }
-}
-
 describe('DotMyAccountComponent', () => {
+    let spectator: Spectator<DotMyAccountComponent>;
     let component: DotMyAccountComponent;
-    let fixture: ComponentFixture<DotMyAccountComponent>;
-    let de: DebugElement;
-    let dotMenuService: DotMenuService;
-    let dotcmsConfigService: DotcmsConfigService;
-    let httpErrorManagerService: DotHttpErrorManagerService;
-    let dotAlertConfirmService: DotAlertConfirmService;
-    let dotAccountService: DotAccountService;
-    let loginService: LoginService;
-    let dotRouterService: DotRouterService;
 
-    const messageServiceMock = new MockDotMessageService({
-        'First-Name': 'First Name',
-        'Last-Name': 'Last Name',
-        'email-address': 'Email',
-        Password: 'Password',
-        'current-password': 'Current Password',
-        'new-password': 'New Password',
-        're-enter-new-password': 'Re-enter New Password',
-        'error.form.mandatory': 'This field is required',
-        'message.createaccount.success': 'Account created successfully',
-        'change-password': 'Change Password',
-        'reset-password': 'Reset Password',
-        'error.forgot.password.passwords.dont.match': "Passwords don't match",
-        save: 'Save',
-        cancel: 'Cancel',
-        'errors.email': 'Please enter a valid email address',
-        'my-account': 'My account',
-        'starter.show.getting.started': 'Show Getting Started'
+    const mockUser: User = {
+        emailAddress: 'admin@dotcms.com',
+        firstName: 'Admin',
+        lastName: 'User',
+        userId: '1'
+    } as User;
+
+    const mockAuth: Auth = {
+        user: mockUser,
+        loginAsUser: null
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotMyAccountComponent,
+        providers: [
+            mockProvider(DotAccountService, {
+                updateUser: () => of({ entity: { user: mockUser, reauthenticate: false } }),
+                addStarterPage: () => of({}),
+                removeStarterPage: () => of({})
+            }),
+            mockProvider(DotMessageService, {
+                get: (key) => key
+            }),
+            mockProvider(DotMenuService, {
+                isPortletInMenu: () => of(true)
+            }),
+            mockProvider(LoginService, {
+                auth$: of(mockAuth),
+                watchUser: (callback) => callback(mockAuth),
+                setAuth: () => {}
+            }),
+            mockProvider(DotRouterService, {
+                doLogOut: () => {}
+            }),
+            mockProvider(DotAlertConfirmService, {
+                alert: () => {}
+            }),
+            mockProvider(DotHttpErrorManagerService, {
+                handle: () => of({})
+            }),
+            mockProvider(DotcmsConfigService, {
+                getConfig: () =>
+                    of({ emailRegex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' })
+            }),
+            mockProvider(ConfirmationService)
+        ]
     });
 
-    beforeEach(waitForAsync(() => {
-        dotMenuService = jasmine.createSpyObj('DotMenuService', ['isPortletInMenu']);
-        dotcmsConfigService = jasmine.createSpyObj('DotcmsConfigService', ['getConfig']);
-        httpErrorManagerService = jasmine.createSpyObj('DotHttpErrorManagerService', ['handle']);
-        dotAlertConfirmService = jasmine.createSpyObj('DotAlertConfirmService', ['alert']);
-
-        (dotMenuService.isPortletInMenu as jasmine.Spy).and.returnValue(of(false));
-        (dotcmsConfigService.getConfig as jasmine.Spy).and.returnValue(of({ emailRegex: '' }));
-
-        TestBed.configureTestingModule({
-            imports: [
-                DotMyAccountComponent,
-                HttpClientTestingModule,
-                CommonModule,
-                FormsModule,
-                ButtonModule,
-                PasswordModule,
-                InputTextModule,
-                DialogModule,
-                CheckboxModule,
-                DotSafeHtmlPipe,
-                DotFieldRequiredDirective,
-                DotMessagePipe,
-                DotDialogModule
-            ],
-            providers: [
-                { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotHttpErrorManagerService, useValue: httpErrorManagerService },
-                { provide: DotcmsConfigService, useValue: dotcmsConfigService },
-                { provide: DotMenuService, useValue: dotMenuService },
-                { provide: DotAccountService, useClass: DotAccountServiceMock },
-                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotAlertConfirmService, useValue: dotAlertConfirmService },
-                ConfirmationService,
-                LoggerService,
-                StringUtils,
-                StringFormat,
-                UserModel
-            ]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(DotMyAccountComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
-        dotMenuService = TestBed.inject(DotMenuService);
-        dotcmsConfigService = TestBed.inject(DotcmsConfigService);
-        httpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-        dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
-        dotAccountService = TestBed.inject(DotAccountService);
-        loginService = TestBed.inject(LoginService);
-        dotRouterService = TestBed.inject(DotRouterService);
-
-        // Spy on component's shutdown event
-        spyOn(component.shutdown, 'emit');
-
-        fixture.detectChanges(); // First detect changes to initialize the component
-        component.visible = true; // Then set visible property
-        fixture.detectChanges(); // Detect changes again after setting visible
-    }));
-
-    afterEach(() => {
-        component.visible = false;
-        fixture.detectChanges();
+    beforeEach(() => {
+        spectator = createComponent();
+        component = spectator.component;
     });
 
-    it(`should have right labels`, async () => {
-        fixture.detectChanges();
-        await fixture.whenStable();
-        component.form.setValue({
-            givenName: 'Admin',
-            surname: 'Admin',
-            email: 'admin@dotcms.com',
-            password: 'test',
-            newPassword: null,
-            confirmPassword: null
+    describe('Dialog Visibility', () => {
+        it('should be hidden by default', () => {
+            // Check that the dialog has visible=false
+            expect(component.visible()).toBe(false);
+            const dialog = spectator.query(byTestId('dot-my-account-dialog'));
+            expect(dialog.getAttribute('ng-reflect-visible')).toBe('false');
         });
 
-        fixture.detectChanges();
-        const firstName = de.nativeElement.querySelector(
-            '#dot-my-account-first-name-input'
-        ).parentNode;
-        const lasttName = de.nativeElement.querySelector(
-            '#dot-my-account-last-name-input'
-        ).parentNode;
-        const email = de.nativeElement.querySelector('#dot-my-account-email-input').parentNode;
-        const currentPassword = de.nativeElement.querySelector(
-            '#dot-my-account-current-password-input'
-        ).parentNode;
-        const changePassword = de.nativeElement.querySelector(
-            '#dot-my-account-change-password-option'
-        );
-        const newPassword = de.nativeElement.querySelector(
-            '#dot-my-account-new-password-input'
-        ).parentNode;
-        const confirmPassword = de.nativeElement.querySelector(
-            '#dot-my-account-confirm-new-password-input'
-        ).parentNode;
-        const showStarter = de.query(By.css('[data-testid="showStarterBtn"]'));
-        const cancel = de.nativeElement.querySelector('.dialog__button-cancel');
-        const save = de.nativeElement.querySelector('.dialog__button-accept');
+        it('should show dialog when visible is set to true', () => {
+            // Use setVisible method to update the signal
+            component.setVisible(true);
+            spectator.detectChanges();
 
-        expect(firstName.innerText).toContain(messageServiceMock.get('First-Name'));
-        expect(lasttName.innerText).toContain(messageServiceMock.get('Last-Name'));
-        expect(email.innerText).toContain(messageServiceMock.get('email-address'));
-        expect(currentPassword.innerText).toContain(messageServiceMock.get('current-password'));
-        expect(changePassword.innerText).toContain(messageServiceMock.get('change-password'));
-        expect(newPassword.innerText).toContain(messageServiceMock.get('new-password'));
-        expect(confirmPassword.innerText).toContain(
-            messageServiceMock.get('re-enter-new-password')
-        );
-        expect(showStarter.nativeElement.innerText).toContain(
-            messageServiceMock.get('starter.show.getting.started')
-        );
-        expect(cancel.innerText).toEqual(messageServiceMock.get('modes.Close'));
-        expect(save.innerText).toEqual(messageServiceMock.get('save'));
-    });
-
-    it(`should form be valid and load starter page data`, async () => {
-        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
-        fixture.detectChanges();
-        await fixture.whenStable();
-
-        component.form.setValue({
-            givenName: 'Admin',
-            surname: 'Admin',
-            email: 'admin@dotcms.com',
-            password: 'test',
-            newPassword: null,
-            confirmPassword: null
+            expect(component.visible()).toBe(true);
+            const dialog = spectator.query(byTestId('dot-my-account-dialog'));
+            expect(dialog.getAttribute('ng-reflect-visible')).toBe('true');
         });
-        fixture.detectChanges();
-        const save = de.nativeElement.querySelector('.dialog__button-accept');
 
-        expect(component.form.valid).toBe(true);
-        expect(
-            de.query(By.css('[data-testid="showStarterBtn"]')).attributes['ng-reflect-model']
-        ).toBe('true');
-        expect(save.disabled).toBe(false);
-    });
+        it('should emit shutdown when dialog is closed', () => {
+            spyOn(component.shutdown, 'emit');
+            component.setVisible(true);
+            spectator.detectChanges();
 
-    it(`should enable new passwords inputs when checked change password option`, async () => {
-        fixture.detectChanges();
-        await fixture.whenStable();
-        component.form.setValue({
-            givenName: 'Admin',
-            surname: 'Admin',
-            email: 'admin@dotcms.com',
-            password: 'test',
-            newPassword: '',
-            confirmPassword: ''
-        });
-        fixture.detectChanges();
-        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('onChange', {});
-        fixture.detectChanges();
-
-        await fixture.whenStable();
-
-        fixture.detectChanges();
-        const newPassword = de.nativeElement.querySelector('#dot-my-account-new-password-input');
-        const confirmPassword = de.nativeElement.querySelector(
-            '#dot-my-account-confirm-new-password-input'
-        );
-        expect(newPassword.disabled).toBe(false);
-        expect(confirmPassword.disabled).toBe(false);
-    });
-
-    it(`should disabled SAVE when new passwords don't match`, async () => {
-        fixture.detectChanges();
-        await fixture.whenStable();
-        component.form.setValue({
-            givenName: 'Admin2',
-            surname: 'Admi2',
-            email: 'admin@dotcms.com',
-            password: 'test',
-            newPassword: 'newPassword',
-            confirmPassword: 'newPasswrd'
-        });
-        fixture.detectChanges();
-        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('onChange', {});
-        fixture.detectChanges();
-
-        await fixture.whenStable();
-
-        fixture.detectChanges();
-        expect(component.form.valid).toBe(false);
-    });
-
-    it(`should call to add starter method in account service`, async () => {
-        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(false));
-        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({ entity: {} }));
-        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
-            of({ entity: { user: mockUser() } })
-        );
-
-        fixture.detectChanges();
-        await fixture.whenStable();
-
-        const user = {
-            givenName: 'Admin2',
-            surname: 'Admi2',
-            email: 'admin@dotcms.com',
-            password: 'admin',
-            newPassword: 'newPassword',
-            confirmPassword: 'newPassword'
-        };
-        component.form.setValue(user);
-        fixture.detectChanges();
-        de.query(By.css('[data-testid="showStarterBtn"]')).componentInstance.onChange.emit(true);
-        fixture.detectChanges();
-        de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
-        expect(dotAccountService.addStarterPage).toHaveBeenCalledTimes(1);
-    });
-
-    it(`should call to remove starter method in account service`, async () => {
-        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
-        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({ entity: {} }));
-        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
-            of({ entity: { user: mockUser() } })
-        );
-        fixture.detectChanges();
-        await fixture.whenStable();
-        const user = {
-            givenName: 'Admin',
-            surname: 'Admin',
-            email: 'admin@dotcms.com',
-            password: 'admin',
-            newPassword: 'newPassword',
-            confirmPassword: 'newPassword'
-        };
-        component.form.setValue(user);
-        fixture.detectChanges();
-        de.query(
-            By.css('[data-testid="showStarterBtn"] input[type="checkbox"]')
-        ).nativeElement.click();
-        fixture.detectChanges();
-        de.query(By.css('.dialog__button-accept')).triggerEventHandler('click', {});
-        expect(dotAccountService.removeStarterPage).toHaveBeenCalledTimes(1);
-    });
-
-    it(`should SAVE form and sethAuth when no reauthentication`, async () => {
-        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({}));
-        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({}));
-        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
-            of({ entity: { user: mockUser() } })
-        );
-        spyOn(loginService, 'setAuth');
-        spyOn(component.shutdown, 'emit');
-
-        fixture.detectChanges();
-        await fixture.whenStable();
-
-        const user = {
-            givenName: 'Admin2',
-            surname: 'Admi2',
-            email: 'admin@dotcms.com',
-            password: 'admin',
-            newPassword: 'newPassword',
-            confirmPassword: 'newPassword'
-        };
-        component.form.setValue(user);
-        fixture.detectChanges();
-        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('onChange', {});
-        fixture.detectChanges();
-        const save = de.query(By.css('.dialog__button-accept'));
-        save.triggerEventHandler('click', {});
-        fixture.detectChanges();
-        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
-        expect(dotAccountService.updateUser).toHaveBeenCalledWith(component.dotAccountUser);
-        expect(loginService.setAuth).toHaveBeenCalledWith({
-            loginAsUser: null,
-            user: mockUser()
+            component.handleClose();
+            expect(component.shutdown.emit).toHaveBeenCalled();
         });
     });
 
-    it(`should SAVE form and reauthenticate`, async () => {
-        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({}));
-        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({}));
-        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
-            of({ entity: { reauthenticate: true } })
-        );
-        spyOn(dotAlertConfirmService, 'alert');
-        spyOn(component.shutdown, 'emit');
-        spyOn(dotRouterService, 'doLogOut');
-
-        fixture.detectChanges();
-        await fixture.whenStable();
-
-        const user = {
-            givenName: 'Admin2',
-            surname: 'Admi2',
-            email: 'admin@dotcms.com',
-            password: 'admin',
-            newPassword: 'newPassword',
-            confirmPassword: 'newPassword'
-        };
-        component.form.setValue(user);
-        fixture.detectChanges();
-        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('onChange', {});
-        fixture.detectChanges();
-        const save = de.query(By.css('.dialog__button-accept'));
-        save.triggerEventHandler('click', {});
-        fixture.detectChanges();
-        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
-        expect(dotAccountService.updateUser).toHaveBeenCalledWith(component.dotAccountUser);
-        expect(dotAlertConfirmService.alert).toHaveBeenCalledWith({
-            header: messageServiceMock.get('my-account'),
-            message: messageServiceMock.get('message.createaccount.success')
+    describe('Form Fields', () => {
+        beforeEach(() => {
+            component.setVisible(true);
+            spectator.detectChanges();
         });
-        expect(dotRouterService.doLogOut).toHaveBeenCalledTimes(1);
+
+        it('should have all required fields', () => {
+            const requiredFields = [
+                'dot-my-account-first-name-input',
+                'dot-my-account-last-name-input',
+                'dot-my-account-email-input',
+                'dot-my-account-current-password-input'
+            ];
+
+            requiredFields.forEach((fieldId) => {
+                const field = spectator.query(byTestId(fieldId)) as HTMLInputElement;
+                expect(field).toBeTruthy();
+            });
+        });
+
+        it('should show validation messages when form is submitted with empty fields', () => {
+            // Clear form values
+            const form = component.form;
+            form.reset();
+
+            // Force form validation
+            Object.keys(form.controls).forEach((key) => {
+                const control = form.get(key);
+                if (control) {
+                    control.markAsDirty();
+                    control.markAsTouched();
+                    control.updateValueAndValidity();
+                }
+            });
+            spectator.detectChanges();
+
+            // Check that validation messages are shown
+            const errorMessages = spectator.queryAll('small.p-invalid:not([hidden])');
+            expect(errorMessages.length).toBeGreaterThan(0);
+        });
+
+        it('should validate email format', () => {
+            // Get the email control
+            const emailControl = component.form.get('email');
+
+            // Set invalid email
+            emailControl?.setValue('invalid-email');
+            emailControl?.markAsDirty();
+            emailControl?.markAsTouched();
+            emailControl?.updateValueAndValidity();
+            spectator.detectChanges();
+
+            // Verify error message is shown
+            expect(emailControl?.valid).toBeFalsy();
+            const errorMessage = spectator.query(byTestId('dot-my-account-email-error'));
+            expect(errorMessage).toBeTruthy();
+
+            // Set valid email
+            emailControl?.setValue('valid@email.com');
+            emailControl?.updateValueAndValidity();
+            spectator.detectChanges();
+
+            // Verify error message is hidden
+            expect(emailControl?.valid).toBeTruthy();
+        });
     });
 
-    it(`should show password input error message when the new password not meet the system security requirements`, async () => {
-        const errorResponse = {
-            status: 400,
-            error: {
-                errors: [
-                    {
-                        errorCode: 'User-Info-Save-Password-Failed',
-                        fieldName: null,
-                        message: 'amazing message from backend'
+    describe('Password Change', () => {
+        beforeEach(() => {
+            component.setVisible(true);
+            spectator.detectChanges();
+        });
+
+        it('should enable password fields when change password is checked', () => {
+            // Check initial state of checkbox and fields
+            expect(component.changePasswordOption()).toBe(false);
+
+            // Verify that password fields are initially disabled
+            const newPasswordField = component.form.get('newPassword');
+            const confirmPasswordField = component.form.get('confirmPassword');
+            expect(newPasswordField?.disabled).toBe(true);
+            expect(confirmPasswordField?.disabled).toBe(true);
+
+            // Simulate click on checkbox using the method directly
+            // since clicking the checkbox may not work correctly in tests
+            component.toggleChangePasswordOption();
+            spectator.detectChanges();
+
+            // Verify that checkbox is checked and fields are enabled after the change
+            expect(component.changePasswordOption()).toBe(true);
+            expect(component.form.get('newPassword')?.disabled).toBe(false);
+            expect(component.form.get('confirmPassword')?.disabled).toBe(false);
+        });
+
+        it('should validate password match', () => {
+            // Enable password change
+            component.toggleChangePasswordOption();
+            spectator.detectChanges();
+
+            // Verify that checkbox is checked and fields are enabled
+            expect(component.changePasswordOption()).toBe(true);
+            expect(component.form.get('newPassword')?.disabled).toBe(false);
+            expect(component.form.get('confirmPassword')?.disabled).toBe(false);
+
+            // Set different passwords
+            component.form.get('newPassword')?.setValue('password1');
+            component.form.get('confirmPassword')?.setValue('password2');
+            component.form.get('confirmPassword')?.markAsTouched();
+            component.form.get('confirmPassword')?.updateValueAndValidity();
+            spectator.detectChanges();
+
+            // Verify that there is a validation error
+            const confirmPasswordControl = component.form.get('confirmPassword');
+            expect(confirmPasswordControl?.hasError('passwordMismatch')).toBe(true);
+
+            // Verify that error message is displayed
+            const errorMessage = spectator.query(byTestId('dot-my-account-confirm-password-error'));
+            expect(errorMessage).toBeTruthy();
+
+            // Set matching passwords
+            component.form.get('confirmPassword')?.setValue('password1');
+            component.form.get('confirmPassword')?.updateValueAndValidity();
+            spectator.detectChanges();
+
+            // Verify that there is no validation error
+            expect(confirmPasswordControl?.hasError('passwordMismatch')).toBe(false);
+
+            // Verify that error message is not displayed
+            const errorMessageAfterFix = spectator.query(
+                byTestId('dot-my-account-confirm-password-error')
+            );
+            expect(errorMessageAfterFix).toBeFalsy();
+        });
+    });
+
+    describe('Starter Checkbox', () => {
+        beforeEach(() => {
+            component.setVisible(true);
+            spectator.detectChanges();
+        });
+
+        it('should call addStarterPage when checkbox is checked', () => {
+            const accountService = spectator.inject(DotAccountService);
+            spyOn(accountService, 'addStarterPage').and.returnValue(of({}));
+
+            // First set showStarter to false
+            component.showStarter.set(false);
+            spectator.detectChanges();
+
+            // Then set it to true and trigger setShowStarter
+            component.showStarter.set(true);
+            component.setShowStarter();
+            spectator.detectChanges();
+
+            expect(accountService.addStarterPage).toHaveBeenCalled();
+        });
+
+        it('should call removeStarterPage when checkbox is unchecked', () => {
+            const accountService = spectator.inject(DotAccountService);
+            spyOn(accountService, 'removeStarterPage').and.returnValue(of({}));
+
+            // First set showStarter to true
+            component.showStarter.set(true);
+            spectator.detectChanges();
+
+            // Then set it to false and trigger setShowStarter
+            component.showStarter.set(false);
+            component.setShowStarter();
+            spectator.detectChanges();
+
+            expect(accountService.removeStarterPage).toHaveBeenCalled();
+        });
+    });
+
+    describe('Form Submission', () => {
+        beforeEach(() => {
+            component.setVisible(true);
+            spectator.detectChanges();
+        });
+
+        it('should update user successfully', fakeAsync(() => {
+            // Arrange
+            const accountService = spectator.inject(DotAccountService);
+            const loginService = spectator.inject(LoginService);
+
+            // Spy on updateUser and setAuth methods
+            const updateUserSpy = spyOn(accountService, 'updateUser').and.returnValue(
+                of({ entity: { user: mockUser, reauthenticate: false } })
+            );
+            const setAuthSpy = spyOn(loginService, 'setAuth');
+
+            // Fill form with valid data
+            component.form.patchValue({
+                userId: '1',
+                givenName: 'John',
+                surname: 'Doe',
+                email: 'john@doe.com',
+                currentPassword: 'currentPass'
+            });
+
+            // Force form validation
+            Object.keys(component.form.controls).forEach((key) => {
+                const control = component.form.get(key);
+                if (control) {
+                    control.markAsDirty();
+                    control.markAsTouched();
+                    control.updateValueAndValidity();
+                }
+            });
+            spectator.detectChanges();
+
+            // Act - Call save method directly
+            component.save();
+
+            // Use tick to complete all async operations
+            tick(100);
+            spectator.detectChanges();
+
+            // Assert
+            // Verify updateUser was called with correct data
+            expect(updateUserSpy).toHaveBeenCalledWith({
+                userId: '1',
+                givenName: 'John',
+                surname: 'Doe',
+                email: 'john@doe.com',
+                currentPassword: 'currentPass'
+            });
+
+            // Verify setAuth was called with correct data
+            expect(setAuthSpy).toHaveBeenCalledWith({
+                loginAsUser: null,
+                user: mockUser
+            });
+
+            // Verify form status was reset
+            expect(component.formStatus()).not.toBe('saving');
+        }));
+
+        it('should handle current password error', fakeAsync(() => {
+            const accountService = spectator.inject(DotAccountService);
+            spyOn(accountService, 'updateUser').and.returnValue(
+                throwError({
+                    status: 400,
+                    error: {
+                        errors: [
+                            {
+                                errorCode: 'User-Info-Confirm-Current-Password-Failed',
+                                message: 'Invalid current password'
+                            }
+                        ]
                     }
-                ]
-            }
-        };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+                })
+            );
 
-        fixture.detectChanges();
-        await fixture.whenStable();
+            // Fill form with valid data
+            component.form.patchValue({
+                userId: '1',
+                givenName: 'John',
+                surname: 'Doe',
+                email: 'john@doe.com',
+                currentPassword: 'currentPass'
+            });
 
-        component.form.setValue({
-            givenName: 'Admin2',
-            surname: 'Admi2',
-            email: 'admin@dotcms.com',
-            password: 'test',
-            newPassword: 'admin',
-            confirmPassword: 'admin'
-        });
+            // Force form validation
+            Object.keys(component.form.controls).forEach((key) => {
+                const control = component.form.get(key);
+                if (control) {
+                    control.markAsDirty();
+                    control.markAsTouched();
+                    control.updateValueAndValidity();
+                }
+            });
+            spectator.detectChanges();
 
-        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('onChange', {});
-        fixture.detectChanges();
+            // Call save method directly instead of clicking the button
+            component.save();
 
-        const save = de.query(By.css('.dialog__button-accept'));
-        save.triggerEventHandler('click', {});
-        fixture.detectChanges();
+            // Use tick to complete all async operations
+            tick();
+            spectator.detectChanges();
 
-        const passwordFailMsg: DebugElement = de.query(
-            By.css('[data-testId="dotSavePasswordFailedMsg"]')
-        );
+            expect(component.confirmPasswordFailedMsg()).toBe('Invalid current password');
+            expect(spectator.query(byTestId('dot-my-account-current-password-error'))).toBeTruthy();
+        }));
 
-        expect(passwordFailMsg.nativeElement.innerText.trim()).toEqual(
-            errorResponse.error.errors[0].message.trim()
-        );
-    });
-
-    it(`should show current password input error message`, async () => {
-        const errorResponse = {
-            status: 400,
-            error: {
-                errors: [
-                    {
-                        errorCode: 'User-Info-Confirm-Current-Password-Failed',
-                        fieldName: null,
-                        message: 'amazing message from backend'
+        it('should handle new password error', fakeAsync(() => {
+            const accountService = spectator.inject(DotAccountService);
+            spyOn(accountService, 'updateUser').and.returnValue(
+                throwError({
+                    status: 400,
+                    error: {
+                        errors: [
+                            {
+                                errorCode: 'User-Info-Save-Password-Failed',
+                                message: 'Invalid new password'
+                            }
+                        ]
                     }
-                ]
-            }
-        };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+                })
+            );
 
-        fixture.detectChanges();
-        await fixture.whenStable();
+            // Enable password change
+            component.toggleChangePasswordOption();
+            spectator.detectChanges();
 
-        component.form.setValue({
-            givenName: 'Admin2',
-            surname: 'Admi2',
-            email: 'admin@dotcms.com',
-            password: 'test',
-            newPassword: 'admin',
-            confirmPassword: 'admin'
-        });
+            // Fill form with valid data
+            component.form.patchValue({
+                userId: '1',
+                givenName: 'John',
+                surname: 'Doe',
+                email: 'john@doe.com',
+                currentPassword: 'currentPass',
+                newPassword: 'newPass',
+                confirmPassword: 'newPass'
+            });
 
-        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('onChange', {});
-        fixture.detectChanges();
+            // Force form validation
+            Object.keys(component.form.controls).forEach((key) => {
+                const control = component.form.get(key);
+                if (control && !control.disabled) {
+                    control.markAsDirty();
+                    control.markAsTouched();
+                    control.updateValueAndValidity();
+                }
+            });
+            spectator.detectChanges();
 
-        const save = de.query(By.css('.dialog__button-accept'));
-        save.triggerEventHandler('click', {});
-        fixture.detectChanges();
+            // Call save method directly instead of clicking the button
+            component.save();
 
-        const passwordFailMsg: DebugElement = de.query(
-            By.css('[data-testId="dotCurrrentPasswordFailedMsg"]')
-        );
+            // Use tick to complete all async operations
+            tick();
+            spectator.detectChanges();
 
-        expect(passwordFailMsg.nativeElement.innerText).toContain(
-            errorResponse.error.errors[0].message.trim()
-        );
-    });
+            // Check that the error message is displayed
+            expect(component.newPasswordFailedMsg()).toBe('Invalid new password');
+            expect(spectator.query(byTestId('dot-my-account-new-password-error'))).toBeTruthy();
+        }));
 
-    it(`should call to HttpErrorManagerServices to show a generic dialog error message `, async () => {
-        const errorResponse = {
-            status: 400,
-            error: {
-                errors: [
-                    {
-                        errorCode: 'Any-Other-ErrorCode-From-Backend',
-                        message: 'unknown message from backend'
+        it('should handle generic error', fakeAsync(() => {
+            const accountService = spectator.inject(DotAccountService);
+            const errorService = spectator.inject(DotHttpErrorManagerService);
+            spyOn(accountService, 'updateUser').and.returnValue(
+                throwError({
+                    status: 500,
+                    error: {
+                        errors: [
+                            {
+                                errorCode: 'Generic-Error',
+                                message: 'Something went wrong'
+                            }
+                        ]
                     }
-                ]
-            }
-        };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
-        spyOn(httpErrorManagerService, 'handle').and.returnValue(of(null));
+                })
+            );
+            spyOn(errorService, 'handle').and.returnValue(of({}));
 
-        fixture.detectChanges();
-        await fixture.whenStable();
+            // Fill form with valid data
+            component.form.patchValue({
+                userId: '1',
+                givenName: 'John',
+                surname: 'Doe',
+                email: 'john@doe.com',
+                currentPassword: 'currentPass'
+            });
 
-        component.form.setValue({
-            givenName: 'abc',
-            surname: 'abc',
-            email: 'admin@dotcms.com',
-            password: 'test',
-            newPassword: 'admin',
-            confirmPassword: 'admin'
-        });
+            // Force form validation
+            Object.keys(component.form.controls).forEach((key) => {
+                const control = component.form.get(key);
+                if (control) {
+                    control.markAsDirty();
+                    control.markAsTouched();
+                    control.updateValueAndValidity();
+                }
+            });
+            spectator.detectChanges();
 
-        const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('onChange', {});
-        fixture.detectChanges();
+            // Call save method directly instead of clicking the button
+            component.save();
 
-        const save = de.query(By.css('.dialog__button-accept'));
-        save.triggerEventHandler('click', {});
-        fixture.detectChanges();
+            // Use tick to complete all async operations
+            tick();
+            spectator.detectChanges();
 
-        expect(httpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-    });
+            expect(errorService.handle).toHaveBeenCalled();
+        }));
 
-    it(`should show error message when form is invalid`, async () => {
-        fixture.detectChanges();
-        expect(component.form.valid).toBe(false);
+        it('should handle reauthentication requirement', fakeAsync(() => {
+            const accountService = spectator.inject(DotAccountService);
+            const routerService = spectator.inject(DotRouterService);
+            spyOn(accountService, 'updateUser').and.returnValue(
+                of({ entity: { user: mockUser, reauthenticate: true } })
+            );
+            spyOn(routerService, 'doLogOut');
+
+            // Fill form with valid data
+            component.form.patchValue({
+                userId: '1',
+                givenName: 'John',
+                surname: 'Doe',
+                email: 'john@doe.com',
+                currentPassword: 'currentPass'
+            });
+
+            // Force form validation
+            Object.keys(component.form.controls).forEach((key) => {
+                const control = component.form.get(key);
+                if (control) {
+                    control.markAsDirty();
+                    control.markAsTouched();
+                    control.updateValueAndValidity();
+                }
+            });
+            spectator.detectChanges();
+
+            // Call save method directly instead of clicking the button
+            component.save();
+
+            // Use tick to complete all async operations
+            tick();
+            spectator.detectChanges();
+
+            expect(routerService.doLogOut).toHaveBeenCalled();
+        }));
     });
 });

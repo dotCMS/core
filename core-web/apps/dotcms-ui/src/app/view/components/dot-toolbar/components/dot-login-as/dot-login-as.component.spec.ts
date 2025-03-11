@@ -7,14 +7,16 @@ import {
     throwError as observableThrowError
 } from 'rxjs';
 
-import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DialogModule } from 'primeng/dialog';
+import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
@@ -23,76 +25,10 @@ import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
-import { DotDialogModule, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils-testing';
 
 import { DotLoginAsComponent } from './dot-login-as.component';
-
-import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
-
-@Component({
-    selector: 'dot-searchable-dropdown',
-    template: ``,
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotSearchableDropdownMockComponent)
-        }
-    ]
-})
-class DotSearchableDropdownMockComponent {
-    @Input()
-    data: string[];
-
-    @Input()
-    labelPropertyName: string | string[];
-
-    @Input()
-    valuePropertyName: string;
-
-    @Input()
-    pageLinkSize = 3;
-
-    @Input()
-    rows: number;
-
-    @Input()
-    totalRecords: number;
-
-    @Input()
-    placeholder = '';
-
-    @Input()
-    persistentPlaceholder: boolean;
-
-    @Input()
-    width: string;
-
-    @Input()
-    multiple: boolean;
-
-    @Output()
-    switch: EventEmitter<any> = new EventEmitter();
-
-    @Output()
-    filterChange: EventEmitter<string> = new EventEmitter();
-
-    @Output()
-    hide: EventEmitter<any> = new EventEmitter();
-
-    @Output()
-    pageChange: EventEmitter<any> = new EventEmitter();
-
-    @Output()
-    display: EventEmitter<any> = new EventEmitter();
-
-    writeValue() {}
-
-    registerOnChange(): void {}
-
-    registerOnTouched(): void {}
-}
 
 describe('DotLoginAsComponent', () => {
     let comp: DotLoginAsComponent;
@@ -126,13 +62,12 @@ describe('DotLoginAsComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotSearchableDropdownMockComponent],
             imports: [
-                ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 InputTextModule,
                 ReactiveFormsModule,
-                DotDialogModule,
+                DialogModule,
+                DropdownModule,
                 RouterTestingModule,
                 DotMessagePipe,
                 DotLoginAsComponent
@@ -178,26 +113,14 @@ describe('DotLoginAsComponent', () => {
         expect(comp.userCurrentPage).toEqual(users);
     });
 
-    it('should change page', () => {
-        comp.visible = true;
-        fixture.detectChanges();
-
-        const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        searchableDropdown.triggerEventHandler('pageChange', {
-            filter: 'filter',
-            first: 1
-        });
-
-        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(1);
-        expect(paginatorService.filter).toEqual('filter');
-    });
-
     it('should change filter', () => {
         comp.visible = true;
         fixture.detectChanges();
 
-        const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        searchableDropdown.triggerEventHandler('filterChange', 'new filter');
+        const dropdown = de.query(By.css('p-dropdown'));
+        dropdown.triggerEventHandler('onFilter', {
+            filter: 'new filter'
+        });
 
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
         expect(paginatorService.filter).toEqual('new filter');
@@ -216,7 +139,7 @@ describe('DotLoginAsComponent', () => {
         expect(loginService.loginAs).toHaveBeenCalledTimes(1);
     });
 
-    it('should focus on password input after an error haapens in "loginAs" in "LoginService"', () => {
+    it('should focus on password input after an error happens in "loginAs" in "LoginService"', () => {
         spyOn(loginService, 'loginAs').and.returnValue(observableThrowError({ message: 'Error' }));
         comp.visible = true;
         comp.needPassword = true;
@@ -257,24 +180,33 @@ describe('DotLoginAsComponent', () => {
         expect(locationService.reload).toHaveBeenCalledTimes(1);
     });
 
-    it('should show error message', () => {
+    it('should show error message', async () => {
         spyOn(loginService, 'loginAs').and.returnValue(observableThrowError({}));
 
         comp.visible = true;
         comp.needPassword = true;
         fixture.detectChanges();
 
-        let error: DebugElement;
-        error = de.query(By.css('.login-as__error-message'));
-        expect(error).toBeFalsy();
-
-        const form: DebugElement = de.query(By.css('form'));
-        form.triggerEventHandler('ngSubmit', {});
-
+        // Set form values
+        comp.form.get('loginAsUser').setValue(mockUser());
+        comp.form.get('password').setValue('password');
         fixture.detectChanges();
 
+        // Verify error message is not present initially
+        let error = de.query(By.css('.login-as__error-message'));
+        expect(error).toBeNull();
+
+        // Call doLoginAs directly since this triggers the error
+        comp.doLoginAs();
+
+        // Wait for async operations
+        await fixture.whenStable();
+        fixture.detectChanges();
+
+        // Now verify error message is present and has correct text
         error = de.query(By.css('.login-as__error-message'));
-        expect(error.nativeElement.textContent).toBe('wrong password');
+        expect(error).not.toBeNull();
+        expect(error.nativeElement.textContent.trim()).toBe('wrong password');
     });
 
     it('should clean error after user selection change', () => {
@@ -282,9 +214,9 @@ describe('DotLoginAsComponent', () => {
         comp.errorMessage = 'Error messsage';
         fixture.detectChanges();
 
-        const searchableDropdown = de.query(By.css('dot-searchable-dropdown'));
-        searchableDropdown.triggerEventHandler('switch', {
-            requestPassword: false
+        const dropdown = de.query(By.css('p-dropdown'));
+        dropdown.triggerEventHandler('onChange', {
+            value: { requestPassword: false }
         });
 
         expect(comp.errorMessage).toEqual('');
