@@ -16,6 +16,14 @@ public class DotExceptionHandler implements IExecutionExceptionHandler {
 
     @Override
     public int handleExecutionException(Exception ex, CommandLine commandLine, ParseResult parseResult) throws Exception {
+
+        // If this is a known interrupt exception, handle it gracefully
+        if (ex instanceof InterruptedException ||
+                (ex.getCause() != null && ex.getCause() instanceof InterruptedException)) {
+            commandLine.getErr().println("Command was interrupted");
+            return CommandLine.ExitCode.OK;
+        }
+
         String commandName = "UNKNOWN" ;
         boolean isShowErrors = false;
         final Object object = commandLine.getCommand();
