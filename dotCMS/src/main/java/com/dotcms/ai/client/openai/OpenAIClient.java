@@ -26,7 +26,6 @@ import io.vavr.Tuple2;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Optional;
@@ -156,15 +155,12 @@ public class OpenAIClient implements AIClient, EventSubscriber<SystemTableUpdate
                     .setRawData(payload.toString())
                     .setTimeout(openAiTimeout.get())
                     .setTryAgainAttempts(openAiAttempts.get())
-                    .setOverrideException(statusCode -> new GenericHttpStatusCodeException(
-                            String.format(
-                                    "Got invalid response for url: [%s] response: [%d]",
-                                    jsonRequest.getUrl(),
-                                    statusCode),
-                            Response.Status.fromStatusCode(statusCode)))
+                    .setOverrideException(statusCode -> resolveException(jsonRequest, modelName, statusCode))
                     .setRaiseFailsafe(true)
                     .build()
                     .doOut(output);
+        } catch (DotAIModelNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             if (appConfig.getConfigBoolean(AppKeys.DEBUG_LOGGING)) {
                 Logger.warn(this, "INVALID REQUEST: " + e.getMessage(), e);
@@ -176,5 +172,18 @@ public class OpenAIClient implements AIClient, EventSubscriber<SystemTableUpdate
 
             throw new DotAIClientConnectException("Error while sending request to OpenAI", e);
         }
+    }
+
+    private Exception resolveException(final JSONObjectAIRequest jsonRequest,
+                                       final String modelName,
+                                       final int statusCode) {
+        return statusCode == 404
+                ? new DotAIModelNotFoundException(String.format("Model [%s] not found", modelName))
+                : new GenericHttpStatusCodeException(
+                        String.format(
+                                "Got invalid response for url: [%s] response: [%d]",
+                                jsonRequest.getUrl(),
+                                statusCode),
+                        Response.Status.fromStatusCode(statusCode));
     }
 }
