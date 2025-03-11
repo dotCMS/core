@@ -2,8 +2,6 @@ package com.dotcms.rest.api.v1.page;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
-import com.dotcms.analytics.track.collectors.Collector;
-import com.dotcms.analytics.track.collectors.EventType;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -19,7 +17,6 @@ import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.page.ImmutablePageRenderParams.Builder;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPaginator;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
@@ -80,16 +77,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.control.Try;
 import java.io.IOException;
-import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -145,12 +139,6 @@ public class PageResource {
     public static final String DOT_CACHE = "dotcache";
     public static final String IS_PAGE_RESOURCE = "pageResource";
 
-    private static final String URI = "uri";
-    private static final String MODE_PARAM = "modeParam";
-    private static final String LANGUAGE_ID = "languageId";
-    private static final String PERSONA_ID = "personaId";
-    private static final String DEVICE_INODE = "deviceInode";
-    private static final String TIME_MACHINE_DATE = "timeMachineDate";
     public static final String USER = "user";
 
     private final PageResourceHelper pageResourceHelper;
