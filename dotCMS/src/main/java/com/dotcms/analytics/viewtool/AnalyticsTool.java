@@ -7,8 +7,6 @@ import com.dotcms.analytics.query.AnalyticsQuery;
 import com.dotcms.analytics.query.AnalyticsQueryParser;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cube.CubeJSQuery;
-import com.dotcms.cube.filters.Filter;
-import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.web.UserWebAPI;
