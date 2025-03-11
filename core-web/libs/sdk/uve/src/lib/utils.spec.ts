@@ -267,23 +267,30 @@ describe('createUVESubscription', () => {
         consoleErrorSpy.mockRestore();
     });
 
-    it('should throw error when not running inside UVE', () => {
-        mockWindow = {
+    const noop = () => {
+        /* do nothing */
+    };
+
+    it('should log warning when not running inside UVE', () => {
+        const mockWindow = {
             ...window,
             parent: window
         };
 
         const spy = jest.spyOn(global, 'window', 'get');
-        spy.mockReturnValue(mockWindow as Window & typeof globalThis);
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-        const callback = jest.fn();
-        expect(() => createUVESubscription('changes', callback)).toThrow(
-            'UVE Subscription: Not running inside UVE'
-        );
+        const subscription = createUVESubscription('test-event', noop);
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith('UVE Subscription: Not running inside UVE');
+        expect(subscription).toEqual({
+            unsubscribe: expect.any(Function),
+            event: 'test-event'
+        });
     });
 
-    it('should throw error when an invalid event is provided', () => {
-        mockWindow = {
+    it('should log error when event is not found', () => {
+        const mockWindow = {
             ...window,
             parent: {
                 ...window
@@ -294,12 +301,17 @@ describe('createUVESubscription', () => {
         };
 
         const spy = jest.spyOn(global, 'window', 'get');
-        spy.mockReturnValue(mockWindow as Window & typeof globalThis);
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-        const callback = jest.fn();
-        expect(() => createUVESubscription('invalid_event', callback)).toThrow(
-            'UVE Subscription: Event invalid_event not found'
+        const subscription = createUVESubscription('non-existent-event', noop);
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            'UVE Subscription: Event non-existent-event not found'
         );
+        expect(subscription).toEqual({
+            unsubscribe: expect.any(Function),
+            event: 'non-existent-event'
+        });
     });
 
     it('should create a valid subscription for changes event', () => {
