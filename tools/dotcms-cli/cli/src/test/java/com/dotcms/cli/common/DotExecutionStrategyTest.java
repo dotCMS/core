@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -53,7 +54,9 @@ class DotExecutionStrategyTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        dotExecutionStrategy = spy(new DotExecutionStrategy(mockUnderlyingStrategy, mockSubcommandProcessor, mockWatchService, mockServiceManager));
+        dotExecutionStrategy = spy(new DotExecutionStrategy(
+                mockUnderlyingStrategy, mockSubcommandProcessor, mockWatchService, mockServiceManager
+        ));
     }
 
     /**
@@ -119,6 +122,7 @@ class DotExecutionStrategyTest {
         //Verify that the command was executed and the watch service was started
         verify(mockUnderlyingStrategy, atMostOnce()).execute(parseResult);
         verify(dotExecutionStrategy, atLeastOnce()).internalExecute(any(),any(),any());
+        verify(dotExecutionStrategy, atLeastOnce()).processCommandExecution(any(),any(),any());
         verify(dotExecutionStrategy, atLeastOnce()).handleWatchPush(any(), any(), any());
 
         verify(mockSubcommandProcessor).process(parseResult);

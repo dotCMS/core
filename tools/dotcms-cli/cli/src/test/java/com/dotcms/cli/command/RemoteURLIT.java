@@ -127,7 +127,8 @@ class RemoteURLIT extends CommandTest {
             var status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME,
                     "--workspace", tempFolder.toAbsolutePath().toString(),
                     "--dotcms-url", "http://localhost:8080",
-                    "--token", "invalid token");
+                    "--token", "invalid token",
+                    "--errors");
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
 
             final String output = writer.toString();
