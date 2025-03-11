@@ -297,8 +297,8 @@ export class DotEditContentFormComponent implements OnInit {
         this.#dotWorkflowEventHandlerService
             .checkPublishEnvironments()
             .pipe(take(1))
-            .subscribe((hasEnviroments: boolean) => {
-                if (hasEnviroments) {
+            .subscribe((hasEnvironments: boolean) => {
+                if (hasEnvironments) {
                     this.openWizard(workflow, inode, contentlet);
                 }
             });
