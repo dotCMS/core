@@ -7,12 +7,6 @@ describe('Image Loader Utils', () => {
   describe('provideDotCMSImageLoader', () => {
     const validPath = 'https://demo.dotcms.com';
 
-    it('should throw error when no path is provided', () => {
-      expect(() => provideDotCMSImageLoader('')).toThrow(
-        'No path provided to DotCMS image loader. Supply either the full URL to the dotCMS site.'
-      );
-    });
-
     it('should throw error when invalid path is provided', () => {
       const invalidPath = 'invalid-url';
       expect(() => provideDotCMSImageLoader(invalidPath)).toThrow(
@@ -31,7 +25,17 @@ describe('Image Loader Utils', () => {
       expect(provider).toHaveProperty('useValue');
     });
 
-    describe('Image URL Generation', () => {
+    it('should return array of providers when no path is provided', () => {
+      const providers = provideDotCMSImageLoader();
+      const provider = providers[0] as { provide: typeof IMAGE_LOADER, useValue: unknown };
+
+      expect(Array.isArray(providers)).toBe(true);
+      expect(providers.length).toBe(1);
+      expect(provider.provide).toBe(IMAGE_LOADER);
+      expect(provider).toHaveProperty('useValue');
+    });
+
+    describe('Image URL Generation with path', () => {
       let imageLoader: (config: ImageLoaderConfig) => string;
 
       beforeEach(() => {
@@ -90,6 +94,57 @@ describe('Image Loader Utils', () => {
 
         const expectedUrl = 'https://demo.dotcms.com/dA/folder/subfolder/image-with-dash.jpg/500?language_id=3';
         expect(imageLoader(config)).toBe(expectedUrl);
+      });
+    });
+
+    describe('Image URL Generation without path', () => {
+      let imageLoader: (config: ImageLoaderConfig) => string;
+
+      beforeEach(() => {
+        const [provider] = provideDotCMSImageLoader();
+        imageLoader = (provider as { useValue: (config: ImageLoaderConfig) => string }).useValue;
+      });
+
+      it('should generate correct URL for internal images without host', () => {
+        const config: ImageLoaderConfig = {
+          src: 'image.jpg',
+          width: 100,
+          loaderParams: { languageId: '2' }
+        };
+
+        const expectedUrl = '/dA/image.jpg/100?language_id=2';
+        expect(imageLoader(config)).toBe(expectedUrl);
+      });
+
+      it('should preserve /dA/ in source path if already present', () => {
+        const config: ImageLoaderConfig = {
+          src: '/dA/existing/image.jpg',
+          width: 200,
+          loaderParams: { languageId: '1' }
+        };
+
+        const expectedUrl = '/dA/existing/image.jpg/200?language_id=1';
+        expect(imageLoader(config)).toBe(expectedUrl);
+      });
+
+      it('should use default language ID when not provided', () => {
+        const config: ImageLoaderConfig = {
+          src: 'image.jpg',
+          width: 300
+        };
+
+        const expectedUrl = '/dA/image.jpg/300?language_id=1';
+        expect(imageLoader(config)).toBe(expectedUrl);
+      });
+
+      it('should return original source when isOutsideSRC is true', () => {
+        const config: ImageLoaderConfig = {
+          src: 'https://external-domain.com/image.jpg',
+          width: 400,
+          loaderParams: { isOutsideSRC: true }
+        };
+
+        expect(imageLoader(config)).toBe(config.src);
       });
     });
   });
