@@ -5,8 +5,8 @@ import { Provider } from '@angular/core';
  * Type definition for the DotCMS image loader parameters
  */
 interface DotCMSImageLoaderParams {
-  isOutsideSRC?: boolean;
-  languageId?: string;
+    isOutsideSRC?: boolean;
+    languageId?: string;
 }
 
 /**
@@ -22,17 +22,17 @@ interface DotCMSImageLoaderParams {
  * ```
  */
 function isValidPath(path: unknown): boolean {
-  if (typeof path !== 'string' || path.trim() === '') {
-    return false;
-  }
+    if (typeof path !== 'string' || path.trim() === '') {
+        return false;
+    }
 
-  try {
-    new URL(path);
+    try {
+        new URL(path);
 
-    return true;
-  } catch {
-    return false;
-  }
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 /**
@@ -54,18 +54,20 @@ function isValidPath(path: unknown): boolean {
  * ```
  */
 export function provideDotCMSImageLoader(path?: string): Provider[] {
-  // If path is provided, validate it
-  if (path && !isValidPath(path)) {
-    throw new Error(
-      `Image loader has detected an invalid path (\`${path}\`). ` +
-      `To fix this, supply either the full URL to the dotCMS site, or leave it empty to use the current site.`
-    );
-  }
+    // If path is provided, validate it
+    if (path && !isValidPath(path)) {
+        throw new Error(
+            `Image loader has detected an invalid path (\`${path}\`). ` +
+                `To fix this, supply either the full URL to the dotCMS site, or leave it empty to use the current site.`
+        );
+    }
 
-  return [{
-    provide: IMAGE_LOADER,
-    useValue: (config: ImageLoaderConfig) => createDotCMSUrl(config, path)
-  }];
+    return [
+        {
+            provide: IMAGE_LOADER,
+            useValue: (config: ImageLoaderConfig) => createDotCMSUrl(config, path)
+        }
+    ];
 }
 
 /**
@@ -77,17 +79,17 @@ export function provideDotCMSImageLoader(path?: string): Provider[] {
  * @internal
  */
 function createDotCMSUrl(config: ImageLoaderConfig, path?: string): string {
-  const { loaderParams, src, width } = config;
-  const params = loaderParams as DotCMSImageLoaderParams;
+    const { loaderParams, src, width } = config;
+    const params = loaderParams as DotCMSImageLoaderParams;
 
-  if (params?.isOutsideSRC) {
-    return src;
-  }
+    if (params?.isOutsideSRC) {
+        return src;
+    }
 
-  // Use empty string as fallback to support using current site
-  const dotcmsHost = path ? new URL(path).origin : '';
-  const imageSRC = src.includes('/dA/') ? src : `/dA/${src}`;
-  const languageId = params?.languageId ?? '1';
+    // Use empty string as fallback to support using current site
+    const dotcmsHost = path ? new URL(path).origin : '';
+    const imageSRC = src.includes('/dA/') ? src : `/dA/${src}`;
+    const languageId = params?.languageId ?? '1';
 
-  return `${dotcmsHost}${imageSRC}/${width}?language_id=${languageId}`;
+    return `${dotcmsHost}${imageSRC}/${width}?language_id=${languageId}`;
 }
