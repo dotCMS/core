@@ -4,6 +4,7 @@ import {
     signalStoreFeature,
     type,
     withComputed,
+    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
@@ -11,7 +12,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { MessageService, SelectItem } from 'primeng/api';
@@ -44,6 +45,11 @@ import { parseCurrentActions } from '../../utils/workflows.utils';
 import { EditContentRootState } from '../edit-content.store';
 
 export type CurrentContentActionsWithScheme = Record<string, DotCMSWorkflowAction[]>;
+
+// Define the extended lock state that includes the computed properties
+export interface ExtendedLockState extends LockState {
+    isContentLocked: () => boolean;
+}
 
 export interface WorkflowState {
     /** Current workflow scheme id */
@@ -84,7 +90,7 @@ export const workflowInitialState: WorkflowState = {
  */
 export function withWorkflow() {
     return signalStoreFeature(
-        { state: type<EditContentRootState & ContentState & LockState>() },
+        { state: type<EditContentRootState & ContentState>() },
         withState(workflowInitialState),
         withComputed((store) => ({
             /**
@@ -362,8 +368,60 @@ export function withWorkflow() {
                             );
                         })
                     )
+                ),
+
+                /**
+                 * Updates the current content actions by fetching the latest allowed actions for the content
+                 * This is used to refresh the available workflow actions for the current contentlet
+                 */
+                updateCurrentContentActions: rxMethod<void>(
+                    pipe(
+                        switchMap(() => {
+                            const contentlet = store.contentlet();
+                            if (!contentlet?.inode) {
+                                return [];
+                            }
+
+                            return workflowActionService
+                                .getByInode(contentlet.inode, DotRenderMode.EDITING)
+                                .pipe(
+                                    tapResponse({
+                                        next: (actions) => {
+                                            const parsedCurrentActions =
+                                                parseCurrentActions(actions);
+
+                                            patchState(store, {
+                                                currentContentActions: parsedCurrentActions
+                                            });
+                                        },
+                                        error: (error: HttpErrorResponse) => {
+                                            dotHttpErrorManagerService.handle(error);
+                                        }
+                                    })
+                                );
+                        })
+                    )
                 )
             })
-        )
+        ),
+        withHooks({
+            onInit(store) {
+                /**
+                 * Effect that updates the allowed workflow actions whenever the content changes
+                 * This ensures that the available actions are always in sync with the current state of the contentlet
+                 */
+                effect(() => {
+                    const contentlet = store.contentlet();
+
+                    // Use untracked to prevent circular dependencies in the effect
+                    untracked(() => {
+                        // Only update actions if we have a contentlet with an inode
+                        if (contentlet?.inode) {
+                            store.updateCurrentContentActions();
+                        }
+                    });
+                });
+            }
+        })
     );
 }
