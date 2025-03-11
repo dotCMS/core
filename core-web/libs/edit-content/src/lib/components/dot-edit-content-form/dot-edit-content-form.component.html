@@ -132,7 +132,7 @@
                 data-testId="workflow-actions"
                 (actionFired)="
                     fireWorkflowAction({
-                        actionId: $event.id,
+                        workflow: $event,
                         inode: contentlet?.inode,
                         contentType: contentType.variable,
                         languageId: currentLocaleId,
