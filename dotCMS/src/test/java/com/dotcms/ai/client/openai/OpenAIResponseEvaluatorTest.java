@@ -3,10 +3,13 @@ package com.dotcms.ai.client.openai;
 import com.dotcms.ai.domain.AIResponseData;
 import com.dotcms.ai.domain.ModelStatus;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
+import com.dotcms.rest.exception.GenericHttpStatusCodeException;
 import com.dotmarketing.exception.DotRuntimeException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -34,10 +37,10 @@ public class OpenAIResponseEvaluatorTest {
      */
     @Test
     public void testFromResponse_withError() {
-        String response = new JSONObject()
+        final String response = new JSONObject()
                 .put("error", new JSONObject().put("message", "Model has been deprecated"))
                 .toString();
-        AIResponseData metadata = new AIResponseData();
+        final AIResponseData metadata = new AIResponseData();
 
         evaluator.fromResponse(response, metadata, true);
 
@@ -54,10 +57,10 @@ public class OpenAIResponseEvaluatorTest {
      */
     @Test
     public void testFromResponse_withErrorNoJson() {
-        String response = new JSONObject()
+        final String response = new JSONObject()
                 .put("error", new JSONObject().put("message", "Model has been deprecated"))
                 .toString();
-        AIResponseData metadata = new AIResponseData();
+        final AIResponseData metadata = new AIResponseData();
 
         evaluator.fromResponse(response, metadata, false);
 
@@ -74,8 +77,8 @@ public class OpenAIResponseEvaluatorTest {
      */
     @Test
     public void testFromResponse_withoutErrorNoJson() {
-        String response = "not a json response";
-        AIResponseData metadata = new AIResponseData();
+        final String response = "not a json response";
+        final AIResponseData metadata = new AIResponseData();
 
         evaluator.fromResponse(response, metadata, false);
 
@@ -92,8 +95,8 @@ public class OpenAIResponseEvaluatorTest {
      */
     @Test
     public void testFromResponse_withoutError() {
-        String response = new JSONObject().put("data", "some data").toString();
-        AIResponseData metadata = new AIResponseData();
+        final String response = new JSONObject().put("data", "some data").toString();
+        final AIResponseData metadata = new AIResponseData();
 
         evaluator.fromResponse(response, metadata, true);
 
@@ -111,14 +114,42 @@ public class OpenAIResponseEvaluatorTest {
      */
     @Test
     public void testFromException_withDotRuntimeException() {
-        DotRuntimeException exception = new DotAIModelNotFoundException("Model not found");
-        AIResponseData metadata = new AIResponseData();
+        final DotRuntimeException exception = new DotAIModelNotFoundException("Model not found");
+        final AIResponseData metadata = new AIResponseData();
 
         evaluator.fromException(exception, metadata);
 
         assertEquals("Model not found", metadata.getError());
         assertEquals(ModelStatus.INVALID, metadata.getStatus());
         assertEquals(exception, metadata.getException());
+    }
+
+    @Test
+    public void testFromException_withGenericHttpStatusCodeException_notFound() {
+        final GenericHttpStatusCodeException exception = new GenericHttpStatusCodeException(
+                "Not found",
+                Response.Status.NOT_FOUND);
+        final AIResponseData metadata = new AIResponseData();
+
+        evaluator.fromException(exception, metadata);
+
+        assertEquals("HTTP 404 Not Found", metadata.getError());
+        assertEquals(ModelStatus.INVALID, metadata.getStatus());
+        assertEquals(exception, metadata.getException().getCause());
+    }
+
+    @Test
+    public void testFromException_withGenericHttpStatusCodeException() {
+        final GenericHttpStatusCodeException exception = new GenericHttpStatusCodeException(
+                "Not found",
+                Response.Status.BAD_REQUEST);
+        final AIResponseData metadata = new AIResponseData();
+
+        evaluator.fromException(exception, metadata);
+
+        assertEquals("HTTP 400 Bad Request", metadata.getError());
+        assertEquals(ModelStatus.UNKNOWN, metadata.getStatus());
+        assertEquals(exception, metadata.getException().getCause());
     }
 
     /**
