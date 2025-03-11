@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 
 import {
     CLIENT_ACTIONS,
-    DotCmsClient,
     destroyEditor,
     initEditor,
     isInsideEditor as isInsideEditorFn,
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
+import { createUVESubscription } from '@dotcms/uve';
 
 import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
 import { DotCMSPageContext } from '../models';
@@ -50,15 +50,14 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
      */
     useEffect(() => {
         const insideEditor = isInsideEditorFn();
-        const client = DotCmsClient.instance;
 
         if (!insideEditor || !onReload) {
             return;
         }
 
-        client.editor.on('changes', () => onReload?.());
+        const { unsubscribe } = createUVESubscription('changes', () => onReload());
 
-        return () => client.editor.off('changes');
+        return () => unsubscribe();
     }, [onReload]);
 
     /**
@@ -73,21 +72,19 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
     }, [pathname, editor]);
 
     /**
-     * Updates the page asset when changes are made in the editor.
+     * Old
      */
     useEffect(() => {
         if (!isInsideEditorFn()) {
             return;
         }
 
-        const client = DotCmsClient.instance;
-
-        client.editor.on('changes', (data) => {
+        const { unsubscribe } = createUVESubscription('changes', (data) => {
             const pageAsset = data as DotCMSPageContext['pageAsset'];
             setState((state) => ({ ...state, pageAsset }));
         });
 
-        return () => client.editor.off('changes');
+        return () => unsubscribe();
     }, []);
 
     return state;
