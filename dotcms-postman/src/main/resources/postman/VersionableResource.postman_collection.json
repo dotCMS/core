@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "5c6a2e24-7ac2-412b-8c1c-97321b2599ed",
+		"_postman_id": "9d328adc-9493-490b-b196-660c85cdf0d9",
 		"name": "Versionable Resource",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -40,18 +39,22 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
 											"type": "string"
 										}
 									]
@@ -60,6 +63,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -116,18 +120,22 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
 											"type": "string"
 										}
 									]
@@ -136,6 +144,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -192,18 +201,22 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
 											"type": "string"
 										}
 									]
@@ -212,6 +225,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -268,18 +282,22 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
 											"type": "string"
 										}
 									]
@@ -288,6 +306,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -333,18 +352,22 @@
 											"    pm.expect(jsonData.entity.title).to.eql(\"testContent v1\");",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
 											"type": "string"
 										}
 									]
@@ -389,18 +412,22 @@
 											"});",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
 											"type": "string"
 										}
 									]
@@ -486,20 +513,34 @@
 											"});",
 											"",
 											""
+
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -549,19 +590,32 @@
 											"});",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -623,19 +677,32 @@
 											"",
 											"pm.collectionVariables.set(\"templateInodeV2ToDeleteVersion\", jsonData.entity.inode);"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -695,19 +762,32 @@
 											"",
 											"pm.collectionVariables.set(\"templateInodeV3ToDeleteVersion\", jsonData.entity.inode);"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -748,19 +828,32 @@
 											"    pm.response.to.have.status(400);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -793,19 +886,32 @@
 											"    pm.response.to.have.status(400);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -838,19 +944,32 @@
 											"    pm.response.to.have.status(200);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -883,19 +1002,32 @@
 											"    pm.response.to.have.status(404);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -956,18 +1088,22 @@
 											"});",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
 											"type": "string"
 										}
 									]
@@ -976,6 +1112,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -1030,18 +1167,22 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
 											"type": "string"
 										}
 									]
@@ -1050,6 +1191,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -1104,18 +1246,22 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
 											"type": "string"
 										}
 									]
@@ -1124,6 +1270,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -1178,18 +1325,22 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
 											"type": "string"
 										}
 									]
@@ -1198,6 +1349,7 @@
 								"header": [
 									{
 										"key": "Content-Type",
+										"name": "Content-Type",
 										"value": "application/json",
 										"type": "text"
 									}
@@ -1239,18 +1391,22 @@
 											"    ",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
 											"type": "string"
 										}
 									]
@@ -1296,22 +1452,11 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{jwt}}",
-											"type": "string"
-										}
-									]
-								},
 								"method": "GET",
 								"header": [],
 								"url": {
@@ -1374,19 +1519,32 @@
 											"",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -1446,19 +1604,32 @@
 											"",
 											"pm.collectionVariables.set(\"templateInodeV2ToFindVersion\", jsonData.entity.inode);"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -1507,19 +1678,32 @@
 											"    pm.expect(jsonData.entity.versionType).to.eql('template');",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -1560,19 +1744,32 @@
 											"    pm.expect(jsonData.entity[0].versionType).to.eql('template');",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -1605,19 +1802,32 @@
 											"    pm.response.to.have.status(404);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
 							"request": {
 								"auth": {
-									"type": "bearer",
-									"bearer": [
+									"type": "basic",
+									"basic": [
 										{
-											"key": "token",
-											"value": "{{jwt}}",
+											"key": "password",
+											"value": "admin",
 											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
 										}
 									]
 								},
@@ -1641,68 +1851,6 @@
 					]
 				}
 			]
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"packages": {},
-				"exec": [
-					"   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-					"   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-					"",
-					"// If we are unable to get the JWT we need to generate a new one",
-					"   if (!pm.environment.get('jwt')) {",
-					"       const username = pm.environment.get(\"user\");",
-					"       const password = pm.environment.get(\"password\");",
-					"       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-					"",
-					"",
-					"       const requestOptions = {",
-					"           url: apiUrl,",
-					"           method: \"POST\",",
-					"           header: {",
-					"               \"accept\": \"*/*\",",
-					"               \"content-type\": \"application/json\",",
-					"               \"Authorization\": `Basic ${basicAuth}`",
-					"           },",
-					"           body: {",
-					"               mode: \"raw\",",
-					"               raw: JSON.stringify({",
-					"                   \"expirationSeconds\": 7200,",
-					"                   \"userId\": \"dotcms.org.1\",",
-					"                   \"network\": \"0.0.0.0/0\",",
-					"                   \"claims\": {\"label\": \"postman-tests\"}",
-					"               })",
-					"           }",
-					"       };",
-					"",
-					"",
-					"       pm.sendRequest(requestOptions, function (err, response) {",
-					"           if (err) {",
-					"               console.log(err);",
-					"           } else {",
-					"               const jwt = response.json().entity.jwt;",
-					"               pm.environment.set('jwt', jwt);",
-					"               console.log(jwt);",
-					"           }",
-					"       });",
-					"   }",
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"packages": {},
-				"exec": [
-					""
-				]
-			}
 		}
 	],
 	"variable": [
