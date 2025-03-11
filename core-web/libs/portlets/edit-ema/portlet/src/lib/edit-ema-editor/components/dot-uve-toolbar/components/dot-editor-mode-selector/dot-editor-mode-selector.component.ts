@@ -12,6 +12,8 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotAnalyticsTrackerService } from '@dotcms/data-access';
+import { EVENT_TYPES } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -27,7 +29,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 })
 export class DotEditorModeSelectorComponent {
     readonly #store = inject(UVEStore);
-
+    readonly #analyticsTracker = inject(DotAnalyticsTrackerService);
     readonly $menuItems = computed(() => {
         const canEditPage = this.#store.canEditPage();
         const menu = [];
@@ -82,6 +84,11 @@ export class DotEditorModeSelectorComponent {
         if (mode === UVE_MODE.EDIT) {
             this.#store.clearDeviceAndSocialMedia();
         }
+
+        this.#analyticsTracker.track<{ mode: UVE_MODE; custom_event: string }>(EVENT_TYPES.TRACK, {
+            mode: mode,
+            custom_event: 'UVE_MODE_CHANGE'
+        });
 
         this.#store.loadPageAsset({
             mode: mode,
