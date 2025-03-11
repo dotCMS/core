@@ -397,6 +397,14 @@ public class CubeJSQuery {
             this.timeDimensions.addAll(timeDimensions);
             return this;
         }
+
+        public SimpleFilter.Operator operator(String operatorName) {
+            return SimpleFilter.Operator.valueOf(operatorName);
+        }
+
+        public Filter.Order order(String orderName) {
+            return Filter.Order.valueOf(orderName);
+        }
     }
 
     public static class TimeDimension {
