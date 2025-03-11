@@ -1,4 +1,4 @@
-import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData, normalizeUrl } from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
@@ -248,10 +248,11 @@ export class PageClient {
         const normalizedParams = this.#mapToBackendParams(params || {});
         const queryParams = new URLSearchParams(normalizedParams).toString();
 
-        const rawURL = `${this.dotcmsUrl}/api/v1/page/json/${path}?${queryParams}`;
-        const normalizedUrl = normalizeUrl(rawURL);
-
-        const response = await fetch(normalizedUrl, this.requestOptions);
+        // If the path starts with a slash, remove it to avoid double slashes in the final URL
+        // Because the page path is part of api url path
+        const pagePath = path.startsWith('/') ? path.slice(1) : path;
+        const url = `${this.dotcmsUrl}/api/v1/page/json/${pagePath}?${queryParams}`;
+        const response = await fetch(url, this.requestOptions);
 
         if (!response.ok) {
             const error = {
