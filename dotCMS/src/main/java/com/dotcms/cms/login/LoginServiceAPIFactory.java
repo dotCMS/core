@@ -24,6 +24,7 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -42,6 +43,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.servlet.PortletSessionPool;
+import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
@@ -80,10 +82,16 @@ import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
  */
 public class LoginServiceAPIFactory implements Serializable {
 
+
     private static final Lazy<Boolean> FIRST_AVAILABLE_SITE_FALLBACK =
             Lazy.of(() -> Config.getBooleanProperty("FIRST_AVAILABLE_SITE_FALLBACK", true));
     private static final String BACKEND_LOGIN = "backendLogin";
     public static final String LOG_OUT_ATTRIBUTE = "LOG_OUT";
+
+
+    private final Lazy<Boolean> SET_JWT_SESSION_COOKIE = Lazy.of(() -> Config.getBooleanProperty("SET_JWT_SESSION_COOKIE", true));
+
+
 
     /**
 	 * Used to keep the instance of the {@link LoginServiceAPI}. Should be volatile
@@ -565,40 +573,8 @@ public class LoginServiceAPIFactory implements Serializable {
            return PreventSessionFixationUtil.getInstance().preventSessionFixation(request, false);
         } // preventSessionFixation.
 
-        /**
-         * Generates the JWT and its respective cookie based on the following
-         * criteria:
-         * <ul>
-         * <li>Information from the user: ID, associated company.</li>
-         * <li>The "Remember Me" option being checked or not.</li>
-         * </ul>
-         * The JWT will allow the user to access the dotCMS back-end even though
-         * their session has expired. This way, they won't need to re-authenticate.
-         *
-         * @param req
-         *            - The {@link HttpServletRequest} object.
-         * @param res
-         *            - The {@link HttpServletResponse} object.
-         * @param user
-         *            - The {@link User} trying to log into the system.
-         * @param maxAge
-         *            - The maximum days (in milliseconds) that the JWT will live.
-         *            If the "Remember Me" option is checked, the token will live
-         *            for many days (check its default value). Otherwise, it will
-         *            only live during the current session.
-         * @throws PortalException
-         *             The specified user could not be found.
-         * @throws SystemException
-         *             An error occurred during the user ID encryption.
-         */
-        private void createRememberMeCookie(final HttpServletRequest req,
-                                         final HttpServletResponse res,
-                                         final User user,
-                                         final int maxAge) throws PortalException, SystemException {
 
-            final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, Math.abs(maxAge));
-            createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(maxAge));
-        }
+
 
 
 
@@ -608,15 +584,23 @@ public class LoginServiceAPIFactory implements Serializable {
                                  final HttpServletResponse res,
                                  final User user,
                                  final boolean rememberMe) {
-            if(!rememberMe){
+
+
+            if(!rememberMe && !SET_JWT_SESSION_COOKIE.get()) {
                 return;
             }
-            int jwtMaxAge = Config.getIntProperty(
-                    JSON_WEB_TOKEN_DAYS_MAX_AGE,
-                    JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT) ;
 
-            this.doRememberMe(req, res, user, jwtMaxAge);
+            // if rememberMe is false, the cookie will be created just for the session.
+            int cookieMaxAge = rememberMe ? JWT_TOKEN_MAX_AGE_DAYS.get() : 0;
+
+            // token is valid for one day
+            int tokenMaxAge = rememberMe ? JWT_TOKEN_MAX_AGE_DAYS.get() : 1;
+
+            final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, tokenMaxAge);
+            createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(cookieMaxAge));
+
         } // doRememberMe.
+
 
         @Override
         public void doRememberMe(final HttpServletRequest req,
@@ -624,9 +608,12 @@ public class LoginServiceAPIFactory implements Serializable {
                                  final User user,
                                  final int maxAge) {
 
+            final int tokenMaxAge = Math.min(maxAge,JWT_TOKEN_MAX_AGE_DAYS.get());
+            final int cookieMaxAge = SET_JWT_SESSION_COOKIE.get() == true && maxAge>1 ? maxAge : 0;
             try {
 
-                this.createRememberMeCookie(req, res, user, maxAge);
+                final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, tokenMaxAge);
+                createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(cookieMaxAge));
             } catch (Exception e) {
 
                 Logger.debug(this, e.getMessage(), e);
@@ -639,15 +626,10 @@ public class LoginServiceAPIFactory implements Serializable {
             // note: keep in mind we are doing BE and FE login, not sure if this is right
             final boolean doCookieLogin = LoginServiceAPI.super.doCookieLogin(encryptedId, request, response);
 
-            if (doCookieLogin) {
+            if (!doCookieLogin) {
+                    com.liferay.util.CookieUtil.deleteCookie(request, response, CookieKeys.JWT_ACCESS_TOKEN);
+                    SecurityLogger.logInfo(this.getClass(), "Cookie login failed, deleting rMe cookie.");
 
-                final String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
-                request.setAttribute(WebKeys.USER_ID, decryptedId);
-                final HttpSession session = request.getSession(false);
-                if (null != session && null != decryptedId) {
-                    // this is what the PortalRequestProcessor needs to check the login.
-                    session.setAttribute(WebKeys.USER_ID, decryptedId);
-                } //
             }
 
             return doCookieLogin;
