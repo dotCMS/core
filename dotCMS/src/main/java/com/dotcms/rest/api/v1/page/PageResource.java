@@ -256,34 +256,9 @@ public class PageResource {
                 .uri(uri)
                 .asJson(true);
 
-        final Optional<Instant> timeMachineDateInstant = TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601);
-        //Logging analytics for FTM if the publishing date is older than five minutes now
-        collectAnalyticsIfNeeded(originalRequest, response, timeMachineDateInstant);
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
-                languageId, deviceInode, timeMachineDateInstant, timeMachineDateAsISO8601, builder);
+                languageId, deviceInode, timeMachineDateAsISO8601, builder);
         return getPageRender(renderParams);
-    }
-
-    /**
-     * Collects analytics data if needed based on the given request parameters.
-     *
-     * @param originalRequest      The original HTTP request.
-     * @param response            The HTTP response.
-     * @param timeMachineDateInstant An optional instant representing a time machine date, if applicable.
-     */
-    private void collectAnalyticsIfNeeded(
-            final HttpServletRequest originalRequest,
-            final HttpServletResponse response,
-            final Optional<Instant> timeMachineDateInstant) {
-        if (timeMachineDateInstant.isPresent() && isOlderThanFiveMinutes(timeMachineDateInstant.get())) {
-            Map<String, Serializable> userEventPayload = new HashMap<>();
-
-            userEventPayload.put(TIME_MACHINE_DATE, timeMachineDateInstant.get());
-            userEventPayload.put(Collector.EVENT_TYPE, EventType.FUTURE_TIME_MACHINE_REQUEST.getType());
-
-            ContentAnalyticsUtil.registerContentAnalyticsRestEvent(originalRequest, response,
-                    userEventPayload);
-        }
     }
 
 
@@ -370,7 +345,7 @@ public class PageResource {
                         .init();
         final User user = initData.getUser();
 
-        final Optional<Instant> timeMachineDateInstant = TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601);
+
         final Builder builder = ImmutablePageRenderParams.builder();
         builder.originalRequest(originalRequest)
                 .request(request)
@@ -378,11 +353,7 @@ public class PageResource {
                 .user(user)
                 .uri(uri);
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
-                languageId, deviceInode, timeMachineDateInstant, timeMachineDateAsISO8601, builder);
-
-
-        //Logging analytics for FTM if the publishing date is older than five minutes now
-        collectAnalyticsIfNeeded(originalRequest, response, timeMachineDateInstant);
+                languageId, deviceInode, timeMachineDateAsISO8601, builder);
         return getPageRender(renderParams);
     }
 
@@ -391,13 +362,12 @@ public class PageResource {
      * @param modeParam      The current {@link PageMode} used to render the page.
      * @param languageId    The {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s
      * @param deviceInode  The {@link java.lang.String}'s inode to render the page.
-     * @param timeMachineDateInstant The date to set the Time Machine to as an Optional Instant.
      * @param timeMachineDateAsISO8601 {@link String} with the date to set the Time Machine to in ISO8601 format.
      * @param builder The builder to use to create the {@link PageRenderParams}.
      * @return The {@link PageRenderParams} object.
      */
     private PageRenderParams optionalRenderParams(final String modeParam,
-            final String languageId, final String deviceInode, final Optional<Instant> timeMachineDateInstant,
+            final String languageId, final String deviceInode,
             final String timeMachineDateAsISO8601,
             Builder builder) {
         if (null != languageId){
@@ -409,7 +379,7 @@ public class PageResource {
         if (null != deviceInode){
             builder.deviceInode(deviceInode);
         }
-        timeMachineDateInstant.ifPresentOrElse(
+        TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601).ifPresentOrElse(
                 builder::timeMachineDate,
                 () -> Logger.debug(this, () -> String.format(
                         "Date %s is not older than the grace window. Skipping Time Machine setup.",
