@@ -85,9 +85,12 @@ export class DotEditorModeSelectorComponent {
             this.#store.clearDeviceAndSocialMedia();
         }
 
-        this.#analyticsTracker.track<{ mode: UVE_MODE; custom_event: string }>(EVENT_TYPES.TRACK, {
-            mode: mode,
-            custom_event: 'UVE_MODE_CHANGE'
+        this.#analyticsTracker.track<{
+            toMode: UVE_MODE;
+            fromMode: UVE_MODE;
+        }>(EVENT_TYPES.UVE_MODE_CHANGE, {
+            toMode: mode,
+            fromMode: this.$currentMode()
         });
 
         this.#store.loadPageAsset({

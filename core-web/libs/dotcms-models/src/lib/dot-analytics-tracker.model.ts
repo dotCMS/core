@@ -11,5 +11,7 @@ export interface BaseAnalyticsEvent {
 
 export enum EVENT_TYPES {
     TRACK = 'track',
-    PAGEV_VIEW = 'pageview'
+    PAGEV_VIEW = 'pageview',
+    UVE_MODE_CHANGE = 'UVE_MODE_CHANGE',
+    UVE_CALENDAR_CHANGE = 'UVE_CALENDAR_CHANGE'
 }
