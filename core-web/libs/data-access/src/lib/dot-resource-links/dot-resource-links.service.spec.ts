@@ -11,7 +11,7 @@ describe('DotResourceLinksService', () => {
     it('should get file source links', (done) => {
         const props = {
             fieldVariable: 'testField',
-            inodeOrIdentifier: 'testInode'
+            inode: 'testInode'
         };
 
         const response: DotResourceLinks = {
@@ -22,13 +22,13 @@ describe('DotResourceLinksService', () => {
             versionPath: 'testVersionPath'
         };
 
-        spectator.service.getFileResourceLinks(props).subscribe((resp) => {
+        spectator.service.getFileResourceLinksByInode(props).subscribe((resp) => {
             expect(resp).toEqual(response);
             done();
         });
 
         const req = spectator.expectOne(
-            `/api/v1/content/resourcelinks/field/${props.fieldVariable}?identifier=${props.inodeOrIdentifier}`,
+            `/api/v1/content/resourcelinks/field/${props.fieldVariable}?inode=${props.inode}`,
             HttpMethod.GET
         );
 

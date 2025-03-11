@@ -1,6 +1,7 @@
 package com.dotcms.analytics.helper;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AccessTokenErrorType;
@@ -22,7 +23,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
-import static com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor.BEARER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -219,22 +219,12 @@ public class AnalyticsHelperTest extends UnitTestBase {
 
     /**
      * Given an {@link AccessToken} instance
-     * Then evaluate token cannot be formatted since exception is thrown due to token validation
-     */
-    @Test(expected = AnalyticsException.class)
-    public void test_formatBearer_fail() throws AnalyticsException {
-        final AccessToken accessToken = createAccessToken(TokenStatus.NOOP);
-        AnalyticsHelper.get().formatBearer(accessToken);
-    }
-
-    /**
-     * Given an {@link AccessToken} instance
      * Then evaluate token can be formatted with Bearer type
      */
     @Test
     public void test_formatBearer() throws AnalyticsException {
         final AccessToken accessToken = createFreshAccessToken();
-        assertEquals(BEARER + accessToken.accessToken(), AnalyticsHelper.get().formatBearer(accessToken));
+        assertEquals(AnalyticsAPI.BEARER + accessToken.accessToken(), AnalyticsHelper.get().formatBearer(accessToken));
     }
 
     /**
@@ -242,7 +232,7 @@ public class AnalyticsHelperTest extends UnitTestBase {
      * Then evaluate key can be formatted with Basic type
      */
     @Test
-    public void test_formatBasic() throws AnalyticsException {
+    public void test_formatBasic() {
         final String key = "this-is-a-key";
         final AnalyticsKey analyticsKey = AnalyticsKey.builder().jsKey(key).build();
         assertEquals(WebResource.BASIC + key, AnalyticsHelper.get().formatBasic(analyticsKey));

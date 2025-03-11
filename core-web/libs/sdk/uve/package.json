@@ -16,12 +16,14 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
-    "./types": "./src/types.ts"
+    "./types": "./src/types.ts",
+    "./internal": "./src/internal.ts"
   },
   "typesVersions": {
     "*": {
       ".": ["./src/index.d.ts"],
-      "types": ["./src/types.d.ts"]
+      "types": ["./src/types.d.ts"],
+      "internal": ["./src/internal.d.ts"]
     }
   },
   "author": "dotcms <dev@dotcms.com>",

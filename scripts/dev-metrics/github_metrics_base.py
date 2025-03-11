@@ -18,11 +18,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class GitHubMetricsBase:
-    def __init__(self, token, owner, repo, team_label):
+    def __init__(self, token, owner, repo, team_labels):
         self.token = token
         self.owner = owner 
         self.repo = repo
-        self.team_label = team_label
+        self.team_labels = team_labels if isinstance(team_labels, list) else [team_labels]
         self.base_url = f"https://api.github.com/repos/{owner}/{repo}"
         self.headers = {
             'Authorization': f'token {token}',
@@ -67,24 +67,29 @@ class GitHubMetricsBase:
     
     def get_all_falcon_issues(self, sprint_start, sprint_end, page=1):
         """Base method to get team issues within a date range"""
+        all_issues = []
         try:
-            params = {
-                'state': 'all',
-                'labels': self.team_label,
-                'since': sprint_start.isoformat(),
-                'per_page': 100,
-                'page': page
-            }
+            for team_label in self.team_labels:
+                params = {
+                    'state': 'all',
+                    'labels': team_label,
+                    'since': sprint_start.isoformat(),
+                    'per_page': 100,
+                    'page': page
+                }
+                
+                response = requests.get(
+                    f"{self.base_url}/issues",
+                    headers=self.headers,
+                    params=params,
+                    verify=False
+                )
+                response.raise_for_status()
+                issues = response.json()
+                all_issues.extend(issues)
             
-            response = requests.get(
-                f"{self.base_url}/issues",
-                headers=self.headers,
-                params=params,
-                verify=False
-            )
-            response.raise_for_status()
-            return response.json()
-            
+            return all_issues
+                
         except Exception as e:
             logger.error(f"Error fetching page {page}: {e}")
             return []

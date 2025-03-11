@@ -1,10 +1,10 @@
 /// <reference types="jest" />
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Content } from './content/content-api';
+import { NOTIFY_CLIENT } from './editor/models/listeners.model';
+import * as dotcmsEditor from './editor/sdk-editor';
 import { ClientConfig, DotCmsClient } from './sdk-js-client';
 
-import { NOTIFY_CLIENT } from '../editor/models/listeners.model';
-import * as dotcmsEditor from '../editor/sdk-editor';
+import { Content } from '../client/content/content-api';
 
 global.fetch = jest.fn();
 

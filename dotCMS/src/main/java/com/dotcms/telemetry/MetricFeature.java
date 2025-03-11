@@ -15,6 +15,7 @@ public enum MetricFeature {
     SITE_SEARCH,
     IMAGE_API,
     LAYOUT,
-    CONTENT_TYPE_FIELDS
+    CONTENT_TYPE_FIELDS,
+    EXPERIMENTS
 
 }
