@@ -1,4 +1,4 @@
-import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData, normalizeUrl } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
@@ -216,45 +216,6 @@ export class PageClient {
     }
 
     /**
-     * Type guard that checks if the provided options object matches the PageRequestParams interface.
-     *
-     * @param {unknown} options - The options object to check
-     * @returns {boolean} True if the options match PageRequestParams, false otherwise
-     * @internal
-     *
-     * @example
-     * ```typescript
-     * const options = {
-     *   siteId: '123',
-     *   mode: 'PREVIEW_MODE',
-     *   languageId: 1
-     * };
-     *
-     * if (this.#isPageRequestParams(options)) {
-     *   // options is typed as PageRequestParams
-     * }
-     * ```
-     */
-    #isPageRequestParams(options: unknown): options is PageRequestParams {
-        if (typeof options !== 'object' || options === null) {
-            return false;
-        }
-
-        const validKeys = [
-            'siteId',
-            'mode',
-            'languageId',
-            'personaId',
-            'fireRules',
-            'depth',
-            'publishDate',
-            'variantName'
-        ];
-
-        return Object.keys(options).every((key) => validKeys.includes(key));
-    }
-
-    /**
      * Retrieves all the elements of a Page in your dotCMS system in JSON format.
      *
      * @param {string} path - The path of the page to retrieve
@@ -284,14 +245,13 @@ export class PageClient {
             throw new Error("The 'path' parameter is required for the Page API");
         }
 
-        // Remove leading and trailing slashes from the path.
-        // Add a leading slash if it's missing.
-        const pagePath = `/${path.replace(/^\/+/, '').replace(/\/+/g, '/')}${path.endsWith('/') ? '/' : ''}`;
-        const pageParams = this.#mapToBackendParams(params || {});
-        const urlParams = new URLSearchParams(pageParams as Record<string, string>).toString();
-        const url = `${this.dotcmsUrl}/api/v1/page/json${pagePath}${urlParams ? `?${urlParams}` : ''}`;
+        const normalizedParams = this.#mapToBackendParams(params || {});
+        const queryParams = new URLSearchParams(normalizedParams).toString();
 
-        const response = await fetch(url, this.requestOptions);
+        const rawURL = `${this.dotcmsUrl}/api/v1/page/json/${path}?${queryParams}`;
+        const normalizedUrl = normalizeUrl(rawURL);
+
+        const response = await fetch(normalizedUrl, this.requestOptions);
 
         if (!response.ok) {
             const error = {
