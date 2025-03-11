@@ -3,6 +3,7 @@ package com.dotcms.http;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.HttpStatusCodeException;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -10,7 +11,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -35,17 +35,18 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -83,7 +84,9 @@ public class CircuitBreakerUrl {
     private int response = -1;
     private Header[] responseHeaders;
     private final boolean allowRedirects;
-    private final boolean throwWhenNot2xx;
+    private final boolean throwWhenError;
+    private final Function<Integer, HttpStatusCodeException> overrideException;
+    private final boolean raiseFailsafe;
 
     public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
 
@@ -91,10 +94,6 @@ public class CircuitBreakerUrl {
         GET, POST, PUT, DELETE, PATCH
     }
 
-    /**
-     * 
-     * @param proxyUrl
-     */
     public CircuitBreakerUrl(final String proxyUrl) {
         this(proxyUrl, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 2000));
     }
@@ -105,7 +104,7 @@ public class CircuitBreakerUrl {
      * @param timeoutMs
      */
     public CircuitBreakerUrl(final String proxyUrl, final long timeoutMs) {
-        this(proxyUrl, timeoutMs, CurcuitBreakerPool.getBreaker(proxyUrl + timeoutMs), false);
+        this(proxyUrl, timeoutMs, CircuitBreakerPool.getBreaker(proxyUrl + timeoutMs), false);
     }
     
     /**
@@ -143,7 +142,7 @@ public class CircuitBreakerUrl {
                              final Map<String, String> headers,
                              final boolean verbose,
                              final String rawData) {
-        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true);
+        this(proxyUrl, timeoutMs, circuitBreaker, request, params, headers,  verbose, rawData, false, true, null, false);
     }
     
     @VisibleForTesting
@@ -156,7 +155,9 @@ public class CircuitBreakerUrl {
                              final boolean verbose,
                              final String rawData,
                              final boolean allowRedirects,
-                             final boolean throwWhenNot2xx) {
+                             final boolean throwWhenError,
+                             final Function<Integer, HttpStatusCodeException> overrideException,
+                             final boolean raiseFailsafe) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
         this.circuitBreaker = circuitBreaker;
@@ -164,7 +165,9 @@ public class CircuitBreakerUrl {
         this.request = request;
         this.rawData = rawData;
         this.allowRedirects = allowRedirects;
-        this.throwWhenNot2xx = throwWhenNot2xx;
+        this.throwWhenError = throwWhenError;
+        this.overrideException = this.throwWhenError ? overrideException : null;
+        this.raiseFailsafe = raiseFailsafe;
 
         for (final String head : headers.keySet()) {
             request.addHeader(head, headers.get(head));
@@ -197,7 +200,7 @@ public class CircuitBreakerUrl {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doOut(out);
             final String output = out.toString();
-            if (!isWithin2xx(this.response)) {
+            if (isError()) {
                 Logger.warn(
                     this,
                     String.format(
@@ -241,11 +244,9 @@ public class CircuitBreakerUrl {
         circuitBreakerConnectionControl.check(this.proxyUrl);
 
         try (final OutputStream out = response.getOutputStream()) {
-
             circuitBreakerConnectionControl.start(Thread.currentThread().getId());
 
-            if(verbose) {
-
+            if (verbose) {
                 Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
             }
 
@@ -260,7 +261,7 @@ public class CircuitBreakerUrl {
                                 .setRedirectsEnabled(allowRedirects)
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
-                        try (CloseableHttpClient httpclient = HttpClientBuilder.create()
+                        try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
                                 .setDefaultRequestConfig(config).build()) {
                             
@@ -268,7 +269,7 @@ public class CircuitBreakerUrl {
                                 throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
                             }
 
-                            try (CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
+                            try (final CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
 
                                 this.responseHeaders = innerResponse.getAllHeaders();
 
@@ -286,14 +287,25 @@ public class CircuitBreakerUrl {
                             }
                             
                             // throw an error if the request is bad
-                            if (!isWithin2xx(this.response) && throwWhenNot2xx) {
-                                throw new BadRequestException("Got invalid response for url: " + this.proxyUrl + " response: " + this.response);
+                            if ((isError() || isRedirectWhenDisallowed()) && throwWhenError) {
+                                throw Optional
+                                        .ofNullable(overrideException)
+                                        .map(mapper -> mapper.apply(this.response))
+                                        .orElse(new BadRequestException(
+                                                String.format(
+                                                        "Got invalid response for url: [%s] response: [%d]",
+                                                        this.proxyUrl,
+                                                        this.response)));
                             }
                         }
                     });
         } catch (FailsafeException ee) {
 
             Logger.debug(this.getClass(), ee.getMessage() + " " + this);
+
+            if (raiseFailsafe) {
+                throw ee;
+            }
         } finally {
 
             circuitBreakerConnectionControl.end(Thread.currentThread().getId());
@@ -301,11 +313,25 @@ public class CircuitBreakerUrl {
     }
 
     public int response() {
-        return this.response;
+        return response;
     }
 
-    public static boolean isWithin2xx(final int response) {
-        return response >= 200 && response <= 299;
+    public boolean isProcessed() {
+        return response != -1;
+    }
+
+    public boolean isError() {
+        final javax.ws.rs.core.Response.Status.Family family = fromStatusCode(response);
+        return Stream
+                .of(
+                        javax.ws.rs.core.Response.Status.Family.CLIENT_ERROR,
+                        javax.ws.rs.core.Response.Status.Family.SERVER_ERROR)
+                .anyMatch(fam -> fam == family)
+                || !isProcessed();
+    }
+
+    public boolean isRedirectWhenDisallowed() {
+        return fromStatusCode(response) == javax.ws.rs.core.Response.Status.Family.REDIRECTION && !allowRedirects;
     }
 
     public <T extends Serializable> T doObject(final Class<T> clazz) {
@@ -340,6 +366,10 @@ public class CircuitBreakerUrl {
         return "CircuitBreakerUrl [proxyUrl=" + proxyUrl + ", timeoutMs=" + timeoutMs + ", circuitBreaker=" + circuitBreaker + "]";
     }
 
+    private javax.ws.rs.core.Response.Status.Family fromStatusCode(final int statusCode) {
+        return javax.ws.rs.core.Response.Status.Family.familyOf(statusCode);
+    }
+
     private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
         final Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
 
@@ -352,13 +382,6 @@ public class CircuitBreakerUrl {
         if (UtilMethods.isSet(contentLengthHeader)) {
             response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
         }
-    }
-
-    public static Map<String, String> authHeaders(final String token) {
-        return ImmutableMap.<String, String>builder()
-                .put(HttpHeaders.AUTHORIZATION, token)
-                .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-                .build();
     }
 
     /**

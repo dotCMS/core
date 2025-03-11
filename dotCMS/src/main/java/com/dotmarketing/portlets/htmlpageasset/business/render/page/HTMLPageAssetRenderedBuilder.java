@@ -7,6 +7,8 @@ import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.util.TimeMachineUtil;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -34,6 +36,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.util.Date;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -202,22 +205,58 @@ public class HTMLPageAssetRenderedBuilder {
         }
     }
 
-    private Optional<Contentlet> findUrlContentlet(final HttpServletRequest request) throws DotDataException, DotSecurityException {
+    private Optional<Contentlet> findUrlContentlet(final HttpServletRequest request)
+            throws DotDataException, DotSecurityException {
 
         Contentlet contentlet = null;
 
         if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)) {
-
             final String inode = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-            contentlet         = this.contentletAPI.find(inode, user, false);
+            contentlet = this.contentletAPI.find(inode, user, false);
         } else if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET)) {
-
-            final String id    = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET);
-            contentlet         = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
+            final String id = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            contentlet = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
         }
 
-        return Optional.ofNullable(contentlet);
+        return Optional.ofNullable(getContentletForTimeMachine(contentlet));
     }
+
+    /**
+     * Finds the appropriate contentlet version for Time Machine functionality.
+     * If a Time Machine date is present and the contentlet is not null, this method
+     * attempts to find a version of the contentlet that existed at the specified Time Machine date.
+     *
+     * @param contentlet The original contentlet to find a time machine version for. Can be null.
+     * @return The time machine version of the contentlet if found, otherwise the original contentlet.
+     *         Returns null if the input contentlet was null.
+     * @throws DotDataException If there is an error in the underlying data layer
+     * @throws DotSecurityException If the current user doesn't have permission to access the contentlet
+     */
+    private Contentlet getContentletForTimeMachine(final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
+
+        // Get the Time Machine date if it has been configured
+        final Optional<Date> timeMachineDate = TimeMachineUtil.getTimeMachineDateAsDate();
+
+        // Early return if the contentlet is null or no Time Machine date is configured
+        if (contentlet == null || timeMachineDate.isEmpty()) {
+            return contentlet;
+        }
+
+        // Attempt to find the version of the contentlet at the Time Machine date
+        Contentlet future = contentletAPI.findContentletByIdentifier(
+                contentlet.getIdentifier(),
+                contentlet.getLanguageId(),
+                WebAPILocator.getVariantWebAPI().currentVariantId(),
+                timeMachineDate.get(),
+                user,
+                false
+        );
+
+        // Return the future version if found, otherwise return the original contentlet
+        return future != null ? future : contentlet;
+    }
+
 
 
     @CloseDBIfOpened

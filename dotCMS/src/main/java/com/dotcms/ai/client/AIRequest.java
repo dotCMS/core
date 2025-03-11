@@ -197,6 +197,11 @@ public class AIRequest<T extends Serializable> {
             return self();
         }
 
+        public B withMethod(final String method) {
+            this.method = method;
+            return self();
+        }
+
         public B withConfig(final AppConfig config) {
             this.config = config;
             return self();
