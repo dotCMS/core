@@ -3,7 +3,6 @@ package com.dotcms.http;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.rest.exception.HttpStatusCodeException;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -85,7 +84,7 @@ public class CircuitBreakerUrl {
     private Header[] responseHeaders;
     private final boolean allowRedirects;
     private final boolean throwWhenError;
-    private final Function<Integer, HttpStatusCodeException> overrideException;
+    private final Function<Integer, Exception> overrideException;
     private final boolean raiseFailsafe;
 
     public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
@@ -156,7 +155,7 @@ public class CircuitBreakerUrl {
                              final String rawData,
                              final boolean allowRedirects,
                              final boolean throwWhenError,
-                             final Function<Integer, HttpStatusCodeException> overrideException,
+                             final Function<Integer, Exception> overrideException,
                              final boolean raiseFailsafe) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
