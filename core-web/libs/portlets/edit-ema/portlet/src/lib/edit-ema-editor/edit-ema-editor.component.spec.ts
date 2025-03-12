@@ -21,6 +21,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
+    DotAnalyticsTrackerService,
     DotContentTypeService,
     DotContentletLockerService,
     DotContentletService,
@@ -237,6 +238,12 @@ const createRouting = () =>
             DotWorkflowActionsFireService,
             DotTempFileUploadService,
             DotAlertConfirmService,
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
             {
                 provide: DotHttpErrorManagerService,
                 useValue: new MockDotHttpErrorManagerService()

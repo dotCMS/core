@@ -1,5 +1,5 @@
 export const DEBOUNCE_FOR_TRACKING = <T>(func: (...args: T[]) => void, delay: number) => {
-    let timeout: number;
+    let timeout: ReturnType<typeof setTimeout>;
 
     return function (...args: T[]) {
         clearTimeout(timeout);

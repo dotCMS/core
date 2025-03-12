@@ -14,6 +14,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
+    DotAnalyticsTrackerService,
     DotContentletLockerService,
     DotExperimentsService,
     DotLanguagesService,
@@ -277,6 +278,12 @@ describe('DotEmaShellComponent', () => {
                             }
                         });
                     }
+                }
+            },
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
                 }
             },
             {
