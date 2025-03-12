@@ -1158,6 +1158,7 @@ function assetHostListTable_deleteHost(hostId){
 
         let btnContainer = document.createElement("div");
         btnContainer.style.padding = "10px";
+        btnContainer.style.textAlign = "center";
         let radioButton = new dijit.form.RadioButton({
             name: "oldAssetsRadio",
             id:"oldAssetsRadioIdTrue",
@@ -1165,7 +1166,7 @@ function assetHostListTable_deleteHost(hostId){
             checked: false
         });
         let label = document.createElement("label");
-        label.style.paddingRight = "20px";
+        label.style.paddingRight = "30px";
         label.style.paddingLeft = "5px";
         label.htmlFor = "oldAssetsRadioIdTrue";
         label.innerHTML = "<%= LanguageUtil.get(pageContext, "Yes") %>";
@@ -1191,7 +1192,7 @@ function assetHostListTable_deleteHost(hostId){
 
 
         btnContainer = document.createElement("div");
-
+        btnContainer.style.textAlign = "center";
 
 
         let input = new dijit.form.ValidationTextBox({
@@ -1205,7 +1206,7 @@ function assetHostListTable_deleteHost(hostId){
 
         });
         input.domNode.style.width = "150px";
-        input.domNode.style.marginLeft = "10px";
+        input.domNode.style.margin = "auto";
         let labelDiv = document.createElement("div");
         labelDiv.style.paddingTop = "10px";
         labelDiv.style.paddingBottom = "10px";
