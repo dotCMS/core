@@ -64,6 +64,7 @@ public interface Collector {
     String CUSTOMER_CATEGORY = "customer_category";
     String ENVIRONMENT_NAME = "environment_name";
     String ENVIRONMENT_VERSION = "environment_version";
+    String HTTP_RESPONSE_CODE = "http_response_code";
 
     /**
      * Test if the collector should run

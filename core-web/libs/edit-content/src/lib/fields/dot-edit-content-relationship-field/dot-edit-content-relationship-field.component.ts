@@ -6,7 +6,8 @@ import {
     effect,
     forwardRef,
     inject,
-    input
+    input,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -84,6 +85,12 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     readonly #dialogService = inject(DialogService);
 
     /**
+     * Signal that tracks whether the component is disabled.
+     * This is used to disable all interactive elements in the component.
+     */
+    readonly $isDisabled = signal(false);
+
+    /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
      *
      * @type {DynamicDialogRef | null}
@@ -102,7 +109,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 label: this.#dotMessageService.get(
                     'dot.file.relationship.field.table.existing.content'
                 ),
-                disabled: isDisabledCreateNewContent,
+                disabled: isDisabledCreateNewContent || this.$isDisabled(),
                 command: () => {
                     this.showExistingContentDialog();
                 }
@@ -219,11 +226,25 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
     private onTouched: (() => void) | null = null;
 
     /**
+     * Sets the disabled state of the component.
+     * This method is called by Angular when the form control's disabled state changes.
+     *
+     * @param isDisabled Whether the component should be disabled
+     */
+    setDisabledState(isDisabled: boolean): void {
+        this.$isDisabled.set(isDisabled);
+    }
+
+    /**
      * Deletes an item from the store at the specified index.
      *
      * @param index - The index of the item to delete.
      */
     deleteItem(inode: string) {
+        if (this.$isDisabled()) {
+            return;
+        }
+
         this.store.deleteItem(inode);
     }
 
@@ -231,6 +252,10 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * Shows the existing content dialog.
      */
     showExistingContentDialog() {
+        if (this.$isDisabled()) {
+            return;
+        }
+
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             closeOnEscape: false,
@@ -268,7 +293,7 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
      * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
      */
     onRowReorder(event: TableRowReorderEvent) {
-        if (event?.dragIndex == null || event?.dropIndex == null) {
+        if (this.$isDisabled() || event?.dragIndex == null || event?.dropIndex == null) {
             return;
         }
 

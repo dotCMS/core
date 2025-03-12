@@ -117,7 +117,7 @@ public class EventLogRunnable implements Runnable {
             .setParams(Map.of("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
             .setTimeout(4000)
             .setHeaders(POSTING_HEADERS)
-            .setThrowWhenNot2xx(false);
+            .setThrowWhenError(false);
     }
 
 
