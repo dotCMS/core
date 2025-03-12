@@ -16,6 +16,19 @@
     "API Client",
     "REST API"
   ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts",
+    "./types": "./src/types.ts"
+  },
+  "typesVersions": {
+    "*": {
+      ".": ["./src/index.d.ts"],
+      "next": ["./src/next.d.ts"],
+      "types": ["./src/types.d.ts"]
+    }
+  },
   "author": "dotcms <dev@dotcms.com>",
   "license": "MIT",
   "bugs": {

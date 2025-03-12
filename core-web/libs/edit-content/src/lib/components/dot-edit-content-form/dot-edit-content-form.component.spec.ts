@@ -25,7 +25,9 @@ import {
     DotFormatDateService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotWizardService,
     DotWorkflowActionsFireService,
+    DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
@@ -86,7 +88,9 @@ describe('DotFormComponent', () => {
             mockProvider(DotContentletService),
             mockProvider(MessageService),
             mockProvider(DialogService),
-
+            mockProvider(DotWorkflowEventHandlerService),
+            mockProvider(DotWizardService),
+            mockProvider(DotMessageService),
             {
                 provide: ActivatedRoute,
                 useValue: {
@@ -408,6 +412,27 @@ describe('DotFormComponent', () => {
                         }
                     }
                 });
+            });
+
+            it('should call the wizard service when the workflow action is fired', () => {
+                const wizardService = spectator.inject(DotWizardService);
+
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                store.initializeExistingContent({
+                    inode: 'inode',
+                    depth: DotContentletDepths.ONE
+                });
+                spectator.detectChanges();
+
+                const workflowActions = spectator.query(DotWorkflowActionsComponent);
+                workflowActions.actionFired.emit({
+                    id: '1',
+                    actionInputs: [{ id: 'move', body: {} }]
+                } as DotCMSWorkflowAction);
+
+                expect(wizardService.open).toHaveBeenCalled();
             });
         });
     });

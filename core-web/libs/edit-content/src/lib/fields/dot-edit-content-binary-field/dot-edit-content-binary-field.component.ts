@@ -90,7 +90,6 @@ type SystemOptionsType = {
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent,
-        DotAIImagePromptComponent,
         TooltipModule
     ],
     providers: [

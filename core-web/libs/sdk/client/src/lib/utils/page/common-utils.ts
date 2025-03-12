@@ -1,4 +1,4 @@
-import { PageApiOptions } from '../../client/sdk-js-client';
+import { PageApiOptions } from '../../deprecated/sdk-js-client';
 
 /**
  * Interface representing the properties for page request parameters.
