@@ -6,19 +6,9 @@ import { DotAnalyticsTrackerService } from '@dotcms/data-access';
 import { EVENT_TYPES } from '@dotcms/dotcms-models';
 
 import { AnalyticsUVEModeChange, AnalyticsUVECalendarChange } from './models';
+import { DEBOUNCE_FOR_TRACKING, TRACKING_DELAY } from './utils';
 
 import { UVEState } from '../../models';
-
-const debounce = <T>(func: (...args: T[]) => void, delay: number) => {
-    let timeout: number;
-
-    return function (...args: T[]) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), delay);
-    };
-};
-
-const TRACKING_DELAY = 5000;
 
 /**
  *
@@ -31,15 +21,15 @@ export function withTrack() {
         {
             state: type<UVEState>()
         },
-        withMethods((_, analyticsTracker = inject(DotAnalyticsTrackerService)) => ({
-            trackUVEModeChange: debounce((payload: AnalyticsUVEModeChange) => {
-                analyticsTracker.track<AnalyticsUVEModeChange>(
+        withMethods((_, analyticsTrackerService = inject(DotAnalyticsTrackerService)) => ({
+            trackUVEModeChange: DEBOUNCE_FOR_TRACKING((payload: AnalyticsUVEModeChange) => {
+                analyticsTrackerService.track<AnalyticsUVEModeChange>(
                     EVENT_TYPES.UVE_MODE_CHANGE,
                     payload
                 );
             }, TRACKING_DELAY),
-            trackUVECalendarChange: debounce((payload: AnalyticsUVECalendarChange) => {
-                analyticsTracker.track<AnalyticsUVECalendarChange>(
+            trackUVECalendarChange: DEBOUNCE_FOR_TRACKING((payload: AnalyticsUVECalendarChange) => {
+                analyticsTrackerService.track<AnalyticsUVECalendarChange>(
                     EVENT_TYPES.UVE_CALENDAR_CHANGE,
                     payload
                 );
