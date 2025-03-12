@@ -13,7 +13,6 @@ import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAnalyticsTrackerService } from '@dotcms/data-access';
-import { EVENT_TYPES } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -85,12 +84,9 @@ export class DotEditorModeSelectorComponent {
             this.#store.clearDeviceAndSocialMedia();
         }
 
-        this.#analyticsTracker.track<{
-            toMode: UVE_MODE;
-            fromMode: UVE_MODE;
-        }>(EVENT_TYPES.UVE_MODE_CHANGE, {
-            toMode: mode,
-            fromMode: this.$currentMode()
+        this.#store.trackUVEModeChange({
+            fromMode: this.$currentMode(),
+            toMode: mode
         });
 
         this.#store.loadPageAsset({
