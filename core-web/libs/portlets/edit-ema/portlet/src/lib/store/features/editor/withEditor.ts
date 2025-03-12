@@ -217,11 +217,13 @@ export function withEditor() {
                         More info: https://github.com/dotCMS/core/issues/31475
                      */
                     const vanityURL = store.pageAPIResponse().vanityUrl?.url;
-                    const sanitizedURL = sanitizeURL(vanityURL ?? store.pageParams().url);
+                    const sanitizedURL = sanitizeURL(
+                        vanityURL ?? untracked(() => store.pageParams().url)
+                    );
 
                     const url = buildIframeURL({
                         url: sanitizedURL,
-                        params: store.pageParams(),
+                        params: untracked(() => store.pageParams()),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });
 
