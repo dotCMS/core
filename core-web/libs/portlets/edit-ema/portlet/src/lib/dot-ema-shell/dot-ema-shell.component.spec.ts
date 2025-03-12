@@ -32,6 +32,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotNotLicenseComponent } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -47,7 +48,7 @@ import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, PERSONA_KEY, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
