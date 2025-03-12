@@ -139,9 +139,9 @@ export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
      */
     private fetchResourceLinks(): void {
         this.#dotResourceLinksService
-            .getFileResourceLinks({
+            .getFileResourceLinksByInode({
                 fieldVariable: this.fieldVariable,
-                inodeOrIdentifier: this.contentlet.identifier
+                inode: this.contentlet.inode
             })
             .pipe(
                 catchError(() => {

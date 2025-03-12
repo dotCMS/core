@@ -115,9 +115,19 @@ cube(`Events`, {
   dataSource: `default`
 });
 
+cube('HttpResponses', {
+  sql: `SELECT request_id, http_response_code
+        FROM events 
+        WHERE event_type = 'HTTP_RESPONSE'`,
+  dimensions: {
+    requestId: { sql: 'request_id', type: `string` },
+    httpResponseCode: { sql: 'http_response_code', type: `number` }
+  }
+});
+
 cube('request', {
   sql: `SELECT *
-        FROM events
+        FROM events 
         WHERE ${FILTER_PARAMS.request.customerId.filter('customer_id')}
         AND ${FILTER_PARAMS.request.cluster_id ? FILTER_PARAMS.request.cluster_id.filter('cluster_id') : '(cluster_id IS NULL OR cluster_id = \'\')'}`,
   /*preAggregations: {
@@ -176,6 +186,11 @@ cube('request', {
     }
   },*/
   dimensions: {
+    id: {
+      sql: `CONCAT(${CUBE}.request_id, '-', ${CUBE}.event_type, '-', ${CUBE}.object_identifier)`,
+      type: `string`,
+      primaryKey: true
+    },
     conHost: { sql: 'conhost', type: `string` },
     conHostName: { sql: 'conhostname', type: `string` },
     contentTypeName: { sql: 'object_contenttypename', type: `string` },
@@ -202,7 +217,8 @@ cube('request', {
     forwardTo: { sql: 'object_forwardto', type: `string` },
     action: { sql: 'object_action', type: `string` },
     eventType: { sql: 'event_type', type: `string` },
-    eventSource: { sql: 'event_source', type: `string` }
+    eventSource: { sql: 'event_source', type: `string` },
+    httpResponseCode: { sql: `${HttpResponses.httpResponseCode}`, type: `number` }
   },
   measures: {
     count: {
@@ -242,6 +258,12 @@ cube('request', {
       sql: `(${totalRequest} - (${fileRequest} + ${pageRequest})) / NULLIF(${totalRequest}, 0)`,
       type: 'number',
       title: 'No FIle OR Page Average'
+    }
+  },
+  joins: {
+    HttpResponses: {
+      sql: `${CUBE}.request_id = ${HttpResponses.requestId}`,
+      relationship: `one_to_one`
     }
   }
 });

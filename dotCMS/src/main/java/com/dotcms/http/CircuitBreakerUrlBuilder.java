@@ -1,7 +1,9 @@
 package com.dotcms.http;
 
 import java.util.Map;
+import java.util.function.Function;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -15,6 +17,9 @@ import com.google.common.collect.Maps;
 
 import net.jodah.failsafe.CircuitBreaker;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+
 
 public class CircuitBreakerUrlBuilder {
     String proxyUrl = null;
@@ -24,12 +29,14 @@ public class CircuitBreakerUrlBuilder {
     Map<String, String> headers = Maps.newHashMap();
     Method method = Method.GET;
     boolean verbose = false;
-    int failAfter = CurcuitBreakerPool.FAIL_AFTER;
-    int tryAgainAttempts = CurcuitBreakerPool.TRY_AGAIN_ATTEMPTS;
-    int tryAgainAfterDelay = CurcuitBreakerPool.TRY_AGAIN_DELAY_SEC;
+    int failAfter = CircuitBreakerPool.FAIL_AFTER;
+    int tryAgainAttempts = CircuitBreakerPool.TRY_AGAIN_ATTEMPTS;
+    int tryAgainAfterDelay = CircuitBreakerPool.TRY_AGAIN_DELAY_SEC;
     String rawData = null;
     boolean allowRedirects=Config.getBooleanProperty("REMOTE_CALL_ALLOW_REDIRECTS", false);
-    boolean throwWhenNot2xx = true;
+    boolean throwWhenError = true;
+    Function<Integer, Exception> overrideException;
+    boolean raiseFailsafe = false;
 
     public CircuitBreakerUrlBuilder setUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
@@ -66,8 +73,13 @@ public class CircuitBreakerUrlBuilder {
         return this;
     }
 
-    public CircuitBreakerUrlBuilder setThrowWhenNot2xx(boolean throwWhenNot2xx) {
-        this.throwWhenNot2xx = throwWhenNot2xx;
+    public CircuitBreakerUrlBuilder setThrowWhenError(boolean throwWhenError) {
+        this.throwWhenError = throwWhenError;
+        return this;
+    }
+
+    public CircuitBreakerUrlBuilder setRaiseFailsafe(final boolean raiseFailsafe) {
+        this.raiseFailsafe = raiseFailsafe;
         return this;
     }
     
@@ -92,6 +104,19 @@ public class CircuitBreakerUrlBuilder {
         return this;
     }
 
+    public CircuitBreakerUrlBuilder setAuthHeaders(final String token) {
+        return setHeaders(ImmutableMap.<String, String>builder()
+                .put(HttpHeaders.AUTHORIZATION, token)
+                .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                .put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .build());
+    }
+
+    public CircuitBreakerUrlBuilder setOverrideException(final Function<Integer, Exception> overrideException) {
+        this.overrideException = overrideException;
+        return this;
+    }
+
     public CircuitBreakerUrlBuilder setMethod(Method method) {
         this.method = method;
         return this;
@@ -107,7 +132,7 @@ public class CircuitBreakerUrlBuilder {
             throw new DotStateException("A URL must be set to use CircuitBreakerUrl");
         }
         if (this.circuitBreaker == null) {
-            this.circuitBreaker = CurcuitBreakerPool.getBreaker(this.proxyUrl + this.timeout, failAfter, tryAgainAttempts, tryAgainAfterDelay);
+            this.circuitBreaker = CircuitBreakerPool.getBreaker(this.proxyUrl + this.timeout, failAfter, tryAgainAttempts, tryAgainAfterDelay);
         }
         final HttpRequestBase request;
         switch (this.method) {
@@ -135,7 +160,9 @@ public class CircuitBreakerUrlBuilder {
             this.verbose,
             this.rawData,
             this.allowRedirects,
-            this.throwWhenNot2xx);
+            this.throwWhenError,
+            this.overrideException,
+            this.raiseFailsafe);
     }
 
 }

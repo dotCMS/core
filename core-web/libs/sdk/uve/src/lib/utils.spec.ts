@@ -1,5 +1,9 @@
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
+
 import { UVE_MODE } from './types';
-import { getUVEState } from './utils';
+import { getUVEState, createUVESubscription } from './utils';
+
+import { __NOTIFY_CLIENT__ } from '../internal';
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
@@ -241,5 +245,165 @@ it('should handle variantName and experimentId being provided together', () => {
         experimentId: 'exp-123',
         publishDate: null,
         languageId: null
+    });
+});
+
+describe('createUVESubscription', () => {
+    let mockWindow: unknown;
+    let consoleWarnSpy: jest.SpyInstance;
+    let consoleErrorSpy: jest.SpyInstance;
+
+    beforeAll(() => {
+        jest.spyOn(global, 'window', 'get').mockReset();
+    });
+
+    beforeEach(() => {
+        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    });
+
+    afterEach(() => {
+        consoleWarnSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+    });
+
+    const noop = () => {
+        /* do nothing */
+    };
+
+    it('should log warning when not running inside UVE', () => {
+        const mockWindow = {
+            ...window,
+            parent: window
+        };
+
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+        const subscription = createUVESubscription('test-event', noop);
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith('UVE Subscription: Not running inside UVE');
+        expect(subscription).toEqual({
+            unsubscribe: expect.any(Function),
+            event: 'test-event'
+        });
+    });
+
+    it('should log error when event is not found', () => {
+        const mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=EDIT_MODE'
+            }
+        };
+
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
+
+        const subscription = createUVESubscription('non-existent-event', noop);
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            'UVE Subscription: Event non-existent-event not found'
+        );
+        expect(subscription).toEqual({
+            unsubscribe: expect.any(Function),
+            event: 'non-existent-event'
+        });
+    });
+
+    it('should create a valid subscription for changes event', () => {
+        mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=EDIT_MODE'
+            },
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            postMessage: jest.fn()
+        };
+
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as Window & typeof globalThis);
+
+        const callback = jest.fn();
+        const subscription = createUVESubscription('changes', callback);
+
+        expect(subscription).toBeDefined();
+        expect(subscription.event).toBe('changes');
+        expect(subscription.unsubscribe).toBeDefined();
+        expect((mockWindow as Window).addEventListener).toHaveBeenCalledWith(
+            'message',
+            expect.any(Function as unknown as (event: MessageEvent) => void)
+        );
+    });
+
+    it('should handle message events correctly', () => {
+        mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=EDIT_MODE'
+            },
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn()
+        };
+
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as Window & typeof globalThis);
+
+        const callback = jest.fn();
+        createUVESubscription('changes', callback);
+
+        // Get the message event listener that was registered
+        const messageCallback = ((mockWindow as Window).addEventListener as jest.Mock).mock
+            .calls[0][1];
+
+        // Create and dispatch a message event
+        const messageEvent = new MessageEvent('message', {
+            data: {
+                name: __NOTIFY_CLIENT__.UVE_SET_PAGE_DATA,
+                payload: { test: 'data' }
+            }
+        });
+
+        messageCallback(messageEvent);
+
+        expect(callback).toHaveBeenCalledWith({ test: 'data' });
+    });
+
+    it('should properly unsubscribe from events', () => {
+        mockWindow = {
+            ...window,
+            parent: {
+                ...window
+            },
+            location: {
+                href: 'https://test.com/hello?mode=EDIT_MODE'
+            },
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn()
+        };
+
+        const spy = jest.spyOn(global, 'window', 'get');
+        spy.mockReturnValue(mockWindow as Window & typeof globalThis);
+
+        const callback = jest.fn();
+        const subscription = createUVESubscription('changes', callback);
+
+        const messageCallback = ((mockWindow as Window).addEventListener as jest.Mock).mock
+            .calls[0][1]; // Get the second argument (1) of the first call (0)
+        subscription.unsubscribe();
+        expect((mockWindow as Window).removeEventListener).toHaveBeenCalledWith(
+            'message',
+            messageCallback
+        );
     });
 });
