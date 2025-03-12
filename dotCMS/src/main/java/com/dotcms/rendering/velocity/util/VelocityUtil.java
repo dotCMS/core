@@ -2,9 +2,6 @@ package com.dotcms.rendering.velocity.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.cube.CubeJSQuery;
-import com.dotcms.cube.filters.Filter;
-import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.mock.request.FakeHttpRequest;
@@ -228,7 +225,6 @@ public class VelocityUtil {
 		context.put("velocityContext", context);
 		context.put("language", "1");
 		context.put("InodeUtils", new InodeUtils());
-		context.put("queryBuilder", new CubeJSQuery.Builder());
 
 		return context;
 	}
