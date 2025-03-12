@@ -4,8 +4,9 @@ import { Injectable, inject } from '@angular/core';
 import { BaseAnalyticsEvent, EVENT_TYPES } from '@dotcms/dotcms-models';
 import { WINDOW } from '@dotcms/utils';
 
-const CONTENT_ANALYTICS_EVENT_API = '/api/v1/analytics/content/event';
-const DOT_ANALYTICS_SRC = 'dotAnalytics';
+export const CONTENT_ANALYTICS_EVENT_API = '/api/v1/analytics/content/event';
+
+export const DOT_ANALYTICS_SRC = 'dotAnalytics';
 
 @Injectable()
 export class DotAnalyticsTrackerService {
