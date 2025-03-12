@@ -78,7 +78,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,8 +137,6 @@ public class PageResource {
     public static final String TM_HOST = "tm_host";
     public static final String DOT_CACHE = "dotcache";
     public static final String IS_PAGE_RESOURCE = "pageResource";
-
-    public static final String USER = "user";
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -247,16 +244,6 @@ public class PageResource {
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
                 languageId, deviceInode, timeMachineDateAsISO8601, builder);
         return getPageRender(renderParams);
-    }
-
-
-    /**
-     * Verifies that a given date is older than five minutes now
-     * @param dateToCheck
-     * @return
-     */
-    private static boolean isOlderThanFiveMinutes(Instant dateToCheck) {
-        return Duration.between(Instant.now(), dateToCheck).toMinutes() >= 5;
     }
 
     /**
