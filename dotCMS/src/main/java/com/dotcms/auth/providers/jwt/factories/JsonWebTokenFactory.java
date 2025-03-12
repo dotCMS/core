@@ -314,7 +314,7 @@ public class JsonWebTokenFactory implements Serializable {
                             .subject(body.getSubject())
                             .issuer(body.getIssuer())
                             .modificationDate(body.get(CLAIM_UPDATED_AT, Date.class))
-                            .expiresDate(null != body.getExpiration()? body.getExpiration().getTime() : 0)
+                            .expiresDate(null != body.getExpiration()? body.getExpiration() : new Date(0))
                             .claims(body).build()
                    : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).orElseGet(()->null);
         }
