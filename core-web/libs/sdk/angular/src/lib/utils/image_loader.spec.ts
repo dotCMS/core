@@ -62,7 +62,7 @@ describe('Image Loader Utils', () => {
                 };
 
                 const expectedUrl =
-                    'https://demo.dotcms.com/dA/existing/image.jpg/200?language_id=1';
+                    'https://demo.dotcms.com/dA/existing/image.jpg/200w?language_id=1';
                 expect(imageLoader(config)).toBe(expectedUrl);
             });
 
@@ -72,7 +72,7 @@ describe('Image Loader Utils', () => {
                     width: 300
                 };
 
-                const expectedUrl = 'https://demo.dotcms.com/dA/image.jpg/300?language_id=1';
+                const expectedUrl = 'https://demo.dotcms.com/dA/image.jpg/300w?language_id=1';
                 expect(imageLoader(config)).toBe(expectedUrl);
             });
 
@@ -94,7 +94,7 @@ describe('Image Loader Utils', () => {
                 };
 
                 const expectedUrl =
-                    'https://demo.dotcms.com/dA/folder/subfolder/image-with-dash.jpg/500?language_id=3';
+                    'https://demo.dotcms.com/dA/folder/subfolder/image-with-dash.jpg/500w?language_id=3';
                 expect(imageLoader(config)).toBe(expectedUrl);
             });
         });
@@ -115,7 +115,7 @@ describe('Image Loader Utils', () => {
                     loaderParams: { languageId: '2' }
                 };
 
-                const expectedUrl = '/dA/image.jpg/100?language_id=2';
+                const expectedUrl = '/dA/image.jpg/100w?language_id=2';
                 expect(imageLoader(config)).toBe(expectedUrl);
             });
 
@@ -126,7 +126,7 @@ describe('Image Loader Utils', () => {
                     loaderParams: { languageId: '1' }
                 };
 
-                const expectedUrl = '/dA/existing/image.jpg/200?language_id=1';
+                const expectedUrl = '/dA/existing/image.jpg/200w?language_id=1';
                 expect(imageLoader(config)).toBe(expectedUrl);
             });
 
@@ -136,7 +136,7 @@ describe('Image Loader Utils', () => {
                     width: 300
                 };
 
-                const expectedUrl = '/dA/image.jpg/300?language_id=1';
+                const expectedUrl = '/dA/image.jpg/300w?language_id=1';
                 expect(imageLoader(config)).toBe(expectedUrl);
             });
 

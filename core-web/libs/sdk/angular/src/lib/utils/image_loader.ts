@@ -14,12 +14,6 @@ interface DotCMSImageLoaderParams {
  *
  * @param path - The path to validate
  * @returns boolean indicating if the path is valid
- * @example
- * ```typescript
- * isValidPath('https://example.com') // returns true
- * isValidPath('invalid-url') // returns false
- * isValidPath('') // returns false
- * ```
  */
 function isValidPath(path: unknown): boolean {
     if (typeof path !== 'string' || path.trim() === '') {
@@ -91,5 +85,9 @@ function createDotCMSUrl(config: ImageLoaderConfig, path?: string): string {
     const imageSRC = src.includes('/dA/') ? src : `/dA/${src}`;
     const languageId = params?.languageId ?? '1';
 
-    return `${dotcmsHost}${imageSRC}/${width}?language_id=${languageId}`;
+    if (width) {
+        return `${dotcmsHost}${imageSRC}/${width}w?language_id=${languageId}`;
+    }
+
+    return `${dotcmsHost}${imageSRC}?language_id=${languageId}`;
 }
