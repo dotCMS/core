@@ -381,7 +381,7 @@ public class PageResource {
 
         //Let's set up the Time Machine if needed
         setUpTimeMachineIfPresent(renderParams);
-        try {
+
             String resolvedUri = renderParams.uri();
             final Optional<CachedVanityUrl> cachedVanityUrlOpt =
                     this.pageResourceHelper.resolveVanityUrlIfPresent(
@@ -456,10 +456,6 @@ public class PageResource {
             request.setAttribute(WebKeys.CURRENT_HOST, site);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, site);
             return Response.ok(new ResponseEntityView<>(pageRendered)).build();
-        } finally {
-            // Let's reset the Time Machine if needed
-            resetTimeMachineIfPresent(request);
-        }
 
     }
 
@@ -489,6 +485,8 @@ public class PageResource {
                request.setAttribute(DOT_CACHE, "refresh");
                request.setAttribute(TM_HOST, host.get());
                request.setAttribute(IS_PAGE_RESOURCE, true);
+        } else {
+            resetTimeMachine(renderParams.request());
         }
     }
 
@@ -496,7 +494,7 @@ public class PageResource {
      * Removes the Time Machine attributes from the session.
      * @param request The current instance of the {@link HttpServletRequest}.
      */
-    private void resetTimeMachineIfPresent(final HttpServletRequest request) {
+    private void resetTimeMachine(final HttpServletRequest request) {
         final HttpSession session = request.getSession(false);
         if (null != session) {
             session.removeAttribute(TM_DATE);
