@@ -148,8 +148,8 @@ public class UserAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 
-		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; IP: " + request.getRemoteAddr() + "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; IP: " + request.getRemoteAddr() + "User:" + modUser.getUserId());
 		
 
 		boolean localTransaction = false;
@@ -164,8 +164,8 @@ public class UserAjax {
 			user.setPassword(password);
 			uAPI.save(user, uWebAPI.getLoggedInUser(request), true, !uWebAPI.isLoggedToBackend(request));
 
-			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
 			
 			if (localTransaction) {
 				HibernateUtil.closeAndCommitTransaction();
@@ -246,13 +246,13 @@ public class UserAjax {
 
 		//Validate if this logged in user has the required permissions to access the users portlet
 		validateUsersPortletPermissions(modUser);
-	
-		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
+
+		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; IP: " + request.getRemoteAddr() + "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; IP: " + request.getRemoteAddr() + "User:" + modUser.getUserId());
 		
 		try {
 	
@@ -292,8 +292,8 @@ public class UserAjax {
 				throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
 			}
 
-			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
 			resultMap = new HashMap<String, Object>();
 			resultMap.put("userID", userToSave.getUserId());
 			resultMap.put("reauthenticate", reauthenticationRequired);
@@ -336,14 +336,13 @@ public class UserAjax {
 		//Validate if this logged in user has the required permissions to access the users portlet
 		validateUsersPortletPermissions(getLoggedInUser());
 
-		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-
 		try {
 
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
+			ActivityLogger.logInfo(getClass(), "Deleting user", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Deleting user", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
 			UserAPI uAPI = APILocator.getUserAPI();
 
 			User user;
@@ -355,14 +354,14 @@ public class UserAjax {
 				return false;
 			}
 
+			ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + modUser.getUserId());
+
 		} catch(DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			throw e;
 		}
-
-		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 
 		return true;
 	}
@@ -387,14 +386,13 @@ public class UserAjax {
 		//Validate if this logged in user has the required permissions to access the users portlet
 		validateUsersPortletPermissions(getLoggedInUser());
 
-		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + userId+"; Replacing entries with User:"+replacingUserId);
-		AdminLogger.log(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + userId+"; Replacing entries with User:"+replacingUserId);
-
 		try {
 
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
+			ActivityLogger.logInfo(getClass(), "Deleting user", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + userId+"; Replacing entries with User:"+replacingUserId);
+			AdminLogger.log(getClass(), "Deleting user", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + userId+"; Replacing entries with User:"+replacingUserId);
 			UserAPI uAPI = APILocator.getUserAPI();
 
 			User user;
@@ -408,14 +406,14 @@ public class UserAjax {
 				return false;
 			}
 
+			ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + userId+"; Replaced entries with User:"+replacingUserId);
+			AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; IP: " + request.getRemoteAddr() + "; User:" + userId+"; Replaced entries with User:"+replacingUserId);
+
 		} catch(DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + userId);
 			AdminLogger.log(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + userId);
 			throw e;
 		}
-
-		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + userId+"; Replaced entries with User:"+replacingUserId);
-		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + userId+"; Replaced entries with User:"+replacingUserId);
 
 		return true;
 	}
