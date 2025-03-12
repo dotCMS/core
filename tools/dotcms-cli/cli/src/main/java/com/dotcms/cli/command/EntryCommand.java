@@ -1,5 +1,6 @@
 package com.dotcms.cli.command;
 
+import com.dotcms.api.client.analytics.AnalyticsService;
 import com.dotcms.api.client.model.AuthenticationParam;
 import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.cli.command.contenttype.ContentTypeCommand;
@@ -16,6 +17,7 @@ import io.quarkus.picocli.runtime.annotations.TopCommand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
 
 @TopCommand
@@ -63,6 +65,12 @@ public class EntryCommand implements DotCommand {
 
     @Inject
     DirectoryWatcherService directoryWatcherService;
+
+    @Inject
+    ManagedExecutor executor;
+
+    @Inject
+    AnalyticsService analyticsService;
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
