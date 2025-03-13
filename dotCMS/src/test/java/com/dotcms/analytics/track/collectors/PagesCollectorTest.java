@@ -63,5 +63,6 @@ public class PagesCollectorTest {
         Assert.assertEquals("www.dotcms.com", collectorPayloadBean.get(Collector.SITE_NAME));
         Assert.assertEquals("en", collectorPayloadBean.get(Collector.LANGUAGE));
         Assert.assertEquals(EventType.PAGE_REQUEST.getType(), collectorPayloadBean.get(Collector.EVENT_TYPE));
+        Assert.assertEquals("1", collectorPayloadBean.get(Collector.SITE_ID));
     }
 }

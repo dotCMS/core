@@ -37,6 +37,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import graphql.AssertException;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
@@ -325,6 +326,8 @@ public class Util {
                     assertEquals("Collected value must be equal to expected value for key: " + key,
                             expectedValue, collectedValue);
                 }
+            } else {
+                throw new AssertException("Expected key in the Collected value: " + key);
             }
         }
     }

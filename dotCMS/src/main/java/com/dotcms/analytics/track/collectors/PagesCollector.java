@@ -103,6 +103,7 @@ public class PagesCollector implements Collector {
 
         if (Objects.nonNull(site)) {
             collectorPayloadBean.put(SITE_NAME,  site.getHostname());
+            collectorPayloadBean.put(SITE_ID, site.getIdentifier());
         }
 
         return collectorPayloadBean;
