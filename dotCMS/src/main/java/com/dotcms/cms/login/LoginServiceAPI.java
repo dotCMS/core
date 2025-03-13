@@ -1,6 +1,9 @@
 package com.dotcms.cms.login;
 
 import static com.dotcms.util.FunctionUtils.ifTrue;
+
+import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
 import java.io.Serializable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,6 +33,9 @@ public interface LoginServiceAPI extends Serializable {
     // max expiration day allowed for a json web token
     public static final String JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS = "json.web.token.max.allowed.expiration.days";
 
+    public final static Lazy<Integer> JWT_TOKEN_MAX_AGE_DAYS = Lazy.of(() -> Config.getIntProperty(
+            JSON_WEB_TOKEN_DAYS_MAX_AGE,
+            JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT));
     /**
      * Calls the event processor, kill cookies, portlets session and the http session.
      * @param req

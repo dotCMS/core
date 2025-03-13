@@ -28,3 +28,18 @@ export const __UVE_EVENTS__: Record<string, UVEEvent> = {
         };
     }
 };
+
+/**
+ * Default UVE event
+ *
+ * @param {string} event - The event to subscribe to.
+ * @internal
+ */
+export const __UVE_EVENT_ERROR_FALLBACK__ = (event: string) => {
+    return {
+        unsubscribe: () => {
+            /* do nothing */
+        },
+        event
+    };
+};

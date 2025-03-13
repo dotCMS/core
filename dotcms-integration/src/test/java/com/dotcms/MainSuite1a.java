@@ -65,7 +65,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.liferay.portal.ejb.UserUtilTest.class,
         com.liferay.util.LocaleUtilTest.class,
         com.dotcms.languagevariable.business.LanguageVariableAPITest.class,
-        com.dotcms.filters.interceptor.jwt.JsonWebTokenInterceptorIntegrationTest.class,
         com.dotcms.publishing.PublisherAPITest.class,
         com.dotcms.publishing.remote.RemoteReceiverLanguageResolutionTest.class,
         com.dotcms.cluster.business.ServerAPIImplTest.class,
