@@ -16,3 +16,4 @@ This maintenance release includes the following code fixes:
 10. https://github.com/dotCMS/core/issues/31185 : Fix for IllegalStateException when stopping re-satrting an OSGI plugin with Jersey resources #31185
 11. https://github.com/dotCMS/core/issues/31142 : UVE: Edit Mode not working in Firefox #31142
 12. https://github.com/dotCMS/core/issues/31563 : Creating a file in a secondary language won't return the file information #31563
+13. https://github.com/dotCMS/core/issues/31343 : Wysiwyg fields hide when there are multiple wysiwyg fields in a content type #31343
