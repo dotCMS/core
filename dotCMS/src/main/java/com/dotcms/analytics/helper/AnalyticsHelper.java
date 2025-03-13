@@ -93,14 +93,16 @@ public class AnalyticsHelper implements EventSubscriber<SystemTableUpdatedKeyEve
      * @return true if current time is in the TTL window
      */
     private boolean filterIssueDate(final AccessToken accessToken, final BiPredicate<Instant, Instant> filter) {
+        final long tokenTtl = Optional.ofNullable(accessToken.expiresIn().longValue()).orElse(accessTokenTtl.get());
         return Optional.ofNullable(accessToken.issueDate())
-            .map(issuedAt -> {
-                final Instant now = Instant.now();
-                final Instant expireDate = issuedAt.plusSeconds(accessTokenTtl.get());
-                return now.isBefore(expireDate) && (filter == null || filter.test(now, expireDate));
-            })
-            .orElseGet(() -> {
-                Logger.warn(AnalyticsHelper.class, "ACCESS_TOKEN does not have a issued date, filtering token out");
+                .map(issuedAt -> {
+                    final Instant now = Instant.now();
+                    final Instant expireDate = issuedAt.plusSeconds(tokenTtl);
+                    return now.isBefore(expireDate) &&
+                            Optional.ofNullable(filter).map(f -> f.test(now, expireDate)).orElse (true);
+                })
+                .orElseGet(() -> {
+                    Logger.warn(AnalyticsHelper.class, "ACCESS_TOKEN does not have a issued date, filtering token out");
                 return false;
             });
     }
@@ -224,12 +226,25 @@ public class AnalyticsHelper implements EventSubscriber<SystemTableUpdatedKeyEve
      * when add in the corresponding header.
      *
      * @param accessToken provided access token
+     * @param type token type (most of times it will be 'Bearer')
+     * @return the actual string value of token for header usage
+     * @throws AnalyticsException when validating token
+     */
+    public String formatToken(final AccessToken accessToken, final String type) throws AnalyticsException {
+        checkAccessToken(accessToken);
+        return StringUtils.defaultIfBlank(type, StringPool.BLANK) + accessToken.accessToken();
+    }
+
+    /**
+     * Extracts actual access token value from {@link AccessToken} and prepends the "Bearer " prefix to be used
+     * when add in the corresponding header.
+     *
+     * @param accessToken provided access token
      * @return the actual string value of token for header usage
      * @throws AnalyticsException when validating token
      */
     public String formatBearer(final AccessToken accessToken) throws AnalyticsException {
-        checkAccessToken(accessToken);
-        return JsonWebTokenAuthCredentialProcessor.BEARER + accessToken.accessToken();
+        return formatToken(accessToken, JsonWebTokenAuthCredentialProcessor.BEARER);
     }
 
     /**

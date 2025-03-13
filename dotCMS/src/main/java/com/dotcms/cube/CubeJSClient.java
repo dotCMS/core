@@ -40,7 +40,6 @@ import java.util.Map;
  */
 public class CubeJSClient {
 
-    private int PAGE_SIZE = 1000;
     private final String url;
     private final AccessToken accessToken;
 
@@ -148,7 +147,7 @@ public class CubeJSClient {
      */
     private Map<String, String> cubeJsHeaders(final AccessToken accessToken) throws AnalyticsException {
         return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
+                .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatToken(accessToken, null))
             .build();
     }
 
