@@ -5,13 +5,15 @@
     [draggable]="false"
     [resizable]="false"
     [style]="{ width: '400px' }"
-    [baseZIndex]="10000"
     appendTo="body"
     styleClass="dot-login-as-dialog"
+    data-testid="dot-login-as-dialog"
     (onHide)="close()">
-    <div class="login-as">
-        @if (errorMessage) {
-            <p class="login-as__error-message">{{ errorMessage }}</p>
+    <div class="login-as" data-testid="dot-login-as-container">
+        @if (errorMessage()) {
+            <p class="login-as__error-message" data-testid="dot-login-as-error-message">
+                {{ errorMessage() }}
+            </p>
         }
         <form
             (ngSubmit)="doLoginAs()"
@@ -19,12 +21,13 @@
             id="login-as-form"
             #formEl="ngForm"
             novalidate
+            data-testid="dot-login-as-form"
             class="p-fluid">
             <div class="field">
                 <p-dropdown
                     #dropdown
                     formControlName="loginAsUser"
-                    [options]="userCurrentPage"
+                    [options]="userCurrentPage()"
                     [filter]="true"
                     [filterBy]="'fullName'"
                     [placeholder]="'loginas.select.loginas.user' | dm"
@@ -32,20 +35,25 @@
                     (onChange)="userSelectedHandler($event.value)"
                     (onFilter)="handleFilterChange($event)"
                     (onClear)="clearSelection()"
+                    data-testid="dot-login-as-user-dropdown"
                     appendTo="body">
                     <ng-template pTemplate="selectedItem" let-user>
-                        <div class="user-item selected" *ngIf="user">
-                            {{ user.fullName }}
-                        </div>
+                        @if (user) {
+                            <div
+                                class="user-item selected"
+                                data-testid="dot-login-as-selected-user">
+                                {{ user.fullName }}
+                            </div>
+                        }
                     </ng-template>
                     <ng-template let-user pTemplate="item">
-                        <div class="user-item">
+                        <div class="user-item" data-testid="dot-login-as-user-item">
                             {{ user.fullName }}
                         </div>
                     </ng-template>
                 </p-dropdown>
             </div>
-            @if (needPassword) {
+            @if (needPassword()) {
                 <div class="field">
                     <input
                         [feedback]="false"
@@ -53,6 +61,7 @@
                         #password
                         formControlName="password"
                         id="dot-login-as-password"
+                        data-testid="dot-login-as-password-input"
                         type="password"
                         placeholder="{{ 'loginas.input.loginas.password' | dm }}"
                         floatingPlaceholder="false" />
@@ -65,13 +74,15 @@
             pButton
             class="p-button-outlined"
             [label]="'cancel' | dm"
-            [disabled]="loading"
+            [disabled]="loading()"
+            data-testid="dot-login-as-cancel-button"
             (click)="close()"></button>
         <button
             pButton
             [label]="'Change' | dm"
-            [loading]="loading"
-            [disabled]="!form.valid || loading"
+            [loading]="loading()"
+            [disabled]="!form.valid || loading()"
+            data-testid="dot-login-as-submit-button"
             (click)="doLoginAs()"></button>
     </ng-template>
 </p-dialog>

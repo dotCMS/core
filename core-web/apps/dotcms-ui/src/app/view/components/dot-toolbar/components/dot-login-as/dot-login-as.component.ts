@@ -5,13 +5,13 @@ import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
-    EventEmitter,
     inject,
-    Input,
+    input,
     OnDestroy,
     OnInit,
-    Output,
-    ViewChild
+    output,
+    signal,
+    viewChild
 } from '@angular/core';
 import {
     FormBuilder,
@@ -51,46 +51,41 @@ import { DotMessagePipe } from '@dotcms/ui';
     ]
 })
 export class DotLoginAsComponent implements OnInit, OnDestroy {
-    @Input() visible = false;
-    @Output() visibleChange = new EventEmitter<boolean>();
-    @Output() cancel = new EventEmitter<boolean>();
+    visible = input<boolean>(false);
+    visibleChange = output<boolean>();
+    cancel = output<boolean>();
 
-    @ViewChild('password')
-    passwordElem: ElementRef;
-
-    @ViewChild('dropdown')
-    dropdown: Dropdown;
-
-    @ViewChild('formEl', { static: true })
-    formEl: HTMLFormElement;
+    passwordElem = viewChild<ElementRef>('password');
+    dropdown = viewChild<Dropdown>('dropdown');
+    formEl = viewChild<HTMLFormElement>('formEl');
 
     form: FormGroup;
-    needPassword = false;
-    userCurrentPage: User[];
-    errorMessage: string;
-    loading = false;
+    needPassword = signal<boolean>(false);
+    userCurrentPage = signal<User[]>([]);
+    errorMessage = signal<string>('');
+    loading = signal<boolean>(false);
 
-    private readonly destroy$ = new Subject<boolean>();
-    private readonly location = inject(LOCATION_TOKEN);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly dotNavigationService = inject(DotNavigationService);
-    private readonly fb = inject(FormBuilder);
-    private readonly loginService = inject(LoginService);
-    readonly paginationService = inject(PaginatorService);
+    #destroy$ = new Subject<boolean>();
+    #location = inject(LOCATION_TOKEN);
+    #dotMessageService = inject(DotMessageService);
+    #dotNavigationService = inject(DotNavigationService);
+    #fb = inject(FormBuilder);
+    #loginService = inject(LoginService);
+    #paginationService = inject(PaginatorService);
 
     ngOnInit(): void {
-        this.paginationService.url = 'v1/users/loginAsData';
+        this.#paginationService.url = 'v1/users/loginAsData';
         this.getUsersList();
 
-        this.form = this.fb.group({
+        this.form = this.#fb.group({
             loginAsUser: new FormControl('', Validators.required),
             password: ''
         });
     }
 
     ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
+        this.#destroy$.next(true);
+        this.#destroy$.complete();
     }
 
     /**
@@ -105,32 +100,34 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
      */
     doLoginAs(): void {
         if (this.form.valid) {
-            this.loading = true;
-            this.errorMessage = '';
+            this.loading.set(true);
+            this.errorMessage.set('');
             const password: string = this.form.value.password;
             const user: User = this.form.value.loginAsUser;
-            this.loginService
+            this.#loginService
                 .loginAs({ user: user, password: password })
                 .pipe(take(1))
                 .subscribe({
                     next: (data) => {
                         if (data) {
-                            this.dotNavigationService.goToFirstPortlet().then(() => {
-                                this.location.reload();
+                            this.#dotNavigationService.goToFirstPortlet().then(() => {
+                                this.#location.reload();
                             });
                         }
 
-                        this.loading = false;
+                        this.loading.set(false);
                     },
                     error: (response) => {
-                        this.loading = false;
+                        this.loading.set(false);
                         if (response.errorsMessages) {
-                            this.errorMessage = response.errorsMessages;
+                            this.errorMessage.set(response.errorsMessages);
                         } else {
-                            this.errorMessage = this.dotMessageService.get(
-                                'loginas.error.wrong-credentials'
+                            this.errorMessage.set(
+                                this.#dotMessageService.get('loginas.error.wrong-credentials')
                             );
-                            this.passwordElem.nativeElement.focus();
+                            if (this.passwordElem()) {
+                                this.passwordElem().nativeElement.focus();
+                            }
                         }
                     }
                 });
@@ -141,20 +138,20 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
      * Set need password
      */
     userSelectedHandler(user: User): void {
-        this.errorMessage = '';
-        this.needPassword = user?.requestPassword || false;
+        this.errorMessage.set('');
+        this.needPassword.set(user?.requestPassword || false);
     }
 
     /**
      * Call to load a new page of user.
      */
     getUsersList(filter = '', offset = 0): void {
-        this.paginationService.filter = filter;
-        this.paginationService
+        this.#paginationService.filter = filter;
+        this.#paginationService
             .getWithOffset<User[]>(offset)
             .pipe(take(1))
             .subscribe((items: User[]) => {
-                this.userCurrentPage = items.slice();
+                this.userCurrentPage.set(items.slice());
             });
     }
 
@@ -176,7 +173,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
      * Clear user selection
      */
     clearSelection(): void {
-        this.needPassword = false;
-        this.errorMessage = '';
+        this.needPassword.set(false);
+        this.errorMessage.set('');
     }
 }
