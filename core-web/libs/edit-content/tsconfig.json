@@ -23,5 +23,8 @@
         "strictInjectionParameters": true,
         "strictInputAccessModifiers": true,
         "strictTemplates": true
+    },
+    "paths": {
+        "@dotcms/edit-content/custom-languages/*": ["./src/lib/custom-languages/*"]
     }
 }
