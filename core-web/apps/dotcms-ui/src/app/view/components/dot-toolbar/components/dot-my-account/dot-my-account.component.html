@@ -5,7 +5,6 @@
     [draggable]="false"
     [resizable]="false"
     [style]="{ width: '380px' }"
-    [baseZIndex]="10000"
     appendTo="body"
     styleClass="dot-my-account-dialog"
     data-testid="dot-my-account-dialog"
@@ -21,12 +20,11 @@
                     id="dot-my-account-first-name-input"
                     data-testid="dot-my-account-first-name-input"
                     pInputText />
-                <small
-                    *ngIf="form.get('givenName')?.invalid && form.get('givenName')?.touched"
-                    class="p-invalid"
-                    data-testid="dot-my-account-first-name-error">
-                    {{ errorMessages().firstName }}
-                </small>
+                @if (form.get('givenName')?.invalid && form.get('givenName')?.touched) {
+                    <small class="p-invalid" data-testid="dot-my-account-first-name-error">
+                        {{ errorMessages().firstName }}
+                    </small>
+                }
             </div>
 
             <div class="field">
@@ -38,12 +36,11 @@
                     id="dot-my-account-last-name-input"
                     data-testid="dot-my-account-last-name-input"
                     pInputText />
-                <small
-                    *ngIf="form.get('surname')?.invalid && form.get('surname')?.touched"
-                    class="p-invalid"
-                    data-testid="dot-my-account-last-name-error">
-                    {{ errorMessages().lastName }}
-                </small>
+                @if (form.get('surname')?.invalid && form.get('surname')?.touched) {
+                    <small class="p-invalid" data-testid="dot-my-account-last-name-error">
+                        {{ errorMessages().lastName }}
+                    </small>
+                }
             </div>
 
             <div class="field">
@@ -56,21 +53,20 @@
                     data-testid="dot-my-account-email-input"
                     pInputText
                     type="email" />
-                <small
-                    *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
-                    class="p-invalid"
-                    data-testid="dot-my-account-email-error">
-                    @if (form.get('email')?.errors?.['required']) {
-                        <span>
-                            {{ errorMessages().email.required }}
-                        </span>
-                    }
-                    @if (form.get('email')?.errors?.['pattern']) {
-                        <span>
-                            {{ errorMessages().email.pattern }}
-                        </span>
-                    }
-                </small>
+                @if (form.get('email')?.invalid && form.get('email')?.touched) {
+                    <small class="p-invalid" data-testid="dot-my-account-email-error">
+                        @if (form.get('email')?.errors?.['required']) {
+                            <span>
+                                {{ errorMessages().email.required }}
+                            </span>
+                        }
+                        @if (form.get('email')?.errors?.['pattern']) {
+                            <span>
+                                {{ errorMessages().email.pattern }}
+                            </span>
+                        }
+                    </small>
+                }
             </div>
 
             <div class="field">
@@ -137,15 +133,14 @@
                     data-testid="dot-my-account-confirm-password-input"
                     pPassword
                     type="password" />
-                <small
-                    *ngIf="
-                        form.get('confirmPassword')?.errors?.['passwordMismatch'] &&
-                        form.get('confirmPassword')?.touched
-                    "
-                    class="p-invalid"
-                    data-testid="dot-my-account-confirm-password-error">
-                    {{ errorMessages().passwordsDontMatch }}
-                </small>
+                @if (
+                    form.get('confirmPassword')?.errors?.['passwordMismatch'] &&
+                    form.get('confirmPassword')?.touched
+                ) {
+                    <small class="p-invalid" data-testid="dot-my-account-confirm-password-error">
+                        {{ errorMessages().passwordsDontMatch }}
+                    </small>
+                }
             </div>
         </form>
     </div>
