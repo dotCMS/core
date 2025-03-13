@@ -241,12 +241,12 @@ var cmsfile=null;
 		else if(toggleValue=="CODE"){
 			toCodeArea(id, isFullscreen);
 			updateDisabledWysiwyg(id,"CODE");
-			dojo.query(".wysiwyg-container").style({display:'none'});
+            dojo.query(`#wysiwyg-container-${id}`).style({display:'none'});
 			}
 		else if(toggleValue=="PLAIN"){
 			toPlainView(id);
 			updateDisabledWysiwyg(id,"PLAIN");
-			dojo.query(".wysiwyg-container").style({display:'block'});
+            dojo.query(`#wysiwyg-container-${id}`).style({display:'block'});
 			}
 	}
 

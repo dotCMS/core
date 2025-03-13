@@ -106,4 +106,4 @@ This maintenance release includes the following code fixes:
 100. https://github.com/dotCMS/core/issues/28939 : New Divider Button under Workflows should be under FF #28939
 101. https://github.com/dotCMS/core/issues/30761 : Data is not getting saved in the workflow #30761
 102. https://github.com/dotCMS/core/issues/30998 : [PP]: Filter option relationships is not being respected #30998
-
+103. https://github.com/dotCMS/core/issues/31343 : Wysiwyg fields hide when there are multiple wysiwyg fields in a content type #31343

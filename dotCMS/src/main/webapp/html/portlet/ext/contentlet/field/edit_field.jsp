@@ -460,7 +460,7 @@
                         }
                     }
             %>
-                <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" style="<%= fullScreenHeight%>" >
+            <div class="wysiwyg-container" id="wysiwyg-container-<%=field.getVelocityVarName()%>" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" style="<%= fullScreenHeight%>"
             <% if (dragAndDrop) {  %>
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
             <% }  %>
