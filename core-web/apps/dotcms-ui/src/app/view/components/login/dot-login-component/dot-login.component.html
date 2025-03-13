@@ -69,11 +69,15 @@
                 [field]="loginForm.get('password')"></dot-field-validation-message>
         </div>
         <div class="login__password-settings field">
-            <p-checkbox
-                [label]="loginInfo.i18nMessagesMap['remember-me']"
-                formControlName="rememberMe"
-                data-testId="rememberMe"
-                binary="true"></p-checkbox>
+            <div class="flex items-center">
+                <p-checkbox
+                    formControlName="rememberMe"
+                    data-testId="rememberMe"
+                    binary="true"
+                    inputId="rememberMe">
+                </p-checkbox>
+                <label for="rememberMe" class="ml-2">{{loginInfo.i18nMessagesMap['remember-me']}}</label>
+            </div>
             <a
                 *ngIf="!isLoginInProgress"
                 [routerLink]="['/public/forgotPassword']"
