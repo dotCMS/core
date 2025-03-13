@@ -16,6 +16,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -34,6 +35,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 
 /**
@@ -49,7 +52,15 @@ public class AnalyticsHelper {
         return analyticsHelper.get();
     }
 
-    private  AnalyticsHelper() {}
+    private final AtomicLong accessTokenTtl;
+
+    private  AnalyticsHelper() {
+        accessTokenTtl = new AtomicLong(resolveAccessTokenTtl());
+    }
+
+    private long resolveAccessTokenTtl() {
+        return Config.getLongProperty(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_KEY, TimeUnit.HOURS.toSeconds(1));
+    }
 
     /**
      * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
@@ -101,16 +112,18 @@ public class AnalyticsHelper {
      * @return true if current time is in the TTL window
      */
     private boolean filterIssueDate(final AccessToken accessToken, final BiPredicate<Instant, Instant> filter) {
+        final long tokenTtl = Optional.ofNullable(accessToken.expiresIn().longValue()).orElse(accessTokenTtl.get());
         return Optional.ofNullable(accessToken.issueDate())
-            .map(issuedAt -> {
-                final Instant now = Instant.now();
-                final Instant expireDate = issuedAt.plusSeconds(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL);
-                return now.isBefore(expireDate) && (filter == null || filter.test(now, expireDate));
-            })
-            .orElseGet(() -> {
-                Logger.warn(AnalyticsHelper.class, "ACCESS_TOKEN does not have a issued date, filtering token out");
-                return false;
-            });
+                .map(issuedAt -> {
+                    final Instant now = Instant.now();
+                    final Instant expireDate = issuedAt.plusSeconds(tokenTtl);
+                    return now.isBefore(expireDate) &&
+                            Optional.ofNullable(filter).map(f -> f.test(now, expireDate)).orElse (true);
+                })
+                .orElseGet(() -> {
+                    Logger.warn(AnalyticsHelper.class, "ACCESS_TOKEN does not have a issued date, filtering token out");
+                    return false;
+                });
     }
 
     /**
@@ -213,12 +226,25 @@ public class AnalyticsHelper {
      * when add in the corresponding header.
      *
      * @param accessToken provided access token
+     * @param type token type (most of times it will be 'Bearer')
+     * @return the actual string value of token for header usage
+     * @throws AnalyticsException when validating token
+     */
+    public String formatToken(final AccessToken accessToken, final String type) throws AnalyticsException {
+        checkAccessToken(accessToken);
+        return StringUtils.defaultIfBlank(type, StringPool.BLANK) + accessToken.accessToken();
+    }
+
+    /**
+     * Extracts actual access token value from {@link AccessToken} and prepends the "Bearer " prefix to be used
+     * when add in the corresponding header.
+     *
+     * @param accessToken provided access token
      * @return the actual string value of token for header usage
      * @throws AnalyticsException when validating token
      */
     public String formatBearer(final AccessToken accessToken) throws AnalyticsException {
-        checkAccessToken(accessToken);
-        return JsonWebTokenAuthCredentialProcessor.BEARER + accessToken.accessToken();
+        return formatToken(accessToken, JsonWebTokenAuthCredentialProcessor.BEARER);
     }
 
     /**
