@@ -167,7 +167,7 @@ describe('DotBinaryFieldEditorComponent', () => {
         it('should force html language on vtl files', fakeAsync(() => {
             const expectedMonacoOptions = {
                 ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
-                language: 'html'
+                language: 'velocity'
             };
 
             spectator.detectChanges();

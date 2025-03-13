@@ -24,9 +24,8 @@ import { PaginatorModule } from 'primeng/paginator';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { dotVelocityLanguageDefinition } from './custom-languages/velocity-monaco-language';
-
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
+import { dotVelocityLanguageDefinition } from '../../../custom-languages/velocity-monaco-language';
 import {
     AvailableLanguageMonaco,
     COMMENT_TINYMCE,
