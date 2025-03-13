@@ -38,39 +38,191 @@ export const isValidJson = (jsonString: string): boolean | JsonObject => {
 
 export const AnalyticsQueryExamples: AnalyticsQueryExample[] = [
     {
-        title: 'analytics.search.query.by.page',
+        title: 'analytics.search.query.by.hits',
         query: `
 {
-  "measures": ["request.count"],
-  "order": {
-        "request.count": "desc"
-  },
-  "dimensions": ["request.pageTitle"],
-  "filters": [
-    {
-      "member": "request.whatAmI",
-      "operator": "equals",
-      "values": [
-        "PAGE"
-      ]
-    }
-  ]
+   "measures":[
+      "request.totalRequest"
+   ],
+   "dimensions":[
+      "request.identifier",
+      "request.title",
+      "request.baseType",
+      "request.url"
+   ],
+   "order":{
+      "request.totalRequest":"desc"
+   }
 }`
     },
     {
-        title: 'analytics.search.query.by.daily.sessions',
+        title: 'analytics.search.query.by.time.frame',
         query: `
 {
-  "order": {
-    "request.totalSessions": "desc"
-  },
-  "measures": [
-    "request.totalRequest",
-    "request.totalSessions"
-  ],
-  "dimensions": [
-    "request.host"
-  ]
-}`
+   "measures":[
+      "request.totalRequest"
+   ],
+   "dimensions":[
+      "request.identifier",
+      "request.title",
+      "request.baseType",
+      "request.url"
+   ],
+   "order":{
+      "request.totalRequest":"desc"
+   },
+   "timeDimensions":[
+      {
+         "dimension":"request.createdAt",
+         "dateRange":"last 7 days",
+         "granularity":"day"
+      }
+   ]
+}
+`
+    },
+    {
+        title: 'analytics.search.query.by.object.type',
+        query: `
+{
+   "measures":[
+      "request.totalRequest"
+   ],
+   "dimensions":[
+      "request.baseType"
+   ],
+   "order":{
+      "request.totalRequest":"desc"
+   }
+}
+`
+    },
+    {
+        title: 'analytics.search.query.by.average.request',
+        query: `
+{
+   "dimensions":[
+      "request.createdAt"
+   ],
+   "measures":[
+      "request.fileRequestAverage",
+      "request.pageRequestAverage",
+      "request.otherRequestAverage"
+   ],
+   "order":{
+      "request.createdAt":"desc"
+   },
+   "timeDimensions":[
+      {
+         "dimension":"request.createdAt",
+         "granularity":"day"
+      }
+   ]
+}
+`
+    },
+    {
+        title: 'analytics.search.query.by.total.sessions',
+        query: `
+{
+   "dimensions":[
+      "request.conHost",
+      "request.conHostName"
+   ],
+   "measures":[
+      "request.totalSessions",
+      "request.totalRequest"
+   ],
+   "order":{
+      "request.conHostName":"desc"
+   }
+}
+`
+    },
+    {
+        title: 'analytics.search.query.by.unique.request',
+        query: `
+{
+   "dimensions":[
+      "request.identifier",
+      "request.title"
+   ],
+   "measures":[
+      "request.totalSessions"
+   ],
+   "filters":[
+      {
+         "member":"request.baseType",
+         "operator":"equals",
+         "values":[
+            "HTMLPAGE"
+         ]
+      }
+   ],
+   "order":{
+      "request.totalSessions":"desc"
+   }
+}
+`
+    },
+    {
+        title: 'analytics.search.query.by.filter.event',
+        query: `
+{
+   "dimensions":[
+      "request.identifier",
+      "request.title",
+      "request.url"
+   ],
+   "measures":[
+      "request.totalRequest"
+   ],
+   "filters":[
+      {
+         "member":"request.baseType",
+         "operator":"equals",
+         "values":[
+            "HTMLPAGE"
+         ]
+      }
+   ],
+   "order":{
+      "request.totalRequest":"desc"
+   },
+   "timeDimensions":[
+      {
+         "dimension":"request.createdAt",
+         "granularity":"day",
+         "dateRange":"This week"
+      }
+   ]
+}
+`
+    },
+    {
+        title: 'analytics.search.query.by.blogs.hits',
+        query: `
+{
+   "dimensions":[
+      "request.identifier",
+      "request.title"
+   ],
+   "measures":[
+      "request.totalRequest"
+   ],
+   "filters":[
+      {
+         "member":"request.contentTypeName",
+         "operator":"equals",
+         "values":[
+            "Blog"
+         ]
+      }
+   ],
+   "order":{
+      "request.totalRequest":"desc"
+   }
+}
+`
     }
 ];
