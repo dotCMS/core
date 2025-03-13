@@ -236,7 +236,7 @@ describe('DotBinaryFieldPreviewComponent', () => {
 
         it('should have the correct resource links', () => {
             const spyResourceLinks = jest
-                .spyOn(dotResourceLinksService, 'getFileResourceLinks')
+                .spyOn(dotResourceLinksService, 'getFileResourceLinksByInode')
                 .mockReturnValue(of(RESOURCE_LINKS));
 
             spectator.detectChanges();
@@ -255,13 +255,13 @@ describe('DotBinaryFieldPreviewComponent', () => {
 
             expect(spyResourceLinks).toHaveBeenCalledWith({
                 fieldVariable: 'Binary',
-                inodeOrIdentifier: CONTENTLET_MOCK.identifier
+                inode: CONTENTLET_MOCK.inode
             });
         });
 
         it('should not have the Resource-Link', () => {
             const spyResourceLinks = jest
-                .spyOn(dotResourceLinksService, 'getFileResourceLinks')
+                .spyOn(dotResourceLinksService, 'getFileResourceLinksByInode')
                 .mockReturnValue(of(RESOURCE_LINKS));
             spectator.setInput('contentlet', CONTENTLET_HTMLPAGE_MOCK);
 
@@ -274,13 +274,13 @@ describe('DotBinaryFieldPreviewComponent', () => {
             expect(resourceLinkElement).toBeNull();
             expect(spyResourceLinks).toHaveBeenCalledWith({
                 fieldVariable: 'Binary',
-                inodeOrIdentifier: CONTENTLET_MOCK.identifier
+                inode: CONTENTLET_MOCK.inode
             });
         });
 
         it('should have the loading state', fakeAsync(() => {
             const spyResourceLinks = jest
-                .spyOn(dotResourceLinksService, 'getFileResourceLinks')
+                .spyOn(dotResourceLinksService, 'getFileResourceLinksByInode')
                 .mockReturnValue(of(RESOURCE_LINKS).pipe(delay(1000)));
 
             spectator.detectChanges();
@@ -295,7 +295,7 @@ describe('DotBinaryFieldPreviewComponent', () => {
 
             expect(spyResourceLinks).toHaveBeenCalledWith({
                 fieldVariable: 'Binary',
-                inodeOrIdentifier: CONTENTLET_MOCK.identifier
+                inode: CONTENTLET_MOCK.inode
             });
         }));
 

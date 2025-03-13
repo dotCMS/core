@@ -111,3 +111,4 @@ This maintenance release includes the following code fixes:
 105. https://github.com/dotCMS/core/issues/31143 : Block Editor Extension Not Loading in dotCMS #31143
 106. https://github.com/dotCMS/core/issues/31019 : Token Invalid in CubeJS Server after token renew #31019
 107. https://github.com/dotCMS/core/issues/31207 : Improve performance to retrieve Analytics Data #31207
+108. https://github.com/dotCMS/core/issues/31563 : Creating a file in a secondary language won't return the file information #31563
