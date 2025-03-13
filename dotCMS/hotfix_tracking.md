@@ -18,3 +18,4 @@ This maintenance release includes the following code fixes:
 12. https://github.com/dotCMS/core/issues/31563 : Creating a file in a secondary language won't return the file information #31563
 13. https://github.com/dotCMS/core/issues/31343 : Wysiwyg fields hide when there are multiple wysiwyg fields in a content type #31343
 14. https://github.com/dotCMS/core/issues/31300 : VTL Syntax highlighting missing in the new code editor modal #31300
+15. https://github.com/dotCMS/core/issues/31143 : Block Editor Extension Not Loading in dotCMS #31143
