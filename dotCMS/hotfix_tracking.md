@@ -15,3 +15,4 @@ This maintenance release includes the following code fixes:
 9. https://github.com/dotCMS/core/issues/30761 : Data is not getting saved in the workflow #30761
 10. https://github.com/dotCMS/core/issues/31185 : Fix for IllegalStateException when stopping re-satrting an OSGI plugin with Jersey resources #31185
 11. https://github.com/dotCMS/core/issues/31142 : UVE: Edit Mode not working in Firefox #31142
+12. https://github.com/dotCMS/core/issues/31563 : Creating a file in a secondary language won't return the file information #31563
