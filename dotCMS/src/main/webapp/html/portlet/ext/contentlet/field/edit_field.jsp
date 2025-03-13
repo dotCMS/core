@@ -236,8 +236,8 @@
                 Logger.error(this.getClass(), e.getMessage());
             }
 
-            List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
-            String fieldVariablesContent = mapper.writeValueAsString(acceptTypes); // Field Variables
+            List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+            String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
             %>
             <script src="/html/showdown.min.js"></script>
             <div  id="block-editor-<%=field.getVelocityVarName()%>-container">
