@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { fakeAsync, tick, flush } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -53,7 +53,12 @@ describe('WorkflowFeature', () => {
     const createStore = createServiceFactory({
         service: signalStore(
             withState({ ...initialRootState, ...mockInitialStateWithContent }),
-            withWorkflow()
+            withWorkflow(),
+            withMethods((store) => ({
+                updateContent: (content) => {
+                    patchState(store, { contentlet: content });
+                }
+            }))
         ),
         mocks: [
             DotEditContentService,
@@ -78,6 +83,11 @@ describe('WorkflowFeature', () => {
         dotWorkflowService = spectator.inject(DotWorkflowService);
         dotEditContentService = spectator.inject(DotEditContentService);
         dotMessageService.get.mockReturnValue('Success Message');
+
+        // Initialize the workflow actions
+        workflowActionService.getByInode.mockReturnValue(
+            of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+        );
     });
 
     describe('methods', () => {
@@ -92,13 +102,11 @@ describe('WorkflowFeature', () => {
                 const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
                 dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));
                 workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
-                workflowActionService.getByInode.mockReturnValue(
-                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
-                );
                 dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
                 store.fireWorkflowAction(mockOptions);
                 tick();
+                flush();
 
                 expect(store.state()).toBe(ComponentStatus.LOADED);
                 expect(store.contentlet()).toEqual(updatedContentlet);
@@ -156,12 +164,10 @@ describe('WorkflowFeature', () => {
 
             it('should handle reset action correctly', fakeAsync(() => {
                 workflowActionsFireService.fireTo.mockReturnValue(of({} as DotCMSContentlet));
-                workflowActionService.getByInode.mockReturnValue(
-                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
-                );
 
                 store.fireWorkflowAction(mockOptions);
                 tick();
+                flush();
 
                 expect(store.getCurrentStep()).toBeNull();
                 expect(messageService.add).toHaveBeenCalledWith(
@@ -179,6 +185,7 @@ describe('WorkflowFeature', () => {
 
                 store.fireWorkflowAction(mockOptions);
                 tick();
+                flush();
 
                 expect(messageService.add).toHaveBeenCalledWith(
                     expect.objectContaining({
@@ -204,9 +211,6 @@ describe('WorkflowFeature', () => {
                 const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
                 dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));
                 workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
-                workflowActionService.getByInode.mockReturnValue(
-                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
-                );
 
                 store.fireWorkflowAction({
                     inode: '123',
@@ -216,6 +220,50 @@ describe('WorkflowFeature', () => {
                 tick();
 
                 expect(store.getCurrentStep()).toBeDefined();
+            }));
+        });
+    });
+
+    describe('effects', () => {
+        describe('contentlet change effect', () => {
+            it('should automatically update workflow actions when contentlet changes', fakeAsync(() => {
+                // Reset any previous calls
+                workflowActionService.getByInode.mockClear();
+
+                // Update the contentlet using the proper method
+                const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
+
+                // Use the updateContent method to update the contentlet
+                store.updateContent(updatedContentlet);
+
+                tick();
+
+                // Verify the effect called updateCurrentContentActions
+                expect(workflowActionService.getByInode).toHaveBeenCalledWith(
+                    updatedContentlet.inode,
+                    'EDITING'
+                );
+
+                // Verify the state was updated with the new actions
+                expect(store.currentContentActions()).toEqual(
+                    parseCurrentActions(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+                );
+            }));
+
+            it('should not update workflow actions when contentlet has no inode', fakeAsync(() => {
+                // Setup
+                workflowActionService.getByInode.mockClear();
+
+                // Update with a contentlet that has no inode
+                const contentletWithoutInode = { ...MOCK_CONTENTLET_1_TAB, inode: '' };
+
+                // Use the updateContent method to update the contentlet
+                store.updateContent(contentletWithoutInode);
+
+                tick();
+
+                // Verify the service was not called
+                expect(workflowActionService.getByInode).not.toHaveBeenCalled();
             }));
         });
     });

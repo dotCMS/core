@@ -134,6 +134,26 @@ describe('PageClient', () => {
             expect(url).toContain('publishDate=2023-01-01');
         });
 
+        it('should call the correct URL when path starts with a slash', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            await pageClient.get('/test-page');
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                'https://demo.dotcms.com/api/v1/page/json/test-page?hostId=test-site',
+                requestOptions
+            );
+        });
+
+        it('should call the correct URL when path starts is `/`', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions);
+            await pageClient.get('/');
+
+            expect(mockFetch).toHaveBeenCalledWith(
+                'https://demo.dotcms.com/api/v1/page/json/?hostId=test-site',
+                requestOptions
+            );
+        });
+
         it('should handle API error responses', async () => {
             mockFetch.mockResolvedValue({
                 ok: false,

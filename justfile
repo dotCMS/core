@@ -96,15 +96,15 @@ dev-tomcat-stop:
 # Testing Commands
 
 # Executes a specified set of Postman tests
-test-postman collections='page':
+test-postman collections='ai':
     ./mvnw -pl :dotcms-postman verify -Dpostman.test.skip=false -Pdebug -Dpostman.collections={{ collections }}
-
-test-karate collections='KarateCITests#defaults':
-    ./mvnw -pl :dotcms-test-karate verify -Dkarate.test.skip=false -Pdebug -Dit.test={{ collections }}
 
 # Stops Postman-related Docker containers
 postman-stop:
     ./mvnw -pl :dotcms-postman -Pdocker-stop -Dpostman.test.skip=false
+
+test-karate collections='KarateCITests#defaults':
+    ./mvnw -pl :dotcms-test-karate verify -Dkarate.test.skip=false -Pdebug -Dit.test={{ collections }}
 
 # Runs all integration tests
 test-integration:

@@ -16,6 +16,7 @@ public enum MetricFeature {
     IMAGE_API,
     LAYOUT,
     CONTENT_TYPE_FIELDS,
+    AI,
     EXPERIMENTS
 
 }

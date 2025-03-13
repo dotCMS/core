@@ -77,14 +77,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.control.Try;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -242,6 +240,7 @@ public class PageResource {
                 .user(user)
                 .uri(uri)
                 .asJson(true);
+
         final PageRenderParams renderParams = optionalRenderParams(modeParam,
                 languageId, deviceInode, timeMachineDateAsISO8601, builder);
         return getPageRender(renderParams);
@@ -320,6 +319,8 @@ public class PageResource {
                         .rejectWhenNoUser(true)
                         .init();
         final User user = initData.getUser();
+
+
         final Builder builder = ImmutablePageRenderParams.builder();
         builder.originalRequest(originalRequest)
                 .request(request)
@@ -336,12 +337,13 @@ public class PageResource {
      * @param modeParam      The current {@link PageMode} used to render the page.
      * @param languageId    The {@link com.dotmarketing.portlets.languagesmanager.model.Language}'s
      * @param deviceInode  The {@link java.lang.String}'s inode to render the page.
-     * @param timeMachineDateAsISO8601 The date to set the Time Machine to.
+     * @param timeMachineDateAsISO8601 {@link String} with the date to set the Time Machine to in ISO8601 format.
      * @param builder The builder to use to create the {@link PageRenderParams}.
      * @return The {@link PageRenderParams} object.
      */
     private PageRenderParams optionalRenderParams(final String modeParam,
-            final String languageId, final String deviceInode, final String timeMachineDateAsISO8601,
+            final String languageId, final String deviceInode,
+            final String timeMachineDateAsISO8601,
             Builder builder) {
         if (null != languageId){
             builder.languageId(languageId);

@@ -6,6 +6,9 @@ import com.dotcms.telemetry.MetricType;
 import com.dotcms.telemetry.MetricValue;
 import com.dotcms.telemetry.MetricsSnapshot;
 import com.dotcms.telemetry.business.MetricsAPI;
+import com.dotcms.telemetry.collectors.ai.TotalEmbeddingsIndexesMetricType;
+import com.dotcms.telemetry.collectors.ai.TotalSitesUsingDotaiMetricType;
+import com.dotcms.telemetry.collectors.ai.TotalSitesWithAutoIndexContentConfigMetricType;
 import com.dotcms.telemetry.collectors.api.ApiMetricAPI;
 import com.dotcms.telemetry.collectors.api.ApiMetricTypes;
 import com.dotcms.telemetry.collectors.container.TotalFileContainersInLivePageDatabaseMetricType;
@@ -239,6 +242,10 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new CountOfTextFieldsMetricType());
         metricStatsCollectors.add(new CountOfTimeFieldsMetricType());
         metricStatsCollectors.add(new CountOfWYSIWYGFieldsMetricType());
+
+        metricStatsCollectors.add(new TotalSitesUsingDotaiMetricType());
+        metricStatsCollectors.add(new TotalEmbeddingsIndexesMetricType());
+        metricStatsCollectors.add(new TotalSitesWithAutoIndexContentConfigMetricType());
 
         // adding experiments metrics
         metricStatsCollectors.add(new ExperimentFeatureFlagMetricType());

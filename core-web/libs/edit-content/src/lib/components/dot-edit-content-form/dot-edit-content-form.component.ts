@@ -26,7 +26,19 @@ import { InputSwitchChangeEvent, InputSwitchModule } from 'primeng/inputswitch';
 import { MessagesModule } from 'primeng/messages';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { take } from 'rxjs/operators';
+
+import {
+    DotMessageService,
+    DotWizardService,
+    DotWorkflowEventHandlerService
+} from '@dotcms/data-access';
+import {
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotCMSWorkflowAction,
+    DotWorkflowPayload
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotWorkflowActionsComponent } from '@dotcms/ui';
 
 import { resolutionValue } from './utils';
@@ -51,24 +63,24 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 /**
  * DotEditContentFormComponent
  *
- * This component is responsible for rendering and managing the form for editing content in DotCMS.
- * It provides a dynamic form based on the content type structure and handles form submission,
- * validation, and interaction with workflow actions. The component now uses a store to manage its state.
+ * A standalone component responsible for rendering and managing the form for editing content in DotCMS.
+ * This component uses a signal-based store approach for state management and provides a dynamic form
+ * based on the content type structure.
  *
  * Features:
- * - Dynamic form generation based on content type fields from the store
- * - Real-time form value updates
- * - Custom field type handling (e.g., calendar fields, flattened fields)
- * - Integration with DotCMS workflow actions
- * - Form validation including required fields and regex patterns
- * - Navigation back to content listing
+ * - Dynamic form generation based on content type fields
+ * - Real-time form value updates with signal-based reactivity
+ * - Custom field type handling (calendar fields, flattened fields)
+ * - Workflow action integration with push publish support
+ * - Form validation (required fields, regex patterns)
+ * - Content locking mechanism
+ * - Preview functionality for content types
+ * - Tab-based field organization
  *
  * @example
+ * ```typescript
  * <dot-edit-content-form></dot-edit-content-form>
- *
- * @export
- * @class DotEditContentFormComponent
- * @implements {OnInit}
+ * ```
  */
 @Component({
     selector: 'dot-edit-content-form',
@@ -103,7 +115,9 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
-
+    readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
+    readonly #dotWizardService = inject(DotWizardService);
+    readonly #dotMessageService = inject(DotMessageService);
     /**
      * Output event emitter that informs when the form has changed.
      * Emits an object of type Record<string, string> containing the updated form values.
@@ -231,12 +245,120 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Processes the form value, applying specific transformations for certain field types.
+     * Handles the workflow action execution process.
+     *
+     * This method processes the workflow action based on its configuration:
+     * 1. If no action inputs are required, executes the action directly
+     * 2. If push publish is required, checks for available environments first
+     * 3. For other cases, opens the workflow wizard
+     *
+     * @param {DotWorkflowActionParams} params - Parameters needed for the workflow action
+     * @param {DotCMSWorkflowAction} params.workflow - The workflow action to execute
+     * @param {string} params.inode - The content inode
+     * @param {string} params.contentType - The content type
+     * @param {string} params.languageId - The language ID
+     * @param {string} params.identifier - The content identifier
+     * @memberof DotEditContentFormComponent
+     */
+    fireWorkflowAction({
+        workflow,
+        inode,
+        contentType,
+        languageId,
+        identifier
+    }: DotWorkflowActionParams): void {
+        const contentlet = {
+            ...this.processFormValue(this.form.value),
+            contentType,
+            languageId,
+            identifier
+        };
+
+        const { actionInputs = [] } = workflow;
+        const isPushPublish =
+            this.#dotWorkflowEventHandlerService.containsPushPublish(actionInputs);
+
+        if (!actionInputs.length) {
+            this.$store.fireWorkflowAction({
+                actionId: workflow.id,
+                inode,
+                data: {
+                    contentlet
+                }
+            });
+
+            return;
+        }
+
+        if (!isPushPublish) {
+            this.openWizard(workflow, inode, contentlet);
+
+            return;
+        }
+
+        // Check if there are any publish environments available if not fire a notification.
+        this.#dotWorkflowEventHandlerService
+            .checkPublishEnvironments()
+            .pipe(take(1))
+            .subscribe((hasEnvironments: boolean) => {
+                if (hasEnvironments) {
+                    this.openWizard(workflow, inode, contentlet);
+                }
+            });
+    }
+
+    /**
+     * Opens the workflow wizard for actions that require additional input.
+     *
+     * This method:
+     * 1. Opens a wizard dialog using DotWizardService
+     * 2. Processes the workflow payload with any additional inputs
+     * 3. Fires the workflow action with the combined data
      *
      * @private
-     * @param {Record<string, string>} value The raw form value
-     * @returns {Record<string, string>} The processed form value
-     * @memberof DotEditContentFormComponent
+     * @param {DotCMSWorkflowAction} workflow - The workflow action configuration
+     * @param {string} inode - The content inode
+     * @param {{ [key: string]: string | object }} contentlet - The content data
+     */
+    private openWizard(
+        workflow: DotCMSWorkflowAction,
+        inode: string,
+        contentlet: { [key: string]: string | object }
+    ): void {
+        this.#dotWizardService
+            .open<DotWorkflowPayload>(
+                this.#dotWorkflowEventHandlerService.setWizardInput(
+                    workflow,
+                    this.#dotMessageService.get('Workflow-Action')
+                )
+            )
+            .pipe(take(1))
+            .subscribe((data: DotWorkflowPayload) => {
+                this.$store.fireWorkflowAction({
+                    actionId: workflow.id,
+                    inode,
+                    data: {
+                        ...this.#dotWorkflowEventHandlerService.processWorkflowPayload(
+                            data,
+                            workflow.actionInputs
+                        ),
+                        contentlet
+                    }
+                });
+            });
+    }
+
+    /**
+     * Processes the form value, applying specific transformations for different field types.
+     *
+     * Handles special cases:
+     * - Flattened fields: Joins array values with commas
+     * - Calendar fields: Formats dates to the required string format
+     * - Null/undefined values: Converts to empty string
+     *
+     * @private
+     * @param {Record<string, string | string[] | Date | null | undefined>} value - The raw form value
+     * @returns {FormValues} The processed form value ready for submission
      */
     private processFormValue(
         value: Record<string, string | string[] | Date | null | undefined>
@@ -269,11 +391,14 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Initializes the form by creating form controls for each field in the content type.
-     * Skips filtered types.
+     * Creates form controls for each field in the content type.
+     *
+     * This method:
+     * 1. Filters out non-form fields
+     * 2. Creates form controls with appropriate initial values and validators
+     * 3. Combines all controls into a FormGroup
      *
      * @private
-     * @memberof DotEditContentFormComponent
      */
     private initializeForm() {
         const controls = this.$formFields().reduce(
@@ -288,13 +413,16 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Creates a form control for a given field.
-     * Sets the initial value and validators for the control.
+     * Creates a form control for a specific content type field.
+     *
+     * This method:
+     * 1. Determines the initial value based on field type
+     * 2. Applies appropriate validators (required, regex)
+     * 3. Sets the control's disabled state based on field configuration
      *
      * @private
-     * @param {DotCMSContentTypeField} field The field to create a control for
-     * @returns {FormControl} The created form control
-     * @memberof DotEditContentFormComponent
+     * @param {DotCMSContentTypeField} field - The field configuration
+     * @returns {AbstractControl} The configured form control
      */
     private createFormControl(field: DotCMSContentTypeField) {
         const initialValue = this.getInitialFieldValue(field, this.$store.contentlet());
@@ -304,18 +432,18 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Retrieves the initial value for a given field based on the contentlet data.
+     * Retrieves the initial value for a field based on the contentlet data.
      *
-     * This method uses a resolution function specific to the field type to extract
-     * the initial value from the contentlet. If no resolution function is found for
-     * the field type, it logs a warning and returns null. The resolved value is then
-     * cast to the appropriate type using getFinalCastedValue.
+     * This method:
+     * 1. Gets the appropriate resolution function for the field type
+     * 2. Applies the resolution function to extract the value
+     * 3. Casts the value to the correct type
+     * 4. Falls back to null if no value can be resolved
      *
      * @private
-     * @param {DotCMSContentTypeField} field - The field for which to get the initial value.
-     * @param {DotCMSContentlet} contentlet - The contentlet object containing the field data.
-     * @returns {any} The initial value for the field, or null if no value could be resolved.
-     * @memberof DotEditContentFormComponent
+     * @param {DotCMSContentTypeField} field - The field configuration
+     * @param {DotCMSContentlet | null} contentlet - The contentlet containing field values
+     * @returns {unknown} The resolved and cast field value
      */
     private getInitialFieldValue(
         field: DotCMSContentTypeField,
@@ -334,18 +462,17 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Generates an array of validators for a given content type field.
+     * Generates validators for a content type field.
      *
-     * This method creates validators based on the field's properties:
-     * - If the field is required, it adds a required validator.
-     * - If the field has a regex check, it adds a pattern validator.
+     * Applies the following validators based on field configuration:
+     * - Required validator if field.required is true
+     * - Pattern validator if field.regexCheck is set
      *
-     * If an invalid regex is provided, it logs an error but does not throw an exception.
+     * Handles invalid regex patterns gracefully by logging errors without throwing exceptions.
      *
      * @private
-     * @param {DotCMSContentTypeField} field - The field for which to generate validators.
-     * @returns {ValidatorFn[]} An array of Angular validator functions for the field.
-     * @memberof DotEditContentFormComponent
+     * @param {DotCMSContentTypeField} field - The field to generate validators for
+     * @returns {ValidatorFn[]} Array of Angular validator functions
      */
     private getFieldValidators(field: DotCMSContentTypeField): ValidatorFn[] {
         const validators: ValidatorFn[] = [];
@@ -367,38 +494,10 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Fire the workflow action.
+     * Navigates back to the content listing page.
      *
-     * @param {DotCMSWorkflowAction} action
-     * @memberof EditContentLayoutComponent
-     */
-    fireWorkflowAction({
-        actionId,
-        inode,
-        contentType,
-        languageId,
-        identifier
-    }: DotWorkflowActionParams): void {
-        this.$store.fireWorkflowAction({
-            actionId,
-            inode,
-            data: {
-                contentlet: {
-                    ...this.processFormValue(this.form.value),
-                    contentType,
-                    languageId,
-                    identifier
-                }
-            }
-        });
-    }
-
-    /**
-     * Navigates back to the content listing page with the current content type as a filter.
-     *
-     * This method retrieves the content type variable from the store, then uses
-     * the Angular Router to navigate to the content search route. It includes
-     * the content type variable as a filter in the query parameters.
+     * Uses the current content type as a filter parameter when navigating back
+     * to ensure relevant content is displayed in the listing.
      *
      * @memberof DotEditContentFormComponent
      */
@@ -411,7 +510,10 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Opens the preview URL in a new browser tab.
+     * Opens the content preview in a new browser tab.
+     *
+     * Generates a preview URL based on the current contentlet's URL_MAP_FOR_CONTENT
+     * and opens it in a new tab. Logs a warning if the URL cannot be generated.
      *
      * @memberof DotEditContentFormComponent
      */
@@ -431,9 +533,12 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Sets the active tab index in the store when the tab view changes.
+     * Updates the active tab index in the store.
      *
-     * @param {TabViewChangeEvent} event - The event object containing the active tab index.
+     * This method is triggered by the PrimeNG TabView component when the active tab changes.
+     * It synchronizes the UI state with the store to maintain tab selection across renders.
+     *
+     * @param {TabViewChangeEvent} event - The tab change event containing the new active index
      * @memberof DotEditContentFormComponent
      */
     onActiveIndexChange({ index }: TabViewChangeEvent) {
@@ -441,9 +546,12 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Handles the change event for the content lock input switch.
+     * Handles the content lock toggle.
      *
-     * @param {InputSwitchChangeEvent} event - The event object containing the checked state.
+     * This method is triggered when the user toggles the content lock switch.
+     * It updates the content lock state in the store based on the switch value.
+     *
+     * @param {InputSwitchChangeEvent} event - The switch change event containing the new checked state
      * @memberof DotEditContentFormComponent
      */
     onContentLockChange(event: InputSwitchChangeEvent) {

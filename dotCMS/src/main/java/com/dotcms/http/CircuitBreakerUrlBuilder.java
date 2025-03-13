@@ -3,7 +3,6 @@ package com.dotcms.http;
 import java.util.Map;
 import java.util.function.Function;
 
-import com.dotcms.rest.exception.HttpStatusCodeException;
 import com.google.common.collect.ImmutableMap;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -36,7 +35,7 @@ public class CircuitBreakerUrlBuilder {
     String rawData = null;
     boolean allowRedirects=Config.getBooleanProperty("REMOTE_CALL_ALLOW_REDIRECTS", false);
     boolean throwWhenError = true;
-    Function<Integer, HttpStatusCodeException> overrideException;
+    Function<Integer, Exception> overrideException;
     boolean raiseFailsafe = false;
 
     public CircuitBreakerUrlBuilder setUrl(String proxyUrl) {
@@ -113,9 +112,7 @@ public class CircuitBreakerUrlBuilder {
                 .build());
     }
 
-    public CircuitBreakerUrlBuilder setOverrideException(
-            final Function<Integer, HttpStatusCodeException> overrideException) {
-
+    public CircuitBreakerUrlBuilder setOverrideException(final Function<Integer, Exception> overrideException) {
         this.overrideException = overrideException;
         return this;
     }

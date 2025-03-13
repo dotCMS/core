@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.variant.VariantAPI;
@@ -20,10 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.StringUtils;
 import graphql.AssertException;
-import net.bytebuddy.utility.RandomString;
-import net.minidev.json.JSONUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,7 +31,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
@@ -689,6 +685,127 @@ public class UniqueFieldDataBaseUtilTest {
 
         List<Map<String, Object>> maps = uniqueFieldDataBaseUtil.get(defaultContentlet.getIdentifier(), language.getId());
         assertNotNull(maps);
+    }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#get(Contentlet, Field)}
+     * when: Try to get register from unique_fields table when exists a register with a too long languege_id
+     * should: get the register and not throw any exception
+     *
+     * @throws IOException
+     * @throws DotDataException
+     */
+    @Test
+    public void getUniqueValueWithFieldWithTooLongId() throws IOException, DotDataException {
+        final String defaultUniqueValue = "default_variant_unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet defaultContentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), defaultUniqueValue)
+                .nextPersisted();
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        final String supportingValueJSON = "{\"live\": true, \"siteId\": \"SYSTEM_HOST\", \"variant\": \"DEFAULT\", \"fieldValue\": \"System Host\", \"languageId\": 1565640883097, \"contentTypeId\": \"855a2d72-f2f3-4169-8b04-ac5157c4380c\", \"contentletIds\": [\"" + defaultContentlet.getIdentifier() + "\"], \"uniquePerSite\": false, \"fieldVariableName\": \"" + uniqueTextField.variable() + "\"}";
+        final Map<String, Object> jsonFromString = JsonUtil.getJsonFromString(supportingValueJSON);
+
+        uniqueFieldDataBaseUtil.insert(String.valueOf(System.currentTimeMillis()), jsonFromString);
+
+        List<Map<String, Object>> maps = uniqueFieldDataBaseUtil.get(defaultContentlet, uniqueTextField);
+        assertNotNull(maps);
+    }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#setLive(Contentlet, boolean)}
+     * when: Try to set live attribute to a register in the unique_fields table when exists a register with a too long languege_id
+     * should: get the register and not throw any exception
+     *
+     * @throws IOException
+     * @throws DotDataException
+     */
+    @Test
+    public void setLiveUniqueValueWithTooLongId() throws IOException, DotDataException {
+        final String defaultUniqueValue = "default_variant_unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet defaultContentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), defaultUniqueValue)
+                .nextPersisted();
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        final String supportingValueJSON = "{\"live\": false, \"siteId\": \"SYSTEM_HOST\", \"variant\": \"DEFAULT\", \"fieldValue\": \"System Host\", \"languageId\": 1565640883097, \"contentTypeId\": \"855a2d72-f2f3-4169-8b04-ac5157c4380c\", \"contentletIds\": [\"" + defaultContentlet.getIdentifier() + "\"], \"uniquePerSite\": false, \"fieldVariableName\": \"hostName\"}";
+        final Map<String, Object> jsonFromString = JsonUtil.getJsonFromString(supportingValueJSON);
+
+        uniqueFieldDataBaseUtil.insert(String.valueOf(System.currentTimeMillis()), jsonFromString);
+
+        uniqueFieldDataBaseUtil.setLive(defaultContentlet, true);
+    }
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#setLive(Contentlet, boolean)}
+     * when: Try to remove live attribute to a register in the unique_fields table when exists a register with a too long languege_id
+     * should: get the register and not throw any exception
+     *
+     * @throws IOException
+     * @throws DotDataException
+     */
+    @Test
+    public void removeLiveUniqueValueWithTooLongId() throws IOException, DotDataException {
+        final String defaultUniqueValue = "default_variant_unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet defaultContentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), defaultUniqueValue)
+                .nextPersisted();
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+        final String supportingValueJSON = "{\"live\": true, \"siteId\": \"SYSTEM_HOST\", \"variant\": \"DEFAULT\", \"fieldValue\": \"System Host\", \"languageId\": 1565640883097, \"contentTypeId\": \"855a2d72-f2f3-4169-8b04-ac5157c4380c\", \"contentletIds\": [\"" + defaultContentlet.getIdentifier() + "\"], \"uniquePerSite\": false, \"fieldVariableName\": \"hostName\"}";
+        final Map<String, Object> jsonFromString = JsonUtil.getJsonFromString(supportingValueJSON);
+
+        uniqueFieldDataBaseUtil.insert(String.valueOf(System.currentTimeMillis()), jsonFromString);
+
+        uniqueFieldDataBaseUtil.removeLive(defaultContentlet);
     }
 
 }

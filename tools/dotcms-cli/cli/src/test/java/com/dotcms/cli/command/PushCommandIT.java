@@ -10,8 +10,6 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.DotCMSITProfile;
 import com.dotcms.api.AuthenticationContext;
-import com.dotcms.cli.command.files.FilesCommand;
-import com.dotcms.cli.command.files.FilesPull;
 import com.dotcms.cli.common.FullPushOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.common.WorkspaceManager;
@@ -33,6 +31,7 @@ import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
@@ -487,7 +486,6 @@ class PushCommandIT extends CommandTest {
                 //Now let's create a relative path to the workspace
                 final Path folderToWatchPath = Path.of("files", "live", "en-us", "default", "folder-to-watch");
                 final Path resolvedFolderToWatchPath = tempFolder.resolve(folderToWatchPath);
-                final Path relativePath = tempFolder.relativize(resolvedFolderToWatchPath);
                 //Create the directory we're going to watch
                 Files.createDirectories(resolvedFolderToWatchPath);
 
@@ -506,9 +504,7 @@ class PushCommandIT extends CommandTest {
                         commandStartLatch.countDown(); // Signal that the command has started
                         commandLine.execute(PushCommand.NAME,
                                 // Path to the files folder
-                                relativePath.toString(),
-                                // Path to the workspace
-                                "--workspace", tempFolder.toAbsolutePath().toString(),
+                                resolvedFolderToWatchPath.toString(),
                                 "--watch", "1");
                     } catch (Exception e) {
                         // Quietly ignore exceptions
@@ -527,7 +523,7 @@ class PushCommandIT extends CommandTest {
                 // Simulate changes in the tempFolder with a delay
                 Runnable changeTask = () -> {
                     try {
-                        final Path newFile = tempFolder.resolve("newFile.txt");
+                        final Path newFile = resolvedFolderToWatchPath.resolve("newFile.txt");
                         Files.createFile(newFile);
                         for (int i = 0; i < 5; i++) {
                             // Create a new file

@@ -2,4 +2,4 @@ export { DotCMSLayoutBody } from './lib/next/components/DotCMSLayoutBody/DotCMSL
 
 export { DotCMSShow } from './lib/next/components/DotCMSShow/DotCMSShow';
 
-export { useShowInUveMode } from './lib/next/hooks/useShowInUVE';
+export { useShowInUVE } from './lib/next/hooks/useShowInUVE';

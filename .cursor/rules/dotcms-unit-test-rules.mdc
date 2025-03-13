@@ -1,6 +1,7 @@
 ---
 description: Unit Test Rules
 globs: core-web/{apps,libs}/**/*.{spec.ts,html,ts,mock.ts}
+alwaysApply: false
 ---
 # DotCMS Angular Unit Testing Rules
 
@@ -95,6 +96,52 @@ describe('ComponentName', () => {
         expect(spectator.component).toBeTruthy();
     });
 });
+```
+
+## Component Input Handling
+
+### Using setInput for Component Inputs
+
+1. **ALWAYS use setInput for setting component inputs**
+```typescript
+// ❌ DON'T set inputs directly on the component
+spectator.component.inputProperty = 'some value';
+
+// ✅ USE spectator.setInput()
+spectator.setInput('inputProperty', 'some value');
+```
+
+2. **For Multiple Inputs**
+```typescript
+// ❌ DON'T set multiple inputs directly
+spectator.component.input1 = 'value1';
+spectator.component.input2 = 'value2';
+
+// ✅ SET each input separately
+spectator.setInput('input1', 'value1');
+spectator.setInput('input2', 'value2');
+
+// ✅ Or set multiple inputs at once
+spectator.setInput({
+  input1: 'value1',
+  input2: 'value2'
+});
+```
+
+3. **Setting inputs and testing changes**
+```typescript
+// Set initial input
+spectator.setInput('users', []);
+
+// Verify initial state
+expect(spectator.query(byTestId('no-users-message'))).toBeVisible();
+
+// Set new input value
+spectator.setInput('users', [{ id: 1, name: 'John' }]);
+
+// Verify component reacts to input change
+expect(spectator.query(byTestId('user-list'))).toBeVisible();
+expect(spectator.query(byTestId('no-users-message'))).not.toBeVisible();
 ```
 
 ## User-Centric Testing Guidelines
@@ -238,25 +285,30 @@ export const userActions = {
    - Add data-testid to elements that need testing
    - Avoid testing implementation details
 
-3. **Interaction Testing**
+3. **Component Inputs**
+   - ALWAYS use spectator.setInput for component inputs
+   - NEVER modify component.inputProperty directly
+   - Test component's reaction to input changes
+
+4. **Interaction Testing**
    - Use Spectator's click, typeInElement, etc.
    - Test complete user flows
    - Verify visual feedback
    - Test keyboard interactions when relevant
 
-4. **Async Testing**
+5. **Async Testing**
    - Use async/await with whenStable
    - Test loading states
    - Verify async operation completion
    - Test error handling
 
-5. **Form Testing**
+6. **Form Testing**
    - Test validation messages
    - Test form submission
    - Test field interactions
    - Test error states
 
-6. **CSS Class Verification**
+7. **CSS Class Verification**
    - ALWAYS use multiple string parameters: toHaveClass('class1', 'class2')
    - NEVER use object notation: toHaveClass({ class1: true })
 
@@ -264,6 +316,7 @@ Remember:
 - Always think from the user's perspective
 - Add data-testid to elements that need testing
 - Use Spectator for better testing APIs
+- Use setInput for component inputs instead of direct assignment
 - Test complete user flows, not just methods
 - Verify what the user sees and experiences
 
