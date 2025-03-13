@@ -71,6 +71,7 @@ public class FilesCollector implements Collector {
         collectorPayloadBean.put(URL, uri);
         collectorPayloadBean.put(SITE_NAME, Objects.nonNull(site)?site.getHostname():host);
         collectorPayloadBean.put(LANGUAGE, language);
+        collectorPayloadBean.put(LANGUAGE_ID, languageId);
         collectorPayloadBean.put(SITE_ID, null != site?site.getIdentifier():StringPool.UNKNOWN);
         collectorPayloadBean.put(EVENT_TYPE, EventType.FILE_REQUEST.getType());
 

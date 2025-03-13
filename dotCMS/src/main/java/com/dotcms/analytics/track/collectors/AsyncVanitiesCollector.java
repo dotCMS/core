@@ -67,7 +67,6 @@ public class AsyncVanitiesCollector implements Collector {
             match.get(whoIAM).collect(innerCollectorContextMap, collectorPayloadBean);
         }
 
-        collectorPayloadBean.put(COME_FROM_VANITY_URL, true);
         return collectorPayloadBean;
     }
 

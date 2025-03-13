@@ -70,7 +70,6 @@ public class BasicProfileCollector implements Collector {
                 WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
 
         // Include default value for other boolean fields in the Clickhouse table
-        collectorPayloadBean.put(COME_FROM_VANITY_URL, false);
         collectorPayloadBean.put(IS_EXPERIMENT_PAGE, false);
         collectorPayloadBean.put(IS_TARGET_PAGE, false);
 

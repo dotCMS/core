@@ -23,8 +23,8 @@ public interface Collector {
     String INODE = "inode"; // NOT USED YET BUT MAY BE DESIRED
     String BASE_TYPE = "baseType";
     String PATH = "path"; // NOT USED YET BUT MAY BE DESIRED
-    String LIVE = "live"; // NOT USED YET BUT MAY BE DESIRED
-    String WORKING = "working"; // NOT USED YET BUT MAY BE DESIRED
+    String LIVE = "live";
+    String WORKING = "working";
     String CONTENT_TYPE_VAR_NAME = "contentType";
     String CONTENT_TYPE_NAME = "contentTypeName";
     String CONTENT_TYPE_ID = "contentTypeId";
@@ -48,12 +48,10 @@ public interface Collector {
     String UTC_TIME = "utc_time";
 
 
-    String RENDER_MODE = "renderMode";
-    String RESPONSE = "response";
+    String RESPONSE = "action";
     String RESPONSE_CODE = "response_code";
 
 
-    String COME_FROM_VANITY_URL = "comeFromVanityURL";
     String DETAIL_PAGE_URL = "detail_page_url";
     String IS_EXPERIMENT_PAGE = "isexperimentpage";
     String IS_TARGET_PAGE = "istargetpage";
