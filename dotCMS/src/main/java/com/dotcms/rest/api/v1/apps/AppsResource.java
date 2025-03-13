@@ -248,9 +248,7 @@ public class AppsResource {
             final SecretForm secretForm
     ) {
         try {
-            Logger.info(this.getClass(), "Validating Form");
             secretForm.checkValid();
-            Logger.info(this.getClass(), "Getting InitDataObject");
             final InitDataObject initData =
                     new WebResource.InitBuilder(webResource)
                             .requiredBackendUser(true)
@@ -259,13 +257,6 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            //Add useful logs
-            Logger.info(this.getClass(),
-                    String.format("Creating secret integration with form `%s` ",secretForm)
-            );
-            Logger.info(this.getClass(),
-                    String.format("Creating secret integration with user `%s` ",user.toString())
-            );
             helper.saveSecretForm(key, siteId, secretForm, user);
             Logger.info(this.getClass(), "Secret integration created successfully.");
             return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
