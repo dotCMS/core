@@ -9,7 +9,7 @@ const ImageLoader = ({ src, width }) => {
 
     const imageSRC = src.includes('/dA/') ? src : `/dA/${src}`; // Check if the image is a DotCMS asset or a file asset
 
-    return `${dotcmsURL}${imageSRC}/${width}?language_id=${languageId}`;
+    return `${dotcmsURL}${imageSRC}/${width}w?language_id=${languageId}`;
 };
 
 export default ImageLoader;
