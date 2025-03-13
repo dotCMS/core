@@ -7,6 +7,8 @@ import com.dotcms.analytics.query.AnalyticsQuery;
 import com.dotcms.analytics.query.AnalyticsQueryParser;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cube.CubeJSQuery;
+import com.dotcms.cube.filters.Filter;
+import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -238,6 +240,25 @@ public class AnalyticsTool  implements ViewTool {
      */
     public CubeJSQuery.Builder createCubeJSQueryBuilder() {
         return new CubeJSQuery.Builder();
+    }
+
+    /**
+     * Create a {@link SimpleFilter.Operator} from its name
+     *
+     * @param operatorName
+     * @return
+     */
+    public SimpleFilter.Operator operator(String operatorName) {
+        return SimpleFilter.Operator.valueOf(operatorName);
+    }
+
+    /**
+     * Create a {@link Filter.Order} from its name
+     * @param orderName
+     * @return
+     */
+    public Filter.Order order(String orderName) {
+        return Filter.Order.valueOf(orderName);
     }
 
     /**

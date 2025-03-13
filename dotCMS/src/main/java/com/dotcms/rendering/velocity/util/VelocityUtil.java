@@ -225,6 +225,7 @@ public class VelocityUtil {
 		context.put("velocityContext", context);
 		context.put("language", "1");
 		context.put("InodeUtils", new InodeUtils());
+
 		return context;
 	}
 	
