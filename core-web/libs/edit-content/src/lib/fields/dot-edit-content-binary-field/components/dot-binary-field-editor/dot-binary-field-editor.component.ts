@@ -37,7 +37,7 @@ import { debounceTime } from 'rxjs/operators';
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
-import { dotVelocityLanguageDefinition } from '@dotcms/edit-content/custom-languages/velocity-monaco-language';
+import { dotVelocityLanguageDefinition} from "../../../../custom-languages/velocity-monaco-language";
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
