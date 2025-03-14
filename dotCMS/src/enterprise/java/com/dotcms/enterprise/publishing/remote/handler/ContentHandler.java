@@ -1036,9 +1036,6 @@ public class ContentHandler implements IHandler {
 						.searchIndex(luceneQuery.toString(), limit, offset, sortBy,
 								systemUser, !RESPECT_FRONTEND_ROLES);
 
-				Logger.info(ContentHandler.class, "contentlets = " + contentlets);
-				Logger.info(ContentHandler.class, "contentlets.get(0) = " + contentlets.get(0));
-
 				if (null != contentlets && contentlets.size() > 0) {
 					// A contentlet with different Identifier but same unique value has been found. Update the local
                     // one WITHOUT CHANGING the local Identifier and Inode
@@ -1046,7 +1043,6 @@ public class ContentHandler implements IHandler {
 							this.contentletAPI.find(contentlets.get(0).getInode(), systemUser,
 									!RESPECT_FRONTEND_ROLES);
 
-					Logger.info(ContentHandler.class, "matchingContent = " + matchingContent);
                     if (null == matchingContent || !UtilMethods.isSet(matchingContent.getIdentifier())) {
 						Logger.info(ContentHandler.class, "EXCEPTION");
                         // It might be that the matching content doesn't exist in the DB anymore, or is archived
@@ -1229,16 +1225,10 @@ public class ContentHandler implements IHandler {
 			// if the content is not live, then we don't need to unpublish it
 			Optional<ContentletVersionInfo> existingInfoOptional = Optional.empty();
             final List<Contentlet> contents = findContents(content.getIdentifier(), user);
-			Logger.info(this, "looking for contents for " + content.getIdentifier());
-			Logger.info(this, "Found " + contents);
 
             if (UtilMethods.isSet(contents)) {
-				Logger.info(this, "UtilMethods.isSet(contents) ");
-
 				final Optional<Contentlet> contentletOptional = contents.stream()
 						.filter(c -> c.getLanguageId() == remoteLocalLanguages.getRight()).findFirst();
-
-				Logger.info(this, "contentletOptional " + contentletOptional);
 
 				if (contentletOptional.isPresent()) {
 					final Contentlet existingContent = contentletOptional.get();
@@ -1264,8 +1254,6 @@ public class ContentHandler implements IHandler {
 				isExistingContentLive = UtilMethods.isSet(existingVersionInfo.getLiveInode());
 			}
 
-			Logger.info(this, "isExistingContentLive " + isExistingContentLive);
-
 			if (isExistingContentLive) {
 				try {
 					contentletAPI.unpublish(content, user, !RESPECT_FRONTEND_ROLES);
@@ -1273,17 +1261,16 @@ public class ContentHandler implements IHandler {
 					final String contentId = content.getIdentifier();
 					final String contentInode = content.getInode();
 					if (isPushedContentArchived) {
-						Logger.info(getClass(), () -> String.format(
+						Logger.debug(getClass(), () -> String.format(
 								"No live version, not able to archive, contentlet: id -> %s, inode-> %s",
 								contentId, contentInode));
 					} else {
-						Logger.info(getClass(), () -> String.format("No live version, not able to unpublish, contentlet: id -> %s, inode-> %s",
+						Logger.debug(getClass(), () -> String.format("No live version, not able to unpublish, contentlet: id -> %s, inode-> %s",
 								contentId, contentInode));
 					}
 				}
 			}
 
-			Logger.info(this, "isPushedContentArchived " + isPushedContentArchived);
 			if (isPushedContentArchived) {
 				this.contentletAPI.archive(content, user, !RESPECT_FRONTEND_ROLES);
 			} else {
@@ -1319,9 +1306,6 @@ public class ContentHandler implements IHandler {
         final String sortBy = null;
         String luceneQuery = "+identifier:" + identifier + " +live:true";
         List<Contentlet> contents = contentletAPI.search(luceneQuery, limit, offset, sortBy, user, !RESPECT_FRONTEND_ROLES);
-
-		Logger.info(this, "found " + contents.size() + " contents for " + identifier);
-		Logger.info(this, "Another query " + contentletAPI.search( "+identifier:" + identifier, limit, offset, sortBy, user, !RESPECT_FRONTEND_ROLES));
 
         if (contents.isEmpty()) {
             luceneQuery = "+identifier:" + identifier + " +working:true";
