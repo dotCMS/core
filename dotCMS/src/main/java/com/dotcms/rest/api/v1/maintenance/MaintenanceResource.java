@@ -7,6 +7,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.DbExporterUtil;
+import com.dotcms.util.SizeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
@@ -256,7 +257,7 @@ public class MaintenanceResource implements Serializable {
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
      * @param oldAssets If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
-     *
+     * @param maxSize  The maximum size of the assets to include in the ZIP file. If the assets exceed this size, they will not be included.
      * @return The {@link StreamingOutput} with the compressed file.
      */
     @Path("/_downloadAssets")
@@ -266,7 +267,12 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
                                          @Context final HttpServletResponse response,
-                                         @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
+                                         @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets,
+                                         @QueryParam("maxSize") String maxSize) {
+
+
+
+        final long maxFileSize = SizeUtil.convertToBytes(maxSize);
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveAssetsFileName();
@@ -274,7 +280,7 @@ public class MaintenanceResource implements Serializable {
                 zipName, oldAssets));
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedAssets(output, oldAssets);
+            exportStarterUtil.streamCompressedAssets(output, oldAssets, maxFileSize);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
@@ -289,6 +295,7 @@ public class MaintenanceResource implements Serializable {
      *
      * @param request  http request
      * @param response http response
+     *  @param maxSize  The maximum size of the assets to include in the ZIP file. If the assets exceed this size, they will not be included.
      * @return octet stream response with octet stream
      */
     @Path("/_downloadStarter")
@@ -297,8 +304,9 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarter(@Context final HttpServletRequest request,
-                                          @Context final HttpServletResponse response) {
-        return downloadStarter(request, response, false, true);
+                                          @Context final HttpServletResponse response,
+                                            @QueryParam("maxSize") String maxSize) {
+        return downloadStarter(request, response, false, true, maxSize);
     }
 
     /**
@@ -315,8 +323,9 @@ public class MaintenanceResource implements Serializable {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarterWithAssets(@Context final HttpServletRequest request,
                                                     @Context final HttpServletResponse response,
-                                                    @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets) {
-        return downloadStarter(request, response, true, oldAssets);
+                                                    @DefaultValue("true") @QueryParam("oldAssets") boolean oldAssets,
+                                                    @QueryParam("maxSize") String maxSize) {
+        return downloadStarter(request, response, true, oldAssets, maxSize);
     }
 
     /**
@@ -327,11 +336,14 @@ public class MaintenanceResource implements Serializable {
      * @param response      The current instance of the {@link HttpServletResponse}.
      * @param includeAssets If the generated Starter must include all assets as well, set this to {@code true}.
      * @param oldAssets     If the resulting file must have absolutely all versions of all assets, set this to {@code true}.
+     * @param maxSize  The maximum size of the assets to include in the ZIP file. If the assets exceed this size, they will not be included.
      *
      * @return The streamed Starter ZIP file.
      */
     private Response downloadStarter(final HttpServletRequest request, final HttpServletResponse response,
-                                     final boolean includeAssets, final boolean oldAssets) {
+                                     final boolean includeAssets, final boolean oldAssets, final String maxSize) {
+
+        final long maxFileSize = SizeUtil.convertToBytes(maxSize);
         final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.resolveStarterFileName();
@@ -340,7 +352,7 @@ public class MaintenanceResource implements Serializable {
 
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamCompressedStarter(output, includeAssets, oldAssets);
+            exportStarterUtil.streamCompressedStarter(output, includeAssets, oldAssets, maxFileSize);
             output.flush();
             output.close();
             Logger.info(this, String.format("Compressed Starter file '%s' has been generated successfully!", zipName));

@@ -494,8 +494,6 @@ public class ExportStarterUtil {
     }
 
 
-
-
     /**
      * Generates all the contents that go into the compressed dotCMS Starter file. It's very
      * important to point out that <b>no temporary files are created, and no data is written to the
@@ -512,8 +510,8 @@ public class ExportStarterUtil {
      * @param includeOldAssets If absolutely all versions of the assets must be included in the
      *                         compressed file, set this to {@code true}.
      */
-    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets, final boolean includeOldAssets) {
-        this.streamCompressedData(output, true, includeAssets, false, includeOldAssets);
+    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets, final boolean includeOldAssets, long maxFileSize) {
+        this.streamCompressedData(output, true, includeAssets, false, includeOldAssets,  maxFileSize);
     }
 
     /**
@@ -526,8 +524,8 @@ public class ExportStarterUtil {
      * @param includeOldAssets If absolutely all versions of the assets must be included in the compressed file, set
      *                         this to {@code true}.
      */
-    public void streamCompressedAssets(final OutputStream output, boolean includeOldAssets) {
-        this.streamCompressedData(output, false, false, true, includeOldAssets);
+    public void streamCompressedAssets(final OutputStream output, boolean includeOldAssets, long maxFileSize) {
+        this.streamCompressedData(output, false, false, true, includeOldAssets,  maxFileSize);
     }
 
     /**
@@ -544,7 +542,7 @@ public class ExportStarterUtil {
      *                                    file, set this to {@code true}.
      */
     private void streamCompressedData(final OutputStream output, boolean includeStarterData,
-                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets) {
+                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets, long maxFileSize) {
 
 
 
@@ -554,7 +552,9 @@ public class ExportStarterUtil {
                 Logger.debug(this, "Including Starter Data");
                 this.getStarterDataAsJSON(zip);
             }
-            final AssetFileNameFilter fileFilter = includeOldAssets ? new AssetFileNameFilter() : new AssetFileNameFilter(getLiveWorkingBloomFilter());
+            final AssetFileNameFilter fileFilter = includeOldAssets
+                    ? new AssetFileNameFilter(maxFileSize)
+                    : new AssetFileNameFilter(getLiveWorkingBloomFilter(),maxFileSize);
             if (includeStarterDataAndAssets) {
                 Logger.debug(this, "Including Starter Data and Assets");
                 this.getAssets(zip, fileFilter);
