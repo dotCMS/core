@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 
 import {
+    DotAnalyticsTrackerService,
     DotContentTypeService,
     DotContentletLockerService,
     DotExperimentsService,
@@ -88,6 +89,12 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(ActivatedRoute),
             mockProvider(DotContentTypeService),
             mockProvider(CoreWebService),
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
             mockProvider(DotPageLayoutService, {
                 save: jest.fn(() => of(PAGE_RESPONSE))
             }),

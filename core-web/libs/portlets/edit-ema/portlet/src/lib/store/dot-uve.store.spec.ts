@@ -13,6 +13,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 
 import {
+    DotAnalyticsTrackerService,
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
@@ -126,6 +127,12 @@ describe('UVEStore', () => {
             {
                 provide: DotLanguagesService,
                 useValue: new DotLanguagesServiceMock()
+            },
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
             }
         ]
     });

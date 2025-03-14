@@ -1,5 +1,3 @@
-import { InjectionToken } from '@angular/core';
-
 import { DotDeviceListItem, DotPersona } from '@dotcms/dotcms-models';
 
 import { CommonErrors } from './enums';
@@ -12,8 +10,6 @@ export const PERSONA_KEY = 'com.dotmarketing.persona.id';
 export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
 export const HOST = 'http://localhost:3000';
-
-export const WINDOW = new InjectionToken<Window>('WindowToken');
 
 export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 

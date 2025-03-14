@@ -22,12 +22,14 @@
                 [hourFormat]="'12'"
                 dataType="date"
                 [minDate]="$MIN_DATE()"
-                [readonlyInput]="true" />
+                [readonlyInput]="true"
+                data-testId="uve-toolbar-calendar" />
             <p-button
                 styleClass="uve-toolbar-chips"
                 [label]="'Today' | dm"
                 alt="Page Day"
-                (click)="fetchPageOnDate()" />
+                (click)="fetchPageOnDate()"
+                data-testId="uve-toolbar-calendar-today-button" />
         </div>
     }
 
