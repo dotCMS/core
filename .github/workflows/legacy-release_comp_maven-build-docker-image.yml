@@ -178,7 +178,7 @@ jobs:
             if [[ "${is_trunk}" == 'true' ]]; then
               is_trunk_snapshot=true
             fi
-          elif [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}$ ]]; then
+          elif [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}-[0-9]{1,2}$ ]]; then
             is_release=true
             is_latest=true
           elif [[ ${version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}_lts$ ]]; then
