@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'Release Version (yy.mm.dd_## or yy.mm.dd_lts_v##] ##: counter)'
+        description: 'Release Version (yy.mm.dd-## or yy.mm.dd_lts_v##] ##: counter)'
         required: true
       release_commit:
         description: 'Commit Hash (default to latest commit)'
