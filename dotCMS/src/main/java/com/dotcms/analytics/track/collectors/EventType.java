@@ -7,7 +7,7 @@ package com.dotcms.analytics.track.collectors;
 public enum EventType {
 
     UVE_MODE_CHANGE("UVE_MODE_CHANGE"),
-    UVE_CALENDAR_CHANGE("UVE_MODE_CHANGE"),
+    UVE_CALENDAR_CHANGE("UVE_CALENDAR_CHANGE"),
     VANITY_REQUEST("VANITY_REQUEST"),
     FILE_REQUEST("FILE_REQUEST"),
     PAGE_REQUEST("PAGE_REQUEST"),
