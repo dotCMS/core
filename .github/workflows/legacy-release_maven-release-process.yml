@@ -48,7 +48,7 @@ jobs:
       - name: Validate Inputs
         run: |
           release_version=${{ github.event.inputs.release_version }}
-          if [[ ! ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}(_[0-9]{1,2}|_lts_v[0-9]{1,2})$ ]]; then
+          if [[ ! ${release_version} =~ ^[0-9]{2}.[0-9]{2}.[0-9]{2}(-[0-9]{1,2}|_lts_v[0-9]{1,2})$ ]]; then
             echo 'Release version must be in the format yy.mm.dd-counter or yy.mm.dd_lts_v##'
             exit 1
           fi
