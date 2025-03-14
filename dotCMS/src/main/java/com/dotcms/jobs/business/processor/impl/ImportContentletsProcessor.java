@@ -27,12 +27,15 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.ImmutableImportFileParams;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.importer.model.ImportResult;
+import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -87,6 +90,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
     private static final String PARAMETER_SITE_NAME = "siteName";
     private static final String PARAMETER_CONTENT_TYPE = "contentType";
     private static final String PARAMETER_WORKFLOW_ACTION_ID = "workflowActionId";
+    private static final String PARAMETER_STOP_ON_ERROR = "stopOnError";
     private static final String PARAMETER_CMD = Constants.CMD;
     private static final String CMD_PREVIEW = com.dotmarketing.util.Constants.PREVIEW;
     private static final String CMD_PUBLISH = com.dotmarketing.util.Constants.PUBLISH;
@@ -392,6 +396,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
         final var fields = getFieldIds(job.parameters(), contentType);
         final var language = findLanguage(job.parameters());
         final var workflowActionId = getWorkflowActionId(job.parameters());
+        final var stopOnError = getStopOnError(job.parameters());
         final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
         final var importId = jobIdToLong(job.id());
 
@@ -401,12 +406,21 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
         Logger.info(this, String.format("-------- Starting Content Import %s -------- ",
                 preview ? "Preview" : "Process"));
         Logger.info(this, String.format("-> Content Type: %s", contentType.variable()));
-
-        return ImportUtil.importFileResult(importId, currentSiteId, contentType.id(), fields,
-                preview, language == null, user, language == null ? -1 : language.getId(),
-                headerInfo.headers, csvReader, headerInfo.languageCodeColumn,
-                headerInfo.countryCodeColumn, workflowActionId, fileTotalLines, httpReq,
-                progressCallback);
+        final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
+                .importId(importId).siteId(currentSiteId)
+                .contentTypeInode(contentType.id()).keyFields(fields).user(user)
+                .language(language == null ? -1 : language.getId())
+                .csvHeaders(headerInfo.headers)
+                .csvReader(csvReader)
+                .languageCodeHeaderColumn(headerInfo.languageCodeColumn)
+                .countryCodeHeaderColumn(headerInfo.countryCodeColumn)
+                .workflowActionId(workflowActionId)
+                .fileTotalLines(fileTotalLines)
+                .request(httpReq)
+                .progressCallback(progressCallback)
+                .stopOnError(stopOnError)
+                .build();
+        return ImportUtil.importFileResult(importFileParams);
     }
 
     /**
@@ -476,6 +490,15 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      */
     private String getWorkflowActionId(final Map<String, Object> parameters) {
         return (String) parameters.get(PARAMETER_WORKFLOW_ACTION_ID);
+    }
+
+    /**
+     * Retrieves the stop on error flag from the job parameters.
+     * @param parameters job parameters
+     * @return The stop on error flag, or false if not present in parameters
+     */
+    private boolean getStopOnError(final Map<String, Object> parameters) {
+        return Try.of(()->(Boolean) parameters.get(PARAMETER_STOP_ON_ERROR)).getOrElse(false);
     }
 
     /**
