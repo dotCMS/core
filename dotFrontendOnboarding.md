@@ -73,10 +73,10 @@ Follow these steps to install and set up the frontend project. This section will
 
 ## Running
 
-To run the frontend application locally, follow these steps. This section will guide you through building the project, starting the necessary backend services, and running the frontend application.
+To run the frontend application locally, follow these steps. This section will guide you through building the project, starting the necessary backend services, and running the frontend application, which is located in the `core-web` directory.
 
 1. **Build the project**:
-   First, you need to install the project dependencies and build the project. Use the following command:
+   First, you need to install the project dependencies and build the project. Execute the following command in the `core-web` directory:
 
    ```sh
    yarn install
