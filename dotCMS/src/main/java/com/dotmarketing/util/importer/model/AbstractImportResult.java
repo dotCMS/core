@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 /**
  * Immutable data structure representing the complete results of an import operation.
