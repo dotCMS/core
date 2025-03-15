@@ -407,8 +407,11 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                 preview ? "Preview" : "Process"));
         Logger.info(this, String.format("-> Content Type: %s", contentType.variable()));
         final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
-                .importId(importId).siteId(currentSiteId)
-                .contentTypeInode(contentType.id()).keyFields(fields).user(user)
+                .preview(preview)
+                .importId(importId)
+                .siteId(currentSiteId)
+                .contentTypeInode(contentType.id())
+                .keyFields(fields).user(user)
                 .language(language == null ? -1 : language.getId())
                 .csvHeaders(headerInfo.headers)
                 .csvReader(csvReader)
@@ -498,7 +501,15 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      * @return The stop on error flag, or false if not present in parameters
      */
     private boolean getStopOnError(final Map<String, Object> parameters) {
-        return Try.of(()->(Boolean) parameters.get(PARAMETER_STOP_ON_ERROR)).getOrElse(false);
+        return Try.of(() -> {
+            final Object value = parameters != null ? parameters.get(PARAMETER_STOP_ON_ERROR) : null;
+            if (value instanceof Boolean) {
+                return (Boolean) value;
+            } else if (value instanceof String) {
+                return Boolean.parseBoolean((String) value);
+            }
+            return false;
+        }).getOrElse(false);
     }
 
     /**
