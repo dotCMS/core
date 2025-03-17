@@ -67,7 +67,7 @@ const MyPage = ({ page }) => {
 
 ### `BlockEditorRenderer`
 
-The `BlockEditorRenderer`component renders the content of a Block Editor Content Type from dotCMS.
+The `BlockEditorRenderer` component renders the content of a Block Editor Content Type from dotCMS.
 [More information of Block Editor Content Type](https://dev.dotcms.com/docs/block-editor)
 
 #### Props

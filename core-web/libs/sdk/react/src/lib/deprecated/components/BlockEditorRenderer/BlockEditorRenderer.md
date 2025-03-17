@@ -36,7 +36,7 @@ function MyComponent({ blockContent }) {
 }
 ```
 
-Where `blockContent` represent the Content Type that are a BlockEditor Type.
+Where `blockContent` represents the Block Editor content type.
 More info in the [Block Editor documentation](https://dev.dotcms.com/docs/block-editor#JSONObject)
 ### Editable Mode (Inside DotCMS Editor)
 
