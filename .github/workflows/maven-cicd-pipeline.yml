@@ -530,20 +530,6 @@ jobs:
             LICENSE
           retention-days: 2
 
-  clean-up:
-    name: Clean up
-    runs-on: ubuntu-latest
-    needs: [ build-jdk11, linux-postman-tests ]
-    if: (success() || failure()) && (github.repository == 'dotCMS/core' || !endsWith(github.ref, '/master'))
-    steps:
-      - uses: actions/checkout@v4
-      - id: cleanup-package
-        name: Clean up CICD packages
-        uses: ./.github/actions/cleanup-gh-packages
-        with:
-          delete_tags: ${{ needs.build-jdk11.outputs.docker-tag }}
-          access_token: ${{ secrets.GHCR_TOKEN }}
-
   #
   # Collate reports and build status
   #
