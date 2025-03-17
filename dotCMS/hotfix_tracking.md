@@ -24,3 +24,4 @@ This maintenance release includes the following code fixes:
 18. https://github.com/dotCMS/core/issues/31022 : Host save as null in PAGE_REQUEST events #31022
 19. https://github.com/dotCMS/core/issues/30875 : CA Search: Define queries for the help dialog #30875
 20. https://github.com/dotCMS/core/issues/30802 : Update clickhouse data to use new field/property names #30802
+21. 
