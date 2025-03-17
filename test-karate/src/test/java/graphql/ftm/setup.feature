@@ -5,11 +5,19 @@ Feature: Setting up the Future Time Machine Test
     # Make the prefix available to the scenario
     # Setup required data
     * callonce read('classpath:graphql/ftm/deleteFolder.feature') { path: '/application/containers/banner' }
-    * def follderIdentifierResult = callonce read('classpath:graphql/ftm/newFolder.feature') { path: '/application/containers/banner' }
-    * def folderIdentifier = follderIdentifierResult.response.entity[0].identifier
+    * def folderIdentifierResult = callonce read('classpath:graphql/ftm/newFolder.feature') { path: '/application/containers/banner' }
+    * def folderIdentifier = folderIdentifierResult.response.entity[0].identifier
     * karate.log('Folder Identifier ::', folderIdentifier)
 
     * callonce read('classpath:graphql/ftm/newVTL.feature') { fileName: 'banner.vtl', folderidentifier: '#(folderIdentifier)' }
+
+    * def imageOneResult = callonce read('classpath:graphql/ftm/newImage.feature') { fileName: 'draft.png' }
+    * def imageOneId = imageOneResult.response.entity.identifier
+    * karate.log('Image One Identifier ::', imageOneId)
+
+    * def imageTwoResult = callonce read('classpath:graphql/ftm/newImage.feature') { fileName: 'java-image.png' }
+    * def imageTwoId = imageTwoResult.response.entity.identifier
+    * karate.log('Image Two Identifier ::', imageTwoId)
 
     # Lets start by creating a new content type, container, template and publish the template
     # First the Content Type
@@ -43,7 +51,7 @@ Feature: Setting up the Future Time Machine Test
     * def contentPieceThreeId = contentPieceThree.map(result => Object.keys(result)[0])
     * def contentPieceThreeId = contentPieceThreeId[0]
 
-    * def createBannerContentPieceOneResult = callonce read('classpath:graphql/ftm/newContent.feature') { contentTypeId: '#(bannerContentTypeId)', title: 'banner 1'}
+    * def createBannerContentPieceOneResult = callonce read('classpath:graphql/ftm/newContent.feature') { contentTypeId: '#(bannerContentTypeId)', title: 'banner 1', imageId: '#(imageOneId)' }
     * def bannerContentPieceOne = createBannerContentPieceOneResult.response.entity.results
     * def bannerContentPieceOneId = bannerContentPieceOne.map(result => Object.keys(result)[0])
     * def bannerContentPieceOneId = bannerContentPieceOneId[0]
@@ -61,7 +69,7 @@ Feature: Setting up the Future Time Machine Test
     * def newContentPiceOneVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(contentTypeId)', identifier: '#(contentPieceOneId)', title: 'test 1 v2 (This ver will be publshed in the future)', publishDate: '#(formattedFutureDateTime)' }
     * def newContentPiceTwoVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(contentTypeId)', identifier: '#(contentPieceTwoId)', title: 'test 2 v2' }
     * def newContentPiceThreeVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(contentTypeId)', identifier: '#(contentPieceThreeId)', title: 'test 3 v2', publishDate: '#(formattedFutureDateTimeInGraceWindow)' }
-    * def newContentBannerOneVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(bannerContentTypeId)', identifier: '#(bannerContentPieceOneId)', title: 'banner 1 v2', publishDate: '#(formattedFutureDateTime)' }
+    * def newContentBannerOneVersion2 = callonce read('classpath:graphql/ftm/newContentVersion.feature') {  contentTypeId: '#(bannerContentTypeId)', identifier: '#(bannerContentPieceOneId)', title: 'banner 1 v2', publishDate: '#(formattedFutureDateTime)', imageId: '#(imageTwoId)' }
 
     # Lets create a new non-published piece of content wiht a publish date in the future
     * def nonPublishedPieceResult = callonce read('classpath:graphql/ftm/newContent.feature') { contentTypeId: '#(contentTypeId)', title: 'Working version Only! with publish date', publishDate: '#(formattedFutureDateTime)', action: 'NEW' }

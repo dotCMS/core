@@ -48,6 +48,9 @@ Feature: Test Time Machine functionality
     * match rendered !contains CONTENTLET_ONE_V2
     * match rendered !contains BANNER_CONTENTLET_ONE_V2
 
+    # Since the request to PageResource removed the TM_DATE session attribute,
+    # we do not expect the future banner image to be displayed
+    * call read('classpath:graphql/ftm/validateBanner.feature') { imageName: 'draft.png', contentLength: '18137' }
 
   @smoke @positive @ftm
   Scenario: Test Time Machine functionality when publish date is provided with current date
@@ -79,6 +82,10 @@ Feature: Test Time Machine functionality
     * match rendered !contains CONTENTLET_ONE_V2
     * match rendered !contains NON_PUBLISHED_CONTENTLET
     * match rendered !contains BANNER_CONTENTLET_ONE_V2
+
+    # Since the request to PageResource set the TM_DATE session attribute with the current date,
+    # we do not expect the future banner image to be displayed
+    * call read('classpath:graphql/ftm/validateBanner.feature') { imageName: 'draft.png', contentLength: '18137' }
 
   @positive @ftm
   Scenario: Test Time Machine functionality when a publish date is provided within grace window expect the future content not to be displayed
@@ -132,6 +139,9 @@ Feature: Test Time Machine functionality
 
     * match rendered contains BANNER_CONTENTLET_ONE_V2
 
+    # Since the request to PageResource set the TM_DATE session attribute with the future date,
+    # we expect the future banner image to be displayed
+    * call read('classpath:graphql/ftm/validateBanner.feature') { imageName: 'java-image.png', contentLength: '46239' }
 
   @positive @ftm
   Scenario: Test Time Machine functionality in UrlContentMap when the current date is provided expect urlContentMap

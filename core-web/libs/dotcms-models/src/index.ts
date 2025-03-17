@@ -78,3 +78,4 @@ export * from './lib/page-model-change-event.type';
 export * from './lib/shared-models';
 export * from './lib/structure-type-view.model';
 export * from './lib/structure-type.model';
+export * from './lib/dot-analytics-tracker.model';
