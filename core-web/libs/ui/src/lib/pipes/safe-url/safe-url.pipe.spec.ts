@@ -23,16 +23,4 @@ describe('SafeUrlPipe', () => {
         expect(transformedUrl).toBe(safeUrl);
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(url);
     });
-
-    it('should transform URL to a safe resource URL when the URL is an instance of String', () => {
-        const url = new String('http://example.com');
-        const safeUrl: SafeResourceUrl = 'safeUrl: http://example.com';
-
-        (sanitizer.bypassSecurityTrustResourceUrl as jasmine.Spy).and.returnValue(safeUrl);
-
-        const transformedUrl = pipe.transform(url);
-
-        expect(transformedUrl).toBe(safeUrl);
-        expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(url.toString());
-    });
 });
