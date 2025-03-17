@@ -200,3 +200,4 @@ This maintenance release includes the following code fixes:
 193. https://github.com/dotCMS/core/issues/31343 : Wysiwyg fields hide when there are multiple wysiwyg fields in a content type #31343
 194. https://github.com/dotCMS/core/issues/31019 : Token Invalid in CubeJS Server after token renew #31019
 195. https://github.com/dotCMS/core/issues/31207 : Improve performance to retrieve Analytics Data #31207
+196. 
