@@ -704,7 +704,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         validate(results, true, false, true);
 
         assertTrue(results.get("warnings").size() == 1);
-//        assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+        assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
     }
 
     /**
@@ -764,8 +764,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-//            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
-//            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
+            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testTitle', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
             try {
@@ -830,8 +830,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 2);
-//            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
-//            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
+            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertEquals("Line #3: contains duplicate values for a unique Content Type field 'testNumber', and will be ignored.", results.get("warnings").get(1));
 
         } finally {
             try {
@@ -902,7 +902,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 1);
-//            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
+            assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
             assertTrue(results.get("errors").size() == 0);
         } finally {
             try {
@@ -967,7 +967,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validate(results, true, false, true);
 
             assertTrue(results.get("warnings").size() == 1);
-//            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
+            assertEquals("The Content Type field testNumber is unique.", results.get("warnings").get(0));
             assertTrue(results.get("errors").size() == 0);
         } finally {
             try {
