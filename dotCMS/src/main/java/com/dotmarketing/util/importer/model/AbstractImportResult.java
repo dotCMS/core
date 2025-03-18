@@ -109,4 +109,6 @@ public interface AbstractImportResult extends Serializable {
         PUBLISH,
         PREVIEW
     }
+
+    boolean stopOnError();
 }
