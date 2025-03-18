@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
@@ -14,7 +15,8 @@ public class Task231207AddInodeAndIdentifierLeftIndexes implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        DotDatabaseMetaData dmd = new DotDatabaseMetaData();
+        return !dmd.checkIndex("inode","inode_inode_leading_idx");
     }
 
     @Override
