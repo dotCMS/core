@@ -110,5 +110,9 @@ public interface AbstractImportResult extends Serializable {
         PREVIEW
     }
 
+    /**
+     * Here to help troubleshoot issues with the import process.
+     * @return true if the import process should stop on error, false otherwise
+     */
     boolean stopOnError();
 }

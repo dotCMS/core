@@ -81,6 +81,8 @@ public class ContentImportForm extends Validated {
                 ", language='" + language + '\'' +
                 ", workflowActionId='" + workflowActionId + '\'' +
                 ", fields=" + fields +
+                ", stopOnError=" + stopOnError +
+                ", commitGranularity=" + commitGranularity +
                 '}';
     }
 }

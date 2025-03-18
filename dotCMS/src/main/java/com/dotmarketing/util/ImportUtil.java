@@ -692,16 +692,25 @@ public class ImportUtil {
             List<String> updatedInodes, final boolean updateCounters) {
 
         if (updateCounters) {
-            counters.setContentToCreate(
-                    counters.getContentToCreate() + lineResult.contentToCreate());
-            counters.setContentCreated(
-                    counters.getContentCreated() + lineResult.createdContent());
-            counters.setContentToUpdate(
-                    counters.getContentToUpdate() + lineResult.contentToUpdate());
-            counters.setContentUpdated(
-                    counters.getContentUpdated() + lineResult.updatedContent());
-            counters.setContentUpdatedDuplicated(
-                    counters.getContentUpdatedDuplicated() + lineResult.duplicateContent());
+            //counters.setContentToCreate(counters.getContentToCreate() + lineResult.contentToCreate());
+
+            counters.incContentToCreate(lineResult.contentToCreate());
+
+            //counters.setContentCreated(counters.getContentCreated() + lineResult.createdContent());
+
+            counters.incContentCreated(lineResult.createdContent());
+
+            //counters.setContentToUpdate(counters.getContentToUpdate() + lineResult.contentToUpdate());
+
+            counters.incContentToUpdate(lineResult.contentToUpdate());
+
+            //counters.setContentUpdated(counters.getContentUpdated() + lineResult.updatedContent());
+
+            counters.incContentUpdated(lineResult.updatedContent());
+
+            //counters.setContentUpdatedDuplicated(counters.getContentUpdatedDuplicated() + lineResult.duplicateContent());
+
+            counters.incContentUpdatedDuplicated(lineResult.duplicateContent());
         }
 
         // Update results from line processing
@@ -4383,7 +4392,7 @@ public class ImportUtil {
         private int commits = 0;
         private int rollbacks = 0;
 
-        private Collection<Map<String, String>> keys = new ArrayList<>();
+        private final Collection<Map<String, String>> keys = new ArrayList<>();
 
         private String lastInode = "";
 
@@ -4391,40 +4400,40 @@ public class ImportUtil {
             return contentToCreate;
         }
 
-        public void setContentToCreate(int contentToCreate) {
-            this.contentToCreate = contentToCreate;
+        public void incContentToCreate(int contentToCreate) {
+            this.contentToCreate += contentToCreate;
         }
 
         public int getContentToUpdate() {
             return contentToUpdate;
         }
 
-        public void setContentToUpdate(int contentToUpdate) {
-            this.contentToUpdate = contentToUpdate;
+        public void incContentToUpdate(int contentToUpdate) {
+            this.contentToUpdate += contentToUpdate;
         }
 
         public int getContentCreated() {
             return contentCreated;
         }
 
-        public void setContentCreated(int contentCreated) {
-            this.contentCreated = contentCreated;
+        public void incContentCreated(int contentCreated) {
+            this.contentCreated += contentCreated;
         }
 
         public int getContentUpdated() {
             return contentUpdated;
         }
 
-        public void setContentUpdated(int contentUpdated) {
-            this.contentUpdated = contentUpdated;
+        public void incContentUpdated(int contentUpdated) {
+            this.contentUpdated += contentUpdated;
         }
 
         public int getContentUpdatedDuplicated() {
             return contentUpdatedDuplicated;
         }
 
-        public void setContentUpdatedDuplicated(int contentUpdatedDuplicated) {
-            this.contentUpdatedDuplicated = contentUpdatedDuplicated;
+        public void incContentUpdatedDuplicated(int contentUpdatedDuplicated) {
+            this.contentUpdatedDuplicated += contentUpdatedDuplicated;
         }
 
         public String getLastInode() {
