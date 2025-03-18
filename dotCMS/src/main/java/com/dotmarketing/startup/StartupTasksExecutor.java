@@ -340,7 +340,7 @@ public class StartupTasksExecutor {
         Logger.info(this, "Finishing data upgrade tasks.");
     }
 
-	/**
+    /**
      * This will execute all the UT that were backported to the LTS version.
      * Will be run everytime the server gets restarted just like the Startup Tasks.
      * But these will be run after the upgradeTasks.
@@ -355,22 +355,28 @@ public class StartupTasksExecutor {
 
 
             for (Class<?> c : TaskLocatorUtil.getBackportedUpgradeTaskClasses()) {
-                HibernateUtil.startTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.startTransaction();
+                }
                 name = c.getCanonicalName();
                 name = name.substring(name.lastIndexOf(".") + 1);
-		String id = getTaskId(name);
+                String id = getTaskId(name);
                 int taskId = Integer.parseInt(id);
-		if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
+                if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
                     StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
-                        HibernateUtil.startTransaction();
+                        if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                            HibernateUtil.startTransaction();
+                        }
                         Logger.info(this, "Running Backported Tasks : " + name);
                         task.executeUpgrade();
                     } else {
                         Logger.info(this, "Not Running Backported Tasks: " + name);
                     }
                 }
-                HibernateUtil.closeAndCommitTransaction();
+                if(!TaskLocatorUtil.getTaskClassesNoTransaction().contains(c)){
+                    HibernateUtil.closeAndCommitTransaction();
+                }
             }
             Logger.info(this, "Finishing Backported tasks.");
         } catch (Throwable e) {

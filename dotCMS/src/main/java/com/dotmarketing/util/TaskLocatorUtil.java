@@ -407,4 +407,14 @@ public class TaskLocatorUtil {
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
+	/**
+	 * List of tasks that are need to run without transaction. It can be all kind: Run-Once, Run-Always, Data, Backported, etc
+	 * @return The list of tasks
+	 */
+	public static List<Class<?>> getTaskClassesNoTransaction() {
+		final List<Class<?>> ret = new ArrayList<>();
+		ret.add(Task231207AddInodeAndIdentifierLeftIndexes.class);
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
+
 }
