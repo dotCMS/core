@@ -195,7 +195,7 @@ export function withEditor() {
                             : null
                     };
                 }),
-                $iframeURL: computed<string>(() => {
+                $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     const page = store.pageAPIResponse().page;
                     const vanityURL = store.pageAPIResponse().vanityUrl?.url;
                     const url = buildIframeURL({
