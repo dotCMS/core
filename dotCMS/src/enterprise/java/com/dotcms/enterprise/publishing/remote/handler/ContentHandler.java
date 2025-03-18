@@ -1044,7 +1044,6 @@ public class ContentHandler implements IHandler {
 									!RESPECT_FRONTEND_ROLES);
 
                     if (null == matchingContent || !UtilMethods.isSet(matchingContent.getIdentifier())) {
-						Logger.info(ContentHandler.class, "EXCEPTION");
                         // It might be that the matching content doesn't exist in the DB anymore, or is archived
                         throw new DotDataException(getUniqueMatchErrorMsg(uniqueFields, luceneQuery.toString(),
                                 contentlets.get(0)));
