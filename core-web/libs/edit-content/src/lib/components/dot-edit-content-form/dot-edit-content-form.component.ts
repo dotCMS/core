@@ -189,14 +189,13 @@ export class DotEditContentFormComponent implements OnInit {
 
     constructor() {
         /**
-         * Effect that enables or disables the form based on the loading or locked state.
+         * Effect that enables or disables the form based on the loading state.
          */
         effect(
             () => {
                 const isLoading = this.$store.isLoading();
-                const isLocked = this.$store.isContentLocked();
 
-                if (isLoading || isLocked) {
+                if (isLoading) {
                     this.form.disable();
                 } else {
                     this.form.enable();
