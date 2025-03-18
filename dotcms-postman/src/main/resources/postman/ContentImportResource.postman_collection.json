@@ -3132,7 +3132,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "resources/ContentImportResource/test-import-with-error.csv"
+									"src": "resources/ContentImportResource/test-import-has-error.csv"
 								},
 								{
 									"key": "form",
