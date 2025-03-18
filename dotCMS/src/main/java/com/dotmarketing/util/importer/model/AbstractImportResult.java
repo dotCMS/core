@@ -8,7 +8,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
 
 /**
  * Immutable data structure representing the complete results of an import operation.
@@ -109,10 +108,4 @@ public interface AbstractImportResult extends Serializable {
         PUBLISH,
         PREVIEW
     }
-
-    /**
-     * Here to help troubleshoot issues with the import process.
-     * @return true if the import process should stop on error, false otherwise
-     */
-    boolean stopOnError();
 }
