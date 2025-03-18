@@ -8,6 +8,7 @@ import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
+import { withTrack } from './features/track/withTrack';
 import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
@@ -178,5 +179,6 @@ export const UVEStore = signalStore(
     withLoad(),
     withLayout(),
     withEditor(),
+    withTrack(),
     withFlags(UVE_FEATURE_FLAGS)
 );

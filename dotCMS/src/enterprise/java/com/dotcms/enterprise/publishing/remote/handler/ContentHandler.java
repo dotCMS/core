@@ -250,6 +250,8 @@ public class ContentHandler implements IHandler {
         Contentlet content = null;
 		ContentWrapper wrapper = null;
 		final Collection<File> contents = contentsIn.stream().filter(File::isFile).collect(Collectors.toList());
+		final Collection<String> alreadyDeleted = new HashSet<>();
+
     	try{
 	        final XStream xstream = XStreamHandler.newXStreamInstance();
 			final Set<Pair<String,Long>> pushedIdsToIgnore = new HashSet<>();
@@ -351,8 +353,13 @@ public class ContentHandler implements IHandler {
 						pushedIdsToIgnore.add(idAndLanguageKey);
 					} else {
 						// Finally, this operation (UNPUBLISH) deletes a Content altogether
-						archiveOrDeleteContent(content, systemUser, isHost, remoteLocalLanguages, false);
-						Logger.debug(this, () -> "Content deleted: " + contentId
+
+						if (!alreadyDeleted.contains(contentId)) {
+							archiveOrDeleteContent(content, systemUser, isHost, remoteLocalLanguages, false);
+						}
+
+						alreadyDeleted.add(contentId);
+						Logger.info(this, () -> "Content deleted: " + contentId
 								+ " , inode: " + contentInode + " , language: " + languageId);
 					}
 				} catch (final FileAssetValidationException e1){
@@ -1028,12 +1035,14 @@ public class ContentHandler implements IHandler {
 				final List<ContentletSearch> contentlets = this.contentletAPI
 						.searchIndex(luceneQuery.toString(), limit, offset, sortBy,
 								systemUser, !RESPECT_FRONTEND_ROLES);
+
 				if (null != contentlets && contentlets.size() > 0) {
 					// A contentlet with different Identifier but same unique value has been found. Update the local
                     // one WITHOUT CHANGING the local Identifier and Inode
 					final Contentlet matchingContent =
 							this.contentletAPI.find(contentlets.get(0).getInode(), systemUser,
 									!RESPECT_FRONTEND_ROLES);
+
                     if (null == matchingContent || !UtilMethods.isSet(matchingContent.getIdentifier())) {
                         // It might be that the matching content doesn't exist in the DB anymore, or is archived
                         throw new DotDataException(getUniqueMatchErrorMsg(uniqueFields, luceneQuery.toString(),
@@ -1198,7 +1207,8 @@ public class ContentHandler implements IHandler {
 	 * @throws Exception
 	 *             An error occurred when deleting the specified asset.
 	 */
-	private void archiveOrDeleteContent(Contentlet content, final User user, final boolean isHost, final Pair<Long, Long> remoteLocalLanguages, final boolean isPushedContentArchived)
+	private void archiveOrDeleteContent(Contentlet content, final User user, final boolean isHost,
+										final Pair<Long, Long> remoteLocalLanguages, final boolean isPushedContentArchived)
             throws Exception
     {
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
@@ -1214,9 +1224,11 @@ public class ContentHandler implements IHandler {
 			// if the content is not live, then we don't need to unpublish it
 			Optional<ContentletVersionInfo> existingInfoOptional = Optional.empty();
             final List<Contentlet> contents = findContents(content.getIdentifier(), user);
+
             if (UtilMethods.isSet(contents)) {
 				final Optional<Contentlet> contentletOptional = contents.stream()
 						.filter(c -> c.getLanguageId() == remoteLocalLanguages.getRight()).findFirst();
+
 				if (contentletOptional.isPresent()) {
 					final Contentlet existingContent = contentletOptional.get();
 					existingInfoOptional = this.versionableAPI.getContentletVersionInfo(
@@ -1261,7 +1273,7 @@ public class ContentHandler implements IHandler {
 			if (isPushedContentArchived) {
 				this.contentletAPI.archive(content, user, !RESPECT_FRONTEND_ROLES);
 			} else {
-				this.contentletAPI.delete(content, user, !RESPECT_FRONTEND_ROLES, true);
+				this.contentletAPI.destroy(content, user, !RESPECT_FRONTEND_ROLES);
 			}
 
 			PushPublishLogger.log(getClass(),
@@ -1293,6 +1305,7 @@ public class ContentHandler implements IHandler {
         final String sortBy = null;
         String luceneQuery = "+identifier:" + identifier + " +live:true";
         List<Contentlet> contents = contentletAPI.search(luceneQuery, limit, offset, sortBy, user, !RESPECT_FRONTEND_ROLES);
+
         if (contents.isEmpty()) {
             luceneQuery = "+identifier:" + identifier + " +working:true";
             contents = contentletAPI.search(luceneQuery, limit, offset, sortBy, user, !RESPECT_FRONTEND_ROLES);

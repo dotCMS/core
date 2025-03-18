@@ -84,7 +84,7 @@
     var actions = "";
 
     function refresh() {
-        var hashReceived = decodeURIComponent(dojo.hash());
+        var hashReceived = dojo.hash();
         var inode = "0";
         var name = "<%= LanguageUtil.get(pageContext, "Top-Level") %>";
         var hashToSend = null;
