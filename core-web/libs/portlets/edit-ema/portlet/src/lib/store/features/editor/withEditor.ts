@@ -49,7 +49,10 @@ import { withClient } from '../client/withClient';
 
 const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
     if (isTraditionalPage) {
-        return `about:blank?t=${Date.now()}`;
+        // Force iframe reload on every page load to avoid caching issues and window dirty state
+        // We need a new reference to avoid the iframe to be cached
+        // More reference: https://github.com/dotCMS/core/issues/30981
+        return new String('');
     }
 
     const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
