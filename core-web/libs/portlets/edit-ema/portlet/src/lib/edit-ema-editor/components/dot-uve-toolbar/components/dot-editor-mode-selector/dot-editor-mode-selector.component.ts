@@ -12,6 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotAnalyticsTrackerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -27,10 +28,9 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 })
 export class DotEditorModeSelectorComponent {
     readonly #store = inject(UVEStore);
-
+    readonly #analyticsTracker = inject(DotAnalyticsTrackerService);
     readonly $menuItems = computed(() => {
         const canEditPage = this.#store.canEditPage();
-        const hasLiveVersion = this.#store.pageAPIResponse().page.live;
         const menu = [];
 
         if (canEditPage) {
@@ -47,13 +47,11 @@ export class DotEditorModeSelectorComponent {
             id: UVE_MODE.PREVIEW
         });
 
-        if (hasLiveVersion) {
-            menu.push({
-                label: 'uve.editor.mode.published',
-                description: 'uve.editor.mode.published.description',
-                id: UVE_MODE.LIVE
-            });
-        }
+        menu.push({
+            label: 'uve.editor.mode.published',
+            description: 'uve.editor.mode.published.description',
+            id: UVE_MODE.LIVE
+        });
 
         return menu;
     });
@@ -68,15 +66,9 @@ export class DotEditorModeSelectorComponent {
         () => {
             const currentMode = untracked(() => this.$currentMode());
             const canEditPage = this.#store.canEditPage();
-            const hasLiveVersion = this.#store.pageAPIResponse().page.live;
 
             // If the user is in edit mode and does not have edit permission, change to preview mode
             if (currentMode === UVE_MODE.EDIT && !canEditPage) {
-                this.onModeChange(UVE_MODE.PREVIEW);
-            }
-
-            // If the user is in live mode and does not have a live version, change to preview mode
-            if (currentMode === UVE_MODE.LIVE && !hasLiveVersion) {
                 this.onModeChange(UVE_MODE.PREVIEW);
             }
         },
@@ -91,6 +83,11 @@ export class DotEditorModeSelectorComponent {
         if (mode === UVE_MODE.EDIT) {
             this.#store.clearDeviceAndSocialMedia();
         }
+
+        this.#store.trackUVEModeChange({
+            fromMode: this.$currentMode(),
+            toMode: mode
+        });
 
         this.#store.loadPageAsset({
             mode: mode,

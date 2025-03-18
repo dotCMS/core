@@ -17,17 +17,21 @@ import { Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, switchMap, take } from 'rxjs/operators';
+import { filter, switchMap, take, map } from 'rxjs/operators';
 
 import {
     DotContentletService,
     DotHttpErrorManagerService,
     DotLanguagesService,
-    DotMessageService
+    DotMessageService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import { DotEditContentSidebarUntranslatedLocaleComponent } from '@dotcms/edit-content/components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
-import { sortLocalesTranslatedFirst } from '@dotcms/edit-content/utils/functions.util';
+import {
+    prepareContentletForCopy,
+    sortLocalesTranslatedFirst
+} from '@dotcms/edit-content/utils/functions.util';
 
 import { ContentState } from './content.feature';
 import { FormState } from './form.feature';
@@ -35,7 +39,7 @@ import { WorkflowState } from './workflow.feature';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { EditContentRootState } from '../../store/edit-content.store';
-import { parseCurrentActions } from '../../utils/workflows.utils';
+import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
 
 export interface LocalesState {
     locales: DotLanguage[] | null;
@@ -85,7 +89,8 @@ export function withLocales() {
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
                 dotMessageService = inject(DotMessageService),
                 dialogService = inject(DialogService),
-                router = inject(Router)
+                router = inject(Router),
+                workflowActionService = inject(DotWorkflowsActionsService)
             ) => ({
                 /**
                  * Loads the locales based on a content identifier and updates the state accordingly.
@@ -234,21 +239,27 @@ export function withLocales() {
                                 ref.onClose
                                     .pipe(
                                         take(1),
-                                        filter((value) => value)
+                                        filter((value) => value),
+                                        switchMap((copyType) => {
+                                            return workflowActionService
+                                                .getDefaultActions(store.contentType()?.variable)
+                                                .pipe(map((schemes) => ({ copyType, schemes })));
+                                        })
                                     )
-                                    .subscribe((copyType) => {
-                                        const schemes = store.schemes();
-                                        const schemeIds = Object.keys(schemes);
+                                    .subscribe(({ copyType, schemes }) => {
+                                        // Convert the schemes to an object with the schemeId as the key
+                                        const parsedSchemes = parseWorkflows(schemes);
+                                        const schemeIds = Object.keys(parsedSchemes);
                                         // If we have only one scheme, we set it as the default one
                                         const defaultSchemeId =
                                             schemeIds.length === 1 ? schemeIds[0] : null;
                                         // Parse the actions as an object with the schemeId as the key
                                         const parsedCurrentActions = parseCurrentActions(
-                                            schemes[defaultSchemeId]?.actions || []
+                                            parsedSchemes[defaultSchemeId]?.actions || []
                                         );
-
                                         patchState(store, {
                                             currentLocale: locale,
+                                            schemes: parsedSchemes,
                                             currentSchemeId: defaultSchemeId,
                                             currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
@@ -256,7 +267,9 @@ export function withLocales() {
                                             error: null,
                                             formValues: null,
                                             contentlet:
-                                                copyType === 'populate' ? store.contentlet() : null
+                                                copyType === 'populate'
+                                                    ? prepareContentletForCopy(store.contentlet())
+                                                    : null
                                         });
                                     });
 

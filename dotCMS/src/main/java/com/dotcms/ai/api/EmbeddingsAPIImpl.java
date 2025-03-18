@@ -5,14 +5,13 @@ import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.client.AIProxyClient;
+import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.db.EmbeddingsDTO.Builder;
 import com.dotcms.ai.db.EmbeddingsFactory;
-import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -21,7 +20,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotcms.rest.ContentResource;
+import com.dotcms.rest.ContentHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -377,9 +376,8 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
     private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {
         return Try.of(() ->
-                ContentResource.contentletToJSON(
+                ContentHelper.getInstance().contentletToJSON(
                         APILocator.getContentletAPI().find(dto.inode, user, true),
-                        HttpServletRequestThreadLocal.INSTANCE.getRequest(),
                         HttpServletResponseThreadLocal.INSTANCE.getResponse(),
                         "false",
                         user,

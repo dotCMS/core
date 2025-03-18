@@ -21,6 +21,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
+    DotAnalyticsTrackerService,
     DotContentTypeService,
     DotContentletLockerService,
     DotContentletService,
@@ -58,6 +59,7 @@ import {
 import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -76,6 +78,7 @@ import {
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
+import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -88,7 +91,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW, HOST, PERSONA_KEY } from '../shared/consts';
+import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
@@ -236,6 +239,12 @@ const createRouting = () =>
             DotTempFileUploadService,
             DotAlertConfirmService,
             {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
+            {
                 provide: DotHttpErrorManagerService,
                 useValue: new MockDotHttpErrorManagerService()
             },
@@ -369,7 +378,7 @@ describe('EditEmaEditorComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: 1, url: 'page-one' },
+                queryParams: { language_id: 1, url: 'index' },
                 data: {
                     data: {
                         url: 'http://localhost:3000'
@@ -476,11 +485,26 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should relaod when Block editor is saved', () => {
+            it('should reload when Block editor is saved', () => {
                 const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
                 const spy = jest.spyOn(store, 'reloadCurrentPage');
                 blockEditorSidebar.onSaved.emit();
                 expect(spy).toHaveBeenCalled();
+            });
+
+            it('should show the error component when there is no live version', () => {
+                const errorComponent = spectator.query(DotUvePageVersionNotFoundComponent);
+
+                spectator.detectChanges();
+
+                store.loadPageAsset({
+                    url: 'index',
+                    language_id: '9'
+                });
+
+                spectator.detectChanges();
+
+                expect(errorComponent).toBeDefined();
             });
         });
 
@@ -2573,7 +2597,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/page-one?language_id=1'
+                        'http://localhost:3000/index?language_id=1'
                     );
                 });
 

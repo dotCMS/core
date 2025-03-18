@@ -11,6 +11,7 @@ import io.quarkus.arc.Arc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
@@ -32,9 +33,9 @@ class CustomConfigurationUtil {
 
         cmdLine.setCaseInsensitiveEnumValuesAllowed(true)
                 .setExecutionStrategy(new DotExecutionStrategy(
-                    new CommandLine.RunLast(), new SubcommandProcessor(),
-                    Arc.container().instance(DirectoryWatcherService.class).get(),
-                    Arc.container().instance(ServiceManager.class).get())
+                        new CommandLine.RunLast(), new SubcommandProcessor(),
+                        Arc.container().instance(DirectoryWatcherService.class).get(),
+                        Arc.container().instance(ServiceManager.class).get())
                 )
                 .setExecutionExceptionHandler(new DotExceptionHandler())
                 .setExitCodeExceptionMapper(new DotExitCodeExceptionMapper());

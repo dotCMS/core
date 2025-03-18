@@ -63,3 +63,4 @@ export * from './lib/dot-resource-links/dot-resource-links.service';
 export * from './lib/dot-ai/dot-ai.service';
 export * from './lib/dot-analytics-search/dot-analytics-search.service';
 export * from './lib/dot-field/dot-field.service';
+export * from './lib/dot-analytics-tracker/dot-analytics-tracker.service';

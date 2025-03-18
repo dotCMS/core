@@ -2,10 +2,10 @@
 
 import { CollectionBuilder } from './collection';
 
-import { Equals } from '../../../../query-builder/lucene-syntax';
-import { ClientOptions } from '../../../sdk-js-client';
+import { ClientOptions } from '../../../../deprecated/sdk-js-client';
 import { CONTENT_API_URL } from '../../shared/const';
 import { SortBy } from '../../shared/types';
+import { Equals } from '../query/lucene-syntax';
 
 global.fetch = jest.fn().mockReturnValue(
     Promise.resolve({

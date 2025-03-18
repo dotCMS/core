@@ -47,10 +47,8 @@ public interface Collector {
     String USER_AGENT = "userAgent";
     String UTC_TIME = "utc_time";
 
-
     String RESPONSE = "action";
     String RESPONSE_CODE = "response_code";
-
 
     String DETAIL_PAGE_URL = "detail_page_url";
     String IS_EXPERIMENT_PAGE = "isexperimentpage";
@@ -61,6 +59,13 @@ public interface Collector {
 
     String EMAIL = "email";
     String USER_OBJECT = "user";
+
+    String CUSTOMER_NAME = "customer_name";
+    String CUSTOMER_CATEGORY = "customer_category";
+    String ENVIRONMENT_NAME = "environment_name";
+    String ENVIRONMENT_VERSION = "environment_version";
+    String HTTP_RESPONSE_CODE = "http_response_code";
+
     /**
      * Test if the collector should run
      * @param collectorContextMap

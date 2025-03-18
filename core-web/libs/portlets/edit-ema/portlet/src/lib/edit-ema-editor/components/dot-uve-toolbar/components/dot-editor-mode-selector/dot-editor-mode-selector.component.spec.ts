@@ -2,7 +2,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAnalyticsTrackerService, DotMessageService } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
@@ -31,6 +31,7 @@ describe('DotEditorModeSelectorComponent', () => {
                 live: true
             }
         },
+        hasLiveVersion: true,
         pageParams
     };
 
@@ -38,8 +39,10 @@ describe('DotEditorModeSelectorComponent', () => {
         canEditPage: signal(mockStoreState.canEditPage),
         pageAPIResponse: signal(mockStoreState.pageAPIResponse),
         pageParams: signal(mockStoreState.pageParams),
+        $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
         clearDeviceAndSocialMedia: jest.fn(),
-        loadPageAsset: jest.fn()
+        loadPageAsset: jest.fn(),
+        trackUVEModeChange: jest.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -48,6 +51,12 @@ describe('DotEditorModeSelectorComponent', () => {
             {
                 provide: UVEStore,
                 useValue: mockStore
+            },
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
             },
             {
                 provide: DotMessageService,
@@ -78,22 +87,6 @@ describe('DotEditorModeSelectorComponent', () => {
             const menuItems = component.$menuItems();
             expect(menuItems).toHaveLength(2);
             expect(menuItems.map((item) => item.id)).not.toContain(UVE_MODE.EDIT);
-        });
-
-        it('should exclude LIVE mode when page has no live version', () => {
-            mockStore.pageAPIResponse.set({
-                ...MOCK_RESPONSE_HEADLESS,
-                page: {
-                    ...MOCK_RESPONSE_HEADLESS.page,
-                    live: false
-                }
-            });
-            mockStore.canEditPage.set(true);
-
-            spectator.detectChanges();
-            const menuItems = component.$menuItems();
-            expect(menuItems).toHaveLength(2);
-            expect(menuItems.map((item) => item.id)).not.toContain(UVE_MODE.LIVE);
         });
     });
 
@@ -135,27 +128,16 @@ describe('DotEditorModeSelectorComponent', () => {
     });
 
     describe('$modeGuardEffect', () => {
-        it('should switch to PREVIEW mode when in EDIT mode without edit permission', () => {
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
-            mockStore.canEditPage.set(false);
-
-            spectator.detectChanges();
-
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                mode: UVE_MODE.PREVIEW,
-                publishDate: undefined
-            });
+        beforeEach(() => {
+            // Reset mock store to initial state
+            mockStore.canEditPage.set(true);
+            mockStore.pageParams.set(pageParams);
+            jest.clearAllMocks();
         });
 
-        it('should switch to PREVIEW mode when in LIVE mode without live version', () => {
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.LIVE });
-            mockStore.pageAPIResponse.set({
-                ...MOCK_RESPONSE_HEADLESS,
-                page: {
-                    ...MOCK_RESPONSE_HEADLESS.page,
-                    live: false
-                }
-            });
+        it('should switch to PREVIEW mode when in EDIT mode without edit permission', () => {
+            mockStore.canEditPage.set(false);
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
 
             spectator.detectChanges();
 
@@ -172,6 +154,7 @@ describe('DotEditorModeSelectorComponent', () => {
             mockStore.canEditPage.set(true);
             mockStore.pageAPIResponse.set(MOCK_RESPONSE_HEADLESS);
             mockStore.pageParams.set(pageParams);
+            mockStore.$hasLiveVersion.set(true);
         });
 
         it('should show menu when clicking the button', () => {
@@ -200,6 +183,27 @@ describe('DotEditorModeSelectorComponent', () => {
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
                 mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
+            });
+        });
+
+        it('should track mode change when clicking a menu item', () => {
+            // Setup initial state as EDIT mode
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
+            spectator.detectChanges();
+
+            // Open menu
+            const button = spectator.query('[data-testId="more-button"]');
+            spectator.click(button);
+            spectator.detectChanges();
+
+            // Click the Preview mode menu item
+            const menuItems = spectator.queryAll('.menu-item');
+            const previewMenuItem = menuItems[1]; // Preview is second item
+            spectator.click(previewMenuItem);
+
+            expect(mockStore.trackUVEModeChange).toHaveBeenCalledWith({
+                toMode: UVE_MODE.PREVIEW,
+                fromMode: UVE_MODE.EDIT
             });
         });
 

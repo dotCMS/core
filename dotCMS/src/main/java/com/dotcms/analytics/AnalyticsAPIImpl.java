@@ -66,6 +66,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI, EventSubscriber<SystemTab
 
     @Override
     public void notify(final SystemTableUpdatedKeyEvent event) {
+        Logger.info(this, String.format("Received event with key [%s]", event.getKey()));
         if (event.getKey().contains(ANALYTICS_IDP_URL_KEY)) {
             analyticsIdpUrl.set(resolveAnalyticsIdpUrl());
         } else if (event.getKey().contains(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY)) {
@@ -368,7 +369,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI, EventSubscriber<SystemTab
             .setTryAgainAttempts(accessTokenRenewAttempts.get())
             .setHeaders(accessTokenHeaders())
             .setRawData(prepareRequestData(analyticsApp))
-            .setThrowWhenNot2xx(false)
+            .setThrowWhenError(false)
             .build()
             .doResponse(AccessToken.class);
         logTokenResponse(response, analyticsApp);
@@ -413,28 +414,19 @@ public class AnalyticsAPIImpl implements AnalyticsAPI, EventSubscriber<SystemTab
     private CircuitBreakerUrl.Response<AnalyticsKey> requestAnalyticsKey(final AnalyticsApp analyticsApp,
                                                                          final AccessToken accessToken)
             throws AnalyticsException {
+        AnalyticsHelper.get().checkAccessToken(accessToken);
         final CircuitBreakerUrl.Response<AnalyticsKey> response = CircuitBreakerUrl.builder()
             .setMethod(CircuitBreakerUrl.Method.GET)
             .setUrl(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
             .setTimeout(analyticsKeyRenewTimeout.get())
             .setTryAgainAttempts(analyticsKeyRenewAttempts.get())
-            .setHeaders(analyticsKeyHeaders(accessToken))
-            .setThrowWhenNot2xx(false)
+            .setAuthHeaders(accessToken.accessToken())
+            .setThrowWhenError(false)
             .build()
             .doResponse(AnalyticsKey.class);
         logKeyResponse(response, analyticsApp);
 
         return response;
-    }
-
-    /**
-     * Prepares access token request headers in a {@link Map} with values found in a {@link AccessToken} instance.
-     *
-     * @param accessToken access token
-     * @return map representation of http headers
-     */
-    private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
-        return CircuitBreakerUrl.authHeaders(AnalyticsHelper.get().formatBearer(accessToken));
     }
 
 }

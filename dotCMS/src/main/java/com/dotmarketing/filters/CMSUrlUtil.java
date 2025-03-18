@@ -655,4 +655,14 @@ public class CMSUrlUtil {
 		return urlPath.substring(urlPath.indexOf(FORWARD_SLASH) + 1, urlPath.indexOf(UNDERLINE));
 	}
 
+	/**
+	 * Test the request to see if it is a dotAdmin request
+	 * @param request the request to test
+	 * @return true if the request is a dotAdmin request
+	 */
+	public static boolean isDotAdminRequest(HttpServletRequest request) {
+		final String referer = request.getHeader("referer");
+		return  referer != null && referer.contains("/dotAdmin");
+	}
+
 }

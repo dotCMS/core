@@ -1,4 +1,4 @@
-import { createDirectiveFactory, createFakeEvent, SpectatorDirective } from '@ngneat/spectator';
+import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -48,7 +48,7 @@ describe('DotSiteSelectorDirective', () => {
         let getSitesSpy;
 
         beforeEach(() => {
-            getSitesSpy = spyOn(dotSiteService, 'getSites').and.returnValue(of(mockSites));
+            getSitesSpy = jest.spyOn(dotSiteService, 'getSites').mockReturnValue(of(mockSites));
         });
 
         it('should get sites list', () => {
@@ -62,7 +62,7 @@ describe('DotSiteSelectorDirective', () => {
         it('should get sites list with filter', fakeAsync(() => {
             const event: DropdownFilterEvent = {
                 filter: 'demo',
-                originalEvent: createFakeEvent('click')
+                originalEvent: new MouseEvent('click')
             };
             dropdown.onFilter.emit(event);
 
@@ -73,7 +73,9 @@ describe('DotSiteSelectorDirective', () => {
 
     describe('Listen login-as/logout-as events', () => {
         it('should send notification when login-as/logout-as', fakeAsync(() => {
-            const getSitesSpy = spyOn(dotSiteService, 'getSites').and.returnValue(of(mockSites));
+            const getSitesSpy = jest
+                .spyOn(dotSiteService, 'getSites')
+                .mockReturnValue(of(mockSites));
             spectator.detectChanges();
             dotEventsService.notify('login-as');
             spectator.tick(0);

@@ -1,5 +1,8 @@
 package com.dotmarketing.util;
 
+import static com.dotmarketing.util.importer.HeaderValidationCodes.HEADERS_NOT_FOUND;
+import static com.dotmarketing.util.importer.ImportLineValidationCodes.LANGUAGE_NOT_FOUND;
+
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -23,12 +26,12 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
-import com.dotmarketing.portlets.contentlet.action.ImportContentletsAction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
@@ -55,13 +58,15 @@ import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
 import com.dotmarketing.util.importer.exception.HeaderValidationException;
 import com.dotmarketing.util.importer.exception.ImportLineException;
-import com.dotmarketing.util.importer.model.AbstractSpecialHeaderInfo.SpecialHeaderType;
+import com.dotmarketing.util.importer.exception.ValidationMessageException;
+import com.dotmarketing.util.importer.model.AbstractImportResult.OperationType;
 import com.dotmarketing.util.importer.model.AbstractValidationMessage.ValidationMessageType;
 import com.dotmarketing.util.importer.model.ContentSummary;
 import com.dotmarketing.util.importer.model.ContentletSearchResult;
 import com.dotmarketing.util.importer.model.FieldProcessingResult;
 import com.dotmarketing.util.importer.model.FieldsProcessingResult;
 import com.dotmarketing.util.importer.model.FileInfo;
+import com.dotmarketing.util.importer.model.FileInfo.Builder;
 import com.dotmarketing.util.importer.model.HeaderInfo;
 import com.dotmarketing.util.importer.model.HeaderValidationResult;
 import com.dotmarketing.util.importer.model.ImportResult;
@@ -77,7 +82,6 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -105,7 +109,6 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Provides utility methods to import content into dotCMS. The data source is a
@@ -122,7 +125,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ImportUtil {
 
-    public static final String LINE_NO = "Line #";
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final static ContentletAPI conAPI = APILocator.getContentletAPI();
     private final static CategoryAPI catAPI = APILocator.getCategoryAPI();
@@ -144,9 +146,9 @@ public class ImportUtil {
 
     private final static String languageCodeHeader = "languageCode";
     private final static String countryCodeHeader = "countryCode";
+    public final static String identifierHeader = "Identifier";
 
     private final static int commitGranularity = 100;
-    private final static int sleepTime = 200;
 
     public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
         "MM/dd/yy hh:mm aa", "MM/dd/yyyy hh:mm aa",	"MM/dd/yy HH:mm", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d",
@@ -173,6 +175,11 @@ public class ImportUtil {
      * the system try to import the contents right away. The method will also
      * return a summary with the status of the operation.</li>
      * </ul>
+     *
+     * For new implementations, consider using {@link #importFileResult} which provides
+     * a more structured response format.
+     * <p>
+     * This method maintains backwards compatibility with existing code.
      *
      * @param importId
      *            - The ID of this data import.
@@ -226,123 +233,90 @@ public class ImportUtil {
             int countryCodeHeaderColumn, Reader reader, String wfActionId,
             final HttpServletRequest request) throws DotRuntimeException, DotDataException {
 
-        return importFile(importId, currentSiteId, contentTypeInode, keyfields, preview,
-                isMultilingual, user, language, csvHeaders, csvreader, languageCodeHeaderColumn,
-                countryCodeHeaderColumn, wfActionId, request, null);
+        ImportResult result = importFileResult(importId, currentSiteId, contentTypeInode,
+                keyfields, preview, isMultilingual, user, language, csvHeaders, csvreader,
+                languageCodeHeaderColumn, countryCodeHeaderColumn, wfActionId, 0,
+                request, null);
+        return ImportResultConverter.toLegacyFormat(result, user);
     }
 
-	/**
-	 * Imports the data contained in a CSV file into dotCMS. The data can be
-	 * either new or an update for existing content. The {@code preview}
-	 * parameter determines the behavior of this method:
-	 * <ul>
-	 * <li>{@code preview == true}: This is the ideal approach. The data
-	 * contained in the CSV file is previously analyzed and evaluated
-	 * <b>BEFORE</b> actually committing any changes to existing contentlets or
-	 * adding new ones. This way, users can perform the appropriate corrections
-	 * (if needed) before submitting the new contents.</li>
-	 * <li>{@code preview == false}: Setting the parameter this way will make
-	 * the system try to import the contents right away. The method will also
-	 * return a summary with the status of the operation.</li>
-	 * </ul>
-	 *
-	 * @param importId
-	 *            - The ID of this data import.
-	 * @param currentSiteId
-	 *            - The ID of the Site where the content will be added/updated.
-	 * @param contentTypeInode
-	 *            - The Inode of the Content Type that the content is associated
-	 *            to.
-	 * @param keyfields
-	 *            - The Inodes of the fields used to associated existing dotCMS
-	 *            contentlets with the information in this file. Can be empty.
-	 * @param preview
-	 *            - Set to {@code true} if an analysis and evaluation of the
-	 *            imported data will be generated <b>before</b> actually
-	 *            importing the data. Otherwise, set to {@code false}.
-	 * @param isMultilingual
-	 *            - If set to {@code true}, the CSV file will import contents in
-	 *            more than one language. Otherwise, set to {@code false}.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param language
-	 *            - The language ID for the contents. If the ID equals -1, the
-	 *            columns for language code and country code will be used to
-	 *            infer the language ID.
-	 * @param csvHeaders
-	 *            - The headers for each column in the CSV file.
-	 * @param csvreader
-	 *            - The actual data contained in the CSV file.
-	 * @param languageCodeHeaderColumn
-	 *            - The column name containing the language code.
-	 * @param countryCodeHeaderColumn
-	 *            - The column name containing the country code.
-     * @param wfActionId
-     *            - The workflow Action Id to execute on the import
-     * @param request
-     *            - The request object.
-     * @param progressCallback
-     *           - A callback function to report progress.
-	 * @return The resulting analysis performed on the CSV file. This provides
-	 *         information regarding inconsistencies, errors, warnings and/or
-	 *         precautions to the user.
-	 * @throws DotRuntimeException
-	 *             An error occurred when analyzing the CSV file.
-	 * @throws DotDataException
-	 *             An error occurred when analyzing the CSV file.
-	 */
-    public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId,
-            String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual,
-            User user, long language, String[] csvHeaders, CsvReader csvreader,
-            int languageCodeHeaderColumn, int countryCodeHeaderColumn, String wfActionId,
+    /**
+     * Imports the data contained in a CSV file into dotCMS. This method is the preferred way to
+     * handle imports as it provides a structured result object containing detailed validation,
+     * error tracking, and processing information.
+     *
+     * <p>The preview parameter determines the behavior:
+     * <ul>
+     *   <li>{@code preview == true}: Analyzes and validates data before committing changes</li>
+     *   <li>{@code preview == false}: Attempts immediate import with result summary</li>
+     * </ul>
+     *
+     * @param importId                 ID of this data import
+     * @param currentSiteId            ID of the Site for content
+     * @param contentTypeInode         Content Type Inode
+     * @param keyfields                Field Inodes for content matching
+     * @param preview                  If true, validates without saving
+     * @param isMultilingual           If true, handles multiple languages
+     * @param user                     User performing the import
+     * @param language                 Language ID (-1 for language from CSV)
+     * @param csvHeaders               Headers from CSV file
+     * @param csvreader                CSV file reader
+     * @param languageCodeHeaderColumn Language code column index
+     * @param countryCodeHeaderColumn  Country code column index
+     * @param wfActionId               Workflow action ID
+     * @param fileTotalLines           The total lines count of the CSV file
+     * @param request                  HTTP request context
+     * @param progressCallback         Optional callback for progress updates
+     * @return Structured ImportResult containing validation and processing details
+     * @throws DotRuntimeException If a critical error occurs
+     * @throws DotDataException    If a data access error occurs
+     */
+    public static ImportResult importFileResult(
+            Long importId, String currentSiteId, String contentTypeInode, String[] keyfields,
+            boolean preview, boolean isMultilingual, User user, long language,
+            String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn,
+            int countryCodeHeaderColumn, String wfActionId, final long fileTotalLines,
             final HttpServletRequest request, final LongConsumer progressCallback)
             throws DotRuntimeException, DotDataException {
 
-        final HashMap<String, List<String>> results = new HashMap<>();
-        results.put(KEY_WARNINGS, new ArrayList<>());
-        results.put(KEY_ERRORS, new ArrayList<>());
-        results.put(KEY_MESSAGES, new ArrayList<>());
-        results.put(KEY_RESULTS, new ArrayList<>());
-        results.put(KEY_COUNTERS, new ArrayList<>());
-        results.put(KEY_IDENTIFIERS, new ArrayList<>());
-        results.put(KEY_UPDATED_INODES, new ArrayList<>());
-        results.put(KEY_LAST_INODE, new ArrayList<>());
-        results.put(Contentlet.WORKFLOW_ACTION_KEY, new ArrayList<>());
-
-        Structure contentType = CacheLocator.getContentTypeCache().getStructureByInode (contentTypeInode);
+        Structure contentType = CacheLocator.getContentTypeCache()
+                .getStructureByInode(contentTypeInode);
         List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
         List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<>();
-        List<Field> uniqueFields = new ArrayList<>();
 
-        //Initializing variables
-        int lines = 1;
-        int errors = 0;
+        // Initialize processing variables
+        int failedRows = 0;
         int lineNumber = 0;
 
+        // Initialize counters
         final Counters counters = new Counters();
         final HashSet<String> keyContentUpdated = new HashSet<>();
-        final StringBuilder choosenKeyField = new StringBuilder();
+        final Set<String> chosenKeyFields = new HashSet<>();
 
-        // Data structures to be populated by header validation
+        // Processing maps
         final Map<Integer, Field> headers = new HashMap<>();
         final Map<Integer, Field> keyFields = new HashMap<>();
         final Map<Integer, Relationship> relationships = new HashMap<>();
         final Map<Integer, Boolean> onlyParent = new HashMap<>();
         final Map<Integer, Boolean> onlyChild = new HashMap<>();
 
-        //Get unique fields for structure
-        for(Field field : FieldsCache.getFieldsByStructureInode(contentType.getInode())){
-            if(field.isUnique()){
-                uniqueFields.add(field);
-            }
-        }
+        // Get unique fields
+        final List<Field> uniqueFields = FieldsCache.getFieldsByStructureInode(contentType.getInode())
+                .stream()
+                .filter(Field::isUnique)
+                .collect(Collectors.toList());
 
-        //Parsing the file line per line
+        // Results builder
+        final FileInfo.Builder fileInfoBuilder = FileInfo.builder();
+        HeaderValidationResult headerValidation;
+        final List<ValidationMessage> messages = new ArrayList<>();
+        final List<String> savedInodes = new ArrayList<>();
+        final List<String> updatedInodes = new ArrayList<>();
+
         try {
             if ((csvHeaders != null) || (csvreader.readHeaders())) {
 
-                // Process headers and get validation result
-                HeaderValidationResult headerValidation;
+                // Process headers
                 if (csvHeaders != null) {
                     headerValidation = importHeaders(csvHeaders, contentType, keyfields,
                             isMultilingual, user, headers, keyFields, uniqueFields, relationships,
@@ -353,210 +327,438 @@ public class ImportUtil {
                             onlyChild, onlyParent);
                 }
 
-                // ---
-                // Convert header validation results to legacy format
-                errors += ImportResultConverter.headerValidationResultsToLegacyMap(
-                        headerValidation, results
-                );
-                // ---
+                // Add header validation results
+                fileInfoBuilder.headerInfo(headerValidation.headerInfo());
+                messages.addAll(headerValidation.messages());
+
+                int identifierColumnIndex = -1;
+                int workflowActionIdColumnIndex = -1;
+                for (SpecialHeaderInfo specialHeader : headerValidation.headerInfo()
+                        .specialHeaders()) {
+                    if (specialHeader.header().equalsIgnoreCase(identifierHeader)) {
+                        identifierColumnIndex = specialHeader.columnIndex();
+                    } else if (specialHeader.header().
+                            equalsIgnoreCase(Contentlet.WORKFLOW_ACTION_KEY)) {
+                        workflowActionIdColumnIndex = specialHeader.columnIndex();
+                    }
+                }
 
                 lineNumber++;
 
                 // Log preview/import status every 100 processed records
-                //Reading the whole file
-                if (headers.size() > 0) {
+                // Reading the whole file
+                if (!headers.isEmpty()) {
+
                     if (!preview) {
                         HibernateUtil.startTransaction();
                     }
+
                     String[] csvLine;
                     while (csvreader.readRecord()) {
-                        if(ImportAuditUtil.cancelledImports.containsKey(importId)){
-                            break;
-                        }
+
                         lineNumber++;
                         csvLine = csvreader.getValues();
                         LineImportResultBuilder resultBuilder = null;
 
+                        // Check for cancellation
+                        if (ImportAuditUtil.cancelledImports.containsKey(importId)) {
+                            messages.add(ValidationMessage.builder()
+                                    .type(ValidationMessageType.INFO)
+                                    .lineNumber(lineNumber)
+                                    .message("Import cancelled by user")
+                                    .build());
+                            break;
+                        }
+
                         try {
-                            lines++;
-                            Logger.debug(ImportUtil.class, "Line " + lines + ": (" + csvreader.getRawRecord() + ").");
 
-                            //Importing a line
-                            Long languageToImport = language;
-                            if ( language == -1 ) {
-                                if ( languageCodeHeaderColumn != -1 && countryCodeHeaderColumn != -1 ) {
-                                    Language dotCMSLanguage = langAPI.getLanguage( csvLine[languageCodeHeaderColumn], csvLine[countryCodeHeaderColumn] );
-                                    languageToImport = dotCMSLanguage.getId();
-                                }
-                            }
+                            Logger.debug(ImportUtil.class,
+                                    "Line " + lineNumber + ": (" + csvreader.getRawRecord() + ").");
 
-                            if ( languageToImport != -1 ) {
-                                /*
-                                Verifies if there was already imported a record with the same keys.
-                                Useful to know if we have batch uploads with the same keys, mostly visible for batch content uploads with multiple languages
-                                 */
-                                boolean sameKeyBatchInsert = true;
-                                if ( keyFields != null && !keyFields.isEmpty() ) {
-                                    for ( Integer column : keyFields.keySet() ) {
-                                        Field keyField = keyFields.get( column );
-										if (!counters.matchKey(keyField.getVelocityVarName(), csvLine[column])) {
-                                            sameKeyBatchInsert = false;
-                                            break;
-                                        }
-                                    }
-                                }
+                            // Process language for line
+                            final Long languageToImport = processLanguage(language,
+                                    languageCodeHeaderColumn,
+                                    countryCodeHeaderColumn, csvLine);
+
+                            if (languageToImport != -1) {
+
+                                // Verifies if there was already imported a record with the same keys.
+                                // Useful to know if we have batch uploads with the same keys,
+                                // mostly visible for batch content uploads with multiple languages
+                                boolean sameKeyBatchInsert = checkBatchKeyMatches(keyFields,
+                                        csvLine, counters);
 
                                 // Get identifier from results if it exists
-                                final String identifier = getIdentifierFromResults(results,
-                                        csvLine);
-                                // Get workflow action id column index from results if it exists
-                                final int wfActionIdIndex = getWorkflowActionIdIndexFromResults(
-                                        results
+                                final String identifier = getIdentifierFromResults(
+                                        identifierColumnIndex, csvLine
                                 );
 
                                 //Importing content record...
                                 resultBuilder = new LineImportResultBuilder(lineNumber);
                                 importLine(csvLine, currentSiteId,
                                         contentType, preview, isMultilingual, user, identifier,
-                                        wfActionIdIndex, lineNumber, languageToImport, headers,
-                                        keyFields, choosenKeyField, keyContentUpdated,
+                                        workflowActionIdColumnIndex, lineNumber, languageToImport,
+                                        headers, keyFields, chosenKeyFields, keyContentUpdated,
                                         contentTypePermissions, uniqueFieldBeans, uniqueFields,
                                         relationships, onlyChild, onlyParent, sameKeyBatchInsert,
                                         wfActionId, request, resultBuilder);
-                                // ---
-                                // Convert import results to legacy format
-                                errors += ImportResultConverter.lineImportResultToLegacyMap(
-                                        resultBuilder.build(), results, counters
-                                );
-                                // ---
+                                final var lineResult = resultBuilder.build();
+                                parseLineResults(counters, lineResult, messages, savedInodes,
+                                        updatedInodes, true);
 
                                 //Storing the record keys we just imported for a later reference...
-                                if ( keyFields != null && !keyFields.isEmpty() ) {
-                                    for ( Integer column : keyFields.keySet() ) {
-                                        Field keyField = keyFields.get( column );
-										counters.addKey(keyField.getVelocityVarName(), csvLine[column]);
-                                    }
+                                if (!keyFields.isEmpty()) {
+                                    storeKeyFieldValues(keyFields, csvLine, counters);
                                 }
                             } else {
-                                results.get(KEY_ERRORS)
-                                        .add(LanguageUtil.get(user, "Line--") + lineNumber
-                                                + LanguageUtil.get(user,
+                                messages.add(ValidationMessage.builder()
+                                        .type(ValidationMessageType.ERROR)
+                                        .code(LANGUAGE_NOT_FOUND.name())
+                                        .message(LanguageUtil.get(user,
                                                 "Locale-not-found-for-languageCode") + " ='"
                                                 + csvLine[languageCodeHeaderColumn]
                                                 + "' countryCode='"
-                                                + csvLine[countryCodeHeaderColumn] + "'");
-                                errors++;
+                                                + csvLine[countryCodeHeaderColumn] + "'")
+                                        .context(Map.of(
+                                                "Language code", csvLine[languageCodeHeaderColumn],
+                                                "Country code", csvLine[countryCodeHeaderColumn]
+                                        ))
+                                        .lineNumber(lineNumber)
+                                        .build());
                             }
 
+                            // Handle transaction commits
                             if (lineNumber % commitGranularity == 0) {
-                                final String action = preview ? "previewed." : "imported.";
-                                Logger.info(ImportUtil.class, String.format("-> %d entries have been %s", lineNumber, action));
-                                if(!preview) {
-                                    HibernateUtil.closeAndCommitTransaction();
-                                    HibernateUtil.startTransaction();
-                                }
+                                handleBatchCommit(preview, lineNumber);
                             }
-                        } catch (final Exception ex) {
+
+                        } catch (Exception ex) {
+
+                            failedRows++;
 
                             // If we failed importing a line we need to make sure we track
                             // everything that was done so far
                             if (ex instanceof ImportLineException) {
                                 if (resultBuilder != null) {
-                                    // Convert import results to legacy format
-                                    errors += ImportResultConverter.lineImportResultToLegacyMap(
-                                            resultBuilder.build(), results, counters
-                                    );
+                                    final var lineResult = resultBuilder.build();
+                                    parseLineResults(counters, lineResult, messages, savedInodes,
+                                            updatedInodes, false);
                                 }
                             }
 
-                            String errorMessage = getErrorMsgFromException(user, ex);
-                            if(errorMessage.indexOf(LINE_NO) == -1){
-                                errorMessage = LINE_NO + lineNumber + ": " + errorMessage;
-                            }
-                            results.get(KEY_ERRORS).add(errorMessage);
-                            errors++;
-                            Logger.warn(ImportUtil.class, "Error line: " + lines + " (" + csvreader.getRawRecord()
-                                    + "). Line Ignored.");
+                            handleException(ex, lineNumber, messages);
+
+                            Logger.warn(ImportUtil.class, "Error line: " + lineNumber +
+                                    " (" + csvreader.getRawRecord() + "). Line Ignored.");
                         } finally {
-                            // Progress callback
+                            // Update progress
                             if (progressCallback != null) {
-                                progressCallback.accept(lines);
+                                progressCallback.accept(lineNumber);
                             }
                         }
                     }
 
-                    if(!preview){
-                        results.get(KEY_COUNTERS).add("linesread=" + lines);
-                        results.get(KEY_COUNTERS).add("errors=" + errors);
-                        results.get(KEY_COUNTERS)
-                                .add("newContent=" + counters.getNewContentCounter());
-                        results.get(KEY_COUNTERS)
-                                .add("contentToUpdate=" + counters.getContentToUpdateCounter());
+                    // Finalize transaction if not preview
+                    if (!preview) {
                         HibernateUtil.closeAndCommitTransaction();
                     }
 
-                    results.get(KEY_MESSAGES)
-                            .add(lines + " " + LanguageUtil.get(user, "lines-of-data-were-read"));
-                    if (errors > 0) {
-                        results.get(KEY_ERRORS).add(errors + " " + LanguageUtil.get(user,
-                                "input-lines-had-errors"));
-                    }
-                    if (preview && choosenKeyField.length() > 1) {
-                        results.get(KEY_MESSAGES).add(
-                                LanguageUtil.get(user,
-                                        "Fields-selected-as-key") + ": " +
-                                        choosenKeyField.substring(1) + ".");
-                    }
-                    if (counters.getNewContentCounter() > 0) {
-                        results.get(KEY_MESSAGES)
-                                .add(LanguageUtil.get(user, "Attempting-to-create") + " "
-                                        + (counters.getNewContentCounter()) + " contentlets - "
-                                        + LanguageUtil.get(user, "check-below-for-errors"));
-                    }
-                    if (counters.getContentToUpdateCounter() > 0) {
-                        results.get(KEY_MESSAGES).add(LanguageUtil.get(user, "Approximately") + " "
-                                + (counters.getContentToUpdateCounter()) + " " + LanguageUtil.get(
-                                user, "old-content-will-be-updated"));
+                    if (!preview) {
+                        if (counters.getContentUpdatedDuplicated() > 0 &&
+                                counters.getContentUpdatedDuplicated()
+                                        > counters.getContentUpdated()) {
+                            messages.add(ValidationMessage.builder()
+                                    .type(ValidationMessageType.INFO)
+                                    .message(counters.getContentUpdatedDuplicated() + " \""
+                                            + contentType.getName() + "\" " + LanguageUtil.get(user,
+                                            "contentlets-updated-corresponding-to") + " "
+                                            + counters.getContentUpdated() + " " + LanguageUtil.get(
+                                            user,
+                                            "repeated-contents-based-on-the-key-provided"))
+                                    .build()
+                            );
+                        }
                     }
 
-                    results.get(KEY_RESULTS)
-                            .add(counters.getContentCreated() + " " + LanguageUtil.get(user, "new")
-                                    + " " + "\"" + contentType.getName() + "\" " + LanguageUtil.get(
-                                    user, "were-created"));
-                    results.get(KEY_RESULTS).add(counters.getContentUpdatedDuplicated() + " \""
-                            + contentType.getName() + "\" " + LanguageUtil.get(user,
-                            "contentlets-updated-corresponding-to") + " "
-                            + counters.getContentUpdated() + " " + LanguageUtil.get(user,
-                            "repeated-contents-based-on-the-key-provided"));
-
-                    if (errors > 0) {
-                        results.get(KEY_RESULTS).add(errors + " " + LanguageUtil.get(user,
-                                "contentlets-were-ignored-due-to-invalid-information"));
-                    }
                 } else {
-                    results.get(KEY_ERRORS).add(LanguageUtil.get(user,
-                            "No-headers-found-on-the-file-nothing-will-be-imported"));
+                    messages.add(ValidationMessage.builder()
+                            .type(ValidationMessageType.ERROR)
+                            .code(HEADERS_NOT_FOUND.name())
+                            .message(LanguageUtil.get(user,
+                                    "No-headers-found-on-the-file-nothing-will-be-imported"))
+                            .build()
+                    );
                 }
             }
-        } catch (final Exception e) {
-            Logger.error(ImportContentletsAction.class, String.format("An error occurred when parsing CSV file in " +
-                    "line #%s: %s", lineNumber, e.getMessage()), e);
+        } catch (Exception e) {
+            Logger.error(ImportUtil.class,
+                    String.format("An error occurred when parsing CSV file in " +
+                            "line #%s: %s", lineNumber, e.getMessage()), e);
+            handleException(e, lineNumber, messages);
+            failedRows++;
+        }
 
-            // If we failed validating headers we need to make sure we track the error
-            if (e instanceof HeaderValidationException) {
-                String errorMessage = getErrorMsgFromException(user, e);
-                if (errorMessage.indexOf(LINE_NO) == -1) {
-                    errorMessage = LINE_NO + lineNumber + ": " + errorMessage;
+        // Preparing the response
+        return generateImportResult(preview, wfActionId, fileTotalLines, lineNumber, failedRows,
+                messages, fileInfoBuilder, counters, chosenKeyFields, contentType);
+    }
+
+    /**
+     * Generates an import result from the provided input parameters after processing and analyzing
+     * the file data and performing the necessary content operations.
+     *
+     * @param preview         a boolean flag indicating whether the operation is a preview or an
+     *                        actual import
+     * @param wfActionId      a string representing the workflow action ID associated with the
+     *                        import operation
+     * @param fileTotalLines  the total number of lines in the file being processed
+     * @param lineNumber      the number of lines successfully processed
+     * @param failedRows      the number of rows that encountered errors during processing
+     * @param messages        a list of validation messages containing information, warnings, or
+     *                        errors for the import operation
+     * @param fileInfoBuilder a builder for constructing file information details
+     * @param counters        an object containing counters to track content creation, updating, and
+     *                        other metrics
+     * @param chosenKeyFields a set of key fields initially chosen for the operation
+     * @param contentType     the structure representing the type of content being imported
+     * @return an {@link ImportResult} object containing details about the operation, processed
+     * data, validation messages, and summary information
+     */
+    private static ImportResult generateImportResult(final boolean preview,
+            final String wfActionId, final long fileTotalLines, final int lineNumber,
+            final int failedRows, final List<ValidationMessage> messages,
+            final Builder fileInfoBuilder, final Counters counters,
+            final Set<String> chosenKeyFields, final Structure contentType) {
+
+        fileInfoBuilder.totalRows((int) fileTotalLines);
+        final var fileInfo = fileInfoBuilder.build();
+
+        final var infoMessages = messages.stream()
+                .filter(message -> message.type() == ValidationMessageType.INFO)
+                .collect(Collectors.toList());
+
+        final var warningMessages = messages.stream()
+                .filter(message -> message.type() == ValidationMessageType.WARNING)
+                .collect(Collectors.toList());
+
+        final var errorMessages = messages.stream()
+                .filter(message -> message.type() == ValidationMessageType.ERROR)
+                .collect(Collectors.toList());
+
+        final String action = preview ? "Content preview" : "Content import";
+        String statusMsg = String.format("%s has finished, %d lines were read correctly.", action,
+                lineNumber);
+        statusMsg = !errorMessages.isEmpty() ? statusMsg + String.format(
+                " However, %d errors were found.",
+                errorMessages.size()) : StringPool.BLANK;
+        Logger.info(ImportUtil.class, statusMsg);
+
+        // Calculate the values for the report display
+        final var createdContent = Math.max(counters.getContentToCreate(),
+                counters.getContentCreated());
+        final var updatedContent = Math.max(counters.getContentToUpdate(),
+                counters.getContentUpdated());
+
+        // Calculate the displayed key fields, if an identifier column exist, that one will be
+        // the actual key field
+        var calculatedKeyFields = chosenKeyFields;
+        if (!fileInfo.headerInfo().specialHeaders().isEmpty()) {
+            for (SpecialHeaderInfo specialHeader : fileInfo.headerInfo().specialHeaders()) {
+                if (specialHeader.header().equalsIgnoreCase(identifierHeader)) {
+                    calculatedKeyFields = new HashSet<>();
+                    calculatedKeyFields.add(specialHeader.header());
+                    break;
                 }
-                results.get(KEY_ERRORS).add(errorMessage);
-                errors++;
             }
         }
-        final String action = preview ? "Content preview" : "Content import";
-        String statusMsg = String.format("%s has finished, %d lines were read correctly.", action, lines);
-        statusMsg = errors > 0 ? statusMsg + String.format(" However, %d errors were found.", errors) : StringPool.BLANK;
-        Logger.info(ImportUtil.class, statusMsg);
-        return results;
+
+        final var resultBuilder = ImportResult.builder();
+        return resultBuilder
+                .type(preview ? OperationType.PREVIEW : OperationType.PUBLISH)
+                .keyFields(calculatedKeyFields)
+                .workflowActionId(Optional.ofNullable(wfActionId))
+                .contentTypeName(contentType.getName())
+                .contentTypeVariableName(contentType.getVelocityVarName())
+                .lastInode(Optional.ofNullable(counters.getLastInode()))
+                .fileInfo(fileInfo)
+                .data(ResultData.builder()
+                        .processed(ProcessedData.builder()
+                                .parsedRows(lineNumber)
+                                .failedRows(failedRows)
+                                .build())
+                        .summary(ContentSummary.builder()
+                                .toCreateContent(counters.getContentToCreate())
+                                .toUpdateContent(counters.getContentToUpdate())
+                                .createdContent(counters.getContentCreated())
+                                .updatedContent(counters.getContentUpdated())
+                                .duplicateContent(counters.getContentUpdatedDuplicated())
+                                .createdDisplay(createdContent)
+                                .updatedDisplay(updatedContent)
+                                .failedDisplay(failedRows)
+                                .build())
+                        .build())
+                .info(infoMessages)
+                .warning(warningMessages)
+                .error(errorMessages)
+                .build();
+    }
+
+    /**
+     * Processes the results of a line import operation and updates the provided counters, messages
+     * list, and inode lists with the relevant data from the line result.
+     *
+     * @param counters       an instance of {@code Counters} to update with values from the line
+     *                       result
+     * @param lineResult     an instance of {@code LineImportResult} containing the results of a
+     *                       single line processing
+     * @param messages       a list of {@code ValidationMessage} to which validation messages from
+     *                       the line result are added
+     * @param savedInodes    a list of strings representing the inodes saved during processing; this
+     *                       list is updated with values from the line result
+     * @param updatedInodes  a list of strings representing the inodes updated during processing;
+     *                       this list is updated with values from the line result
+     * @param updateCounters If the counters needs or not to be updated. if we are colling the
+     *                       parseLineResults after an error we don't need to update them.
+     */
+    private static void parseLineResults(Counters counters, LineImportResult lineResult,
+            List<ValidationMessage> messages, List<String> savedInodes,
+            List<String> updatedInodes, final boolean updateCounters) {
+
+        if (updateCounters) {
+            counters.setContentToCreate(
+                    counters.getContentToCreate() + lineResult.contentToCreate());
+            counters.setContentCreated(
+                    counters.getContentCreated() + lineResult.createdContent());
+            counters.setContentToUpdate(
+                    counters.getContentToUpdate() + lineResult.contentToUpdate());
+            counters.setContentUpdated(
+                    counters.getContentUpdated() + lineResult.updatedContent());
+            counters.setContentUpdatedDuplicated(
+                    counters.getContentUpdatedDuplicated() + lineResult.duplicateContent());
+        }
+
+        // Update results from line processing
+        counters.setLastInode(lineResult.lastInode());
+        messages.addAll(lineResult.messages());
+        savedInodes.addAll(lineResult.savedInodes());
+        updatedInodes.addAll(lineResult.updatedInodes());
+    }
+
+    /**
+     * Processes the language based on the given parameters. If the provided language value is -1,
+     * attempts to retrieve a language ID using the language and country code columns from a CSV
+     * line.
+     *
+     * @param language                 the language identifier, where a value of -1 triggers lookup
+     *                                 using the columns
+     * @param languageCodeHeaderColumn the column index in the CSV line for the language code
+     * @param countryCodeHeaderColumn  the column index in the CSV line for the country code
+     * @param csvLine                  the array representing a line from a CSV file, containing
+     *                                 language details
+     * @return the language ID derived from the provided parameters or the original language value
+     * if valid
+     */
+    private static Long processLanguage(long language, int languageCodeHeaderColumn,
+            int countryCodeHeaderColumn, String[] csvLine) {
+
+        if (language == -1) {
+            if (languageCodeHeaderColumn != -1 && countryCodeHeaderColumn != -1) {
+                Language dotCMSLanguage = langAPI.getLanguage(
+                        csvLine[languageCodeHeaderColumn],
+                        csvLine[countryCodeHeaderColumn]
+                );
+                return dotCMSLanguage.getId();
+            }
+        }
+
+        return language;
+    }
+
+    /**
+     * Handles the batch commit process by logging the number of entries processed and, if not in
+     * preview mode, committing and starting a new transaction.
+     *
+     * @param preview    A boolean indicating whether the operation is in preview mode. If true, no
+     *                   transaction is committed.
+     * @param lineNumber The number of entries processed during the batch operation.
+     * @throws DotHibernateException If an error occurs while handling the Hibernate transaction.
+     */
+    private static void handleBatchCommit(boolean preview, int lineNumber)
+            throws DotHibernateException {
+
+        final String action = preview ? "previewed." : "imported.";
+        Logger.info(ImportUtil.class,
+                String.format("-> %d entries have been %s", lineNumber, action)
+        );
+
+        if (!preview) {
+            HibernateUtil.closeAndCommitTransaction();
+            HibernateUtil.startTransaction();
+        }
+    }
+
+    /**
+     * Handles an exception by building a validation message and adding it to the provided list.
+     *
+     * @param ex         The exception to be handled. If the exception is an instance of
+     *                   ValidationMessageException, additional details will be extracted.
+     * @param lineNumber The line number associated with the exception, typically where it
+     *                   occurred.
+     * @param messages   A list of validation messages to which the constructed validation message
+     *                   will be added.
+     */
+    private static void handleException(Exception ex, int lineNumber,
+            List<ValidationMessage> messages) {
+
+        ValidationMessage.Builder messageBuilder = ValidationMessage.builder()
+                .type(ValidationMessageType.ERROR)
+                .lineNumber(lineNumber);
+
+        if (ex instanceof ValidationMessageException) {
+            final var validationMessageException = (ValidationMessageException) ex;
+            messageBuilder
+                    .code(validationMessageException.getCode())
+                    .field(validationMessageException.getField())
+                    .invalidValue(validationMessageException.getInvalidValue())
+                    .context(validationMessageException.getContext());
+        }
+
+        messageBuilder.message(ex.getMessage());
+        messages.add(messageBuilder.build());
+    }
+
+    /**
+     * Checks if the current line has matches with batch keys from previous lines.
+     */
+    private static boolean checkBatchKeyMatches(final Map<Integer, Field> keyFields,
+            final String[] csvLine, final Counters counters) {
+
+        if (keyFields == null || keyFields.isEmpty()) {
+            return true;
+        }
+
+        boolean sameKeyBatchInsert = true;
+        for (Integer column : keyFields.keySet()) {
+            Field keyField = keyFields.get(column);
+            if (!counters.matchKey(keyField.getVelocityVarName(), csvLine[column])) {
+                sameKeyBatchInsert = false;
+                break;
+            }
+        }
+
+        return sameKeyBatchInsert;
+    }
+
+    /**
+     * Stores key field values for tracking duplicates in batch processing.
+     */
+    private static void storeKeyFieldValues(final Map<Integer, Field> keyFields,
+            final String[] csvLine, final Counters counters) {
+
+        for (Integer column : keyFields.keySet()) {
+            Field keyField = keyFields.get(column);
+            counters.addKey(keyField.getVelocityVarName(), csvLine[column]);
+        }
     }
 
     /**
@@ -609,28 +811,13 @@ public class ImportUtil {
         // Process and validate headers
         processHeaders(
                 headerLine, contentType, keyFieldsInodes, isMultilingual,
-                relationshipsMap, headerFields, headers, keyFields,
-                relationships, onlyChild, onlyParent, user, validationBuilder);
-
-        // Validate multilingual requirements if needed
-        validateMultilingualHeaders(isMultilingual, headerFields, validationBuilder);
-
-        // Validate key fields and unique fields
-        validateKeyFields(keyFieldsInodes, headers, user, validationBuilder);
-        processUniqueFields(uniqueFields, user, validationBuilder);
+                relationshipsMap, headerFields, headers, keyFields, uniqueFields,
+                typeInfo.importableFields, relationships, onlyChild, onlyParent, user,
+                validationBuilder);
 
         // Generate summary messages
-        addSummaryMessages(headers.size(), typeInfo.importableFields,
+        addHeadersSummaryMessages(headers.size(), typeInfo.importableFields,
                 relationships.size(), user, validationBuilder);
-
-        // Add context information
-        Map<String, Object> context = new HashMap<>();
-        context.put("headers", headers);
-        context.put("keyFields", keyFields);
-        context.put("relationships", relationships);
-        context.put("onlyChild", onlyChild);
-        context.put("onlyParent", onlyParent);
-        validationBuilder.context(context);
 
         return validationBuilder.build();
     }
@@ -639,19 +826,21 @@ public class ImportUtil {
      * Processes and validates header entries from the CSV file. This method handles the detailed
      * validation of each header column and populates various data structures with the results.
      *
-     * @param headerLine        Array of header strings to process
-     * @param contentType       Content Type structure to validate against
-     * @param keyFieldsInodes   Array of field inodes used as keys
-     * @param isMultilingual    Whether import is multilingual
-     * @param relationshipsMap  Map of available relationships
-     * @param headerFields      List to store processed header names
-     * @param headers           Map to store header-to-field mappings
-     * @param keyFields         Map to store key field mappings
-     * @param relationships     Map to store relationship mappings
-     * @param onlyChild         Map for child-only relationships
-     * @param onlyParent        Map for parent-only relationships
-     * @param user              User performing the import
-     * @param validationBuilder Builder for validation result
+     * @param headerLine           Array of header strings to process
+     * @param contentType          Content Type structure to validate against
+     * @param keyFieldsInodes      Array of field inodes used as keys
+     * @param isMultilingual       Whether import is multilingual
+     * @param relationshipsMap     Map of available relationships
+     * @param headerFields         List to store processed header names
+     * @param headers              Map to store header-to-field mappings
+     * @param keyFields            Map to store key field mappings
+     * @param uniqueFields         List of fields marked as unique in the content type
+     * @param importableFieldCount Number of fields that can be imported
+     * @param relationships        Map to store relationship mappings
+     * @param onlyChild            Map for child-only relationships
+     * @param onlyParent           Map for parent-only relationships
+     * @param user                 User performing the import
+     * @param validationBuilder    Builder for validation result
      * @throws Exception if processing encounters errors
      */
     private static void processHeaders(final String[] headerLine,
@@ -659,12 +848,11 @@ public class ImportUtil {
             final String[] keyFieldsInodes, boolean isMultilingual,
             final Map<String, Relationship> relationshipsMap, final List<String> headerFields,
             final Map<Integer, Field> headers, final Map<Integer, Field> keyFields,
-            final Map<Integer, Relationship> relationships,
-            final Map<Integer, Boolean> onlyChild, final Map<Integer, Boolean> onlyParent,
-            final User user, final HeaderValidationResult.Builder validationBuilder)
-            throws Exception {
+            final List<Field> uniqueFields, final int importableFieldCount,
+            final Map<Integer, Relationship> relationships, final Map<Integer, Boolean> onlyChild,
+            final Map<Integer, Boolean> onlyParent, final User user,
+            final HeaderValidationResult.Builder validationBuilder) throws Exception {
 
-        List<String> validHeaders = new ArrayList<>();
         List<String> invalidHeaders = new ArrayList<>();
         List<SpecialHeaderInfo> specialHeaders = new ArrayList<>();
 
@@ -674,10 +862,9 @@ public class ImportUtil {
             headerFields.add(header);
 
             // Handle special headers first
-            final var specialHeaderInfo = isSpecialHeader(header, i, user, validationBuilder);
-            if (specialHeaderInfo.type() != SpecialHeaderType.NONE) {
-                validHeaders.add(header);
-                specialHeaders.add(specialHeaderInfo);
+            final var specialHeaderInfo = isSpecialHeader(header, i, isMultilingual);
+            if (specialHeaderInfo.isPresent()) {
+                specialHeaders.add(specialHeaderInfo.get());
                 continue;
             }
 
@@ -685,21 +872,42 @@ public class ImportUtil {
             processAndValidateHeader(
                     header, i, contentType, headers, keyFieldsInodes, keyFields,
                     onlyChild, onlyParent, relationshipsMap, relationships,
-                    validHeaders, invalidHeaders, isMultilingual, user, validationBuilder);
+                    invalidHeaders, isMultilingual, user, validationBuilder);
         }
 
         // Validate required fields
         List<String> missingHeaders = validateRequiredFields(headerFields, user, contentType,
                 validationBuilder);
 
+        // Validate multilingual requirements if needed
+        validateMultilingualHeaders(isMultilingual, headerFields, missingHeaders,
+                validationBuilder);
+
+        // Validate key fields and unique fields
+        validateKeyFields(keyFieldsInodes, headers, user, validationBuilder);
+        processUniqueFields(uniqueFields, user, validationBuilder);
+
+        String[] headersNames = headers.values()
+                .stream()
+                .map(Field::getVelocityVarName)
+                .toArray(String[]::new);
+
+        // Add context information
+        Map<String, Object> context = new HashMap<>();
+        context.put("importableFields", importableFieldCount);
+        context.put("headers", headerLine);
+        context.put("keyFields", keyFields);
+        context.put("relationships", relationships);
+        context.put("onlyChild", onlyChild);
+        context.put("onlyParent", onlyParent);
+
         // Create headerInfo
         final var headerInfo = HeaderInfo.builder()
-                .totalHeaders(headerLine.length)
-                .validHeaders(validHeaders.toArray(new String[0]))
+                .validHeaders(headersNames)
                 .invalidHeaders(invalidHeaders.toArray(new String[0]))
                 .missingHeaders(missingHeaders.toArray(new String[0]))
-                .validationDetails(new HashMap<>())  // Add validation details if needed
                 .specialHeaders(specialHeaders)
+                .context(context)
                 .build();
         validationBuilder.headerInfo(headerInfo);
     }
@@ -724,7 +932,7 @@ public class ImportUtil {
             throw HeaderValidationException.builder()
                     .message(LanguageUtil.get(user,
                             "No-headers-found-on-the-file-nothing-will-be-imported"))
-                    .code(HeaderValidationCodes.INVALID_HEADER_FORMAT.name())
+                    .code(HeaderValidationCodes.HEADERS_NOT_FOUND.name())
                     .build();
         }
 
@@ -755,11 +963,10 @@ public class ImportUtil {
      * @param headers           Map to populate with validated header-to-field mappings
      * @param keyFieldsInodes   Array of field inodes used as keys
      * @param keyFields         Map to populate with key field mappings
-     * @param relationships     Map to populate with relationship mappings
      * @param onlyChild         Map tracking child-only relationships
      * @param onlyParent        Map tracking parent-only relationships
      * @param relationshipsMap  Map of available relationships
-     * @param validHeaders      List to store valid header names
+     * @param relationships     Map to populate with relationship mappings
      * @param invalidHeaders    List to store invalid header names
      * @param isMultilingual    Whether import supports multiple languages
      * @param user              User performing the import
@@ -774,7 +981,7 @@ public class ImportUtil {
             final Map<Integer, Boolean> onlyParent,
             final Map<String, Relationship> relationshipsMap,
             final Map<Integer, Relationship> relationships,
-            final List<String> validHeaders, final List<String> invalidHeaders,
+            final List<String> invalidHeaders,
             final boolean isMultilingual, final User user,
             final HeaderValidationResult.Builder validationBuilder)
             throws LanguageException, DotDataException, DotSecurityException {
@@ -783,17 +990,11 @@ public class ImportUtil {
         boolean found = processContentTypeField(header, columnIndex, contentType, headers,
                 keyFieldsInodes, keyFields, onlyChild, onlyParent, relationshipsMap, relationships,
                 user, validationBuilder);
-        if (found) {
-            validHeaders.add(header);
-        }
 
         // Validate if the header is a relationship header
         boolean foundAsRelationship = processRelationshipHeader(header, columnIndex,
                 relationshipsMap, relationships,
                 onlyChild, onlyParent);
-        if (foundAsRelationship) {
-            validHeaders.add(header);
-        }
 
         // If not found and not a language header, mark as invalid
         if (!(found || foundAsRelationship) && !(isMultilingual && isLanguageHeader(header))) {
@@ -817,10 +1018,11 @@ public class ImportUtil {
      *
      * @param isMultilingual    Whether multilingual import is enabled
      * @param headerFields      List of processed header fields
+     * @param missingHeaders    List of missing header fields
      * @param validationBuilder Builder to accumulate validation messages
      */
     private static void validateMultilingualHeaders(final boolean isMultilingual,
-            final List<String> headerFields,
+            final List<String> headerFields, final List<String> missingHeaders,
             final HeaderValidationResult.Builder validationBuilder) {
 
         if (!isMultilingual) {
@@ -831,9 +1033,16 @@ public class ImportUtil {
         boolean hasCountryCode = headerFields.contains(countryCodeHeader);
 
         if (!hasLanguageCode || !hasCountryCode) {
+
+            if (!hasLanguageCode) {
+                missingHeaders.add(languageCodeHeader);
+            } else {
+                missingHeaders.add(countryCodeHeader);
+            }
+
             validationBuilder.addMessages(ValidationMessage.builder()
                     .type(ValidationMessageType.ERROR)
-                    .code(HeaderValidationCodes.INVALID_LANGUAGE.name())
+                    .code(HeaderValidationCodes.MISSING_HEADER.name())
                     .message("languageCode and countryCode fields are mandatory in the CSV file" +
                             " when importing multilingual content")
                     .lineNumber(1)
@@ -895,62 +1104,29 @@ public class ImportUtil {
     }
 
     /**
-     * Checks if a header represents a special system field like Identifier or Workflow Action. Adds
-     * appropriate validation messages for recognized system headers.
+     * Determines if a given header qualifies as a special header based on certain conditions.
      *
-     * @param header            Header to check
-     * @param columnIndex       Index of the header in the CSV file
-     * @param user              User performing the import
-     * @param validationBuilder Builder to accumulate validation messages
-     * @return SpecialHeaderInfo containing type and column index if header is special, NONE otherwise
-     * @throws LanguageException If language key lookup fails
+     * @param header         the name of the header to evaluate
+     * @param columnIndex    the index of the column where the header is located
+     * @param isMultilingual a flag indicating if multilingual support is enabled
+     * @return an Optional containing the SpecialHeaderInfo object if the header is special;
+     * otherwise, an empty Optional
      */
-    private static SpecialHeaderInfo isSpecialHeader(final String header, final int columnIndex,
-            final User user,
-            final HeaderValidationResult.Builder validationBuilder) throws LanguageException {
+    private static Optional<SpecialHeaderInfo> isSpecialHeader(final String header,
+            final int columnIndex,
+            final boolean isMultilingual) {
 
-        if (header.equalsIgnoreCase("Identifier")) {
-            validationBuilder.addMessages(
-                    ValidationMessage.builder()
-                            .type(ValidationMessageType.INFO)
-                            .code(HeaderValidationCodes.SYSTEM_HEADER.name())
-                            .field("Identifier")
-                            .lineNumber(1)
-                            .message(LanguageUtil.get(user,
-                                    "identifier-field-found-in-import-contentlet-csv-file"))
-                            .context(Map.of("columnIndex", columnIndex))
-                            .build()
-            );
+        if (header.equalsIgnoreCase(identifierHeader)
+                || header.equalsIgnoreCase(Contentlet.WORKFLOW_ACTION_KEY)
+                || (isLanguageHeader(header) && isMultilingual)) {
 
-            return SpecialHeaderInfo.builder()
-                    .type(SpecialHeaderType.IDENTIFIER)
+            return Optional.of(SpecialHeaderInfo.builder()
+                    .header(header)
                     .columnIndex(columnIndex)
-                    .build();
+                    .build());
         }
 
-        if (header.equalsIgnoreCase(Contentlet.WORKFLOW_ACTION_KEY)) {
-            validationBuilder.addMessages(
-                    ValidationMessage.builder()
-                            .type(ValidationMessageType.INFO)
-                            .code(HeaderValidationCodes.SYSTEM_HEADER.name())
-                            .field(Contentlet.WORKFLOW_ACTION_KEY)
-                            .lineNumber(1)
-                            .message(LanguageUtil.get(user,
-                                    "workflow-action-id-field-found-in-import-contentlet-csv-file"))
-                            .context(Map.of("columnIndex", columnIndex))
-                            .build()
-            );
-
-            return SpecialHeaderInfo.builder()
-                    .type(SpecialHeaderType.WORKFLOW_ACTION)
-                    .columnIndex(columnIndex)
-                    .build();
-        }
-
-        return SpecialHeaderInfo.builder()
-                .type(SpecialHeaderType.NONE)
-                .columnIndex(-1)
-                .build();
+        return Optional.empty();
     }
 
     /**
@@ -1155,7 +1331,8 @@ public class ImportUtil {
      * @return true if header is a language or country code field
      */
     private static boolean isLanguageHeader(final String header) {
-        return header.equals(languageCodeHeader) || header.equals(countryCodeHeader);
+        return header.equalsIgnoreCase(languageCodeHeader)
+                || header.equalsIgnoreCase(countryCodeHeader);
     }
 
     /**
@@ -1300,26 +1477,16 @@ public class ImportUtil {
      * @param validationBuilder    Builder to accumulate validation messages
      * @throws LanguageException If language key lookup fails
      */
-    private static void addSummaryMessages(final int headerCount, final int importableFieldCount,
+    private static void addHeadersSummaryMessages(final int headerCount,
+            final int importableFieldCount,
             final int relationshipCount, final User user,
             final HeaderValidationResult.Builder validationBuilder) throws LanguageException {
 
-        if (headerCount == importableFieldCount) {
-
-            validationBuilder.addMessages(
-                    ValidationMessage.builder()
-                            .type(ValidationMessageType.INFO)
-                            .code(HeaderValidationCodes.SYSTEM_HEADER.name())
-                            .message(LanguageUtil.get(user, headerCount + " " +
-                                    LanguageUtil.get(user, "headers-match-these-will-be-imported")))
-                            .build()
-            );
-        } else {
+        if (headerCount != importableFieldCount) {
             if (headerCount > 0) {
                 validationBuilder.addMessages(
                         ValidationMessage.builder()
                                 .type(ValidationMessageType.INFO)
-                                .code(HeaderValidationCodes.SYSTEM_HEADER.name())
                                 .message(headerCount + " " +
                                         LanguageUtil.get(user,
                                                 "headers-found-on-the-file-matches-all-the-structure-fields"))
@@ -1328,8 +1495,8 @@ public class ImportUtil {
             } else {
                 validationBuilder.addMessages(
                         ValidationMessage.builder()
-                                .type(ValidationMessageType.INFO)
-                                .code(HeaderValidationCodes.INVALID_HEADER_FORMAT.name())
+                                .type(ValidationMessageType.ERROR)
+                                .code(HeaderValidationCodes.HEADERS_NOT_FOUND.name())
                                 .message(LanguageUtil.get(user,
                                         "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"))
                                 .build()
@@ -1353,7 +1520,6 @@ public class ImportUtil {
             validationBuilder.addMessages(
                     ValidationMessage.builder()
                             .type(ValidationMessageType.INFO)
-                            .code(HeaderValidationCodes.SYSTEM_HEADER.name())
                             .message(LanguageUtil.get(user, relationshipCount + " " +
                                     LanguageUtil.get(user,
                                             "relationship-match-these-will-be-imported")))
@@ -1385,7 +1551,7 @@ public class ImportUtil {
      * @param language               Language ID for the content
      * @param headers                Map of column indices to field definitions
      * @param keyFields              Map of key fields used for content matching
-     * @param choosenKeyField        Buffer tracking chosen key fields
+     * @param chosenKeyFields        Buffer tracking chosen key fields
      * @param keyContentUpdated      Set tracking updated content keys
      * @param contentTypePermissions Content type permissions
      * @param uniqueFieldBeans       List tracking unique field values
@@ -1412,7 +1578,7 @@ public class ImportUtil {
             final long language,
             final Map<Integer, Field> headers,
             final Map<Integer, Field> keyFields,
-            final StringBuilder choosenKeyField,
+            final Set<String> chosenKeyFields,
             final HashSet<String> keyContentUpdated,
             final List<Permission> contentTypePermissions,
             final List<UniqueFieldBean> uniqueFieldBeans,
@@ -1494,7 +1660,7 @@ public class ImportUtil {
         final var searchResult = searchExistingContentlets(
                 contentType, values, keyFields, siteAndFolder, urlValue,
                 urlValueAssetName, identifier, preview, sameKeyBatchInsert, isMultilingual,
-                language, lineNumber, choosenKeyField, user);
+                language, lineNumber, chosenKeyFields, user);
         isMultilingual = searchResult.isMultilingual();
         searchResult.messages().forEach(resultBuilder::addValidationMessage);
 
@@ -1562,18 +1728,7 @@ public class ImportUtil {
                 }
 
                 Logger.debug(ImportUtil.class, "Contentlets size: " + contentlets.size());
-                if (contentlets.size() == 1) {
-                    resultBuilder.addValidationMessage(ValidationMessage.builder()
-                            .type(ValidationMessageType.WARNING)
-                            .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
-                            .message(LanguageUtil.get(user,
-                                    "The-key-fields-chosen-match-one-existing-content(s)")
-                                    + " - "
-                                    + LanguageUtil.get(user,
-                                    "more-than-one-match-suggests-key(s)-are-not-properly-unique"))
-                            .lineNumber(lineNumber)
-                            .build());
-                } else if (contentlets.size() > 1) {
+                if (contentlets.size() > 1) {
                     resultBuilder.addValidationMessage(ValidationMessage.builder()
                             .type(ValidationMessageType.WARNING)
                             .code(ImportLineValidationCodes.DUPLICATE_UNIQUE_VALUE.name())
@@ -1714,10 +1869,6 @@ public class ImportUtil {
 
                 fieldResult.messages().forEach(results::addValidationMessage);
 
-                if (fieldResult.ignoreLine()) {
-                    return results.build();
-                }
-
             } catch (Exception e) {
 
                 if (e instanceof ImportLineException) {
@@ -1848,41 +1999,6 @@ public class ImportUtil {
         }
 
         return results.build();
-    }
-
-    /**
-     * Updates the buffer tracking chosen key fields for content matching. This method maintains a
-     * comma-separated list of field names that will be used as keys when matching imported content
-     * with existing content.
-     *
-     * <p>The method ensures each field is only added once to the list by:
-     * <ul>
-     *   <li>Checking if the current field is already in the list</li>
-     *   <li>Only appending new fields that aren't already tracked</li>
-     *   <li>Maintaining proper comma separation between field names</li>
-     * </ul>
-     *
-     * @param field           The field being considered as a key field
-     * @param choosenKeyField StringBuffer containing the comma-separated list of key field names.
-     *                        May be empty if no key fields have been chosen yet.
-     */
-    private static void updateChosenKeyField(final Field field,
-            final StringBuilder choosenKeyField) {
-        if (UtilMethods.isSet(choosenKeyField.toString())) {
-            int count = 1;
-            String[] chosenArr = choosenKeyField.toString().split(",");
-            for (String chosen : chosenArr) {
-                if (UtilMethods.isSet(chosen) && !field.getVelocityVarName()
-                        .equals(chosen.trim())) {
-                    count++;
-                }
-            }
-            if (chosenArr.length == count) {
-                choosenKeyField.append(", ").append(field.getVelocityVarName());
-            }
-        } else {
-            choosenKeyField.append(", ").append(field.getVelocityVarName());
-        }
     }
 
     /**
@@ -2370,7 +2486,7 @@ public class ImportUtil {
      * @param isMultilingual       True if import contains multiple languages
      * @param language             Content language ID
      * @param lineNumber           CSV line number for error reporting
-     * @param choosenKeyField      Buffer tracking user-selected key fields
+     * @param chosenKeyFields      Buffer tracking user-selected key fields
      * @param user                 Authenticated user for permission checks
      *
      * @return {@link ContentletSearchResult} containing:
@@ -2381,13 +2497,6 @@ public class ImportUtil {
      *
      * @throws DotDataException    If search index queries fail
      * @throws DotSecurityException If user lacks permission to access content
-     *
-     * @example // Search by identifier
-     * searchExistingContentlets(contentType, values, keyFields, site,
-     *   Pair.of(3, "/contact"), "contact-page", "1234-5678", ...)
-     *
-     * @see ContentletAPI#findContentletByIdentifier(String, boolean, long, User, boolean)
-     * @see ESUtils#sha256(String, String, long)
      */
     private static ContentletSearchResult searchExistingContentlets(
             final Structure contentType,
@@ -2402,7 +2511,7 @@ public class ImportUtil {
             final boolean isMultilingual,
             final long language,
             final int lineNumber,
-            final StringBuilder choosenKeyField,
+            final Set<String> chosenKeyFields,
             final User user
     ) throws DotDataException, DotSecurityException {
 
@@ -2422,7 +2531,7 @@ public class ImportUtil {
             // Search by key fields
             SearchByKeyFieldsResult keyFieldResults = searchByKeyFields(
                     contentType, values, keyFields, siteAndFolder, urlValueAssetName, preview,
-                    sameKeyBatchInsert, language, isMultilingual, user, lineNumber, choosenKeyField,
+                    sameKeyBatchInsert, language, isMultilingual, user, lineNumber, chosenKeyFields,
                     builder);
             contentlets.addAll(keyFieldResults.contentlets);
             conditionValues = keyFieldResults.conditionValues;
@@ -2469,7 +2578,6 @@ public class ImportUtil {
                     .message("Content not found with identifier")
                     .code(ImportLineValidationCodes.CONTENT_NOT_FOUND.name())
                     .invalidValue(identifier)
-                    .context(Map.of("Content Type", contentType.getVelocityVarName()))
                     .build();
         }
 
@@ -2495,7 +2603,7 @@ public class ImportUtil {
      * @param user               The user performing the search, used for security validation.
      * @param lineNumber         The line number in the source code where this method is called,
      *                           used for error messaging.
-     * @param choosenKeyField    A string buffer to store the chosen key field.
+     * @param chosenKeyFields    A string buffer to store the chosen key field.
      * @param builder            A builder object used to accumulate search results and messages.
      * @return A container holding the search results including contentlets, updated inodes,
      * condition values, and multilingual status.
@@ -2515,7 +2623,7 @@ public class ImportUtil {
             final boolean isMultilingual,
             final User user,
             final int lineNumber,
-            final StringBuilder choosenKeyField,
+            final Set<String> chosenKeyFields,
             final ContentletSearchResult.Builder builder
     ) throws DotDataException, DotSecurityException {
 
@@ -2594,7 +2702,7 @@ public class ImportUtil {
             conditionValues.append(processedValue).append("-");
 
             if (!field.isUnique()) {
-                updateChosenKeyField(field, choosenKeyField);
+                chosenKeyFields.add(field.getVelocityVarName());
             }
         }
 
@@ -2612,12 +2720,10 @@ public class ImportUtil {
         List<ContentletSearch> contentsSearch = conAPI.searchIndex(query.toString(), 0,
                 -1, null, user, true);
 
-        /*
-        We need to handle the case when keys are used, we could have a contentlet already saved
-        with the same keys but different language so the above query is not going to find it.
-         */
+        // We need to handle the case when keys are used, we could have a contentlet already saved
+        // with the same keys but different language so the above query is not going to find it.
         if (contentsSearch == null || contentsSearch.isEmpty()) {
-            if (choosenKeyField.length() > 1) {
+            if (chosenKeyFields.size() > 1) {
                 // Try without language constraint for multilingual content
                 contentsSearch = conAPI.searchIndex(noLanguageQuery, 0, -1, null, user, true);
                 if (contentsSearch != null && !contentsSearch.isEmpty()) {
@@ -2821,56 +2927,14 @@ public class ImportUtil {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Retrieves the identifier from the search results.
-     *
-     * @param results The map containing the search results.
-     * @param line    The current line of CSV data being processed.
-     * @return The identifier as a string, or null if not found.
-     */
-    private static String getIdentifierFromResults(final Map<String, List<String>> results,
+    private static String getIdentifierFromResults(final int identifierFieldIndex,
             final String[] line) {
         try {
-            int identifierFieldIndex = Integer.parseInt(results.get(KEY_IDENTIFIERS).get(0));
             return identifierFieldIndex >= 0 ? line[identifierFieldIndex] : null;
         } catch (Exception e) {
             Logger.debug(ImportUtil.class, "No identifier field found", e);
             return null;
         }
-    }
-
-    /**
-     * Retrieves the column index containing workflow action IDs from CSV import results.
-     * Looks for the {@link Contentlet#WORKFLOW_ACTION_KEY} entry in the results map populated
-     * during header processing.
-     *
-     * @param results Map containing CSV import metadata with:
-     *                - Key: {@link Contentlet#WORKFLOW_ACTION_KEY}
-     *                - Value: Single-element list containing column index as String
-     *
-     * @return Column index (0-based) of workflow action IDs in CSV, or -1 if:
-     *         - No workflow action column exists
-     *         - Invalid index format
-     *         - Key not found in results
-     *
-     * @example // For CSV header: "Title,WorkflowAction,Content"
-     *          // Returns 1 (second column)
-     * @see ImportUtil#importFile() Header processing stores workflow action column index
-     */
-    private static int getWorkflowActionIdIndexFromResults(final Map<String, List<String>> results) {
-
-        int wfActionIdIndex = -1;
-        try {
-            List<String> workflowActionKey = results.get(Contentlet.WORKFLOW_ACTION_KEY);
-            if (UtilMethods.isSet(workflowActionKey)) {
-                wfActionIdIndex = Integer.parseInt(
-                        results.get(Contentlet.WORKFLOW_ACTION_KEY).get(0));
-            }
-        } catch (Exception e) {
-            Logger.warn(ImportUtil.class, e.getMessage());
-        }
-
-        return wfActionIdIndex;
     }
 
     /**
@@ -3056,11 +3120,16 @@ public class ImportUtil {
                 sb.append("\n");
             }
 
+            String fields = null;
+            if (sb.length() > 0) {
+                fields = sb.toString();
+            }
+
             throw ImportLineException.builder()
                     .message(ex.getMessage())
                     .code(ImportLineValidationCodes.RELATIONSHIP_VALIDATION_ERROR.name())
                     .lineNumber(lineNumber)
-                    .field(sb.toString())
+                    .field(fields)
                     .build();
         }
 
@@ -3165,7 +3234,8 @@ public class ImportUtil {
     }
 
     /**
-     * Persists processed contentlet data to the repository with full workflow integration. Handles:
+     * Persists processed contentlet data to the repository with full workflow integration.
+     * Handles:
      * <ul>
      *   <li>Workflow action execution validation and triggering</li>
      *   <li>Content check-in/check-out lifecycle management</li>
@@ -3181,31 +3251,20 @@ public class ImportUtil {
      *   <li>System default NEW/PUBLISH actions</li>
      * </ol>
      *
-     * @param lineNumber            CSV line number for error tracking
-     * @param wfActionId            Workflow action ID from import configuration
-     * @param cont                  Contentlet with processed field values
-     * @param categories            Categories to associate with content
+     * @param lineNumber             CSV line number for error tracking
+     * @param wfActionId             Workflow action ID from import configuration
+     * @param cont                   Contentlet with processed field values
+     * @param categories             Categories to associate with content
      * @param contentTypePermissions Permissions inherited from content type
-     * @param relationships         Content relationships (parent/child)
-     * @param user                  Authenticated user for audit trail
-     * @param headers               Map of CSV columns to content fields
-     * @param values                Raw+processed field values map
-     * @param siteAndFolder         Hosting location context
-     * @param resultBuilder         Accumulates processing results and messages
-     *
-     * @throws DotDataException       If content persistence fails
-     * @throws DotSecurityException   If user lacks permission for operations
-     * @throws LanguageException      If workflow message localization fails
-     *
-     * @example // Save blog post with 'Publish' workflow
-     * saveContent(42, "pub-123", blogContent, categories, permissions,
-     *             relationships, user, headers, values, hostFolder, result);
-     *
-     * @see WorkflowAPI#findActionMappedBySystemActionContentlet(Contentlet, SystemAction, User)
-     * @see ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)
-     *
-     * @commitStrategy Uses DEFER index policy during batch operations
-     * @autoPublish Controlled by PUBLISH_CSV_IMPORTED_CONTENT_AUTOMATICALLY property
+     * @param relationships          Content relationships (parent/child)
+     * @param user                   Authenticated user for audit trail
+     * @param headers                Map of CSV columns to content fields
+     * @param values                 Raw+processed field values map
+     * @param siteAndFolder          Hosting location context
+     * @param resultBuilder          Accumulates processing results and messages
+     * @throws DotDataException     If content persistence fails
+     * @throws DotSecurityException If user lacks permission for operations
+     * @throws LanguageException    If workflow message localization fails
      */
     private static void saveContent(
             final int lineNumber,
@@ -3332,14 +3391,6 @@ public class ImportUtil {
      *         - Are defined in the content type
      *         - Are NOT present in CSV headers
      *         - Need their existing values preserved during update operations
-     *
-     * @example // Given:
-     *          // categoryFields = [Topics, Audience]
-     *          // headers = {0: Title, 1: Content, 2: Topics}
-     *          // Returns: [Audience] field
-     *
-     * @implNote Comparison is done using case-insensitive inode matching
-     * @see ImportUtil#importLine() Used during content update processing
      */
     private static List<Field> getNonHeaderCategoryFields(final List<Field> categoryFields,
             final Map<Integer, Field> headers) {
@@ -3653,10 +3704,22 @@ public class ImportUtil {
 
     }
 
+    /**
+     * Determines if the given folder is set and its associated inode is also set.
+     *
+     * @param folder the Folder object to be checked
+     * @return true if the folder and its inode are set, false otherwise
+     */
     private static boolean isFolderSet(Folder folder) {
         return UtilMethods.isSet(folder) && InodeUtils.isSet(folder.getInode());
     }
 
+    /**
+     * Checks if the given site is set and has a valid identifier.
+     *
+     * @param site the Host object to check
+     * @return true if the site and its identifier are both set, false otherwise
+     */
     private static boolean isSiteSet(final Host site) {
         return UtilMethods.isSet(site) && UtilMethods.isSet(site.getIdentifier());
     }
@@ -3889,6 +3952,25 @@ public class ImportUtil {
         return url.toString();
     }
 
+    /**
+     * Executes a workflow action on a contentlet, if applicable, based on permissions, categories,
+     * and relationships provided. This method determines the appropriate workflow action, and if
+     * valid, performs it with the given user and contentlet details. If no workflow action is
+     * applicable, it falls back to saving or publishing the contentlet based on system
+     * configurations.
+     *
+     * @param user                    The user attempting to run the workflow for the contentlet.
+     * @param contentTypePermissions  The list of permissions associated with the content type of
+     *                                the contentlet.
+     * @param categories              The list of categories assigned to the contentlet.
+     * @param contentlet              The contentlet object that the workflow or save operation will
+     *                                be applied to.
+     * @param contentletRelationships The relationships associated with the contentlet.
+     * @return The contentlet object after the workflow action or save operation has been applied.
+     * @throws DotDataException     If a failure occurs during data access or database operations.
+     * @throws DotSecurityException If the user does not have the necessary permissions to execute
+     *                              the workflow.
+     */
     private static Contentlet runWorkflowIfCould(final User user, final List<Permission> contentTypePermissions,
                                                  final List<Category> categories, final Contentlet contentlet,
                                                  final ContentletRelationships contentletRelationships) throws DotDataException, DotSecurityException {
@@ -3937,6 +4019,22 @@ public class ImportUtil {
         return contentletSaved;
     }
 
+    /**
+     * Executes a workflow publish action on the provided contentlet if associated with a publish
+     * workflow action. If not, the contentlet will be directly published. The contentlet may also
+     * be updated with relationships, categories, and permissions before being published.
+     *
+     * @param contentletRelationships an object representing the relationships associated with the
+     *                                contentlet
+     * @param categories              a list of categories to be associated with the contentlet
+     * @param permissions             a list of permissions to be associated with the contentlet
+     * @param user                    the user performing the operation
+     * @param savedContent            the contentlet to be published or have its workflow processed
+     * @return the contentlet after the workflow publish action (or direct publish) is completed
+     * @throws DotDataException     if there is an issue accessing or modifying content data
+     * @throws DotSecurityException if the user does not have the necessary permissions to perform
+     *                              the operation
+     */
     private static Contentlet runWorkflowPublishIfCould(final ContentletRelationships contentletRelationships,
                                                  final List<Category>   categories,
                                                  final List<Permission> permissions,
@@ -3972,6 +4070,7 @@ public class ImportUtil {
         conAPI.publish(savedContent, user, false);
         return savedContent;
     }
+
     /**
      *
      * @param csvRelationshipRecordsParentOnly
@@ -3981,7 +4080,6 @@ public class ImportUtil {
      * @return
      * @throws DotDataException
      */
-    @NotNull
     private static ContentletRelationships loadRelationshipRecords(
             Map<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
             Map<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
@@ -4078,6 +4176,16 @@ public class ImportUtil {
         return executeWfAction;
     }
 
+    /**
+     * Validates and parses the date types in a given field and value, returning the parsed object
+     * or null if the value is not set or invalid.
+     *
+     * @param field    The field object containing metadata about the type of the data.
+     * @param value    The string representation of the value to be validated and parsed.
+     * @param valueObj The original value object, which will be updated if parsing is successful.
+     * @return The parsed date object if the value is successfully parsed, null if the value is not
+     * set, or the original value object on validation failure.
+     */
     private static Object validateDateTypes(final Field field, final String value,
             Object valueObj) {
         if (field.getFieldContentlet().startsWith("date")) {
@@ -4185,14 +4293,14 @@ public class ImportUtil {
         text = text.replaceAll("&&","\\\\&&").replaceAll("\\|\\|","\\\\||");
         text = text.replaceAll("!","\\\\!").replaceAll("\\^","\\\\^");
         text = text.replaceAll("-","\\\\-").replaceAll("~","\\\\~");
-        text = text.replaceAll("\"","\\\"");
+        text = text.replaceAll("\"", "\\\"");
 
         return text;
     }
 
 
     /**
-     * 
+     *
      * @author root
      * @version 1.x
      * @since Mar 22, 2012
@@ -4200,76 +4308,62 @@ public class ImportUtil {
      */
     public static class Counters {
 
-        public int newContentCounter = 0;
-        public int contentToUpdateCounter = 0;
+        public int contentToCreate = 0;
         public int contentCreated = 0;
+        public int contentToUpdate = 0;
         public int contentUpdated = 0;
         public int contentUpdatedDuplicated = 0;
 
         private Collection<Map<String, String>> keys = new ArrayList<>();
 
-        /**
-         * @return the newContentCounter
-         */
-        public int getNewContentCounter () {
-            return newContentCounter;
+        private String lastInode = "";
+
+        public int getContentToCreate() {
+            return contentToCreate;
         }
 
-        /**
-         * @param newContentCounter the newContentCounter to set
-         */
-        public void setNewContentCounter ( int newContentCounter ) {
-            this.newContentCounter = newContentCounter;
+        public void setContentToCreate(int contentToCreate) {
+            this.contentToCreate = contentToCreate;
         }
 
-        /**
-         * @return the contentToUpdateCounter
-         */
-        public int getContentToUpdateCounter () {
-            return contentToUpdateCounter;
+        public int getContentToUpdate() {
+            return contentToUpdate;
         }
 
-        /**
-         * @param contentToUpdateCounter the contentToUpdateCounter to set
-         */
-        public void setContentToUpdateCounter(int contentToUpdateCounter) {
-            this.contentToUpdateCounter = contentToUpdateCounter;
+        public void setContentToUpdate(int contentToUpdate) {
+            this.contentToUpdate = contentToUpdate;
         }
-        /**
-         * @return the contentCreated
-         */
+
         public int getContentCreated() {
             return contentCreated;
         }
-        /**
-         * @param contentCreated the contentCreated to set
-         */
+
         public void setContentCreated(int contentCreated) {
             this.contentCreated = contentCreated;
         }
-        /**
-         * @return the contentUpdated
-         */
+
         public int getContentUpdated() {
             return contentUpdated;
         }
-        /**
-         * @param contentUpdated the contentUpdated to set
-         */
+
         public void setContentUpdated(int contentUpdated) {
             this.contentUpdated = contentUpdated;
         }
-        /**
-         * @return the contentUpdatedDuplicated
-         */
+
         public int getContentUpdatedDuplicated() {
             return contentUpdatedDuplicated;
         }
-        /**
-         * @param contentUpdatedDuplicated the contentUpdatedDuplicated to set
-         */
+
         public void setContentUpdatedDuplicated(int contentUpdatedDuplicated) {
             this.contentUpdatedDuplicated = contentUpdatedDuplicated;
+        }
+
+        public String getLastInode() {
+            return lastInode;
+        }
+
+        public void setLastInode(String lastInode) {
+            this.lastInode = lastInode;
         }
 
         /**
@@ -4309,10 +4403,6 @@ public class ImportUtil {
             return false;
         }
 
-        public int uniqueKeysCount () {
-            return keys.size();
-        }
-
     }
 
     /**
@@ -4340,26 +4430,6 @@ public class ImportUtil {
      */
     private static Date parseExcelDate ( String date ) throws ParseException {
         return DateUtil.convertDate( date, IMP_DATE_FORMATS );
-    }
-
-    /**
-     * Utility method that retrieves the appropriate error message from an exception stack trace. This error might come
-     * from either the Content Preview, or the Content Import step.
-     *
-     * @param user      The {@link User} calling the CSV Content Import tool.
-     * @param exception The exception that was thrown because of the error.
-     *
-     * @return The appropriate error message that will be displayed to the user.
-     */
-    private static String getErrorMsgFromException(final User user, final Exception exception) {
-
-        if (!UtilMethods.isSet(exception.getMessage())) {
-            return exception.getCause().getClass().getSimpleName();
-        } else {
-            return Try
-                    .of(() -> LanguageUtil.get(user, exception.getMessage()))
-                    .getOrElse(exception.getMessage());
-        }
     }
 
     /**
@@ -4395,228 +4465,6 @@ public class ImportUtil {
             this.fields = fields;
             this.relationships = relationships;
             this.importableFields = importableFields;
-        }
-    }
-
-    /**
-     * Container class for managing structured import results during the validation process. This
-     * class handles building and updating the structured result format.
-     */
-    private static class ImportResults {
-
-        /**
-         * Builder for the structured results
-         */
-        private final ImportResult.Builder structuredResults;
-
-        /**
-         * Creates a new ImportResults instance with initialized data structures.
-         */
-        ImportResults() {
-            this.structuredResults = initializeStructuredResults();
-        }
-
-        /**
-         * Initializes the base structure for import results.
-         *
-         * @return Builder configured with default values
-         */
-        private static ImportResult.Builder initializeStructuredResults() {
-            return ImportResult.builder()
-                    .fileInfo(FileInfo.builder()
-                            .totalRows(0)
-                            .parsedRows(0)
-                            .headerInfo(initializeHeaderInfo())
-                            .build())
-                    .data(initializeResultData());
-        }
-
-        /**
-         * Initializes header information with empty arrays.
-         *
-         * @return HeaderInfo builder with default values
-         */
-        private static HeaderInfo initializeHeaderInfo() {
-            return HeaderInfo.builder()
-                    .validHeaders(new String[0])
-                    .invalidHeaders(new String[0])
-                    .missingHeaders(new String[0])
-                    .validationDetails(new HashMap<>())
-                    .build();
-        }
-
-        /**
-         * Initializes result data with zero counters.
-         *
-         * @return ResultData builder with default values
-         */
-        private static ResultData initializeResultData() {
-            return ResultData.builder()
-                    .processed(ProcessedData.builder()
-                            .valid(0)
-                            .invalid(0)
-                            .build())
-                    .summary(ContentSummary.builder()
-                            .created(0)
-                            .updated(0)
-                            .contentType("")
-                            .build())
-                    .build();
-        }
-
-        /**
-         * Adds multiple validation messages to the results.
-         *
-         * @param validationMessages List of messages to add
-         */
-        void addMessages(List<ValidationMessage> validationMessages) {
-            if (validationMessages != null) {
-                validationMessages.forEach(structuredResults::addMessages);
-            }
-        }
-
-        /**
-         * Adds a single validation message to the results.
-         *
-         * @param message Message to add
-         */
-        void addMessage(ValidationMessage message) {
-            structuredResults.addMessages(message);
-        }
-
-        /**
-         * Updates file processing information.
-         *
-         * @param fileInfo Updated file information
-         */
-        void updateFileInfo(final FileInfo fileInfo) {
-            structuredResults.fileInfo(fileInfo);
-        }
-
-        /**
-         * Updates header validation information.
-         *
-         * @param headerInfo Updated header information
-         */
-        void updateHeaderInfo(final HeaderInfo headerInfo) {
-            FileInfo currentFileInfo = structuredResults.build().fileInfo();
-            structuredResults.fileInfo(currentFileInfo.withHeaderInfo(headerInfo));
-        }
-
-        /**
-         * Updates the content type name in the results.
-         *
-         * @param contentType Name of the content type
-         */
-        void updateContentType(String contentType) {
-            ResultData currentData = structuredResults.build().data();
-            structuredResults.data(currentData.withSummary(
-                    currentData.summary().withContentType(contentType)
-            ));
-        }
-
-        /**
-         * Updates processing counters in the results.
-         *
-         * @param counts Updated counter values
-         */
-        void updateCounters(ImportCounts counts) {
-            structuredResults.data(ResultData.builder()
-                    .processed(ProcessedData.builder()
-                            .valid(counts.getValid())
-                            .invalid(counts.getInvalid())
-                            .build())
-                    .summary(ContentSummary.builder()
-                            .created(counts.getCreated())
-                            .updated(counts.getUpdated())
-                            .contentType(structuredResults.build().data().summary().contentType())
-                            .build())
-                    .build());
-        }
-
-        /**
-         * Builds and returns the final structured results.
-         *
-         * @return Complete structured import results
-         */
-        ImportResult getResults() {
-            return structuredResults.build();
-        }
-    }
-
-    /**
-     * Value object holding count information for import processing. Tracks valid/invalid records
-     * and created/updated content counts.
-     */
-    private static class ImportCounts {
-
-        private final int valid;
-        private final int invalid;
-        private final int created;
-        private final int updated;
-
-        /**
-         * Creates a new ImportCounts instance.
-         *
-         * @param valid   Count of valid records
-         * @param invalid Count of invalid records
-         * @param created Count of newly created content
-         * @param updated Count of updated content
-         */
-        private ImportCounts(int valid, int invalid, int created, int updated) {
-            this.valid = valid;
-            this.invalid = invalid;
-            this.created = created;
-            this.updated = updated;
-        }
-
-        /**
-         * Factory method to create an ImportCounts instance.
-         *
-         * @param valid   Count of valid records
-         * @param invalid Count of invalid records
-         * @param created Count of newly created content
-         * @param updated Count of updated content
-         * @return New ImportCounts instance
-         */
-        static ImportCounts of(int valid, int invalid, int created, int updated) {
-            return new ImportCounts(valid, invalid, created, updated);
-        }
-
-        public int getValid() {
-            return valid;
-        }
-
-        public int getInvalid() {
-            return invalid;
-        }
-
-        public int getCreated() {
-            return created;
-        }
-
-        public int getUpdated() {
-            return updated;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            ImportCounts that = (ImportCounts) o;
-            return valid == that.valid &&
-                    invalid == that.invalid &&
-                    created == that.created &&
-                    updated == that.updated;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(valid, invalid, created, updated);
         }
     }
 
@@ -4805,10 +4653,6 @@ public class ImportUtil {
 
         public void addCategories(Collection<Category> categories) {
             this.categories.addAll(categories);
-        }
-
-        public void setIgnoreLine(boolean ignoreLine) {
-            builder.ignoreLine(ignoreLine);
         }
 
         public FieldProcessingResult build() {

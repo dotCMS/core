@@ -4,6 +4,7 @@ import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -19,11 +20,13 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -32,18 +35,6 @@ import com.liferay.portal.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.apache.commons.lang.RandomStringUtils;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -56,12 +47,23 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
-
-import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.lang.RandomStringUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.AfterClass;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class BinaryExporterServletTest {
@@ -102,9 +104,13 @@ public class BinaryExporterServletTest {
     private static final String AUTH_WITH_TOKEN = "auth-with-token";
     private static final String NO_AUTH = "no-auth";
 
+    private static final String DEFAULT_LANGUAGE = "default-language";
+    private static final String NON_DEFAULT_LANGUAGE = "non-default-language";
+
     private static Host host;
     private static Role role;
     private static User user;
+    private static Language nonDefaultLanguage;
     private static String userEmailAndPassword;
     private static ApiToken apiToken;
 
@@ -128,6 +134,8 @@ public class BinaryExporterServletTest {
                 .emailAddress(userEmail).password(userPassword)
                 .roles(role, APILocator.getRoleAPI().loadRoleByKey(DOTCMS_BACK_END_USER))
                 .nextPersisted();
+
+        nonDefaultLanguage = new LanguageDataGen().nextPersisted();
 
         apiToken = APILocator.getApiTokenAPI().persistApiToken(
            user.getUserId(), Date.from(Instant.now().plus(Duration.ofDays(10))),
@@ -166,34 +174,50 @@ public class BinaryExporterServletTest {
     @DataProvider
     public static Object[][] testCases() {
         return new Object[][] {
-                { BY_ID, NO_PERMISSIONS_REQUIRED, NO_AUTH },
-                { BY_ID, PERMISSIONS_REQUIRED, NO_AUTH },
-                { BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS },
-                { BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN },
-                { BY_INODE, NO_PERMISSIONS_REQUIRED, NO_AUTH },
-                { BY_INODE, PERMISSIONS_REQUIRED, NO_AUTH },
-                { BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS },
-                { BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN }
+                {BY_ID, NO_PERMISSIONS_REQUIRED, NO_AUTH, DEFAULT_LANGUAGE},
+                {BY_ID, NO_PERMISSIONS_REQUIRED, NO_AUTH, NON_DEFAULT_LANGUAGE},
+                {BY_ID, NO_PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, DEFAULT_LANGUAGE},
+                {BY_ID, NO_PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, NON_DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, NO_AUTH, DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, NO_AUTH, NON_DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, NON_DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN, DEFAULT_LANGUAGE},
+                {BY_ID, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, NO_PERMISSIONS_REQUIRED, NO_AUTH, DEFAULT_LANGUAGE},
+                {BY_INODE, NO_PERMISSIONS_REQUIRED, NO_AUTH, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, NO_PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, DEFAULT_LANGUAGE},
+                {BY_INODE, NO_PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, NO_AUTH, DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, NO_AUTH, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_CREDENTIALS, NON_DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN, DEFAULT_LANGUAGE},
+                {BY_INODE, PERMISSIONS_REQUIRED, AUTH_WITH_TOKEN, NON_DEFAULT_LANGUAGE}
         };
     }
 
     /**
      * Method to test: {@link BinaryExporterServlet.doGet(HttpServletRequest, HttpServletResponse)}
-     * Given scenario: Request a binary file asset
-     * Expected result: Should return the binary file asset content if permissions are granted
-     * If permissions are not granted, should return 401 Unauthorized
-     * @param byIdType Identifier type (by-identifier or by-inode)
+     * Given scenario: Request a binary file asset Expected result: Should return the binary file
+     * asset content if permissions are granted If permissions are not granted, should return 401
+     * Unauthorized
+     *
+     * @param byIdType       Identifier type (by-identifier or by-inode)
      * @param permissionType Permissions required (no-permissions-required or permissions-required)
-     * @param authType Authorization type (no-auth, auth-with-credentials or auth-with-token)
+     * @param authType       Authorization type (no-auth, auth-with-credentials or auth-with-token)
+     * @param languageType   The type of language to use for the test (default-language,
+     *                       non-default-language)
      */
     @UseDataProvider("testCases")
     @Test
-    public void requestBinaryFile(
-            final String byIdType, final String permissionType, final String authType)
+    public void requestBinaryFile(final String byIdType, final String permissionType,
+            final String authType, final String languageType)
             throws DotDataException, DotSecurityException, ServletException, IOException {
 
         final boolean byIdentifier = byIdType.equals(BY_ID);
         final boolean permissionsRequired = permissionType.equals(PERMISSIONS_REQUIRED);
+        final boolean useDefaultLanguage = languageType.equals(DEFAULT_LANGUAGE);
 
         Contentlet fileAsset = null;
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
@@ -220,6 +244,15 @@ public class BinaryExporterServletTest {
                 request.setHeader("Authorization",
                         "Bearer " + APILocator.getApiTokenAPI().getJWT(apiToken, user));
             }
+
+            if (!useDefaultLanguage) {
+                HttpSession sessionOpt = request.getSession(true);
+                if (sessionOpt != null) {
+                    sessionOpt.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
+                            String.valueOf(nonDefaultLanguage.getId()));
+                }
+            }
+
             final HttpServletResponse response = mockServletResponse(tmpTargetFile);
 
             // Send servlet request
@@ -227,7 +260,12 @@ public class BinaryExporterServletTest {
 
             if (permissionsRequired && NO_AUTH.equals(authType)) {
                 // Verify response status
-                assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+                if (byIdentifier && !useDefaultLanguage) {
+                    assertEquals(HttpServletResponse.SC_NOT_FOUND, response.getStatus());
+                } else {
+                    assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+                    assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
+                }
             } else {
                 // Verify response
                 assertEquals(HttpServletResponse.SC_OK, response.getStatus());
@@ -332,15 +370,15 @@ public class BinaryExporterServletTest {
 
             final String fileURI = "/contentAsset/image/" + fileContentlet.getInode()
                     + "/fileAsset/byInode/true/quality_q/75/resize_w/600/quality_q/75/quality_q/75";
-            final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-            Mockito.when(request.getHeader("user-agent")).thenReturn(userAgent);
-            Mockito.when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
-            Mockito.when(request.getRequestURI()).thenReturn(fileURI);
-            Mockito.when(request.getServletPath()).thenReturn("/contentAsset");
-            Mockito.when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getHeader("user-agent")).thenReturn(userAgent);
+            when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+            when(request.getRequestURI()).thenReturn(fileURI);
+            when(request.getServletPath()).thenReturn("/contentAsset");
+            when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
                     .thenReturn("image/webp");
 
-            Mockito.when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
+            when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
                     .thenReturn("image/jpeg");
 
             final HttpServletResponse response = new MockHttpContentTypeResponse(
@@ -389,7 +427,7 @@ public class BinaryExporterServletTest {
     private HttpServletResponse mockServletResponse(final TmpBinaryFile tmpTargetFile) {
         try {
             return new MockHttpStatusResponse(new MockHttpCaptureResponse(
-                    Mockito.mock(HttpServletResponse.class), new FileOutputStream(tmpTargetFile.getFile())));
+                    mock(HttpServletResponse.class), new FileOutputStream(tmpTargetFile.getFile())));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -403,5 +441,6 @@ public class BinaryExporterServletTest {
         binaryExporterServlet.doGet(request, response);
 
     }
+
 
 }

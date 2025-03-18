@@ -17,7 +17,7 @@ Feature: Reusable Functions and Helpers
     ## Builds a payload for creating a new content version
     * def buildContentRequestPayload =
       """
-      function(contentType, title, publishDate, expiresOn, identifier) {
+      function(contentType, title, publishDate, expiresOn, identifier, urlTitle, imageId) {
         let payload = {
           "contentlets": [
             {
@@ -30,6 +30,8 @@ Feature: Reusable Functions and Helpers
         if (publishDate) payload.contentlets[0].publishDate = publishDate;
         if (expiresOn) payload.contentlets[0].expiresOn = expiresOn;
         if (identifier) payload.contentlets[0].identifier = identifier;
+        if (urlTitle) payload.contentlets[0].urlTitle = urlTitle;
+        if (imageId) payload.contentlets[0].image = imageId;
         return payload;
       }
       """

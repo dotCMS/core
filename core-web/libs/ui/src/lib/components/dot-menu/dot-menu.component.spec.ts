@@ -16,15 +16,11 @@ describe('DotMenuComponent', () => {
 
     const menuItems = [
         {
-            command: () => {
-                //
-            },
+            command: jest.fn(),
             label: 'Add'
         },
         {
-            command: () => {
-                //
-            },
+            command: jest.fn(),
             label: 'Remove',
             disabled: true
         }
@@ -56,9 +52,9 @@ describe('DotMenuComponent', () => {
         fixture.detectChanges();
         button = fixture.debugElement.query(By.css('[data-testid="dot-menu-button"]'));
 
-        expect(
-            (button.componentInstance.styleClass as string).includes('p-button-text')
-        ).toBeTrue();
+        expect((button.componentInstance.styleClass as string).includes('p-button-text')).toBe(
+            true
+        );
     });
 
     it('should pass menu items to the Menu', () => {
@@ -67,37 +63,30 @@ describe('DotMenuComponent', () => {
     });
 
     it('should show the menu list on click', () => {
-        button.triggerEventHandler('click', {
-            stopPropagation: () => {
-                //
-            }
-        });
+        const stopPropagation = jest.fn();
+        button.triggerEventHandler('click', { stopPropagation });
         fixture.detectChanges();
 
         const menuList: DebugElement = fixture.debugElement.query(By.css('p-menu'));
 
         expect(menuList).not.toBeNull();
+        expect(stopPropagation).toHaveBeenCalled();
     });
 
     it('should close menus when click the button', () => {
-        button.triggerEventHandler('click', {
-            stopPropagation: () => {
-                //
-            }
-        });
+        const stopPropagation = jest.fn();
+        button.triggerEventHandler('click', { stopPropagation });
         fixture.detectChanges();
 
         const menuList: Menu = fixture.debugElement.query(By.css('p-menu')).componentInstance;
 
-        expect(menuList.visible).toEqual(true);
+        expect(menuList.visible).toBe(true);
+        expect(stopPropagation).toHaveBeenCalled();
 
-        button.triggerEventHandler('click', {
-            stopPropagation: () => {
-                //
-            }
-        });
+        button.triggerEventHandler('click', { stopPropagation });
 
         fixture.detectChanges();
-        expect(menuList.visible).toEqual(false);
+        expect(menuList.visible).toBe(false);
+        expect(stopPropagation).toHaveBeenCalledTimes(2);
     });
 });

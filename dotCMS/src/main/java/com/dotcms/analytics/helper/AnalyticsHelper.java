@@ -7,7 +7,6 @@ import com.dotcms.analytics.model.AccessTokenErrorType;
 import com.dotcms.analytics.model.AccessTokenStatus;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.TokenStatus;
-import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.exception.UnrecoverableAnalyticsException;
@@ -244,7 +243,7 @@ public class AnalyticsHelper implements EventSubscriber<SystemTableUpdatedKeyEve
      * @throws AnalyticsException when validating token
      */
     public String formatBearer(final AccessToken accessToken) throws AnalyticsException {
-        return formatToken(accessToken, JsonWebTokenAuthCredentialProcessor.BEARER);
+        return formatToken(accessToken, AnalyticsAPI.BEARER);
     }
 
     /**

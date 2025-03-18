@@ -3,7 +3,8 @@ import { describe, expect, it, jest } from '@jest/globals';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
-    DotLanguage
+    DotLanguage,
+    UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
@@ -24,7 +25,6 @@ import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './moc
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
-import { UI_STORAGE_KEY } from '../models/dot-edit-content.constant';
 
 describe('Utils Functions', () => {
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
@@ -614,7 +614,7 @@ describe('Utils Functions', () => {
 
     describe('UI State Storage', () => {
         beforeEach(() => {
-            localStorage.clear();
+            sessionStorage.clear();
             // eslint-disable-next-line @typescript-eslint/no-empty-function
             jest.spyOn(console, 'warn').mockImplementation(() => {});
         });
@@ -624,7 +624,7 @@ describe('Utils Functions', () => {
         });
 
         describe('getStoredUIState', () => {
-            it('should return default state when localStorage is empty', () => {
+            it('should return default state when sessionStorage is empty', () => {
                 const state = getStoredUIState();
                 expect(state).toEqual({
                     activeTab: 0,
@@ -633,20 +633,20 @@ describe('Utils Functions', () => {
                 });
             });
 
-            it('should return stored state from localStorage', () => {
+            it('should return stored state from sessionStorage', () => {
                 const mockState = {
                     activeTab: 2,
                     isSidebarOpen: false,
                     activeSidebarTab: 1
                 };
-                localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
+                sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
 
                 const state = getStoredUIState();
                 expect(state).toEqual(mockState);
             });
 
-            it('should return default state and warn when localStorage has invalid JSON', () => {
-                localStorage.setItem(UI_STORAGE_KEY, 'invalid-json');
+            it('should return default state and warn when sessionStorage has invalid JSON', () => {
+                sessionStorage.setItem(UI_STORAGE_KEY, 'invalid-json');
 
                 const state = getStoredUIState();
                 expect(state).toEqual({
@@ -655,17 +655,17 @@ describe('Utils Functions', () => {
                     activeSidebarTab: 0
                 });
                 expect(console.warn).toHaveBeenCalledWith(
-                    'Error reading UI state from localStorage:',
+                    'Error reading UI state from sessionStorage:',
                     expect.any(Error)
                 );
             });
 
-            it('should return default state and warn when localStorage throws error', () => {
+            it('should return default state and warn when sessionStorage throws error', () => {
                 const mockGetItem = jest.fn(() => {
                     throw new Error('Storage error');
                 });
 
-                Object.defineProperty(window, 'localStorage', {
+                Object.defineProperty(window, 'sessionStorage', {
                     value: {
                         getItem: mockGetItem
                     }
@@ -678,7 +678,7 @@ describe('Utils Functions', () => {
                     activeSidebarTab: 0
                 });
                 expect(console.warn).toHaveBeenCalledWith(
-                    'Error reading UI state from localStorage:',
+                    'Error reading UI state from sessionStorage:',
                     expect.any(Error)
                 );
             });
@@ -800,6 +800,30 @@ describe('Utils Functions', () => {
             });
 
             expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+    });
+
+    describe('prepareContentletForCopy', () => {
+        it('should prepare a contentlet for copying by setting locked to false and removing lockedBy', () => {
+            // Arrange
+            const contentlet = createFakeContentlet({
+                locked: true,
+                lockedBy: {
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    userId: 'user123'
+                }
+            });
+
+            // Act
+            const result = functionsUtil.prepareContentletForCopy(contentlet);
+
+            // Assert
+            expect(result).toEqual({
+                ...contentlet,
+                locked: false,
+                lockedBy: undefined
+            });
         });
     });
 });

@@ -165,9 +165,9 @@ export class DotFileFieldPreviewComponent implements OnInit {
      */
     private fetchResourceLinks(contentlet: DotCMSContentlet, contentType: string): void {
         this.#dotResourceLinksService
-            .getFileResourceLinks({
+            .getFileResourceLinksByInode({
                 fieldVariable: contentType,
-                inodeOrIdentifier: contentlet.identifier
+                inode: contentlet.inode
             })
             .pipe(
                 catchError(() => {

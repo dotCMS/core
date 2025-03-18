@@ -18,11 +18,13 @@ import {
     DotPageRenderService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotAnalyticsTrackerService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 import { UVE_MODE } from '@dotcms/uve/types';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -30,7 +32,6 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { WINDOW } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -39,10 +40,10 @@ import {
     checkClientHostAccess,
     getAllowedPageParams,
     getTargetUrl,
+    normalizeQueryParams,
     sanitizeURL,
     shouldNavigate
 } from '../utils';
-
 @Component({
     selector: 'dot-ema-shell',
     standalone: true,
@@ -65,7 +66,8 @@ import {
             provide: WINDOW,
             useValue: window
         },
-        DotExperimentsService
+        DotExperimentsService,
+        DotAnalyticsTrackerService
     ],
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
@@ -102,7 +104,14 @@ export class DotEmaShellComponent implements OnInit {
      */
     readonly $updateQueryParamsEffect = effect(() => {
         const params = this.uveStore.$friendlyParams();
-        this.#updateLocation(params);
+
+        const { data } = this.#activatedRoute.snapshot;
+
+        const baseClientHost = data?.uveConfig?.url;
+
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+
+        this.#updateLocation(cleanedParams);
     });
 
     ngOnInit(): void {

@@ -28,7 +28,7 @@ describe('DotFileFieldPreviewComponent', () => {
         providers: [provideHttpClient()],
         componentProviders: [
             mockProvider(DotResourceLinksService, {
-                getFileResourceLinks: jest.fn().mockReturnValue(
+                getFileResourceLinksByInode: jest.fn().mockReturnValue(
                     of({
                         configuredImageURL: 'testConfiguredImageURL',
                         idPath: 'testIdPath',
@@ -136,7 +136,9 @@ describe('DotFileFieldPreviewComponent', () => {
         });
 
         it('should handle a error in fetchResourceLinks', async () => {
-            dotResourceLinksService.getFileResourceLinks.mockReturnValue(throwError('error'));
+            dotResourceLinksService.getFileResourceLinksByInode.mockReturnValue(
+                throwError('error')
+            );
             spectator.detectChanges();
         });
 

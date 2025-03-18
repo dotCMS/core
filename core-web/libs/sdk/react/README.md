@@ -1,6 +1,6 @@
 # @dotcms/react
 
-`@dotcms/react` is the official set of React components and hooks designed to work seamlessly with dotCMS, making it easy to render dotCMS pages an use the page builder.
+`@dotcms/react` is the official set of React components and hooks designed to work seamlessly with dotCMS, making it easy to render dotCMS pages and use the page builder.
 
 ## Features
 
@@ -24,9 +24,9 @@ yarn add @dotcms/react
 
 ## Components
 
-### `DotcmsLayout`
+### Deprecated: DotcmsLayout
 
-A functional component that renders a layout for a dotCMS page.
+**Important:** The `DotcmsLayout` component is deprecated. Please use the new [`DotCMSLayoutBody`](#DotCMSLayoutBody) component instead.
 
 #### Props
 
@@ -35,12 +35,54 @@ A functional component that renders a layout for a dotCMS page.
 #### Usage
 
 ```javascript
+// Deprecated:
 import { DotcmsLayout } from '@dotcms/react';
 
 const MyPage = ({ entity }) => {
     return <DotcmsLayout entity={entity} />;
 };
 ```
+
+### `DotCMSLayoutBody`
+
+The `DotCMSLayoutBody` component renders the layout body for a DotCMS page.
+
+#### Props
+
+-   **page**: The DotCMS page asset containing the layout information.
+-   **components**: A mapping of custom components for content rendering.
+-   **mode** (optional): The renderer mode; defaults to `'production'`.
+
+
+#### Usage
+
+```javascript
+import { DotCMSLayoutBody } from '@dotcms/react';
+
+const MyPage = ({ page }) => {
+    return <DotCMSLayoutBody page={page} components={components} />;
+};
+```
+
+
+### `BlockEditorRenderer`
+
+The `BlockEditorRenderer` component renders the content of a Block Editor Content Type from dotCMS.
+[More information of Block Editor Content Type](https://dev.dotcms.com/docs/block-editor)
+
+#### Props
+
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `blocks` | `Block` | The block editor content structure to render. |
+| `customRenderers` | `CustomRenderer` | Optional custom renderers for specific block types. |
+| `className` | `string` | Optional CSS class name to apply to the container. |
+| `style` | `React.CSSProperties` | Optional inline styles to apply to the container. |
+| `contentlet` | `DotCMSContentlet` | Contentlet object containing the field to be edited. Required when editable is true. |
+| `fieldName` | `string` | Name of the field in the contentlet that contains the block editor content. Required when editable is true. |
+
+For a more in-depth explanation of BlockEditorRenderer, visit the [documentation](./src/lib/deprecated/components/BlockEditorRenderer/BlockEditorRenderer.md).
 
 ## Hooks
 

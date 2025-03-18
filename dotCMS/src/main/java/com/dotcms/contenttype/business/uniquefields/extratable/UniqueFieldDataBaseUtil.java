@@ -66,24 +66,24 @@ public class UniqueFieldDataBaseUtil {
     private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET = "SELECT * FROM unique_fields " +
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
             "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
-            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
+            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::BIGINT = ? " +
             "AND supporting_values->>'" + FIELD_VARIABLE_NAME_ATTR + "' = ?";
 
     private final static String DELETE_UNIQUE_FIELDS_BY_CONTENTLET = "DELETE FROM unique_fields " +
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
-            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
+            "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::BIGINT = ? " +
             "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = ?";
 
     private final static String SET_LIVE_BY_CONTENTLET = "UPDATE unique_fields " +
             "SET supporting_values = jsonb_set(supporting_values, '{" + LIVE_ATTR +  "}', ?::jsonb) " +
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb " +
                 "AND supporting_values->>'" + VARIANT_ATTR + "' = ? " +
-                "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::INTEGER = ? " +
+                "AND (supporting_values->>'"+ LANGUAGE_ID_ATTR + "')::BIGINT = ? " +
                 "AND (supporting_values->>'" + LIVE_ATTR + "')::BOOLEAN = false";
 
 
     private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_LANGUAGE = "SELECT * FROM unique_fields " +
-            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND (supporting_values->>'" + LANGUAGE_ID_ATTR +"')::INTEGER = ?";
+            "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND (supporting_values->>'" + LANGUAGE_ID_ATTR +"')::BIGINT = ?";
 
     private final static String GET_UNIQUE_FIELDS_BY_CONTENTLET_AND_VARIANT= "SELECT * FROM unique_fields " +
             "WHERE supporting_values->'" + CONTENTLET_IDS_ATTR + "' @> ?::jsonb AND supporting_values->>'" + VARIANT_ATTR + "' = ?";

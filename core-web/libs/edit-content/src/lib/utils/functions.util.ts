@@ -5,7 +5,8 @@ import {
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutTab,
-    DotLanguage
+    DotLanguage,
+    UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -22,7 +23,6 @@ import {
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { Tab } from '../models/dot-edit-content-form.interface';
-import { UI_STORAGE_KEY } from '../models/dot-edit-content.constant';
 import { UIState } from '../models/dot-edit-content.model';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
@@ -313,16 +313,16 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
 };
 
 /**
- * Gets the UI state from localStorage or returns the initial state if not found
+ * Gets the UI state from sessionStorage or returns the initial state if not found
  */
 export const getStoredUIState = (): UIState => {
     try {
-        const storedState = localStorage.getItem(UI_STORAGE_KEY);
+        const storedState = sessionStorage.getItem(UI_STORAGE_KEY);
         if (storedState) {
             return JSON.parse(storedState);
         }
     } catch (e) {
-        console.warn('Error reading UI state from localStorage:', e);
+        console.warn('Error reading UI state from sessionStorage:', e);
     }
 
     return {
@@ -333,12 +333,24 @@ export const getStoredUIState = (): UIState => {
 };
 
 /**
- * Saves the UI state to localStorage
+ * Saves the UI state to sessionStorage
  */
 export const saveStoreUIState = (state: UIState): void => {
     try {
-        localStorage.setItem(UI_STORAGE_KEY, JSON.stringify(state));
+        sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
-        console.warn('Error saving UI state to localStorage:', e);
+        console.warn('Error saving UI state to sessionStorage:', e);
     }
 };
+
+/**
+ * Prepares a contentlet for copying by ensuring it's not locked and removing any previous lock owner.
+ *
+ * @param contentlet - The original contentlet to be copied
+ * @returns The contentlet with locked=false and no lockedBy property
+ */
+export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSContentlet => ({
+    ...contentlet,
+    locked: false,
+    lockedBy: undefined
+});

@@ -18,10 +18,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class GitHubMetricsBase:
-    def __init__(self, token, owner, repo):
+    def __init__(self, token, owner, repo, team_labels):
         self.token = token
         self.owner = owner 
         self.repo = repo
+        self.team_labels = team_labels if isinstance(team_labels, list) else [team_labels]
         self.base_url = f"https://api.github.com/repos/{owner}/{repo}"
         self.headers = {
             'Authorization': f'token {token}',
@@ -66,37 +67,51 @@ class GitHubMetricsBase:
     
     def get_all_falcon_issues(self, sprint_start, sprint_end, page=1):
         """Base method to get team issues within a date range"""
+        all_issues = []
         try:
-            params = {
-                'state': 'all',
-                'labels': self.team_label,
-                'since': sprint_start.isoformat(),
-                'per_page': 100,
-                'page': page
-            }
+            for team_label in self.team_labels:
+                params = {
+                    'state': 'all',
+                    'labels': team_label,
+                    'since': sprint_start.isoformat(),
+                    'per_page': 100,
+                    'page': page
+                }
+                
+                response = requests.get(
+                    f"{self.base_url}/issues",
+                    headers=self.headers,
+                    params=params,
+                    verify=False
+                )
+                response.raise_for_status()
+                issues = response.json()
+                all_issues.extend(issues)
             
-            response = requests.get(
-                f"{self.base_url}/issues",
-                headers=self.headers,
-                params=params,
-                verify=False
-            )
-            response.raise_for_status()
-            return response.json()
-            
+            return all_issues
+                
         except Exception as e:
             logger.error(f"Error fetching page {page}: {e}")
             return []
 
     def should_skip_issue(self, issue, sprint_end):
         """Common logic for filtering issues"""
-        update_time = datetime.strptime(issue['updated_at'], '%Y-%m-%dT%H:%M:%SZ')
         current_labels = [label['name'] for label in issue['labels']]
         
-        # Skip if updated after sprint end or has NW Removed label
-        if update_time > sprint_end or 'NW Removed' in current_labels:
+        # Skip if has NW Removed label
+        if 'NW Removed' in current_labels:
             return True
-            
+        
+        # If "QA : Failed Internal" is in current labels, check when it was added
+        if 'QA : Failed Internal' in current_labels:
+            events = self.get_issue_events(issue['number'])
+            for event in reversed(events):  # Check events from newest to oldest
+                if (event.get('event') == 'labeled' and 
+                    event.get('label', {}).get('name') == 'QA : Failed Internal'):
+                    label_time = datetime.strptime(event['created_at'], '%Y-%m-%dT%H:%M:%SZ')
+                    logger.info(f"QA Failed label time {label_time} - sprint_end {sprint_end}")
+                    return label_time > sprint_end
+                
         return False
 
     def format_issue_details(self, issue):
