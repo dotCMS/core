@@ -139,6 +139,8 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
+        this.#store.trackUVECalendarChange({ selectedDate: publishDate.toISOString() });
+
         this.#store.loadPageAsset({
             mode: UVE_MODE.LIVE,
             publishDate: publishDate?.toISOString()
