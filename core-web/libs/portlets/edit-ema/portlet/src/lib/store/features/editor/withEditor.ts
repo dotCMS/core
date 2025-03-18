@@ -59,7 +59,7 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
     const origin = params.clientHost || window.location.origin;
     const url = new URL(pageAPIQueryParams, origin);
 
-    return sanitizeURL(url.toString());
+    return url.toString();
 };
 
 const initialState: EditorState = {
@@ -201,8 +201,10 @@ export function withEditor() {
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     const page = store.pageAPIResponse().page;
                     const vanityURL = store.pageAPIResponse().vanityUrl?.url;
+
+                    const sanitizedURL = sanitizeURL(vanityURL ?? page?.pageURI);
                     const url = buildIframeURL({
-                        pageURI: vanityURL ?? page?.pageURI,
+                        pageURI: sanitizedURL,
                         params: store.pageParams(),
                         isTraditionalPage: untracked(() => store.isTraditionalPage())
                     });
