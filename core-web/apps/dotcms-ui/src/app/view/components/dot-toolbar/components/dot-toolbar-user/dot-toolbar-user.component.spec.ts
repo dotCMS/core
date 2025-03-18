@@ -47,8 +47,8 @@ import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
-import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
-import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
+import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
+import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
 
 class DotGravatarServiceMock {
     getPhoto() {
@@ -106,8 +106,8 @@ describe('DotToolbarUserComponent', () => {
                 CheckboxModule,
                 HttpClientTestingModule,
                 MenuModule,
-                DotLoginAsModule,
-                DotMyAccountModule,
+                DotLoginAsComponent,
+                DotMyAccountComponent,
                 DotToolbarUserComponent,
                 DotGravatarDirective,
                 AvatarModule

@@ -2,8 +2,10 @@ package com.dotmarketing.servlets;
 
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -394,11 +396,47 @@ public class ShortyServlet extends HttpServlet {
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
                 .getRenderContext(language.getId(), identifier, pageMode, APILocator.systemUser());
 
+        // If a Time Machine date is configured, attempt to retrieve the future version of the contentlet.
+        // Return if found.
+        final Optional<Contentlet> futureContentlet = getTimeMachineContentlet(identifier, renderContext);
+        if(futureContentlet.isPresent()){
+            return futureContentlet;
+        }
+        // Retrieve the contentlet based on the specified identifier and language,
+        // considering whether the live version or a preview version is required.
         return Optional.ofNullable(
                 APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
                         renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey(),
                         APILocator.systemUser(), false)
         );
+    }
+
+    /**
+     * Retrieves a contentlet for the given identifier and render context using the Time Machine feature,
+     * if a Time Machine date is configured.
+     *
+     * @param identifier      The unique identifier of the contentlet.
+     * @param renderContext   The {@link RenderContext} containing language and variant key information.
+     * @return An {@link Optional} containing the contentlet if found; otherwise, an empty Optional.
+     * @throws DotDataException     If there is an error accessing the contentlet data.
+     * @throws DotSecurityException If there is a security-related issue when retrieving the contentlet.
+     */
+    private static Optional<Contentlet> getTimeMachineContentlet(
+            final String identifier, final RenderContext renderContext) throws DotDataException, DotSecurityException {
+
+        final Optional<Date> timeMachineDate = TimeMachineUtil.getTimeMachineDateAsDate();
+        if (timeMachineDate.isPresent()) {
+            Contentlet future = APILocator.getContentletAPI().findContentletByIdentifier(
+                    identifier,
+                    renderContext.getCurrentLanguageId(),
+                    renderContext.getCurrentVariantKey(),
+                    timeMachineDate.get(),
+                    APILocator.systemUser(),
+                    false
+            );
+            return Optional.ofNullable(future);
+        }
+        return Optional.empty();
     }
 
   private void doForward(final HttpServletRequest request,

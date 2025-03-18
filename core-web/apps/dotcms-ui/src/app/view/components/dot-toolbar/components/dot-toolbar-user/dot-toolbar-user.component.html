@@ -15,11 +15,13 @@
         appendTo="body"
         styleClass="toolbar-user__menu" />
 
-    @if (vm.showMyAccount) {
+    @defer (when vm.showMyAccount) {
         <dot-my-account (shutdown)="store.showMyAccount(false)" [visible]="vm.showMyAccount" />
     }
 
     @if (vm.showLoginAs) {
-        <dot-login-as (cancel)="store.showLoginAs(false)" [visible]="vm.showLoginAs" />
+        @defer (when vm.showLoginAs) {
+            <dot-login-as (cancel)="store.showLoginAs(false)" [visible]="vm.showLoginAs" />
+        }
     }
 }
