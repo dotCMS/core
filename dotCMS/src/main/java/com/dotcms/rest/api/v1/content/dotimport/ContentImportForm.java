@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Form object that represents the JSON parameters for content import operations.
@@ -22,17 +23,28 @@ public class ContentImportForm extends Validated {
 
     private final List<String> fields;
 
+    @Nullable
+    private final Boolean stopOnError;
+
+    @Nullable
+    private final Integer commitGranularity;
+
     @JsonCreator
     public ContentImportForm(
             @JsonProperty("contentType") final String contentType,
             @JsonProperty("language") final String language,
             @JsonProperty("workflowActionId") final String workflowActionId,
-            @JsonProperty("fields") final List<String> fields) {
+            @JsonProperty("fields") final List<String> fields,
+            @JsonProperty("stopOnError") @Nullable final Boolean stopOnError,
+            @JsonProperty("commitGranularity") @Nullable final Integer commitGranularity
+    ) {
         super();
         this.contentType = contentType;
         this.language = language;
         this.workflowActionId = workflowActionId;
         this.fields = fields;
+        this.stopOnError = stopOnError;
+        this.commitGranularity = commitGranularity;
         this.checkValid();
     }
 
@@ -50,6 +62,16 @@ public class ContentImportForm extends Validated {
 
     public List<String> getFields() {
         return fields;
+    }
+
+    @Nullable
+    public Boolean getStopOnError() {
+        return stopOnError;
+    }
+
+    @Nullable
+    public Integer getCommitGranularity() {
+        return commitGranularity;
     }
 
     @Override

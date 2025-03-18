@@ -90,6 +90,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
     private static final String PARAMETER_CONTENT_TYPE = "contentType";
     private static final String PARAMETER_WORKFLOW_ACTION_ID = "workflowActionId";
     private static final String PARAMETER_STOP_ON_ERROR = "stopOnError";
+    private static final String PARAMETER_COMMIT_GRANULARITY = "commitGranularity";
     private static final String PARAMETER_CMD = Constants.CMD;
     private static final String CMD_PREVIEW = com.dotmarketing.util.Constants.PREVIEW;
     private static final String CMD_PUBLISH = com.dotmarketing.util.Constants.PUBLISH;
@@ -396,11 +397,13 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
         final var language = findLanguage(job.parameters());
         final var workflowActionId = getWorkflowActionId(job.parameters());
         final var stopOnError = getStopOnError(job.parameters());
+        final var commitGranularity = commitGranularity(job.parameters());
+
         final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
         final var importId = jobIdToLong(job.id());
 
         // Read headers and process language columns for multilingual imports
-        CsvHeaderInfo headerInfo = readHeaders(job, language == null, csvReader);
+        final CsvHeaderInfo headerInfo = readHeaders(job, language == null, csvReader);
 
         Logger.info(this, String.format("-------- Starting Content Import %s -------- ",
                 preview ? "Preview" : "Process"));
@@ -421,6 +424,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                 .request(httpReq)
                 .progressCallback(progressCallback)
                 .stopOnError(stopOnError)
+                .commitGranularityOverride(commitGranularity)
                 .build();
         return ImportUtil.importFileResult(importFileParams);
     }
@@ -509,6 +513,25 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
             }
             return false;
         }).getOrElse(false);
+    }
+
+    /**
+     * Retrieves the transaction granularity from the job parameters.
+     * @param parameters job parameters
+     * @return The transaction granularity, or the default value if not present in parameters
+     */
+    private static int commitGranularity(final Map<String, Object> parameters) {
+        final Number orNull = Try.of(() -> {
+            final Object value =
+                    parameters != null ? parameters.get(PARAMETER_COMMIT_GRANULARITY) : null;
+            if (value instanceof Number) {
+                return (Number) value;
+            } else if (value instanceof String) {
+                return Integer.parseInt((String) value);
+            }
+            return ImportUtil.COMMIT_GRANULARITY;
+        }).getOrNull();
+        return orNull != null ? orNull.intValue() : ImportUtil.COMMIT_GRANULARITY;
     }
 
     /**

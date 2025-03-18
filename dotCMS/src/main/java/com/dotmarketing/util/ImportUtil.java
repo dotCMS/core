@@ -149,7 +149,7 @@ public class ImportUtil {
     private static final String countryCodeHeader = "countryCode";
     public static final String identifierHeader = "Identifier";
 
-    static final int COMMIT_GRANULARITY = Lazy.of(
+    public static final int COMMIT_GRANULARITY = Lazy.of(
             () -> Config.getIntProperty("COMMIT_GRANULARITY", 100)
     ).get();
 
