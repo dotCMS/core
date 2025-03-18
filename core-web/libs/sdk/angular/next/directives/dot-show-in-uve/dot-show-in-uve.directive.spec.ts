@@ -2,7 +2,7 @@ import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator/je
 
 import { UVE_MODE } from '@dotcms/uve/types';
 
-import { DotShowInUVEDirective } from './dot-show-in-uve';
+import { DotShowInUVEDirective } from './dot-show-in-uve.directive';
 
 describe('DotShowInUVEDirective', () => {
     let spectator: SpectatorDirective<DotShowInUVEDirective>;

@@ -9,11 +9,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import * as dotcmsClient from '@dotcms/client';
 import * as dotcmsUVE from '@dotcms/uve';
 
-import { PageResponseMock, PageResponseOneRowMock } from './../../utils/testing.utils';
 import { DotcmsLayoutComponent } from './dotcms-layout.component';
 
 import { DotCMSContentlet, DotCMSPageAsset } from '../../models';
 import { PageContextService } from '../../services/dotcms-context/page-context.service';
+import { PageResponseMock, PageResponseOneRowMock } from '../../utils/testing.utils';
 import { RowComponent } from '../row/row.component';
 
 @Component({
