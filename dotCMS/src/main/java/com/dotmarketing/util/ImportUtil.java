@@ -564,7 +564,7 @@ public class ImportUtil {
         );
 
         // Preparing the response
-        return generateImportResult(params.preview(), params.workflowActionId(), params.fileTotalLines(), lineNumber, failedRows,
+        return generateImportResult(params, lineNumber, failedRows,
                 messages, fileInfoBuilder, counters, chosenKeyFields, contentType);
     }
 
@@ -589,13 +589,12 @@ public class ImportUtil {
      * @return an {@link ImportResult} object containing details about the operation, processed
      * data, validation messages, and summary information
      */
-    private static ImportResult generateImportResult(final boolean preview,
-            final String wfActionId, final long fileTotalLines, final int lineNumber,
+    private static ImportResult generateImportResult(final ImportFileParams params, final int lineNumber,
             final int failedRows, final List<ValidationMessage> messages,
             final Builder fileInfoBuilder, final Counters counters,
             final Set<String> chosenKeyFields, final Structure contentType) {
 
-        fileInfoBuilder.totalRows((int) fileTotalLines);
+        fileInfoBuilder.totalRows((int) params.fileTotalLines());
         final var fileInfo = fileInfoBuilder.build();
 
         final var infoMessages = messages.stream()
@@ -610,7 +609,7 @@ public class ImportUtil {
                 .filter(message -> message.type() == ValidationMessageType.ERROR)
                 .collect(Collectors.toList());
 
-        final String action = preview ? "Content preview" : "Content import";
+        final String action = params.preview() ? "Content preview" : "Content import";
         String statusMsg = String.format("%s has finished, %d lines were read correctly.", action,
                 lineNumber);
         statusMsg = !errorMessages.isEmpty() ? statusMsg + String.format(
@@ -639,13 +638,14 @@ public class ImportUtil {
 
         final var resultBuilder = ImportResult.builder();
         return resultBuilder
-                .type(preview ? OperationType.PREVIEW : OperationType.PUBLISH)
+                .type(params.preview() ? OperationType.PREVIEW : OperationType.PUBLISH)
                 .keyFields(calculatedKeyFields)
-                .workflowActionId(Optional.ofNullable(wfActionId))
+                .workflowActionId(Optional.ofNullable(params.workflowActionId()))
                 .contentTypeName(contentType.getName())
                 .contentTypeVariableName(contentType.getVelocityVarName())
                 .lastInode(Optional.ofNullable(counters.getLastInode()))
                 .fileInfo(fileInfo)
+                .stopOnError(params.stopOnError())
                 .data(ResultData.builder()
                         .processed(ProcessedData.builder()
                                 .parsedRows(lineNumber)
