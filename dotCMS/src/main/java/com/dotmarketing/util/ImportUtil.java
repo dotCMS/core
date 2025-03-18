@@ -691,24 +691,10 @@ public class ImportUtil {
             List<String> updatedInodes, final boolean updateCounters) {
 
         if (updateCounters) {
-            //counters.setContentToCreate(counters.getContentToCreate() + lineResult.contentToCreate());
-
             counters.incContentToCreate(lineResult.contentToCreate());
-
-            //counters.setContentCreated(counters.getContentCreated() + lineResult.createdContent());
-
             counters.incContentCreated(lineResult.createdContent());
-
-            //counters.setContentToUpdate(counters.getContentToUpdate() + lineResult.contentToUpdate());
-
             counters.incContentToUpdate(lineResult.contentToUpdate());
-
-            //counters.setContentUpdated(counters.getContentUpdated() + lineResult.updatedContent());
-
             counters.incContentUpdated(lineResult.updatedContent());
-
-            //counters.setContentUpdatedDuplicated(counters.getContentUpdatedDuplicated() + lineResult.duplicateContent());
-
             counters.incContentUpdatedDuplicated(lineResult.duplicateContent());
         }
 
