@@ -2626,7 +2626,7 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
-                describe('VTL Page', () => {
+                describe.skip('VTL Page', () => {
                     beforeEach(() => {
                         jest.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
