@@ -97,6 +97,7 @@ public class DependencyModDateUtil {
 	 * @return
 	 */
 	public <T> boolean excludeByModDate ( final T asset, final PusheableAsset pusheableAsset) {
+
 		if (Rule.class.isInstance(asset)) {
 			return excludeByModDate(Rule.class.cast(asset));
 		} else 	if (WorkflowScheme.class.isInstance(asset)) {
@@ -195,6 +196,11 @@ public class DependencyModDateUtil {
 				}
 
 				final PushedAsset pushedAsset = pushedAssetOptional.get();
+
+				//if (pushedAsset.isRemovePublish()) {
+				//	return false;
+				//}
+
 				boolean modifiedOnCurrentEnv = isModifiedAfterPushAsset(assetId, assetModDate, pushedAsset,
 						pusheableAsset);
 

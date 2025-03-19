@@ -35,10 +35,7 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditHistory;
-import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.business.*;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
@@ -56,6 +53,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -96,29 +94,17 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.osgi.framework.BundleContext;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -126,6 +112,8 @@ import static com.dotcms.util.CollectionsUtils.set;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 @RunWith(DataProviderRunner.class)
@@ -1450,6 +1438,105 @@ public class PublisherAPIImplTest {
         }finally {
             Config.setProperty("ASSET_REAL_PATH", realAssetsRootPath);
         }
+
+    }
+
+    @Test
+    public void publishAfterUnPublish() throws Exception {
+
+        final PublisherQueueJob publisherQueueJob = new PublisherQueueJob();
+
+        new DotConnect().setSQL("delete from publishing_pushed_assets").loadObjectResults();
+        new DotConnect().setSQL("delete from publishing_bundle").loadObjectResults();
+
+        List<Contentlet> languageVariables = getLanguageVariables();
+
+        final Set<?> languagesVariableDependencies = getLanguagesVariableDependencies(
+                        languageVariables,
+                        true, true, true);
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Field textField = new FieldDataGen().name("title").type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(textField)
+                .host(host)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(textField.variable(), "Testing")
+                .host(host)
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
+                .findSystemWorkflowScheme();
+
+        final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
+
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
+
+        //final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+
+        final PushPublisherConfig removePushConfig = new PushPublisherConfig();
+        removePushConfig.setPublishers(list(publisher));
+        removePushConfig.setOperation(PublisherConfig.Operation.UNPUBLISH);
+        removePushConfig.setLuceneQueries(list());
+        removePushConfig.setId("removePush_" + System.currentTimeMillis());
+
+        new BundleDataGen()
+                .pushPublisherConfig(removePushConfig)
+                .addAssets(list(contentlet))
+                .operation(PublisherConfig.Operation.UNPUBLISH)
+                .setSavePublishQueueElements(true)
+                .nextPersisted();
+
+        //final PublishStatus removePublish = publisherAPI.publish(removePushConfig);
+
+        final JobExecutionContext jobExecutionContext_1 = mock(JobExecutionContext.class);
+        when(jobExecutionContext_1.getFireTime()).thenReturn(new Date());
+
+        final JobDataMap jobDataMap_1 = mock(JobDataMap.class);
+        when(jobDataMap_1.get("deliveryStrategy")).thenReturn(PublisherConfig.DeliveryStrategy.ALL_ENDPOINTS);
+
+        when(jobExecutionContext_1.getMergedJobDataMap()).thenReturn(jobDataMap_1);
+
+        publisherQueueJob.execute(jobExecutionContext_1);
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setPublishers(list(publisher));
+        config.setOperation(PublisherConfig.Operation.PUBLISH);
+        config.setLuceneQueries(list());
+        config.setId("publishAfterUnPublish_" + System.currentTimeMillis());
+
+        final Bundle bundle = new BundleDataGen()
+                .pushPublisherConfig(config)
+                .addAssets(list(contentlet))
+                .filter(filterDescriptor)
+                .operation(PublisherConfig.Operation.PUBLISH)
+                .setSavePublishQueueElements(true)
+                .nextPersisted();
+
+        final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
+        when(jobExecutionContext.getFireTime()).thenReturn(new Date());
+
+        final JobDataMap jobDataMap = mock(JobDataMap.class);
+        when(jobDataMap.get("deliveryStrategy")).thenReturn(PublisherConfig.DeliveryStrategy.ALL_ENDPOINTS);
+
+        when(jobExecutionContext.getMergedJobDataMap()).thenReturn(jobDataMap);
+
+        publisherQueueJob.execute(jobExecutionContext);
+
+        final File bundleRoot = BundlerUtil.getBundleRoot(bundle.getName());
+
+
+        final List<Object> dependencies = list(contentType, contentlet, language, host, systemWorkflowScheme);
+        dependencies.addAll(languagesVariableDependencies);
+        dependencies.addAll(languageVariables);
+
+        assertBundle(null, dependencies, bundleRoot);
 
     }
 }
