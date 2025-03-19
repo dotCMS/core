@@ -2,7 +2,7 @@ import { DotClientActionType } from './public';
 
 declare global {
     interface Window {
-        dotUVE: DotUVE;
+        dotCMSUVE: DotCMSUVE;
     }
 }
 
@@ -32,7 +32,7 @@ export function sendPostMessageToEditor<T = unknown>(message: DotCMSPostMessageP
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DotCMSUVEFunction = (...args: any[]) => void;
 
-export interface DotUVE {
+export interface DotCMSUVE {
     editContentlet: DotCMSUVEFunction;
     initInlineEditing: DotCMSUVEFunction;
     reorderMenu: DotCMSUVEFunction;
