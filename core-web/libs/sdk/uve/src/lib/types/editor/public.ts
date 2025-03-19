@@ -1,3 +1,5 @@
+import { DotCMSClientParams } from './editor.model';
+
 /**
  * Represents the state of the Universal Visual Editor (UVE)
  * @interface
@@ -62,3 +64,50 @@ export type UVESubscription = {
  * @typedef {function} UVEEvent
  */
 export type UVEEvent = (callback: UVECallback) => UVESubscription;
+
+/**
+ * @description Union type for fetch configurations.
+ * @typedef {GraphQLFetchConfig | PageAPIFetchConfig} DotCMSFetchConfig
+ */
+export type DotCMSEditorConfig =
+    | {
+          params: DotCMSClientParams;
+      }
+    | {
+          query: string;
+      };
+
+/**
+ * Represents the configuration options for the DotCMS page editor.
+ * @export
+ * @interface DotCMSPageEditorConfig
+ */
+export interface DotCMSPageEditorConfig {
+    /**
+     * The pathname of the page being edited. Optional.
+     * @type {string}
+     */
+    pathname: string;
+    /**
+     *
+     * @type {DotCMSFetchConfig}
+     * @memberof DotCMSPageEditorConfig
+     * @description The configuration custom params for data fetching on Edit Mode.
+     * @example <caption>Example with Custom GraphQL query</caption>
+     * const config: DotCMSPageEditorConfig = {
+     *   editor: { query: 'query { ... }' }
+     * };
+     *
+     * @example <caption>Example usage with Custom Page API parameters</caption>
+     * const config: DotCMSPageEditorConfig = {
+     *   editor: { params: { depth: '2' } }
+     * };
+     */
+    editor?: DotCMSEditorConfig;
+    /**
+     * The reload function to call when the page is reloaded.
+     * @deprecated In future implementation we will be listening for the changes from the editor to update the page state so reload will not be needed.
+     * @type {Function}
+     */
+    onReload?: () => void;
+}

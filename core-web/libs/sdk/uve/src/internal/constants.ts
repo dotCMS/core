@@ -1,6 +1,6 @@
 import { __NOTIFY_CLIENT__ } from './enums';
 
-import { UVECallback, UVEEvent } from '../lib/types';
+import { UVECallback, UVEEvent } from '../lib/types/editor/public';
 
 // TODO: WE NEED TO LOOK FOR ALL THE NOTIFY_CLIENT EVENTS AND ADD THEM TO THE UVE_EVENTS CONSTANT WHEN WE MIGRATE THE EDITOR TO THE NEW UVE LIBRARY
 
