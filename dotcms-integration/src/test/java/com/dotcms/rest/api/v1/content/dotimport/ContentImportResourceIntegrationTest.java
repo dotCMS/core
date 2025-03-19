@@ -683,7 +683,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     private ContentImportForm createContentImportForm(String contentType, String language,
             String workflowActionId, List<String> fields) {
-        return new ContentImportForm(contentType, language, workflowActionId, fields);
+        return new ContentImportForm(contentType, language, workflowActionId, fields, null, null);
     }
 
     /**
