@@ -3,23 +3,35 @@ import { Directive, Input, OnInit, ViewContainerRef, TemplateRef } from '@angula
 import { getUVEState } from '@dotcms/uve';
 import { UVE_MODE, UVEState } from '@dotcms/uve/types';
 
+/**
+ * Directive to show a template when the UVE is in a specific mode.
+ *
+ * @example
+ * <div *dotCMSShowInUVEMode="UVE_MODE.EDIT">
+ *     This will be shown when the UVE is in edit mode.
+ * </div>
+ *
+ * @export
+ * @class DotShowInUVEModeDirective
+ * @implements {OnInit}
+ */
 @Directive({
-    selector: '[dotCMSShowInUVE]',
+    selector: '[dotCMSShowInUVEMode]',
     standalone: true
 })
-export class DotShowInUVEDirective implements OnInit {
-    @Input() when: UVE_MODE;
+export class DotShowInUVEModeDirective implements OnInit {
+    @Input() mode: UVE_MODE;
 
     constructor(
         private viewContainer: ViewContainerRef,
         private templateRef: TemplateRef<unknown>
     ) {
-        this.when = UVE_MODE.EDIT;
+        this.mode = UVE_MODE.EDIT;
     }
 
     ngOnInit(): void {
         const state: UVEState | undefined = getUVEState();
-        const shouldShow = state?.mode === this.when;
+        const shouldShow = state?.mode === this.mode;
 
         if (shouldShow) {
             this.viewContainer.createEmbeddedView(this.templateRef);

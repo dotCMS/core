@@ -1,4 +1,4 @@
-export { DotShowInUVEDirective } from './directives/dot-show-in-uve/dot-show-in-uve.directive';
+export { DotShowInUVEModeDirective } from './directives/dot-show-in-uve-mode/dot-show-in-uve-mode.directive';
 
 export { provideDotCMSImageLoader } from './providers/dot-image-loader/dot-image_loader';
 

@@ -2,14 +2,14 @@ import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator/je
 
 import { UVE_MODE } from '@dotcms/uve/types';
 
-import { DotShowInUVEDirective } from './dot-show-in-uve.directive';
+import { DotShowInUVEModeDirective } from './dot-show-in-uve-mode.directive';
 
-describe('DotShowInUVEDirective', () => {
-    let spectator: SpectatorDirective<DotShowInUVEDirective>;
+describe('DotShowInUVEModeDirective', () => {
+    let spectator: SpectatorDirective<DotShowInUVEModeDirective>;
 
     const createDirective = createDirectiveFactory({
-        directive: DotShowInUVEDirective,
-        template: `<div dotCMSShowInUVE [when]="${UVE_MODE.PREVIEW}"></div>`
+        directive: DotShowInUVEModeDirective,
+        template: `<div *dotCMSShowInUVEMode="${UVE_MODE.PREVIEW}"></div>`
     });
 
     beforeEach(() => {
