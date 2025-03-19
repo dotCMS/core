@@ -1,4 +1,4 @@
-import { DotClientActionType } from './public';
+import { DotCMSUveAction } from './public';
 
 declare global {
     interface Window {
@@ -11,23 +11,12 @@ declare global {
  *
  * @export
  * @template T
- * @interface DotCMSPostMessageProps
+ * @interface DotCMSUVEMessage
  */
-type DotCMSPostMessageProps<T> = {
-    action: DotClientActionType;
+export type DotCMSUVEMessage<T> = {
+    action: DotCMSUveAction;
     payload?: T;
 };
-
-/**
- * Post message to dotcms page editor
- *
- * @export
- * @template T
- * @param {DotCMSPostMessageProps<T>} message
- */
-export function sendPostMessageToEditor<T = unknown>(message: DotCMSPostMessageProps<T>) {
-    window.parent.postMessage(message, '*');
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DotCMSUVEFunction = (...args: any[]) => void;
@@ -38,18 +27,3 @@ export interface DotCMSUVE {
     reorderMenu: DotCMSUVEFunction;
     lastScrollYPosition: number;
 }
-
-/**
- * Represents a listener for DotCMSClientListener.
- *
- * @typedef {Object} DotCMSClientListener
- * @property {string} action - The action that triggers the event.
- * @property {string} event - The name of the event.
- * @property {function(...args: any[]): void} callback - The callback function to handle the event.
- */
-export type DotCMSClientListener = {
-    action: string;
-    event: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    callback: (...args: any[]) => void;
-};

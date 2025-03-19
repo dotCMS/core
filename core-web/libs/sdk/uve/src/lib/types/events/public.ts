@@ -1,4 +1,4 @@
-export type DotCMSInlineEditingEventType = 'BLOCK_EDITOR' | 'WYSIWYG';
+export type DotCMSInlineEditingType = 'BLOCK_EDITOR' | 'WYSIWYG';
 
 /**
  * Interface representing the data needed for inline editing in DotCMS
@@ -10,7 +10,7 @@ export type DotCMSInlineEditingEventType = 'BLOCK_EDITOR' | 'WYSIWYG';
  * @property {string} fieldName - The name of the field being edited
  * @property {Record<string, unknown>} content - The content data as key-value pairs
  */
-export interface DotCMSInlineEditorData {
+export interface DotCMSInlineEditingPayload {
     inode: string;
     language: number;
     contentType: string;
@@ -24,7 +24,7 @@ export interface DotCMSInlineEditorData {
  * @export
  * @enum {number}
  */
-export enum DotCMSClientNotificationType {
+export enum DotCMSUveEvent {
     /**
      * Request to page to reload
      */

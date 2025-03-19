@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
 
-import { UVE_MODE } from './types';
+import { UVE_MODE } from './types/editor/public';
 import { getUVEState, createUVESubscription } from './utils';
 
 import { __NOTIFY_CLIENT__ } from '../internal';
