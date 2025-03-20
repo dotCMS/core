@@ -32,15 +32,15 @@ import { DotCMSContentlet } from '../../models';
  * This component is responsible to render a text field that can be edited inline.
  *
  * @export
- * @class DotEditableTextComponent
+ * @class DotCMSEditableTextComponent
  * @implements {OnInit}
  * @implements {OnChanges}
  */
 @Component({
-    selector: 'dot-editable-text',
+    selector: 'dotcms-editable-text',
     standalone: true,
-    templateUrl: './dot-editable-text.component.html',
-    styleUrl: './dot-editable-text.component.css',
+    templateUrl: './dotcms-editable-text.component.html',
+    styleUrl: './dotcms-editable-text.component.css',
     imports: [EditorComponent],
     providers: [
         {
@@ -51,34 +51,34 @@ import { DotCMSContentlet } from '../../models';
         }
     ]
 })
-export class DotEditableTextComponent implements OnInit, OnChanges {
+export class DotCMSEditableTextComponent implements OnInit, OnChanges {
     @ViewChild(EditorComponent) editorComponent!: EditorComponent;
 
     /**
      * Represents the mode of the editor which can be `plain`, `minimal`, or `full`
      *
      * @type {DOT_EDITABLE_TEXT_MODE}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     @Input() mode: DOT_EDITABLE_TEXT_MODE = 'plain';
     /**
      * Represents the format of the editor which can be `text` or `html`
      *
      * @type {DOT_EDITABLE_TEXT_FORMAT}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     @Input() format: DOT_EDITABLE_TEXT_FORMAT = 'text';
     /**
      * Represents the `contentlet` that can be inline edited
      *
      * @type {DotCMSContentlet}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     @Input() contentlet!: DotCMSContentlet;
     /**
      * Represents the field name of the `contentlet` that can be edited
      *
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     @Input() fieldName = '';
 
@@ -86,7 +86,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * Represents the content of the `contentlet` that can be edited
      *
      * @protected
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     protected content = '';
     /**
@@ -94,7 +94,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      *
      * @protected
      * @type {EditorComponent['init']}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     protected init!: EditorComponent['init'];
     /**
@@ -102,7 +102,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      *
      * @protected
      * @type {boolean}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     protected isInsideEditor!: boolean;
 
@@ -114,7 +114,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * The TinyMCE editor
      *
      * @readonly
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     get editor() {
         return this.editorComponent?.editor;
@@ -124,7 +124,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * Returns the number of pages the contentlet is on
      *
      * @readonly
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     get onNumberOfPages() {
         return this.contentlet['onNumberOfPages'] || 1;
@@ -135,7 +135,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      *
      * @param {MessageEvent} { data }
      * @return {*}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     @HostListener('window:message', ['$event'])
     onMessage({ data }: MessageEvent) {
@@ -181,7 +181,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      *
      * @param {EventObj<MouseEvent>} { event }
      * @return {*}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     onMouseDown({ event }: EventObj<MouseEvent>) {
         if (this.onNumberOfPages <= 1 || this.editorComponent.editor.hasFocus()) {
@@ -212,7 +212,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * Handle focus out event
      *
      * @return {*}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     onFocusOut() {
         const content = this.editor.getContent({ format: this.format });
@@ -246,7 +246,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * @private
      * @param {string} editedContent
      * @return {*}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     private innerHTMLToElement() {
         const element = this.#elementRef.nativeElement;
@@ -262,7 +262,7 @@ export class DotEditableTextComponent implements OnInit, OnChanges {
      * @private
      * @param {string} editedContent
      * @return {*}
-     * @memberof DotEditableTextComponent
+     * @memberof DotCMSEditableTextComponent
      */
     private didContentChange(editedContent: string) {
         return this.content !== editedContent;

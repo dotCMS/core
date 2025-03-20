@@ -7,34 +7,46 @@ import { UVE_MODE, UVEState } from '@dotcms/uve/types';
  * Directive to show a template when the UVE is in a specific mode.
  *
  * @example
- * <div *dotCMSShowInUVEMode="UVE_MODE.EDIT">
+ * <div *dotCMSShowWhen="UVE_MODE.EDIT">
  *     This will be shown when the UVE is in edit mode.
  * </div>
  *
  * @export
- * @class DotShowInUVEModeDirective
+ * @class DotCMSShowWhenDirective
  * @implements {OnInit}
  */
 @Directive({
-    selector: '[dotCMSShowInUVEMode]',
+    selector: '[dotCMSShowWhen]',
     standalone: true
 })
-export class DotShowInUVEModeDirective implements OnInit {
-    @Input() mode: UVE_MODE;
+export class DotCMSShowWhenDirective implements OnInit {
+    #mode: UVE_MODE = UVE_MODE.EDIT;
+
+    @Input() set mode(value: UVE_MODE) {
+        this.#mode = value;
+        this.updateViewContainer();
+    }
+
+    get shouldShow(): boolean {
+        const state: UVEState | undefined = getUVEState();
+
+        return state?.mode === this.#mode;
+    }
 
     constructor(
         private viewContainer: ViewContainerRef,
         private templateRef: TemplateRef<unknown>
-    ) {
-        this.mode = UVE_MODE.EDIT;
-    }
+    ) {}
 
     ngOnInit(): void {
-        const state: UVEState | undefined = getUVEState();
-        const shouldShow = state?.mode === this.mode;
+        this.updateViewContainer();
+    }
 
-        if (shouldShow) {
+    private updateViewContainer() {
+        if (this.shouldShow) {
             this.viewContainer.createEmbeddedView(this.templateRef);
+        } else {
+            this.viewContainer.clear();
         }
     }
 }

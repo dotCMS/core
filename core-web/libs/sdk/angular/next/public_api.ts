@@ -1,5 +1,5 @@
-export { DotShowInUVEModeDirective } from './directives/dot-show-in-uve-mode/dot-show-in-uve-mode.directive';
+export { DotCMSShowWhenDirective } from './directives/dotcms-show-when/dotcms-show-when.directive';
 
-export { provideDotCMSImageLoader } from './providers/dot-image-loader/dot-image_loader';
+export { provideDotCMSImageLoader } from './providers/dotcms-image-loader/dotcms-image_loader';
 
-export { DotEditableTextComponent } from './components/dot-editable-text/dot-editable-text.component';
+export { DotCMSEditableTextComponent } from './components/dotcms-editable-text/dotcms-editable-text.component';

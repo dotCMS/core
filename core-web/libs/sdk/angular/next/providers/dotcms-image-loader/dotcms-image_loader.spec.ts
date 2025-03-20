@@ -4,7 +4,7 @@ import { NgOptimizedImage, IMAGE_LOADER, ImageLoaderConfig } from '@angular/comm
 import { TestBed } from '@angular/core/testing';
 
 // Application imports
-import { provideDotCMSImageLoader } from './dot-image_loader';
+import { provideDotCMSImageLoader } from './dotcms-image_loader';
 
 describe('Image Loader', () => {
     describe('provideDotCMSImageLoader', () => {

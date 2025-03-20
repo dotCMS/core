@@ -1,5 +1,4 @@
-import { SpyObject } from '@ngneat/spectator';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, SpyObject } from '@ngneat/spectator/jest';
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { Editor } from 'tinymce';
@@ -9,7 +8,7 @@ import { By, DomSanitizer } from '@angular/platform-browser';
 
 import * as dotcmsClient from '@dotcms/client';
 
-import { DotEditableTextComponent } from './dot-editable-text.component';
+import { DotCMSEditableTextComponent } from './dotcms-editable-text.component';
 import { TINYMCE_CONFIG } from './utils';
 
 import { dotcmsContentletMock } from '../../utils/testing.utils';
@@ -40,7 +39,7 @@ const TINYMCE_EDITOR_PROPERTY_MOCK = {
     get: jest.fn(() => TINYMCE_EDITOR_MOCK as Editor)
 };
 
-const mockEditorFn = (spectator: Spectator<DotEditableTextComponent>) => {
+const mockEditorFn = (spectator: Spectator<DotCMSEditableTextComponent>) => {
     // Mock the editor property of the EditorComponent
     // We need to test that the methods of the editor are called
     // We do not care about how the editor handles the calls under the hood
@@ -51,11 +50,11 @@ const mockEditorFn = (spectator: Spectator<DotEditableTextComponent>) => {
     );
 };
 
-describe('DotEditableTextComponent', () => {
-    let spectator: Spectator<DotEditableTextComponent>;
+describe('DotCMSEditableTextComponent', () => {
+    let spectator: Spectator<DotCMSEditableTextComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotEditableTextComponent,
+        component: DotCMSEditableTextComponent,
         declarations: [MockComponent(EditorComponent)],
         providers: [
             Renderer2,
