@@ -15,5 +15,6 @@ do
    gsed  's/\\=/=/g' -i $entry
    gsed  's/\\:/:/g' -i $entry
    gsed  's/\\ / /g' -i $entry
+   gsed "s/''''/''/g" -i $entry
 done
 
