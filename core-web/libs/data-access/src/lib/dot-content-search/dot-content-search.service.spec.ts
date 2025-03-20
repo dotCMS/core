@@ -1,6 +1,15 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotContentSearchService, EsQueryParamsSearch } from './dot-content-search.service';
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
+
+import {
+    DotContentSearchService,
+    EsQueryParamsSearch,
+    DotContentSearchParams
+} from './dot-content-search.service';
 
 describe('DotContentSearchService', () => {
     let spectator: SpectatorHttp<DotContentSearchService>;
@@ -31,6 +40,177 @@ describe('DotContentSearchService', () => {
             entity: {
                 contentlets: []
             }
+        });
+    });
+
+    describe('search', () => {
+        let mockContentlets: DotCMSContentlet[];
+
+        beforeEach(() => {
+            mockContentlets = [
+                createFakeContentlet(),
+                createFakeContentlet(),
+                createFakeContentlet()
+            ];
+        });
+
+        it('should call the search endpoint with all provided parameters', (done) => {
+            const params: DotContentSearchParams = {
+                globalSearch: 'test query',
+                systemSearchableFields: { languageId: 1 },
+                page: 0,
+                perPage: 10
+            };
+
+            spectator.service.search(params).subscribe((result) => {
+                expect(result).toEqual(mockContentlets);
+                done();
+            });
+
+            const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
+            expect(req.request.body).toEqual({
+                globalSearch: 'test query',
+                systemSearchableFields: { languageId: 1 },
+                page: 0,
+                perPage: 10
+            });
+
+            req.flush({
+                entity: {
+                    jsonObjectView: {
+                        contentlets: mockContentlets
+                    }
+                }
+            });
+        });
+
+        it('should call the search endpoint with only the globalSearch parameter', (done) => {
+            const params: DotContentSearchParams = {
+                globalSearch: 'test query'
+            };
+
+            spectator.service.search(params).subscribe((result) => {
+                expect(result).toEqual(mockContentlets);
+                done();
+            });
+
+            const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
+            expect(req.request.body).toEqual({
+                globalSearch: 'test query'
+            });
+
+            req.flush({
+                entity: {
+                    jsonObjectView: {
+                        contentlets: mockContentlets
+                    }
+                }
+            });
+        });
+
+        it('should call the search endpoint with only systemSearchableFields parameter', (done) => {
+            const params: DotContentSearchParams = {
+                systemSearchableFields: { languageId: 1, contentType: 'Blog' }
+            };
+
+            spectator.service.search(params).subscribe((result) => {
+                expect(result).toEqual(mockContentlets);
+                done();
+            });
+
+            const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
+            expect(req.request.body).toEqual({
+                systemSearchableFields: { languageId: 1, contentType: 'Blog' }
+            });
+
+            req.flush({
+                entity: {
+                    jsonObjectView: {
+                        contentlets: mockContentlets
+                    }
+                }
+            });
+        });
+
+        it('should call the search endpoint with pagination parameters only', (done) => {
+            const params: DotContentSearchParams = {
+                page: 2,
+                perPage: 20
+            };
+
+            spectator.service.search(params).subscribe((result) => {
+                expect(result).toEqual(mockContentlets);
+                done();
+            });
+
+            const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
+            expect(req.request.body).toEqual({
+                page: 2,
+                perPage: 20
+            });
+
+            req.flush({
+                entity: {
+                    jsonObjectView: {
+                        contentlets: mockContentlets
+                    }
+                }
+            });
+        });
+
+        it('should call the search endpoint with an empty object when no parameters are provided', (done) => {
+            const params: DotContentSearchParams = {};
+
+            spectator.service.search(params).subscribe((result) => {
+                expect(result).toEqual(mockContentlets);
+                done();
+            });
+
+            const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
+            expect(req.request.body).toEqual({});
+
+            req.flush({
+                entity: {
+                    jsonObjectView: {
+                        contentlets: mockContentlets
+                    }
+                }
+            });
+        });
+
+        it('should handle empty contentlets array in response', (done) => {
+            spectator.service.search({ globalSearch: 'nonexistent' }).subscribe((result) => {
+                expect(result).toEqual([]);
+                done();
+            });
+
+            const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
+            req.flush({
+                entity: {
+                    jsonObjectView: {
+                        contentlets: []
+                    }
+                }
+            });
+        });
+
+        it('should propagate error when the request fails', (done) => {
+            const errorResponse = new HttpErrorResponse({
+                error: 'test error',
+                status: 500,
+                statusText: 'Server Error'
+            });
+
+            spectator.service.search({ globalSearch: 'test' }).subscribe({
+                next: () => fail('should have failed with the error'),
+                error: (error) => {
+                    expect(error.status).toBe(500);
+                    done();
+                }
+            });
+
+            const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
+            req.flush('test error', errorResponse);
         });
     });
 });
