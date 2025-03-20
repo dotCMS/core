@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
 
 import { UVE_MODE } from './types/editor/public';
+import { __DOTCMS_UVE_EVENT__ } from './types/events/internal';
 import { getUVEState, createUVESubscription } from './utils';
-
-import { __NOTIFY_CLIENT__ } from '../internal';
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
@@ -369,7 +368,7 @@ describe('createUVESubscription', () => {
         // Create and dispatch a message event
         const messageEvent = new MessageEvent('message', {
             data: {
-                name: __NOTIFY_CLIENT__.UVE_SET_PAGE_DATA,
+                name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA,
                 payload: { test: 'data' }
             }
         });

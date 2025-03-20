@@ -63,6 +63,7 @@ export type UVESubscription = {
  */
 export type UVEEvent = (callback: UVECallback) => UVESubscription;
 
+//TODO: Recheck this after changes
 /**
  * Configuration type for DotCMS Editor
  * @typedef {Object} DotCMSEditoConfig
@@ -70,4 +71,4 @@ export type UVEEvent = (callback: UVECallback) => UVESubscription;
  * @property {number} [params.depth] - The depth level for fetching page data
  * @property {string} [query] - GraphQL query string for data fetching
  */
-export type DotCMSEditoConfig = { params: { depth: number } } | { query: string };
+export type DotCMSEditorConfig = { params: { depth: number } } | { query: string };
