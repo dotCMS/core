@@ -1,7 +1,7 @@
 /**
  * @description Custom client parameters for fetching data.
  */
-export type DotCMSClientParams = {
+export type DotCMSCustomerParams = {
     depth: string;
 };
 

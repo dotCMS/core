@@ -4,7 +4,7 @@
  * @export
  * @enum {number}
  */
-export enum DotCMSUveAction {
+export enum DotCMSUVEAction {
     /**
      * Tell the dotcms editor that page change
      */

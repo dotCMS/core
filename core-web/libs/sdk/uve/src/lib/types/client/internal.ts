@@ -1,4 +1,4 @@
-import { DotCMSUveAction } from './public';
+import { DotCMSUVEAction } from './public';
 
 declare global {
     interface Window {
@@ -14,7 +14,7 @@ declare global {
  * @interface DotCMSUVEMessage
  */
 export type DotCMSUVEMessage<T> = {
-    action: DotCMSUveAction;
+    action: DotCMSUVEAction;
     payload?: T;
 };
 
