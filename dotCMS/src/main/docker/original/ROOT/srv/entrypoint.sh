@@ -4,8 +4,10 @@ set -e
 
 umask 007
 
-source /srv/00-config-defaults.sh
+export TOMCAT_HOME=/srv/dotserver/tomcat
+
 source /srv/20-copy-overriden-files.sh
+source /srv/25-generate-dev-ssl-cert.sh
 source /srv/30-override-config-props.sh
 source /srv/40-custom-starter-zip.sh
 source /srv/50-load-dump-sql.sh
