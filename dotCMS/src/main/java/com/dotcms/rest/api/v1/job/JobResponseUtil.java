@@ -4,6 +4,10 @@ import javax.servlet.http.HttpServletRequest;
 
 public class JobResponseUtil {
 
+    private JobResponseUtil() {
+        // Utility class
+    }
+
     /**
      * Builds a JobStatusResponse object with the job ID and status URL.
      *
@@ -12,7 +16,8 @@ public class JobResponseUtil {
      * @return A JobStatusResponse object
      */
     public static JobStatusResponse buildJobStatusResponse(String jobId, HttpServletRequest request) {
-        String statusUrl = buildBaseUrlFromRequest(request) + "/api/v1/jobs/" + jobId + "/status";
+        String statusUrl = buildBaseUrlFromRequest(request)
+                + "/api/v1/content/_import/" + jobId;
         return JobStatusResponse.builder()
                 .jobId(jobId)
                 .statusUrl(statusUrl)

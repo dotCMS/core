@@ -18,7 +18,7 @@ import java.util.TreeMap;
  */
 public class OptionalJobResultSerializer extends JsonSerializer<Optional<JobResult>> {
 
-    // Constants for field names (can be externalized to configuration if needed)
+    // Constants for field names
     private static final String ERROR_ARRAY_KEY = "error";
     private static final String ERROR_CODE_KEY = "code";
     private static final String ERROR_MESSAGE_KEY = "message";
@@ -44,10 +44,10 @@ public class OptionalJobResultSerializer extends JsonSerializer<Optional<JobResu
 
         // Process errorDetail if present and add to error array in metadata
         if (jobResult.errorDetail().isPresent()) {
-            ErrorDetail errorDetail = jobResult.errorDetail().get();
+            final ErrorDetail errorDetail = jobResult.errorDetail().get();
 
             // Create or get the error list from metadata
-            List<Map<String, Object>> errorList;
+            final List<Map<String, Object>> errorList;
             if (metadata.containsKey(ERROR_ARRAY_KEY) && metadata.get(ERROR_ARRAY_KEY) instanceof List) {
                 errorList = (List<Map<String, Object>>) metadata.get(ERROR_ARRAY_KEY);
             } else {
@@ -56,7 +56,7 @@ public class OptionalJobResultSerializer extends JsonSerializer<Optional<JobResu
             }
 
             // Create error entry from errorDetail (using TreeMap for alphabetical ordering)
-            Map<String, Object> errorEntry = new TreeMap<>();
+            final Map<String, Object> errorEntry = new TreeMap<>();
 
             // Determine error code from exception class if available
             // Extract just the simple class name from the fully qualified name
@@ -93,7 +93,7 @@ public class OptionalJobResultSerializer extends JsonSerializer<Optional<JobResu
      * @param exceptionClass The fully qualified exception class name
      * @return A standardized error code derived from the exception class name
      */
-    private String determineErrorCode(String exceptionClass) {
+    private String determineErrorCode(final String exceptionClass) {
         if (exceptionClass == null || exceptionClass.isEmpty()) {
             return "UNKNOWN_ERROR";
         }
@@ -111,7 +111,7 @@ public class OptionalJobResultSerializer extends JsonSerializer<Optional<JobResu
         }
 
         // Convert to uppercase with underscores
-        StringBuilder result = new StringBuilder();
+        final StringBuilder result = new StringBuilder();
         for (int i = 0; i < simpleName.length(); i++) {
             char c = simpleName.charAt(i);
             if (i > 0 && Character.isUpperCase(c)) {
