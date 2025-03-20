@@ -1238,8 +1238,6 @@ function assetHostListTable_deleteHost(hostId){
                 }
                 let oldAssets = dijit.byId("oldAssetsRadioIdTrue").checked;
                 let maxFileSize = dijit.byId("maxFileSize").get("value");
-
-                alert(downloadUrl + "?oldAssets=" + oldAssets + "&maxSize=" + maxFileSize)
                 location.href = downloadUrl + "?oldAssets=" + oldAssets + "&maxSize=" + maxFileSize;
                 assetExportDialog.hide();
             }
