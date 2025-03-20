@@ -1,21 +1,30 @@
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck } from 'rxjs/operators';
+import { catchError, map, pluck, switchMap } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
     DotFieldService,
     DotHttpErrorManagerService,
-    DotLanguagesService
+    DotLanguagesService,
+    DotContentSearchParams
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/dotcms-models';
 
 import { Column } from '../models/column.model';
 
 type LanguagesMap = Record<number, DotLanguage>;
+
+export interface RelationshipFieldQueryParams {
+    contentTypeId: string;
+    searchTerm: string;
+    page: number;
+    perPage: number;
+    systemSearchableFields?: Record<string, unknown>;
+}
 
 @Injectable({
     providedIn: 'root'
@@ -39,6 +48,44 @@ export class RelationshipFieldService {
                 limit: 100
             })
             .pipe(pluck('jsonObjectView', 'contentlets'));
+    }
+
+    /**
+     * Searches for relationship content items using the content search API
+     * @param contentTypeId The content type ID
+     * @param searchTerm Optional search term for filtering content
+     * @param page Optional page number for pagination
+     * @param perPage Optional number of items per page
+     * @param systemSearchableFields Optional additional search fields
+     * @returns Observable of DotCMSContentlet array
+     */
+    search(queryParams: RelationshipFieldQueryParams): Observable<DotCMSContentlet[]> {
+        const params: DotContentSearchParams = {
+            globalSearch: queryParams.searchTerm,
+            systemSearchableFields: {
+                ...queryParams.systemSearchableFields,
+                contentType: queryParams.contentTypeId,
+                deleted: false,
+                working: true
+            },
+            page: queryParams.page,
+            perPage: queryParams.perPage
+        };
+
+        return this.#contentSearchService.search(params).pipe(
+            switchMap((contentlets) => {
+                if (!contentlets.length) {
+                    return of([]);
+                }
+
+                return this.#getLanguages().pipe(
+                    map((languages) => this.#prepareContent(contentlets, languages))
+                );
+            }),
+            catchError((error: HttpErrorResponse) => {
+                return this.#httpErrorManagerService.handle(error).pipe(map(() => []));
+            })
+        );
     }
 
     /**

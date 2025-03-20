@@ -4,13 +4,16 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
 
 import {
     DotContentSearchService,
     DotFieldService,
     DotHttpErrorManagerService,
-    DotLanguagesService
+    DotLanguagesService,
+    DotContentSearchParams
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
@@ -21,6 +24,7 @@ describe('RelationshipFieldService', () => {
     let spectator: SpectatorService<RelationshipFieldService>;
     let dotFieldService: SpyObject<DotFieldService>;
     let dotContentSearchService: SpyObject<DotContentSearchService>;
+    let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
 
     const createService = createServiceFactory({
         service: RelationshipFieldService,
@@ -38,6 +42,7 @@ describe('RelationshipFieldService', () => {
         spectator = createService();
         dotFieldService = spectator.inject(DotFieldService);
         dotContentSearchService = spectator.inject(DotContentSearchService);
+        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
     });
 
     describe('getColumns', () => {
@@ -323,6 +328,205 @@ describe('RelationshipFieldService', () => {
                     language: mockLocales[0]
                 });
             });
+        });
+    });
+
+    describe('search', () => {
+        const contentTypeId = 'test123';
+        const searchTerm = 'query';
+        const page = 1;
+        const perPage = 10;
+
+        const mockFakeContentlets = [
+            createFakeContentlet({
+                identifier: '123',
+                title: 'Test Content 1',
+                languageId: 1
+            }),
+            createFakeContentlet({
+                identifier: '456',
+                title: 'Test Content 2',
+                languageId: 2
+            })
+        ];
+
+        it('should search contentlets with correct parameters', (done) => {
+            const expectedParams: DotContentSearchParams = {
+                globalSearch: searchTerm,
+                systemSearchableFields: {
+                    contentType: contentTypeId,
+                    deleted: false,
+                    working: true
+                },
+                page,
+                perPage
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(mockFakeContentlets));
+
+            spectator.service
+                .search({ contentTypeId, searchTerm, page, perPage })
+                .subscribe((results) => {
+                    expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
+                    expect(results.length).toBe(2);
+
+                    // Verify languages were applied to contentlets
+                    expect(results[0].language).toEqual(mockLocales[0]);
+                    expect(results[1].language).toEqual(mockLocales[1]);
+
+                    done();
+                });
+        });
+
+        it('should handle contentlets without title by using identifier', (done) => {
+            const contentletsWithoutTitle = [
+                createFakeContentlet({
+                    identifier: '789',
+                    title: null,
+                    languageId: 1
+                })
+            ];
+
+            dotContentSearchService.search.mockReturnValue(of(contentletsWithoutTitle));
+
+            spectator.service
+                .search({ contentTypeId, searchTerm, page, perPage })
+                .subscribe((results) => {
+                    expect(results[0].title).toBe('789'); // Should use identifier when title is null
+                    expect(results[0].language).toEqual(mockLocales[0]);
+                    done();
+                });
+        });
+
+        it('should return empty array when no contentlets are found', (done) => {
+            dotContentSearchService.search.mockReturnValue(of([]));
+
+            spectator.service
+                .search({ contentTypeId, searchTerm, page, perPage })
+                .subscribe((results) => {
+                    expect(dotContentSearchService.search).toHaveBeenCalled();
+                    expect(results).toEqual([]);
+                    done();
+                });
+        });
+
+        it('should handle optional parameters correctly', () => {
+            const expectedParams: DotContentSearchParams = {
+                globalSearch: '',
+                systemSearchableFields: {
+                    contentType: contentTypeId,
+                    deleted: false,
+                    working: true
+                }
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(mockFakeContentlets));
+
+            spectator.service
+                .search({ contentTypeId, searchTerm: expectedParams.globalSearch, page, perPage })
+                .subscribe(() => {
+                    expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
+                });
+        });
+
+        it('should handle error case gracefully', () => {
+            const errorResponse = new HttpErrorResponse({
+                status: 500,
+                statusText: 'Server Error'
+            });
+            dotContentSearchService.search.mockReturnValue(throwError(() => errorResponse));
+
+            spectator.service
+                .search({ contentTypeId, searchTerm, page, perPage })
+                .subscribe((results) => {
+                    expect(dotContentSearchService.search).toHaveBeenCalled();
+                    expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
+                    expect(results).toEqual([]);
+                });
+        });
+
+        it('should apply proper title and language to contentlets', (done) => {
+            const customContentlets = [
+                createFakeContentlet({
+                    identifier: 'abc123',
+                    title: 'Custom Title',
+                    languageId: 1
+                }),
+                createFakeContentlet({
+                    identifier: 'def456',
+                    title: '', // Empty title
+                    languageId: 2
+                })
+            ];
+
+            dotContentSearchService.search.mockReturnValue(of(customContentlets));
+
+            spectator.service
+                .search({ contentTypeId, searchTerm, page, perPage })
+                .subscribe((results) => {
+                    expect(results[0].title).toBe('Custom Title');
+                    expect(results[1].title).toBe('def456'); // Should use identifier for empty title
+
+                    expect(results[0].language).toEqual(mockLocales[0]);
+                    expect(results[1].language).toEqual(mockLocales[1]);
+
+                    done();
+                });
+        });
+
+        it('should handle additional system searchable fields', (done) => {
+            const additionalFields = {
+                someField: 'someValue',
+                anotherField: 123
+            };
+
+            const expectedParams: DotContentSearchParams = {
+                globalSearch: searchTerm,
+                systemSearchableFields: {
+                    contentType: contentTypeId,
+                    ...additionalFields,
+                    deleted: false,
+                    working: true
+                },
+                page,
+                perPage
+            };
+
+            dotContentSearchService.search.mockReturnValue(of(mockFakeContentlets));
+
+            spectator.service
+                .search({
+                    contentTypeId,
+                    searchTerm,
+                    page,
+                    perPage,
+                    systemSearchableFields: additionalFields
+                })
+                .subscribe((results) => {
+                    expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
+                    expect(results.length).toBe(2);
+                    done();
+                });
+        });
+
+        it('should handle content with undefined title', (done) => {
+            const contentletsWithUndefinedTitle = [
+                createFakeContentlet({
+                    identifier: 'undefined-title',
+                    title: undefined,
+                    languageId: 1
+                })
+            ];
+
+            dotContentSearchService.search.mockReturnValue(of(contentletsWithUndefinedTitle));
+
+            spectator.service
+                .search({ contentTypeId, searchTerm, page, perPage })
+                .subscribe((results) => {
+                    expect(results[0].title).toBe('undefined-title'); // Should use identifier when title is undefined
+                    expect(results[0].language).toEqual(mockLocales[0]);
+                    done();
+                });
         });
     });
 });
