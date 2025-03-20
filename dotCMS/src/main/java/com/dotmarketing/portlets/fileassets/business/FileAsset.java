@@ -16,6 +16,8 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -192,6 +194,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	}
 
+	@JsonIgnore
 	public InputStream getInputStream() throws IOException {
 		return new BufferedInputStream(Files.newInputStream(getFileAsset().toPath()));
 	}
@@ -208,6 +211,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		super.setBinary(field, newFile);
 	}
 
+	@JsonIgnore
 	public File getFileAsset() {
 		// Calling the getBinary method can be relatively expensive since it constantly verifies
 		// the existence of the file on disk. Therefore, we'll keep a file reference at hand
@@ -215,8 +219,11 @@ public class FileAsset extends Contentlet implements IFileAsset {
 			try {
 				file = getBinary(FileAssetAPI.BINARY_FIELD);
 			} catch (final IOException e) {
-				throw new DotStateException(String.format("Failed to find binary file for File Asset " +
-						"'%s' [ %s ]: %s", getFileName(), getInode(), ExceptionUtil.getErrorMessage(e)));
+				throw new DotStateException(
+						String.format("Failed to find binary file for File Asset '%s' [ %s ]: %s",
+								getFileName(), getInode(), ExceptionUtil.getErrorMessage(e)
+						)
+				);
 			}
 		}
 		return file;

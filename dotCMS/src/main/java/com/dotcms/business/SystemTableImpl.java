@@ -28,6 +28,12 @@ class SystemTableImpl implements SystemTable {
     public SystemTableImpl() {
 
         this.systemTableFactory = FactoryLocator.getSystemTableFactory();
+        this.initIfNeeded();
+    }
+
+    @WrapInTransaction
+    public void initIfNeeded() {
+        this.systemTableFactory.initIfNeeded();
     }
 
     @Override

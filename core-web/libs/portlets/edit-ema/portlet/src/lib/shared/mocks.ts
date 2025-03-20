@@ -1,9 +1,11 @@
 import { of } from 'rxjs';
 
+import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotPageContainerStructure,
-    CONTAINER_SOURCE
+    CONTAINER_SOURCE,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import {
     mockSites,
@@ -13,7 +15,7 @@ import {
     dotcmsContentletMock
 } from '@dotcms/utils-testing';
 
-import { DEFAULT_PERSONA } from './consts';
+import { DEFAULT_PERSONA, PERSONA_KEY } from './consts';
 import { ActionPayload, ClientData } from './models';
 
 import {
@@ -26,7 +28,7 @@ import { DotPageApiResponse } from '../services/dot-page-api.service';
 export const HEADLESS_BASE_QUERY_PARAMS = {
     url: 'test-url',
     language_id: '1',
-    'com.dotmarketing.persona.id': DEFAULT_PERSONA.keyTag,
+    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
     variantName: DEFAULT_VARIANT_ID,
     clientHost: 'http://localhost:3000'
 };
@@ -34,7 +36,7 @@ export const HEADLESS_BASE_QUERY_PARAMS = {
 export const VTL_BASE_QUERY_PARAMS = {
     url: 'test-url',
     language_id: '1',
-    'com.dotmarketing.persona.id': DEFAULT_PERSONA.keyTag,
+    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
     variantName: DEFAULT_VARIANT_ID
 };
 
@@ -151,6 +153,7 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         inode: '123-i',
         canEdit: true,
         canRead: true,
+        canSeeRules: true,
         contentType: 'htmlpageasset',
         canLock: true,
         locked: false,
@@ -158,6 +161,7 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
         lockedByName: '',
         live: true
     },
+    numberContents: 6,
     viewAs: {
         language: {
             id: 1,
@@ -177,6 +181,32 @@ export const MOCK_RESPONSE_HEADLESS: DotPageApiResponse = {
     containers: mockDotContainers()
 };
 
+export const URL_CONTENT_MAP_MOCK = {
+    contentType: 'Blog',
+    identifier: '123',
+    inode: '1234',
+    title: 'hello world',
+    baseType: 'CONTENT',
+    folder: 'SYSTEM_FOLDER',
+    host: '123',
+    languageId: 1,
+    live: true,
+    modDate: '1722992210315',
+    modUser: 'dotcms.org.1',
+    owner: 'dotcms.org.1',
+    url: '/content.ec123',
+    working: true,
+    archived: false,
+    hasTitleImage: true,
+    hostName: 'demo.dotcms.com',
+    locked: false,
+    modUserName: 'Admin User',
+    sortOrder: 0,
+    stInode: '799f176a-d32e-4844-a07c-1b5fcd107578',
+    titleImage: 'image',
+    URL_MAP_FOR_CONTENT: '/test-url'
+};
+
 export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     page: {
         pageURI: 'test-url',
@@ -185,6 +215,7 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         inode: '123-i',
         canEdit: true,
         canRead: true,
+        canSeeRules: true,
         rendered: '<html><body><h1>Hello, World!</h1></body></html>',
         contentType: 'htmlpageasset',
         canLock: true,
@@ -195,6 +226,7 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
         liveInode: '1234',
         stInode: '12345'
     },
+    numberContents: 6,
     viewAs: {
         language: {
             id: 1,
@@ -212,6 +244,11 @@ export const MOCK_RESPONSE_VTL: DotPageApiResponse = {
     layout: mockDotLayout(),
     template: mockDotTemplate(),
     containers: mockDotContainers()
+};
+
+export const PAGE_RESPONSE_URL_CONTENT_MAP = {
+    ...MOCK_RESPONSE_VTL,
+    urlContentMap: URL_CONTENT_MAP_MOCK
 };
 
 export const dotPageContainerStructureMock: DotPageContainerStructure = {
@@ -387,13 +424,6 @@ export const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
     position: 'before'
 };
 
-export const URL_CONTENT_MAP_MOCK = {
-    contentType: 'Blog',
-    identifier: '123',
-    inode: '1234',
-    title: 'hello world'
-};
-
 export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
     1: of({
         page: {
@@ -402,6 +432,7 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
             inode: '123',
             canEdit: true,
             canRead: true,
+            canSeeRules: true,
             pageURI: 'index',
             liveInode: '1234',
             stInode: '12345',
@@ -430,6 +461,7 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
             inode: '123',
             canEdit: true,
             canRead: true,
+            canSeeRules: true,
             pageURI: 'index',
             liveInode: '1234',
             stInode: '12345',
@@ -458,6 +490,7 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
             inode: '123',
             canEdit: true,
             canRead: true,
+            canSeeRules: true,
             pageURI: 'index',
             liveInode: '1234',
             stInode: '12345',
@@ -480,12 +513,13 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
     })
 };
 
-export const getVanityUrl = (url, mock) => ({
-    vanityUrl: {
-        ...mock,
-        url
-    }
-});
+export const getVanityUrl = (url, mock) =>
+    ({
+        vanityUrl: {
+            ...mock,
+            url
+        }
+    }) as unknown as DotPageApiResponse;
 
 export const FORWARD_VANITY_URL = {
     pattern: '',
@@ -723,6 +757,35 @@ export const BASE_SHELL_PROPS_RESPONSE = {
 };
 
 export const UVE_PAGE_RESPONSE_MAP = {
+    // URLContentMap with hasLiveVersion false
+    9: of({
+        page: {
+            title: 'hello world',
+            inode: PAGE_INODE_MOCK,
+            identifier: '123',
+            canRead: true,
+            canSeeRules: true,
+            pageURI: 'page-one',
+            rendered: '<div>New Content - Hello World</div>',
+            canEdit: true,
+            hasLiveVersion: false
+        },
+        site: {
+            identifier: '123'
+        },
+        viewAs: {
+            language: {
+                id: 4,
+                language: 'German',
+                countryCode: 'DE',
+                languageCode: 'de',
+                country: 'Germany'
+            },
+            persona: DEFAULT_PERSONA
+        },
+        urlContentMap: { ...URL_CONTENT_MAP_MOCK, hasLiveVersion: false },
+        containers: dotPageContainerStructureMock
+    }),
     // Locked without unlock permission
     8: of({
         page: {
@@ -731,6 +794,7 @@ export const UVE_PAGE_RESPONSE_MAP = {
             identifier: '123',
             canEdit: true,
             canRead: true,
+            canSeeRules: true,
             pageURI: 'page-one',
             canLock: false,
             isLocked: true,
@@ -759,6 +823,7 @@ export const UVE_PAGE_RESPONSE_MAP = {
             identifier: '123',
             canEdit: true,
             canRead: true,
+            canSeeRules: true,
             pageURI: 'page-one',
             canLock: true,
             locked: true,
@@ -785,6 +850,7 @@ export const UVE_PAGE_RESPONSE_MAP = {
             inode: PAGE_INODE_MOCK,
             identifier: '123',
             canRead: true,
+            canSeeRules: true,
             pageURI: 'page-one',
             canEdit: false
         },
@@ -810,6 +876,7 @@ export const UVE_PAGE_RESPONSE_MAP = {
             inode: PAGE_INODE_MOCK,
             identifier: 'i-have-a-running-experiment',
             canRead: true,
+            canSeeRules: true,
             pageURI: 'page-one',
             rendered: '<div>New Content - Hello World</div>',
             canEdit: true
@@ -836,6 +903,7 @@ export const UVE_PAGE_RESPONSE_MAP = {
             inode: PAGE_INODE_MOCK,
             identifier: '123',
             canRead: true,
+            canSeeRules: true,
             pageURI: 'page-one',
             rendered: '<div>New Content - Hello World</div>',
             canEdit: true
@@ -862,6 +930,7 @@ export const UVE_PAGE_RESPONSE_MAP = {
             inode: PAGE_INODE_MOCK,
             identifier: '123',
             canRead: true,
+            canSeeRules: true,
             pageURI: 'page-one',
             rendered: '<div>hello world</div>',
             canEdit: true
@@ -888,6 +957,7 @@ export const UVE_PAGE_RESPONSE_MAP = {
             inode: PAGE_INODE_MOCK,
             identifier: '123',
             canRead: true,
+            canSeeRules: true,
             pageURI: 'page-one',
             canEdit: true
         },
@@ -913,6 +983,7 @@ export const UVE_PAGE_RESPONSE_MAP = {
             identifier: '123',
             canEdit: true,
             canRead: true,
+            canSeeRules: true,
             pageURI: 'page-one'
         },
         site: {
@@ -931,4 +1002,28 @@ export const UVE_PAGE_RESPONSE_MAP = {
         urlContentMap: URL_CONTENT_MAP_MOCK,
         containers: dotPageContainerStructureMock
     })
+};
+
+export const PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK = {
+    ...MOCK_RESPONSE_VTL,
+    page: {
+        ...MOCK_RESPONSE_VTL.page,
+        rendered: '<h1>Advance template render</h1>'
+    }
+};
+
+export const dotPropertiesServiceMock = {
+    getFeatureFlags: () =>
+        of({
+            [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false
+        })
+};
+
+export const mockCurrentUser: CurrentUser = {
+    email: 'test@example.com',
+    givenName: 'Test',
+    loginAs: false,
+    roleId: 'role123',
+    surname: 'User',
+    userId: 'user123'
 };

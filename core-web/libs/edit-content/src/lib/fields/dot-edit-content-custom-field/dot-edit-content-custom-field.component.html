@@ -1,17 +1,19 @@
-<iframe
-    (load)="onIframeLoad()"
-    [src]="src | safeUrl"
-    [ngClass]="{ 'legacy-custom-field--fullscreen': isFullscreen }"
-    [ngStyle]="!isFullscreen && { height: variables?.height, width: variables?.width }"
-    [title]="'Content Type ' + field.variable + ' and field ' + field.name"
-    class="legacy-custom-field"
-    #iframe
-    data-testId="iframe"
-    frameborder="0"></iframe>
+@if ($src(); as src) {
+    <iframe
+        (load)="onIframeLoad()"
+        [src]="src | safeUrl"
+        [class.legacy-custom-field--fullscreen]="$isFullscreen()"
+        [ngStyle]="!$isFullscreen() && { height: $variables()?.height, width: $variables()?.width }"
+        [title]="$iframeTitle()"
+        class="legacy-custom-field"
+        #iframe
+        data-testId="custom-field-iframe"
+        frameborder="0"></iframe>
+}
 
-@if (isFullscreen) {
+@if ($isFullscreen()) {
     <p-button
-        (click)="isFullscreen = false"
+        (click)="$isFullscreen.set(false)"
         icon="pi pi-times"
         styleClass="p-button-rounded p-button-text" />
 }

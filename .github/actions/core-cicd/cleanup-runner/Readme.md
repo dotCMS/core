@@ -40,7 +40,7 @@ Here's an example of how to incorporate this action into your workflow:
 ```yaml
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - uses: actions/checkout@v2
 

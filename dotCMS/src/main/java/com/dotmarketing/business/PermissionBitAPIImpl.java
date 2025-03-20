@@ -718,7 +718,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @return boolean
 	 * @throws DotDataException
 	 */
-	private boolean checkIfContentletTypeHasEditPermissions(final Permissionable permissionable, final User user) throws DotDataException {
+	public boolean checkIfContentletTypeHasEditPermissions(final Permissionable permissionable, final User user) throws DotDataException {
 
 		return permissionable instanceof Contentlet? // we can check if the content type has edit permissions
 				doesUserHavePermission(Contentlet.class.cast(permissionable).getContentType(), PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user):false;

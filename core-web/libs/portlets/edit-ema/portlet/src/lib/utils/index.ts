@@ -1,7 +1,11 @@
+import { Params } from '@angular/router';
+
 import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
     DotContainerMap,
+    DotDevice,
     DotExperiment,
     DotExperimentStatus,
     DotPageContainerStructure,
@@ -9,8 +13,13 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams } from '../services/dot-page-api.service';
-import { COMMON_ERRORS, DEFAULT_PERSONA } from '../shared/consts';
+import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import {
+    BASE_IFRAME_MEASURE_UNIT,
+    COMMON_ERRORS,
+    DEFAULT_PERSONA,
+    PERSONA_KEY
+} from '../shared/consts';
 import { EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
@@ -18,11 +27,16 @@ import {
     ContentletDragPayload,
     ContentTypeDragPayload,
     DotPage,
+    DotPageAssetParams,
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
+import { Orientation } from '../store/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
+
+const REORDER_MENU_BASE_URL =
+    'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';
 
 export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
     baseType: 'dotAsset',
@@ -104,7 +118,10 @@ export function deleteContentletFromContainer(action: ActionPayload): {
             };
         }
 
-        return currentContainer;
+        return {
+            ...currentContainer,
+            personaTag
+        };
     });
 
     return {
@@ -179,15 +196,19 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 }
 
 /**
- * Remove the index from the end of the url if it's nested and also remove extra slashes
+ * Sanitizes a URL by:
+ * 1. Removing extra leading/trailing slashes
+ * 2. Preserving 'index' in the URL path
  *
  * @param {string} url
  * @return {*}  {string}
  */
 export function sanitizeURL(url?: string): string {
-    return url
-        ?.replace(/(^\/)|(\/$)/g, '') // Remove slashes from the beginning and end of the url
-        .replace(/\/index$/, ''); // Remove index from the end of the url
+    if (!url || url === '/') {
+        return '/';
+    }
+
+    return url.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
 }
 
 /**
@@ -205,37 +226,84 @@ export const getPersonalization = (persona: Record<string, string>) => {
 };
 
 /**
- * Create a page api url with query params
+ * Constructs a full page URL by appending query parameters.
+ *
+ * This function takes a base URL and a set of parameters, optionally normalizing them,
+ * and returns a complete URL with the query parameters appended. It ensures that any
+ * undefined values are removed and that the 'url' parameter is not included in the query string.
  *
  * @export
- * @param {string} url
- * @param {Partial<DotPageApiParams>} params
- * @return {*}  {string}
+ * @param {FullPageURLParams} { url, params, userFriendlyParams = false } - The parameters for constructing the URL.
+ * @param {string} url - The base URL to which query parameters will be appended.
+ * @param {DotPageAssetParams} params - The query parameters to append to the URL.
+ * @param {boolean} [userFriendlyParams=false] - If true, the query parameters are normalized to be more readable and user-friendly. This may involve renaming keys or removing default values that are not necessary for end-users.
+ * @return {string} The full URL with query parameters appended.
  */
-export function createPageApiUrlWithQueryParams(
-    url: string,
-    params: Partial<DotPageApiParams>
-): string {
-    // Set default values
-    const completedParams = {
-        ...params,
-        language_id: params?.language_id ?? '1',
-        'com.dotmarketing.persona.id':
-            params?.['com.dotmarketing.persona.id'] ?? DEFAULT_PERSONA.identifier,
-        variantName: params?.variantName ?? DEFAULT_VARIANT_ID
-    };
+export function getFullPageURL({
+    url,
+    params,
+    userFriendlyParams = false
+}: {
+    url: string;
+    params: DotPageAssetParams;
+    userFriendlyParams?: boolean;
+}): string {
+    const searchParams = userFriendlyParams ? normalizeQueryParams(params) : { ...params };
 
-    // Filter out undefined values and url
-    Object.keys(completedParams).forEach(
-        (key) =>
-            (completedParams[key] === undefined || key === 'url') && delete completedParams[key]
+    // Remove 'url' from query parameters if present
+    if (searchParams.url) {
+        delete searchParams['url'];
+    }
+
+    if (searchParams.clientHost) {
+        delete searchParams['clientHost'];
+    }
+
+    // Filter out undefined values from query parameters
+    Object.keys(searchParams).forEach(
+        (key) => searchParams[key] === undefined && delete searchParams[key]
     );
 
-    const queryParams = new URLSearchParams({
-        ...completedParams
+    const path = cleanPageURL(url);
+    const paramsAsString = new URLSearchParams({
+        ...searchParams
     }).toString();
 
-    return queryParams.length ? `${url}?${queryParams}` : url;
+    return paramsAsString ? `${path}?${paramsAsString}` : path;
+}
+
+/**
+ * Cleans and transforms query parameters for better readability and usability.
+ *
+ * This function processes the given query parameters by removing unnecessary values
+ * (e.g., default identifiers) and renaming specific keys for a more user-friendly format.
+ * Additional transformations can be applied as needed.
+ *
+ * @export
+ * @param {Object} params - The raw query parameters to be processed.
+ * @param {string} baseClientHost - The base client host to be used to compare with the clientHost query param.
+ * @return {Object} A cleaned and formatted version of the query parameters.
+ */
+export function normalizeQueryParams(params, baseClientHost?: string) {
+    const queryParams = { ...params };
+
+    if (queryParams[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
+        delete queryParams[PERSONA_KEY];
+    }
+
+    if (queryParams[PERSONA_KEY]) {
+        queryParams['personaId'] = params[PERSONA_KEY];
+        delete queryParams[PERSONA_KEY];
+    }
+
+    if (
+        baseClientHost &&
+        new URL(baseClientHost).toString() === new URL(params.clientHost).toString()
+    ) {
+        delete queryParams.clientHost;
+    }
+
+    return queryParams;
 }
 
 /**
@@ -423,8 +491,8 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotPageCont
  * @param {DotPageApiParams} params
  * @return {*}  {string}
  */
-export const getRequestHostName = (isTraditionalPage: boolean, params: DotPageApiParams) => {
-    return !isTraditionalPage ? params.clientHost : window.location.origin;
+export const getRequestHostName = (params: DotPageApiParams) => {
+    return params?.clientHost || window.location.origin;
 };
 
 /**
@@ -509,4 +577,171 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
         // In that case, we are draging an invalid element from the window
         return null;
     }
+};
+
+/**
+ * Adds missing query parameters `pagePath` and `hostId` to the given URL if they are not already present.
+ *
+ * @param {Object} params - The parameters object.
+ * @param {string} params.url - The URL to which the parameters will be added.
+ * @param {string} params.pagePath - The page path to be added as a query parameter if missing.
+ * @param {string} params.hostId - The host ID to be added as a query parameter if missing.
+ * @returns {string} - The updated URL with the missing parameters added.
+ */
+export const createReorderMenuURL = ({
+    startLevel,
+    depth,
+    pagePath,
+    hostId
+}: {
+    startLevel: number;
+    depth: number;
+    pagePath: string;
+    hostId: string;
+}) => {
+    const urlObject = new URL(REORDER_MENU_BASE_URL, window.location.origin);
+
+    const params = urlObject.searchParams;
+
+    if (!params.has('startLevel')) {
+        params.set('startLevel', startLevel.toString());
+    }
+
+    if (!params.has('depth')) {
+        params.set('depth', depth.toString());
+    }
+
+    if (!params.has('pagePath')) {
+        params.set('pagePath', pagePath);
+    }
+
+    if (!params.has('hostId')) {
+        params.set('hostId', hostId);
+    }
+
+    return urlObject.toString();
+};
+
+/**
+ * Check if the clientHost is in the whitelist provided by the app
+ *
+ * @private
+ * @param {string} clientHost
+ * @param {*} [allowedDevURLs=[]]
+ * @return {*}
+ * @memberof DotEmaShellComponent
+ */
+export const checkClientHostAccess = (
+    clientHost: string,
+    allowedDevURLs: string[] = []
+): boolean => {
+    if (!clientHost || !Array.isArray(allowedDevURLs) || !allowedDevURLs.length) {
+        return false;
+    }
+
+    // Most IDEs and terminals add a / at the end of the URL, so we need to sanitize it
+    const sanitizedClientHost = new URL(clientHost).toString();
+    const sanitizedAllowedDevURLs = allowedDevURLs.map((url) => new URL(url).toString());
+
+    return sanitizedAllowedDevURLs.includes(sanitizedClientHost);
+};
+
+/**
+ * Retrieve the page params from the router query params
+ *
+ * @export
+ * @param {Params} params
+ * @return {*}  {DotPageApiParams}
+ */
+export function getAllowedPageParams(params: Params): DotPageAssetParams {
+    const allowedParams: DotPageAssetKeys[] = Object.values(DotPageAssetKeys);
+
+    return Object.keys(params)
+        .filter((key) => key && allowedParams.includes(key as DotPageAssetKeys))
+        .reduce((obj, key) => {
+            obj[key] = params[key];
+
+            return obj;
+        }, {}) as DotPageAssetParams;
+}
+
+/**
+ * Determines the target URL for navigation.
+ *
+ * If `urlContentMap` is present and contains a `URL_MAP_FOR_CONTENT`, it will be used.
+ * Otherwise, it falls back to the URL extracted from the event.
+ *
+ * @param {string | undefined} url - The URL extracted from the event.
+ * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
+ */
+export function getTargetUrl(
+    url: string | undefined,
+    urlContentMap: DotCMSContentlet
+): string | undefined {
+    // Return URL from content map or fallback to the provided URL
+    return urlContentMap?.URL_MAP_FOR_CONTENT || url;
+}
+
+/**
+ * Determines whether navigation to a new URL is necessary.
+ *
+ * @param {string | undefined} targetUrl - The target URL for navigation.
+ * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
+ */
+export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
+    // Navigate if the target URL is defined and different from the current URL
+    return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
+}
+
+/**
+ * Get the page URI from the contentlet
+ *
+ * If the URL_MAP_FOR_CONTENT is present, it will be used as the page URI.
+ *
+ * @param {DotCMSContentlet} { urlContentMap, pageURI, url}
+ * @return {*}  {string}
+ */
+export const getPageURI = ({ urlContentMap, pageURI, url }: DotCMSContentlet): string => {
+    const contentMapUrl = urlContentMap?.URL_MAP_FOR_CONTENT;
+    const pageURIUrl = pageURI ?? url;
+    const newUrl = contentMapUrl ?? pageURIUrl;
+
+    return sanitizeURL(newUrl);
+};
+
+export const getOrientation = (device: DotDevice): Orientation => {
+    return Number(device?.cssHeight) > Number(device?.cssWidth)
+        ? Orientation.PORTRAIT
+        : Orientation.LANDSCAPE;
+};
+
+export const getWrapperMeasures = (
+    device: DotDevice,
+    orientation?: Orientation
+): { width: string; height: string } => {
+    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
+
+    return orientation === Orientation.LANDSCAPE
+        ? {
+              width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+              height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
+          }
+        : {
+              width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
+              height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
+          };
+};
+
+/**
+ * Cleans and normalizes a page URL by:
+ * 1. Removing leading slashes while preserving trailing slash if present
+ * 2. Converting multiple consecutive slashes at end into single slashes
+ *
+ * @param {string} url - The URL to clean
+ * @returns {string} The cleaned URL with normalized slashes
+ */
+export const cleanPageURL = (url: string) => {
+    return url
+        .replace(/^\/*(.*?)(\/+)?$/, '$1$2') // Capture content and optional trailing slash
+        .replace(/\/+/g, '/'); // Clean up any remaining multiple slashes
 };

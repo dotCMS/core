@@ -3,6 +3,7 @@ package com.dotcms.jobs.business.queue;
 import com.dotmarketing.util.Config;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.inject.Named;
 
 /**
  * This class is responsible for producing the JobQueue implementation used in the application. It
@@ -22,17 +23,16 @@ public class JobQueueProducer {
      *
      * @return A JobQueue instance
      */
+    @Named("queueProducer")
     @Produces
-    @ApplicationScoped
     public JobQueue produceJobQueue() {
 
         if (JOB_QUEUE_IMPLEMENTATION_TYPE.equals("postgres")) {
             return new PostgresJobQueue();
         }
 
-        throw new IllegalStateException(
-                "Unknown job queue implementation type: " + JOB_QUEUE_IMPLEMENTATION_TYPE
-        );
+        throw new IllegalStateException("Unknown job queue implementation type: " + JOB_QUEUE_IMPLEMENTATION_TYPE);
+
     }
 
 }

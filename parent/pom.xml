@@ -76,7 +76,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20240719</starter.deploy.version>
+        <starter.deploy.version>empty_20241105</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
@@ -92,7 +92,7 @@
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
 
         <javadoc.additional.params>-Xdoclint:none --allow-script-in-comments</javadoc.additional.params>
-        <jdk.min.version>${maven.compiler.argument.source}</jdk.min.version>
+        <jdk.min.version>21</jdk.min.version>
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
         <maven.compiler.argument.target>${maven.compiler.target}</maven.compiler.argument.target>
         <maven.compiler.argument.testSource>${maven.compiler.testSource}</maven.compiler.argument.testSource>
@@ -196,6 +196,7 @@
         <docker.skip.clean.after>false</docker.skip.clean.after>
         <debug.suspend.flag>n</debug.suspend.flag>
         <debug.port>5005</debug.port>
+
         <!-- Default debug port -->
         <debug.args.default>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${debug.suspend.flag},address=*:${debug.port}</debug.args.default>
         <debug.args/>
@@ -206,6 +207,8 @@
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
+        <glowroot.version>0.14.2</glowroot.version>
+        <jmeter.test.skip>true</jmeter.test.skip>
     </properties>
 
     <build>
@@ -221,6 +224,11 @@
         <pluginManagement>
 
             <plugins>
+                <plugin>
+                    <groupId>com.lazerycode.jmeter</groupId>
+                    <artifactId>jmeter-maven-plugin</artifactId>
+                    <version>3.8.0</version>
+                </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>flatten-maven-plugin</artifactId>
@@ -374,6 +382,10 @@
                                         <file.encoding>UTF-8</file.encoding>
                                         <DOT_ES_ENDPOINTS>http://es:9200</DOT_ES_ENDPOINTS>
                                         <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                                        <DOT_ANALYTICS_IDP_URL>http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/token</DOT_ANALYTICS_IDP_URL>
+                                        <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
+                                        <DOT_FEATURE_FLAG_EXPERIMENTS>true</DOT_FEATURE_FLAG_EXPERIMENTS>
+                                        <DOT_ENABLE_EXPERIMENTS_AUTO_JS_INJECTION>true</DOT_ENABLE_EXPERIMENTS_AUTO_JS_INJECTION>
                                     </env>
                                     <volumes>
                                         <bind combine.children="append">
@@ -1043,8 +1055,7 @@
                                 </bannedRepositories>
                                 <requireJavaVersion>
                                     <version>${jdk.min.version}</version>
-                                    <message>To build this project JDK ${jdk.min.version} (or greater) is required.
-                                        Please install it.</message>
+                                    <message>Building this project requires JDK version ${jdk.min.version} or higher. It is recommended to use SDKMAN to manage JDK versions. Run "sdk env install" to install and activate the correct JDK version specified in the .sdkmanrc file.</message>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
@@ -1475,14 +1486,24 @@
                                 </goals>
                                 <phase>validate</phase>
                                 <configuration>
-                                    <target>
+                                    <target xmlns:ac="antlib:net.sf.antcontrib">
                                         <!-- Here is where you define your Ant tasks -->
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="DotCMS started on     : http://localhost:${tomcat.port}/dotAdmin"/>
+                                        <echo message="DotCMS started on (use fixed with -Dtomcat.port=8080)    : http://localhost:${tomcat.port}/dotAdmin"/>
+
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="Postgres started on   : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
+                                        <echo message="Postgres started on  (use fixed with -Ddb.port=5423) : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
                                         <!--suppress UnresolvedMavenProperty -->
-                                        <echo message="OpenSearch started on : http://localhost:${es.port}"/>
+                                        <echo message="OpenSearch started on (use fixed with -Des.port=9200) : http://localhost:${es.port}"/>
+
+
+                                        <!-- Check if the glowroot profile is enabled and output the glowroot.port -->
+                                        <ac:if>
+                                            <ac:isset property="glowroot.port"/>
+                                            <then>
+                                                <echo message="Glowroot started on (use fixed with -Dglowroot.port=4000) : http://localhost:${glowroot.port}"/>
+                                            </then>
+                                        </ac:if>
                                     </target>
                                 </configuration>
                             </execution>
@@ -1569,6 +1590,39 @@
                                 <phase>process-resources</phase>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>glowroot</id>
+            <activation>
+                <property>
+                    <name>docker.glowroot.enabled</name>
+                    <value>true</value>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <ports combine.children="append">
+                                            <port>glowroot.port:4000</port>
+                                        </ports>
+                                        <env>
+                                            <GLOWROOT_ENABLED>true</GLOWROOT_ENABLED>
+                                            <GLOWROOT_WEB_UI_ENABLED>true</GLOWROOT_WEB_UI_ENABLED>
+                                        </env>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

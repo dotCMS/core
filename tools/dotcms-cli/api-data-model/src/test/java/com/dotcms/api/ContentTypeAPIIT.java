@@ -21,11 +21,13 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.Relationships;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.workflow.SystemAction;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
 import com.dotcms.model.contenttype.FilterContentTypesRequest;
 import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
@@ -114,7 +116,6 @@ class ContentTypeAPIIT {
                         .build()).build();
 
         final String ctAsString = objectMapper.writeValueAsString(contentType);
-        System.out.println(ctAsString);
 
         final ContentType ct = objectMapper.readValue(ctAsString, ContentType.class);
         Assert.assertNotNull(ct);
@@ -142,6 +143,50 @@ class ContentTypeAPIIT {
         final ImmutableSimpleContentType entity = (ImmutableSimpleContentType)entityView.entity();
         Assert.assertNotNull(entity);
  */
+    }
+
+    /**
+     * Generate a CT using our classes model then test we can go back and forth using serialization
+     * and test our fields actually get translated properly using polymorphism to finally test we
+     * can create a SaveContentTypeRequest from a ContentType and the values are properly set.
+     *
+     * @throws JsonProcessingException If an error occurs while processing JSON.
+     */
+    @Test
+    void Test_Content_Type_Model_SaveContentTypeRequest() throws JsonProcessingException {
+
+        final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
+
+        final ImmutablePageContentType contentType = ImmutablePageContentType.builder()
+                .baseType(BaseContentType.HTMLPAGE)
+                .description("desc")
+                .id("1")
+                .variable("var")
+                .addFields(ImmutableBinaryField.builder()
+                        .name("name")
+                        .id("1")
+                        .variable("fieldVar")
+                        .build()).build();
+
+        final String ctAsString = objectMapper.writeValueAsString(contentType);
+
+        final ContentType ct = objectMapper.readValue(ctAsString, ContentType.class);
+        Assert.assertNotNull(ct);
+        Assert.assertTrue(
+                ct.fields().stream().anyMatch(field -> field instanceof BinaryField));
+
+        Assertions.assertEquals(BaseContentType.HTMLPAGE, ct.baseType());
+        Assertions.assertEquals(ContentType.SYSTEM_HOST, ct.host());
+        Assertions.assertEquals(ContentType.SYSTEM_FOLDER, ct.folder());
+
+        // Now we validate that when we create a SaveContentTypeRequest from a ContentType we have
+        // the proper values
+        final SaveContentTypeRequest contentTypeRequest = AbstractSaveContentTypeRequest.builder()
+                .of(ct).build();
+        Assertions.assertEquals(BaseContentType.HTMLPAGE, contentTypeRequest.baseType());
+        Assertions.assertEquals(ct.getClass(), contentTypeRequest.typeInf());
+        Assertions.assertEquals(ContentType.SYSTEM_HOST, contentTypeRequest.host());
+        Assertions.assertEquals(ContentType.SYSTEM_FOLDER, contentTypeRequest.folder());
     }
 
     /**
@@ -234,8 +279,8 @@ class ContentTypeAPIIT {
                 ).build();
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(contentType).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder().
+                of(contentType).build();
 
         final ResponseEntityView<List<ContentType>> response = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(response);
@@ -250,8 +295,8 @@ class ContentTypeAPIIT {
 
         // Now lets test update
         final ImmutableSimpleContentType updatedContentType = ImmutableSimpleContentType.builder().from(newContentType).description("Updated").build();
-        final SaveContentTypeRequest request = SaveContentTypeRequest.builder().
-                from(updatedContentType).build();
+        final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder().
+                of(updatedContentType).build();
         final ResponseEntityView<ContentType> responseEntityView = getUpdateContentTypeResponse(
                 client, request);
         Assertions.assertEquals("Updated", responseEntityView.entity().description());
@@ -358,8 +403,8 @@ class ContentTypeAPIIT {
             // ---
             // Create the content type with the action mappings
             final var contentType = contentTypeWithoutMapping.withSystemActionMappings(jsonNodeV1);
-            final SaveContentTypeRequest request = SaveContentTypeRequest.builder()
-                    .from(contentType).build();
+            final SaveContentTypeRequest request = AbstractSaveContentTypeRequest.builder()
+                    .of(contentType).build();
             final ResponseEntityView<List<ContentType>> createContentTypeResponse =
                     client.createContentTypes(List.of(request));
 
@@ -378,8 +423,8 @@ class ContentTypeAPIIT {
             // Modifying the content type without system mappings, nothing should change in mappings
             var modifiedContentType = contentTypeWithoutMapping.withDescription("Modified!");
 
-            final SaveContentTypeRequest contentTypeRequest = SaveContentTypeRequest.builder()
-                    .from(modifiedContentType).build();
+            final SaveContentTypeRequest contentTypeRequest = AbstractSaveContentTypeRequest.builder()
+                    .of(modifiedContentType).build();
 
             // Use of Awaitility to wait for the modified response
             await().atMost(10, TimeUnit.SECONDS).until(() -> {
@@ -402,7 +447,8 @@ class ContentTypeAPIIT {
                     .withDescription("Modified 2!")
                     .withSystemActionMappings(jsonNodeV2);
 
-            final SaveContentTypeRequest contentTypeRequest1 = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            final SaveContentTypeRequest contentTypeRequest1 = AbstractSaveContentTypeRequest.builder()
+                    .of(modifiedContentType).build();
 
             await().atMost(10, TimeUnit.SECONDS).until(() -> {
                 ResponseEntityView<ContentType> updateContentTypeResponse = getUpdateContentTypeResponse(
@@ -424,7 +470,8 @@ class ContentTypeAPIIT {
                     .withDescription("Modified 3!")
                     .withSystemActionMappings(jsonNodeV3);
 
-            final SaveContentTypeRequest contentTypeRequest2 = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            final SaveContentTypeRequest contentTypeRequest2 = AbstractSaveContentTypeRequest.builder()
+                    .of(modifiedContentType).build();
 
             await().atMost(10, TimeUnit.SECONDS).until(() -> {
                 ResponseEntityView<ContentType> updateContentTypeResponse = getUpdateContentTypeResponse(
@@ -443,7 +490,8 @@ class ContentTypeAPIIT {
                     .withDescription("Modified 4!")
                     .withSystemActionMappings(jsonNodeV4);
 
-            final SaveContentTypeRequest contentTypeRequest3 = SaveContentTypeRequest.builder().from(modifiedContentType).build();
+            final SaveContentTypeRequest contentTypeRequest3 = AbstractSaveContentTypeRequest.builder()
+                    .of(modifiedContentType).build();
 
             await().atMost(10, TimeUnit.SECONDS).until(() -> {
                 ResponseEntityView<ContentType> updateContentTypeResponse = getUpdateContentTypeResponse(
@@ -623,8 +671,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(contentType1).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder().
+                of(contentType1).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse1);
@@ -670,8 +718,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(contentType1).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(contentType1).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse2);
@@ -718,8 +766,8 @@ class ContentTypeAPIIT {
                                 .build()
                 ).build();
 
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(contentType2).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder().
+                of(contentType2).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse2);
@@ -770,8 +818,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(contentType).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder().
+                of(contentType).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse);
@@ -865,8 +913,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(contentType).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder().
+                of(contentType).build();
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse = client.createContentTypes(List.of(saveRequest));
         Assertions.assertNotNull(contentTypeResponse);
@@ -949,8 +997,8 @@ class ContentTypeAPIIT {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
-        final SaveContentTypeRequest saveBlogRequest = SaveContentTypeRequest.builder().
-                from(blog).build();
+        final SaveContentTypeRequest saveBlogRequest = AbstractSaveContentTypeRequest.builder().
+                of(blog).build();
         final ResponseEntityView<List<ContentType>> contentTypeResponse1 = client.createContentTypes(List.of(saveBlogRequest));
         ContentType savedContentType1 = null;
         ContentType savedContentType2 = null;
@@ -973,8 +1021,8 @@ class ContentTypeAPIIT {
             //Assertions.assertTrue(relationships1.isParentField());
             Assertions.assertEquals("MyBlogComment" + timeMark, relationships1.velocityVar());
 
-            final SaveContentTypeRequest saveBlogCommentRequest = SaveContentTypeRequest.builder().
-                    from(blogComment).build();
+            final SaveContentTypeRequest saveBlogCommentRequest = AbstractSaveContentTypeRequest.builder().
+                    of(blogComment).build();
             final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(
                     List.of(saveBlogCommentRequest));
             final List<ContentType> contentTypes2 = contentTypeResponse2.entity();

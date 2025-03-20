@@ -1,4 +1,8 @@
+import { faker } from '@faker-js/faker';
+
 import { DotCMSContentlet, StructureType, StructureTypeView } from '@dotcms/dotcms-models';
+
+import { createFakeLanguage } from './dot-language.mock';
 
 export const mockDotContentlet: StructureTypeView[] = [
     {
@@ -154,3 +158,49 @@ export const EMPTY_IMAGE_CONTENTLET: DotCMSContentlet = {
     fileAsset: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
     ...EMPTY_CONTENTLET
 };
+
+/**
+ * Creates a fake contentlet with optional overrides. This function generates a contentlet
+ * with predefined fake data that can be overridden by passing specific properties.
+ *
+ * @param {Partial<DotCMSContentlet>} overrides - Optional overrides for default contentlet properties.
+ * @return {DotCMSContentlet} - The fake contentlet with applied overrides.
+ */
+export function createFakeContentlet(overrides: Partial<DotCMSContentlet> = {}): DotCMSContentlet {
+    const language = createFakeLanguage();
+
+    const defaultContentlet: DotCMSContentlet = {
+        id: faker.string.uuid(),
+        title: faker.lorem.sentence(),
+        language: language,
+        languageId: language.id,
+        modDate: new Date().toISOString(),
+        inode: faker.string.uuid(),
+        archived: faker.datatype.boolean(),
+        baseType: 'content',
+        contentType: 'test',
+        folder: 'test',
+        host: 'test',
+        identifier: faker.string.uuid(),
+        live: faker.datatype.boolean(),
+        locked: faker.datatype.boolean(),
+        owner: 'test',
+        permissions: [],
+        working: true,
+        contentTypeId: 'test',
+        url: 'test',
+        hasLiveVersion: true,
+        deleted: false,
+        hasTitleImage: false,
+        hostName: 'test',
+        modUser: 'test',
+        modUserName: 'test',
+        publishDate: new Date().toISOString(),
+        sortOrder: 0,
+        versionType: 'test',
+        stInode: 'test',
+        titleImage: 'test'
+    };
+
+    return { ...defaultContentlet, ...overrides };
+}

@@ -661,6 +661,12 @@ public class TestDataUtils {
     }
 
     @WrapInTransaction
+    public static Contentlet getDotAssetLikeContentlet(final boolean perist, final long languageId) {
+        Contentlet dotAssetContentlet = getDotAssetLikeContentlet(languageId, new FolderDataGen().nextPersisted());
+        return perist ? ContentletDataGen.publish(dotAssetContentlet) : dotAssetContentlet;
+    }
+
+    @WrapInTransaction
     public static Contentlet getDotAssetLikeContentlet(long languageId,
             final Treeable hostOrFolder) {
 

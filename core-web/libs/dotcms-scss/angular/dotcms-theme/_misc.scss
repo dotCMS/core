@@ -81,3 +81,9 @@ a.p-button {
     width: $icon-lg-box;
     font-size: $icon-lg;
 }
+
+.truncate-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

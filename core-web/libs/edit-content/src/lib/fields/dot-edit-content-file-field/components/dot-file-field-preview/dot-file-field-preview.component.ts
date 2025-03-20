@@ -18,7 +18,15 @@ import { DialogModule } from 'primeng/dialog';
 import { catchError } from 'rxjs/operators';
 
 import { DotResourceLinksService } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotFileMetadata
+} from '@dotcms/dotcms-models';
+import {
+    DotPreviewResourceLink,
+    UploadedFile
+} from '@dotcms/edit-content/models/dot-edit-content-file.model';
 import {
     DotTempFileThumbnailComponent,
     DotFileSizeFormatPipe,
@@ -26,8 +34,15 @@ import {
     DotCopyButtonComponent
 } from '@dotcms/ui';
 
-import { DotPreviewResourceLink, PreviewFile } from '../../models';
+import { CONTENT_TYPES, DEFAULT_CONTENT_TYPE } from '../../dot-edit-content-file-field.const';
 import { getFileMetadata } from '../../utils';
+
+type FileInfo = UploadedFile & {
+    contentType: string;
+    downloadLink: string;
+    content: string | null;
+    metadata: DotFileMetadata;
+};
 
 @Component({
     selector: 'dot-file-field-preview',
@@ -53,7 +68,7 @@ export class DotFileFieldPreviewComponent implements OnInit {
      *
      * @memberof DotFileFieldPreviewComponent
      */
-    $previewFile = input.required<PreviewFile>({ alias: 'previewFile' });
+    $previewFile = input.required<UploadedFile>({ alias: 'previewFile' });
     /**
      * Remove file
      *
@@ -67,45 +82,36 @@ export class DotFileFieldPreviewComponent implements OnInit {
      */
     $showDialog = signal(false);
     /**
-     * File metadata
+     * File info
      *
      * @memberof DotFileFieldPreviewComponent
      */
-    $metadata = computed(() => {
+    $fileInfo = computed<FileInfo>(() => {
         const previewFile = this.$previewFile();
-        if (previewFile.source === 'temp') {
-            return previewFile.file.metadata;
-        }
 
-        return getFileMetadata(previewFile.file);
-    });
-    /**
-     * Content
-     *
-     * @memberof DotFileFieldPreviewComponent
-     */
-    $content = computed(() => {
-        const previewFile = this.$previewFile();
-        if (previewFile.source === 'contentlet') {
-            return previewFile.file.content;
-        }
-
-        return null;
-    });
-    /**
-     * Download link
-     *
-     * @memberof DotFileFieldPreviewComponent
-     */
-    $downloadLink = computed(() => {
-        const previewFile = this.$previewFile();
         if (previewFile.source === 'contentlet') {
             const file = previewFile.file;
 
-            return `/contentAsset/raw-data/${file.inode}/asset?byInode=true&force_download=true`;
+            const contentType = CONTENT_TYPES[file.contentType] || DEFAULT_CONTENT_TYPE;
+
+            return {
+                source: previewFile.source,
+                file,
+                content: file.content,
+                contentType,
+                downloadLink: `/contentAsset/raw-data/${file.inode}/${contentType}?byInode=true&force_download=true`,
+                metadata: getFileMetadata(file)
+            };
         }
 
-        return null;
+        return {
+            source: previewFile.source,
+            file: previewFile.file,
+            content: null,
+            contentType: DEFAULT_CONTENT_TYPE,
+            downloadLink: null,
+            metadata: previewFile.file.metadata
+        };
     });
 
     /**
@@ -123,10 +129,10 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @memberof DotFileFieldPreviewComponent
      */
     ngOnInit() {
-        const previewFile = this.$previewFile();
+        const fileInfo = this.$fileInfo();
 
-        if (previewFile.source === 'contentlet') {
-            this.fetchResourceLinks(previewFile.file);
+        if (fileInfo.source === 'contentlet') {
+            this.fetchResourceLinks(fileInfo.file, fileInfo.contentType);
         }
     }
 
@@ -157,11 +163,11 @@ export class DotFileFieldPreviewComponent implements OnInit {
      * @param {DotCMSContentlet} contentlet The contentlet to fetch the resource links for.
      * @memberof DotFileFieldPreviewComponent
      */
-    private fetchResourceLinks(contentlet: DotCMSContentlet): void {
+    private fetchResourceLinks(contentlet: DotCMSContentlet, contentType: string): void {
         this.#dotResourceLinksService
-            .getFileResourceLinks({
-                fieldVariable: 'asset',
-                inodeOrIdentifier: contentlet.identifier
+            .getFileResourceLinksByInode({
+                fieldVariable: contentType,
+                inode: contentlet.inode
             })
             .pipe(
                 catchError(() => {

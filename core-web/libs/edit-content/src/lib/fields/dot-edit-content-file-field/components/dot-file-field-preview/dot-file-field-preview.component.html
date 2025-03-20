@@ -1,24 +1,23 @@
-@let previewFile = $previewFile();
-@let metadata = $metadata();
-@let downloadLink = $downloadLink();
+@let fileInfo = $fileInfo();
+@let metadata = fileInfo.metadata;
 
 <div class="preview-container" [class.preview-container--fade]="metadata?.editableAsText">
     @if (metadata?.editableAsText) {
         <div class="preview-code_container" data-testId="code-preview">
-            <code>{{ $content() }}</code>
+            <code>{{ fileInfo.content }}</code>
         </div>
     } @else {
         <div class="preview-image__container">
-            @if (previewFile.source === 'temp') {
+            @if (fileInfo.source === 'temp') {
                 <dot-temp-file-thumbnail
-                    [tempFile]="previewFile.file"
+                    [tempFile]="fileInfo.file"
                     [iconSize]="'48px'"
                     data-testId="temp-file-thumbnail" />
             } @else {
                 <dot-contentlet-thumbnail
-                    fieldVariable="asset"
+                    [fieldVariable]="fileInfo.contentType"
                     [iconSize]="'48px'"
-                    [contentlet]="previewFile.file"
+                    [contentlet]="fileInfo.file"
                     [playableVideo]="true"
                     data-testId="contentlet-thumbnail" />
             }
@@ -56,12 +55,12 @@
             data-testId="info-btn"
             icon="pi pi-info" />
 
-        @if (downloadLink) {
+        @if (fileInfo.downloadLink) {
             <p-button
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
                 data-testId="download-btn"
                 icon="pi pi-download"
-                (click)="downloadAsset(downloadLink)" />
+                (click)="downloadAsset(fileInfo.downloadLink)" />
         }
     </div>
     <div class="preview-metadata__actions">
@@ -79,12 +78,12 @@
             styleClass="p-button-rounded"
             data-testId="info-btn-responsive"
             icon="pi pi-info" />
-        @if (downloadLink) {
+        @if (fileInfo.downloadLink) {
             <p-button
                 styleClass="p-button-rounded"
                 data-testId="download-btn-responsive"
                 icon="pi pi-download"
-                (click)="downloadAsset(downloadLink)" />
+                (click)="downloadAsset(fileInfo.downloadLink)" />
         }
         <p-button
             (click)="removeFile.emit()"

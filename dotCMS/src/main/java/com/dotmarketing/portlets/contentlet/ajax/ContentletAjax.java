@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -2157,9 +2158,11 @@ public class ContentletAjax {
 	  }
 	  catch(final Exception e){
 
-		  if (e instanceof DotContentletValidationException) {
-			  final DotContentletValidationException ve = DotContentletValidationException.class
-					  .cast(e);
+		  final
+		  Optional<Throwable> optionalThrowable = ExceptionUtil.get(e, DotContentletValidationException.class);
+
+		  if (optionalThrowable.isPresent()) {
+			  final DotContentletValidationException ve = (DotContentletValidationException) optionalThrowable.get();
 			  clearBinary = handleValidationException(user, ve, saveContentErrors);
 		  } else {
 			  final Throwable rootCause = getRootCause(e);
@@ -2374,7 +2377,13 @@ public class ContentletAjax {
 					saveContentErrors.add(errorString);
 				}
 				clearBinary = false;
-			}
+
+                try {
+                    HibernateUtil.rollbackTransaction();
+                } catch (DotHibernateException e) {
+                    Logger.error(ContentletAjax.class, e.getMessage());
+                }
+            }
 
 			if (ve.getMessage().contains(
 					"The content form submission data id different from the content which is trying to be edited")) {

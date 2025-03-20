@@ -622,8 +622,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         }
                     if(verInfo.get().getWorkingInode().equals(contentlet.getInode()))
                         APILocator.getVersionableAPI()
-                                .deleteContentletVersionInfo(contentlet.getIdentifier(),
-                                        contentlet.getLanguageId());
+                                .deleteContentletVersionInfoByLanguage(contentlet);
                 }
                 delete(contentlet.getInode());
             }
@@ -837,9 +836,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
-
     @Override
     public Optional<Contentlet> findInDb(final String inode) {
+        return findInDb(inode, false);
+    }
+
+
+    /**
+     * Find in DB a {@link Contentlet}
+     *
+     * @param inode {@link Contentlet}'s inode
+     * @param ignoreStoryBlock if it is true then the StoryBlock are not hydrated
+     * @return
+     */
+    public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
                 final DotConnect dotConnect = new DotConnect();
@@ -850,7 +860,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 if (UtilMethods.isSet(result)) {
                     return Optional.ofNullable(
-                            TransformerLocator.createContentletTransformer(result).asList().get(0));
+                            TransformerLocator.createContentletTransformer(result, ignoreStoryBlock).asList().get(0));
                 }
             }
         } catch (DotDataException e) {
@@ -863,15 +873,34 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
-
     @Override
     protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+        return find(inode, false);
+    }
+
+    /**
+     * Find a {@link Contentlet}, first look for the  {@link Contentlet} is cache is it is not there then
+     * hit the Database
+     *
+     * @param inode {@link Contentlet}'s inode
+     * @param ignoreStoryBlock if it is true, then if the {@link Contentlet} is loaded from cache then the StoryBlock are not refresh
+     *                         if the {@link Contentlet} is loaded from Database then the SToryBlocks are not hydrated
+     * @return
+     * @throws ElasticsearchException
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    protected Contentlet find(final String inode, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-            return processCachedContentlet(contentlet);
+
+            if (!ignoreStoryBlock) {
+                return processCachedContentlet(contentlet);
+            }
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
@@ -920,11 +949,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        if (REFRESH_BLOCK_EDITOR_REFERENCES) {
+        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != cachedContentlet.getContentType() && cachedContentlet.getContentType().hasStoryBlockFields()) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {
-                Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet '%s'",
+                Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet: '%s'",
                         cachedContentlet.getIdentifier()));
 
                 final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
@@ -1196,6 +1225,41 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return Try.of(()->find((live?cvi.get().getLiveInode():cvi.get().getWorkingInode())))
                 .getOrElseThrow(DotRuntimeException::new);
 	}
+
+    protected Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final Date timeMachineDate)
+            throws DotDataException {
+
+        final String variant = UtilMethods.isSet(variantId) ? variantId : DEFAULT_VARIANT.name();
+        // Perhaps we should exclude here contents with only a working version and no live version whatsoever
+        // To match what we did in the old time machine days
+        // This logic is tied with a fragment of VTL code in ContainerLoader.java check it out
+        // Since it basically iterates over the results of this method checks the sysPublishDate and sysExpireDate
+        // and then adds the contentlet to the container if a live version is found and the dates are correct
+        // But for the new time machine we allow the user to see the working version dropped on the container
+        final String query = "SELECT c.*, ci.owner \n"
+                + "FROM contentlet c\n"
+                + "INNER JOIN identifier i ON i.id = c.identifier\n"
+                + "INNER JOIN contentlet_version_info cvi ON cvi.identifier = c.identifier\n"
+                + "INNER JOIN inode ci ON ci.inode = c.inode\n"
+                + "WHERE ? >= i.syspublish_date \n"
+                + "   and (? <= i.sysexpire_date OR i.sysexpire_date IS NULL )\n"
+                + "   and cvi.working_inode = c.inode \n"
+                + "   and cvi.lang  = ?\n"
+                + "   and cvi.deleted = false\n"
+                + "   and c.identifier = ?\n"
+                + "   and cvi.variant_id = ?\n"
+                + ";";
+
+        final DotConnect dotConnect = new DotConnect().setSQL(query)
+                .addParam(timeMachineDate)
+                .addParam(timeMachineDate)
+                .addParam(languageId)
+                .addParam(identifier)
+                .addParam(variant);
+
+        List<Contentlet> con = TransformerLocator.createContentletTransformer(dotConnect.loadObjectResults()).asList();
+                return con.isEmpty() ? null : con.get(0);
+    }
 
 	@Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {

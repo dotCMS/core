@@ -1,6 +1,8 @@
 
 package com.dotmarketing.business.web;
 
+import com.dotcms.analytics.web.AnalyticsWebAPI;
+import com.dotcms.analytics.web.AnalyticsWebAPIImpl;
 import com.dotcms.personalization.web.PersonalizationWebAPI;
 import com.dotcms.personalization.web.PersonalizationWebAPIImpl;
 import com.dotcms.prerender.PreRenderSEOWebAPI;
@@ -57,6 +59,10 @@ public class WebAPILocator extends Locator<WebAPIIndex>{
 
 	public static VariantWebAPI getVariantWebAPI() {
 		return (VariantWebAPI) getInstance(WebAPIIndex.VARIANT_WEB_API);
+	}
+
+	public static AnalyticsWebAPI getAnalyticsWebAPI() {
+		return (AnalyticsWebAPI) getInstance(WebAPIIndex.ANALYTICS_API);
 	}
 
 	public static ExperimentWebAPI getExperimentWebAPI() {
@@ -120,7 +126,8 @@ enum WebAPIIndex
 	HOST_WEB_API,
 	PERSONALIZATION_WEB_API,
 	PRERENDER_API,
-	CHARACTER_API;
+	CHARACTER_API,
+	ANALYTICS_API;
 
 	Object create() {
 		switch(this) {
@@ -150,6 +157,9 @@ enum WebAPIIndex
 
 			case CHARACTER_API:
 				return new CharacterWebAPIImpl();
+
+			case ANALYTICS_API:
+				return new AnalyticsWebAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

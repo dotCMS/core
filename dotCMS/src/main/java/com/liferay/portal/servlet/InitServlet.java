@@ -45,6 +45,7 @@ public class InitServlet extends HttpServlet {
 
 	public void init() throws ServletException {
 		synchronized (InitServlet.class) {
+			Logger.info(this, "Portal InitServlet init method called");
 			
 			// Initialize
 
@@ -75,6 +76,7 @@ public class InitServlet extends HttpServlet {
 				Logger.error(this,e.getMessage(),e);
 			}
 		}
+		Logger.info(this, "Portal InitServlet init method completed");
 	}
 
 	@Override

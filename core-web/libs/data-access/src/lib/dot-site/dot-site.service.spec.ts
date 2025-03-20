@@ -27,7 +27,7 @@ describe('DotSiteService', () => {
                 doneFn();
             });
 
-            const url = `${BASE_SITE_URL}?filter=*&per_page=10&archived=false&live=true&system=true`;
+            const url = `${BASE_SITE_URL}?filter=*&per_page=10&page=1&archived=false&live=true&system=true`;
             const req = spectator.expectOne(url, HttpMethod.GET);
             spectator.flushAll([req], [{ entity: mockSites }]);
         });
@@ -41,7 +41,7 @@ describe('DotSiteService', () => {
 
             service.searchParam = searchParams;
 
-            const url = `${BASE_SITE_URL}?filter=demo&per_page=15&archived=true&live=false&system=true`;
+            const url = `${BASE_SITE_URL}?filter=demo&per_page=15&page=1&archived=true&live=false&system=true`;
 
             service.getSites('demo', 15).subscribe(() => doneFn());
 

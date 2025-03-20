@@ -78,6 +78,7 @@ import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.
 public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentlet> {
 
     private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
+    public static final String SHORTY_ID = "shortyId";
 
     /**
      * Main constructor
@@ -127,6 +128,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         final ContentType type = contentlet.getContentType();
 
         map.put(IDENTIFIER_KEY, contentlet.getIdentifier());
+        map.put(SHORTY_ID, APILocator.getShortyAPI().shortify(contentlet.getIdentifier()));
         map.put(INODE_KEY, contentlet.getInode());
         map.put(TITTLE_KEY, contentlet.getTitle());
         map.put(CONTENT_TYPE_KEY, type != null ? type.variable() : NOT_APPLICABLE);
@@ -401,6 +403,13 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put("isLocked", contentlet.isLocked());
         }
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
+        final Optional<String> lockedByOpt = Try.of(()->toolBox.versionableAPI.getLockedBy(contentlet)).getOrElse(Optional.empty());
+        if (lockedByOpt.isPresent()) {
+
+            final User user = toolBox.userAPI.loadUserById(lockedByOpt.get());
+            map.put("lockedBy", Map.of("userId", user.getUserId(),
+                    "firstName", user.getFirstName(), "lastName", user.getLastName()));
+        }
 
         final Optional<ContentletVersionInfo> versionInfo =
                 APILocator.getVersionableAPI().getContentletVersionInfo(

@@ -1,0 +1,42 @@
+@use "variables" as *;
+@import "mixins";
+
+$skeleton-height: 14px;
+
+.workflow-list {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+
+    margin: 0;
+
+    dt {
+        font-weight: $font-weight-medium-bold;
+        color: $black;
+
+        min-height: 2.286rem;
+        display: flex;
+        align-content: center;
+        flex-wrap: wrap;
+    }
+
+    dd {
+        margin: 0;
+        color: $color-palette-gray-800;
+        font-weight: $font-weight-regular-bold;
+    }
+}
+.workflow-column__description {
+    display: flex;
+    align-items: center;
+    gap: $spacing-0;
+}
+
+.select-workflow-link {
+    cursor: pointer;
+}
+
+:host ::ng-deep {
+    skeleton {
+        height: $skeleton-height;
+    }
+}

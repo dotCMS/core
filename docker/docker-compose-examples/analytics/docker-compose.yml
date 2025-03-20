@@ -122,18 +122,24 @@ services:
       - CUBEJS_DB_NAME=${CH_DB:-clickhouse_test_db}
       - CUBEJS_DB_USER=${CH_USER:-clickhouse_test_user}
       - CUBEJS_DB_PASS=${CH_PWD:-clickhouse_password}
-      - CUBEJS_JWK_URL=${JWKS_URL:-http://keycloak:61111/realms/dotcms/protocol/openid-connect/certs}
+      - CUBEJS_JWK_URL=${JWKS_URL:-http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/certs}
       - CUBEJS_JWT_AUDIENCE=api-dotcms-analytics-audience
-      - CUBEJS_JWT_ISSUER=${AUTH_SERVER_URL:-http://keycloak:61111/realms/dotcms}
+      - CUBEJS_JWT_ISSUER=${AUTH_SERVER_URL:-http://host.docker.internal:61111/realms/dotcms}
       - CUBEJS_JWT_ALGS=RS256
       - CUBEJS_JWT_CLAIMS_NAMESPACE=https://dotcms.com/analytics
+      - CUBEJS_LOG_LEVEL=debug
+      - CUBEJS_REFRESH_WORKER=true
+      - CUBEJS_SCHEDULED_REFRESH_TIME=true
+      - CUBEJS_OVERRIDE_CUSTOMER=customer1
+      - CUBEJS_OVERRIDE_CLUSTER=cluster1
     volumes:
       - cube_metastore:/cube/conf/.cubestore
       - ./setup/config/dev/cube/schema:/cube/conf/schema
+      - ./setup/config/dev/cube/cube.js:/cube/conf/cube.js
 
   ch_server:
     container_name: ch_server
-    image: dotcms/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:latest
     ports:
       - "${CH_HOST_PORT:-8124}:8123"
     ulimits:
@@ -148,6 +154,7 @@ services:
       - CLICKHOUSE_PASSWORD=${CH_PWD:-clickhouse_password}
     volumes:
       - ch_data:/var/lib/clickhouse
+      - ./setup/db/clickhouse/init-scripts:/docker-entrypoint-initdb.d
 
 volumes:
   workspace:

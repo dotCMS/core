@@ -1,4 +1,5 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { getRelationshipFromContentlet } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
@@ -15,7 +16,7 @@ export type FnResolutionValue = (
  * @returns {*} The resolved value for the field.
  */
 const defaultResolutionFn: FnResolutionValue = (contentlet, field) =>
-    contentlet?.[field.variable] ?? field.defaultValue;
+    contentlet ? (contentlet[field.variable] ?? field.defaultValue) : field.defaultValue;
 
 /**
  * The resolutionValue variable is a record that is responsible for mapping and transforming the
@@ -39,7 +40,7 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
             const path = `${contentlet?.hostName}${contentlet?.url}`;
             const finalPath = path.slice(0, path.indexOf('/content'));
 
-            return `//${finalPath}`;
+            return `${finalPath}`;
         }
 
         return field.defaultValue ?? '';
@@ -62,5 +63,14 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
         }
 
         return field.defaultValue ?? [];
-    }
+    },
+    [FIELD_TYPES.RELATIONSHIP]: (contentlet, field) => {
+        const relationship = getRelationshipFromContentlet({
+            contentlet,
+            variable: field.variable
+        });
+
+        return relationship.map((item) => item.identifier).join(',');
+    },
+    [FIELD_TYPES.LINE_DIVIDER]: () => ''
 };

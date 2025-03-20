@@ -92,9 +92,12 @@ import java.util.TreeMap;
  */
 public class MainServlet extends ActionServlet {
 
+  public static final String SKIP_UPGRADE = "skip-upgrade";
+
   @CloseDBIfOpened // Note if ByteBuddyFactory not initialized before this class this may not be wrapped
   public void init(ServletConfig config) throws ServletException {
     synchronized (MainServlet.class) {
+      Logger.info(this, "MainServlet init started");
       ByteBuddyFactory.init();
       super.init(config);
       Config.initializeConfig();
@@ -115,10 +118,11 @@ public class MainServlet extends ActionServlet {
 
       try {
         // Checking for execute upgrades
-        StartupTasksExecutor.getInstance().executeStartUpTasks();
-        StartupTasksExecutor.getInstance().executeSchemaUpgrades();
-        StartupTasksExecutor.getInstance().executeBackportedTasks();
-
+        if (!Config.getBooleanProperty(SKIP_UPGRADE, false)) {
+          StartupTasksExecutor.getInstance().executeStartUpTasks();
+          StartupTasksExecutor.getInstance().executeSchemaUpgrades();
+          StartupTasksExecutor.getInstance().executeBackportedTasks();
+        }
         final Task00030ClusterInitialize clusterInitializeTask = new Task00030ClusterInitialize();
         if(clusterInitializeTask.forceRun()){
           clusterInitializeTask.executeUpgrade();
@@ -130,8 +134,7 @@ public class MainServlet extends ActionServlet {
         DbConnectionFactory.closeSilently();
       }
 
-      // Update license with server start time
-      LicenseManager.getInstance().updateServerStartTime();
+
 
       HashSet<String> suppressProperties = new HashSet<>();
       suppressProperties.add("class");
@@ -207,13 +210,16 @@ public class MainServlet extends ActionServlet {
       // Init other dotCMS services.
       DotInitializationService.getInstance().initialize();
 
-      try {
-        // Now that everything is up we can check if we need to execute data upgrade tasks
-        StartupTasksExecutor.getInstance().executeDataUpgrades();
-      } catch (Exception e) {
-        throw new DotRuntimeException("Error executing data upgrade tasks", e);
+      if (!Config.getBooleanProperty(SKIP_UPGRADE, false)) {
+        try {
+          // Now that everything is up we can check if we need to execute data upgrade tasks
+          StartupTasksExecutor.getInstance().executeDataUpgrades();
+        } catch (Exception e) {
+          throw new DotRuntimeException("Error executing data upgrade tasks", e);
+        }
       }
     }
+    Logger.info(this, "MainServlet init completed");
   }
 
   public void callParentService(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {

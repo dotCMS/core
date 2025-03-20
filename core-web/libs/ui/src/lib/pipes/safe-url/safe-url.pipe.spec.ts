@@ -7,20 +7,32 @@ describe('SafeUrlPipe', () => {
     let sanitizer: DomSanitizer;
 
     beforeEach(() => {
-        sanitizer = jasmine.createSpyObj('DomSanitizer', ['bypassSecurityTrustResourceUrl']);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        pipe = new SafeUrlPipe(sanitizer as any);
+        sanitizer = {
+            bypassSecurityTrustResourceUrl: jest.fn()
+        } as unknown as DomSanitizer;
+        pipe = new SafeUrlPipe(sanitizer);
     });
 
     it('should transform URL to a safe resource URL', () => {
         const url = 'http://example.com';
         const safeUrl: SafeResourceUrl = 'safeUrl: http://example.com';
 
-        (sanitizer.bypassSecurityTrustResourceUrl as jasmine.Spy).and.returnValue(safeUrl);
+        (sanitizer.bypassSecurityTrustResourceUrl as jest.Mock).mockReturnValue(safeUrl);
 
         const transformedUrl = pipe.transform(url);
 
         expect(transformedUrl).toBe(safeUrl);
         expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(url);
+    });
+    it('should transform URL to a safe resource URL when the URL is an instance of String', () => {
+        const url = new String('http://example.com');
+        const safeUrl: SafeResourceUrl = 'safeUrl: http://example.com';
+
+        (sanitizer.bypassSecurityTrustResourceUrl as jest.Mock).mockReturnValue(safeUrl);
+
+        const transformedUrl = pipe.transform(url);
+
+        expect(transformedUrl).toBe(safeUrl);
+        expect(sanitizer.bypassSecurityTrustResourceUrl).toHaveBeenCalledWith(url.toString());
     });
 });

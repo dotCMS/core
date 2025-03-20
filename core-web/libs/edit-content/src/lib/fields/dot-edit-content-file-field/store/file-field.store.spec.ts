@@ -1,13 +1,12 @@
 import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { FileFieldStore } from './file-field.store';
 
-import { NEW_FILE_MOCK, TEMP_FILE_MOCK } from '../../../utils/mocks';
-import { UIMessage } from '../models';
+import { UIMessage } from '../../../models/dot-edit-content-file.model';
+import { NEW_FILE_MOCK } from '../../../utils/mocks';
 import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { getUiMessage } from '../utils/messages';
 
@@ -16,11 +15,11 @@ describe('FileFieldStore', () => {
     let service: SpyObject<DotFileFieldUploadService>;
 
     beforeEach(() => {
-        store = TestBed.overrideProvider(
-            DotFileFieldUploadService,
-            mockProvider(DotFileFieldUploadService)
-        ).runInInjectionContext(() => new FileFieldStore());
+        TestBed.configureTestingModule({
+            providers: [FileFieldStore, mockProvider(DotFileFieldUploadService)]
+        });
 
+        store = TestBed.inject(FileFieldStore);
         service = TestBed.inject(DotFileFieldUploadService) as SpyObject<DotFileFieldUploadService>;
     });
 
@@ -98,58 +97,54 @@ describe('FileFieldStore', () => {
     });
 
     describe('Method: removeFile', () => {
-        it('should set the state properly when removeFile is called', () => {
-            patchState(store, {
-                contentlet: NEW_FILE_MOCK.entity,
-                tempFile: TEMP_FILE_MOCK,
-                value: 'some value',
-                fileStatus: 'preview',
-                uiMessage: getUiMessage('SERVER_ERROR')
-            });
+        it('should set the state properly when removeFile is called', fakeAsync(() => {
+            const mockContentlet = NEW_FILE_MOCK.entity;
+            service.uploadFile.mockReturnValue(of({ source: 'contentlet', file: mockContentlet }));
+
+            const file = new File([''], 'filename', { type: 'text/plain' });
+            Object.defineProperty(file, 'size', { value: 5000 });
+
+            store.handleUploadFile(file);
+
+            tick(50);
+
             store.removeFile();
-            expect(store.contentlet()).toBeNull();
-            expect(store.tempFile()).toBeNull();
             expect(store.value()).toBe('');
             expect(store.fileStatus()).toBe('init');
             expect(store.uiMessage()).toBe(getUiMessage('DEFAULT'));
-        });
+            expect(store.uploadedFile()).toBeNull();
+        }));
     });
 
     describe('Method: setDropZoneState', () => {
         it('should set dropZoneActive to true', () => {
-            patchState(store, {
-                dropZoneActive: false
-            });
             store.setDropZoneState(true);
             expect(store.dropZoneActive()).toBe(true);
         });
 
         it('should set dropZoneActive to false', () => {
-            patchState(store, {
-                dropZoneActive: true
-            });
             store.setDropZoneState(false);
             expect(store.dropZoneActive()).toBe(false);
         });
     });
 
     describe('Method: handleUploadFile', () => {
-        it('should does not call uploadService with maxFileSize exceeded', () => {
-            patchState(store, {
-                maxFileSize: 10000
-            });
+        it('should does not call uploadService with maxFileSize exceeded', fakeAsync(() => {
+            store.setMaxSizeFile(10000);
+
+            tick(50);
 
             const file = new File([''], 'filename', { type: 'text/plain' });
             Object.defineProperty(file, 'size', { value: 20000 });
 
             store.handleUploadFile(file);
-            expect(service.uploadDotAsset).not.toHaveBeenCalled();
-        });
+            expect(service.uploadFile).not.toHaveBeenCalled();
+        }));
 
-        it('should set state properly with maxFileSize exceeded', () => {
-            patchState(store, {
-                maxFileSize: 10000
-            });
+        it('should set state properly with maxFileSize exceeded', fakeAsync(() => {
+            store.setMaxSizeFile(10000);
+
+            tick(50);
 
             const file = new File([''], 'filename', { type: 'text/plain' });
             Object.defineProperty(file, 'size', { value: 20000 });
@@ -161,52 +156,60 @@ describe('FileFieldStore', () => {
                 ...getUiMessage('MAX_FILE_SIZE_EXCEEDED'),
                 args: ['10000']
             });
-        });
+        }));
 
-        it('should call uploadService with maxFileSize not exceeded', () => {
-            service.uploadDotAsset.mockReturnValue(of(NEW_FILE_MOCK.entity));
-
-            patchState(store, {
-                maxFileSize: 10000
-            });
-
-            const file = new File([''], 'filename', { type: 'text/plain' });
-            Object.defineProperty(file, 'size', { value: 5000 });
-
-            store.handleUploadFile(file);
-            expect(service.uploadDotAsset).toHaveBeenCalledWith(file);
-        });
-
-        it('should set state properly with maxFileSize not exceeded', () => {
+        it('should call uploadService with maxFileSize not exceeded', fakeAsync(() => {
             const mockContentlet = NEW_FILE_MOCK.entity;
+            service.uploadFile.mockReturnValue(of({ source: 'contentlet', file: mockContentlet }));
 
-            service.uploadDotAsset.mockReturnValue(of(mockContentlet));
+            store.setMaxSizeFile(10000);
 
-            patchState(store, {
-                maxFileSize: 10000
-            });
+            tick(50);
 
             const file = new File([''], 'filename', { type: 'text/plain' });
             Object.defineProperty(file, 'size', { value: 5000 });
 
             store.handleUploadFile(file);
-            expect(store.tempFile()).toBeNull();
+            expect(service.uploadFile).toHaveBeenCalledWith({
+                file,
+                acceptedFiles: [],
+                maxSize: '10000',
+                uploadType: 'dotasset'
+            });
+        }));
+
+        it('should set state properly with maxFileSize not exceeded', fakeAsync(() => {
+            const mockContentlet = NEW_FILE_MOCK.entity;
+            service.uploadFile.mockReturnValue(of({ source: 'contentlet', file: mockContentlet }));
+
+            store.setMaxSizeFile(10000);
+
+            tick(50);
+
+            const file = new File([''], 'filename', { type: 'text/plain' });
+            Object.defineProperty(file, 'size', { value: 5000 });
+
+            store.handleUploadFile(file);
             expect(store.value()).toBe(mockContentlet.identifier);
-            expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.fileStatus()).toBe('preview');
-            expect(store.previewFile()).toEqual({
+            expect(store.uploadedFile()).toEqual({
                 source: 'contentlet',
                 file: mockContentlet
             });
-        });
+        }));
 
-        it('should set state properly with an error calling uploadDotAsset', () => {
-            service.uploadDotAsset.mockReturnValue(throwError('error'));
+        it('should set state properly with an error calling uploadFile', () => {
+            service.uploadFile.mockReturnValue(throwError('error'));
 
             const file = new File([''], 'filename', { type: 'text/plain' });
             store.handleUploadFile(file);
 
-            expect(service.uploadDotAsset).toHaveBeenCalledWith(file);
+            expect(service.uploadFile).toHaveBeenCalledWith({
+                file,
+                uploadType: 'dotasset',
+                acceptedFiles: [],
+                maxSize: null
+            });
             expect(store.fileStatus()).toBe('init');
             expect(store.uiMessage()).toEqual(getUiMessage('SERVER_ERROR'));
         });
@@ -226,12 +229,9 @@ describe('FileFieldStore', () => {
             service.getContentById.mockReturnValue(of(mockContentlet));
 
             store.getAssetData(mockContentlet.identifier);
-
-            expect(store.tempFile()).toBeNull();
             expect(store.value()).toBe(mockContentlet.identifier);
-            expect(store.contentlet()).toEqual(mockContentlet);
             expect(store.fileStatus()).toBe('preview');
-            expect(store.previewFile()).toEqual({
+            expect(store.uploadedFile()).toEqual({
                 source: 'contentlet',
                 file: mockContentlet
             });

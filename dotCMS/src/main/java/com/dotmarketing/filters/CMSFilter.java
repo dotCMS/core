@@ -57,6 +57,13 @@ public class CMSFilter implements Filter {
 
         try {
             doFilterInternal(req, res, chain);
+        } catch (Exception e) {
+            if (e.getClass().getCanonicalName().contains("ClientAbortException")) {
+                Logger.info(this.getClass(), "ClientAbortException: " + ((HttpServletRequest) req).getRequestURI());
+                Logger.debug(this.getClass(), "ClientAbortException: " + e.getMessage());
+            } else {
+                throw e;
+            }
         } finally {
             DbConnectionFactory.closeSilently();
         }

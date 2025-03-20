@@ -50,6 +50,10 @@ public enum PageAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
                         .name("site")
                         .type(GraphQLString)
                         .build())
+                .argument(GraphQLArgument.newArgument() //This is time machine
+                        .name("publishDate")
+                        .type(GraphQLString)
+                        .build())
                 .type(PageAPIGraphQLTypesProvider.INSTANCE.getTypesMap().get(DOT_PAGE))
                 .dataFetcher(new PageDataFetcher()).build());
     }

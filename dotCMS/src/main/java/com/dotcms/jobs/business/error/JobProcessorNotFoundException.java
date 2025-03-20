@@ -14,4 +14,13 @@ public class JobProcessorNotFoundException extends RuntimeException {
     public JobProcessorNotFoundException(String queueName) {
         super("No job processor found for queue: " + queueName);
     }
+
+    /**
+     * Constructs a new JobProcessorNotFoundException with the specified queue name and job ID.
+     * @param queueName The name of the queue for which no processor was found
+     * @param jobId The ID of the job for which no processor was found
+     */
+    public JobProcessorNotFoundException(String queueName, String jobId) {
+        super("No job processor found for queue: " + queueName + " and job id: " + jobId);
+    }
 }

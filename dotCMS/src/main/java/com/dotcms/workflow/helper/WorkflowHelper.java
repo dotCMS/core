@@ -75,6 +75,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.velocity.context.Context;
@@ -94,6 +95,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -806,6 +808,31 @@ public class WorkflowHelper {
                throw new DoesNotExistException(String.format("Contentlet identified by inode '%s' was Not found.",inode));
             }
             return this.workflowAPI.findAvailableActions(contentlet, user, renderMode);
+        } catch (DotDataException  | DotSecurityException e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw new DotWorkflowException(e.getMessage(), e);
+        }
+    } // findAvailableActions.
+
+    @CloseDBIfOpened
+    public List<WorkflowAction> findAvailableActionsSkippingSeparators(final String inode, final User user,
+                                                     final WorkflowAPI.RenderMode renderMode) {
+        try {
+            Logger.debug(this, ()->"Asking for the available actions for the inode: " + inode);
+
+            if (!UtilMethods.isSet(inode)) {
+                throw new IllegalArgumentException("Missing required parameter inode.");
+            }
+
+            final Optional<ShortyId> shortyIdOptional = APILocator.getShortyAPI().getShorty(inode);
+            final String longInode = shortyIdOptional.isPresent()? shortyIdOptional.get().longId:inode;
+
+            final Contentlet contentlet = this.contentletAPI.find(longInode, user, true);
+            if(contentlet == null){
+                throw new DoesNotExistException(String.format("Contentlet identified by inode '%s' was Not found.",inode));
+            }
+            return this.workflowAPI.findAvailableActions(contentlet, user, renderMode).stream().filter(this::isNotWorkflowSeparator).collect(Collectors.toList());
         } catch (DotDataException  | DotSecurityException e) {
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
@@ -1772,9 +1799,10 @@ public class WorkflowHelper {
      * @return List<WorkflowDefaultActionView>
      */
     @CloseDBIfOpened
-    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId, final User user) {
+    public List<WorkflowDefaultActionView> findAvailableDefaultActionsByContentType(final String contentTypeId, final User user) throws NotFoundInDbException {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
+        final Map<String, WorkflowStep> steps = new HashMap<>();
         try {
 
             Logger.debug(this, () -> "Getting the available default workflows actions by content type: " + contentTypeId);
@@ -1782,11 +1810,17 @@ public class WorkflowHelper {
             final List<WorkflowAction> actions = this.workflowAPI.findAvailableDefaultActionsByContentType(contentTypeAPI.find(contentTypeId), user);
             for (final WorkflowAction action : actions){
                 final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
-                final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
+                steps.computeIfAbsent(scheme.getId(), k -> Try.of(()->this.workflowAPI.findFirstStep(scheme.getId()).orElse(null)).get());
+                final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action, steps.get(scheme.getId()));
                 results.add(value);
             }
 
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (NotFoundInDbException e) {
+            Logger.error(this, e.getMessage());
+            Logger.debug(this, e.getMessage(), e);
+            throw e;
+        }
+        catch (DotDataException | DotSecurityException e) {
 
             Logger.error(this, e.getMessage());
             Logger.debug(this, e.getMessage(), e);
@@ -1874,6 +1908,41 @@ public class WorkflowHelper {
         }
     }
 
+    @CloseDBIfOpened
+    public List<WorkflowDefaultActionView> findInitialAvailableActionsByContentTypeSkippingSeparators(
+            final String contentTypeId, final User user) {
+        checkNotEmpty(contentTypeId, InternalServerException.class, "Missing required parameter contentTypeId");
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+        try {
+            Logger.debug(this, "Asking for the initial available actions for the content type Id: " + contentTypeId);
+            final ContentType contentType = contentTypeAPI.find(contentTypeId);
+            checkNotNull(contentType, DoesNotExistException.class, "Workflow-does-not-exists-content-type");
+
+            // For brand new/non-existing contents, all we need is the Contentlet instance with
+            // the Content Type ID in it for the API to return the expected information
+            final Contentlet emptyContentlet = new Contentlet();
+            emptyContentlet.setContentType(contentType);
+            final List<WorkflowAction> actions = this.workflowAPI.findAvailableActionsEditing(emptyContentlet, user);
+            return buildDefaultActionsViewObj(actions.stream().filter(this::isNotWorkflowSeparator).collect(Collectors.toList()));
+        } catch (final DotDataException | DotSecurityException e) {
+            final String errorMsg = String.format("Failed to find initial available actions for Content Type " +
+                    "'%s': %s", contentTypeId, ExceptionUtil.getErrorMessage(e));
+            Logger.error(this, errorMsg);
+            Logger.debug(this, errorMsg, e);
+            throw new DotWorkflowException(errorMsg, e);
+        }
+    }
+
+    private boolean isNotWorkflowSeparator(final WorkflowAction workflowAction) {
+
+            final boolean isSeparator = Objects.nonNull(workflowAction) && UtilMethods.isSet(workflowAction.getMetadata())
+                && workflowAction.getMetadata().containsKey("subtype") && WorkflowAction.SEPARATOR.equals(workflowAction.getMetadata().get("subtype"));
+
+        return !isSeparator;
+    }
+
+
     /**
      * Takes the list of actions associated to a given Workflow Scheme or Content Type and builds
      * the View object with them. This object is commonly used by the UI to render and/or interact
@@ -1888,9 +1957,11 @@ public class WorkflowHelper {
      */
     private List<WorkflowDefaultActionView> buildDefaultActionsViewObj(final List<WorkflowAction> actions) throws DotDataException, DotSecurityException {
         final ImmutableList.Builder<WorkflowDefaultActionView> results = new ImmutableList.Builder<>();
+        final Map<String, WorkflowStep> steps = new HashMap<>();
         for (final WorkflowAction action : actions) {
             final WorkflowScheme scheme = this.workflowAPI.findScheme(action.getSchemeId());
-            final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action);
+            steps.computeIfAbsent(scheme.getId(), k -> Try.of(()->this.workflowAPI.findFirstStep(scheme.getId()).orElse(null)).get());
+            final WorkflowDefaultActionView value = new WorkflowDefaultActionView(scheme, action, steps.get(scheme.getId()));
             results.add(value);
         }
         return results.build();
@@ -2045,5 +2116,28 @@ public class WorkflowHelper {
         }
         return wfTask;
     }
+
+    /**
+     * Tries to recover the user name based on the role
+     * @param roleId
+     * @return String
+     */
+    public String getPostedBy(final String roleId){
+
+        String postedBy = "unknown";
+        try {
+
+            postedBy = APILocator.getUserAPI().loadUserById(roleId, APILocator.systemUser(), false).getFullName();
+        } catch (Exception e) {
+            try{
+                postedBy = APILocator.getRoleAPI().loadRoleById(roleId).getName();
+            }
+            catch(Exception ee){
+
+            }
+        }
+        return postedBy;
+    }
+
 
 } // E:O:F:WorkflowHelper.

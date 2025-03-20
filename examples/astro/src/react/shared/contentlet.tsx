@@ -1,6 +1,7 @@
 import { useMemo, type FC } from "react";
-import { isInsideEditor } from "@dotcms/client";
 import type { DotCMSContentlet } from "@dotcms/types";
+import { getUVEState } from "@dotcms/uve";
+import { UVE_MODE } from "@dotcms/uve/types";
 
 export type ContentletProps = {
   contentlet: DotCMSContentlet;
@@ -8,7 +9,7 @@ export type ContentletProps = {
 };
 
 export const Contentlet: FC<ContentletProps> = ({ contentlet, children }) => {
-  const insideEditor = useMemo(isInsideEditor, []);
+  const insideEditor = useMemo(() => getUVEState()?.mode === UVE_MODE.EDIT, []);
 
   return insideEditor ? (
     <div

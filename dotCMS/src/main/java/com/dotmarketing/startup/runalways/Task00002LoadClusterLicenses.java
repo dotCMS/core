@@ -39,15 +39,15 @@ public class Task00002LoadClusterLicenses implements StartupTask {
     @Override
     public boolean forceRun() {
         
-       return true;
+       return false;
 
     }
 
     @Override
     @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-        loadLicensePackFiles();
-        getEnvLicenses();
+
+
     }
 
     public void loadLicensePackFiles() {

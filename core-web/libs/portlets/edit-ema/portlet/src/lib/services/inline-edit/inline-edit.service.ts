@@ -1,5 +1,7 @@
 import { ElementRef, Injectable, signal } from '@angular/core';
 
+import { CLIENT_ACTIONS } from '@dotcms/client';
+
 import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
 declare global {
@@ -8,13 +10,33 @@ declare global {
         tinymce: any;
     }
 }
+
+// And added the way we add the `sdk-editor-vtl.js` file.
+export const INLINE_CONTENT_STYLES = `
+    [data-inode][data-field-name][data-mode] {
+        cursor: text;
+        border: 1px solid #53c2f9 !important;
+        display: block;
+    }
+            
+    [data-inode][data-field-name].dotcms__inline-edit-field {
+        cursor: text;
+        border: 1px solid #53c2f9 !important;
+        display: block;
+    }
+
+    [data-inode][data-field-name][data-block-editor-content].dotcms__inline-edit-field {
+        cursor: pointer;
+    }    
+`;
+
 @Injectable({
     providedIn: 'root'
 })
 export class InlineEditService {
     $iframeWindow = signal<Window | null>(null);
-    private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
     $isInlineEditingEnable = signal(true);
+    private $inlineEditingTargetDataset = signal<InlineEditingContentletDataset | null>(null);
 
     private readonly DEFAULT_TINYMCE_CONFIG = {
         menubar: false,
@@ -24,7 +46,7 @@ export class InlineEditService {
         },
         powerpaste_word_import: 'clean',
         powerpaste_html_import: 'clean',
-        setup: this.handleInlineEditEvents
+        setup: this.#handleInlineEditEvents
     };
 
     private readonly TINYCME_CONFIG = {
@@ -64,32 +86,20 @@ export class InlineEditService {
     injectInlineEdit(iframe: ElementRef<HTMLIFrameElement>): void {
         const doc = iframe.nativeElement.contentDocument;
         this.$iframeWindow.set(iframe.nativeElement.contentWindow);
-
         this.$isInlineEditingEnable.set(true);
 
-        if (!doc.querySelector('script[data-inline="true"]')) {
-            const script = doc.createElement('script');
-            script.dataset.inline = 'true';
-            script.src = '/html/js/tinymce/js/tinymce/tinymce.min.js';
-
-            const style = doc.createElement('style');
-            style.innerHTML = `
-            [data-inode][data-field-name][data-mode] {
-                cursor: text;
-                border: 1px solid #53c2f9 !important;
-                display: block;
-            }
-        `;
-
-            doc.body?.appendChild(script);
-            doc.body?.appendChild(style);
+        if (doc.querySelector('script[data-inline="true"]')) {
+            return;
         }
+
+        this.#addStyles(doc);
+        this.#addScript(doc, '/html/js/tinymce/js/tinymce/tinymce.min.js');
     }
 
     removeInlineEdit(iframe: ElementRef<HTMLIFrameElement>) {
         const doc = iframe.nativeElement.contentDocument;
 
-        doc.querySelector('script[data-inline="true"]')?.remove();
+        doc.querySelectorAll('script[data-inline="true"]').forEach((script) => script.remove());
         doc.querySelectorAll('style').forEach((style) => {
             if (style.textContent.includes('[data-inode][data-field-name][data-mode]')) {
                 style.remove();
@@ -129,8 +139,10 @@ export class InlineEditService {
 
         window.parent.postMessage(
             {
-                action: 'init-inline-editing',
-                payload: {}
+                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                payload: {
+                    type: 'WYSIWYG'
+                }
             },
             '*'
         );
@@ -159,11 +171,51 @@ export class InlineEditService {
     }
 
     /**
+     * Sets the target inline contentlet dataset.
+     *
+     * @param {InlineEditingContentletDataset} dataset
+     * @memberof InlineEditService
+     */
+    setTargetInlineMCEDataset(dataset: InlineEditingContentletDataset) {
+        this.$inlineEditingTargetDataset.set(dataset);
+    }
+
+    /**
+     * Sets the iframe window.
+     *
+     * @param {Window} iframeWindow
+     * @memberof InlineEditService
+     */
+    setIframeWindow(iframeWindow: Window) {
+        this.$iframeWindow.set(iframeWindow);
+    }
+
+    /**
+     * Adds the inline content styles to the document.
+     *
+     * @private
+     * @param {Document} doc
+     * @memberof InlineEditService
+     */
+    #addStyles(doc: Document) {
+        const style = doc.createElement('style');
+        style.innerHTML = INLINE_CONTENT_STYLES;
+        doc.body?.appendChild(style);
+    }
+
+    #addScript(doc: Document, src: string) {
+        const script = doc.createElement('script');
+        script.dataset.inline = 'true';
+        script.src = src;
+        doc.body?.appendChild(script);
+    }
+
+    /**
      * Handles inline edit events for the editor.
      *
      * @param {Editor} editor - The editor instance.
      */
-    private handleInlineEditEvents(editor) {
+    #handleInlineEditEvents(editor) {
         editor.on('blur', (e) => {
             const { target: ed, type: eventType } = e;
             const dataset = ed.targetElm.dataset;
@@ -225,13 +277,5 @@ export class InlineEditService {
         const contentlet = targetElement.closest('[data-dot-object="contentlet"]') as HTMLElement;
 
         return Number(contentlet.dataset.dotOnNumberOfPages || 0) > 1;
-    }
-
-    setTargetInlineMCEDataset(dataset: InlineEditingContentletDataset) {
-        this.$inlineEditingTargetDataset.set(dataset);
-    }
-
-    setIframeWindow(iframeWindow: Window) {
-        this.$iframeWindow.set(iframeWindow);
     }
 }

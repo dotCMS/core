@@ -14,7 +14,7 @@ import { TINYMCE_CONFIG } from './utils';
 
 import { dotcmsContentletMock } from '../../utils/testing.utils';
 
-const { CUSTOMER_ACTIONS, postMessageToEditor } = dotcmsClient;
+const { CLIENT_ACTIONS, postMessageToEditor } = dotcmsClient;
 
 // Mock @dotcms/client module
 jest.mock('@dotcms/client', () => ({
@@ -248,11 +248,12 @@ describe('DotEditableTextComponent', () => {
                     focusSpy = jest.spyOn(spectator.component.editorComponent.editor, 'focus');
                 });
 
-                it("should focus on the editor when the message is 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
+                it("should focus on the editor when the message is 'uve-copy-contentlet-inline-editing-success'", () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: {
-                                name: 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS',
+                                name: dotcmsClient.NOTIFY_CLIENT
+                                    .UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: {
                                     oldInode: dotcmsContentletMock.inode,
                                     inode: dotcmsContentletMock.inode
@@ -264,7 +265,7 @@ describe('DotEditableTextComponent', () => {
                     expect(focusSpy).toHaveBeenCalled();
                 });
 
-                it("should not focus on the editor when the message is not 'COPY_CONTENTLET_INLINE_EDITING_SUCCESS'", () => {
+                it("should not focus on the editor when the message is not 'uve-copy-contentlet-inline-editing-success'", () => {
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             data: { name: 'ANOTHER_EVENT' }
@@ -312,7 +313,7 @@ describe('DotEditableTextComponent', () => {
                     };
 
                     expect(postMessageToEditor).toHaveBeenCalledWith({
-                        action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                        action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
                         payload
                     });
                     expect(event.stopPropagation).toHaveBeenCalled();
@@ -401,7 +402,7 @@ describe('DotEditableTextComponent', () => {
                     spectator.triggerEventHandler(editorDebugElement, 'onFocusOut', customEvent);
 
                     const postMessageData = {
-                        action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                        action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                         payload: {
                             content: 'New content',
                             dataset: {

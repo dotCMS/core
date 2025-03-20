@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
+import static com.dotmarketing.util.UtilMethods.isSet;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -57,9 +60,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang3.BooleanUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,9 +74,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
-import static com.dotmarketing.util.UtilMethods.isSet;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.BooleanUtils;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object

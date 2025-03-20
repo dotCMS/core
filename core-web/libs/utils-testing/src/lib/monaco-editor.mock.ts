@@ -72,7 +72,8 @@ export const monacoMock = {
     languages: {
         register: () => {},
         registerCompletionItemProvider: () => {},
-        registerDefinitionProvider: () => {}
+        registerDefinitionProvider: () => {},
+        setMonarchTokensProvider: () => {}
     },
     Uri: {
         parse: () => ({}),

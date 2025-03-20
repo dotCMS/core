@@ -4,6 +4,8 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+
+import com.dotcms.UnitTestBase;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +31,7 @@ import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.google.common.collect.ImmutableSet;
 
-public class ESQueryCacheTest {
+public class ESQueryCacheTest extends UnitTestBase {
 
 
     static ESQueryCache cache;

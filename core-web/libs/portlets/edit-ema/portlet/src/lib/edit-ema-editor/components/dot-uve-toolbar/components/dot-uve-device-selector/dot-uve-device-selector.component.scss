@@ -1,0 +1,66 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    padding: $spacing-1 0;
+    align-items: center;
+    gap: $spacing-1;
+    align-self: stretch;
+
+    .menu-item {
+        padding: $spacing-2;
+    }
+
+    .menu-item--active {
+        background-color: $color-palette-primary-op-20;
+    }
+
+    .p-element {
+        &.p-disabled {
+            ::ng-deep {
+                .p-button {
+                    use {
+                        color: inherit;
+                    }
+                }
+            }
+        }
+
+        ::ng-deep {
+            .p-button {
+                max-width: 124px; // To avoid overflow on the more button
+                use {
+                    color: $color-palette-primary;
+                }
+
+                svg {
+                    transform: rotate(0deg);
+                    transition: all 0.3s ease-in-out;
+
+                    &.landscape {
+                        transform: rotate(90deg);
+                    }
+                }
+            }
+        }
+    }
+
+    .p-element.active {
+        ::ng-deep {
+            .p-button {
+                background-color: $color-palette-primary-op-20;
+            }
+        }
+    }
+
+    ::ng-deep {
+        .more-menu {
+            padding: $spacing-1;
+            max-width: 15.625rem; // To avoid overflow on the more menu
+        }
+
+        .p-submenu-header {
+            border-bottom: 0.0625rem solid $color-palette-gray-300;
+        }
+    }
+}

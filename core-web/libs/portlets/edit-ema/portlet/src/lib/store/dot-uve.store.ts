@@ -1,16 +1,23 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, untracked } from '@angular/core';
+
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { withEditor } from './features/editor/withEditor';
+import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
-import { ShellProps, TranslateProps, UVEState } from './models';
+import { withTrack } from './features/track/withTrack';
+import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
 import { DotPageApiResponse } from '../services/dot-page-api.service';
+import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
-import { getErrorPayload, getRequestHostName, sanitizeURL } from '../utils';
+import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
 
+// Some properties can be computed
+// Ticket: https://github.com/dotCMS/core/issues/30760
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
@@ -18,20 +25,23 @@ const initialState: UVEState = {
     currentUser: null,
     experiment: null,
     errorCode: null,
-    params: null,
+    pageParams: null,
+    viewParams: null,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     canEditPage: false,
-    pageIsLocked: true
+    pageIsLocked: true,
+    isClientReady: false
 };
 
 export const UVEStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
     withComputed(
         ({
             pageAPIResponse,
-            isTraditionalPage,
-            params,
+            pageParams,
+            viewParams,
             languages,
             errorCode: error,
             status,
@@ -41,7 +51,7 @@ export const UVEStore = signalStore(
                 $translateProps: computed<TranslateProps>(() => {
                     const response = pageAPIResponse();
                     const languageId = response?.viewAs.language?.id;
-                    const translatedLanguages = languages();
+                    const translatedLanguages = untracked(() => languages());
                     const currentLanguage = translatedLanguages.find(
                         (lang) => lang.id === languageId
                     );
@@ -56,7 +66,7 @@ export const UVEStore = signalStore(
 
                     const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
 
-                    const requestHostName = getRequestHostName(isTraditionalPage(), params());
+                    const requestHostName = getRequestHostName(pageParams());
 
                     const page = response?.page;
                     const templateDrawed = response?.template.drawed;
@@ -99,7 +109,8 @@ export const UVEStore = signalStore(
                                 label: 'editema.editor.navbar.rules',
                                 id: 'rules',
                                 href: `rules/${page?.identifier}`,
-                                isDisabled: !page?.canEdit || !isEnterpriseLicense
+                                isDisabled:
+                                    !page?.canSeeRules || !page?.canEdit || !isEnterpriseLicense
                             },
                             {
                                 iconURL: 'experiments',
@@ -121,6 +132,23 @@ export const UVEStore = signalStore(
                             }
                         ]
                     };
+                }),
+                $languageId: computed<number>(() => {
+                    return pageAPIResponse()?.viewAs.language?.id || 1;
+                }),
+                $isPreviewMode: computed<boolean>(() => {
+                    return pageParams()?.mode === UVE_MODE.PREVIEW;
+                }),
+                $isLiveMode: computed<boolean>(() => {
+                    return pageParams()?.mode === UVE_MODE.LIVE;
+                }),
+                $friendlyParams: computed(() => {
+                    const params = {
+                        ...(pageParams() ?? {}),
+                        ...(viewParams() ?? {})
+                    };
+
+                    return normalizeQueryParams(params);
                 })
             };
         }
@@ -137,10 +165,20 @@ export const UVEStore = signalStore(
                     status: UVE_STATUS.LOADED,
                     pageAPIResponse
                 });
+            },
+            patchViewParams(viewParams: Partial<DotUveViewParams>) {
+                patchState(store, {
+                    viewParams: {
+                        ...store.viewParams(),
+                        ...viewParams
+                    }
+                });
             }
         };
     }),
     withLoad(),
     withLayout(),
-    withEditor()
+    withEditor(),
+    withTrack(),
+    withFlags(UVE_FEATURE_FLAGS)
 );

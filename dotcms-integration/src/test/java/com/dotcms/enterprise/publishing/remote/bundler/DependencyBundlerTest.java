@@ -1,5 +1,6 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -83,6 +84,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -106,7 +108,8 @@ import static org.mockito.Mockito.mock;
  * @author Freddy Rodriguez
  * @since Feb 9th, 2021
  */
-@RunWith(DataProviderRunner.class)
+@RunWith(DataProviderWeldRunner.class)
+@ApplicationScoped
 public class DependencyBundlerTest {
 
     private static  Map<String, List<ManifestItem>> excludeSystemFolder;

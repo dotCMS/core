@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
-import Contentlets from "@/components/shared/contentlets";
-import { client } from "@/utils/dotcmsClient";
+import { useEffect, useState } from 'react';
+import Contentlets from '@/components/shared/contentlets';
+import { client } from '@/utils/dotcmsClient';
 
 export default function Destinations() {
     const [destinations, setDestinations] = useState([]);
 
     useEffect(() => {
         client.content
-            .getCollection("Destination")
+            .getCollection('Destination')
             .sortBy([
                 {
-                    field: "modDate",
-                    order: "desc",
-                },
+                    field: 'modDate',
+                    order: 'desc'
+                }
             ])
             .limit(3)
             .then((response) => {
@@ -25,12 +25,8 @@ export default function Destinations() {
 
     return (
         <div className="flex flex-col">
-            <h2 className="text-2xl font-bold mb-7 text-black">
-                Popular Destinations
-            </h2>
-            {!!destinations.length && (
-                <Contentlets contentlets={destinations} />
-            )}
+            <h2 className="text-2xl font-bold mb-7 text-black">Popular Destinations</h2>
+            {!!destinations.length && <Contentlets contentlets={destinations} />}
         </div>
     );
 }

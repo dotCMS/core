@@ -26,7 +26,22 @@ describe('DotActionUrlService', () => {
             expect(url).toEqual('testUrl');
         });
 
-        expect(httpClientMock.get).toHaveBeenCalledWith('/api/v1/portlet/_actionurl/testType');
+        expect(httpClientMock.get).toHaveBeenCalledWith(
+            '/api/v1/portlet/_actionurl/testType?language_id=1'
+        );
+    });
+
+    it('should get the URL to create a contentlet with a specify language id', () => {
+        const mockResponse = { entity: 'testUrl' };
+        httpClientMock.get.mockReturnValue(of(mockResponse));
+
+        spectator.service.getCreateContentletUrl('testType', 2).subscribe((url) => {
+            expect(url).toEqual('testUrl');
+        });
+
+        expect(httpClientMock.get).toHaveBeenCalledWith(
+            '/api/v1/portlet/_actionurl/testType?language_id=2'
+        );
     });
 
     it('should return EMPTY when the request fails', () => {

@@ -1,17 +1,15 @@
-import { InjectionToken } from '@angular/core';
-
-import { DotPersona } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, DotPersona } from '@dotcms/dotcms-models';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
 
 export const LAYOUT_URL = '/c/portal/layout';
 
+export const PERSONA_KEY = 'com.dotmarketing.persona.id';
+
 export const CONTENTLET_SELECTOR_URL = `/html/ng-contentlet-selector.jsp`;
 
 export const HOST = 'http://localhost:3000';
-
-export const WINDOW = new InjectionToken<Window>('WindowToken');
 
 export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 
@@ -67,3 +65,38 @@ export const DEFAULT_PERSONA: DotPersona = {
     hasLiveVersion: false,
     modUser: 'system'
 };
+
+// Add the Feature flags we want to fetch for UVE
+export const UVE_FEATURE_FLAGS = [];
+
+export const DEFAULT_DEVICE: DotDeviceListItem = {
+    icon: 'pi pi-desktop',
+    identifier: 'default-id',
+    name: 'uve.device.selector.default',
+    cssHeight: '100', // This will be used in %
+    inode: 'default',
+    cssWidth: '100', // This will be used in %
+    _isDefault: true
+};
+
+export const DEFAULT_DEVICES: DotDeviceListItem[] = [
+    DEFAULT_DEVICE,
+    {
+        cssWidth: '820',
+        name: 'uve.device.selector.tablet',
+        icon: 'pi pi-tablet',
+        cssHeight: '1180',
+        inode: 'tablet',
+        identifier: 'tablet-id',
+        _isDefault: true
+    },
+    {
+        inode: 'mobile',
+        icon: 'pi pi-mobile',
+        name: 'uve.device.selector.mobile',
+        cssHeight: '844',
+        identifier: 'mobile-id',
+        cssWidth: '390',
+        _isDefault: true
+    }
+];

@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
+import com.dotcms.DataProviderWeldRunner;
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.APIProvider;
 import com.dotcms.api.APIProvider.Builder;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -56,6 +58,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
+import javax.enterprise.context.ApplicationScoped;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -101,8 +104,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(DataProviderRunner.class)
-public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
+public class ContentletTransformerTest extends IntegrationTestBase {
 
     static String serializePath;
     static long langId;
@@ -239,6 +243,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
         assertEquals(newContentlet.getMap().get(ContentletForm.IDENTIFIER_KEY), identifier);
         assertEquals(newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD), urlExpected);
+        assertTrue(newContentlet.getMap().containsKey(DefaultTransformStrategy.SHORTY_ID));
     }
 
     @Test
@@ -313,6 +318,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         assertTrue(newContentlet.getMap().containsKey(HTMLPageAssetAPI.URL_FIELD));
         assertEquals(urlExpected, newContentlet.getMap().get(HTMLPageAssetAPI.URL_FIELD));
         assertFalse(newContentlet.getMap().containsKey(Contentlet.NULL_PROPERTIES));
+        assertTrue(newContentlet.getMap().containsKey(DefaultTransformStrategy.SHORTY_ID));
     }
 
 
@@ -402,6 +408,40 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         Assert.assertNotEquals(map2.get("mimeType"),"unknown");
         Assert.assertTrue((long)map2.get("size") > 0);
 
+    }
+
+    /**
+     * Given scenario: We create a dotAsset-like contentlet, set a "title" property,
+     * and then call getContentPrintableMap, which should return a map of the contentlet's properties.
+     * Expected result: The "title" property in the resulting map should match the custom title set
+     * in the original contentlet.
+     * @throws Exception in case of errors during the mapping process
+     */
+    @Test
+    public void Test_DotAsset_With_Title_Property_Pushed_into_Transformer() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+        dotAssetLikeContentlet.setProperty("title", "my custom title");
+
+        final Map<String, Object> map1 = ContentletUtil.getContentPrintableMap(
+                systemUser, dotAssetLikeContentlet, true);
+        Assert.assertEquals("my custom title", map1.get("title"));
+    }
+
+    /**
+     * Given scenario: We create a dotAsset-like contentlet without setting a "title" property
+     * and call getContentPrintableMap, which should return a map of the contentlet's properties.
+     * Expected result: The "title" property in the resulting map should match the asset title.
+     * @throws Exception in case of errors during the mapping process
+     */
+    @Test
+    public void Test_DotAsset_Without_Title_Property_Pushed_into_Transformer() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final Contentlet dotAssetLikeContentlet = TestDataUtils.getDotAssetLikeContentlet();
+
+        final Map<String, Object> map1 = ContentletUtil.getContentPrintableMap(
+                systemUser, dotAssetLikeContentlet, true);
+        Assert.assertEquals("test.jpg", map1.get("title"));
     }
 
     /**

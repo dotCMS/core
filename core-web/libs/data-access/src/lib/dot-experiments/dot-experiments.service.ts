@@ -1,9 +1,9 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { catchError, pluck } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
@@ -83,13 +83,18 @@ export class DotExperimentsService {
     /**
      * Get details of an experiment
      * @param {string} experimentId
-     * @returns Observable<DotExperiment>
+     * @returns Observable<DotExperiment | undefined>
      * @memberof DotExperimentsService
      */
-    getById(experimentId: string): Observable<DotExperiment> {
+    getById(experimentId: string | undefined): Observable<DotExperiment | undefined> {
+        if (!experimentId) {
+            return of(undefined);
+        }
+
         return this.http
             .get<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`)
-            .pipe(pluck('entity'));
+            .pipe(pluck('entity'))
+            .pipe(catchError(() => of(undefined)));
     }
 
     /**

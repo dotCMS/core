@@ -22,7 +22,7 @@ import org.junit.Test;
  */
 public class RemoteAnnouncementsLoaderIntegrationTest {
 
-    public static final String DOTCMS_COM = "https://www.dotcms.com";
+    public static final String DOTCMS_COM = "https://www2.dotcms.com";
 
     @BeforeClass
     public static void prepare() throws Exception {

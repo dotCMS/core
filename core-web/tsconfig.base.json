@@ -19,6 +19,7 @@
         "paths": {
             "@components/*": ["apps/dotcms-ui/src/app/view/components/*"],
             "@directives/*": ["apps/dotcms-ui/src/app/view/directives/*"],
+            "@dotcms/analytics": ["libs/sdk/analytics/src/index.ts"],
             "@dotcms/angular": ["libs/sdk/angular/src/index.ts"],
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
             "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"],
@@ -35,7 +36,12 @@
             "@dotcms/dotcms-webcomponents": ["libs/dotcms-webcomponents/src/index.ts"],
             "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"],
             "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
+            "@dotcms/edit-content-bridge": ["libs/edit-content-bridge/src/index.ts"],
+            "@dotcms/edit-content/*": ["libs/edit-content/src/lib/*"],
             "@dotcms/experiments": ["libs/sdk/experiments/src/index.ts"],
+            "@dotcms/portlets/dot-analytics-search/portlet": [
+                "libs/portlets/dot-analytics-search/portlet/src/index.ts"
+            ],
             "@dotcms/portlets/dot-ema": ["libs/portlets/edit-ema/portlet/src/index.ts"],
             "@dotcms/portlets/dot-ema/ui": ["libs/portlets/edit-ema/ui/src/index.ts"],
             "@dotcms/portlets/dot-experiments/data-access": [
@@ -57,6 +63,9 @@
             "@dotcms/utils": ["libs/utils/src"],
             "@dotcms/utils-testing": ["libs/utils-testing/src/index.ts"],
             "@dotcms/utils/*": ["libs/utils/src/*"],
+            "@dotcms/uve": ["libs/sdk/uve/src/index.ts"],
+            "@dotcms/uve/internal": ["libs/sdk/uve/src/internal.ts"],
+            "@dotcms/uve/types": ["libs/sdk/uve/src/types.ts"],
             "@models/*": ["apps/dotcms-ui/src/app/shared/models/*"],
             "@pipes/*": ["apps/dotcms-ui/src/app/view/pipes/*"],
             "@portlets/*": ["apps/dotcms-ui/src/app/portlets/*"],

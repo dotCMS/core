@@ -1,10 +1,11 @@
 {
   "name": "@dotcms/react",
-  "version": "0.0.1-alpha.38",
+  "version": "0.0.1-beta-2",
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18",
-    "@dotcms/client": "0.0.1-alpha.38",
+    "@dotcms/client": "next",
+    "@dotcms/uve": "next",
     "@tinymce/tinymce-react": "^5.1.1"
   },
   "description": "Official React Components library to render a dotCMS page.",
@@ -21,6 +22,17 @@
     "React",
     "Components"
   ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts"
+  },
+  "typesVersions": {
+    "*": {
+      ".": ["./src/index.d.ts"],
+      "next": ["./src/next.d.ts"]
+    }
+  },
   "author": "dotcms <dev@dotcms.com>",
   "license": "MIT",
   "bugs": {

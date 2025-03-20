@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 
 import {
+    DotAnalyticsTrackerService,
     DotContentTypeService,
     DotContentletLockerService,
     DotExperimentsService,
@@ -19,7 +20,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPageLayoutService,
-    DotRouterService
+    DotRouterService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent, TemplateBuilderModule } from '@dotcms/template-builder';
@@ -33,6 +35,7 @@ import { EditEmaLayoutComponent } from './edit-ema-layout.component';
 
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
 
@@ -86,12 +89,21 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(ActivatedRoute),
             mockProvider(DotContentTypeService),
             mockProvider(CoreWebService),
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
             mockProvider(DotPageLayoutService, {
                 save: jest.fn(() => of(PAGE_RESPONSE))
             }),
             mockProvider(DotPageApiService, {
                 get: jest.fn(() => of(PAGE_RESPONSE)),
                 getClientPage: jest.fn(() => of(PAGE_RESPONSE))
+            }),
+            mockProvider(DotWorkflowsActionsService, {
+                getByInode: jest.fn(() => of([]))
             }),
             MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
             MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
@@ -128,11 +140,11 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
-        store.init({
+        store.loadPageAsset({
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',
-            'com.dotmarketing.persona.id': 'SuperCoolDude'
+            [PERSONA_KEY]: 'SuperCoolDude'
         });
 
         spectator.detectChanges();
@@ -150,7 +162,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
             const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
-            const reloadSpy = jest.spyOn(store, 'reload');
+            const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
             templateBuilder.templateChange.emit();
             tick(5000);
@@ -178,6 +190,13 @@ describe('EditEmaLayoutComponent', () => {
             tick(6000);
 
             expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
+        }));
+
+        it('should set isClientReady false after saving', fakeAsync(() => {
+            templateBuilder.templateChange.emit();
+            tick(6000);
+
+            expect(store.isClientReady()).toBe(false);
         }));
 
         it('should save right away if we request page leave before the 5 secs', () => {

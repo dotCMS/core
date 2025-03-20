@@ -726,6 +726,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		return find(inode, user, respectFrontendRoles, false);
+	}
+
+	@Override
+	public Contentlet find(String inode, User user, boolean respectFrontendRoles, boolean ignoreStoryBlock) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(inode, user, respectFrontendRoles);
 			if(!preResult){
@@ -734,7 +739,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException(errorMessage);
 			}
 		}
-		Contentlet c = conAPI.find(inode, user, respectFrontendRoles);
+		Contentlet c = conAPI.find(inode, user, respectFrontendRoles, ignoreStoryBlock);
 		for(ContentletAPIPostHook post : postHooks){
 			post.find(inode, user, respectFrontendRoles,c);
 		}
@@ -932,6 +937,25 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		Contentlet c = conAPI.findContentletByIdentifier(identifier, live, languageId, variantId, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.findContentletByIdentifier(identifier, live, languageId, user, respectFrontendRoles,c);
+		}
+		return c;
+	}
+
+	@Override
+	public Contentlet findContentletByIdentifier(String identifier, long languageId, String variantId,
+			Date timeMachineDate, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException{
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		Contentlet c = conAPI.findContentletByIdentifier(identifier, languageId, variantId,
+				timeMachineDate, user, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.findContentletByIdentifier(identifier, languageId, variantId, user, timeMachineDate, respectFrontendRoles);
 		}
 		return c;
 	}
@@ -3218,6 +3242,31 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
         return savedContentlet;
     }
+
+	@Override
+	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
+			String variantId, Date timeMachine, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, incomingLangId,
+					variantId, timeMachine, user, respectFrontendRoles);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		final Optional<Contentlet> found =
+				conAPI.findContentletByIdentifierOrFallback(identifier, incomingLangId, variantId,
+						timeMachine, user, respectFrontendRoles);
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletByIdentifierOrFallback(identifier, incomingLangId, variantId,
+					timeMachine, user, respectFrontendRoles);
+		}
+
+		return found;
+	}
+
+
     @Override
     public Optional<Contentlet> findInDb(String inode) {
         for (ContentletAPIPreHook pre : preHooks) {

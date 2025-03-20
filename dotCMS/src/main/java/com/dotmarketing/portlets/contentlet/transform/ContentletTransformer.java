@@ -58,11 +58,11 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
     private static Lazy<Boolean> IS_UNIQUE_PUBLISH_EXPIRE_DATE =
             Lazy.of(() -> Config.getBooleanProperty("uniquePublishExpireDate", false));
 
-    public ContentletTransformer(final List<Map<String, Object>> initList){
+    public ContentletTransformer(final List<Map<String, Object>> initList, final boolean ignoreStoryBlock){
         final List<Contentlet> newList = new ArrayList<>();
         if (initList != null){
             for(final Map<String, Object> map : initList){
-                newList.add(transform(map));
+                newList.add(transform(map, ignoreStoryBlock));
             }
         }
 
@@ -75,7 +75,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
     }
 
     @NotNull
-    private static Contentlet transform(final Map<String, Object> map)  {
+    private static Contentlet transform(final Map<String, Object> map, final boolean ignoreStoryBlock)  {
 
         final String inode = (String) map.get("inode");
         final String contentletId = (String) map.get(IDENTIFIER);
@@ -116,7 +116,11 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
            if(!hasJsonFields) {
                populateFields(contentlet, map);
            }
-            refreshStoryBlockReferences(contentlet);
+
+           if (!ignoreStoryBlock) {
+               refreshStoryBlockReferences(contentlet);
+           }
+
             populateWysiwyg(map, contentlet);
             populateFolderAndHost(contentlet, contentletId, contentTypeId);
         } catch (final Exception e) {

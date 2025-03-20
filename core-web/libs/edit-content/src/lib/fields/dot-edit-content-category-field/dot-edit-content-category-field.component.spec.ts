@@ -87,8 +87,8 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
             it('should categoryFieldControl has the values loaded on the store', () => {
                 const categoryValue = spectator.component.categoryFieldControl.value;
-
-                expect(categoryValue).toEqual(MOCK_SELECTED_CATEGORIES_OBJECT);
+                const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
+                expect(categoryValue).toEqual(expectedInodes);
             });
         });
 
@@ -187,8 +187,8 @@ describe('DotEditContentCategoryFieldComponent', () => {
 
             // Check if the form has the correct value
             const categoryValue = spectator.component.categoryFieldControl.value;
-
-            expect(categoryValue).toEqual(MOCK_SELECTED_CATEGORIES_OBJECT);
+            const expectedInodes = MOCK_SELECTED_CATEGORIES_OBJECT.map((cat) => cat.inode);
+            expect(categoryValue).toEqual(expectedInodes);
         }));
 
         it('should set categoryFieldControl value when adding a new category', () => {
@@ -199,38 +199,30 @@ describe('DotEditContentCategoryFieldComponent', () => {
                 path: CATEGORY_LEVEL_2[0].categoryName
             };
 
-            // this apply selected to the dialog
             store.openDialog();
-
-            // Add the new category
             store.addSelected(newItem);
-            // Apply the selected to the field
             store.applyDialogSelection();
-
             spectator.detectChanges();
 
             const categoryValues = spectator.component.categoryFieldControl.value;
+            const expectedInodes = [...MOCK_SELECTED_CATEGORIES_OBJECT, newItem].map(
+                (cat) => cat.inode
+            );
 
-            expect(categoryValues).toEqual([...MOCK_SELECTED_CATEGORIES_OBJECT, newItem]);
+            expect(categoryValues).toEqual(expectedInodes);
         });
 
         it('should set categoryFieldControl value when removing a category', () => {
-            const categoryValue: DotCategoryFieldKeyValueObj[] =
-                spectator.component.categoryFieldControl.value;
+            const initialValue = spectator.component.categoryFieldControl.value;
+            const expectedInodes = [initialValue[0]];
 
-            const expectedSelected = [categoryValue[0]];
-
-            expect(categoryValue.length).toBe(2);
-            store.openDialog(); // this apply selected to the dialog
-
-            store.removeSelected(categoryValue[1].key);
-            store.applyDialogSelection(); // this apply the selected in the dialog to the final selected
-
+            store.openDialog();
+            store.removeSelected(MOCK_SELECTED_CATEGORIES_OBJECT[1].key);
+            store.applyDialogSelection();
             spectator.detectChanges();
 
             const newCategoryValue = spectator.component.categoryFieldControl.value;
-
-            expect(newCategoryValue).toEqual(expectedSelected);
+            expect(newCategoryValue).toEqual(expectedInodes);
             expect(newCategoryValue.length).toBe(1);
         });
     });

@@ -238,6 +238,7 @@ public class AIProxyClientTest {
         final JSONObjectAIRequest request = textRequest(
                 model,
                 "What are the major achievements of the Apollo space program?");
+        request.getPayload().put(AiKeys.STREAM, true);
 
         final AIResponse aiResponse = aiProxyClient.callToAI(
                 request,
@@ -269,6 +270,26 @@ public class AIProxyClientTest {
                 .getAvailableModels()
                 .stream()
                 .noneMatch(model -> model.getName().equals(invalidModel)));
+    }
+
+    /**
+     * Scenario: Calling AI with a valid model and provided output stream
+     * Given a valid model "gpt-4o-mini" and a provided output stream
+     * When the request is sent to the AI service
+     * Then a 404 is reported from the provider
+     * Then a DotAIAllModelsExhaustedException should be thrown
+     */
+    @Test
+    public void test_callToAI_with404StatusCode() throws Exception {
+        final String model = "gpt-4o-mini";
+        AiTest.aiAppSecrets(host, model, "dall-e-3", "text-embedding-ada-002");
+        appConfig = ConfigService.INSTANCE.config(host);
+        final JSONObjectAIRequest request = textRequest(
+                model,
+                "What is something you cannot answer?");
+        request.getPayload().put(AiKeys.STREAM, true);
+
+        assertThrows(DotAIAllModelsExhaustedException.class, () -> aiProxyClient.callToAI(request));
     }
 
     /**

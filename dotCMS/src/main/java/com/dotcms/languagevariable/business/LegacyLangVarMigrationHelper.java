@@ -184,7 +184,7 @@ public class LegacyLangVarMigrationHelper {
      */
     private void migrateFileContents(final Path path, final Language language, final List<String> success, final List<String> fails) throws IOException {
         Logger.info(this,String.format("-> Migrating variables for language: %s_%s", language.getLanguageCode(), language.getCountryCode()));
-        final List<String> lines = Try.of(() -> Files.readAllLines(path, StandardCharsets.ISO_8859_1))
+        final List<String> lines = Try.of(() -> Files.readAllLines(path, StandardCharsets.UTF_8))
                 .getOrElseThrow(e -> new IOException(String.format("Could not read file: %s", path), e));
         if (lines.isEmpty()) {
             Logger.warn(this,String.format("File '%s' is empty. Moving on...", path));

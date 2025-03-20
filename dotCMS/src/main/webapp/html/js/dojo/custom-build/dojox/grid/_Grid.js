@@ -651,10 +651,11 @@ define("dojox/grid/_Grid", [
 		},
 		
 		showMessage: function(message){
-			if(message){
+			if (!this.messagesNode) return;
+			if (message) {
 				this.messagesNode.innerHTML = message;
 				this.messagesNode.style.display = "";
-			}else{
+			} else {
 				this.messagesNode.innerHTML = "";
 				this.messagesNode.style.display = "none";
 			}

@@ -20,28 +20,50 @@ export type GetPageDataResponse = {
 export const getPageData = async (
   slug: string | undefined,
   params: URLSearchParams,
-): Promise<GetPageDataResponse> => {
+) => {
+  const path = slug || "/";
+  const pageParams = getPageRequestParams({
+    path,
+    params,
+  });
+
+  const { pageAsset, error: pageError } = await fetchPageData(pageParams);
+  const { nav, error: navError } = await fetchNavData(pageParams.language_id);
+
+  return {
+    nav,
+    pageAsset,
+    error: pageError || navError,
+  };
+};
+
+const fetchPageData = async (params: any) => {
   try {
-    const path = slug || "/";
-
-    const pageRequestParams = getPageRequestParams({
-      path,
-      params,
-    });
-
     const pageAsset = (await client.page.get({
-      ...pageRequestParams,
+      ...params,
       depth: 3,
     })) as DotCMSPageAsset;
 
+    return { pageAsset };
+  } catch (error: any) {
+    if (error?.status === 404) {
+      return { pageAsset: undefined, error: undefined };
+    }
+
+    return { pageAsset: undefined, error };
+  }
+};
+
+const fetchNavData = async (languageId = 1) => {
+  try {
     const { entity } = (await client.nav.get({
       path: "/",
       depth: 2,
-      languageId: pageRequestParams.languageId as number,
+      languageId,
     })) as { entity: DotcmsNavigationItem };
 
-    return { pageAsset, nav: entity };
+    return { nav: entity };
   } catch (error) {
-    return { error };
+    return { nav: undefined, error };
   }
 };

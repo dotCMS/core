@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.test;
 
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
@@ -48,16 +49,7 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -68,13 +60,16 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -2271,19 +2266,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
-	/**
-	 * Method to test: {@link ContentTypeAPI#findAllRespectingLicense()}
-	 * Given scenario: No EE license
-	 * Expected result: {@link EnterpriseType}s not included in returned List
-	 */
-	@Test
-	public void test_findAllRespectingLicense_whenCommunity_ExcludeEETypes() throws Exception {
-		runNoLicense(() -> {
-			assertTrue(APILocator.getContentTypeAPI(APILocator.systemUser()).findAllRespectingLicense()
-					.stream().noneMatch((type)->type instanceof EnterpriseType));
 
-		});
-	}
 
 	/**
 	 * Method to test: {@link ContentTypeAPI#findAllRespectingLicense()}
@@ -2318,24 +2301,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
                         }));
     }
 
-    /**
-     * Method to test: {@link ContentTypeAPI#isContentTypeAllowed(ContentType)}
-     * Given scenario: The method is invoked without license using {@link BaseContentType#FORM} and {@link BaseContentType#PERSONA}
-     * Expected result: The method should return false
-     * @throws Exception
-     */
-    @Test
-    public void testIsContentTypeAllowedReturnsFalse() throws Exception {
-        runNoLicense(() -> {
-            assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser())
-                    .isContentTypeAllowed(new ContentTypeDataGen()
-                            .baseContentType(BaseContentType.PERSONA).nextPersisted()));
 
-            assertFalse(APILocator.getContentTypeAPI(APILocator.systemUser())
-                    .isContentTypeAllowed(new ContentTypeDataGen()
-                            .baseContentType(BaseContentType.FORM).nextPersisted()));
-        });
-    }
 
 	/***
 	 * Method to test: {@link ContentTypeAPI#save(ContentType)}

@@ -77,7 +77,6 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      * and custom properties specific to the content field. Additionally, it sets
      * up the editor with initial plugins using the `dotWysiwygPluginService`.
      */
-
     $editorConfig = computed<RawEditorOptions>(() => {
         const config: RawEditorOptions = {
             ...DEFAULT_TINYMCE_CONFIG,
@@ -102,6 +101,17 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
 
         return config;
     });
+
+    /**
+     * Inserts content into the TinyMCE editor.
+     *
+     * @param {string} content - The content to insert into the editor.
+     */
+    insertContent(content: string): void {
+        if (this.#editor) {
+            this.#editor.execCommand('mceInsertContent', false, content);
+        }
+    }
 
     /**
      * The #editor variable represents an instance of the Editor class, which provides functionality for text editing.

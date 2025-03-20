@@ -1,4 +1,4 @@
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,26 +12,25 @@ import { AvatarModule } from 'primeng/avatar';
 import { Menu, MenuModule } from 'primeng/menu';
 
 import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
-import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
-import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
+import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
+import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
 
 @Component({
     providers: [DotToolbarUserStore],
     selector: 'dot-toolbar-user',
     styleUrls: ['./dot-toolbar-user.component.scss'],
-    templateUrl: 'dot-toolbar-user.component.html',
+    templateUrl: './dot-toolbar-user.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
+        CommonModule,
         DotGravatarDirective,
         AvatarModule,
-        DotLoginAsModule,
-        DotMyAccountModule,
-        DotSafeHtmlPipe,
+        DotLoginAsComponent,
+        DotMyAccountComponent,
         MenuModule,
         AsyncPipe
     ]

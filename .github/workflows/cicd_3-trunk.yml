@@ -34,7 +34,15 @@ on:
       publish-npm-sdk-libs:
         description: 'Publish NPM SDKs'
         type: boolean
-        default: false        
+        default: false
+      disable-sonar:
+        description: 'Disable SonarQube job'
+        type: boolean
+        default: false
+      disable-semgrep:
+        description: 'Disable Semgrep job'
+        type: boolean
+        default: false
 
 jobs:
   # Initialize the trunk check process
@@ -75,14 +83,24 @@ jobs:
   # SonarQube analysis job
   sonar:
     name: Trunk SonarQube
-    needs: [ initialize,test ]
-    if: always() && !failure() && !cancelled()
+    needs: [ initialize, test ]
+    if: always() && !failure() && !cancelled() && vars.DISABLE_SONAR != 'true'
     uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  semgrep:
+    name: Trunk Semgrep
+    needs: [ initialize, test ]
+    if: always() && !failure() && !cancelled() && vars.DISABLE_SEMGREP != 'true'
+    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
+    with:
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+    secrets:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
   # CLI Build job - builds CLI artifacts
   build-cli:
@@ -109,13 +127,14 @@ jobs:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, sonar, deployment]
+    needs: [ initialize, build, build-cli, test, sonar, semgrep, deployment]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

@@ -3,8 +3,34 @@ name: dotCMS sync
 on: [push]
 
 jobs:
+
+  dotcli-runner:
+    runs-on: ubuntu-24.04
+    outputs:
+      url: ${{ steps.dotcli-runner.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils        
+
+      - name: Get dotCLI runner
+        id: dotcli-runner
+        run: |
+          echo "::group::Get dotCLI runner"
+       
+          curl -o maven-metadata.xml "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/maven-metadata.xml"
+          LATEST_VERSION=$(xmllint --xpath "string(//versioning/latest)" maven-metadata.xml)
+          URL="https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/${LATEST_VERSION}/dotcms-cli-${LATEST_VERSION}-runner.jar"
+
+          echo "::notice::DOTCLI RUNNER: $URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "::endgroup::"
+
   sync-with-dotcms:
-    runs-on: ubuntu-latest
+    needs: dotcli-runner
+    runs-on: ubuntu-24.04
     env:
       # Global environment expected by dotCMS CLI
       # This is how we instruct the cli the target server
@@ -15,15 +41,12 @@ jobs:
       # This is how we instruct the cli to create the workspace if it does not exist
       DOT_CREATE_WORKSPACE: ${{ vars.DOT_CREATE_WORKSPACE || 'true' }}
       # This is the CLI version to use, but we can always override this value
-      DOT_CLI_JAR_DOWNLOAD_URL: ${{ vars.DOT_CLI_JAR_DOWNLOAD_URL || 'https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/1.0.0-SNAPSHOT/dotcms-cli-1.0.0-20231002.205953-1.jar' }}
+      DOT_CLI_JAR_DOWNLOAD_URL: ${{ vars.DOT_CLI_JAR_DOWNLOAD_URL || needs.dotcli-runner.outputs.url }}
       # In case we want to force the download of the CLI jar
       DOT_FORCE_DOWNLOAD: ${{ vars.DOT_FORCE_DOWNLOAD || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        id: checkout
-        with:
-          fetch-depth: 0
 
       - name: Load .env file
         uses: aarcangeli/load-dotenv@v1.0.0

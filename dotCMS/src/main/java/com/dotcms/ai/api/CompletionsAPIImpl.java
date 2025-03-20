@@ -122,10 +122,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     @Override
     public JSONObject raw(final JSONObject json, final String userId) {
-        AppConfig.debugLogger(this.getClass(), () -> "OpenAI request:" + json.toString(2));
+        config.debugLogger(this.getClass(), () -> "OpenAI request:" + json.toString(2));
 
         final String response = sendRequest(config, json, userId).getResponse();
-        AppConfig.debugLogger(this.getClass(), () -> "OpenAI response:" + response);
+        config.debugLogger(this.getClass(), () -> "OpenAI response:" + response);
 
         return new JSONObject(response);
     }
@@ -182,6 +182,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         if (UtilMethods.isSet(form.model)) {
             json.put(AiKeys.MODEL, modelTuple._2.getName());
+        }
+
+        if (UtilMethods.isSet(form.responseFormat)) {
+            json.put(AiKeys.RESPONSE_FORMAT, form.responseFormat);
         }
 
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);

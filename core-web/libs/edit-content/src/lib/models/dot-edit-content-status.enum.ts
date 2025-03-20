@@ -2,7 +2,7 @@ export const enum DotEditContentStatus {
     DRAFT = 'Draft',
     NEW = 'New',
     PUBLISHED = 'Published',
-    REVISION = 'Revision',
+    CHANGED = 'Changed',
     ARCHIVED = 'Archived',
     LOCKED = 'Locked',
     UNLOCKED = 'Unlocked',

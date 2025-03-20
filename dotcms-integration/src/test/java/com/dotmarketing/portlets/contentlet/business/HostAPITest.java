@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -25,15 +26,12 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -54,11 +52,13 @@ import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.Trigger;
 
+import javax.enterprise.context.Dependent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +71,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -83,15 +84,15 @@ import static org.mockito.Mockito.when;
  * @author Jorge Urdaneta
  * @since Sep 5, 2013
  */
+@Dependent
+@RunWith(JUnit4WeldRunner.class)
 public class HostAPITest extends IntegrationTestBase  {
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-
         LicenseTestUtil.getLicense();
-        DotInitScheduler.start();
     }
 
     /**
@@ -122,8 +123,6 @@ public class HostAPITest extends IntegrationTestBase  {
 
     @Test
     public void testDeleteHostCleanUpTemplates() throws Exception {
-
-
 
         final User user = APILocator.getUserAPI().getSystemUser();
         final Host host = new SiteDataGen().nextPersisted();
@@ -199,77 +198,87 @@ public class HostAPITest extends IntegrationTestBase  {
     public void testDeleteHost() throws Exception {
 
         User user = APILocator.getUserAPI().getSystemUser();
+        Host sourceHost = null;
 
-        Host source = new SiteDataGen().nextPersisted();
-        final ContentType blogContentType = TestDataUtils
-                .getBlogLikeContentType("Blog" + System.currentTimeMillis(), source);
-        final ContentType employeeContentType = TestDataUtils
-                .getEmployeeLikeContentType("Employee" + System.currentTimeMillis(), source);
-        final ContentType newsContentType = TestDataUtils
-                .getNewsLikeContentType("News" + System.currentTimeMillis(), source);
+        try {
+            sourceHost = new SiteDataGen().nextPersisted();
+            final ContentType blogContentType = TestDataUtils
+                    .getBlogLikeContentType("Blog" + System.currentTimeMillis(), sourceHost);
+            final ContentType employeeContentType = TestDataUtils
+                    .getEmployeeLikeContentType("Employee" + System.currentTimeMillis(), sourceHost);
+            final ContentType newsContentType = TestDataUtils
+                    .getNewsLikeContentType("News" + System.currentTimeMillis(), sourceHost);
 
-        TestDataUtils.getBlogContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                blogContentType.id(), source);
-        TestDataUtils.getBlogContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                blogContentType.id(), source);
-        TestDataUtils
-                .getEmployeeContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                        employeeContentType.id(), source);
-        TestDataUtils
-                .getEmployeeContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                        employeeContentType.id(), source);
-        TestDataUtils.getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                newsContentType.id(), source);
-        TestDataUtils.getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                newsContentType.id(), source);
+            TestDataUtils.getBlogContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                    blogContentType.id(), sourceHost);
+            TestDataUtils.getBlogContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                    blogContentType.id(), sourceHost);
+            TestDataUtils
+                    .getEmployeeContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            employeeContentType.id(), sourceHost);
+            TestDataUtils
+                    .getEmployeeContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                            employeeContentType.id(), sourceHost);
+            TestDataUtils.getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                    newsContentType.id(), sourceHost);
+            TestDataUtils.getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                    newsContentType.id(), sourceHost);
 
-        TestDataUtils.getGenericContentContent(true,
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                source);
-        TestDataUtils.getGenericContentContent(true,
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                source);
-        TestDataUtils.getGenericContentContent(true,
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                source);
+            TestDataUtils.getGenericContentContent(true,
+                    APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                    sourceHost);
+            TestDataUtils.getGenericContentContent(true,
+                    APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                    sourceHost);
+            TestDataUtils.getGenericContentContent(true,
+                    APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                    sourceHost);
 
-        //Create a new test host
-        Host host = createHost("copy" + System.currentTimeMillis() + ".demo.dotcms.com", user);
+            TestDataUtils.waitForEmptyQueue();
 
-        Thread.sleep(5000);
-        String newHostIdentifier = host.getIdentifier();
-        String newHostName = host.getHostname();
+            //Create a new test host
+            Host host = createHost("copy" + System.currentTimeMillis() + ".demo.dotcms.com", user);
+            String newHostIdentifier = host.getIdentifier();
+            String newHostName = host.getHostname();
 
-        // mocking JobExecutionContext to execute HostAssetsJobProxy
-        final JobDetail jobDetail = mock(JobDetail.class);
-        final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
-        final Trigger trigger = mock(Trigger.class);
-        when(jobExecutionContext.getJobDetail()).thenReturn(jobDetail);
-        when(jobExecutionContext.getJobDetail().getName())
-                .thenReturn("setup-host-" + host.getIdentifier());
-        when(jobExecutionContext.getJobDetail().getGroup()).thenReturn("setup-host-group");
+            // mocking JobExecutionContext to execute HostAssetsJobProxy
+            final JobDetail jobDetail = mock(JobDetail.class);
+            final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
+            final Trigger trigger = mock(Trigger.class);
+            when(jobExecutionContext.getJobDetail()).thenReturn(jobDetail);
+            when(jobExecutionContext.getJobDetail().getName())
+                    .thenReturn("setup-host-" + host.getIdentifier());
+            when(jobExecutionContext.getJobDetail().getGroup()).thenReturn("setup-host-group");
 
-        final Map dataMap = new HashMap<>();
-        dataMap.put(HostAssetsJobProxy.USER_ID, user.getUserId());
-        dataMap.put(HostAssetsJobProxy.SOURCE_HOST_ID, source.getIdentifier());
-        dataMap.put(HostAssetsJobProxy.DESTINATION_HOST_ID, host.getIdentifier());
-        dataMap.put(HostAssetsJobProxy.COPY_OPTIONS, new HostCopyOptions(true));
-        when(jobExecutionContext.getTrigger()).thenReturn(trigger);
+            final Map<Object,Object> dataMap = new HashMap<>();
+            dataMap.put(HostAssetsJobProxy.USER_ID, user.getUserId());
+            dataMap.put(HostAssetsJobProxy.SOURCE_HOST_ID, sourceHost.getIdentifier());
+            dataMap.put(HostAssetsJobProxy.DESTINATION_HOST_ID, host.getIdentifier());
+            dataMap.put(HostAssetsJobProxy.COPY_OPTIONS, new HostCopyOptions(true));
+            when(jobExecutionContext.getTrigger()).thenReturn(trigger);
 
-        HostAssetsJobProxy hostAssetsJobProxy = Mockito.spy(new HostAssetsJobProxy());
-        doReturn(dataMap).when(hostAssetsJobProxy).getExecutionData(trigger);
-        hostAssetsJobProxy.execute(jobExecutionContext);
+            HostAssetsJobProxy hostAssetsJobProxy = Mockito.spy(new HostAssetsJobProxy());
+            doReturn(dataMap).when(hostAssetsJobProxy).getExecutionData(trigger);
+            hostAssetsJobProxy.execute(jobExecutionContext);
 
-        Thread.sleep(600); // wait a bit for the index
+            TestDataUtils.waitForEmptyQueue(); // wait a bit for the index
 
-        //Archive the just created host in order to be able to delete it
-        archiveHost(host, user);
+            //Archive the just created host in order to be able to delete it
+            archiveHost(host, user);
 
-        //Delete the just created host
-        deleteHost(host, user);
+            //Delete the just created host
+            deleteHost(host, user);
 
-        //Make sure the host was deleted properly
-        hostDoesNotExistCheck(newHostIdentifier, newHostName, user);
+            //Make sure the host was deleted properly
+            hostDoesNotExistCheck(newHostIdentifier, newHostName, user);
+        } finally {
+            // Cleanup
+            if (sourceHost != null) {
+                unpublishHost(sourceHost, user);
+                archiveHost(sourceHost, user);
+                deleteHost(sourceHost, user);
+            }
+        }
     }
 
     @Test
@@ -350,6 +359,7 @@ public class HostAPITest extends IntegrationTestBase  {
                 .nextPersisted();
 
         final String newHostName = "demo.test" + System.currentTimeMillis() + ".dotcms.com";
+
         //Create a new test host
         Host host = createHost(newHostName, user);
         final String newHostIdentifier = host.getIdentifier();
@@ -622,7 +632,7 @@ public class HostAPITest extends IntegrationTestBase  {
         }
 
         if (hostDeleteResult.isEmpty()) {
-            Thread.sleep(6000); // wait a bit for the index
+            TestDataUtils.waitForEmptyQueue(); // wait a bit for the index
         } else {
             hostDeleteResult.get().get();
         }
@@ -648,15 +658,34 @@ public class HostAPITest extends IntegrationTestBase  {
      * Should return it
      */
     @Test
-    public void shouldReturnExistingHost() throws DotSecurityException, DotDataException {
-        final Host host = new SiteDataGen().nextPersisted();
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+    public void shouldReturnExistingHost() throws Exception {
+        Host host = null;
+        Role role = null;
+        User user = null;
+        try {
+            host = new SiteDataGen().nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
 
-        this.addPermission(role, host);
+            this.addPermission(role, host);
 
-        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, false).get();
-        assertEquals(host, hostReturned);
+            final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, false).get();
+            assertEquals(host, hostReturned);
+        } finally {
+            // Cleanup
+            final User systemUser = APILocator.systemUser();
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
     }
 
     /**
@@ -665,12 +694,31 @@ public class HostAPITest extends IntegrationTestBase  {
      * Should throw a {@link DotSecurityException}
      */
     @Test(expected = DotSecurityException.class)
-    public void shouldThrowDotSecurityExceptionWhenUserNotHavePermission() throws DotSecurityException, DotDataException {
-        final Host host = new SiteDataGen().nextPersisted();
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+    public void shouldThrowDotSecurityExceptionWhenUserNotHavePermission() throws Exception {
+        Host host = null;
+        Role role = null;
+        User user = null;
+        try {
+            host = new SiteDataGen().nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
 
-        APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, false);
+            APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, false);
+        } finally {
+            // Cleanup
+            final User systemUser = APILocator.systemUser();
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
     }
 
     /**
@@ -680,7 +728,6 @@ public class HostAPITest extends IntegrationTestBase  {
      */
     @Test
     public void shouldReturnNull() throws DotSecurityException, DotDataException {
-
         final Optional<Host> optional = APILocator.getHostAPI().resolveHostNameWithoutDefault(
                 "not_exists_host", APILocator.systemUser(), false);
         assertFalse(optional.isPresent());
@@ -689,20 +736,20 @@ public class HostAPITest extends IntegrationTestBase  {
     /**
      * Method to test: {@link HostAPI#resolveHostName(String, User, boolean)}
      * When the host does not exist
-     * Should return the default host and store it into host cache
+     * Should return the default host and store 404 into host cache
      */
     @Test
-    public void shouldStoreDefaultHostIntoCache() throws DotSecurityException, DotDataException {
+    public void shouldReturnDefaultHostForNonExistingHost() throws DotSecurityException, DotDataException {
         final String hostName = "not_exists_host";
         final Host notExistsHost = APILocator.getHostAPI().resolveHostName(hostName
                 , APILocator.systemUser(), false);
         final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true);
-        assertEquals(notExistsHost.getIdentifier(), defaultHost.getIdentifier());
+        assertEquals(defaultHost.getIdentifier(), notExistsHost.getIdentifier());
 
         final HostCache hostCache = CacheLocator.getHostCache();
-        final Host hostByAlias = hostCache.getHostByAlias(hostName);
+        final Host hostByAlias = hostCache.getHostByAlias(hostName, false);
 
-        assertEquals(hostByAlias.getIdentifier(), defaultHost.getIdentifier());
+        assertEquals(HostCache.CACHE_404_HOST, hostByAlias.getIdentifier());
     }
 
     /**
@@ -711,13 +758,92 @@ public class HostAPITest extends IntegrationTestBase  {
      * Should return the host
      */
     @Test()
-    public void shouldReturnHostWhenRespectFrontendRolesIsTrue() throws DotSecurityException, DotDataException {
-        final Host host = new SiteDataGen().nextPersisted();
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+    public void shouldReturnHostWhenRespectFrontendRolesIsTrue() throws Exception {
+        Host host = null;
+        Role role = null;
+        User user = null;
+        try {
+            host = new SiteDataGen().nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
 
-        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, true).get();
-        assertEquals(host, hostReturned);
+            final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, true).get();
+            assertEquals(host, hostReturned);
+        } finally {
+            // Cleanup
+            final User systemUser = APILocator.systemUser();
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link HostAPI#resolveHostNameWithoutDefault(String, User, boolean)}
+     * When a host has live and working versions and the user has a front end role
+     * Should return the live version
+     */
+    @Test
+    public void shouldReturnLiveVersionWhenFrontendRolesIsTrue() throws Exception {
+        Host host = null;
+        Role role = null;
+        User user = null;
+        try {
+            host = new SiteDataGen().nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
+
+            // Create a working version
+            final Host workingHost = new Host(APILocator.getContentletAPI().checkout(
+                    host.getInode(), APILocator.systemUser(), false));
+            final String workingHostAlias = "working." + workingHost.getHostname();
+            workingHost.setAliases(workingHostAlias);
+            final Host savedHost = new Host(APILocator.getContentletAPI().checkin(
+                    workingHost, APILocator.systemUser(), false));
+            assertNotEquals(host.getInode(), savedHost.getInode());
+
+            // Resolve host by name
+            final Optional<Host> optionalHost = APILocator.getHostAPI().resolveHostNameWithoutDefault(
+                    host.getHostname(), user, true);
+            assertTrue(optionalHost.isPresent());
+            final Host resolvedHost = optionalHost.get();
+
+            assertTrue(resolvedHost.isLive());
+            assertNull(resolvedHost.getAliases());
+            assertEquals(host, resolvedHost);
+
+            // Resolve host by alias
+            final Optional<Host> optionalHostByAlias = APILocator.getHostAPI()
+                    .resolveHostNameWithoutDefault(workingHostAlias, user, true);
+            assertTrue(optionalHostByAlias.isPresent());
+            final Host resolvedHostByAlias = optionalHostByAlias.get();
+
+            assertTrue(resolvedHostByAlias.isLive());
+            assertEquals(host, resolvedHostByAlias);
+
+        } finally {
+            // Cleanup
+            final User systemUser = APILocator.systemUser();
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
     }
 
     private void addPermission(final Role role, final Host host)
@@ -740,19 +866,48 @@ public class HostAPITest extends IntegrationTestBase  {
      * Should return the first one
      */
     @Test
-    public void shouldReturnHostByAlias() throws DotSecurityException, DotDataException {
-        final Host host = new SiteDataGen().aliases("demo.dotcms.com").nextPersisted();
-        final Host host_2 = new SiteDataGen().aliases("not-demo.dotcms.com").nextPersisted();
+    public void shouldReturnHostByAlias() throws Exception {
+        Host host = null;
+        Host host_2 = null;
+        Role role = null;
+        User user = null;
+        try {
+            final long currentTime = System.currentTimeMillis();
+            final String demoAlias = "demo-" + currentTime + ".dotcms.com";
+            host = new SiteDataGen().aliases(demoAlias).nextPersisted();
+            final String notDemoAlias = "not-demo-" + currentTime + ".dotcms.com";
+            host_2 = new SiteDataGen().aliases(notDemoAlias).nextPersisted();
 
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
 
-        this.addPermission(role, host);
-        this.addPermission(role, host_2);
+            this.addPermission(role, host);
+            this.addPermission(role, host_2);
 
-        final Host hostReturned = APILocator.getHostAPI().findByAlias("demo.dotcms.com", user, false);
-        assertEquals(host, hostReturned);
-        assertNotEquals(host_2, hostReturned);
+            final Host hostReturned = APILocator.getHostAPI().findByAlias(
+                    demoAlias, user, false);
+            assertEquals(host, hostReturned);
+            assertNotEquals(host_2, hostReturned);
+        } finally {
+            // Cleanup
+            final User systemUser = APILocator.systemUser();
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (host_2 != null) {
+                unpublishHost(host_2, systemUser);
+                archiveHost(host_2, systemUser);
+                deleteHost(host_2, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
     }
 
     /**
@@ -761,16 +916,39 @@ public class HostAPITest extends IntegrationTestBase  {
      * Should return thehost by alias
      */
     @Test
-    public void whenHostHasMultipleAliasshouldReturnHostByAlias() throws DotSecurityException, DotDataException {
-        final Host host = new SiteDataGen().aliases("demo.dotcms.com\r\ntest.dotcms.com").nextPersisted();
+    public void whenHostHasMultipleAliasshouldReturnHostByAlias() throws Exception {
+        Host host = null;
+        Role role = null;
+        User user = null;
+        try {
+            final long currentTime = System.currentTimeMillis();
+            final String demoAlias = "demo-" + currentTime + ".dotcms.com";
+            final String testAlias = "test-" + currentTime + ".dotcms.com";
+            host = new SiteDataGen().aliases(String.format("%s%n%s",
+                    demoAlias, testAlias)).nextPersisted();
 
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
 
-        this.addPermission(role, host);
+            this.addPermission(role, host);
 
-        final Host hostReturned = APILocator.getHostAPI().findByAlias("test.dotcms.com", user, false);
-        assertEquals(host, hostReturned);
+            final Host hostReturned = APILocator.getHostAPI().findByAlias(testAlias, user, false);
+            assertEquals(host, hostReturned);
+        } finally {
+            // Cleanup
+            final User systemUser = APILocator.systemUser();
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
     }
 
     /**
@@ -779,23 +957,51 @@ public class HostAPITest extends IntegrationTestBase  {
      * Should return the right host by alias
      */
     @Test
-    public void whenBothAliasStartByProd() throws DotSecurityException, DotDataException {
-        final Host host = new SiteDataGen().aliases("prod-client.dotcms.com").nextPersisted();
-        final Host host_2 = new SiteDataGen().aliases("prod-anotherclient.dotcms.com").nextPersisted();
+    public void whenBothAliasStartByProd() throws Exception {
+        Host host = null;
+        Host host_2 = null;
+        User user = null;
+        Role role = null;
+        final User systemUser = APILocator.systemUser();
+        try {
+            final long currentTime = System.currentTimeMillis();
+            final String prodAlias = "prod-client-" + currentTime + ".dotcms.com";
+            host = new SiteDataGen().aliases(prodAlias).nextPersisted();
+            final String prodAlias_2 = "prod-anotherclient-" + currentTime + ".dotcms.com";
+            host_2 = new SiteDataGen().aliases(prodAlias_2).nextPersisted();
 
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
 
-        this.addPermission(role, host);
-        this.addPermission(role, host_2);
+            this.addPermission(role, host);
+            this.addPermission(role, host_2);
 
-        final Host hostReturned = APILocator.getHostAPI().findByAlias("prod-client.dotcms.com", user, false);
-        assertEquals(host, hostReturned);
-        assertNotEquals(host_2, hostReturned);
+            final Host hostReturned = APILocator.getHostAPI().findByAlias(prodAlias, user, false);
+            assertEquals(host, hostReturned);
+            assertNotEquals(host_2, hostReturned);
 
-        final Host hostReturned2 = APILocator.getHostAPI().findByAlias("prod-anotherclient.dotcms.com", user, false);
-        assertNotEquals(host, hostReturned2);
-        assertEquals(host_2, hostReturned2);
+            final Host hostReturned2 = APILocator.getHostAPI().findByAlias(prodAlias_2, user, false);
+            assertNotEquals(host, hostReturned2);
+            assertEquals(host_2, hostReturned2);
+        } finally {
+            // Cleanup
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (host_2 != null) {
+                unpublishHost(host_2, systemUser);
+                archiveHost(host_2, systemUser);
+                deleteHost(host_2, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
     }
 
     /**
@@ -808,10 +1014,13 @@ public class HostAPITest extends IntegrationTestBase  {
     public void Test_findAllCache() throws DotSecurityException, DotDataException {
         final User systemUser = APILocator.systemUser();
         final HostAPI hostAPI = APILocator.getHostAPI();
-        final List<Host> allFromDB1 = hostAPI.findAllFromDB(systemUser, false);
+        final List<Host> allFromDB1 = hostAPI.findAllFromDB(systemUser,
+                HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
         final List<Host> allFromCache1 = hostAPI.findAllFromCache(systemUser, false);
-        Assert.assertEquals(allFromDB1, allFromCache1);
-        final Host host1 = new SiteDataGen().aliases("any.client.dotcms.com").nextPersisted();
+        Assert.assertTrue( allFromDB1.size() == allFromCache1.size() &&
+                allFromDB1.containsAll(allFromCache1) && allFromCache1.containsAll(allFromDB1));
+        final Host host1 = new SiteDataGen().aliases("any.client"
+                + System.currentTimeMillis() + ".dotcms.com").nextPersisted();
         final List<Host> allFromCache2 = hostAPI.findAllFromCache(systemUser, false);
         assertTrue(allFromCache1.size() < allFromCache2.size());
         hostAPI.archive(host1, systemUser, false);
@@ -827,12 +1036,10 @@ public class HostAPITest extends IntegrationTestBase  {
      * This Test is meant to verify a changed introduced in DBSearch to find ContentletVersionInfo regardless of the language
      * Also it verifies there is always only one entry on version-info for every contentlet of type Host.
      * Regardless of the operation we perform.
-     * @throws DotDataException
-     * @throws DotSecurityException
      */
     @Test
     public void Test_Host_With_Multiple_Lang_Versions_Return_Default_Lang_OtherWise_First_Occurrence()
-            throws DotDataException, DotSecurityException {
+            throws Exception {
 
         final LanguageAPI languageAPI = APILocator.getLanguageAPI();
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -840,56 +1047,63 @@ public class HostAPITest extends IntegrationTestBase  {
         final User systemUser = APILocator.systemUser();
         final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 
-        final SiteDataGen siteDataGen = new SiteDataGen();
+        Host host = null;
+        try {
+            final SiteDataGen siteDataGen = new SiteDataGen();
+            host = siteDataGen.name("xyx" + System.currentTimeMillis())
+                    .aliases("xyz" + System.currentTimeMillis() + ".dotcms.com").next();
 
-        Host host = siteDataGen.name("xyx" + System.currentTimeMillis())
-                .aliases("xyz.dotcms.com").next();
+            host.setLanguageId(0);
+            host = siteDataGen.persist(host, false);
 
-        host.setLanguageId(0);
-        host = siteDataGen.persist(host, false);
+            //Host are created by default under the default language.
+            Assert.assertEquals(languageAPI.getDefaultLanguage().getId(), host.getLanguageId());
 
-        //Host are created by default under the default language.
-        Assert.assertEquals(languageAPI.getDefaultLanguage().getId(), host.getLanguageId());
+            List<ContentletVersionInfo> verInfos = versionableAPI
+                    .findContentletVersionInfos(host.getIdentifier());
 
-        List<ContentletVersionInfo> verInfos = versionableAPI
-                .findContentletVersionInfos(host.getIdentifier());
+            Assert.assertEquals("There should be only one entry.", 1, verInfos.size());
 
-        Assert.assertEquals("There should be only one entry.", 1, verInfos.size());
+            Host dbSearch = hostAPI.DBSearch(host.getIdentifier(), systemUser, false);
+            Assert.assertNotNull(dbSearch);
 
-        Host dbSearch = hostAPI.DBSearch(host.getIdentifier(), systemUser, false);
-        Assert.assertNotNull(dbSearch);
+            Assert.assertEquals(verInfos.get(0).getWorkingInode(), dbSearch.getInode());
 
-        Assert.assertEquals(verInfos.get(0).getWorkingInode(), dbSearch.getInode());
+            Assert.assertNull("There shouldn't be a live version yet.", verInfos.get(0).getLiveInode());
 
-        Assert.assertNull("There shouldn't be a live version yet.", verInfos.get(0).getLiveInode());
+            contentletAPI.publish(host, systemUser, false);
 
-        contentletAPI.publish(host, systemUser, false);
+            verInfos = versionableAPI.findContentletVersionInfos(host.getIdentifier());
 
-        verInfos = versionableAPI.findContentletVersionInfos(host.getIdentifier());
+            Assert.assertNotNull("There should be a live version now.", verInfos.get(0).getLiveInode());
 
-        Assert.assertNotNull("There should be a live version now.", verInfos.get(0).getLiveInode());
+            //This should create another version of the host in a different language.
+            final Language newLanguage = new LanguageDataGen().languageName("ES").nextPersisted();
 
-        //This should create another version of the host in a different language.
-        final Language newLanguage = new LanguageDataGen().languageName("ES").nextPersisted();
+            host.setLanguageId(newLanguage.getId());
+            hostAPI.save(host, systemUser, false);
 
-        host.setLanguageId(newLanguage.getId());
-        hostAPI.save(host, systemUser, false);
+            verInfos = versionableAPI
+                    .findContentletVersionInfos(host.getIdentifier());
+            Assert.assertEquals("There should be two entries one for each language.", 2, verInfos.size());
 
-        verInfos = versionableAPI
-                .findContentletVersionInfos(host.getIdentifier());
-        Assert.assertEquals("There should be two entries one for each language.", 2, verInfos.size());
+            final long newRandomDefaultLangId = -1;
+            final Language mockDefaultLang = mock(Language.class);
+            when(mockDefaultLang.getId()).thenReturn(newRandomDefaultLangId);
 
-        final long newRandomDefaultLangId = -1;
-        final Language mockDefaultLang = mock(Language.class);
-        when(mockDefaultLang.getId()).thenReturn(newRandomDefaultLangId);
+            final HostAPI hostAPIWithMockedLangAPI = new HostAPIImpl(APILocator.getSystemEventsAPI());
+            final Host dbSearchNoDefaultLang = hostAPIWithMockedLangAPI.DBSearch(host.getIdentifier(), systemUser, false);
 
-        final HostAPI hostAPIWithMockedLangAPI = new HostAPIImpl(APILocator.getSystemEventsAPI());
-        final Host dbSearchNoDefaultLang = hostAPIWithMockedLangAPI.DBSearch(host.getIdentifier(), systemUser, false);
-
-        //Since Default language is changed now we still get something here.
-        assertNotNull(dbSearchNoDefaultLang);
-        //And System-host should still be system host
-        assertNotNull(hostAPIWithMockedLangAPI.findSystemHost());
+            //Since Default language is changed now we still get something here.
+            assertNotNull(dbSearchNoDefaultLang);
+            //And System-host should still be system host
+            assertNotNull(hostAPIWithMockedLangAPI.findSystemHost());
+        } finally {
+            // Cleanup
+            unpublishHost(host, systemUser);
+            archiveHost(host, systemUser);
+            deleteHost(host, systemUser);
+        }
 
     }
 
@@ -1028,6 +1242,67 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
+     * Method to test: {@link HostAPI#findAllFromCache(User, boolean)}
+     *
+     * Given Scenario: For a Frontend User, get the list of all Sites in the repository
+     * when a given host has a live and a working version
+     * Expected Result: The API should return the live version of the host
+     */
+    @Test
+    public void getAllSitesShouldReturnLiveVersionForFrontendUser() throws Exception {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+        Host host = null;
+        Role role = null;
+        User user = null;
+
+        try {
+            // Test data generation
+            host = new SiteDataGen().nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
+
+            // Create a working version of the host
+            final Host workingHost = new Host(APILocator.getContentletAPI().checkout(
+                    host.getInode(), APILocator.systemUser(), false));
+            final String workingHostAlias = "working." + workingHost.getHostname();
+            workingHost.setAliases(workingHostAlias);
+            final Host savedHost = new Host(APILocator.getContentletAPI().checkin(
+                    workingHost, systemUser, false));
+            assertNotEquals(host.getInode(), savedHost.getInode());
+
+            final List<Host> allSites = hostAPI.findAllFromCache(user, true);
+
+            // Assertions
+            assertFalse("No Sites were returned", allSites.isEmpty());
+            final String hostId = host.getIdentifier();
+
+            Optional<Host> optionalHost = allSites.stream().filter(
+                    h -> h.getIdentifier().equals(hostId)).findFirst();
+            assertTrue("Host was NOT returned", optionalHost.isPresent());
+            final Host returnedHost = optionalHost.get();
+
+            assertTrue("Host is NOT live", returnedHost.isLive());
+            assertNull("Host has aliases", returnedHost.getAliases());
+            assertEquals("Host does NOT match", host, returnedHost);
+        } finally {
+            // Cleanup
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@link HostAPI#findDefaultHost(User, boolean)}
      *
      * Given Scenario: Create a new Site and mark it as default. Then, go back to marking the original default Site as
@@ -1061,6 +1336,62 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
+     * Method to test: {@link HostAPI#findDefaultHost(User, boolean)}
+     * Given scenario: When the default host has live and working versions and the user has a front end role
+     * Expected result: The API should return the live version of the host
+     */
+    @Test
+    public void findDefaultHostShouldReturnLiveVersionForFrontedUser() throws Exception {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+        final Host originalDefaultSite = hostAPI.findDefaultHost(systemUser, false);
+
+        Host host = null;
+        Role role = null;
+        User user = null;
+
+        try {
+            // Test data generation
+            host = new SiteDataGen().setDefault(true).nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
+            hostAPI.updateDefaultHost(host, systemUser, false);
+
+            // Save working version of the default host
+            final Host workingHost = new Host(APILocator.getContentletAPI().checkout(
+                    host.getInode(), APILocator.systemUser(), false));
+            final String workingHostAlias = "working." + workingHost.getHostname();
+            workingHost.setAliases(workingHostAlias);
+            final Host savedHost = new Host(APILocator.getContentletAPI().checkin(
+                    workingHost, systemUser, false));
+            assertNotEquals(host.getInode(), savedHost.getInode());
+
+            final Host defaultHost = hostAPI.findDefaultHost(user, true);
+
+            // Assertions
+            assertTrue("Default Host is NOT live", defaultHost.isLive());
+            assertNull("Default Host has aliases", defaultHost.getAliases());
+            assertEquals("Default Host does NOT match", host, defaultHost);
+
+        } finally {
+            // Cleanup
+            hostAPI.updateDefaultHost(originalDefaultSite, systemUser, false);
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@link HostAPI#getHostsWithPermission(int, User, boolean)}
      *
      * Given Scenario: Create a User with READ permission on a new Site, and check that the API returns it
@@ -1073,11 +1404,9 @@ public class HostAPITest extends IntegrationTestBase  {
         // Initialization
         final HostAPI hostAPI = APILocator.getHostAPI();
         final User systemUser = APILocator.systemUser();
-        final RoleAPI roleAPI = APILocator.getRoleAPI();
-        final UserAPI userAPI = APILocator.getUserAPI();
-        Host testSite = new Host();
-        Role testRole = new Role();
-        User dummyUser = new User();
+        Host testSite = null;
+        Role testRole = null;
+        User dummyUser = null;
 
         try {
             // Test data generation
@@ -1093,11 +1422,17 @@ public class HostAPITest extends IntegrationTestBase  {
             assertTrue("Permissioned Site ID does not match!", testSite.getIdentifier().equals(permissionedSites.get(0).getIdentifier()));
         } finally {
             // Cleanup
-            unpublishHost(testSite, systemUser);
-            archiveHost(testSite, systemUser);
-            deleteHost(testSite, systemUser);
-            userAPI.delete(dummyUser, systemUser, false);
-            roleAPI.delete(testRole);
+            if (testSite != null) {
+                unpublishHost(testSite, systemUser);
+                archiveHost(testSite, systemUser);
+                deleteHost(testSite, systemUser);
+            }
+            if (dummyUser != null) {
+                UserDataGen.remove(dummyUser);
+            }
+            if (testRole != null) {
+                RoleDataGen.remove(testRole);
+            }
         }
     }
 
@@ -1115,11 +1450,9 @@ public class HostAPITest extends IntegrationTestBase  {
         // Initialization
         final HostAPI hostAPI = APILocator.getHostAPI();
         final User systemUser = APILocator.systemUser();
-        final RoleAPI roleAPI = APILocator.getRoleAPI();
-        final UserAPI userAPI = APILocator.getUserAPI();
-        Host testSite = new Host();
-        Role testRole = new Role();
-        User dummyUser = new User();
+        Host testSite = null;
+        Role testRole = null;
+        User dummyUser = null;
 
         try {
             // Test data generation
@@ -1136,9 +1469,15 @@ public class HostAPITest extends IntegrationTestBase  {
             assertEquals("Non-live/archived Sites cannot be verified for permissions", 0, permissionedSites.size());
         } finally {
             // Cleanup
-            deleteHost(testSite, systemUser);
-            userAPI.delete(dummyUser, systemUser, false);
-            roleAPI.delete(testRole);
+            if (testSite != null) {
+                deleteHost(testSite, systemUser);
+            }
+            if (dummyUser != null) {
+                UserDataGen.remove(dummyUser);
+            }
+            if (testRole != null) {
+                RoleDataGen.remove(testRole);
+            }
         }
     }
 
@@ -1172,10 +1511,8 @@ public class HostAPITest extends IntegrationTestBase  {
     public void findSystemHostWithLimitedUser() throws DotDataException, DotSecurityException {
         // Initialization
         final HostAPI hostAPI = APILocator.getHostAPI();
-        final RoleAPI roleAPI = APILocator.getRoleAPI();
-        final UserAPI userAPI = APILocator.getUserAPI();
-        Role testRole = new Role();
-        User dummyUser = new User();
+        Role testRole = null;
+        User dummyUser = null;
 
         try {
             // Test data generation
@@ -1187,8 +1524,12 @@ public class HostAPITest extends IntegrationTestBase  {
             assertEquals("System Host object NOT found!", "SYSTEM_HOST", systemHost.getIdentifier());
         } finally {
             // Cleanup
-            userAPI.delete(dummyUser, APILocator.systemUser(), false);
-            roleAPI.delete(testRole);
+            if (dummyUser != null) {
+                UserDataGen.remove(dummyUser);
+            }
+            if (testRole != null) {
+                RoleDataGen.remove(testRole);
+            }
         }
     }
 
@@ -1294,7 +1635,7 @@ public class HostAPITest extends IntegrationTestBase  {
      *     archive it. Finally, compare the total count of stopped Sites.</li>
      *     <li><b>Expected Result: </b>When compared to the initial stopped Sites count, after stopping the new Site,
      *     the count must be increased by one. After stopping AND archiving the second Site, the total count difference
-     *     must be 2 because archived Sites are also considered "stopped Sites" as well.</li>
+     *     must still be 1 because archived Sites are not returned by searchByStopped method.</li>
      * </ul>
      */
     @Test
@@ -1328,7 +1669,7 @@ public class HostAPITest extends IntegrationTestBase  {
                     false, 0, 0, systemUser, false);
 
             // Assertions #2
-            assertEquals("Stopped and Archived Sites count difference MUST be two", 2, updatedStoppedAndArchivedSites.size() - stoppedSites.size());
+            assertEquals("After create and archive a site, Stopped Sites count difference MUST be one", 1, updatedStoppedAndArchivedSites.size() - stoppedSites.size());
         } finally {
             // Cleanup
             archiveHost(testSite, systemUser);
@@ -1405,6 +1746,64 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
+     * Method to test: {@link HostAPI#search(String, boolean, boolean, boolean, int, int, User, boolean)}
+     * Given Scenario: look for a site when there is a live and a working version.
+     * Expected Result: The API should return the live version of the site for a front-end user.
+     */
+    @Test
+    public void searchShouldReturnLiveVersionForFrontendUser() throws Exception {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+
+        Host host = null;
+        Role role = null;
+        User user = null;
+
+        try {
+            // Test data generation
+            final String siteName = "returnliveversion.dotcms.com" + System.currentTimeMillis();
+            host = new SiteDataGen().name(siteName).nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
+
+            // Save working version of the host
+            final Host workingHost = new Host(APILocator.getContentletAPI().checkout(
+                    host.getInode(), APILocator.systemUser(), false));
+            final String workingHostAlias = "working." + workingHost.getHostname();
+            workingHost.setAliases(workingHostAlias);
+            final Host savedHost = new Host(APILocator.getContentletAPI().checkin(
+                    workingHost, systemUser, false));
+            assertNotEquals(host.getInode(), savedHost.getInode());
+
+            final List<Host> returnedSites = hostAPI.search(siteName,
+                    false, true, false, 0, 0,
+                    user, true);
+            assertFalse("No Sites were returned", returnedSites.isEmpty());
+            final Host returnedHost = returnedSites.get(0);
+
+            // Assertions
+            assertTrue("Returned Host is NOT live", returnedHost.isLive());
+            assertNull("Returned Host has aliases", returnedHost.getAliases());
+            assertEquals("Returned Host does NOT match", host, returnedHost);
+
+        } finally {
+            // Cleanup
+            if (host != null) {
+                unpublishHost(host, systemUser);
+                archiveHost(host, systemUser);
+                deleteHost(host, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@link HostAPI#count(User, boolean)}
      *
      * Given Scenario: Create a new Site, and get the total count of Sites in the current repository.
@@ -1437,7 +1836,7 @@ public class HostAPITest extends IntegrationTestBase  {
 
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link HostAPI#findAllFromDB(User, boolean, boolean)}</li>
+     *     <li><b>Method to test: </b>{@link HostAPI#findAllFromDB(User, HostAPI.SearchType...)}</li>
      *     <li><b>Given Scenario: </b>Create a test Site and call the {@findAllFromDB} method that allows you to include
      *     or exclude the System Host.</li>
      *     <li><b>Expected Result: </b>When calling the method with the {@code includeSystemHost} parameter as
@@ -1451,8 +1850,9 @@ public class HostAPITest extends IntegrationTestBase  {
         final User systemUser = APILocator.systemUser();
 
         // Test data generation
-        final List<Host> siteList = hostAPI.findAllFromDB(systemUser, false, false);
-        final List<Host> siteListWithSystemHost = hostAPI.findAllFromDB(systemUser, true, false);
+        final List<Host> siteList = hostAPI.findAllFromDB(systemUser);
+        final List<Host> siteListWithSystemHost = hostAPI.findAllFromDB(systemUser,
+                HostAPI.SearchType.INCLUDE_SYSTEM_HOST);
 
         // Assertions
         assertEquals("The size difference between both Site lists MUST be 1", 1,

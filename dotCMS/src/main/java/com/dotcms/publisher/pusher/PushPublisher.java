@@ -23,8 +23,15 @@ import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.VariantBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
-import com.dotcms.publisher.business.*;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditHistory;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -39,7 +46,6 @@ import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -47,6 +53,7 @@ import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFai
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsSuccessEvent;
 import com.dotcms.system.event.local.type.pushpublish.SinglePushPublishEndpointFailureEvent;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.EnterpriseFeature;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -55,8 +62,10 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.glassfish.jersey.client.ClientProperties;
 import org.quartz.JobDetail;
@@ -150,7 +159,7 @@ public class PushPublisher extends Publisher {
 		try {
 			//Compressing bundle
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
-			ArrayList<File> list = new ArrayList<>(1);
+			final List<File> list = new ArrayList<>(1);
 			list.add(bundleRoot);
 			File bundleFile = new File(bundleRoot + ".tar.gz");
 
@@ -165,7 +174,7 @@ public class PushPublisher extends Publisher {
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
 			Map<String, Map<String, EndpointDetail>> endpointsMap = currentStatusHistory.getEndpointsMap();
 			// If not empty, don't overwrite publish history already set via the PublisherQueueJob
-			boolean isHistoryEmpty = endpointsMap.size() == 0;
+			boolean isHistoryEmpty = endpointsMap.isEmpty();
 			currentStatusHistory.setPublishStart(new Date());
 			PushPublishLogger.log(this.getClass(), "Status Update: Sending to all environments");
 			pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
@@ -181,28 +190,27 @@ public class PushPublisher extends Publisher {
 
 				Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());
 				//Filter Endpoints list and push only to those that are enabled and are Dynamic (not S3 at the moment)
-				for(PublishingEndPoint ep : allEndpoints) {
-					if(ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
-						// If pushing a bundle for the first time, always add
-						// all end-points
-						if (null == endpointsDetail || endpointsDetail.size() == 0) {
-							endpoints.add(ep);
-						} else {
-							EndpointDetail epDetail = endpointsDetail.get(ep.getId());
-							// If re-trying a bundle or just re-attempting to
-							// install a bundle, send it only to those
-							// end-points whose status IS NOT success
-							if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-									|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
-									&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
-                                    && Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
-									&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
+				if (null != allEndpoints) {
+					for (PublishingEndPoint ep : allEndpoints) {
+						if (ep.isEnabled() && getProtocols().contains(ep.getProtocol())) {
+							// If pushing a bundle for the first time, always add all end-points
+							if (null == endpointsDetail || endpointsDetail.isEmpty()) {
 								endpoints.add(ep);
+							} else {
+								EndpointDetail epDetail = endpointsDetail.get(ep.getId());
+								// If re-trying a bundle or just re-attempting to install a bundle,
+								// send it only to those end-points whose status IS NOT success
+								if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+										|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+										&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
+										&& Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
+										&& PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode() != epDetail.getStatus())) {
+									endpoints.add(ep);
+								}
 							}
 						}
 					}
 				}
-
 				boolean failedEnvironment = false;
 				if(!environment.getPushToAll()) {
 					Collections.shuffle(endpoints);
@@ -224,9 +232,10 @@ public class PushPublisher extends Publisher {
 
 						if (endpoint.hasAuthKey()) {
 							PushPublishLogger.log(this.getClass(), "Status Update: Sending Bundle");
-
+							final String filterKey = bundle.getFilterKey();
 							WebTarget webTarget = client.target(endpoint.toURL() + "/api/bundlePublisher/publish")
-									.queryParam("FORCE_PUSH", bundle.isForcePush());
+									.queryParam("FORCE_PUSH", bundle.isForcePush())
+									.queryParam("filterkey", filterKey);
 
 							Response response = webTarget.request(MediaType.APPLICATION_JSON)
 									.header("Content-Disposition", contentDisposition)

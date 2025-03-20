@@ -1,9 +1,14 @@
 import {
+    DotCMSContentlet,
+    DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutTab
+    DotCMSContentTypeLayoutTab,
+    DotLanguage,
+    UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
     CALENDAR_FIELD_TYPES,
@@ -16,7 +21,9 @@ import {
     FIELD_TYPES
 } from '../models/dot-edit-content-field.enum';
 import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
-import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
+import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
+import { Tab } from '../models/dot-edit-content-form.interface';
+import { UIState } from '../models/dot-edit-content.model';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
 export const castSingleSelectableValue = (
@@ -224,27 +231,126 @@ export const createPaths = (path: string): string[] => {
 };
 
 /**
- * Retrieves the sidebar state from the local storage.
+ * Checks if a given content type field is of a filtered type.
  *
- * This function accesses the local storage using a predefined key `SIDEBAR_LOCAL_STORAGE_KEY`
- * and returns the parsed state of the sidebar. If the value in local storage is 'true',
- * it returns `true`; otherwise, it returns `false`. If there is no value stored under
- * the key, it defaults to returning `true`.
+ * This function determines whether the provided DotCMSContentTypeField's fieldType
+ * is included in the FILTERED_TYPES enum. It's used to identify fields that require
+ * special handling or filtering in the content management system.
  *
- * @returns {boolean} The state of the sidebar, either `true` (opened) or `false` (closed).
+ * @param {DotCMSContentTypeField} field - The content type field to check.
+ * @returns {boolean} True if the field's type is in FILTERED_TYPES, false otherwise.
  */
-export const getPersistSidebarState = (): boolean => {
-    const localStorageData = localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY);
 
-    return localStorageData ? localStorageData === 'true' : true;
+export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
+    return Object.values(NON_FORM_CONTROL_FIELD_TYPES).includes(
+        field.fieldType as NON_FORM_CONTROL_FIELD_TYPES
+    );
 };
 
 /**
- * Function to persist the state of the sidebar in local storage.
+ * Transforms the form data by filtering out specific field types and organizing the content into tabs.
  *
- * @param {string} value - The state of the sidebar to persist.
- *                         Typically a string representing whether the sidebar is open or closed.
+ * @param formData - The original form data to be transformed.
+ * @returns The transformed form data with filtered fields and organized tabs.
  */
-export const setPersistSidebarState = (value: string) => {
-    localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, value);
+export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
+    if (!contentType) {
+        return [];
+    }
+
+    const tabs = transformLayoutToTabs('Content', contentType.layout);
+
+    return tabs.map((tab) => ({
+        ...tab,
+        layout: tab.layout.map((row) => ({
+            ...row,
+            columns: row.columns.map((column) => ({
+                ...column,
+                fields: column.fields.filter((field) => !isFilteredType(field))
+            }))
+        }))
+    }));
 };
+
+/**
+ * Sorts an array of locales, placing translated locales first.
+ *
+ * @param {DotLanguage[]} locales - The array of locales to be sorted.
+ * @returns {DotLanguage[]} The sorted array with translated locales first, followed by untranslated locales.
+ */
+export const sortLocalesTranslatedFirst = (locales: DotLanguage[]): DotLanguage[] => {
+    const translatedLocales = locales.filter((locale) => locale.translated);
+    const untranslatedLocales = locales.filter((locale) => !locale.translated);
+
+    return [...translatedLocales, ...untranslatedLocales];
+};
+
+/* Generates a preview URL for a given contentlet.
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
+ * @returns {string} The generated preview URL.
+ */
+export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
+    if (
+        !contentlet.URL_MAP_FOR_CONTENT ||
+        !contentlet.host ||
+        contentlet.languageId === undefined
+    ) {
+        console.warn('Missing required contentlet attributes to generate preview URL');
+
+        return '';
+    }
+
+    const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
+    const params = new URLSearchParams();
+
+    params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
+    params.set('language_id', contentlet.languageId.toString());
+    params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
+    params.set('mode', UVE_MODE.EDIT);
+
+    return `${baseUrl}?${params.toString()}`;
+};
+
+/**
+ * Gets the UI state from sessionStorage or returns the initial state if not found
+ */
+export const getStoredUIState = (): UIState => {
+    try {
+        const storedState = sessionStorage.getItem(UI_STORAGE_KEY);
+        if (storedState) {
+            return JSON.parse(storedState);
+        }
+    } catch (e) {
+        console.warn('Error reading UI state from sessionStorage:', e);
+    }
+
+    return {
+        activeTab: 0,
+        isSidebarOpen: true,
+        activeSidebarTab: 0
+    };
+};
+
+/**
+ * Saves the UI state to sessionStorage
+ */
+export const saveStoreUIState = (state: UIState): void => {
+    try {
+        sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+        console.warn('Error saving UI state to sessionStorage:', e);
+    }
+};
+
+/**
+ * Prepares a contentlet for copying by ensuring it's not locked and removing any previous lock owner.
+ *
+ * @param contentlet - The original contentlet to be copied
+ * @returns The contentlet with locked=false and no lockedBy property
+ */
+export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSContentlet => ({
+    ...contentlet,
+    locked: false,
+    lockedBy: undefined
+});

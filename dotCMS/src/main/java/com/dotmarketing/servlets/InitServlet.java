@@ -1,6 +1,7 @@
 package com.dotmarketing.servlets;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
 import com.dotcms.util.GeoIp2CityDbUtil;
@@ -95,6 +96,7 @@ public class InitServlet extends HttpServlet {
      * @throws DotDataException
      */
     public void init(ServletConfig config) throws ServletException {
+        Logger.info(this,"InitServlet init Started");
 
         startupDate = new java.util.Date();
         new StartupLogger().log();
@@ -232,15 +234,25 @@ public class InitServlet extends HttpServlet {
         };
         
         if(Config.getBooleanProperty("START_CLIENT_OSGI_IN_SEPARATE_THREAD", true)) {
-            new Thread(task).start();
+            DotConcurrentFactory.getInstance().getSubmitter().submit(task);
         }else {
             task.run();
         }
-        
+
+        //Deleting old licenses
+        final Runnable oldLicenses = () -> {
+            Logger.debug(InitServlet.class,"Sweeping old nodes");
+            LicenseUtil.deleteOldLicenses();
+        };
+
+        DotConcurrentFactory.getInstance().getSubmitter().submit(oldLicenses);
         
 
         // Starting the re-indexation thread
         ReindexThread.startThread();
+
+        // Start the job queue manager
+        APILocator.getJobQueueManagerAPI().start();
         
         // Tell the world we are started up
         System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
@@ -255,6 +267,8 @@ public class InitServlet extends HttpServlet {
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to record startup time :" + e);
         }
+
+        Logger.info(this,"InitServlet init Completed");
 
     }
 

@@ -1,10 +1,13 @@
 import { TreeNode } from 'primeng/api';
 
-export type TreeNodeData = { type: 'site' | 'folder'; path: string; hostname: string };
+export type TreeNodeData = {
+    type: 'site' | 'folder';
+    path: string;
+    hostname: string;
+    id: string;
+};
 
 export type TreeNodeItem = TreeNode<TreeNodeData>;
-
-export type StatusRequest = 'init' | 'loading' | 'success' | 'failed';
 
 export type TreeNodeSelectItem = TreeNodeSelectEvent<TreeNodeData>;
 
@@ -22,6 +25,7 @@ export interface TreeNodeSelectEvent<T> {
 }
 
 export interface DotFolder {
+    id: string;
     hostName: string;
     path: string;
     addChildrenAllowed: boolean;

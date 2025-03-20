@@ -12,10 +12,8 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.util.TimeZone;
-import org.jboss.weld.bootstrap.api.helpers.RegistrySingletonProvider;
 import org.jboss.weld.environment.se.Weld;
 import org.jboss.weld.environment.se.WeldContainer;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.mockito.Mockito;
 
@@ -24,7 +22,14 @@ public abstract class UnitTestBase extends BaseMessageResources {
 	protected static final ContentTypeAPI contentTypeAPI = mock(ContentTypeAPI.class);
 	protected static final CompanyAPI companyAPI = mock(CompanyAPI.class);
 
-	private static WeldContainer weld;
+	public static final Weld WELD;
+	public static final WeldContainer CONTAINER;
+
+	//This should be here since these are UitTest but people instantiate classes and they have injections etc... so we need to initialize the container
+	static {
+		WELD = new Weld("UnitTestBase");
+		CONTAINER = WELD.initialize();
+	}
 
 	public static class MyAPILocator extends APILocator {
 
@@ -47,10 +52,6 @@ public abstract class UnitTestBase extends BaseMessageResources {
 	@BeforeClass
 	public static void prepare () throws DotDataException, DotSecurityException, Exception {
 
-		weld = new Weld().containerId(RegistrySingletonProvider.STATIC_INSTANCE)
-				.initialize();
-
-		System.out.println("Weld :: " + weld);
 
 		Config.initializeConfig();
 		Config.setProperty("API_LOCATOR_IMPLEMENTATION", MyAPILocator.class.getName());
@@ -64,10 +65,4 @@ public abstract class UnitTestBase extends BaseMessageResources {
 		Mockito.lenient().when(companyAPI.getDefaultCompany()).thenReturn(company);
 	}
 
-	@AfterClass
-	public static void cleanup() {
-		if( null != weld  && weld.isRunning() ){
-			weld.shutdown();
-		}
-	}
 }

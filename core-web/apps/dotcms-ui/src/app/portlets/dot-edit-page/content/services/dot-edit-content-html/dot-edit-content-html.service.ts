@@ -628,6 +628,7 @@ export class DotEditContentHtmlService {
         }
     }
 
+    // Inject Block Editor
     private injectInlineBlockEditor(): void {
         const doc = this.getEditPageDocument();
         const editBlockEditorNodes = doc.querySelectorAll('[data-block-editor-content]');

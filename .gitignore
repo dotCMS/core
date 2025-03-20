@@ -179,3 +179,6 @@ dotCMS/dependencies.gradle
 !/examples/nextjs/.npmrc
 
 .nx/
+.cursorrules
+.cursorignore
+**/vite.config.mts.timestamp-*

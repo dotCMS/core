@@ -1,15 +1,16 @@
 package com.dotmarketing.servlets;
 
+import static com.dotmarketing.filters.CMSUrlUtil.isDotAdminRequest;
 import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
-import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.util.PortalUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +50,6 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -73,7 +73,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 import eu.bitwalker.useragentutils.Browser;
-import eu.bitwalker.useragentutils.OperatingSystem;
 import eu.bitwalker.useragentutils.UserAgent;
 
 /**
@@ -109,6 +108,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
 	private final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+	private final WebResource webResource = new WebResource();
 
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
@@ -116,8 +116,12 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	
 	private final boolean ASSETS_USE_WEAK_ETAGS = Config.getBooleanProperty("ASSETS_USE_WEAK_ETAGS", true);
-	
-	
+
+	/**
+	 * A boolean constant indicating whether anonymous user permissions should always be respected.
+	 * Set to true because the binary servlet is for delivery and should respect front-end roles.
+	 */
+	private static final boolean ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS = true;
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -236,7 +240,6 @@ public class BinaryExporterServlet extends HttpServlet {
 				return;
 			}
 
-			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 			BinaryContentExporter.BinaryContentExporterData data = null;
 			File inputFile = null;
 			HttpSession session = req.getSession(false);
@@ -246,17 +249,14 @@ public class BinaryExporterServlet extends HttpServlet {
 			} else {
 				tempBinaryImageInodes = new ArrayList<>();
 			}
-
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
-
-			final User user = PortalUtil.getUser(req);
-
+			final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+						this.webResource, req, resp);
 			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
 			final long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
-
 
 			if (isContent){
 				Contentlet content = null;
@@ -266,7 +266,9 @@ public class BinaryExporterServlet extends HttpServlet {
 						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
 					else {
 						try {
-							content = contentAPI.find(assetInode, user, mode.respectAnonPerms);
+							content = contentAPI.find(
+									assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+							);
 						} catch(DotSecurityException e) {
 							if (!mode.respectAnonPerms) {
 								content = getContentletLiveVersion(assetInode, user, lang);
@@ -306,7 +308,10 @@ public class BinaryExporterServlet extends HttpServlet {
 							query.append("+working:true ");
 						}
 
-						List<Contentlet> foundContentlets = contentletAPI.search(query.toString(), 2, -1, null, user, mode.respectAnonPerms);
+						List<Contentlet> foundContentlets = contentletAPI.search(
+								query.toString(), 2, -1, null, user,
+								ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+						);
 						if ( foundContentlets != null && !foundContentlets.isEmpty() ) {
 							//Prefer the contentlet with the session language
 							content = foundContentlets.get(0);
@@ -373,7 +378,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 
 			}
-			
+
 			// if this is file uploaded by the tempResource
       if (shorty.type == ShortType.TEMP_FILE) {
         if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_NO_REFERER, false) && !new SecurityUtils().validateReferer(req)) {
@@ -383,7 +388,7 @@ public class BinaryExporterServlet extends HttpServlet {
         }
         inputFile = tempFileAPI.getTempFile(req, shorty.longId).get().file;
       }
-      
+
 
       if(params.get("quality_q")!=null) {
       	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
@@ -396,7 +401,7 @@ public class BinaryExporterServlet extends HttpServlet {
       }
 
 
-			
+
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
 				params.put("fieldVarName", new String[]{fieldVarName});
@@ -427,19 +432,19 @@ public class BinaryExporterServlet extends HttpServlet {
         if (list.size() > 8) {
           list = list.subList(0, 8);
         }
-  
+
         if (list.contains(req.getRequestURI())) {
           list.remove(req.getRequestURI());
         }
         list.add(0, req.getRequestURI());
-  
+
         req.getSession().setAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD, list);
-  
+
         resp.getWriter().println("success");
         resp.getWriter().println(req.getRequestURI());
         return;
       }
-      
+
 
 			/*******************************
 			 *
@@ -447,18 +452,18 @@ public class BinaryExporterServlet extends HttpServlet {
 			 *
 			 *******************************/
 			long _fileLength = data.getDataFile().length();
-			
+
 			String mimeType = fileAssetAPI.getMimeType(data.getDataFile().getName());
 
 			if (mimeType == null) {
 				mimeType = "application/octet-stream";
 			}
-			
+
 			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
 			resp.setHeader("Content-Length", String.valueOf(_fileLength));
 
 			resp.setContentType(mimeType);
-			
+
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
 				// if we are downloading a jpeg version of a png or gif
@@ -468,13 +473,12 @@ public class BinaryExporterServlet extends HttpServlet {
 					downloadName = downloadName.replaceAll("\\." + x, "\\." + y);
 				}
 				resp.setHeader("Content-Disposition", "attachment; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"");
-			
+
 			} else {
 
-
-
-			    // Set the expiration time
-				if (!mode.isAdmin) {
+				// Set the expiration time
+				// Sometimes when The PageMode flag is LIVE, and we are serving a live view of the page from within the admin tool we might end up caching images that we shouldn't
+				if (!isDotAdminRequest(req) && !mode.isAdmin) {
 
 				    int _daysCache = 365;
 				    GregorianCalendar expiration = new GregorianCalendar();
@@ -490,7 +494,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					_lastModified = _lastModified * 1000;
 					Date _lastModifiedDate = new java.util.Date(_lastModified);
 
-					
+
 					String _eTag = (ASSETS_USE_WEAK_ETAGS ? "W/" : "") + "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
 
 					SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT);
@@ -614,18 +618,23 @@ public class BinaryExporterServlet extends HttpServlet {
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
 	            out = resp.getOutputStream();
-	            
+
 	            while((count = is.read(buffer)) > 0) {
 	            	out.write(buffer, 0, count);
 	            }
-	            
+
 			}
-            
+
 		} catch (DotRuntimeException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
+		} catch (SecurityException e) {
+			Logger.debug(BinaryExporterServlet.class, e,  () -> "Error getting user and authenticating");
+			if(!resp.isCommitted()) {
+				resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+			}
 		} catch (PortalException e) {
 			Logger.error(BinaryExporterServlet.class, "[PortalException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
@@ -678,11 +687,11 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 		// close our resources no matter what
 		finally{
-			
+
 		  CloseUtils.closeQuietly(input, is, out);
 
 		}
-		
+
 	}
 
 	private Contentlet getContentletByIdentifier(final PageMode pageMode,
@@ -691,14 +700,19 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(identifier,
-				pageMode.showLive, languageId, currentVariantId, user, pageMode.respectAnonPerms);
+		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(
+				identifier, pageMode.showLive, languageId, currentVariantId, user,
+				ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+		);
 
 		if (UtilMethods.isSet(contentletByIdentifier)) {
 			return contentletByIdentifier;
 		}
 
-		return contentAPI.findContentletByIdentifier(identifier, pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
+		return contentAPI.findContentletByIdentifier(
+				identifier, pageMode.showLive, languageId, user,
+				ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+		);
 	}
 
 	private boolean isBrowserSafariAndVersionBelow14(final UserAgent userAgent) {

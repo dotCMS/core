@@ -52,6 +52,7 @@ RUN apt update && \
         libtcnative-1 \
         tzdata \
         ca-certificates \
+        libjemalloc2 \
         openssl \
         libapr1 \
         libpq-dev && \

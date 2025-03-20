@@ -23,6 +23,6 @@ table, th, td {
   border: 1px solid;
 }
 
-.blocks {
-  border: 5px solid red;
+.blog-styles {
+  @apply bg-gray-100;
 }

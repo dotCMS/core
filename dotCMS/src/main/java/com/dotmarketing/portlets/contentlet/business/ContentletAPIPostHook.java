@@ -93,6 +93,17 @@ public interface ContentletAPIPostHook {
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
 	 * @param identifier
+	 * @param languageId
+	 * @param variantId
+	 * @param user
+	 * @param timeMachineDate
+	 * @param respectFrontendRoles
+	 */
+	public default void findContentletByIdentifier(String identifier, long languageId, String variantId, User user, Date timeMachineDate, boolean respectFrontendRoles){}
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
 	 */
 	public default void findContentletByIdentifierAnyLanguage (String identifier) { }
 
@@ -1703,6 +1714,17 @@ public interface ContentletAPIPostHook {
 	public default void updateModDate(final Set<String> inodes, final User user) throws DotDataException {}
 
     public default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles) {}
+
+	/**
+	 * @param identifier
+	 * @param incomingLangId
+	 * @param timeMachine
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 */
+	default void findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
+			String variantId, Date timeMachine, User user, boolean respectFrontendRoles) {}
 
     public default void findInDb(String inode) {};
 

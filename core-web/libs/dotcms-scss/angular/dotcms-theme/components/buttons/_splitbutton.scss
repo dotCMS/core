@@ -111,3 +111,18 @@
         }
     }
 }
+
+// Severity for text button
+.p-splitbutton.p-button-text {
+    @extend #text-primary-severity;
+
+    .p-button {
+        &,
+        &:hover,
+        &:focus {
+            color: $color-palette-primary;
+            background-color: transparent;
+            border: transparent;
+        }
+    }
+}

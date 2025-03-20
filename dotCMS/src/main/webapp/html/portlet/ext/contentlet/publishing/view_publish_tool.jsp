@@ -248,37 +248,58 @@
 
     }
 
-    dojo.require("dojo.io.iframe");
+
+
     function doBundleUpload() {
+
         var suffix = ".tar.gz";
         var filename = dojo.byId("uploadBundleFile").value;
-
 
         if (filename.indexOf(suffix) == -1 || (filename.length - suffix.length != filename.indexOf(suffix))) {
             alert("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_please_upload_bundle_ending_with_targz")) %>");
             return false;
         }
+        dijit.byId("uploadBundleBtn").setDisabled(true);
 
-        var td = dojo.io.iframe.send({
-            url: "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle",
-            form: "uploadBundleForm",
-            method: "post",
-            content: {fnx: 1},
-            timeoutSeconds: 5,
-            preventCache: true,
-            handleAs: "text",
-            load: dojo.hitch(this, function (response) {
-                if (response.status == 'error') {
-                    alert("Error Uploading the Bundle");
-                } else {
-                    backToBundleList();
-                }
-            })
+
+        const fileInput = document.getElementById('uploadBundleFile');
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/api/bundle/sync', {  // Replace with your actual upload endpoint
+            method: 'POST',
+            body: formData,
+            headers: {
+
+            }
+        })
+        .then(response => {
+            dijit.byId("uploadBundleBtn").setDisabled(false);
+            backToBundleList();
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+
+            return response.json();
+        })
+        .then(data => {
+
+            console.log('Upload successful:', data);
+
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Upload failed: ' + error.message);
         });
+
+
 
     }
 
     function backToBundleList() {
+        dojo.byId("uploadBundleFile").value="";
         dijit.byId("uploadBundleDiv").hide();
         refreshAuditList("");
     }
@@ -359,7 +380,7 @@
             <%= LanguageUtil.get(pageContext, "File") %>  : <input type="file" style="width:400px;"  id="uploadBundleFile" name="uploadBundleFile" accept="application/gzip">
         </div>
         <div style="text-align: center">
-            <button  dojoType="dijit.form.Button" onClick="doBundleUpload();" iconClass="uploadIcon">
+            <button  dojoType="dijit.form.Button" onClick="doBundleUpload();" id="uploadBundleBtn" iconClass="uploadIcon">
                 <%= LanguageUtil.get(pageContext, "publisher_upload") %>
             </button>
         </div>

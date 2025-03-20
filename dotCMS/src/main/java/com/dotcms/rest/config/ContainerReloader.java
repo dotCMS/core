@@ -39,6 +39,8 @@ public class ContainerReloader extends AbstractContainerLifecycleListener {
         Logger.debug(ContainerReloader.class, "Jersey Reloading request");
         if (container != null) {
             container.reload(ResourceConfig.forApplicationClass(DotRestApplication.class));
+        } else {
+            Logger.error(ContainerReloader.class, "Jersey Container not available");
         }
     }
 }

@@ -1,46 +1,10 @@
-/* 
-* Licensed to dotCMS LLC under the dotCMS Enterprise License (the
-* “Enterprise License”) found below 
-* 
-* Copyright (c) 2023 dotCMS Inc.
-* 
-* With regard to the dotCMS Software and this code:
-* 
-* This software, source code and associated documentation files (the
-* "Software")  may only be modified and used if you (and any entity that
-* you represent) have:
-* 
-* 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
-* of Service, available at https://www.dotcms.com/terms (the “Enterprise
-* Terms”) or have another agreement governing the licensing and use of the
-* Software between you and dotCMS. 2. Each dotCMS instance that uses
-* enterprise features enabled by the code in this directory is licensed
-* under these agreements and has a separate and valid dotCMS Enterprise
-* server key issued by dotCMS.
-* 
-* Subject to these terms, you are free to modify this Software and publish
-* patches to the Software if you agree that dotCMS and/or its licensors
-* (as applicable) retain all right, title and interest in and to all such
-* modifications and/or patches, and all such modifications and/or patches
-* may only be used, copied, modified, displayed, distributed, or otherwise
-* exploited with a valid dotCMS Enterprise license for the correct number
-* of dotCMS instances.  You agree that dotCMS and/or its licensors (as
-* applicable) retain all right, title and interest in and to all such
-* modifications.  You are not granted any other rights beyond what is
-* expressly stated herein.  Subject to the foregoing, it is forbidden to
-* copy, merge, publish, distribute, sublicense, and/or sell the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* 
-* For all third party components incorporated into the dotCMS Software,
-* those components are licensed under the original license provided by the
-* owner of the applicable component.
+/*
+*
+* Copyright (c) 2025 dotCMS LLC
+* Use of this software is governed by the Business Source License included
+* in the LICENSE file found at in the root directory of software.
+* SPDX-License-Identifier: BUSL-1.1
+*
 */
 
 package com.dotcms.enterprise.publishing.remote.handler;
@@ -55,11 +19,15 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtil.HandlerType;
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.ContentWrapper;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.storage.FileMetadataAPI;
@@ -130,12 +98,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
+import static com.dotcms.publishing.FilterDescriptor.RELATIONSHIPS_KEY;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This handler deals with Contentlet-related information inside a bundle and
@@ -164,6 +136,7 @@ public class ContentHandler implements IHandler {
 	private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
 	private final Lazy<MultiTreeAPI> multiTreeAPI = Lazy.of(APILocator::getMultiTreeAPI);
+	private final Lazy<BundleAPI> bundleAPI = Lazy.of(APILocator::getBundleAPI);
 
 	private final Map<String,Long> infoToRemove = new HashMap<>();
 	private final ExistingContentMapping existingContentMap = new ExistingContentMapping();
@@ -218,7 +191,7 @@ public class ContentHandler implements IHandler {
 		List<File> contents = isHost?FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()):
 				FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
 		Collections.sort(contents);
-
+		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
 		handleContents(contents, bundleFolder, isHost);
 		HandlerUtil.setExistingContent(config.getId(), existingContentMap);
 
@@ -241,11 +214,22 @@ public class ContentHandler implements IHandler {
 		}
 	}
 
+
+
+	private boolean ignoreContent(Contentlet contentlet){
+
+		// if a host does not exist on target, skip content
+		Host localHost = Try.of(()->APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), false)).getOrNull();
+		return UtilMethods.isEmpty(()->localHost.getIdentifier());
+
+	}
+
+
 	/**
 	 * Reads the information of the contentlets contained in the bundle and
 	 * saves them in the destination server.
 	 * 
-	 * @param contents
+	 * @param contentsIn
 	 *            The list of data files containing the contentlet information.
 	 * @param folderOut
 	 *            - The location of the bundle in the file system.
@@ -257,7 +241,7 @@ public class ContentHandler implements IHandler {
 	 * @throws DotDataException
 	 *             An error occurred when interacting with the database.
 	 */
-	private void handleContents(final Collection<File> contents, final File folderOut, final Boolean isHost) throws DotPublishingException, DotDataException{
+	private void handleContents(final Collection<File> contentsIn, final File folderOut, final Boolean isHost) throws DotPublishingException, DotDataException{
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
 			throw new RuntimeException("need an enterprise pro license to run this");
 		}
@@ -265,15 +249,16 @@ public class ContentHandler implements IHandler {
         File workingOn=null;
         Contentlet content = null;
 		ContentWrapper wrapper = null;
+		final Collection<File> contents = contentsIn.stream().filter(File::isFile).collect(Collectors.toList());
+		final Collection<String> alreadyDeleted = new HashSet<>();
+
     	try{
 	        final XStream xstream = XStreamHandler.newXStreamInstance();
 			final Set<Pair<String,Long>> pushedIdsToIgnore = new HashSet<>();
             for (final File contentFile : contents) {
                 workingOn=contentFile;
                 content = null;
-                if ( contentFile.isDirectory() ) {
-                    continue;
-                }
+
                 try(final InputStream input = Files.newInputStream(contentFile.toPath())){
                     wrapper = (ContentWrapper) xstream.fromXML(input);
                 }
@@ -310,6 +295,15 @@ public class ContentHandler implements IHandler {
                             content.get(PAGE_FRIENDLY_NAME_FIELD_VAR.toLowerCase()));
                     content.getMap().remove(PAGE_FRIENDLY_NAME_FIELD_VAR.toLowerCase());
                 }
+
+
+				// if a host does not exist on target, skip content
+				if(ignoreContent(content)){
+					Contentlet finalContent = content;
+					Logger.warn(this.getClass(), "Ignoring contentlet:" + content.getIdentifier() + " | " + Try.of(
+                            finalContent::getTitle).getOrElse("unknown")  + " . Unable to find referenced host id:" + content.getHost());
+					continue;
+				}
 
 				content.setVariantId(wrapper.getContent().getVariantId());
 
@@ -359,8 +353,13 @@ public class ContentHandler implements IHandler {
 						pushedIdsToIgnore.add(idAndLanguageKey);
 					} else {
 						// Finally, this operation (UNPUBLISH) deletes a Content altogether
-						archiveOrDeleteContent(content, systemUser, isHost, remoteLocalLanguages, false);
-						Logger.debug(this, () -> "Content deleted: " + contentId
+
+						if (!alreadyDeleted.contains(contentId)) {
+							archiveOrDeleteContent(content, systemUser, isHost, remoteLocalLanguages, false);
+						}
+
+						alreadyDeleted.add(contentId);
+						Logger.info(this, () -> "Content deleted: " + contentId
 								+ " , inode: " + contentInode + " , language: " + languageId);
 					}
 				} catch (final FileAssetValidationException e1){
@@ -386,6 +385,16 @@ public class ContentHandler implements IHandler {
 					// get the local language and assign it to the version info, and the content, since the id's might be different
 					final Language remoteLang = wrapper.getLanguage();
 					final Pair<Long,Long> remoteLocalLanguages = this.existingContentMap.getRemoteLocalLanguages(wrapper);
+
+
+					// if a host does not exist on target, skip content
+					if(ignoreContent(content)){
+						Contentlet finalContent = content;
+						Logger.warn(this.getClass(), "Ignoring contentlet:" + content.getIdentifier() + " | " + Try.of(
+                                finalContent::getTitle).getOrElse("unknown")  + " . Unable to find referenced host id:" + content.getHost());
+						continue;
+					}
+
 
 					if(UtilMethods.isSet(remoteLang) && remoteLang.getId() > 0) {
 						// This should take care of solving any existing conflicts. Previously solved by the Language Handler.
@@ -781,16 +790,25 @@ public class ContentHandler implements IHandler {
                 }
             } );
         }
+
         //Saving the content
         if (content.isArchived()){
             this.contentletAPI.unarchive(content, userToUse, !RESPECT_FRONTEND_ROLES);
         }
         content = this.contentletAPI.checkin(content, userToUse, !RESPECT_FRONTEND_ROLES);
 
-        //First we need to remove the "old" trees in order to add this new ones
-        cleanTrees( content );
-		regenerateTree(wrapper,remoteLocalLanguages.getLeft());
-
+		final String filterKey = this.getFilterKeyFromBundle();
+		Logger.debug(this, () -> "Filter Key: " + filterKey);
+		final FilterDescriptor filterDescriptor = APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey);
+		boolean isRelationshipsFilter = filterDescriptor.getFilters().containsKey(RELATIONSHIPS_KEY) ? Boolean.class.cast(filterDescriptor.getFilters()
+				.get(FilterDescriptor.RELATIONSHIPS_KEY)) : true;
+		Logger.debug(this, () -> "Relationships Filter: " + isRelationshipsFilter);
+        if (isRelationshipsFilter) {
+			// Depending on the selected Push Publishing Filter, we need to remove the "old" trees
+			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
+			this.cleanTrees(content);
+			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
+		}
         // Categories
         if (UtilMethods.isSet(wrapper.getCategories())) {
             handleContentCategories(content.getInode(), wrapper.getCategories());
@@ -845,6 +863,20 @@ public class ContentHandler implements IHandler {
 				isHost ? PushPublishHandler.HOST : PushPublishHandler.CONTENT,
 				PushPublishAction.PUBLISH, content.getIdentifier(), content.getInode(), content.getName(), config.getId());
     }
+
+	/**
+	 * Retrieves the Push Publishing Filter that was selected to generate the current Bundle.
+	 *
+	 * @return The Push Publishing Filter key. But, if the bundle doesn't exist, returns an empty
+	 * String.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the data source.
+	 */
+	private String getFilterKeyFromBundle() throws DotDataException {
+		final Bundle bundle =
+				this.bundleAPI.get().getBundleById(com.dotmarketing.util.FileUtil.removeExtension(this.config.getId()));
+		return null != bundle ? bundle.getFilterKey() : BLANK;
+	}
 
 	/**
 	 * Invalidates the respective MultiTree cache entry when the pushed Contentlet is the child of an existing record
@@ -1003,12 +1035,14 @@ public class ContentHandler implements IHandler {
 				final List<ContentletSearch> contentlets = this.contentletAPI
 						.searchIndex(luceneQuery.toString(), limit, offset, sortBy,
 								systemUser, !RESPECT_FRONTEND_ROLES);
+
 				if (null != contentlets && contentlets.size() > 0) {
 					// A contentlet with different Identifier but same unique value has been found. Update the local
                     // one WITHOUT CHANGING the local Identifier and Inode
 					final Contentlet matchingContent =
 							this.contentletAPI.find(contentlets.get(0).getInode(), systemUser,
 									!RESPECT_FRONTEND_ROLES);
+
                     if (null == matchingContent || !UtilMethods.isSet(matchingContent.getIdentifier())) {
                         // It might be that the matching content doesn't exist in the DB anymore, or is archived
                         throw new DotDataException(getUniqueMatchErrorMsg(uniqueFields, luceneQuery.toString(),
@@ -1173,7 +1207,8 @@ public class ContentHandler implements IHandler {
 	 * @throws Exception
 	 *             An error occurred when deleting the specified asset.
 	 */
-	private void archiveOrDeleteContent(Contentlet content, final User user, final boolean isHost, final Pair<Long, Long> remoteLocalLanguages, final boolean isPushedContentArchived)
+	private void archiveOrDeleteContent(Contentlet content, final User user, final boolean isHost,
+										final Pair<Long, Long> remoteLocalLanguages, final boolean isPushedContentArchived)
             throws Exception
     {
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
@@ -1189,9 +1224,11 @@ public class ContentHandler implements IHandler {
 			// if the content is not live, then we don't need to unpublish it
 			Optional<ContentletVersionInfo> existingInfoOptional = Optional.empty();
             final List<Contentlet> contents = findContents(content.getIdentifier(), user);
+
             if (UtilMethods.isSet(contents)) {
 				final Optional<Contentlet> contentletOptional = contents.stream()
 						.filter(c -> c.getLanguageId() == remoteLocalLanguages.getRight()).findFirst();
+
 				if (contentletOptional.isPresent()) {
 					final Contentlet existingContent = contentletOptional.get();
 					existingInfoOptional = this.versionableAPI.getContentletVersionInfo(
@@ -1236,7 +1273,7 @@ public class ContentHandler implements IHandler {
 			if (isPushedContentArchived) {
 				this.contentletAPI.archive(content, user, !RESPECT_FRONTEND_ROLES);
 			} else {
-				this.contentletAPI.delete(content, user, !RESPECT_FRONTEND_ROLES, true);
+				this.contentletAPI.destroy(content, user, !RESPECT_FRONTEND_ROLES);
 			}
 
 			PushPublishLogger.log(getClass(),
@@ -1268,6 +1305,7 @@ public class ContentHandler implements IHandler {
         final String sortBy = null;
         String luceneQuery = "+identifier:" + identifier + " +live:true";
         List<Contentlet> contents = contentletAPI.search(luceneQuery, limit, offset, sortBy, user, !RESPECT_FRONTEND_ROLES);
+
         if (contents.isEmpty()) {
             luceneQuery = "+identifier:" + identifier + " +working:true";
             contents = contentletAPI.search(luceneQuery, limit, offset, sortBy, user, !RESPECT_FRONTEND_ROLES);

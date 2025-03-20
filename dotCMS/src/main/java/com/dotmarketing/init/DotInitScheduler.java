@@ -2,13 +2,25 @@ package com.dotmarketing.init;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
+import com.dotcms.telemetry.job.MetricsStatsJob;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.job.*;
+import com.dotmarketing.quartz.job.AccessTokenRenewJob;
+import com.dotmarketing.quartz.job.BinaryCleanupJob;
+import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
+import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
+import com.dotmarketing.quartz.job.DeleteSiteSearchIndicesJob;
+import com.dotmarketing.quartz.job.DropOldContentVersionsJob;
+import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
+import com.dotmarketing.quartz.job.PruneTimeMachineBackupJob;
+import com.dotmarketing.quartz.job.ServerHeartbeatJob;
+import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJob;
+import com.dotmarketing.quartz.job.UsersToDeleteThread;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -22,7 +34,6 @@ import org.quartz.SchedulerException;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
-import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR;
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 
 /**
@@ -36,19 +47,15 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 public class DotInitScheduler {
 
 	public static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
-
 	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = "0 */5 * ? * *";
 
-
 	private static void deleteOldJobs() throws DotDataException {
-
 		// remove unused old jobs
 		QuartzUtils.deleteJobDB("WebDavCleanupJob", DOTCMS_JOB_GROUP_NAME);
 		QuartzUtils.deleteJobDB("TrashCleanupJob", DOTCMS_JOB_GROUP_NAME);
 		QuartzUtils.deleteJobDB("DeleteOldClickstreams", DOTCMS_JOB_GROUP_NAME);
 		QuartzUtils.deleteJobDB("linkchecker", DOTCMS_JOB_GROUP_NAME);
 		QuartzUtils.deleteJobDB("ContentReindexerJob", DOTCMS_JOB_GROUP_NAME);
-
 	}
 
 	/**
@@ -66,11 +73,8 @@ public class DotInitScheduler {
 			Calendar calendar;
 			boolean isNew;
 
-
-
 			// remove unused old jobs
 			deleteOldJobs();
-
 
 			if(Config.getBooleanProperty("ENABLE_USERS_TO_DELETE_THREAD", false)) {
 				try {
@@ -298,34 +302,23 @@ public class DotInitScheduler {
             }
 
 			addDropOldContentVersionsJob();
-
 			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ) {
 				// Enabling the System Events Job
 				addSystemEventsJob();
 			}
-
 			// start the server heartbeat job
 			addServerHeartbeatJob();
-
 			// Enabling the Delete Old System Events Job
 			addDeleteOldSystemEvents(sched);
 
-			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR, false) ) {
-				// Enabling the Read only monitor
-				addElasticReadyOnlyMonitor(sched);
-			}
-
 			//Enable the delete old ES Indices Job
 			addDeleteOldESIndicesJob(sched);
-
 			//Enable the delete old SS Indices Job
 			addDeleteOldSiteSearchIndicesJob(sched);
-
 			AccessTokenRenewJob.AccessTokensRenewJobScheduler.schedule();
-
 			addStartEndScheduledExperimentsJob(sched);
-
 			addPruneOldTimeMachineBackups(sched);
+			addTelemetryMetricsStatsJob(sched);
 
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
@@ -398,36 +391,6 @@ public class DotInitScheduler {
 		}
 	} // addSystemEventsJob.
 
-	private static void addElasticReadyOnlyMonitor (final Scheduler scheduler) {
-
-		try {
-
-			final String jobName      = "EsReadOnlyMonitorJob";
-			final String triggerName  = "trigger29";
-			final String triggerGroup = "group98";
-
-			if (Config.getBooleanProperty( "ENABLE_ELASTIC_READ_ONLY_MONITOR", true)) {
-
-					final JobBuilder elasticReadOnlyMonitorJob = new JobBuilder().setJobClass(EsReadOnlyMonitorJob.class)
-							.setJobName(jobName)
-							.setJobGroup(DOTCMS_JOB_GROUP_NAME)
-							.setTriggerName(triggerName)
-							.setTriggerGroup(triggerGroup)
-							.setCronExpressionProp("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION")
-							.setCronExpressionPropDefault(Config.getStringProperty("ELASTIC_READ_ONLY_MONITOR_CRON_EXPRESSION", CRON_EXPRESSION_EVERY_5_MINUTES))
-							.setCronMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
-					scheduleJob(elasticReadOnlyMonitorJob);
-			} else {
-
-				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
-					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
-				}
-			}
-		} catch (Exception e) {
-
-			Logger.info(DotInitScheduler.class, e.toString());
-		}
-	} // addElasticReadyOnlyMonitor.
 
 	private static void addDeleteOldESIndicesJob (final Scheduler scheduler) {
 		try {
@@ -535,6 +498,39 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
 		} catch (Exception e) {
 			Logger.info(DotInitScheduler.class, e.toString());
 		}
+	}
+
+	/**
+	 * Adds the {@link MetricsStatsJob} Quartz Job to the scheduler during the startup
+	 * process.
+	 */
+	private static void addTelemetryMetricsStatsJob(final Scheduler scheduler) {
+		if (Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false)) {
+			final String triggerName  = "trigger36";
+			final String triggerGroup = "group36";
+			final JobBuilder telemetryMetricsStatsJob = new JobBuilder()
+					.setJobClass(MetricsStatsJob.class)
+					.setJobName(MetricsStatsJob.JOB_NAME)
+					.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+					.setTriggerName(triggerName)
+					.setTriggerGroup(triggerGroup)
+					.setCronExpressionProp(MetricsStatsJob.CRON_EXPR_PROP)
+					.setCronExpressionPropDefault(MetricsStatsJob.CRON_EXPRESSION.get())
+					.setCronMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+			if (Boolean.FALSE.equals(MetricsStatsJob.ENABLED.get())) {
+				telemetryMetricsStatsJob.enabled(false);
+			}
+			scheduleJob(telemetryMetricsStatsJob);
+		} else {
+            try {
+				// If the job is not enabled, delete it from the scheduler if it exists
+                if (null != (scheduler.getJobDetail(MetricsStatsJob.JOB_NAME, DOTCMS_JOB_GROUP_NAME))) {
+                    scheduler.deleteJob(MetricsStatsJob.JOB_NAME, DOTCMS_JOB_GROUP_NAME);
+                }
+            } catch (final SchedulerException e) {
+				Logger.warn(DotInitScheduler.class, e.toString());
+            }
+        }
 	}
 
    private static void addServerHeartbeatJob () {

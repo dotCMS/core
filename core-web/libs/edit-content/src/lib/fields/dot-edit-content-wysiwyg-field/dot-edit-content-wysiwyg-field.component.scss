@@ -1,19 +1,54 @@
 @use "variables" as *;
 :host {
-    &.wysiwyg__wrapper {
+    &.dot-wysiwyg__wrapper {
         display: flex;
         gap: $spacing-1;
         flex-direction: column;
     }
 
-    .wysiwyg__editor {
+    .dot-wysiwyg__editor {
         display: flex;
         flex-direction: column;
+        border: $field-border-size solid $color-palette-gray-400;
+        border-radius: $border-radius-md;
     }
 
-    .wysiwyg__controls {
+    .dot-wysiwyg__controls {
         display: flex;
         justify-content: space-between;
+    }
+
+    .dot-wysiwyg__language-selector {
+        position: relative;
+        min-width: 16rem;
+    }
+
+    .dot-wysiwyg__search-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: $color-palette-primary-500;
+    }
+
+    .dot-wysiwyg__language-item {
+        display: flex;
+        gap: $spacing-1;
+        max-width: 100%;
+
+        .dot-wysiwyg__language-key {
+            flex: 0 1 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            direction: rtl;
+        }
+
+        .dot-wysiwyg__language-value {
+            flex: 0 0 auto;
+            font-weight: $font-weight-medium-bold;
+        }
     }
 
     ::ng-deep {
@@ -32,12 +67,21 @@
         }
 
         .tox-tinymce {
-            border: $field-border-size solid $color-palette-gray-400;
-            border-radius: $border-radius-md;
+            border: none;
         }
 
         p-dropdown {
             min-width: 10rem;
+        }
+
+        p-autocomplete .p-inputwrapper {
+            padding-right: 35px;
+        }
+
+        .p-autocomplete-panel {
+            z-index: 1000;
+            position: fixed;
+            max-width: 16rem;
         }
     }
 }

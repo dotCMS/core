@@ -170,4 +170,11 @@ describe('DotExperimentsService', () => {
 
         expect(req.request.body['trafficProportion']).toEqual(newValue);
     });
+
+    it('should return an Observable of undefined when experimentId is undefined', (done) => {
+        spectator.service.getById(undefined).subscribe((result) => {
+            expect(result).toBeUndefined();
+            done();
+        });
+    });
 });

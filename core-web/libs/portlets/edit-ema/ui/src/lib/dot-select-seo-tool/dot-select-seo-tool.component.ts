@@ -1,7 +1,7 @@
 import { DecimalPipe, NgClass, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
-import { DotDeviceListItem, socialMediaTiles } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, SEO_TILES } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
@@ -16,7 +16,7 @@ export class DotSelectSeoToolComponent implements OnChanges {
     @Input() socialMedia: string;
     @Input() device: DotDeviceListItem;
     socialMediaIconClass: string;
-    socialMediaTiles = socialMediaTiles;
+    SOCIAL_MEDIA_TILES = SEO_TILES;
 
     ngOnChanges() {
         this.socialMediaIconClass = `pi pi-${this.socialMedia?.toLowerCase()}`;

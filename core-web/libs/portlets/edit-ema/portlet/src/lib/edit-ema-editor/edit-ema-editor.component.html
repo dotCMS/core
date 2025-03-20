@@ -1,63 +1,79 @@
-<dot-edit-ema-toolbar (editUrlContentMap)="editContentMap($event)" />
-@if ($editorProps().seoResults && ogTagsResults$) {
+@let ogTagsResults = ogTagsResults$;
+@let showSEOTool = $editorProps().seoResults && ogTagsResults;
+
+<dot-uve-toolbar
+    (translatePage)="translatePage($event)"
+    (editUrlContentMap)="editContentMap($event)" />
+
+@if (showSEOTool) {
     <dot-results-seo-tool
         [seoMedia]="$editorProps().seoResults.socialMedia"
         [seoOGTags]="$editorProps().seoResults.ogTags"
-        [seoOGTagsResults]="ogTagsResults$"
+        [seoOGTagsResults]="ogTagsResults"
         data-testId="results-seo-tool"></dot-results-seo-tool>
 }
-@if ($editorProps().showEditorContent) {
-    <div class="editor-content" data-testId="editor-content">
-        <div
-            [ngClass]="{
-                'iframe-wrapper--device': $editorProps().iframe.wrapper
-            }"
+
+<div
+    class="editor-content"
+    [ngStyle]="$editorContentStyles()"
+    [ngClass]="{ 'editor-content-preview': $isPreviewMode() }"
+    data-testId="editor-content">
+    <div
+        [ngClass]="{
+            'iframe-wrapper--device': $editorProps().iframe.wrapper
+        }"
+        [ngStyle]="{
+            width: $editorProps().iframe?.wrapper?.width,
+            height: $editorProps().iframe?.wrapper?.height
+        }"
+        class="iframe-wrapper">
+        @if (uveStore.status() === UVE_STATUS.ERROR) {
+            <dot-uve-page-version-not-found />
+        }
+        <iframe
+            (load)="onIframePageLoad()"
+            [src]="uveStore.$iframeURL() | safeUrl"
+            [title]="host"
             [ngStyle]="{
-                width: $editorProps().iframe?.wrapper?.width,
-                height: $editorProps().iframe?.wrapper?.height
+                pointerEvents: $editorProps().iframe.pointerEvents,
+                opacity: $editorProps().iframe.opacity
             }"
-            class="iframe-wrapper">
-            <iframe
-                (load)="onIframePageLoad()"
-                [src]="$editorProps().iframe.src | safeUrl"
-                [title]="host"
-                [ngStyle]="{
-                    pointerEvents: $editorProps().iframe.pointerEvents,
-                    opacity: $editorProps().iframe.opacity
-                }"
-                #iframe
-                data-testId="iframe"
-                width="100%"
-                height="100%"></iframe>
-            @if ($editorProps().progressBar) {
-                <p-progressBar
-                    [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
-                    [style]="{ height: '6px' }"
-                    data-testId="progress-bar"
-                    mode="indeterminate"></p-progressBar>
-            }
-            @if ($editorProps().contentletTools; as contentletTools) {
-                <dot-ema-contentlet-tools
-                    (edit)="handleEditContentlet($event)"
-                    (editVTL)="handleEditVTL($event)"
-                    (delete)="deleteContentlet($event)"
-                    (addWidget)="dialog.addWidget($event)"
-                    (addForm)="dialog.addForm($event)"
-                    (addContent)="dialog.addContentlet($event)"
-                    [hide]="contentletTools.hide"
-                    [contentletArea]="contentletTools.contentletArea"
-                    [isEnterprise]="contentletTools.isEnterprise"
-                    data-testId="contentlet-tools" />
-            }
-            @if ($editorProps().dropzone; as dropzone) {
-                <dot-ema-page-dropzone
-                    [containers]="dropzone.bounds"
-                    [dragItem]="dropzone.dragItem"
-                    data-testId="dropzone" />
-            }
-        </div>
+            sandbox="allow-scripts allow-same-origin allow-forms"
+            #iframe
+            data-testId="iframe"
+            width="100%"
+            height="100%"></iframe>
+
+        @if ($editorProps().progressBar) {
+            <p-progressBar
+                [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
+                [style]="{ height: '6px' }"
+                data-testId="progress-bar"
+                mode="indeterminate" />
+        }
+        @if ($editorProps().contentletTools; as contentletTools) {
+            <dot-ema-contentlet-tools
+                (edit)="handleEditContentlet($event)"
+                (editVTL)="handleEditVTL($event)"
+                (delete)="deleteContentlet($event)"
+                (addWidget)="dialog.addWidget($event)"
+                (addForm)="dialog.addForm($event)"
+                (addContent)="dialog.addContentlet($event)"
+                [hide]="contentletTools.hide"
+                [contentletArea]="contentletTools.contentletArea"
+                [isEnterprise]="contentletTools.isEnterprise"
+                [disableDeleteButton]="contentletTools.disableDeleteButton"
+                data-testId="contentlet-tools" />
+        }
+        @if ($editorProps().dropzone; as dropzone) {
+            <dot-ema-page-dropzone
+                [containers]="dropzone.bounds"
+                [dragItem]="dropzone.dragItem"
+                data-testId="dropzone" />
+        }
     </div>
-}
+</div>
+
 @if ($editorProps().palette; as palette) {
     <dot-edit-ema-palette
         [languageId]="palette.languageId"
@@ -68,15 +84,19 @@
 @if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
-        (reloadFromDialog)="reloadFromDialog()"
+        (reloadFromDialog)="reloadPage()"
         #dialog
-        data-testId="ema-dialog"></dot-edit-ema-dialog>
-    <p-confirmDialog
-        [style]="{
-            width: '400px'
-        }"
-        rejectIcon="hidden"
-        acceptIcon="hidden"
-        rejectButtonStyleClass="p-button-outlined"
-        data-testId="confirm-dialog"></p-confirmDialog>
+        data-testId="ema-dialog" />
+}
+<p-confirmDialog
+    [style]="{
+        width: '400px'
+    }"
+    rejectIcon="hidden"
+    acceptIcon="hidden"
+    rejectButtonStyleClass="p-button-outlined"
+    data-testId="confirm-dialog" />
+
+@if ($editorProps().showBlockEditorSidebar) {
+    <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
 }

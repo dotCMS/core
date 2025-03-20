@@ -247,6 +247,12 @@ import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariables
 import com.dotmarketing.startup.runonce.Task240513UpdateContentTypesSystemField;
 import com.dotmarketing.startup.runonce.Task240530AddDotAIPortletToLayout;
 import com.dotmarketing.startup.runonce.Task240606AddVariableColumnToWorkflow;
+import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTables;
+import com.dotmarketing.startup.runonce.Task241013RemoveFullPathLcColumnFromIdentifier;
+import com.dotmarketing.startup.runonce.Task241014AddTemplateValueOnContentletIndex;
+import com.dotmarketing.startup.runonce.Task241015ReplaceLanguagesWithLocalesPortlet;
+import com.dotmarketing.startup.runonce.Task241016AddCustomLanguageVariablesPortletToLayout;
+import com.dotmarketing.startup.runonce.Task250107RemoveEsReadOnlyMonitorJob;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -567,15 +573,17 @@ public class TaskLocatorUtil {
 		.add(Task240513UpdateContentTypesSystemField.class)
 		.add(Task240530AddDotAIPortletToLayout.class)
 		.add(Task240606AddVariableColumnToWorkflow.class)
+		.add(Task241013RemoveFullPathLcColumnFromIdentifier.class)
+		.add(Task241014AddTemplateValueOnContentletIndex.class)
+		.add(Task241015ReplaceLanguagesWithLocalesPortlet.class)
+    	.add(Task241016AddCustomLanguageVariablesPortletToLayout.class)
+		.add(Task250107RemoveEsReadOnlyMonitorJob.class)
+        .add(Task250113CreatePostgresJobQueueTables.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
-    final static private Comparator<Class<?>> classNameComparator = new Comparator<Class<?>>() {
-        public int compare(Class<?> o1, Class<?> o2) {
-            return o1.getName().compareTo(o2.getName());
-        }
-    };
+    private static final Comparator<Class<?>> classNameComparator = Comparator.comparing(Class::getName);
 
 	/**
 	 * Returns list of tasks that are run <b>every time</b> that dotCMS starts
@@ -626,6 +634,16 @@ public class TaskLocatorUtil {
 				.add(Task230320FixMissingContentletAsJSON.class)
 				.add(Task240306MigrateLegacyLanguageVariables.class)
 				.build();
+		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
+	}
+
+	/**
+	 * List of tasks that are need to run without transaction. It can be all kind: Run-Once, Run-Always, Data, Backported, etc
+	 * @return The list of tasks
+	 */
+	public static List<Class<?>> getTaskClassesNoTransaction() {
+		final List<Class<?>> ret = new ArrayList<>();
+		ret.add(Task241014AddTemplateValueOnContentletIndex.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

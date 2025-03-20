@@ -194,14 +194,14 @@ public class AssetsUtils {
         var workspaceCount = workspacePath.getNameCount();
         var sourceCount = sourcePath.getNameCount();
 
-        if (sourceCount < workspaceCount) {
+        if (!sourcePath.startsWith(workspacePath) ) {
             throw new IllegalArgumentException("Source path cannot be outside of the workspace");
         }
 
         final Path filesPath = Path.of(workspace.getAbsolutePath(), FILES_NAMESPACE)
                 .toAbsolutePath().normalize();
         // Check if we are inside the workspace but also inside the files folder
-        if (sourceCount > workspaceCount + 1 || (sourceCount == workspaceCount + 1 && !sourcePath.startsWith(filesPath))) {
+        if ((sourceCount > workspaceCount + 1 || sourceCount == workspaceCount + 1) && !sourcePath.startsWith(filesPath)) {
             logger.warn("Invalid source path provided for a files push {}. Source path must be inside the files folder. otherwise it will fall back to workspace. {}", sourcePath, workspacePath);
             //if a source path is provided, but it is not inside the files folder but still is a valid folder then we will fall back to the workspace
             return parseRootPaths(workspacePath, workspaceCount, workspaceCount);

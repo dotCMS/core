@@ -60,7 +60,7 @@
     }
 }
 
-.p-calendar .p-datepicker {
+.p-datepicker {
     padding: $spacing-3;
     background: $white;
     color: $black;
@@ -98,7 +98,7 @@
 
         &.p-highlight:not(.p-disabled) {
             // Selected
-            background: $color-accessible-text-blue-bg;
+            background: $color-palette-primary-op-10;
             color: $color-accessible-text-blue;
         }
     }

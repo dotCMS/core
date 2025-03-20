@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 /**
  * Event fired when a job starts processing.
  */
-public class JobStartedEvent {
+public class JobStartedEvent implements JobEvent {
 
     private final Job job;
     private final LocalDateTime startedAt;

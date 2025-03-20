@@ -1,0 +1,36 @@
+Name,Suite,Section,Estimated Time,Type,Steps (Instructions),Steps (Expected Result),Preconditions/Validadtion,,Assigned to: ,Status,Issue link,,,,,,,,,,,,,,
+Create and Activate a Basic Rule,Rules Engine,Rules,10,Functional,"1. Navigate to Marketing > Rules.
+2. Click on Add Rule.
+3. Set the condition to fire the rule based on Browser Language set to English.
+4. Set the action to Redirect to a specific URL (e.g., /content).
+5. Save and activate the rule.","- The rule should be saved and appear in the list as active.
+- When a visitor with an English browser language accesses the site, they should be redirected to the specified URL.", User is logged into the dotCMS admin panel.,,,,,,,,,,,,,,,,,,
+Add Multiple Actions to a Rule,Rules Engine,Rules,20,Functional,"1. Edit the existing rule from Test Case 1.
+2. Add the following actions:
+ - Set Request Attribute with a value (e.g., RequestAttribute=value).
+ - Assign a Persona (e.g., Eco Enthusiast).
+ - Set Response Header.
+3. Save and activate the rule.","- The rule should save successfully with all actions.
+- Upon accessing the site with an English browser language, the visitor should:
+   - Be redirected.
+   - The request attribute should be set in the browser's developer tools.
+   - The persona should be",A basic rule already exists. Use developer tools or backend logs to verify each action occurs.,,,,,,,,,,,,,,,,,,
+Rule Evaluation Frequency,Rules Engine,Rules,25,Functional,"1. Create a rule with the condition Browser Language = English.
+2. Set the action to Redirect to a different URL.
+3. Set the evaluation frequency to Once per visit.
+4. Test by refreshing the page multiple times.","The rule should fire only on the first visit, and subsequent page loads should not trigger the redirect until a new session is initiated.",Verify rule behavior by checking if the redirect occurs only on the first page load of the session.,,,,,,,,,,,,,,,,,,
+Testing Rule Deactivation,Rules Engine,Rules,25,Functional,"1. Navigate to Marketing > Rules.
+2. Deactivate an active rule.
+3. Visit the site with the conditions of the rule (e.g., browser language is English).","The rule should not fire when it is deactivated, and the user should not be redirected or experience any of the actions tied to the rule.",Use a browser to access the site and verify the rule is no longer applied.,,,,,,,,,,,,,,,,,,
+Test Error Handling for Invalid Rule Configuration,Rules Engine,Rules,20,Functional,"1. Create a new rule with a condition but leave some mandatory fields empty (e.g., action fields).
+2. Try to save the rule.",The system should prompt an error message indicating which fields are missing or invalid.,Ensure that the rule cannot be saved without completing the necessary fields.,,,,,,,,,,,,,,,,,,
+Apply Rule on a Specific Page,Rules Engine,Rules,20,Functional,"1. Create a new rule.
+2. Set the condition to Browser Language = English.
+3. Assign the rule to a specific page via the Rules tab on the Page Editor.
+4. Test by visiting the assigned page.","The rule should only fire when the visitor accesses the specific page, not on other pages.",Test by visiting various pages to ensure the rule only applies to the intended page.,,,,,,,,,,,,,,,,,,
+Rule with No Conditions,Rules Engine,Rules,25,Functional,"1. Create a new rule in the Marketing > Rules section.
+2. Skip setting a condition (leave the condition field blank).
+3. Set an action (e.g., redirect to /content or assign a persona).
+4. Save and activate the rule.
+5. Visit the site with a standard brows","- The rule should either fail to save or provide a validation error, as rules should not be able to execute without conditions.
+- If the rule does save, it should behave unpredictably, potentially applying to all visitors, so the system should prevent suc",Ensure that the rule system correctly blocks rule creation without a condition or handles it safely.,,,,,,,,,,,,,,,,,,

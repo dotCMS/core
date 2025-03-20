@@ -1,4 +1,8 @@
-import { MESSAGES_TYPES, UIMessage, UIMessagesMap } from '../models';
+import {
+    MESSAGES_TYPES,
+    UIMessage,
+    UIMessagesMap
+} from '../../../models/dot-edit-content-file.model';
 
 export const UiMessageMap: UIMessagesMap = {
     DEFAULT: {

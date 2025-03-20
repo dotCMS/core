@@ -1,12 +1,15 @@
+import { Params } from '@angular/router';
+
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
     deleteContentletFromContainer,
     insertContentletInContainer,
     sanitizeURL,
     getPersonalization,
-    createPageApiUrlWithQueryParams,
+    getFullPageURL,
     SDK_EDITOR_SCRIPT_SOURCE,
     computePageIsLocked,
     computeCanEditPage,
@@ -15,11 +18,19 @@ import {
     areContainersEquals,
     compareUrlPaths,
     createFullURL,
-    getDragItemData
+    getDragItemData,
+    createReorderMenuURL,
+    getAllowedPageParams,
+    getOrientation,
+    getWrapperMeasures,
+    normalizeQueryParams
 } from '.';
 
+import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload, DotPage } from '../shared/models';
+import { Orientation } from '../store/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
     page: {
@@ -58,6 +69,11 @@ describe('utils functions', () => {
                         identifier: 'test',
                         uuid: 'test',
                         contentletsId: ['test']
+                    },
+                    {
+                        identifier: 'test-2',
+                        uuid: 'test',
+                        contentletsId: ['test']
                     }
                 ],
                 contentlet: {
@@ -77,6 +93,12 @@ describe('utils functions', () => {
                         uuid: 'test',
                         contentletsId: [],
                         personaTag: 'test'
+                    },
+                    {
+                        identifier: 'test-2',
+                        uuid: 'test',
+                        contentletsId: ['test'],
+                        personaTag: 'test' // In the last version this was not being added and it lead to saving content to the default persona and messing up with the pages
                     }
                 ],
                 contentletsId: []
@@ -287,34 +309,30 @@ describe('utils functions', () => {
     });
 
     describe('url sanitize', () => {
-        it('should remove the slash from the start', () => {
-            expect(sanitizeURL('/cool')).toEqual('cool');
+        it('should left the / as /', () => {
+            expect(sanitizeURL('/')).toEqual('/');
         });
 
-        it("should remove the slash from the end if it's not the only character", () => {
-            expect(sanitizeURL('super-cool/')).toEqual('super-cool');
+        it('should clean multiple slashes', () => {
+            expect(sanitizeURL('//////')).toEqual('/');
         });
 
-        it('should remove the slash from the end and the beggining', () => {
-            expect(sanitizeURL('/hello-there/')).toEqual('hello-there');
+        it('should clean multiple slashes', () => {
+            expect(sanitizeURL('//index////')).toEqual('/index/');
         });
 
-        it('should remove the index if a nested path', () => {
-            expect(sanitizeURL('i-have-the-high-ground/index')).toEqual('i-have-the-high-ground');
-        });
+        describe('nested url', () => {
+            it('should leave as it is for a nested valid url', () => {
+                expect(sanitizeURL('hello-there/general-kenobi/')).toEqual(
+                    'hello-there/general-kenobi/'
+                );
+            });
 
-        it('should remove the index if a nested path with slash', () => {
-            expect(sanitizeURL('no-index-please/index/')).toEqual('no-index-please');
-        });
-
-        it('should leave as it is for valid url', () => {
-            expect(sanitizeURL('this-is-where-the-fun-begins')).toEqual(
-                'this-is-where-the-fun-begins'
-            );
-        });
-
-        it('should leave as it is for a nested valid url', () => {
-            expect(sanitizeURL('hello-there/general-kenobi')).toEqual('hello-there/general-kenobi');
+            it('should clean multiple slashes in a nested url', () => {
+                expect(sanitizeURL('hello-there////general-kenobi//////')).toEqual(
+                    'hello-there/general-kenobi/'
+                );
+            });
         });
     });
 
@@ -334,37 +352,48 @@ describe('utils functions', () => {
         });
     });
 
-    describe('createPageApiUrlWithQueryParams', () => {
+    describe('getFullPageURL', () => {
         it('should return the correct query params', () => {
-            const queryParams = {
+            const params = {
+                url: 'test',
                 variantName: 'test',
                 language_id: '20',
-                'com.dotmarketing.persona.id': 'the-chosen-one',
+                [PERSONA_KEY]: 'the-chosen-one',
                 experimentId: '123',
-                mode: 'PREVIEW_MODE'
+                mode: UVE_MODE.LIVE
             };
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            const result = getFullPageURL({ url: 'test', params });
             expect(result).toBe(
-                'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=PREVIEW_MODE'
-            );
-        });
-
-        it('should return url with default query params if no query params', () => {
-            const queryParams = {};
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
-            expect(result).toBe(
-                'test?language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
+                'test?variantName=test&language_id=20&com.dotmarketing.persona.id=the-chosen-one&experimentId=123&mode=LIVE'
             );
         });
 
         it('should ignore the undefined queryParams', () => {
-            const queryParams = {
+            const params = {
+                url: 'test',
+                language_id: '20',
+                [PERSONA_KEY]: 'the-chosen-one',
                 variantName: 'test',
                 experimentId: undefined
             };
-            const result = createPageApiUrlWithQueryParams('test', queryParams);
+            const result = getFullPageURL({ url: 'test', params });
             expect(result).toBe(
-                'test?variantName=test&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona'
+                'test?language_id=20&com.dotmarketing.persona.id=the-chosen-one&variantName=test'
+            );
+        });
+
+        it('should remove the clientHost if it is passed', () => {
+            const params = {
+                url: 'test',
+                language_id: '20',
+                [PERSONA_KEY]: 'the-chosen-one',
+                variantName: 'test',
+                clientHost: 'http://localhost:4200'
+            };
+
+            const result = getFullPageURL({ url: 'test', params });
+            expect(result).toBe(
+                'test?language_id=20&com.dotmarketing.persona.id=the-chosen-one&variantName=test'
             );
         });
     });
@@ -600,10 +629,10 @@ describe('utils functions', () => {
         const params = {
             url: 'page',
             language_id: '1',
-            'com.dotmarketing.persona.id': 'persona',
+            [PERSONA_KEY]: 'persona',
             variantName: 'new',
             experimentId: '1',
-            mode: 'EDIT_MODE',
+            mode: UVE_MODE.EDIT,
             clientHost: 'http://localhost:4200/',
             depth: '1'
         };
@@ -707,6 +736,230 @@ describe('utils functions', () => {
             const result = getDragItemData(dataset);
 
             expect(result).toBeNull();
+        });
+    });
+
+    describe('createReorderMenuURL', () => {
+        it('should create the correct URL', () => {
+            const result = createReorderMenuURL({
+                startLevel: 1,
+                depth: 1,
+                pagePath: '123',
+                hostId: '456'
+            });
+
+            expect(result).toEqual(
+                'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
+            );
+        });
+    });
+
+    describe('getAllowedPageParams', () => {
+        it('should filter and return only allowed page params', () => {
+            const expected = {
+                url: 'some-url',
+                mode: UVE_MODE.EDIT,
+                depth: '2',
+                clientHost: 'localhost',
+                variantName: 'variant',
+                language_id: '1',
+                experimentId: 'exp123',
+                [PERSONA_KEY]: 'persona123'
+            } as DotPageApiParams;
+
+            const params: Params = {
+                ...expected,
+                invalidParam: 'invalid'
+            };
+
+            const result = getAllowedPageParams(params);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should return an empty object if no allowed params are present', () => {
+            const params: Params = {
+                invalidParam1: 'invalid1',
+                invalidParam2: 'invalid2'
+            };
+
+            const expected = {} as DotPageApiParams;
+
+            const result = getAllowedPageParams(params);
+
+            expect(result).toEqual(expected);
+        });
+
+        it('should return an empty object if params is empty', () => {
+            const params: Params = {};
+
+            const expected = {} as DotPageApiParams;
+
+            const result = getAllowedPageParams(params);
+
+            expect(result).toEqual(expected);
+        });
+    });
+
+    describe('getWrapperMeasures', () => {
+        it('should return correct measures for landscape orientation', () => {
+            const device: DotDevice = {
+                cssHeight: '1200',
+                cssWidth: '800',
+                inode: 'some-inode'
+            } as DotDevice;
+
+            const result = getWrapperMeasures(device, Orientation.LANDSCAPE);
+            expect(result).toEqual({ width: '1200px', height: '800px' });
+        });
+
+        it('should return correct measures for portrait orientation', () => {
+            const device: DotDevice = {
+                cssHeight: '800',
+                cssWidth: '1200',
+                inode: 'some-inode'
+            } as DotDevice;
+
+            const result = getWrapperMeasures(device, Orientation.PORTRAIT);
+            expect(result).toEqual({ width: '800px', height: '1200px' });
+        });
+
+        it('should use percentage unit for default inode', () => {
+            const device: DotDevice = {
+                cssHeight: '100',
+                cssWidth: '100',
+                inode: 'default'
+            } as DotDevice;
+
+            const result = getWrapperMeasures(device);
+            expect(result).toEqual({ width: '100%', height: '100%' });
+        });
+    });
+
+    describe('getOrientation', () => {
+        it('should return PORTRAIT for taller devices', () => {
+            const device: DotDevice = {
+                cssHeight: '1200',
+                cssWidth: '800'
+            } as DotDevice;
+
+            const result = getOrientation(device);
+            expect(result).toBe(Orientation.PORTRAIT);
+        });
+
+        it('should return LANDSCAPE for wider devices', () => {
+            const device: DotDevice = {
+                cssHeight: '800',
+                cssWidth: '1200'
+            } as DotDevice;
+
+            const result = getOrientation(device);
+            expect(result).toBe(Orientation.LANDSCAPE);
+        });
+    });
+
+    describe('normalizeQueryParams', () => {
+        describe('persona handling', () => {
+            it('should remove PERSONA_KEY if it equals DEFAULT_PERSONA.identifier', () => {
+                const params = {
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                    someOtherKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual({
+                    someOtherKey: 'someValue'
+                });
+            });
+
+            it('should rename PERSONA_KEY to personaId if not default', () => {
+                const params = {
+                    [PERSONA_KEY]: 'customPersonaId',
+                    anotherKey: 'anotherValue'
+                };
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual({
+                    personaId: 'customPersonaId',
+                    anotherKey: 'anotherValue'
+                });
+            });
+        });
+
+        describe('clientHost handling', () => {
+            it('should remove clientHost when it matches baseClientHost exactly', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params, 'http://example.com');
+
+                expect(result).toEqual({
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should remove clientHost when it matches baseClientHost with trailing slash', () => {
+                const params = {
+                    clientHost: 'http://example.com/',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params, 'http://example.com');
+
+                expect(result).toEqual({
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should keep clientHost if it differs from baseClientHost', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params, 'http://different.com');
+
+                expect(result).toEqual({
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                });
+            });
+
+            it('should keep clientHost if baseClientHost is not provided', () => {
+                const params = {
+                    clientHost: 'http://example.com',
+                    someKey: 'someValue'
+                };
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual(params);
+            });
+        });
+
+        describe('edge cases', () => {
+            it('should handle empty params object', () => {
+                const params = {};
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual({});
+            });
+
+            it('should handle params with no special keys', () => {
+                const params = {
+                    someKey: 'someValue',
+                    anotherKey: 'anotherValue'
+                };
+
+                const result = normalizeQueryParams(params);
+
+                expect(result).toEqual(params);
+            });
         });
     });
 });

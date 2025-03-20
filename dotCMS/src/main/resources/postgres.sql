@@ -2353,6 +2353,7 @@ create index containers_ident on dot_containers (identifier);
 create index template_ident on template (identifier);
 create index contentlet_moduser on contentlet (mod_user);
 create index contentlet_lang on contentlet (language_id);
+CREATE INDEX CONCURRENTLY idx_contentlet_template_value ON contentlet((contentlet_as_json->'fields'->'template'->>'value'));
 -- end of fk indicies --
 
 -- Notifications Table
@@ -2514,7 +2515,7 @@ create table experiment (
 CREATE INDEX idx_exp_pageid ON experiment (page_id);
 
 -- system table for general purposes and configuration
-create table system_table (
+create table  if not exists system_table (
      key varchar(511) primary key,
      value text not null
 );

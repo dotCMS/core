@@ -19,10 +19,11 @@
     border: none;
     border-radius: 0;
     color: $black;
-    padding: 1.2rem $spacing-4 1.35rem;
+    padding: $spacing-3 $spacing-4;
     transition: none;
     margin: 0;
     white-space: nowrap;
+    height: 100%;
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link:not(.p-disabled):focus {

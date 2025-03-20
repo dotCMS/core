@@ -3,6 +3,8 @@ package com.dotcms.ai.domain;
 import com.dotmarketing.exception.DotRuntimeException;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.OutputStream;
+
 /**
  * Represents the data of a response from an AI service.
  *
@@ -20,6 +22,7 @@ public class AIResponseData {
     private String error;
     private ModelStatus status;
     private DotRuntimeException exception;
+    private OutputStream output;
 
     public String getResponse() {
         return response;
@@ -51,6 +54,14 @@ public class AIResponseData {
 
     public void setException(DotRuntimeException exception) {
         this.exception = exception;
+    }
+
+    public OutputStream getOutput() {
+        return output;
+    }
+
+    public void setOutput(OutputStream output) {
+        this.output = output;
     }
 
     public boolean isSuccess() {

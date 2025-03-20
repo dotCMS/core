@@ -1,7 +1,11 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -40,6 +44,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -59,11 +64,11 @@ public class ShortyServlet extends HttpServlet {
   private final HostWebAPI     hostWebAPI     = WebAPILocator.getHostWebAPI();
   private final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
   private final ShortyIdAPI    shortyIdAPI    = APILocator.getShortyAPI();
+  private final WebResource    webResource    = new WebResource();
 
-
-  private static final String  JPEG                        = "jpeg";
-  private static final String  JPEGP                       = "jpegp";
-  private static final String  WEBP                        = "webp";
+  private static final String  JPEG                        = ".jpeg";
+  private static final String  JPEGP                       = ".jpegp";
+  private static final String  WEBP                        = ".webp";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
   private static final Pattern widthPattern                = Pattern.compile("/(\\d+)w\\b");
@@ -263,6 +268,16 @@ public class ShortyServlet extends HttpServlet {
   private void serve(final HttpServletRequest request,
                      final HttpServletResponse response) throws Exception {
 
+    try {
+        final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+                this.webResource, request, response);
+        Logger.debug(ShortyServlet.class, () -> "User: " + user);
+    } catch (SecurityException e) {
+        SecurityLogger.logInfo(ShortyServlet.class, e.getMessage());
+        Logger.debug(ShortyServlet.class, e,  () -> "Error getting user and authenticating");
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        return;
+    }
 
     final PageMode mode = PageMode.get(request);
 
@@ -324,7 +339,7 @@ public class ShortyServlet extends HttpServlet {
     final Language language =WebAPILocator.getLanguageWebAPI().getLanguage(request);
     try {
 
-        
+
         String inodePath = null;
         if(shorty.type!= ShortType.TEMP_FILE) {
           final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
@@ -381,11 +396,47 @@ public class ShortyServlet extends HttpServlet {
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
                 .getRenderContext(language.getId(), identifier, pageMode, APILocator.systemUser());
 
+        // If a Time Machine date is configured, attempt to retrieve the future version of the contentlet.
+        // Return if found.
+        final Optional<Contentlet> futureContentlet = getTimeMachineContentlet(identifier, renderContext);
+        if(futureContentlet.isPresent()){
+            return futureContentlet;
+        }
+        // Retrieve the contentlet based on the specified identifier and language,
+        // considering whether the live version or a preview version is required.
         return Optional.ofNullable(
                 APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
                         renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey(),
                         APILocator.systemUser(), false)
         );
+    }
+
+    /**
+     * Retrieves a contentlet for the given identifier and render context using the Time Machine feature,
+     * if a Time Machine date is configured.
+     *
+     * @param identifier      The unique identifier of the contentlet.
+     * @param renderContext   The {@link RenderContext} containing language and variant key information.
+     * @return An {@link Optional} containing the contentlet if found; otherwise, an empty Optional.
+     * @throws DotDataException     If there is an error accessing the contentlet data.
+     * @throws DotSecurityException If there is a security-related issue when retrieving the contentlet.
+     */
+    private static Optional<Contentlet> getTimeMachineContentlet(
+            final String identifier, final RenderContext renderContext) throws DotDataException, DotSecurityException {
+
+        final Optional<Date> timeMachineDate = TimeMachineUtil.getTimeMachineDateAsDate();
+        if (timeMachineDate.isPresent()) {
+            Contentlet future = APILocator.getContentletAPI().findContentletByIdentifier(
+                    identifier,
+                    renderContext.getCurrentLanguageId(),
+                    renderContext.getCurrentVariantKey(),
+                    timeMachineDate.get(),
+                    APILocator.systemUser(),
+                    false
+            );
+            return Optional.ofNullable(future);
+        }
+        return Optional.empty();
     }
 
   private void doForward(final HttpServletRequest request,
@@ -499,7 +550,20 @@ public class ShortyServlet extends HttpServlet {
     return true;
   }
 
-
+  
+  /**
+   * Resolves and builds the appropriate file path for a contentlet's field.
+   * This method handles both regular fields and special cases for image/file fields,
+   * including language fallback logic when necessary.
+   *
+   * @param contentlet The contentlet whose field path needs to be resolved
+   * @param tryField The name of the field to try to resolve
+   * @param live Whether to use the live version (true) or working version (false)
+   * @return A string representing the path to the field's content
+   * @throws DotStateException If there's an issue with the contentlet's state
+   * @throws DotDataException If there's an error accessing the data
+   * @throws DotSecurityException If there's a security violation
+   */
   protected final String inodePath(final Contentlet contentlet,
                                    final String tryField,
                                    final boolean live)
@@ -508,35 +572,64 @@ public class ShortyServlet extends HttpServlet {
         final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
 
         if (fieldOpt.isEmpty()) {
-            return "/" + contentlet.getInode() + "/" + FILE_ASSET_DEFAULT;
+            return buildFieldPath(contentlet, FILE_ASSET_DEFAULT);
         }
 
         final Field field = fieldOpt.get();
         if (field instanceof ImageField || field instanceof FileField) {
 
             final String relatedImageId = contentlet.getStringProperty(field.variable());
-            final Optional<ContentletVersionInfo> contentletVersionInfo =
+            Optional<ContentletVersionInfo> contentletVersionInfo =
                     this.versionableAPI.getContentletVersionInfo(relatedImageId, contentlet.getLanguageId());
 
-            if (contentletVersionInfo.isPresent()) {
-                final String inode = live ? contentletVersionInfo.get().getLiveInode()
-                        : contentletVersionInfo.get().getWorkingInode();
-
-                final Contentlet imageContentlet = APILocator.getContentletAPI()
-                        .find(inode, APILocator.systemUser(), false);
-
-                validateContentlet(imageContentlet, live, inode);
-
-                final String fieldVar = imageContentlet.isDotAsset() ?
-                        DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
-
-                return new StringBuilder(StringPool.FORWARD_SLASH).append(inode)
-                    .append(StringPool.FORWARD_SLASH).append(fieldVar).toString();
+            if (contentletVersionInfo.isEmpty() && shouldFallbackToDefaultLanguage(contentlet)) {
+                // Try finding the contentlet version with the default language ID
+                Logger.info(this, "No contentlet version found for identifier " + relatedImageId + " in language " + contentlet.getLanguageId() + ", trying default language.");
+                contentletVersionInfo = this.versionableAPI.getContentletVersionInfo(relatedImageId,APILocator.getLanguageAPI().getDefaultLanguage().getId());
             }
-        }
 
-        return new StringBuilder(StringPool.FORWARD_SLASH).append(contentlet.getInode())
-                .append(StringPool.FORWARD_SLASH).append(field.variable()).toString();
+            if (contentletVersionInfo.isPresent()) {
+                Logger.debug(this, "Contentlet version found for identifier: " + relatedImageId);
+                final String inode = live
+                        ? contentletVersionInfo.get().getLiveInode()
+                        : contentletVersionInfo.get().getWorkingInode();
+                try{
+                    final Contentlet imageContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+                    validateContentlet(imageContentlet, live, inode);
+                    final String fieldVar = imageContentlet.isDotAsset() ? DotAssetContentType.ASSET_FIELD_VAR : FILE_ASSET_DEFAULT;
+                    return buildFieldPath(imageContentlet, fieldVar);
+                }catch (DotDataException e){
+                    Logger.debug(this.getClass(), e.getMessage());
+                }
+            }
+            Logger.debug(this, "No contentlet version found for identifier: " + relatedImageId + ", returning path based on original contentlet inode: " + contentlet.getInode());
+        }
+        return buildFieldPath(contentlet, field.variable());
+    }
+
+    /**
+     * Determines whether the system should attempt to fallback to the default language
+     * for the given contentlet. This is used when content is not found in the
+     * contentlet's original language.
+     *
+     * @param contentlet The contentlet to check for language fallback eligibility
+     * @return true if the system should attempt to use the default language, false otherwise
+     */
+    private boolean shouldFallbackToDefaultLanguage(final Contentlet contentlet) {
+        return APILocator.getLanguageAPI().canDefaultFileToDefaultLanguage() &&
+                APILocator.getLanguageAPI().getDefaultLanguage().getId() != contentlet.getLanguageId();
+    }
+
+    /**
+     * Constructs a standardized field path for a contentlet and field variable.
+     * The path format is: /[contentlet-inode]/[field-variable]
+     *
+     * @param contentlet The contentlet for which to build the path
+     * @param fieldVar The field variable to append to the path
+     * @return A formatted path string
+     */
+    private String buildFieldPath(final Contentlet contentlet, final String fieldVar) {
+        return StringPool.FORWARD_SLASH + contentlet.getInode() + StringPool.FORWARD_SLASH + fieldVar;
     }
 
     private void validateContentlet(final Contentlet contentlet, final boolean live, final String inode) throws DotDataException {

@@ -15,7 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This asynchronized collector collects the page/asset information based on the vanity URL previous loaded on the
+ * This asynchronous collector collects page information based on the Vanity URL that has been
+ * processed previously.
+ *
  * @author jsanca
  */
 public class AsyncVanitiesCollector implements Collector {
@@ -51,8 +53,8 @@ public class AsyncVanitiesCollector implements Collector {
         // this will be a new event
         final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl) collectorContextMap.get(Constants.VANITY_URL_OBJECT);
 
-        final Host currentHost = (Host)collectorContextMap.get("currentHost");
-        final Long languageId = (Long)collectorContextMap.get("langId");
+        final Host currentHost = (Host)collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
+        final Long languageId = (Long)collectorContextMap.get(CollectorContextMap.LANG_ID);
 
         final Host site = Try.of(()->this.hostAPI.find(currentHost.getIdentifier(), APILocator.systemUser(),
                 false)).get();
@@ -61,11 +63,10 @@ public class AsyncVanitiesCollector implements Collector {
         if (UtilMethods.isSet(whoIAM)) {
 
             final CollectorContextMap innerCollectorContextMap = new WrapperCollectorContextMap(collectorContextMap,
-                    Map.of("uri", cachedVanityUrl.forwardTo));
+                    Map.of(CollectorContextMap.URI, cachedVanityUrl.forwardTo));
             match.get(whoIAM).collect(innerCollectorContextMap, collectorPayloadBean);
         }
 
-        collectorPayloadBean.put("comeFromVanityURL", "true");
         return collectorPayloadBean;
     }
 

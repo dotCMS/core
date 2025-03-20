@@ -1,25 +1,24 @@
-"use client";
+'use client';
 
-import WebPageContent from "./content-types/webPageContent";
-import Banner from "./content-types/banner";
-import Activity from "./content-types/activity";
-import CallToAction from "./content-types/callToAction";
-import CalendarEvent from "./content-types/calendarEvent";
-import Product from "./content-types/product";
-import ImageComponent from "./content-types/image";
+import Activity from './content-types/activity';
+import Banner from './content-types/banner';
+import Blog from './content-types/blog';
+import CalendarEvent from './content-types/calendarEvent';
+import CallToAction from './content-types/callToAction';
+import ImageComponent from './content-types/image';
+import Product from './content-types/product';
+import WebPageContent from './content-types/webPageContent';
 
-import Header from "./layout/header";
-import Footer from "./layout/footer/footer";
-import Navigation from "./layout/navigation";
-import { usePathname, useRouter } from "next/navigation";
-import { DotcmsLayout } from "@dotcms/react";
-import { withExperiments } from "@dotcms/experiments";
-import { CustomNoComponent } from "./content-types/empty";
+import { DotcmsLayout } from '@dotcms/react';
+import { usePathname, useRouter } from 'next/navigation';
+import { CustomNoComponent } from './content-types/empty';
+import Footer from './layout/footer/footer';
+import Header from './layout/header/header';
+import Navigation from './layout/navigation';
 
-import { usePageAsset } from "../hooks/usePageAsset";
-import BlogWithBlockEditor from "./content-types/blog";
-import { DotCmsClient } from "@dotcms/client";
-
+import NotFound from '@/app/not-found';
+import { withExperiments } from '@dotcms/experiments';
+import { usePageAsset } from '../hooks/usePageAsset';
 /**
  * Configure experiment settings below. If you are not using experiments,
  * you can ignore or remove the experiment-related code and imports.
@@ -27,11 +26,12 @@ import { DotCmsClient } from "@dotcms/client";
 const experimentConfig = {
     apiKey: process.env.NEXT_PUBLIC_EXPERIMENTS_API_KEY, // API key for experiments, should be securely stored
     server: process.env.NEXT_PUBLIC_DOTCMS_HOST, // DotCMS server endpoint
-    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG, // Debug mode for additional logging
+    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG // Debug mode for additional logging
 };
 
 // Mapping of components to DotCMS content types
 const componentsMap = {
+    Blog: Blog,
     webPageContent: WebPageContent,
     Banner: Banner,
     Activity: Activity,
@@ -39,8 +39,7 @@ const componentsMap = {
     Image: ImageComponent,
     calendarEvent: CalendarEvent,
     CallToAction: CallToAction,
-    CustomNoComponent: CustomNoComponent,
-    BlockEditorItem: BlogWithBlockEditor,
+    CustomNoComponent: CustomNoComponent
 };
 
 export function MyPage({ pageAsset, nav }) {
@@ -53,41 +52,42 @@ export function MyPage({ pageAsset, nav }) {
      * - Replace the below line with `const DotLayoutComponent = DotcmsLayout;`
      * - Remove DotExperimentsProvider from the return statement.
      */
-    const DotLayoutComponent = experimentConfig.apiKey
+
+    const DotLayoutComponent = experimentConfig?.apiKey
         ? withExperiments(DotcmsLayout, {
               ...experimentConfig,
-              redirectFn: replace,
+              redirectFn: replace
           })
         : DotcmsLayout;
 
     pageAsset = usePageAsset(pageAsset);
 
+    if (!pageAsset) {
+        return <NotFound />;
+    }
+
     return (
         <div className="flex flex-col gap-6 min-h-screen bg-lime-50">
-            {pageAsset.layout.header && (
-                <Header>
-                    <Navigation items={nav} />
-                </Header>
-            )}
+            {pageAsset?.layout.header && <Header>{!!nav && <Navigation items={nav} />}</Header>}
 
-            <main className="flex flex-col gap-8 m-auto">
+            <main className="container m-auto">
                 <DotLayoutComponent
                     pageContext={{
-                        components: componentsMap,
-                        pageAsset: pageAsset,
+                        pageAsset,
+                        components: componentsMap
                     }}
                     config={{
                         pathname,
                         editor: {
                             params: {
-                                depth: 3,
-                            },
-                        },
+                                depth: 3
+                            }
+                        }
                     }}
                 />
             </main>
 
-            {pageAsset.layout.footer && <Footer />}
+            {pageAsset?.layout.footer && <Footer />}
         </div>
     );
 }

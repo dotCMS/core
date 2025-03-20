@@ -11,13 +11,12 @@ import java.util.HashMap;
 import java.util.Objects;
 
 /**
- * This synchronized collector that collects the vanities
+ * This synchronous collector collects information from the Vanity URL that has been processed.
+ *
  * @author jsanca
  */
 public class SyncVanitiesCollector implements Collector {
 
-
-    public static final String VANITY_URL_KEY = "vanity_url";
 
     public SyncVanitiesCollector() {
     }
@@ -31,50 +30,44 @@ public class SyncVanitiesCollector implements Collector {
     @Override
     public CollectorPayloadBean collect(final CollectorContextMap collectorContextMap,
                                         final CollectorPayloadBean collectorPayloadBean) {
+        if (null != collectorContextMap.get(CollectorContextMap.REQUEST)) {
 
-        if (null != collectorContextMap.get("request")) {
-
-            final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get("request");
+            final HttpServletRequest request = (HttpServletRequest)collectorContextMap.get(CollectorContextMap.REQUEST);
             final String vanityUrl = (String)request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
             final String vanityQueryString = (String)request.getAttribute(Constants.CMS_FILTER_QUERY_STRING_OVERRIDE);
             if (request instanceof VanityUrlRequestWrapper) {
                 final VanityUrlRequestWrapper vanityRequest = (VanityUrlRequestWrapper) request;
-                collectorPayloadBean.put("response_code", vanityRequest.getResponseCode());
+                collectorPayloadBean.put(RESPONSE_CODE, vanityRequest.getResponseCode());
             }
 
             collectorPayloadBean.put(VANITY_URL_KEY, vanityUrl);
-            collectorPayloadBean.put("vanity_query_string", vanityQueryString);
+            collectorPayloadBean.put(VANITY_QUERY_STRING, vanityQueryString);
         }
 
-        final String uri = (String)collectorContextMap.get("uri");
-        final Host site = (Host) collectorContextMap.get("currentHost");
-        final Long languageId = (Long)collectorContextMap.get("langId");
-        final String language = (String)collectorContextMap.get("lang");
+        final String uri = (String)collectorContextMap.get(CollectorContextMap.URI);
+        final Host site = (Host) collectorContextMap.get(CollectorContextMap.CURRENT_HOST);
+        final Long languageId = (Long)collectorContextMap.get(CollectorContextMap.LANG_ID);
+        final String language = (String)collectorContextMap.get(CollectorContextMap.LANG);
         final CachedVanityUrl cachedVanityUrl = (CachedVanityUrl)collectorContextMap.get(Constants.VANITY_URL_OBJECT);
         final HashMap<String, String> vanityObject = new HashMap<>();
 
         if (Objects.nonNull(cachedVanityUrl)) {
-
-            vanityObject.put("id", cachedVanityUrl.vanityUrlId);
-            vanityObject.put("forward_to",
-                    collectorPayloadBean.get(VANITY_URL_KEY)!=null?(String)collectorPayloadBean.get(VANITY_URL_KEY):cachedVanityUrl.forwardTo);
-            vanityObject.put("url", uri);
-            vanityObject.put("response", String.valueOf(cachedVanityUrl.response));
+            vanityObject.put(ID, cachedVanityUrl.vanityUrlId);
+            vanityObject.put(FORWARD_TO, collectorPayloadBean.get(VANITY_URL_KEY) != null
+                    ? (String) collectorPayloadBean.get(VANITY_URL_KEY)
+                    : cachedVanityUrl.forwardTo);
+            vanityObject.put(URL, cachedVanityUrl.url);
+            vanityObject.put(RESPONSE, String.valueOf(cachedVanityUrl.response));
         }
 
-        collectorPayloadBean.put("object",  vanityObject);
-        collectorPayloadBean.put("url", uri);
-        collectorPayloadBean.put("language", language);
-        collectorPayloadBean.put("language_id", languageId);
-        collectorPayloadBean.put("site", site.getIdentifier());
-        collectorPayloadBean.put("event_type", EventType.VANITY_REQUEST.getType());
+        collectorPayloadBean.put(OBJECT,  vanityObject);
+        collectorPayloadBean.put(URL, uri);
+        collectorPayloadBean.put(LANGUAGE, language);
+        collectorPayloadBean.put(LANGUAGE_ID, languageId);
+        collectorPayloadBean.put(SITE_ID, site.getIdentifier());
+        collectorPayloadBean.put(EVENT_TYPE, EventType.VANITY_REQUEST.getType());
 
         return collectorPayloadBean;
-    }
-
-    @Override
-    public boolean isAsync() {
-        return false;
     }
 
 }

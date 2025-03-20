@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import {
-    CUSTOMER_ACTIONS,
+    CLIENT_ACTIONS,
     DotCmsClient,
     EditorConfig,
     initEditor,
@@ -19,6 +19,8 @@ import {
     postMessageToEditor,
     updateNavigation
 } from '@dotcms/client';
+import { createUVESubscription } from '@dotcms/uve';
+import { UVESubscription } from '@dotcms/uve/types';
 
 import { DotCMSPageComponent } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
@@ -38,7 +40,7 @@ import { RowComponent } from '../row/row.component';
     imports: [RowComponent, AsyncPipe],
     template: `
         @if (pageAsset$ | async; as page) {
-            @for (row of this.page?.layout?.body?.rows; track $index) {
+            @for (row of page?.layout?.body?.rows; track $index) {
                 <dotcms-row [row]="row" />
             }
         }
@@ -112,6 +114,8 @@ export class DotcmsLayoutComponent implements OnInit {
     private client!: DotCmsClient;
     protected readonly pageAsset$ = this.pageContextService.currentPage$;
 
+    private uveSubscription?: UVESubscription;
+
     ngOnInit() {
         this.pageContextService.setContext(this.pageAsset, this.components);
 
@@ -127,7 +131,7 @@ export class DotcmsLayoutComponent implements OnInit {
             updateNavigation(pathname || '/');
         });
 
-        this.client.editor.on('changes', (data) => {
+        this.uveSubscription = createUVESubscription('changes', (data) => {
             if (this.onReload) {
                 this.onReload();
 
@@ -137,7 +141,7 @@ export class DotcmsLayoutComponent implements OnInit {
             this.pageContextService.setPageAsset(data as DotCMSPageAsset);
         });
 
-        postMessageToEditor({ action: CUSTOMER_ACTIONS.CLIENT_READY, payload: this.editor });
+        postMessageToEditor({ action: CLIENT_ACTIONS.CLIENT_READY, payload: this.editor });
     }
 
     ngOnDestroy() {
@@ -145,6 +149,6 @@ export class DotcmsLayoutComponent implements OnInit {
             return;
         }
 
-        this.client.editor.off('changes');
+        this.uveSubscription?.unsubscribe();
     }
 }

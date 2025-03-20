@@ -328,7 +328,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             throw new BaseRuntimeInternationalizationException(e);
         }
         final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-        localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
+        localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type));
         notifyContentTypeDestroyed(type);
     }
 

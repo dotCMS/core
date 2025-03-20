@@ -1,0 +1,22 @@
+@use "variables" as *;
+
+.p-splitter {
+    border: 1px solid $color-palette-gray-400;
+    background: $white;
+    border-radius: $border-radius-sm;
+
+    .p-splitter-gutter,
+    .p-splitter-gutter-resizing {
+        background: $color-palette-gray-100;
+
+        .p-splitter-gutter-handle {
+            background: $color-palette-gray-300;
+
+            &:focus-visible {
+                outline: none;
+                outline-offset: 0;
+                box-shadow: $shadow-xs;
+            }
+        }
+    }
+}

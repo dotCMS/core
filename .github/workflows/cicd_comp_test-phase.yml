@@ -37,6 +37,10 @@ on:
         required: false
         type: boolean
         default: false
+      karate:
+        required: false
+        type: boolean
+        default: false
       integration:
         required: false
         type: boolean
@@ -56,7 +60,7 @@ jobs:
   # JVM Unit Tests
   linux-jvm-tests:
     name: JVM Unit Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: inputs.jvm_unit_test || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -69,7 +73,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "JVM Tests"
-          maven-args: "-Pcoverage -Dprod test -pl :dotcms-core"
+          maven-args: " -Dprod test -pl :dotcms-core"
           cleanup-runner: true
           generates-test-results: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -78,7 +82,7 @@ jobs:
   # CLI Tests
   linux-cli-tests:
     name: CLI Tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: inputs.cli || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -102,7 +106,7 @@ jobs:
   # Frontend Tests
   linux-frontend-tests:
     name: Frontend Unit Tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: inputs.frontend || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -124,7 +128,7 @@ jobs:
   # Integration Tests
   linux-integration-tests:
     name: JVM IT Tests ${{matrix.suites.name}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: inputs.integration || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -137,6 +141,7 @@ jobs:
           - { name: "MainSuite 1b", pathName: "mainsuite1b", maven_args: '-Dit.test=MainSuite1b' }
           - { name: "MainSuite 2a", pathName: "mainsuite2a", maven_args: '-Dit.test=MainSuite2a' }
           - { name: "MainSuite 2b", pathName: "mainsuite2b", maven_args: '-Dit.test=MainSuite2b' }
+          - { name: "MainSuite 3a", pathName: "mainsuite3a", maven_args: '-Dit.test=MainSuite3a' }
           - { name: "Junit5 Suite 1", pathName: "junit5suite1", maven_args: '-Dit.test=Junit5Suite1' }
 
     steps:
@@ -147,7 +152,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "IT Tests ${{ matrix.suites.name }}"
-          maven-args: "-Dit.test.forkcount=1 -Pcoverage verify -pl :dotcms-integration -Dcoreit.test.skip=false ${{ matrix.suites.maven_args}}"
+          maven-args: "-Dit.test.forkcount=1 verify -pl :dotcms-integration -Dcoreit.test.skip=false ${{ matrix.suites.maven_args}}"
           generates-test-results: true
           cleanup-runner: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
@@ -158,7 +163,7 @@ jobs:
   # Postman Tests
   linux-postman-tests:
     name: Run Postman Tests - ${{matrix.collection_group}}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: inputs.postman || inputs.run-all-tests
     strategy:
       fail-fast: false
@@ -172,7 +177,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "Postman ${{ matrix.collection_group }}"
-          maven-args: "-Pcoverage verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
+          maven-args: " verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=${{ matrix.collection_group }}"
           generates-test-results: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
           requires-node: true
@@ -180,11 +185,42 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
           cleanup-runner: true
-
-  # E2E Tests
+  # Karate Tests
+  karate-tests:
+    name: Karate Tests - ${{ matrix.suites.name }}
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    if: inputs.karate || inputs.run-all-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        suites:
+          - { name: "Default", pathName: "default", tests: 'KarateCITests#defaults'  }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "Karate ${{ matrix.suites.name }}"
+          maven-args: "verify -pl :dotcms-test-karate -Dkarate.test.skip=false -Dit.test=${{ matrix.suites.tests }}"
+          generates-test-results: true
+          dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
+          requires-node: true
+          needs-docker-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
+          cleanup-runner: true
+      - id: upload-karate-report
+        name: Upload Karate-report
+        uses: actions/upload-artifact@v4
+        with:
+          name: karate-reports
+          path: dotCMS/target/karate-reports
+  # E2E Testsgit 
   linux-e2e-tests:
     name: E2E Tests ${{matrix.suites.name}}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: inputs.e2e || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -203,7 +239,7 @@ jobs:
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "E2E ${{ matrix.suites.name }}"
-          maven-args: "verify -Pcoverage -De2e.test.skip=false ${{ matrix.suites.maven_args}}"
+          maven-args: "verify  -De2e.test.skip=false ${{ matrix.suites.maven_args}}"
           generates-test-results: true
           dotcms-license: ${{ secrets.DOTCMS_LICENSE }}
           requires-node: true

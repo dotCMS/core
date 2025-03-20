@@ -2,14 +2,16 @@ package com.dotcms.cube;
 
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.metrics.timing.TimeMetric;
-import com.dotcms.util.CollectionsUtils;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
@@ -20,9 +22,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * CubeJS Client it allow to send a Request to a Cube JS Server.
+ * CubeJS Client it allows to send a Request to a Cube JS Server.
  * Example:
  *
  * <code>
@@ -38,11 +41,13 @@ import java.util.Map;
  * final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
  * </code>
  */
-public class CubeJSClient {
+public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent> {
 
-    private int PAGE_SIZE = 1000;
+    private static final String CUBEJS_CLIENT_TIMEOUT_KEY = "CUBEJS_CLIENT_TIMEOUT";
+
     private final String url;
     private final AccessToken accessToken;
+    private final AtomicLong cubeJsClientTimeout = new AtomicLong(resolveClientTimeout());
 
     public CubeJSClient(final String url, final AccessToken accessToken) {
         this.url = url;
@@ -98,8 +103,8 @@ public class CubeJSClient {
                     .setHeaders(cubeJsHeaders(accessToken))
                     .setUrl(cubeJsUrl)
                     .setParams(new HashMap<>(Map.of("query", queryAsString)))
-                    .setTimeout(4000)
-                    .setThrowWhenNot2xx(false)
+                    .setTimeout(cubeJsClientTimeout.get())
+                    .setThrowWhenError(false)
                     .build();
         } catch (AnalyticsException e) {
             throw new RuntimeException(e);
@@ -119,18 +124,28 @@ public class CubeJSClient {
         }
     }
 
+    @Override
+    public void notify(final SystemTableUpdatedKeyEvent event) {
+        if (event.getKey().contains(CUBEJS_CLIENT_TIMEOUT_KEY)) {
+            cubeJsClientTimeout.set(resolveClientTimeout());
+        }
+    }
+
+    private long resolveClientTimeout() {
+        return Config.getLongProperty(CUBEJS_CLIENT_TIMEOUT_KEY, 8000);
+    }
+
     private Response<String> getStringResponse(final CircuitBreakerUrl cubeJSClient,
                                                final String cubeJsUrl,
                                                final String queryAsString) {
-            final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
+        final TimeMetric timeMetric = TimeMetric.mark(getClass().getSimpleName());
 
         Logger.debug(this, String.format("Getting results from CubeJs [%s] with query [%s]", cubeJsUrl, queryAsString));
         final Response<String> response = cubeJSClient.doResponse();
 
         timeMetric.stop();
 
-        if (!CircuitBreakerUrl.isWithin2xx(response.getStatusCode())) {
-
+        if (cubeJSClient.isError()) {
             if (400 == response.getStatusCode()) {
                 throw new IllegalArgumentException(response.getResponse());
             }
@@ -148,9 +163,8 @@ public class CubeJSClient {
      */
     private Map<String, String> cubeJsHeaders(final AccessToken accessToken) throws AnalyticsException {
         return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
+            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatToken(accessToken, null))
             .build();
     }
-
 
 }

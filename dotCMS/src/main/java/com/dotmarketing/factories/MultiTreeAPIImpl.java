@@ -152,7 +152,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
-
     @WrapInTransaction
     @Override
     public void deleteMultiTree(final List<MultiTree> mTree) throws DotDataException {
@@ -209,7 +208,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 .addParam(multiTree.getVariantId())
                 .loadResult();
     }
-
 
     @CloseDBIfOpened
     @Override
@@ -274,7 +272,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public java.util.List<MultiTree> getMultiTrees(final Identifier htmlPage, final Identifier container) throws DotDataException {
         return getMultiTrees(htmlPage.getId(), container.getId());
     }
-
 
     @Override
     public java.util.List<MultiTree> getMultiTrees(final String parentInode) throws DotDataException {
@@ -1008,6 +1005,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 pageLoader.invalidate(htmlPage, variantName, PageMode.EDIT_MODE);
                 pageLoader.invalidate(htmlPage, variantName, PageMode.PREVIEW_MODE);
+                pageLoader.invalidate(htmlPage, variantName, PageMode.LIVE);
             }
         } catch (DotStateException | DotSecurityException e) {
 
@@ -1242,8 +1240,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final ContainerUUID containerUUID,
             final Container container) {
 
-
-         if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
+        if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
             return true;
         } else if(pageContents.contains(container.getIdentifier(), ParseContainer.PARSE_CONTAINER_UUID_PREFIX + containerUUID.getUUID())) {
             return true;
@@ -1316,7 +1313,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      *
      * @param layoutChanges
      * @param pageIds
-     * @param variant
      *
      * @throws DotDataException
      */

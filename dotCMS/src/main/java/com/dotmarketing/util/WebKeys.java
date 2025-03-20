@@ -361,6 +361,8 @@ public final class WebKeys {
     public static final String RULES_ACTIONLET_CLASSES = "RULES_ACTIONLET_CLASSES";
     public static final String RULES_CONDITIONLET_VISITEDURLS = "RULES_CONDITIONLET_VISITEDURLS";
     public static final String RULES_ENGINE_PARAM = "dotRules";
+    // stores the rule id that is currently being evaluated
+    public static final String RULES_ENGINE_PARAM_CURRENT_RULE_ID = "dotCurrentRuleId";
     public static final String RULES_ENGINE_FIRE_LIST = "dotRulesFired";
 
 	//ADMIN CONTROL
@@ -695,8 +697,6 @@ public final class WebKeys {
     public static final String DOTCMS_WEBSOCKET = "websocket";
     public static final String DOTCMS_WEBSOCKET_TIME_TO_WAIT_TO_RECONNECT = "dotcms.websocket.reconnect.time";
     public static final String DOTCMS_DISABLE_WEBSOCKET_PROTOCOL = "dotcms.websocket.disable";
-    public static final String DOTCMS_DISABLE_ELASTIC_READONLY_MONITOR = "dotcms_elastic_readyonly_monitor_disable";
-
 	// System Events
 	public static final String WEBSOCKET_SYSTEMEVENTS_ENDPOINT = "websocket.systemevents.endpoint";
 

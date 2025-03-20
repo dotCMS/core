@@ -364,7 +364,8 @@ public class Visitor implements Serializable {
                 ", ipAddress=" + ipAddress +
                 ", selectedLanguage=" + selectedLanguage +
                 ", locale=" + locale +
-                ", persona=" + possiblePersonas +
+                ", persona=" + lastPersona +
+                ", possiblePersonas=" + possiblePersonas +
                 ", accruedTags=" + _accruedTags +
                 ", userAgent=" + userAgent +
                 ", device=" + getDevice() +

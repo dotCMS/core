@@ -6,10 +6,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import graphql.kickstart.servlet.AbstractGraphQLHttpServlet;
 import graphql.kickstart.servlet.GraphQLConfiguration;
-import io.vavr.Function0;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 
 public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
@@ -17,6 +19,21 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
     private static final String CORS_DEFAULT=CorsFilter.CORS_PREFIX + "." + CorsFilter.CORS_DEFAULT;
 
     private static final String CORS_GRAPHQL = CorsFilter.CORS_PREFIX + ".graphql";
+
+    /**
+     * Wrapper to force the request to be a POST
+     */
+    static class PostRequestWrapper extends HttpServletRequestWrapper {
+        public PostRequestWrapper(HttpServletRequest request) {
+            super(request);
+        }
+
+        @Override
+        public String getMethod() {
+            return "POST";
+        }
+    }
+
 
     @Override
     protected GraphQLConfiguration getConfiguration() {
@@ -29,7 +46,16 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest request, final HttpServletResponse response) {
-        handleRequest(request, response);
+
+        if(request.getParameter("qid") == null) {
+            Logger.warn(DotGraphQLHttpServlet.class, "No query id (qid) provided in graphql GET .  This can result in invalid cached data by both browsers and CDNs.  Please provide a distinguishing query id (qid) parameter to execute a graphql query via GET, e.g. /api/v1/graphql?qid=123abc");
+            Try.run(()->response.sendError(500, "No query id (qid) provided.  This can result in invalid cached data by both browsers and CDNs.  Please provide a distinguishing query id (qid) parameter to execute a graphql query via GET, e.g. /api/v1/graphql?qid=123abc"));
+            return;
+        }
+
+        HttpServletRequest wrapper = new PostRequestWrapper(request);
+
+        handleRequest(wrapper, response);
     }
 
     @Override
@@ -39,7 +65,8 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
 
     @Override
     protected void doOptions(final HttpServletRequest request, final HttpServletResponse response) {
-        handleRequest(request, response);
+        corsHeaders.get().forEach(response::setHeader);
+
     }
 
     /**
@@ -48,7 +75,7 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
      * @param response
      */
     protected void handleRequest(HttpServletRequest request, HttpServletResponse response) {
-        corsHeaders.apply().forEach(response::setHeader);
+        corsHeaders.get().forEach(response::setHeader);
         try {
             getConfiguration().getHttpRequestHandler().handle(request, response);
         } catch (Exception t) {
@@ -64,34 +91,32 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
      * those with the specific ones for graphql, api.cors.graphql.access-control-allow-headers
      *
      */
-    protected final Function0<HashMap<String, String>> corsHeaders = Function0.of(() -> {
+    protected final Lazy<HashMap<String, String>> corsHeaders = Lazy.of(() -> {
 
         final HashMap<String, String> headers = new HashMap<>();
         // load defaults
-        Config.subset(CORS_DEFAULT).forEachRemaining(k -> {
-            final String prop = Config.getStringProperty(CORS_DEFAULT + "." + k, null);
+        Config.subsetContainsAsList(CORS_DEFAULT).stream().filter(k -> k.startsWith(CORS_DEFAULT)).forEach(k -> {
+            final String prop = Config.getStringProperty(k, null);
             if (UtilMethods.isSet(prop)) {
-                headers.put(k.toLowerCase(), prop);
+                headers.put(k.replace(CORS_DEFAULT + ".", "").toLowerCase(), prop);
             }
 
         });
         // then override with graph
-        Config.subset(CORS_GRAPHQL).forEachRemaining(k -> {
-            final String prop = Config.getStringProperty(CORS_GRAPHQL + "." + k, null);
+        Config.subsetContainsAsList(CORS_GRAPHQL).stream().filter(k -> k.startsWith(CORS_GRAPHQL)).forEach(k -> {
+            final String prop = Config.getStringProperty(k, null);
             if (UtilMethods.isSet(prop)) {
-                headers.put(k.toLowerCase(), prop);
+                headers.put(k.replace(CORS_GRAPHQL + ".", "").toLowerCase(), prop);
             } else {
                 headers.remove(k.toLowerCase());
             }
 
         });
 
-
-
         return headers;
 
 
-    }).memoized();
+    });
 
 
 

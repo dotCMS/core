@@ -1,30 +1,56 @@
 // cube.js configuration file
-module.exports = {
-    /*
-    contextToAppId: ({ securityContext }) =>
-        `CUBEJS_APP_${securityContext.customerId}`,
-    preAggregationsSchema: ({ securityContext }) =>
-        `pre_aggregations_${securityContext.customerId}`,
-*/
 
-    queryRewrite: (query, { securityContext }) => {
-
-
-        if (!securityContext) {
+function resolveToken(securityContext) {
+    if (!securityContext) {
+        const hasFallback = !!process.env.CUBEJS_OVERRIDE_CUSTOMER && !!process.env.CUBEJS_OVERRIDE_CLUSTER;
+        if (!hasFallback) {
             throw new Error('No valid token');
         }
 
-        const tokenData = securityContext["https://dotcms.com/analytics"];
+        return {
+            clusterId: process.env.CUBEJS_OVERRIDE_CUSTOMER,
+            customerId: process.env.CUBEJS_OVERRIDE_CLUSTER
+        };
+    }
+
+    return securityContext["https://dotcms.com/analytics"];
+}
+
+module.exports = {
+    /*contextToAppId: ({ securityContext }) =>
+        `CUBEJS_APP_${securityContext.customerId}`,
+    preAggregationsSchema: ({ securityContext }) =>
+        `pre_aggregations_${securityContext.customerId}`,*/
+
+    orchestratorOptions: {
+        queryCacheOptions: {
+            refreshKeyRenewalThreshold: 5 * 60 * 1000,
+        },
+    },
+
+    queryRewrite: (query, { securityContext }) => {
+        const tokenData = resolveToken(securityContext);
+        console.log(`tokenData: ${JSON.stringify(tokenData, null, 2)}`);
+        const isRequestQuery = (query.measures + query.dimensions).includes("request.");
+
+        if (isRequestQuery) {
+            if (tokenData.clusterId) {
+                query.filters.push({
+                    member: 'request.clusterId',
+                    operator: 'equals',
+                    values: [tokenData.clusterId],
+                });
+            }
 
             query.filters.push({
-                member: 'Events.clusterId',
+                member: 'request.customerId',
                 operator: 'equals',
-                values: [tokenData.clusterId],
+                values: [tokenData.customerId],
             });
+        }
 
+        console.log(`query: ${JSON.stringify(query, null, 2)}`);
 
         return query;
     },
-
-
 };

@@ -44,7 +44,7 @@ export class DotDropZoneComponent {
      * Max file size in bytes.
      * See Docs: https://www.dotcms.com/docs/latest/binary-field#FieldVariables
      */
-    @Input() maxFileSize: number;
+    @Input() maxFileSize: number | null = null;
 
     @Input() set accept(types: string[]) {
         this._accept = types

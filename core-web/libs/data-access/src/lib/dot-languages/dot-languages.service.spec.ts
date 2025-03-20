@@ -81,4 +81,14 @@ describe('DotLanguagesService', () => {
         spectator.service.getByISOCode('test').subscribe();
         spectator.expectOne(`${LANGUAGE_API_URL}/test`, HttpMethod.GET);
     });
+
+    it('should get language variables', () => {
+        spectator.service.getLanguageVariables().subscribe();
+        spectator.expectOne(`${LANGUAGE_API_URL}/variables`, HttpMethod.GET);
+    });
+
+    it('should get the default language', () => {
+        spectator.service.getDefault().subscribe();
+        spectator.expectOne(`${LANGUAGE_API_URL}/_getdefault`, HttpMethod.GET);
+    });
 });

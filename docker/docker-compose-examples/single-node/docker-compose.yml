@@ -57,6 +57,9 @@ services:
       DOT_ES_ENDPOINTS: 'https://opensearch:9200'
       DOT_INITIAL_ADMIN_PASSWORD: 'admin'
       DOT_DOTCMS_CLUSTER_ID: 'dotcms-production'
+      GLOWROOT_ENABLED: 'true'
+      GLOWROOT_WEB_UI_ENABLED: 'true' # Enable glowroot web ui on localhost.  do not use in production
+
       #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240719/starter-20240719.zip'
     depends_on:
       - db
@@ -70,6 +73,7 @@ services:
     ports:
       - "8082:8082"
       - "8443:8443"
+      - "4000:4000" # Glowroot web ui if enabled
 
 networks:
   db_net:

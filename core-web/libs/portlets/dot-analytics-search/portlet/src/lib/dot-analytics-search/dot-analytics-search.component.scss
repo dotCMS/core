@@ -1,0 +1,82 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: $white;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-3 $spacing-4;
+    gap: $spacing-3;
+
+    section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: $spacing-3;
+        gap: $spacing-3;
+    }
+
+    dot-empty-container {
+        flex-grow: 1;
+    }
+
+    p-splitter {
+        height: 100%;
+
+        ::ng-deep .p-splitter {
+            height: 100%;
+        }
+    }
+
+    ngx-monaco-editor {
+        flex-grow: 1;
+        border: $field-border-size solid $color-palette-gray-400;
+        border-radius: $border-radius-md;
+    }
+
+    .content-analytics__query-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        h4 {
+            font-size: $font-size-md;
+            margin: 0;
+        }
+
+        button {
+            color: $color-palette-gray-500;
+        }
+    }
+
+    .content-analytics__actions {
+        display: flex;
+        gap: $spacing-3;
+        justify-content: flex-end;
+    }
+
+    .content-analytics__results {
+        flex: 2;
+    }
+
+    ::ng-deep {
+        .editor-container {
+            border-radius: $border-radius-md;
+        }
+    }
+
+    pre {
+        font-size: $font-size-sm;
+        background-color: $color-palette-gray-100;
+        border-radius: $border-radius-md;
+        position: relative;
+    }
+
+    .content-analytics__insert-btn {
+        position: absolute;
+        bottom: $spacing-2;
+        right: $spacing-2;
+    }
+}

@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import com.dotcms.analytics.web.AnalyticsWebAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
@@ -15,27 +15,22 @@ import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.Constants;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,13 +51,14 @@ public class HTMLPageAssetRenderedAPIImplTest {
     private final LanguageAPI languageAPI = mock(LanguageAPI.class);
     private final HTMLPageAssetAPI htmlPageAssetAPI = mock(HTMLPageAssetAPI.class);
     private final HttpSession httpSession = mock(HttpSession.class);
-    private HTMLPageAssetRenderedAPIImpl hTMLPageAssetRenderedAPIImpl;
     private final URLMapAPIImpl urlMapAPIImpl = mock(URLMapAPIImpl.class);
     private final LanguageWebAPI languageWebAPI = mock(LanguageWebAPI.class);
+    private HTMLPageAssetRenderedAPIImpl hTMLPageAssetRenderedAPIImpl;
 
     @Before
     public void init() throws DotDataException, DotSecurityException {
         permissionAPI = mock(PermissionAPI.class);
+
 
         userAPI = mock(UserAPI.class);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
@@ -73,10 +69,11 @@ public class HTMLPageAssetRenderedAPIImplTest {
 
         when(languageAPI.getDefaultLanguage()).thenReturn(DEFAULT_LANGUAGE);
         when(DEFAULT_LANGUAGE.getId()).thenReturn(1l);
+        when(languageWebAPI.getLanguage(any(HttpServletRequest.class))).thenReturn(DEFAULT_LANGUAGE);
 
         hTMLPageAssetRenderedAPIImpl = new HTMLPageAssetRenderedAPIImpl(
                 permissionAPI, userAPI, hostWebAPI, languageAPI, htmlPageAssetAPI,
-                urlMapAPIImpl, languageWebAPI);
+                urlMapAPIImpl, languageWebAPI, mock(AnalyticsWebAPI.class));
     }
 
     @Test
@@ -102,8 +99,6 @@ public class HTMLPageAssetRenderedAPIImplTest {
                 PageMode.PREVIEW_MODE.respectAnonPerms)).thenReturn(true);
 
         when(this.hostWebAPI.getCurrentHost(request, systemUser)).thenReturn(currentHost);
-
-        when(languageWebAPI.getLanguage(request)).thenReturn(DEFAULT_LANGUAGE);
 
         final PageMode defaultEditPageMode =
                 hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
@@ -200,7 +195,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
         when(htmlPageAssetAPI.getPageByPath(pageUri, currentHost, DEFAULT_LANGUAGE.getId(),
                 PageMode.PREVIEW_MODE.showLive)).thenReturn(htmlPage);
 
-        when(languageWebAPI.getLanguage(request)).thenReturn(language);
+        when(languageWebAPI.getLanguage(any(HttpServletRequest.class))).thenReturn(language);
 
         when(urlMapInfo.getContentlet()).thenReturn(contentlet);
         when(urlMapInfo.getIdentifier()).thenReturn(identifier);

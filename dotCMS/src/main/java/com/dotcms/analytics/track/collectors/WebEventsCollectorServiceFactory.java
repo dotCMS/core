@@ -9,9 +9,12 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 /**
- * This class provides the default implementation for the WebEventsCollectorService
+ * This class provides the default implementation for the {@link WebEventsCollectorService}
+ * interface.
  *
  * @author jsanca
  */
@@ -51,17 +55,26 @@ public class WebEventsCollectorServiceFactory {
         return webEventsCollectorService;
     }
 
-    private static class WebEventsCollectorServiceImpl implements WebEventsCollectorService {
+    /**
+     *
+     */
+    public static class WebEventsCollectorServiceImpl implements WebEventsCollectorService {
 
         private final Collectors baseCollectors = new Collectors();
         private final Collectors eventCreatorCollectors = new Collectors();
 
-        private final EventLogSubmitter submitter = new EventLogSubmitter();
+        private EventLogSubmitter submitter = new EventLogSubmitter();
 
         WebEventsCollectorServiceImpl () {
 
             addCollector(new BasicProfileCollector(), new FilesCollector(), new PagesCollector(),
-                    new PageDetailCollector(), new SyncVanitiesCollector(), new AsyncVanitiesCollector());
+                    new PageDetailCollector(), new SyncVanitiesCollector(), new AsyncVanitiesCollector(),
+                    new CustomerEventCollector(), new HttpResponseCollector());
+        }
+
+        @VisibleForTesting
+        WebEventsCollectorServiceImpl(final EventLogSubmitter submitter) {
+            this.submitter = submitter;
         }
 
         @Override
@@ -78,16 +91,27 @@ public class WebEventsCollectorServiceFactory {
             }
         }
 
-        private void fireCollectorsAndEmitEvent(final HttpServletRequest request,
+        /**
+         * Allows to fire the collections and emit the event from a base payload map already built by the user
+         * @param request
+         * @param response
+         * @param requestMatcher
+         * @param basePayloadMap
+         */
+        @Override
+        public void fireCollectorsAndEmitEvent(final HttpServletRequest request,
                                                 final HttpServletResponse response,
-                                                final RequestMatcher requestMatcher) {
+                                                final RequestMatcher requestMatcher,
+                                               final Map<String, Serializable> basePayloadMap,
+                                               final Map<String, Object> baseContextMap) {
 
             final Character character = WebAPILocator.getCharacterWebAPI().getOrCreateCharacter(request, response);
             final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
 
-            final CollectorPayloadBean base = new ConcurrentCollectorPayloadBean();
+            final CollectorPayloadBean base = UtilMethods.isSet(basePayloadMap)?
+                    new ConcurrentCollectorPayloadBeanWithBaseMap(basePayloadMap): new ConcurrentCollectorPayloadBean();
             final CollectorContextMap syncCollectorContextMap =
-                    new RequestCharacterCollectorContextMap(request, character, requestMatcher);
+                    new RequestCharacterCollectorContextMap(request, character, requestMatcher, baseContextMap);
 
             Logger.debug(this, ()-> "Running sync collectors");
 
@@ -99,7 +123,7 @@ public class WebEventsCollectorServiceFactory {
             // if there is anything to run async
             final PageMode pageMode = PageMode.get(request);
             final CollectorContextMap collectorContextMap = new CharacterCollectorContextMap(character, requestMatcher,
-                    getCollectorContextMap(request, pageMode, site));
+                    getCollectorContextMap(request, pageMode, site), baseContextMap);
 
             try {
                 this.submitter.logEvent(
@@ -115,9 +139,16 @@ public class WebEventsCollectorServiceFactory {
                                     .map(CollectorPayloadBean::toMap)
                                     .collect(java.util.stream.Collectors.toList());
                         }));
-            } catch (Exception e) {
+            } catch (Exception e) { // todo: should we catch a more specific exception?
                 Logger.debug(WebEventsCollectorServiceFactory.class, () -> "Error saving Analytics Events:" + e.getMessage());
             }
+        }
+
+        private void fireCollectorsAndEmitEvent(final HttpServletRequest request,
+                                                final HttpServletResponse response,
+                                                final RequestMatcher requestMatcher) {
+
+            this.fireCollectorsAndEmitEvent(request, response, requestMatcher, Map.of(), Map.of());
         }
 
         private static Map<String, Object> getCollectorContextMap(final HttpServletRequest request,

@@ -1,0 +1,35 @@
+<p-sidebar
+    [blockScroll]="true"
+    [closeOnEscape]="false"
+    [dismissible]="false"
+    [showCloseIcon]="false"
+    [visible]="!!contentlet()"
+    data-testId="sidebar"
+    position="right">
+    <div class="container" (keydown.escape)="$event.stopPropagation()" data-testId="dot-container">
+        @if (contentlet(); as contentlet) {
+            <dot-block-editor
+                [field]="contentlet.field"
+                [value]="contentlet.content"
+                [languageId]="contentlet.language"
+                (valueChange)="value.set($event)"
+                data-testId="dot-block-editor" />
+        }
+        <footer>
+            <button
+                pButton
+                (click)="close()"
+                [label]="'Cancel' | dm"
+                [disabled]="loading()"
+                class="p-button-outlined"
+                data-testId="cancel-btn"></button>
+            <button
+                pButton
+                (click)="saveEditorChanges()"
+                [disabled]="!value() || loading()"
+                [label]="'Save' | dm"
+                [loading]="loading()"
+                data-testId="save-btn"></button>
+        </footer>
+    </div>
+</p-sidebar>

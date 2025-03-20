@@ -80,7 +80,7 @@ const meta: Meta<Args> = {
             description: 'Whether to display a remove icon.'
         },
         styles: {
-            options: [DEFAULT, 'p-chip-outlined', 'p-chip-filled'],
+            options: [DEFAULT, 'p-chip-outlined', 'p-chip-filled', 'p-chip-dashed'],
             control: { type: 'radio' }
         },
         size: {

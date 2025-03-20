@@ -70,4 +70,43 @@ public abstract class AbstractSaveContentTypeRequest extends ContentType {
 
     }
 
+    /**
+     * Custom Builder to handle the typeInf attribute.
+     */
+    public static class Builder extends SaveContentTypeRequest.Builder {
+
+        private Class<? extends ContentType> typeInf = SimpleContentType.class;
+
+        /**
+         * Sets the typeInf attribute based on the provided ContentType instance.
+         *
+         * @param in the ContentType instance
+         * @return the updated SaveContentTypeRequest.Builder
+         */
+        public SaveContentTypeRequest.Builder of(ContentType in) {
+            this.typeInf = in.getClass();
+            return from(in);
+        }
+
+        /**
+         * Builds the SaveContentTypeRequest and sets the typeInf attribute.
+         *
+         * @return the built SaveContentTypeRequest
+         */
+        @Override
+        public SaveContentTypeRequest build() {
+            this.typeInf(typeInf);
+            return super.build();
+        }
+    }
+
+    /**
+     * Helper method to create the custom Builder.
+     *
+     * @return a new instance of the custom Builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
 }

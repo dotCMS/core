@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 /**
  * Event fired when a job completes successfully.
  */
-public class JobCompletedEvent {
+public class JobCompletedEvent implements JobEvent {
 
     private final Job job;
     private final LocalDateTime completedAt;

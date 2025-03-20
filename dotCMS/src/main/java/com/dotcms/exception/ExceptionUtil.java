@@ -133,6 +133,25 @@ public class ExceptionUtil {
     }
 
     /**
+     * Iterate through the entire cause chain of the exception until an instance of the specified exceptionClass is found
+     *
+     * @param exception thrown
+     * @param exceptionClass Exception class to look for
+     * @return An Optional with the Exception found if it exists otherwise return an empty Optional
+     */
+    public static Optional<Throwable> get(final Throwable exception, final Class <? extends Throwable> exceptionClass) {
+
+        Throwable t = exception;
+        while (t != null) {
+            if (t.getClass().equals(exceptionClass)) {
+                return Optional.of(t);
+            }
+            t = t.getCause();
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Returns true if the Throwable is instance or contains a cause of the specified on any of the exceptionClasses
      * @param e
      * @param exceptionClasses

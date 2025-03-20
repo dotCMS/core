@@ -6,7 +6,10 @@ import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.model.OpenAIModel;
 import com.dotcms.ai.model.OpenAIModels;
 import com.dotcms.ai.model.SimpleModel;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -26,6 +29,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -35,52 +41,39 @@ import java.util.stream.Collectors;
  *
  * @author vico
  */
-public class AIModels {
+public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
 
     private static final String SUPPORTED_MODELS_KEY = "supportedModels";
     private static final String AI_MODELS_FETCH_ATTEMPTS_KEY = "ai.models.fetch.attempts";
-    private static final int AI_MODELS_FETCH_ATTEMPTS = Config.getIntProperty(AI_MODELS_FETCH_ATTEMPTS_KEY, 3);
     private static final String AI_MODELS_FETCH_TIMEOUT_KEY = "ai.models.fetch.timeout";
-    private static final int AI_MODELS_FETCH_TIMEOUT = Config.getIntProperty(AI_MODELS_FETCH_TIMEOUT_KEY, 4000);
     private static final String AI_MODELS_API_URL_KEY = "AI_MODELS_API_URL";
     private static final String AI_MODELS_API_URL_DEFAULT = "https://api.openai.com/v1/models";
-    private static final String AI_MODELS_API_URL = Config.getStringProperty(
-            AI_MODELS_API_URL_KEY,
-            AI_MODELS_API_URL_DEFAULT);
     private static final int AI_MODELS_CACHE_TTL = 28800;  // 8 hours
     private static final int AI_MODELS_CACHE_SIZE = 256;
     private static final Lazy<AIModels> INSTANCE = Lazy.of(AIModels::new);
+    public static final String BEARER = "Bearer ";
 
     private final ConcurrentMap<String, List<Tuple2<AIModelType, AIModel>>> internalModels;
     private final ConcurrentMap<Tuple3<String, Model, AIModelType>, AIModel> modelsByName;
     private final Cache<String, Set<String>> supportedModelsCache;
+    private final AtomicInteger modelsFetchAttempts;
+    private final AtomicLong modelsFetchTimeout;
+    private final AtomicReference<String> aiModelsApiUrl;
 
     public static AIModels get() {
         return INSTANCE.get();
     }
 
-    private static CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final String apiKey) {
-        final CircuitBreakerUrl.Response<OpenAIModels> response = CircuitBreakerUrl.builder()
-                .setMethod(CircuitBreakerUrl.Method.GET)
-                .setUrl(AI_MODELS_API_URL)
-                .setTimeout(AI_MODELS_FETCH_TIMEOUT)
-                .setTryAgainAttempts(AI_MODELS_FETCH_ATTEMPTS)
-                .setHeaders(CircuitBreakerUrl.authHeaders("Bearer " + apiKey))
-                .setThrowWhenNot2xx(true)
-                .build()
-                .doResponse(OpenAIModels.class);
+    private static int resolveModelsFetchAttempts() {
+        return Config.getIntProperty(AI_MODELS_FETCH_ATTEMPTS_KEY, 90);
+    }
 
-        if (!CircuitBreakerUrl.isSuccessResponse(response)) {
-            AppConfig.debugLogger(
-                    AIModels.class,
-                    () -> String.format(
-                            "Error fetching OpenAI supported models from [%s] (status code: [%d])",
-                            AI_MODELS_API_URL,
-                            response.getStatusCode()));
-            throw new DotRuntimeException("Error fetching OpenAI supported models");
-        }
+    private static long resolveModelsFetchTimeout() {
+        return Config.getLongProperty(AI_MODELS_FETCH_TIMEOUT_KEY, 4000);
+    }
 
-        return response;
+    private static String resolveAiModelsApiUrl() {
+        return Config.getStringProperty(AI_MODELS_API_URL_KEY, AI_MODELS_API_URL_DEFAULT);
     }
 
     private AIModels() {
@@ -91,6 +84,10 @@ public class AIModels {
                         .expireAfterWrite(Duration.ofSeconds(AI_MODELS_CACHE_TTL))
                         .maximumSize(AI_MODELS_CACHE_SIZE)
                         .build();
+        modelsFetchAttempts = new AtomicInteger(resolveModelsFetchAttempts());
+        modelsFetchTimeout = new AtomicLong(resolveModelsFetchTimeout());
+        aiModelsApiUrl = new AtomicReference<>(resolveAiModelsApiUrl());
+        APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
     }
 
     /**
@@ -98,10 +95,11 @@ public class AIModels {
      * are already loaded, this method does nothing. It also maps model names to their
      * corresponding AIModel instances.
      *
-     * @param host the host for which the models are being loaded
+     * @param appConfig app config
      * @param loading the list of AI models to load
      */
-    public void loadModels(final String host, final List<AIModel> loading) {
+    public void loadModels(final AppConfig appConfig, final List<AIModel> loading) {
+        final String host = appConfig.getHost();
         final List<Tuple2<AIModelType, AIModel>> added = internalModels.putIfAbsent(
                 host,
                 loading.stream()
@@ -112,7 +110,7 @@ public class AIModels {
                 .forEach(model -> {
                     final Tuple3<String, Model, AIModelType> key = Tuple.of(host, model, aiModel.getType());
                     if (modelsByName.containsKey(key)) {
-                        AppConfig.debugLogger(
+                        appConfig.debugLogger(
                                 getClass(),
                                 () -> String.format(
                                         "Model [%s] already exists for host [%s], ignoring it",
@@ -122,7 +120,10 @@ public class AIModels {
                     }
                     modelsByName.putIfAbsent(key, aiModel);
                 }));
-        activateModels(host, added == null);
+
+        if (added == null) {
+            activateModels(host);
+        }
     }
 
     /**
@@ -230,11 +231,11 @@ public class AIModels {
         }
 
         if (!appConfig.isEnabled()) {
-            AppConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty set of supported models");
+            appConfig.debugLogger(getClass(), () -> "dotAI is not enabled, returning empty set of supported models");
             return Set.of();
         }
 
-        final CircuitBreakerUrl.Response<OpenAIModels> response = fetchOpenAIModels(appConfig.getApiKey());
+        final CircuitBreakerUrl.Response<OpenAIModels> response = fetchOpenAIModels(appConfig);
         if (Objects.nonNull(response.getResponse().getError())) {
             throw new DotRuntimeException("Found error in AI response: " + response.getResponse().getError().getMessage());
         }
@@ -273,16 +274,48 @@ public class AIModels {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void notify(final SystemTableUpdatedKeyEvent event) {
+        Logger.info(this, String.format("Notify for event [%s]", event.getKey()));
+        if (event.getKey().contains(AI_MODELS_FETCH_ATTEMPTS_KEY)) {
+            modelsFetchAttempts.set(resolveModelsFetchAttempts());
+        } else if (event.getKey().contains(AI_MODELS_FETCH_TIMEOUT_KEY)) {
+            modelsFetchTimeout.set(Config.getIntProperty(AI_MODELS_FETCH_TIMEOUT_KEY, 14));
+        } else if (event.getKey().contains(AI_MODELS_API_URL_KEY)) {
+            aiModelsApiUrl.set(resolveAiModelsApiUrl());
+        }
+    }
+
     @VisibleForTesting
     void cleanSupportedModelsCache() {
         supportedModelsCache.invalidate(SUPPORTED_MODELS_KEY);
     }
 
-    private void activateModels(final String host, boolean wasAdded) {
-        if (!wasAdded) {
-            return;
+    private CircuitBreakerUrl.Response<OpenAIModels> fetchOpenAIModels(final AppConfig appConfig) {
+        final CircuitBreakerUrl.Response<OpenAIModels> response = CircuitBreakerUrl.builder()
+                .setMethod(CircuitBreakerUrl.Method.GET)
+                .setUrl(aiModelsApiUrl.get())
+                .setTimeout(modelsFetchTimeout.get())
+                .setTryAgainAttempts(modelsFetchAttempts.get())
+                .setAuthHeaders(BEARER + appConfig.getApiKey())
+                .setThrowWhenError(true)
+                .build()
+                .doResponse(OpenAIModels.class);
+
+        if (!CircuitBreakerUrl.isSuccessResponse(response)) {
+            appConfig.debugLogger(
+                    AIModels.class,
+                    () -> String.format(
+                            "Error fetching OpenAI supported models from [%s] (status code: [%d])",
+                            aiModelsApiUrl.get(),
+                            response.getStatusCode()));
+            throw new DotRuntimeException("Error fetching OpenAI supported models");
         }
 
+        return response;
+    }
+
+    private void activateModels(final String host) {
         final List<AIModel> aiModels = internalModels.get(host)
                 .stream()
                 .map(tuple -> tuple._2)
@@ -291,8 +324,7 @@ public class AIModels {
         aiModels.forEach(aiModel ->
             aiModel.getModels().forEach(model -> {
                 final String modelName = model.getName().trim().toLowerCase();
-                final ModelStatus status;
-                status = ModelStatus.ACTIVE;
+                final ModelStatus status = ModelStatus.ACTIVE;
                 if (aiModel.getCurrentModelIndex() == AIModel.NOOP_INDEX) {
                     aiModel.setCurrentModelIndex(model.getIndex());
                 }

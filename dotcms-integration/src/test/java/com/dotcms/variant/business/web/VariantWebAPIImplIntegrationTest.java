@@ -2,16 +2,17 @@ package com.dotcms.variant.business.web;
 
 import static org.junit.Assert.assertEquals;
 
+import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockSession;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -21,10 +22,10 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-import net.bytebuddy.utility.RandomString;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -33,6 +34,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
 public class VariantWebAPIImplIntegrationTest {
 
     @BeforeClass
@@ -266,6 +269,24 @@ public class VariantWebAPIImplIntegrationTest {
     @Test
     public void test_getContentletVersionInfoByFallback_should_get_default_content() throws DotDataException {
         final Contentlet content = TestDataUtils.getFileAssetContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
+        ContentletVersionInfo cvi = variantWebAPI.getContentletVersionInfoByFallback(language.getId(), content.getIdentifier(), PageMode.LIVE, APILocator.getUserAPI().getAnonymousUser());
+
+        assertNotNull(cvi);
+    }
+
+
+    /**
+     * Method to test {@link VariantWebAPIImpl#getContentletVersionInfoByFallback(long, String, PageMode, User, boolean)}
+     * When: The dotAsset contentlet does not have a version for the language
+     * Should: Return the default contentlet
+     * @throws DotDataException
+     */
+    @Test
+    public void test_getContentletVersionInfoByFallback_should_get_default_content_for_dotAsset() throws DotDataException {
+        final Contentlet content = TestDataUtils.getDotAssetLikeContentlet(true, APILocator.getLanguageAPI().getDefaultLanguage().getId());
         final Language language = new LanguageDataGen().nextPersisted();
 
         final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();

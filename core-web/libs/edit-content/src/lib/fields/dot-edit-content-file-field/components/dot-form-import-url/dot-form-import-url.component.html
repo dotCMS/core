@@ -1,0 +1,52 @@
+<form (ngSubmit)="onSubmit()" [formGroup]="form" class="url-mode__form" data-testId="form">
+    <div class="url-mode__input-container">
+        <label for="url-input">{{ 'dot.file.field.action.import.from.url' | dm }}</label>
+        <input
+            id="url-input"
+            type="text"
+            autocomplete="off"
+            formControlName="url"
+            pInputText
+            placeholder="https://www.dotcms.com/image.png"
+            aria-label="URL input field"
+            data-testId="url-input" />
+        <div class="error-messsage__container">
+            @let error = store.error();
+            @if (error) {
+                <small class="p-invalid" data-testId="error-msg">
+                    {{ error | dm: [store.allowFiles()] }}
+                </small>
+            } @else {
+                <dot-field-validation-message
+                    [message]="'dot.file.field.action.import.from.url.error.message' | dm"
+                    [field]="form.controls.url"
+                    data-testId="error-message" />
+            }
+        </div>
+    </div>
+    <div class="url-mode__actions">
+        <p-button
+            (click)="cancelUpload()"
+            [label]="'dot.common.cancel' | dm"
+            styleClass="p-button-outlined"
+            type="button"
+            aria-label="Cancel button"
+            data-testId="cancel-button" />
+        <div class="w-7rem">
+            @if (store.isLoading()) {
+                <p-button
+                    [icon]="'pi pi-spin pi-spinner'"
+                    type="button"
+                    aria-label="Loading button"
+                    data-testId="loading-button" />
+            } @else {
+                <p-button
+                    [label]="'dot.common.import' | dm"
+                    [icon]="'pi pi-download'"
+                    type="submit"
+                    aria-label="Import button"
+                    data-testId="import-button" />
+            }
+        </div>
+    </div>
+</form>

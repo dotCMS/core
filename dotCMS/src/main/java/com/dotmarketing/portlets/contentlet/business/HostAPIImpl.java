@@ -42,6 +42,8 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -101,7 +103,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
         Host site;
         try{
-            site  = (this.hostCache.getDefaultHost()!=null) ? this.hostCache.getDefaultHost() : getOrCreateDefaultHost();
+            site  = (this.hostCache.getDefaultHost(respectFrontendRoles)!=null) ?
+                    this.hostCache.getDefaultHost(respectFrontendRoles) : getOrCreateDefaultHost(respectFrontendRoles);
 
             APILocator.getPermissionAPI().checkPermission(site, PermissionLevel.READ, user);
             return site;
@@ -140,7 +143,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public Optional<Host> resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         Host host;
-        final Host cachedHostByAlias = hostCache.getHostByAlias(serverName);
+        final Host cachedHostByAlias = hostCache.getHostByAlias(serverName, respectFrontendRoles);
         if (UtilMethods.isSet(() -> cachedHostByAlias.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedHostByAlias.getIdentifier())) {
                 return Optional.empty();
@@ -220,7 +223,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      * @return The {@link Host} object that matches the specified name.
      */
     private Host findByNameNotDefault(final String siteName, final User user, final boolean respectFrontendRoles) {
-        final Host site = this.getHostFactory().bySiteName(siteName);
+        final Host site = this.getHostFactory().bySiteName(siteName, respectFrontendRoles);
         if (null != site) {
             try {
                 checkSitePermission(user, respectFrontendRoles, site);
@@ -234,6 +237,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
+    @CloseDBIfOpened
     public Optional<Host> findByIdOrKey(final String siteIdOrKey, final User user,
                                         final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         checkNotEmpty(siteIdOrKey, IllegalArgumentException.class, "'siteIdOrKey' parameter cannot be null or empty");
@@ -253,7 +257,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     @CloseDBIfOpened
     public Host findByAlias(final String alias, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final Host site = this.getHostFactory().byAlias(alias);
+        final Host site = this.getHostFactory().byAlias(alias, respectFrontendRoles);
         if (null != site) {
             try {
                 checkSitePermission(user, respectFrontendRoles, site);
@@ -298,7 +302,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
 
         Host site = null;
-        Host cachedSiteById = hostCache.getById(id);
+        Host cachedSiteById = hostCache.getById(id, respectFrontendRoles);
         if (UtilMethods.isSet(() -> cachedSiteById.getIdentifier())) {
             if (HostCache.CACHE_404_HOST.equals(cachedSiteById.getIdentifier())) {
                 return null;
@@ -337,90 +341,86 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     @Deprecated
     public List<Host> findAll(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        return this.findAllFromDB(user, respectFrontendRoles);
+        final List<SearchType> searchTypes = respectFrontendRoles ?
+                List.of(SearchType.INCLUDE_SYSTEM_HOST, SearchType.RESPECT_FRONT_END_ROLES) :
+                List.of(SearchType.INCLUDE_SYSTEM_HOST);
+        return this.findAllFromDB(user, searchTypes.toArray(new SearchType[0]));
     }
 
     @Override
     public List<Host> findAll(final User user, final int limit, final int offset, final String sortBy, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-        return this.findPaginatedSitesFromDB(user, limit, offset, sortBy, respectFrontendRoles);
+        final List<SearchType> searchTypes = respectFrontendRoles ?
+                List.of(SearchType.INCLUDE_SYSTEM_HOST, SearchType.RESPECT_FRONT_END_ROLES) :
+                List.of(SearchType.INCLUDE_SYSTEM_HOST);
+        return this.findPaginatedSitesFromDB(user, limit, offset, sortBy,
+                searchTypes.toArray(new SearchType[0]));
     }
 
     @Override
-    public List<Host> findAllFromDB(final User user, final boolean respectFrontendRoles) throws DotDataException,
-            DotSecurityException {
-        return this.findAllFromDB(user, true, respectFrontendRoles);
-    }
-
-    @Override
-    public List<Host> findAllFromDB(final User user, final boolean includeSystemHost,
-                                    final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        return this.findPaginatedSitesFromDB(user, 0, 0, null, includeSystemHost, respectFrontendRoles);
+    @CloseDBIfOpened
+    public List<Host> findAllFromDB(final User user, final SearchType... searchTypes) throws DotDataException, DotSecurityException {
+        return this.findPaginatedSitesFromDB(user, 0, 0, null, searchTypes);
     }
 
     /**
-     * Returns an optionally paginated list of all Sites in your dotCMS content repository, including the System Host.
+     * Returns an optionally paginated list of all Sites in your dotCMS content repository. This method allows you to
+     *      * <b>EXCLUDE</b> the System Host from the result list. It also allows you to get live versions of the sites
+     *      when they are available.
      *
-     * @param user                 The {@link User} performing this action.
-     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
-     *                             lower than zero, this parameter will be ignored.
-     * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
-     *                             lower than zero, this parameter will be ignored.
-     * @param sortBy               Optional sorting criterion, as specified by the available columns in: {@link
-     *                             com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}
-     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
-     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
-     *
+     * @param user        The {@link User} performing this action.
+     * @param limit       Limit of results returned in the response, for pagination purposes. If set equal or
+     *                    lower than zero, this parameter will be ignored.
+     * @param offset      Expected offset of results in the response, for pagination purposes. If set equal or
+     *                    lower than zero, this parameter will be ignored.
+     * @param sortBy      Optional sorting criterion, as specified by the available columns in: {@link
+     *                    com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}
+     * @param searchTypes The search types to be used in the query.
      * @return The list of {@link Host} objects.
-     *
      * @throws DotDataException     An error occurred when accessing the data source.
      * @throws DotSecurityException The specified User does not have the required permissions to perform this
      *                              operation.
      */
     @CloseDBIfOpened
     private List<Host> findPaginatedSitesFromDB(final User user, final int limit, final int offset, final String
-            sortBy, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        return this.findPaginatedSitesFromDB(user, limit, offset, sortBy, true, respectFrontendRoles);
+            sortBy, final SearchType... searchTypes) throws DotDataException, DotSecurityException {
+
+        final boolean respectFrontEndRoles = Arrays.stream(searchTypes).anyMatch(t -> t == SearchType.RESPECT_FRONT_END_ROLES);
+        final boolean includeSystemHost = Arrays.stream(searchTypes).anyMatch(t -> t == SearchType.INCLUDE_SYSTEM_HOST);
+        final boolean liveOnly = Arrays.stream(searchTypes).anyMatch(t -> t == SearchType.LIVE_ONLY);
+
+        final List<Host> siteList = this.getHostFactory().findAll(
+                limit, offset, sortBy, includeSystemHost, liveOnly);
+
+        return filterHostsByPermissions(user, includeSystemHost, respectFrontEndRoles, siteList);
     }
 
     /**
-     * Returns an optionally paginated list of all Sites in your dotCMS content repository. This method allows you to
-     * <b>EXCLUDE</b> the System Host from the result list.
-     *
-     * @param user                 The {@link User} performing this action.
-     * @param limit                Limit of results returned in the response, for pagination purposes. If set equal or
-     *                             lower than zero, this parameter will be ignored.
-     * @param offset               Expected offset of results in the response, for pagination purposes. If set equal or
-     *                             lower than zero, this parameter will be ignored.
-     * @param sortBy               Optional sorting criterion, as specified by the available columns in: {@link
-     *                             com.dotmarketing.common.util.SQLUtil#ORDERBY_WHITELIST}
-     * @param includeSystemHost    If the System Host should be included in the result list, set to {@code true}.
-     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
-     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
-     *
-     * @return The list of {@link Host} objects.
-     *
-     * @throws DotDataException     An error occurred when accessing the data source.
-     * @throws DotSecurityException The specified User does not have the required permissions to perform this
-     *                              operation.
+     * Returns a list of hosts filtered by user read permissions.
+     * @param user                  The {@link User} performing this action.
+     * @param includeSystemHost     If the System Host should be included in the result list, set to {@code true}.
+     * @param respectFrontendRoles  If the User's front-end roles need to be taken into account in order to perform this
+     *                              operation, set to {@code true}. Otherwise, set to {@code false}.
+     * @param siteList              The list of {@link Host} objects to be filtered.
+     * @return                      The list of {@link Host} objects filtered by user read permissions.
      */
-    private List<Host> findPaginatedSitesFromDB(final User user, final int limit, final int offset,
-                                                final String sortBy, final boolean includeSystemHost,
-                                                final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        final List<Host> siteList = this.getHostFactory().findAll(limit, offset, sortBy, includeSystemHost);
+    private List<Host> filterHostsByPermissions(final User user, final boolean includeSystemHost,
+                                                final boolean respectFrontendRoles, final List<Host> siteList) {
         if (null != siteList && !siteList.isEmpty()) {
             return siteList.stream().filter(site -> {
                 try {
-                    if (site.isSystemHost() && !user.isAdmin()){
+                    if (site.isSystemHost() && !user.isAdmin()) {
                         return includeSystemHost &&
-                               APILocator.getPermissionAPI().doesSystemHostHavePermissions(APILocator.systemHost(), user, respectFrontendRoles, Host.class.getCanonicalName());
+                                APILocator.getPermissionAPI().doesSystemHostHavePermissions(
+                                        APILocator.systemHost(), user, respectFrontendRoles,
+                                        Host.class.getCanonicalName());
                     }
                     this.checkSitePermission(user, respectFrontendRoles, site);
                     return true;
                 } catch (final DotDataException | DotSecurityException e) {
                     Logger.warn(this,
                             String.format("An error occurred when checking permissions from User '%s' on " + "Site " +
-                                                  "'%s': %s", user.getUserId(), site.getInode(), e.getMessage()));
+                                    "'%s': %s", user.getUserId(), site.getInode(), e.getMessage()));
                 }
                 return false;
             }).collect(Collectors.toList());
@@ -431,11 +431,17 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     @Override
     public List<Host> findAllFromCache(final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Set<Host> cachedSites = hostCache.getAllSites();
+        Set<Host> cachedSites = hostCache.getAllSites(respectFrontendRoles);
         if(null == cachedSites){
-            final List<Host> allFromDB = findAllFromDB(user, respectFrontendRoles);
-            hostCache.addAll(allFromDB);
-            cachedSites = hostCache.getAllSites();
+            final List<Host> allFromDB = findAllFromDB(
+                    APILocator.systemUser(), SearchType.INCLUDE_SYSTEM_HOST);
+            final List<Host> allFromDBLive = findAllFromDB(
+                    APILocator.systemUser(), SearchType.INCLUDE_SYSTEM_HOST, SearchType.LIVE_ONLY);
+            hostCache.addAll(allFromDB, allFromDBLive);
+            final List<Host> filteredSiteList = filterHostsByPermissions(
+                    user, true, respectFrontendRoles,
+                    new ArrayList<>(hostCache.getAllSites(respectFrontendRoles)));
+            cachedSites = filteredSiteList != null ? new HashSet<>(filteredSiteList) : new HashSet<>();
         }
         return ImmutableList.copyOf(cachedSites);
     }
@@ -484,6 +490,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
         if(hostToBeSaved.isWorking() || hostToBeSaved.isLive()){
             APILocator.getVersionableAPI().setLive(contentletHost);
+            Logger.info(this, "Host " + hostToBeSaved.getHostname() + " is now live");
         }
         Host savedHost =  new Host(contentletHost);
 
@@ -498,8 +505,11 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     public void updateDefaultHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
         // If host is marked as default make sure that no other host is already set to be the default
         if(host.isDefault()) {
-            ContentletAPI conAPI = APILocator.getContentletAPI();
-            List<Host> hosts= findAllFromDB(user, respectFrontendRoles);
+            final ContentletAPI conAPI = APILocator.getContentletAPI();
+            final List<SearchType> searchTypes = respectFrontendRoles ?
+                    List.of(SearchType.INCLUDE_SYSTEM_HOST, SearchType.RESPECT_FRONT_END_ROLES) :
+                    List.of(SearchType.INCLUDE_SYSTEM_HOST);
+            final List<Host> hosts= findAllFromDB(user, searchTypes.toArray(new SearchType[0]));
             Host otherHost;
             Contentlet otherHostContentlet;
             for(Host h : hosts){
@@ -508,7 +518,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                 }
                 // if this host is the default as well then ours should become the only one
                 if(h.isDefault()){
-                    boolean isHostRunning = h.isLive();
+                    final boolean isHostRunning = h.isLive();
                     otherHostContentlet = APILocator.getContentletAPI().checkout(h.getInode(), user, respectFrontendRoles);
                     otherHost =  new Host(otherHostContentlet);
                     hostCache.remove(otherHost);
@@ -518,7 +528,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                     if(host.getMap().containsKey(Contentlet.DISABLE_WORKFLOW))
                         otherHost.setProperty(Contentlet.DISABLE_WORKFLOW,true);
 
-                    Contentlet cont = conAPI.checkin(otherHost, user, respectFrontendRoles);
+                    final Contentlet cont = conAPI.checkin(otherHost, user, respectFrontendRoles);
                     if(isHostRunning) {
                         otherHost = new Host(cont);
                         publish(otherHost, user, respectFrontendRoles);
@@ -704,8 +714,14 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
     }
 
+    /**
+     * Retrieves the default site if exists or creates a new one if required.
+     * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+     *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+     * @return The default site.
+     */
     @CloseDBIfOpened
-    private synchronized Host getOrCreateDefaultHost() throws DotDataException, DotSecurityException {
+    private synchronized Host getOrCreateDefaultHost(final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         final ContentType siteContentType = hostType();
         final List<Field> fields = siteContentType.fields();
@@ -716,7 +732,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             Logger.error(HostAPIImpl.class, message);
             throw new DotDataException(message);
         }
-        final Optional<Host> defaultHostOpt = this.getHostFactory().findDefaultHost(siteContentType.inode(), defaultField.get().dbColumn());
+        final Optional<Host> defaultHostOpt = this.getHostFactory().findDefaultHost(
+                siteContentType.inode(), defaultField.get().dbColumn(), respectFrontendRoles);
         if (defaultHostOpt.isPresent()) {
             return defaultHostOpt.get();
         }
@@ -794,8 +811,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
-    public void updateCache(Host host) {
-        hostCache.remove(host);
+    public void updateCache(Host host) throws DotDataException, DotSecurityException {
+        hostCache.remove(host, false);
         hostCache.clearAliasCache();
         hostCache.add(new Host(host));
     }

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e53e1b4d-87ee-4920-9477-917bb7ad4d95",
+		"_postman_id": "4e56a84e-ecc4-4072-8e09-e0acb5691fb5",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -4109,34 +4109,29 @@
 									"",
 									"pm.test(\"Valid response\", function () {",
 									"    pm.expect(pm.response.text()).to.include(\"Save\");",
+									"});",
+									"",
+									"",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity[0]).to.have.property(\"action\");",
+									"    pm.expect(jsonData.entity[0]).to.have.property(\"firstStep\");",
+									"    pm.expect(jsonData.entity[0]).to.have.property(\"scheme\");",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -4183,32 +4178,19 @@
 									"",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -17535,6 +17517,1632 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "CreateRichText",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test3-11\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateRichText-Again",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test3-11\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR&identifier={{identifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								},
+								{
+									"key": "identifier",
+									"value": "{{identifier}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckHistoryAndComment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"// Test para verificar que el JSON de respuesta tiene las propiedades principales",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"    pm.expect(jsonData).to.have.property(\"errors\");",
+									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
+									"    pm.expect(jsonData).to.have.property(\"messages\");",
+									"    pm.expect(jsonData).to.have.property(\"pagination\");",
+									"    pm.expect(jsonData).to.have.property(\"permissions\");",
+									"});",
+									"",
+									"// Test para verificar que \"entity\" es un array y tiene al menos un elemento",
+									"pm.test(\"Entity is an array and contains items\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.be.an(\"array\").that.is.not.empty;",
+									"});",
+									"",
+									"// Test para verificar las propiedades de los objetos dentro de \"entity\"",
+									"pm.test(\"Each entity item has expected properties\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    entity.forEach(item => {",
+									"        pm.expect(item).to.have.property(\"commentDescription\");",
+									"        pm.expect(item).to.have.property(\"createdDate\");",
+									"        pm.expect(item).to.have.property(\"postedBy\");",
+									"        pm.expect(item).to.have.property(\"roleId\");",
+									"        pm.expect(item).to.have.property(\"taskId\");",
+									"        pm.expect(item).to.have.property(\"type\");",
+									"        ",
+									"        // Verificación de tipo de dato para cada propiedad",
+									"        pm.expect(item.commentDescription).to.be.a(\"string\");",
+									"        pm.expect(item.createdDate).to.be.a(\"number\");",
+									"        pm.expect(item.postedBy).to.be.a(\"string\");",
+									"        pm.expect(item.roleId).to.be.a(\"string\");",
+									"        pm.expect(item.taskId).to.be.a(\"string\");",
+									"        pm.expect(item.type).to.be.a(\"string\");",
+									"    });",
+									"});",
+									"",
+									"// Test para verificar que no hay errores en el array \"errors\"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/tasks/history/comments/{{identifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"tasks",
+								"history",
+								"comments",
+								"{{identifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateComment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// Test to check that the response has a 200 OK status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test to check that the JSON response has the main properties",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"    pm.expect(jsonData).to.have.property(\"errors\");",
+									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
+									"    pm.expect(jsonData).to.have.property(\"messages\");",
+									"    pm.expect(jsonData).to.have.property(\"pagination\");",
+									"    pm.expect(jsonData).to.have.property(\"permissions\");",
+									"});",
+									"",
+									"// Test to check that \"entity\" has the expected properties",
+									"pm.test(\"Entity has expected properties\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.have.property(\"commentDescription\").that.is.a(\"string\");",
+									"    pm.expect(entity).to.have.property(\"createdDate\").that.is.a(\"number\");",
+									"    pm.expect(entity).to.have.property(\"postedBy\").that.is.a(\"string\");",
+									"    pm.expect(entity).to.have.property(\"roleId\").that.is.a(\"string\");",
+									"    pm.expect(entity).to.have.property(\"taskId\").that.is.a(\"string\");",
+									"    pm.expect(entity).to.have.property(\"type\").that.is.a(\"string\");",
+									"",
+									"    // Check specific values",
+									"    pm.expect(entity.type).to.equal(\"WorkflowComment\");",
+									"    pm.expect(entity.postedBy).to.equal(\"Admin User\");",
+									"});",
+									"",
+									"// Test to check that \"errors\" is an empty array",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"comment\":\"This is a postman test\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/{{identifier}}/comments",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"{{identifier}}",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Resetable",
+			"item": [
+				{
+					"name": "CreateContentPreconditions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Title\",\n        \"body\": \"Test Body\",\n        \"contentHost\": \"default\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CheckResetable",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test para verificar que la respuesta tiene el estado 200 OK",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test para verificar que el JSON de respuesta tiene las propiedades principales",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"    pm.expect(jsonData).to.have.property(\"errors\");",
+									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
+									"    pm.expect(jsonData).to.have.property(\"messages\");",
+									"    pm.expect(jsonData).to.have.property(\"pagination\");",
+									"    pm.expect(jsonData).to.have.property(\"permissions\");",
+									"});",
+									"",
+									"// Test para verificar que \"entity\" es un array y tiene al menos un elemento",
+									"pm.test(\"Entity is an array and contains items\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.be.an(\"array\").that.is.not.empty;",
+									"});",
+									"",
+									"// Test para verificar las propiedades de los objetos dentro de \"entity\"",
+									"pm.test(\"Each entity item has expected properties\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    entity.forEach(item => {",
+									"        pm.expect(item).to.have.property(\"actionInputs\").that.is.an(\"array\");",
+									"        pm.expect(item).to.have.property(\"assignable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"commentable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"condition\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"hasArchiveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasDeleteActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasDestroyActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasMoveActionletActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasMoveActionletHasPathActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasOnlyBatchActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasPublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasPushPublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasSaveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasUnarchiveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasUnpublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"icon\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"id\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"name\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextAssign\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextStep\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextStepCurrentStep\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"order\").that.is.a(\"number\");",
+									"        pm.expect(item).to.have.property(\"owner\").that.is.null;",
+									"        pm.expect(item).to.have.property(\"hasResetActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"roleHierarchyForAssign\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"schemeId\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"showOn\").that.is.an(\"array\");",
+									"        ",
+									"        // Verificación adicional: que \"showOn\" contiene valores específicos esperados",
+									"        const allowedShowOnValues = [\"NEW\", \"LISTING\", \"PUBLISHED\", \"UNLOCKED\", \"ARCHIVED\", \"UNPUBLISHED\", \"EDITING\", \"LOCKED\"];",
+									"        item.showOn.forEach(status => {",
+									"            pm.expect(allowedShowOnValues).to.include(status);",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"// Test para verificar que \"errors\" es un array vacío",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions?renderMode=EDITING",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"contentlet",
+								"{{contentletInode}}",
+								"actions"
+							],
+							"query": [
+								{
+									"key": "renderMode",
+									"value": "EDITING"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Resetable",
+			"item": [
+				{
+					"name": "CreateContentPreconditions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"title\": \"Test Title\",\n        \"body\": \"Test Body\",\n        \"contentHost\": \"default\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CheckResetable",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has expected properties\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"entity\");",
+									"    pm.expect(jsonData).to.have.property(\"errors\");",
+									"    pm.expect(jsonData).to.have.property(\"i18nMessagesMap\");",
+									"    pm.expect(jsonData).to.have.property(\"messages\");",
+									"    pm.expect(jsonData).to.have.property(\"pagination\");",
+									"    pm.expect(jsonData).to.have.property(\"permissions\");",
+									"});",
+									"",
+									"pm.test(\"Entity is an array and contains items\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.be.an(\"array\").that.is.not.empty;",
+									"});",
+									"",
+									"pm.test(\"Each entity item has expected properties\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    entity.forEach(item => {",
+									"        pm.expect(item).to.have.property(\"actionInputs\").that.is.an(\"array\");",
+									"        pm.expect(item).to.have.property(\"assignable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"commentable\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"condition\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"hasArchiveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasDeleteActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasDestroyActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasMoveActionletActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasMoveActionletHasPathActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasOnlyBatchActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasPublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasPushPublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasSaveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasUnarchiveActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"hasUnpublishActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"icon\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"id\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"name\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextAssign\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextStep\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"nextStepCurrentStep\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"order\").that.is.a(\"number\");",
+									"        pm.expect(item).to.have.property(\"owner\").that.is.null;",
+									"        pm.expect(item).to.have.property(\"hasResetActionlet\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"roleHierarchyForAssign\").that.is.a(\"boolean\");",
+									"        pm.expect(item).to.have.property(\"schemeId\").that.is.a(\"string\");",
+									"        pm.expect(item).to.have.property(\"showOn\").that.is.an(\"array\");",
+									"        ",
+									"        const allowedShowOnValues = [\"NEW\", \"LISTING\", \"PUBLISHED\", \"UNLOCKED\", \"ARCHIVED\", \"UNPUBLISHED\", \"EDITING\", \"LOCKED\"];",
+									"        item.showOn.forEach(status => {",
+									"            pm.expect(allowedShowOnValues).to.include(status);",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an(\"array\").that.is.empty;",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/contentlet/{{contentletInode}}/actions?renderMode=EDITING",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"contentlet",
+								"{{contentletInode}}",
+								"actions"
+							],
+							"query": [
+								{
+									"key": "renderMode",
+									"value": "EDITING"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "SavingOnDiffLanguageByActionId",
+			"item": [
+				{
+					"name": "CreateFrenchType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"frenchLanguageId\", jsonData.entity.id);",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"languageCode\":\"fr\",\n    \"countryCode\":\"fr\",\n    \"language\":\"French\",\n    \"country\":\"French\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateEnglishContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"englishidentifier\", jsonData.entity.identifier);",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that the Contentlet's english languageId\", function () {",
+									"    pm.expect(jsonData.entity.languageId).to.eql(1);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestEnglishFrench\",\n        \"contentHost\":\"default\",\n        \"body\":\"Body Test\",\n        \"languageId\":1\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR ",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateFrenchContent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let englishidentifier = pm.collectionVariables.get(\"englishidentifier\");",
+									"let frenchLanguageId = pm.collectionVariables.get(\"frenchLanguageId\");",
+									"",
+									"pm.test(\"Check that the Contentlet's french id\", function () {",
+									"    pm.expect(jsonData.entity.identifier).to.eql(englishidentifier);",
+									"});",
+									"",
+									"pm.test(\"Check that the Contentlet's french languageId\", function () {",
+									"    pm.expect(jsonData.entity.languageId).to.eql(frenchLanguageId);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"identifier\":\"{{englishidentifier}}\",\n        \"languageId\":\"{{frenchLanguageId}}\",\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestEnglishFrench\",\n        \"contentHost\":\"default\",\n        \"body\":\"Corps d essai\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/ceca71a0-deee-4999-bd47-b01baa1bcfc8/fire?identifier={{englishidentifier}}&language=1&indexPolicy=WAIT_FOR ",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{englishidentifier}}"
+								},
+								{
+									"key": "language",
+									"value": "1"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateContentOnNonExistingLang",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Invalid request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"identifier\":\"{{englishidentifier}}\",\n        \"languageId\":\"99999999999999\",\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestNonExistingLang\",\n        \"contentHost\":\"default\",\n        \"body\":\"Non existing language\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/ceca71a0-deee-4999-bd47-b01baa1bcfc8/fire?identifier={{englishidentifier}}&language=1&indexPolicy=WAIT_FOR ",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{englishidentifier}}"
+								},
+								{
+									"key": "language",
+									"value": "1"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR "
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Creates a French language and them creates a rich text in english and finally the french version of the english one previously created\n\nshould has the same id but diff language\n\nSince will use the system working, uses the safe action to creates the contentlets"
+		},
+		{
+			"name": "Metadata",
+			"item": [
+				{
+					"name": "UpdateArchiveActionAsPrimary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionId\": \"4da13a42-5d59-480c-ad8f-94a3adf809fe\",\n    \"actionCondition\": \"\",\n    \"metadata\": {\n        \"primary\":true\n    },\n    \"whoCanUse\":[],\n    \"actionName\": \"Archive\",\n    \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n    \"actionNextStep\": \"d6b095b6-b65f-4bdb-bbfd-701d663dfee2\",\n    \"actionRoleHierarchyForAssign\": false,\n    \"schemeId\": \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n    \"showOn\": [\n        \"ARCHIVED\",\n        \"LISTING\",\n        \"UNLOCKED\",\n        \"UNPUBLISHED\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/4da13a42-5d59-480c-ad8f-94a3adf809fe",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"4da13a42-5d59-480c-ad8f-94a3adf809fe"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WFActionSeparators",
+			"item": [
+				{
+					"name": "Add Separator",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonDataAsText = pm.response.text();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Do not contains a separator\", function () {",
+									"    let textToCheck = \"SEPARATOR\";",
+									"    pm.expect(jsonDataAsText).to.include(textToCheck);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"schemeId\":\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\",\n    \"stepId\":\"6cb7e3bd-1710-4eed-8838-d3db60f78f19\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/separator",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"separator"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetInitialStepsWithoutSeparators",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonDataAsText = pm.response.text();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Do not contains a separator\", function () {",
+									"    let textToCheck = \"SEPARATOR\";",
+									"    pm.expect(jsonDataAsText).to.not.include(textToCheck);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/webPageContent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"initialactions",
+								"contenttype",
+								"webPageContent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetInitialStepsWithSeparator",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonDataAsText = pm.response.text();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Do contains a separator\", function () {",
+									"    let textToCheck = \"SEPARATOR\";",
+									"    pm.expect(jsonDataAsText).to.include(textToCheck);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/webPageContent?includeSeparator=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"initialactions",
+								"contenttype",
+								"webPageContent"
+							],
+							"query": [
+								{
+									"key": "includeSeparator",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CheckActionletHasMovePropsWhenMoveActionlet",
+			"item": [
+				{
+					"name": "CreateTestScheme",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200, Scheme already exist\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"schemeId\", jsonData.entity.id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"schemeName\": \"REST1\", \"schemeDescription\": \"rest1\", \"schemeArchived\": \"false\"}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes"
+							]
+						},
+						"description": "Creates a new scheme \n\n@Path(\"/schemes\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CreateTestStep",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"stepId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"stepIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"schemeId\": \"{{schemeId}}\",\n    \"stepName\": \"My Move step\",\n    \"enableEscalation\": false,\n    \"escalationAction\": \"\",\n    \"escalationTime\": \"0\",\n    \"stepResolved\": false\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/steps",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"steps"
+							]
+						},
+						"description": "Add a new workflow step \n\n@Path(\"/steps\")"
+					},
+					"response": []
+				},
+				{
+					"name": "CreateWfAction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"actionId\", jsonData.entity.id);",
+									"pm.collectionVariables.set(\"actionIdShorty\", jsonData.entity.id.replace(\"-\",\"\").substring(0,10));"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"stepId\": \"{{stepId}}\",\n      \"actionName\": \"Move Test\",\n      \"schemeId\": \"{{schemeId}}\",\n      \"actionCondition\": \"\",\n      \"actionNextStep\": \"currentstep\",\n      \"actionNextAssign\": \"654b0931-1027-41f7-ad4d-173115ed8ec1\",\n      \"actionRoleHierarchyForAssign\": false,\n      \"actionAssignable\": false,\n      \"actionCommentable\": true,\n      \"whoCanUse\":[],\n      \"showOn\": [\n        \"UNPUBLISHED\",\n        \"NEW\",\n        \"LOCKED\",\n        \"PUBLISHED\"\n      ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions"
+							]
+						},
+						"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n\n@Path(\"/actions\")"
+					},
+					"response": []
+				},
+				{
+					"name": "RelActionToStep",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Ok\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"actionId\": \"{{actionId}}\" }"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/steps/{{stepId}}/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"steps",
+								"{{stepId}}",
+								"actions"
+							]
+						},
+						"description": "This method saves the actions and associate to a specific step\n\n@Path(\"/steps/{stepId}/actions\")"
+					},
+					"response": []
+				},
+				{
+					"name": "AddMoveActionletToTheAction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"actionletClass\":\"com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}/actionlets",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"{{actionId}}",
+								"actionlets"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckMoveAttrsOn",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"hasMoveActionletActionlet Check\", function () {",
+									"    pm.expect(jsonData.entity.hasMoveActionletActionlet).to.be.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"{{actionId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckExportScheme",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 \", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"hasMoveActionletActionlet Check\", function () {",
+									"    pm.expect(jsonData.entity.workflowObject.actions[0].hasMoveActionletActionlet).to.be.eql(true);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/{{schemeId}}/export",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"{{schemeId}}",
+								"export"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -17632,6 +19240,30 @@
 		},
 		{
 			"key": "fireActionLanguageKey",
+			"value": ""
+		},
+		{
+			"key": "identifier",
+			"value": ""
+		},
+		{
+			"key": "frenchLanguageId",
+			"value": ""
+		},
+		{
+			"key": "stepId",
+			"value": ""
+		},
+		{
+			"key": "stepIdShorty",
+			"value": ""
+		},
+		{
+			"key": "actionId",
+			"value": ""
+		},
+		{
+			"key": "actionIdShorty",
 			"value": ""
 		}
 	]

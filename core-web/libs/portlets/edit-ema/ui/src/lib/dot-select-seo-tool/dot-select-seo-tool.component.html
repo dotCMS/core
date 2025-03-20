@@ -5,10 +5,10 @@
             class="dot-select-seo-tool__icon"
             data-testId="select-seo-tool-icon"></i>
         <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
-            {{ socialMediaTiles[socialMedia]?.label }}
+            {{ SOCIAL_MEDIA_TILES[socialMedia]?.label }}
         </h5>
         <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">
-            {{ socialMediaTiles[socialMedia]?.description | dm }}
+            {{ SOCIAL_MEDIA_TILES[socialMedia]?.description | dm }}
         </span>
     </div>
 </ng-container>

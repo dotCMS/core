@@ -12,6 +12,14 @@ public class ConcurrentCollectorPayloadBean implements CollectorPayloadBean {
 
     private final ConcurrentHashMap<String, Serializable> map = new ConcurrentHashMap<>();
 
+    public ConcurrentCollectorPayloadBean() {
+        // empty
+    }
+
+    public ConcurrentCollectorPayloadBean(final Map<String, Serializable> customMap) {
+        map.putAll(customMap);
+    }
+
     @Override
     public CollectorPayloadBean put(final String key, final Serializable value) {
         if (null != value) {

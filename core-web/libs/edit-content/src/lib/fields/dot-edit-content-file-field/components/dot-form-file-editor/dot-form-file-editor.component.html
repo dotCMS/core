@@ -1,0 +1,60 @@
+<form (ngSubmit)="onSubmit()" [formGroup]="form" class="editor-mode__form">
+    @if (store.allowFileNameEdit()) {
+        <div class="editor-mode__input-container">
+            <label class="p-label-input-required" data-testId="editor-label" for="file-name">
+                {{ 'dot.file.field.action.create.new.file.label' | dm }}
+            </label>
+            <input
+                id="file-name"
+                autocomplete="off"
+                formControlName="name"
+                pInputText
+                placeholder="Ex. template.html"
+                type="text"
+                data-testId="editor-file-name" />
+            <div class="error-message">
+                @let error = store.error();
+                @if (error) {
+                    <small class="p-invalid" data-testId="error-msg">
+                        {{ error | dm: [store.allowFiles()] }}
+                    </small>
+                } @else {
+                    <dot-field-validation-message
+                        [field]="nameField"
+                        [patternErrorMessage]="'dot.file.field.error.type.file.not.extension'"
+                        data-testId="error-message" />
+                }
+            </div>
+        </div>
+    }
+    <div class="file-field__editor-container">
+        <ngx-monaco-editor
+            [class.file-field__code-editor--disabled]="form.disabled"
+            [options]="store.monacoConfig()"
+            (init)="onEditorInit($event)"
+            class="file-field__code-editor"
+            data-testId="code-editor"
+            formControlName="content" />
+
+        @let file = store.file();
+        <div [class.editor-mode__helper--visible]="file.mimeType" class="editor-mode__helper">
+            <i class="pi pi-info-circle"></i>
+            <small>Mime Type: {{ file.mimeType }}</small>
+        </div>
+    </div>
+    <div class="editor-mode__actions">
+        <p-button
+            (click)="cancelUpload()"
+            [label]="'dot.common.cancel' | dm"
+            aria-label="Cancel button"
+            data-testId="cancel-button"
+            styleClass="p-button-outlined"
+            type="button" />
+
+        <p-button
+            [label]="'dot.common.save' | dm"
+            aria-label="Import button"
+            data-testId="import-button"
+            type="submit" />
+    </div>
+</form>

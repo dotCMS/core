@@ -36,6 +36,7 @@
             <div class="file-field__actions">
                 @if (store.allowURLImport()) {
                     <p-button
+                        (click)="showImportUrlDialog()"
                         [label]="'dot.file.field.action.import.from.url' | dm"
                         data-testId="action-import-from-url"
                         icon="pi pi-link"
@@ -43,6 +44,7 @@
                 }
                 @if (store.allowExistingFile()) {
                     <p-button
+                        (click)="showSelectExistingFileDialog()"
                         [label]="'dot.file.field.action.select.existing.file' | dm"
                         data-testId="action-existing-file"
                         icon="pi pi-file"
@@ -50,6 +52,7 @@
                 }
                 @if (store.allowCreateFile()) {
                     <p-button
+                        (click)="showFileEditorDialog()"
                         [label]="'dot.file.field.action.create.new.file' | dm"
                         data-testId="action-new-file"
                         icon="pi pi-code"
@@ -57,6 +60,10 @@
                 }
                 @if (store.allowGenerateImg()) {
                     <p-button
+                        [disabled]="!$isAIPluginInstalled()"
+                        tooltipPosition="bottom"
+                        [pTooltip]="$tooltipTextAIBtn()"
+                        (click)="showAIImagePromptDialog()"
                         tooltipPosition="bottom"
                         data-testId="action-generate-with-ai"
                         [label]="'dot.file.field.action.generate.with.dotai' | dm"
@@ -87,10 +94,11 @@
             <dot-spinner data-testId="loading" />
         }
         @case ('preview') {
-            @if (store.previewFile()) {
+            @let uploadedFile = store.uploadedFile();
+            @if (uploadedFile) {
                 <dot-file-field-preview
                     (removeFile)="store.removeFile()"
-                    [previewFile]="store.previewFile()" />
+                    [previewFile]="uploadedFile" />
             }
         }
     }

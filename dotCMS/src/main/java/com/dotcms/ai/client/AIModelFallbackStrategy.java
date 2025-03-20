@@ -8,20 +8,15 @@ import com.dotcms.ai.domain.AIResponseData;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIAllModelsExhaustedException;
 import com.dotcms.ai.validator.AIAppValidator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -55,23 +50,24 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
      * @param client the AI client to which the request is sent
      * @param handler the response evaluator to handle the response
      * @param request the AI request to be processed
-     * @param output the output stream to which the response will be written
+     * @param incoming the output stream to which the response will be written
+     * @return response data object
      * @throws DotAIAllModelsExhaustedException if all models are exhausted and no successful response is obtained
      */
     @Override
-    public void applyStrategy(final AIClient client,
-                              final AIResponseEvaluator handler,
-                              final AIRequest<? extends Serializable> request,
-                              final OutputStream output) {
+    public AIResponseData applyStrategy(final AIClient client,
+                                        final AIResponseEvaluator handler,
+                                        final AIRequest<? extends Serializable> request,
+                                        final OutputStream incoming) {
         final JSONObjectAIRequest jsonRequest = AIClient.useRequestOrThrow(request);
         final Tuple2<AIModel, Model> modelTuple = resolveModel(jsonRequest);
 
-        final AIResponseData firstAttempt = sendAttempt(client, handler, jsonRequest, output, modelTuple);
+        final AIResponseData firstAttempt = sendRequest(client, handler, jsonRequest, incoming, modelTuple);
         if (firstAttempt.isSuccess()) {
-            return;
+            return firstAttempt;
         }
 
-        runFallbacks(client, handler, jsonRequest, output, modelTuple);
+        return runFallbacks(client, handler, jsonRequest, incoming, modelTuple);
     }
 
     private static Tuple2<AIModel, Model> resolveModel(final JSONObjectAIRequest request) {
@@ -96,16 +92,12 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
     }
 
     private static boolean isSameAsFirst(final Model firstAttempt, final Model model) {
-        if (firstAttempt.equals(model)) {
-            return true;
-        }
-
-        return false;
+        return firstAttempt.equals(model);
     }
 
-    private static boolean isOperational(final Model model) {
+    private static boolean isOperational(final Model model, final AppConfig config) {
         if (!model.isOperational()) {
-            AppConfig.debugLogger(
+            config.debugLogger(
                     AIModelFallbackStrategy.class,
                     () -> String.format("Model [%s] is not operational. Skipping.", model.getName()));
             return false;
@@ -114,48 +106,57 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         return true;
     }
 
-    private static AIResponseData doSend(final AIClient client, final AIRequest<? extends Serializable> request) {
-        final ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private static AIResponseData doSend(final AIClient client,
+                                         final JSONObjectAIRequest request,
+                                         final OutputStream incoming,
+                                         final boolean isStream) {
+        final OutputStream output = Optional.ofNullable(incoming).orElseGet(ByteArrayOutputStream::new);
         client.sendRequest(request, output);
 
-        final AIResponseData responseData = new AIResponseData();
-        responseData.setResponse(output.toString());
-        IOUtils.closeQuietly(output);
-
-        return responseData;
+        return AIClientStrategy.response(output, isStream);
     }
 
-    private static void redirectOutput(final OutputStream output, final String response) {
-        try (final InputStream input = new ByteArrayInputStream(response.getBytes(StandardCharsets.UTF_8))) {
-            IOUtils.copy(input, output);
-        } catch (IOException e) {
-            throw new DotRuntimeException(e);
+    private static void notifyFailure(final AIModel aiModel, final JSONObjectAIRequest request) {
+        AIAppValidator.get().validateModelsUsage(aiModel, request);
+    }
+
+    private static void handleResponse(final Tuple2<AIModel, Model> modelTuple,
+                                       final JSONObjectAIRequest request,
+                                       final AIResponseData responseData) {
+        if (responseData.isSuccess()) {
+            request.getConfig().debugLogger(
+                    AIModelFallbackStrategy.class,
+                    () -> String.format("Model [%s] succeeded. No need to fallback.", modelTuple._2.getName()));
+            return;
         }
-    }
 
-    private static void notifyFailure(final AIModel aiModel, final AIRequest<? extends Serializable> request) {
-        AIAppValidator.get().validateModelsUsage(aiModel, request.getUserId());
+        handleFailure(modelTuple, request, responseData);
     }
 
     private static void handleFailure(final Tuple2<AIModel, Model> modelTuple,
-                                      final AIRequest<? extends Serializable> request,
+                                      final JSONObjectAIRequest request,
                                       final AIResponseData responseData) {
+        logFailure(modelTuple, request, responseData);
+
+        if (responseData.getStatus().doesNeedToThrow()) {
+            throw responseData.getException();
+        }
+
         final AIModel aiModel = modelTuple._1;
         final Model model = modelTuple._2;
+        final AppConfig appConfig = request.getConfig();
 
-        if (!responseData.getStatus().doesNeedToThrow()) {
-            AppConfig.debugLogger(
-                    AIModelFallbackStrategy.class,
-                    () -> String.format(
-                            "Model [%s] failed then setting its status to [%s].",
-                            model.getName(),
-                            responseData.getStatus()));
-            model.setStatus(responseData.getStatus());
-        }
+        appConfig.debugLogger(
+                AIModelFallbackStrategy.class,
+                () -> String.format(
+                        "Model [%s] failed then setting its status to [%s].",
+                        model.getName(),
+                        responseData.getStatus()));
+        model.setStatus(responseData.getStatus());
 
         if (model.getIndex() == aiModel.getModels().size() - 1) {
             aiModel.setCurrentModelIndex(AIModel.NOOP_INDEX);
-            AppConfig.debugLogger(
+            appConfig.debugLogger(
                     AIModelFallbackStrategy.class,
                     () -> String.format(
                             "Model [%s] is the last one. Cannot fallback anymore.",
@@ -170,58 +171,68 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         }
     }
 
-    private static AIResponseData sendAttempt(final AIClient client,
+    private static AIResponseData sendRequest(final AIClient client,
                                               final AIResponseEvaluator evaluator,
                                               final JSONObjectAIRequest request,
                                               final OutputStream output,
                                               final Tuple2<AIModel, Model> modelTuple) {
-
+        final boolean isStream = AIClientStrategy.isStream(request) && output != null;
         final AIResponseData responseData = Try
-                .of(() -> doSend(client, request))
+                .of(() -> doSend(client, request, output, isStream))
                 .getOrElseGet(exception -> fromException(evaluator, exception));
 
-        if (!responseData.isSuccess()) {
-            if (responseData.getStatus().doesNeedToThrow()) {
-                if (!modelTuple._1.isOperational()) {
-                    AppConfig.debugLogger(
-                            AIModelFallbackStrategy.class,
-                            () -> String.format(
-                                    "All models from type [%s] are not operational. Throwing exception.",
-                                    modelTuple._1.getType()));
-                    notifyFailure(modelTuple._1, request);
-                }
-                throw responseData.getException();
+        try {
+            if (responseData.isSuccess()) {
+                evaluator.fromResponse(responseData.getResponse(), responseData, !isStream);
+            } else {
+                handleException(request, modelTuple, responseData);
             }
-        } else {
-            evaluator.fromResponse(responseData.getResponse(), responseData, output instanceof ByteArrayOutputStream);
-        }
 
-        if (responseData.isSuccess()) {
-            AppConfig.debugLogger(
-                    AIModelFallbackStrategy.class,
-                    () -> String.format("Model [%s] succeeded. No need to fallback.", modelTuple._2.getName()));
-            redirectOutput(output, responseData.getResponse());
-        } else {
-            logFailure(modelTuple, responseData);
+            handleResponse(modelTuple, request, responseData);
 
-            handleFailure(modelTuple, request, responseData);
+            if (responseData.isSuccess()) {
+                return responseData;
+            }
+        } finally {
+            if (!isStream) {
+                IOUtils.closeQuietly(responseData.getOutput());
+            }
         }
 
         return responseData;
     }
 
-    private static void logFailure(final Tuple2<AIModel, Model> modelTuple, final AIResponseData responseData) {
+    private static void handleException(final JSONObjectAIRequest request,
+                                        final Tuple2<AIModel, Model> modelTuple,
+                                        final AIResponseData responseData) {
+        if (!modelTuple._1.isOperational()) {
+            request.getConfig().debugLogger(
+                    AIModelFallbackStrategy.class,
+                    () -> String.format(
+                            "All models from type [%s] are not operational. Throwing exception.",
+                            modelTuple._1.getType()));
+            notifyFailure(modelTuple._1, request);
+        }
+
+        if (responseData.getStatus().doesNeedToThrow()) {
+            throw responseData.getException();
+        }
+    }
+
+    private static void logFailure(final Tuple2<AIModel, Model> modelTuple,
+                                   final JSONObjectAIRequest request,
+                                   final AIResponseData responseData) {
         Optional
                 .ofNullable(responseData.getResponse())
                 .ifPresentOrElse(
-                        response -> AppConfig.debugLogger(
+                        response -> request.getConfig().debugLogger(
                                 AIModelFallbackStrategy.class,
                                 () -> String.format(
                                         "Model [%s] failed with response:%s%sTrying next model.",
                                         modelTuple._2.getName(),
                                         System.lineSeparator(),
                                         response)),
-                        () -> AppConfig.debugLogger(
+                        () -> request.getConfig().debugLogger(
                                 AIModelFallbackStrategy.class,
                                 () -> String.format(
                                         "Model [%s] failed with error: [%s]. Trying next model.",
@@ -235,27 +246,29 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
         return metadata;
     }
 
-    private static void runFallbacks(final AIClient client,
-                                     final AIResponseEvaluator evaluator,
-                                     final JSONObjectAIRequest request,
-                                     final OutputStream output,
-                                     final Tuple2<AIModel, Model> modelTuple) {
+    private static AIResponseData runFallbacks(final AIClient client,
+                                               final AIResponseEvaluator evaluator,
+                                               final JSONObjectAIRequest request,
+                                               final OutputStream output,
+                                               final Tuple2<AIModel, Model> modelTuple) {
         for(final Model model : modelTuple._1.getModels()) {
-            if (isSameAsFirst(modelTuple._2, model) || !isOperational(model)) {
+            if (isSameAsFirst(modelTuple._2, model) || !isOperational(model, request.getConfig())) {
                 continue;
             }
 
             request.getPayload().put(AiKeys.MODEL, model.getName());
-            final AIResponseData responseData = sendAttempt(
+            final AIResponseData responseData = sendRequest(
                     client,
                     evaluator,
                     request,
                     output,
                     Tuple.of(modelTuple._1, model));
             if (responseData.isSuccess()) {
-                return;
+                return responseData;
             }
         }
+
+        return null;
     }
 
 }

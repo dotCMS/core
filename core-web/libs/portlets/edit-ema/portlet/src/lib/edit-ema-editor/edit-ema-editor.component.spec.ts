@@ -18,9 +18,10 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { CUSTOMER_ACTIONS } from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
+    DotAnalyticsTrackerService,
     DotContentTypeService,
     DotContentletLockerService,
     DotContentletService,
@@ -30,16 +31,22 @@ import {
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotIframeService,
     DotLanguagesService,
     DotLicenseService,
+    DotMessageDisplayService,
     DotMessageService,
     DotPersonalizeService,
+    DotPropertiesService,
+    DotRouterService,
     DotSeoMetaTagsService,
     DotSeoMetaTagsUtilService,
+    DotSessionStorageService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
@@ -52,6 +59,7 @@ import {
 import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -70,18 +78,20 @@ import {
     MockDotHttpErrorManagerService
 } from '@dotcms/utils-testing';
 
-import { DotEditEmaWorkflowActionsComponent } from './components/dot-edit-ema-workflow-actions/dot-edit-ema-workflow-actions.component';
-import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
+import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
+import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { CONTENT_TYPE_MOCK } from './components/edit-ema-palette/components/edit-ema-palette-content-type/edit-ema-palette-content-type.component.spec';
 import { CONTENTLETS_MOCK } from './components/edit-ema-palette/edit-ema-palette.component.spec';
-import { EditEmaToolbarComponent } from './components/edit-ema-toolbar/edit-ema-toolbar.component';
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
+import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW, HOST } from '../shared/consts';
+import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
@@ -91,7 +101,10 @@ import {
     newContentlet,
     PAYLOAD_MOCK,
     UVE_PAGE_RESPONSE_MAP,
-    EMA_DRAG_ITEM_CONTENTLET_MOCK
+    EMA_DRAG_ITEM_CONTENTLET_MOCK,
+    dotPropertiesServiceMock,
+    MOCK_RESPONSE_VTL,
+    PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -108,24 +121,10 @@ const messagesMock = {
     'dot.common.dialog.accept': 'Accept',
     'dot.common.dialog.reject': 'Reject',
     'editpage.content.add.already.title': 'Content already added',
-    'editpage.content.add.already.message': 'This content is already added to this container'
-};
-
-const IFRAME_MOCK = {
-    nativeElement: {
-        contentDocument: {
-            getElementsByTagName: () => [],
-            querySelectorAll: () => [],
-            write: function (html) {
-                this.body.innerHTML = html;
-            },
-            body: {
-                innerHTML: ''
-            },
-            open: jest.fn(),
-            close: jest.fn()
-        }
-    }
+    'editpage.content.add.already.message': 'This content is already added to this container',
+    'editpage.not.lincese.error':
+        'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.',
+    'dot.common.license.enterprise.only.error': 'Enterprise Only'
 };
 
 const createRouting = () =>
@@ -133,10 +132,9 @@ const createRouting = () =>
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
-            MockComponent(DotEditEmaWorkflowActionsComponent),
+            MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
-            MockComponent(DotEmaRunningExperimentComponent),
-            MockComponent(EditEmaToolbarComponent)
+            MockComponent(DotEmaRunningExperimentComponent)
         ],
         detectChanges: false,
         componentProviders: [
@@ -145,10 +143,28 @@ const createRouting = () =>
             UVEStore,
             DotFavoritePageService,
             DotESContentService,
+            DotSessionStorageService,
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotRouterService),
+            mockProvider(DotGlobalMessageService),
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
+            {
+                provide: DotPropertiesService,
+                useValue: {
+                    ...dotPropertiesServiceMock,
+                    getKeyAsList: () => of([])
+                }
+            },
             {
                 provide: DotAlertConfirmService,
                 useValue: {
-                    confirm: () => of({})
+                    confirm: () => of({}),
+                    alert: () => of({})
                 }
             },
             {
@@ -221,6 +237,13 @@ const createRouting = () =>
             DotCopyContentModalService,
             DotWorkflowActionsFireService,
             DotTempFileUploadService,
+            DotAlertConfirmService,
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
             {
                 provide: DotHttpErrorManagerService,
                 useValue: new MockDotHttpErrorManagerService()
@@ -309,7 +332,14 @@ const createRouting = () =>
                 provide: DotPersonalizeService,
                 useValue: new DotPersonalizeServiceMock()
             },
-            mockProvider(DotContentTypeService),
+            {
+                provide: DotContentTypeService,
+                useValue: {
+                    filterContentTypes: () => of([CONTENT_TYPE_MOCK]),
+                    getContentTypes: () => of([CONTENT_TYPE_MOCK]),
+                    getContentType: () => of(CONTENT_TYPE_MOCK)
+                }
+            },
             {
                 provide: DotContentletLockerService,
                 useValue: {
@@ -326,13 +356,14 @@ describe('EditEmaEditorComponent', () => {
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: jest.SpyInstance;
+        let dotLicenseService: DotLicenseService;
         let dotCopyContentModalService: DotCopyContentModalService;
         let dotCopyContentService: DotCopyContentService;
         let dotContentletService: DotContentletService;
+        let dotAlertConfirmService: DotAlertConfirmService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
         let dotTempFileUploadService: DotTempFileUploadService;
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
-        let router: Router;
         let dotPageApiService: DotPageApiService;
 
         const createComponent = createRouting();
@@ -347,7 +378,7 @@ describe('EditEmaEditorComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent({
-                queryParams: { language_id: 1, url: 'page-one' },
+                queryParams: { language_id: 1, url: 'index' },
                 data: {
                     data: {
                         url: 'http://localhost:3000'
@@ -358,22 +389,23 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(UVEStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
+            dotLicenseService = spectator.inject(DotLicenseService, true);
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
             dotContentletService = spectator.inject(DotContentletService, true);
+            dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
             dotTempFileUploadService = spectator.inject(DotTempFileUploadService, true);
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
-            router = spectator.inject(Router, true);
             dotPageApiService = spectator.inject(DotPageApiService, true);
-
             addMessageSpy = jest.spyOn(messageService, 'add');
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
-            store.init({
+            store.loadPageAsset({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
-                'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
             });
 
             spectator.detectChanges();
@@ -389,13 +421,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should hide components when the store changes', () => {
-                const componentsToHide = [
-                    'palette',
-                    'dropzone',
-                    'contentlet-tools',
-                    'dialog',
-                    'confirm-dialog'
-                ]; // Test id of components that should hide when entering preview modes
+                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools', 'dialog']; // Test id of components that should hide when entering preview modes
 
                 const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
@@ -408,24 +434,24 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            it('should have a toolbar', () => {
+                const toolbar = spectator.query(DotUveToolbarComponent);
+
+                expect(toolbar).not.toBeNull();
+            });
+
             it('should hide components when the store changes for a variant', () => {
-                const componentsToHide = [
-                    'palette',
-                    'dropzone',
-                    'contentlet-tools',
-                    'dialog',
-                    'confirm-dialog'
-                ]; // Test id of components that should hide when entering preview modes
+                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools', 'dialog']; // Test id of components that should hide when entering preview modes
 
                 spectator.detectChanges();
 
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                 spectator.detectChanges();
-                store.init({
+                store.loadPageAsset({
                     url: 'index',
                     language_id: '5',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                     variantName: 'hello-there',
                     experimentId: 'i-have-a-running-experiment'
                 });
@@ -444,10 +470,10 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.init({
+                store.loadPageAsset({
                     url: 'index',
                     language_id: '5',
-                    'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                    [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                 });
 
                 spectator.detectChanges();
@@ -457,6 +483,28 @@ describe('EditEmaEditorComponent', () => {
                         spectator.debugElement.query(By.css(`[data-testId="${testId}"]`))
                     ).not.toBeNull();
                 });
+            });
+
+            it('should reload when Block editor is saved', () => {
+                const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
+                const spy = jest.spyOn(store, 'reloadCurrentPage');
+                blockEditorSidebar.onSaved.emit();
+                expect(spy).toHaveBeenCalled();
+            });
+
+            it('should show the error component when there is no live version', () => {
+                const errorComponent = spectator.query(DotUvePageVersionNotFoundComponent);
+
+                spectator.detectChanges();
+
+                store.loadPageAsset({
+                    url: 'index',
+                    language_id: '9'
+                });
+
+                spectator.detectChanges();
+
+                expect(errorComponent).toBeDefined();
             });
         });
 
@@ -535,7 +583,7 @@ describe('EditEmaEditorComponent', () => {
 
                     jest.spyOn(dialog, 'editUrlContentMapContentlet');
 
-                    spectator.triggerEventHandler(EditEmaToolbarComponent, 'editUrlContentMap', {
+                    spectator.triggerEventHandler(DotUveToolbarComponent, 'editUrlContentMap', {
                         identifier: '123',
                         inode: '456',
                         title: 'Hello World'
@@ -592,15 +640,115 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
+                it('should open a dialog to edit contentlet using custom action and trigger reload after saving', (done) => {
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.EDIT_CONTENTLET,
+                                payload: CONTENTLETS_MOCK[0]
+                            }
+                        })
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    const dialog = spectator.debugElement.query(
+                        By.css("[data-testId='ema-dialog']")
+                    );
+
+                    const pDialog = dialog.query(By.css('p-dialog'));
+
+                    expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+
+                    const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                    iframe.nativeElement.contentWindow.addEventListener(
+                        'message',
+                        (event: MessageEvent) => {
+                            expect(event).toBeTruthy();
+                            done();
+                        }
+                    );
+
+                    triggerCustomEvent(dialog, 'action', {
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                                payload: {}
+                            }
+                        })
+                    });
+
+                    spectator.detectChanges();
+                });
+
+                it('should notify block-editor-sidebar to enable editing', () => {
+                    const spy = jest.spyOn(spectator.component.blockSidebar, 'open');
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                payload: {
+                                    type: 'BLOCK_EDITOR',
+                                    data: {}
+                                }
+                            }
+                        })
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    expect(spy).toHaveBeenCalledWith({});
+                });
+
+                it('should show a message and not notify the event if there is not enterprise lincese', () => {
+                    const spyAlert = jest.spyOn(dotAlertConfirmService, 'alert');
+
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+
+                    spectator.detectChanges();
+
+                    store.loadPageAsset({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    spectator.detectChanges();
+
+                    window.dispatchEvent(
+                        new MessageEvent('message', {
+                            origin: HOST,
+                            data: {
+                                action: CLIENT_ACTIONS.INIT_INLINE_EDITING,
+                                payload: {}
+                            }
+                        })
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    expect(spyAlert).toHaveBeenCalledWith({
+                        header: 'Enterprise Only',
+                        message:
+                            'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.'
+                    });
+                });
+
                 describe('reorder navigation', () => {
                     it('should open a dialog to reorder the navigation', () => {
                         window.dispatchEvent(
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
-                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                        startLevel: 1,
+                                        depth: 2
                                     }
                                 }
                             })
@@ -618,7 +766,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should reload the page after saving the new navigation order', () => {
-                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
                         const messageSpy = jest.spyOn(messageService, 'add');
                         const dialog = spectator.debugElement.query(
                             By.css("[data-testId='ema-dialog']")
@@ -673,9 +821,10 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.REORDER_MENU,
+                                    action: CLIENT_ACTIONS.REORDER_MENU,
                                     payload: {
-                                        reorderUrl: 'http://localhost:3000/reorder-menu'
+                                        startLevel: 1,
+                                        depth: 2
                                     }
                                 }
                             })
@@ -705,6 +854,8 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
                     });
+
+                    afterEach(() => jest.clearAllMocks());
                 });
 
                 xdescribe('reload', () => {
@@ -747,7 +898,7 @@ describe('EditEmaEditorComponent', () => {
                         spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
                         spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframeContent');
                         spyUpdateQueryParams = jest.spyOn(router, 'navigate');
-                        spyStoreReload = jest.spyOn(store, 'reload');
+                        spyStoreReload = jest.spyOn(store, 'reloadCurrentPage');
 
                         spectator.detectChanges();
                     });
@@ -946,7 +1097,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
+                                    action: CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING,
                                     payload: {
                                         inode: '123'
                                     }
@@ -1018,7 +1169,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload: PAYLOAD_MOCK
+                        actionPayload: PAYLOAD_MOCK
                     });
 
                     spectator.detectChanges();
@@ -1078,7 +1229,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -1156,7 +1307,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -1237,7 +1388,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -1315,7 +1466,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -1396,7 +1547,7 @@ describe('EditEmaEditorComponent', () => {
                                 }
                             }
                         }),
-                        payload
+                        actionPayload: payload
                     });
 
                     spectator.detectChanges();
@@ -2446,7 +2597,7 @@ describe('EditEmaEditorComponent', () => {
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
                     expect(iframe.nativeElement.src).toBe(
-                        'http://localhost:3000/index?clientHost=http%3A%2F%2Flocalhost%3A3000&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&variantName=DEFAULT'
+                        'http://localhost:3000/index?language_id=1'
                     );
                 });
 
@@ -2455,15 +2606,12 @@ describe('EditEmaEditorComponent', () => {
                         jest.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        store.init({
+                        store.loadPageAsset({
                             url: 'index',
                             language_id: '3',
-                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                            clientHost: undefined
                         });
-                    });
-
-                    afterEach(() => {
-                        jest.useRealTimers(); // Restore the real timers after each test
                     });
 
                     it('iframe should have the correct content when is VTL', () => {
@@ -2473,6 +2621,9 @@ describe('EditEmaEditorComponent', () => {
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
                         );
+
+                        iframe.nativeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
 
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>hello world</div>'
@@ -2495,16 +2646,19 @@ describe('EditEmaEditorComponent', () => {
 
                         iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
-                        store.init({
+                        store.loadPageAsset({
                             url: 'index',
                             language_id: '4',
-                            'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                         });
-                        spectator.detectChanges();
 
+                        spectator.detectChanges();
                         jest.runOnlyPendingTimers();
 
-                        expect(iframe.nativeElement.src).toBe('http://localhost/'); //When dont have src, the src is the same as the current page
+                        iframe.nativeElement.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
+                        expect(iframe.nativeElement.src).toContain('http://localhost/'); //When dont have src, the src is the same as the current page
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
                             '<div>New Content - Hello World</div>'
                         );
@@ -2517,8 +2671,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should navigate to new url and change persona when postMessage SET_URL', () => {
-                    const router = spectator.inject(Router);
-                    jest.spyOn(router, 'navigate');
+                    const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
 
                     spectator.detectChanges();
 
@@ -2534,12 +2687,9 @@ describe('EditEmaEditorComponent', () => {
                         })
                     );
 
-                    expect(router.navigate).toHaveBeenCalledWith([], {
-                        queryParams: {
-                            url: '/some',
-                            'com.dotmarketing.persona.id': 'modes.persona.no.persona'
-                        },
-                        queryParamsHandling: 'merge'
+                    expect(spyloadPageAsset).toHaveBeenCalledWith({
+                        url: '/some',
+                        [PERSONA_KEY]: 'modes.persona.no.persona'
                     });
                 });
 
@@ -2565,7 +2715,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('set url to a different route should set the editor state to loading', () => {
-                    const navigateSpy = jest.spyOn(router, 'navigate');
+                    const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
 
                     spectator.detectChanges();
 
@@ -2581,12 +2731,9 @@ describe('EditEmaEditorComponent', () => {
                         })
                     );
 
-                    expect(navigateSpy).toHaveBeenCalledWith([], {
-                        queryParams: {
-                            'com.dotmarketing.persona.id': 'modes.persona.no.persona',
-                            url: '/some'
-                        },
-                        queryParamsHandling: 'merge'
+                    expect(spyloadPageAsset).toHaveBeenCalledWith({
+                        [PERSONA_KEY]: 'modes.persona.no.persona',
+                        url: '/some'
                     });
                 });
 
@@ -2595,10 +2742,10 @@ describe('EditEmaEditorComponent', () => {
 
                     const url = "/ultra-cool-url-that-doesn't-exist";
 
-                    store.init({
+                    store.loadPageAsset({
                         url,
                         language_id: '5',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
                     spectator.detectChanges();
@@ -2634,10 +2781,10 @@ describe('EditEmaEditorComponent', () => {
                     spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                     spectator.detectChanges();
-                    store.init({
+                    store.loadPageAsset({
                         url: 'index',
                         language_id: '5',
-                        'com.dotmarketing.persona.id': DEFAULT_PERSONA.identifier,
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                         variantName: 'hello-there',
                         experimentId: 'i have a variant'
                     });
@@ -2650,55 +2797,68 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('script and styles injection', () => {
-                    let iframeDocument: Document;
-                    let spy: jest.SpyInstance;
-
-                    beforeEach(() => {
-                        jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-                            cb(0); // Pass a dummy value to satisfy the expected argument count
-
-                            return 0;
+                    describe('designer templates', () => {
+                        beforeEach(() => {
+                            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                                of(MOCK_RESPONSE_VTL)
+                            );
+                            store.loadPageAsset({ url: 'index', clientHost: null });
                         });
 
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        spectator.component.iframe = IFRAME_MOCK as any;
-                        iframeDocument = spectator.component.iframe.nativeElement.contentDocument;
-                        spy = jest.spyOn(iframeDocument, 'write');
+                        it('should add script and styles to iframe', () => {
+                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                            const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
+                            iframe.dispatchEvent(new Event('load'));
+
+                            spectator.detectChanges();
+
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(
+                                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                                )
+                            );
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(`[data-dot-object="container"]:empty`)
+                            );
+
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(
+                                    '[data-dot-object="contentlet"].empty-contentlet'
+                                )
+                            );
+                        });
                     });
 
-                    it('should add script and styles to iframe', () => {
-                        spectator.component.setIframeContent(`<head></head></body></body>`);
+                    describe('advance templates', () => {
+                        beforeEach(() => {
+                            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                                of(PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK)
+                            );
+                            store.loadPageAsset({ url: 'index', clientHost: null });
+                        });
 
-                        expect(spy).toHaveBeenCalled();
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                        );
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="container"]:empty'
-                        );
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"].empty-contentlet'
-                        );
-                    });
+                        it('should add script and styles to iframe for advance templates', () => {
+                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                            const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
 
-                    it('should add script and styles to iframe for advance templates', () => {
-                        spectator.component.setIframeContent(`<div>Advanced Template</div>`);
+                            iframe.dispatchEvent(new Event('load'));
 
-                        expect(spy).toHaveBeenCalled();
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                        );
+                            spectator.detectChanges();
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(
+                                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                                )
+                            );
 
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="container"]:empty'
-                        );
-                        expect(iframeDocument.body.innerHTML).toContain(
-                            '[data-dot-object="contentlet"].empty-contentlet'
-                        );
-                    });
-
-                    afterEach(() => {
-                        (window.requestAnimationFrame as jest.Mock).mockRestore();
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining('[data-dot-object="container"]:empty')
+                            );
+                            expect(spyWrite).toHaveBeenCalledWith(
+                                expect.stringContaining(
+                                    '[data-dot-object="contentlet"].empty-contentlet'
+                                )
+                            );
+                        });
                     });
                 });
             });
@@ -2711,7 +2871,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: {
                                     dataset: {
                                         inode: '123',
@@ -2747,7 +2907,7 @@ describe('EditEmaEditorComponent', () => {
                         new MessageEvent('message', {
                             origin: HOST,
                             data: {
-                                action: CUSTOMER_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
+                                action: CLIENT_ACTIONS.UPDATE_CONTENTLET_INLINE_EDITING,
                                 payload: null
                             }
                         })
@@ -2760,27 +2920,12 @@ describe('EditEmaEditorComponent', () => {
 
             describe('CUSTOMER ACTIONS', () => {
                 describe('CLIENT_READY', () => {
-                    it('should set client is ready when not extra configuration is send', () => {
-                        const setIsClientReadySpy = jest.spyOn(store, 'setIsClientReady');
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: HOST,
-                                data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY
-                                }
-                            })
-                        );
-
-                        expect(setIsClientReadySpy).toHaveBeenCalledWith(true);
-                    });
-
                     it('should set client GraphQL configuration and call the reload', () => {
                         const setClientConfigurationSpy = jest.spyOn(
                             store,
                             'setClientConfiguration'
                         );
-                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = {
                             params: {},
@@ -2791,7 +2936,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY,
+                                    action: CLIENT_ACTIONS.CLIENT_READY,
                                     payload: config
                                 }
                             })
@@ -2806,7 +2951,7 @@ describe('EditEmaEditorComponent', () => {
                             store,
                             'setClientConfiguration'
                         );
-                        const reloadSpy = jest.spyOn(store, 'reload');
+                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = {
                             params: {
@@ -2819,7 +2964,7 @@ describe('EditEmaEditorComponent', () => {
                             new MessageEvent('message', {
                                 origin: HOST,
                                 data: {
-                                    action: CUSTOMER_ACTIONS.CLIENT_READY,
+                                    action: CLIENT_ACTIONS.CLIENT_READY,
                                     payload: config
                                 }
                             })
@@ -2830,6 +2975,104 @@ describe('EditEmaEditorComponent', () => {
                     });
                 });
             });
+
+            describe('language selected', () => {
+                it('should update the URL and language when the user create a new translation changing the URL', () => {
+                    store.loadPageAsset({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    const dialog = spectator.debugElement.query(
+                        By.css('[data-testId="ema-dialog"]')
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    spectator.triggerEventHandler(
+                        EmaContentletToolsComponent,
+                        'edit',
+                        EDIT_ACTION_PAYLOAD_MOCK
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    triggerCustomEvent(dialog, 'action', {
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
+                                payload: {
+                                    htmlPageReferer:
+                                        '/new-url-here?com.dotmarketing.htmlpage.language=1'
+                                }
+                            }
+                        })
+                    });
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        url: '/new-url-here',
+                        language_id: '1'
+                    });
+                });
+
+                it('should update the language when the user create a new translation', () => {
+                    store.loadPageAsset({
+                        clientHost: 'http://localhost:3000',
+                        url: 'test-url',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    const dialog = spectator.debugElement.query(
+                        By.css('[data-testId="ema-dialog"]')
+                    );
+
+                    spectator.detectComponentChanges();
+
+                    triggerCustomEvent(dialog, 'action', {
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
+                                payload: {
+                                    htmlPageReferer:
+                                        '/test-url?com.dotmarketing.htmlpage.language=2'
+                                }
+                            }
+                        })
+                    });
+
+                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                        language_id: '2'
+                    });
+                });
+            });
+
+            describe('Editor content', () => {
+                it('should have display block when there is not SEO view', () => {
+                    const editorContent = spectator.query(
+                        byTestId('editor-content')
+                    ) as HTMLElement;
+                    expect(editorContent.style.display).toBe('block');
+                });
+
+                it('should have display none when there is SEO view', () => {
+                    store.setSEO('test');
+                    spectator.detectChanges();
+                    const editorContent = spectator.query(
+                        byTestId('editor-content')
+                    ) as HTMLElement;
+                    expect(editorContent.style.display).toBe('none');
+                });
+            });
         });
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+        jest.useRealTimers(); // Restore the real timers after each test
     });
 });

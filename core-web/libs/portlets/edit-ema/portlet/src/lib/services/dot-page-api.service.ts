@@ -17,11 +17,12 @@ import {
     DotTemplate,
     VanityUrl
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
-import { PAGE_MODE } from '../shared/enums';
-import { DotPage, SavePagePayload } from '../shared/models';
+import { PERSONA_KEY } from '../shared/consts';
+import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
 import { ClientRequestProps } from '../store/features/client/withClient';
-import { createPageApiUrlWithQueryParams } from '../utils';
+import { getFullPageURL } from '../utils';
 
 export interface DotPageApiResponse {
     page: DotPage;
@@ -36,17 +37,32 @@ export interface DotPageApiResponse {
     containers: DotPageContainerStructure;
     urlContentMap?: DotCMSContentlet;
     vanityUrl?: VanityUrl;
+    runningExperimentId?: string;
+    numberContents: number;
 }
 
 export interface DotPageApiParams {
     url: string;
     language_id: string;
-    'com.dotmarketing.persona.id': string;
+    [PERSONA_KEY]: string;
     variantName?: string;
     experimentId?: string;
-    mode?: string;
+    mode?: UVE_MODE;
     clientHost?: string;
     depth?: string;
+    publishDate?: string;
+}
+
+export enum DotPageAssetKeys {
+    URL = 'url',
+    MODE = 'mode',
+    DEPTH = 'depth',
+    CLIENT_HOST = 'clientHost',
+    VARIANT_NAME = 'variantName',
+    LANGUAGE_ID = 'language_id',
+    EXPERIMENT_ID = 'experimentId',
+    PERSONA_ID = 'com.dotmarketing.persona.id',
+    PUBLISH_DATE = 'publishDate'
 }
 
 export interface GetPersonasParams {
@@ -78,28 +94,15 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get(params: DotPageApiParams): Observable<DotPageApiResponse> {
-        // Remove trailing and leading slashes
-        const url = params.url.replace(/^\/+|\/+$/g, '');
-
-        const pageType = params.clientHost ? 'json' : 'render';
-        const mode = PAGE_MODE.EDIT;
-
-        const pageApiUrl = createPageApiUrlWithQueryParams(url, {
-            language_id: params.language_id,
-            'com.dotmarketing.persona.id': params['com.dotmarketing.persona.id'],
-            variantName: params.variantName,
-            experimentId: params.experimentId,
-            depth: params['depth'] || '0',
-            mode
-        });
-
-        const apiUrl = `/api/v1/page/${pageType}/${pageApiUrl}`;
+    get(queryParams: DotPageAssetParams): Observable<DotPageApiResponse> {
+        const { clientHost, ...params } = queryParams;
+        const pageType = clientHost ? 'json' : 'render';
+        const pageURL = getFullPageURL({ url: params.url, params });
 
         return this.http
             .get<{
                 entity: DotPageApiResponse;
-            }>(apiUrl)
+            }>(`/api/v1/page/${pageType}/${pageURL}`)
             .pipe(pluck('entity'));
     }
 

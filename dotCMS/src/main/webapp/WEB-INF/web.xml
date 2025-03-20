@@ -247,6 +247,12 @@
 		<servlet-class>com.dotmarketing.servlets.InitServlet</servlet-class>
 		<load-on-startup>8</load-on-startup>
 	</servlet>
+
+	<servlet>
+		<servlet-name>FinalStartupServlet</servlet-name>
+		<servlet-class>com.dotmarketing.servlets.FinalStartupServlet</servlet-class>
+		<load-on-startup>99999</load-on-startup>
+	</servlet>
 	
 	<servlet>
 		<servlet-name>VelocityServlet</servlet-name>

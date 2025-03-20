@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 /**
  * Event fired when a job fails during processing.
  */
-public class JobFailedEvent {
+public class JobFailedEvent implements JobEvent {
 
     private final Job job;
     private final LocalDateTime failedAt;

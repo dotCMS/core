@@ -1,110 +1,106 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
-import { of } from 'rxjs';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
+import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { fakeAsync } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 
 import { ConfirmationService } from 'primeng/api';
-import { Dialog } from 'primeng/dialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { DotAiService } from '@dotcms/data-access';
 import {
-    PromptType,
     AIImagePrompt,
+    DotAIImageContent,
     DotAIImageOrientation,
-    DotGeneratedAIImage
+    PromptType
 } from '@dotcms/dotcms-models';
 
 import { DotAIImagePromptComponent } from './ai-image-prompt.component';
-import { DotAiImagePromptStore } from './ai-image-prompt.store';
 import { AiImagePromptFormComponent } from './components/ai-image-prompt-form/ai-image-prompt-form.component';
+import { DotAiImagePromptStore } from './store/ai-image-prompt.store';
+import { MOCK_AI_IMAGE_CONTENT, MOCK_GENERATED_AI_IMAGE } from './utils/mocks';
+
+const mockDotAiService = {
+    generateAndPublishImage: (_prompt: string, _size?: string): Observable<DotAIImageContent> =>
+        of(MOCK_AI_IMAGE_CONTENT)
+};
 
 describe('DotAIImagePromptComponent', () => {
     let spectator: Spectator<DotAIImagePromptComponent>;
-    let store: DotAiImagePromptStore;
-
-    const imagesMock: DotGeneratedAIImage[] = [
-        { name: 'image1', url: 'image_url' },
-        { name: 'image2', url: 'image_url_2' }
-    ] as unknown as DotGeneratedAIImage[];
+    let store: InstanceType<typeof DotAiImagePromptStore>;
+    let dynamicDialogRef: SpyObject<DynamicDialogRef>;
+    let dotAiService: SpyObject<DotAiService>;
+    let confirmationService: SpyObject<ConfirmationService>;
 
     const createComponent = createComponentFactory({
         component: DotAIImagePromptComponent,
-        providers: [
-            {
-                provide: DotAiImagePromptStore,
-                useValue: {
-                    vm$: of({
-                        showDialog: true,
-                        isLoading: false,
-                        images: imagesMock,
-                        galleryActiveIndex: 0,
-                        orientation: DotAIImageOrientation.VERTICAL
-                    }),
-                    generateImage: jasmine.createSpy('generateImage'),
-                    hideDialog: jasmine.createSpy('hideDialog'),
-                    patchState: jasmine.createSpy('patchState'),
-                    cleanError: jasmine.createSpy('cleanError'),
-                    setSelectedImage: jasmine.createSpy('setSelectedImage')
-                }
-            },
-            mockProvider(ConfirmationService)
+        componentProviders: [
+            DotAiImagePromptStore,
+            mockProvider(DynamicDialogRef),
+            mockProvider(DynamicDialogConfig),
+            ConfirmationService
         ],
-        imports: [HttpClientTestingModule]
+        providers: [provideHttpClient(), { provide: DotAiService, useValue: mockDotAiService }]
     });
 
     beforeEach(() => {
         spectator = createComponent();
-        store = spectator.inject(DotAiImagePromptStore);
+        store = spectator.inject(DotAiImagePromptStore, true);
+        dynamicDialogRef = spectator.inject(DynamicDialogRef, true);
+        dotAiService = spectator.inject(DotAiService, true);
+        confirmationService = spectator.inject(ConfirmationService, true);
+
+        jest.spyOn(dotAiService, 'generateAndPublishImage');
     });
 
-    it('should hide dialog', () => {
-        const dialog = spectator.query(Dialog);
-        dialog.onHide.emit('true');
-        expect(store.hideDialog).toHaveBeenCalled();
-    });
-
-    it('should the modal have 1040px in maxWidth', () => {
-        spectator.detectChanges();
-        const dialog = spectator.query(Dialog);
-        const width = dialog.style.width;
-        const maxWidth = dialog.style.maxWidth;
-        expect(width).toBe('90%');
-        expect(maxWidth).toBe('1040px');
+    it('should create', () => {
+        expect(spectator.component).toBeTruthy();
     });
 
     it('should generate image', () => {
-        const promptForm = spectator.query(AiImagePromptFormComponent);
+        const generateImageSpy = jest.spyOn(store, 'generateImage');
+
         const formMock: AIImagePrompt = {
             text: 'Test',
             type: PromptType.INPUT,
             size: DotAIImageOrientation.VERTICAL
         };
-        promptForm.valueChange.emit(formMock);
-        promptForm.generate.emit();
+        patchState(store, { formValue: formMock });
 
-        expect(store.generateImage).toHaveBeenCalledWith();
+        spectator.triggerEventHandler(AiImagePromptFormComponent, 'generate', null);
+        expect(generateImageSpy).toHaveBeenCalled();
+        expect(dotAiService.generateAndPublishImage).toHaveBeenCalledWith(
+            'Test',
+            DotAIImageOrientation.VERTICAL
+        );
     });
 
-    it('should inset image', async () => {
+    it('should inset an image', async () => {
+        patchState(store, { images: [MOCK_GENERATED_AI_IMAGE] });
+        spectator.detectChanges();
+
         const submitBtn = spectator.query(byTestId('submit-btn'));
 
         spectator.click(submitBtn);
         await spectator.fixture.whenStable();
-        expect(store.setSelectedImage).toHaveBeenCalled();
+        expect(dynamicDialogRef.close).toHaveBeenCalled();
     });
 
-    it('should clear error on hide confirm', () => {
-        const dialog = spectator.query(Dialog);
-        dialog.onHide.emit('true');
-        expect(store.hideDialog).toHaveBeenCalled();
-    });
+    it('should call confirm dialog when try to close dialog', async () => {
+        patchState(store, { images: [MOCK_GENERATED_AI_IMAGE] });
+        const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+        spectator.detectChanges();
 
-    it('should call confirm dialog when try to close dialog', fakeAsync(() => {
         const closeBtn = spectator.query(byTestId('close-btn'));
-        const spyCloseDialog = spyOn(spectator.component, 'closeDialog');
 
         spectator.click(closeBtn);
-        spectator.tick();
-        expect(spyCloseDialog).toHaveBeenCalled();
-    }));
+        await spectator.fixture.whenStable();
+        expect(confirmSpy).toHaveBeenCalled();
+    });
 });

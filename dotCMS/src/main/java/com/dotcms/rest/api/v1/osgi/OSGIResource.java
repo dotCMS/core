@@ -544,7 +544,7 @@ public class OSGIResource {
         Logger.info( this, "Portlets Removed: " + OSGIUtil.getInstance().portletIDsStopped.toString());
 
         //Remove Actionlets in the list
-        OSGIUtil.getInstance().actionletsStopped.forEach(p -> OSGIUtil.getInstance().workflowOsgiService.removeActionlet(p));
+        OSGIUtil.getInstance().actionletsStopped.forEach(p -> OSGIUtil.getInstance().getWorkflowOsgiService().removeActionlet(p));
         Logger.info( this, "Actionlets Removed: " + OSGIUtil.getInstance().actionletsStopped.toString());
 
         //Cleanup lists

@@ -241,7 +241,7 @@ runs:
       name: Save Docker Image to Tar File
       if: ${{ inputs.generate-docker == 'true' }}
       shell: bash
-      run: docker save dotcms/dotcms-test:1.0.0-SNAPSHOT > /tmp/image.tar
+      run: docker save dotcms/dotcms-test:${{ inputs.version }} > /tmp/image.tar
 
     - id: upload-docker-image
       name: Upload Docker Image as Artifact
@@ -259,6 +259,8 @@ runs:
         name: "build-classes"
         path: |
           **/target/classes/**/*.class
+          **/target/generated-sources/**/*.java
+          **/target/test-classes/**/*.class
           LICENSE
 
     - id: delete-built-artifacts-from-cache
@@ -319,4 +321,4 @@ runs:
         name: "build-reports-test-${{ inputs.stage-name }}"
         path: |
           **/target/jacoco-report/*.exec
-          **/target/*-reports/TEST-*.xml
+          **/target/*-reports/*.xml

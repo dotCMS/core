@@ -10,6 +10,7 @@ import {
 import { computed, untracked } from '@angular/core';
 
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import {
     EditorProps,
@@ -19,14 +20,14 @@ import {
     ReloadEditorContent
 } from './models';
 import { withSave } from './save/withSave';
-import { withEditorToolbar } from './toolbar/withEditorToolbar';
+import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
     Container,
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { BASE_IFRAME_MEASURE_UNIT } from '../../../shared/consts';
+import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -35,15 +36,30 @@ import {
     PositionPayload
 } from '../../../shared/models';
 import {
-    sanitizeURL,
-    createPageApiUrlWithQueryParams,
     mapContainerStructureToArrayOfContainers,
     getPersonalization,
     areContainersEquals,
-    getEditorStates
+    getEditorStates,
+    sanitizeURL,
+    getWrapperMeasures,
+    getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
+
+const buildIframeURL = ({ url, params, isTraditionalPage }) => {
+    if (isTraditionalPage) {
+        // Force iframe reload on every page load to avoid caching issues and window dirty state
+        // We need a new reference to avoid the iframe to be cached
+        // More reference: https://github.com/dotCMS/core/issues/30981
+        return new String('');
+    }
+
+    const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
+    const iframeURL = new URL(pageURL, params.clientHost || window.location.origin); // Add Host to iframeURL
+
+    return iframeURL.toString();
+};
 
 const initialState: EditorState = {
     bounds: [],
@@ -65,7 +81,7 @@ export function withEditor() {
             state: type<UVEState>()
         },
         withState<EditorState>(initialState),
-        withEditorToolbar(),
+        withUVEToolbar(),
         withSave(),
         withClient(),
         withComputed((store) => {
@@ -94,6 +110,12 @@ export function withEditor() {
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
+                $pageRender: computed<string>(() => {
+                    return store.pageAPIResponse()?.page?.rendered;
+                }),
+                $enableInlineEdit: computed<boolean>(() => {
+                    return store.isEditState() && untracked(() => store.isEnterprise());
+                }),
                 $editorIsInDraggingState: computed<boolean>(
                     () => store.state() === EDITOR_STATE.DRAGGING
                 ),
@@ -105,58 +127,63 @@ export function withEditor() {
                     const canEditPage = store.canEditPage();
                     const isEnterprise = store.isEnterprise();
                     const state = store.state();
-                    const params = store.params();
+                    const params = store.pageParams();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
                     const contentletArea = store.contentletArea();
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
-                    const isLoading = !isClientReady || store.status() === UVE_STATUS.LOADING;
 
-                    const isPageReady = isTraditionalPage || isClientReady;
+                    const isPreview = params?.mode === UVE_MODE.PREVIEW;
+                    const isPageReady = isTraditionalPage || isClientReady || isPreview;
+                    const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
 
-                    const url = sanitizeURL(params?.url);
-
-                    const pageAPIQueryParams = createPageApiUrlWithQueryParams(url, params);
-
                     const showDialogs = canEditPage && isEditState;
+                    const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
                     const canUserHaveContentletTools =
-                        !!contentletArea && canEditPage && isEditState && !isScrolling;
+                        !!contentletArea &&
+                        canEditPage &&
+                        isEditState &&
+                        !isScrolling &&
+                        !isPreview;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-
-                    const showPalette = isEnterprise && canEditPage && isEditState;
+                    const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
-                    const origin = params.clientHost || window.location.origin;
-                    const iframeURL = new URL(pageAPIQueryParams, origin);
+
+                    const wrapper = getWrapperMeasures(device, store.orientation());
+
+                    const shouldDisableDeleteButton =
+                        pageAPIResponse?.numberContents === 1 && // If there is only one content, we should disable the delete button
+                        pageAPIResponse?.viewAs?.persona && // If there is a persona, we should disable the delete button
+                        pageAPIResponse?.viewAs?.persona?.identifier !== DEFAULT_PERSONA.identifier; // If the persona is not the default persona, we should disable the delete button
+
+                    const message = 'uve.disable.delete.button.on.personalization';
+
+                    const disableDeleteButton = shouldDisableDeleteButton ? message : null;
 
                     return {
-                        showDialogs: showDialogs,
-                        showEditorContent: !socialMedia,
+                        showDialogs,
+                        showBlockEditorSidebar,
                         iframe: {
                             opacity: iframeOpacity,
                             pointerEvents: dragIsActive ? 'none' : 'auto',
-                            src: !isTraditionalPage ? iframeURL.href : '',
-                            wrapper: device
-                                ? {
-                                      width: `${device.cssWidth}${BASE_IFRAME_MEASURE_UNIT}`,
-                                      height: `${device.cssHeight}${BASE_IFRAME_MEASURE_UNIT}`
-                                  }
-                                : null
+                            wrapper: device ? wrapper : null
                         },
                         progressBar: isLoading,
                         contentletTools: canUserHaveContentletTools
                             ? {
                                   isEnterprise,
                                   contentletArea,
-                                  hide: dragIsActive
+                                  hide: dragIsActive,
+                                  disableDeleteButton
                               }
                             : null,
                         dropzone: showDropzone
@@ -179,6 +206,34 @@ export function withEditor() {
                                   socialMedia
                               }
                             : null
+                    };
+                }),
+                $iframeURL: computed<string | InstanceType<typeof String>>(() => {
+                    /*
+                        Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
+                        This should change in future UVE improvements. 
+                        The url should not depend on the PageAPI response since it does not change (In traditional).
+                        In the future we should have a function that updates the content, independent of the url.
+                        More info: https://github.com/dotCMS/core/issues/31475
+                     */
+                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
+                    const sanitizedURL = sanitizeURL(
+                        vanityURL ?? untracked(() => store.pageParams().url)
+                    );
+
+                    const url = buildIframeURL({
+                        url: sanitizedURL,
+                        params: untracked(() => store.pageParams()),
+                        isTraditionalPage: untracked(() => store.isTraditionalPage())
+                    });
+
+                    return url;
+                }),
+                $editorContentStyles: computed<Record<string, string>>(() => {
+                    const socialMedia = store.socialMedia();
+
+                    return {
+                        display: socialMedia ? 'none' : 'block'
                     };
                 })
             };

@@ -5,13 +5,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.JUnit4WeldRunner;
 import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.spi.CDI;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Integration test for simple CDI injection
  */
-public class SimpleInjectionIT extends IntegrationTestBase {
+@ApplicationScoped
+@RunWith(JUnit4WeldRunner.class)
+public class SimpleInjectionIT  {
 
     /**
      * Test CDI injection
@@ -20,12 +26,8 @@ public class SimpleInjectionIT extends IntegrationTestBase {
      */
     @Test
     public void testInjection() {
-
-        Optional<GreetingBean> optional = CDIUtils.getBean(GreetingBean.class);
-        assertTrue(optional.isPresent());
-        final GreetingBean greetingBean = optional.get();
+        final GreetingBean greetingBean = CDIUtils.getBeanThrows(GreetingBean.class);
         assertEquals("Hello World", greetingBean.greet());
-
     }
 
 }

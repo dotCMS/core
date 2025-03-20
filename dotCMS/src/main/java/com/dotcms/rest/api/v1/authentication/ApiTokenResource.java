@@ -410,6 +410,7 @@ public class ApiTokenResource implements Serializable {
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "401", description = "Invalid user"),
                     @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
             }
     )
@@ -465,11 +466,14 @@ public class ApiTokenResource implements Serializable {
         final Map<String, Object> claims = formData.claims;
         final int expirationSeconds      = formData.expirationSeconds;
 
+
+
         if(expirationSeconds < 0) {
 
             return ExceptionMapperUtil.createResponse(new DotStateException("Invalid expirationSeconds"), Response.Status.BAD_REQUEST);
         }
 
+        Date expires = Date.from(Instant.now().plus(expirationSeconds, ChronoUnit.SECONDS));
         ApiToken token = ApiToken.builder()
                 .withAllowNetwork(netmask)
                 .withIssueDate(new Date())
@@ -575,6 +579,7 @@ public class ApiTokenResource implements Serializable {
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "401", description = "Invalid user"),
                     @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
             }
     )

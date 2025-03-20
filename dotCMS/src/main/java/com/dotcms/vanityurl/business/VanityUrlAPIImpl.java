@@ -24,6 +24,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -115,7 +116,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
   @Override
   public void populateAllVanityURLsCache() throws DotDataException {
-    for (final Host site : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), false)).getOrElse(List.of())) {
+    for (final Host site : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(),
+            HostAPI.SearchType.INCLUDE_SYSTEM_HOST)).getOrElse(List.of())) {
       populateVanityURLsCacheBySite(site);
     }
     populateVanityURLsCacheBySite(APILocator.getHostAPI().findSystemHost());
@@ -375,7 +377,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           final String queryString = request.getQueryString();
           final int responseCode = request.getResponseCode();
 
-          final String newUrl = uri + (queryString != null ? StringPool.QUESTION + queryString : StringPool.BLANK);
+          final String newUrl = uri + (UtilMethods.isSet(queryString) ? StringPool.QUESTION + queryString : StringPool.BLANK);
 
           if (responseCode == 301 || responseCode == 302) {
               response.setStatus(responseCode);

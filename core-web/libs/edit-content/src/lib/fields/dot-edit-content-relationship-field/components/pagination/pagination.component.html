@@ -1,0 +1,55 @@
+@let currentPage = $currentPage();
+@let totalPages = $totalPages();
+@let currentPageReportLayout = $currentPageReportLayout();
+
+<div
+    class="flex justify-content-center"
+    [class.gap-1]="currentPageReportLayout === 'center'"
+    [class.gap-2]="currentPageReportLayout === 'left'">
+    @switch ($currentPageReportLayout()) {
+        @case ('center') {
+            <p-button
+                type="button"
+                (onClick)="previousPage.emit()"
+                icon="pi pi-angle-left"
+                [rounded]="true"
+                [text]="true"
+                [disabled]="currentPage === 1"
+                size="small" />
+            <span class="text-primary-500 flex align-items-center">
+                {{ currentPage }} of {{ totalPages }}
+            </span>
+            <p-button
+                type="button"
+                (onClick)="nextPage.emit()"
+                icon="pi pi-angle-right"
+                [rounded]="true"
+                [text]="true"
+                [disabled]="currentPage === totalPages"
+                size="small" />
+        }
+        @default {
+            <span class="text-primary-500 flex align-items-center">
+                {{ currentPage }} of {{ totalPages }}
+            </span>
+            <div class="flex justify-content-center gap-1">
+                <p-button
+                    type="button"
+                    (onClick)="previousPage.emit()"
+                    icon="pi pi-angle-left"
+                    [rounded]="true"
+                    [text]="true"
+                    [disabled]="currentPage === 1"
+                    size="small" />
+                <p-button
+                    type="button"
+                    (onClick)="nextPage.emit()"
+                    icon="pi pi-angle-right"
+                    [rounded]="true"
+                    [text]="true"
+                    [disabled]="currentPage === totalPages"
+                    size="small" />
+            </div>
+        }
+    }
+</div>

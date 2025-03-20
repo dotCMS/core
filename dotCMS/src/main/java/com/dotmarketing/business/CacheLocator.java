@@ -15,6 +15,8 @@ import com.dotcms.experiments.business.ExperimentsCache;
 import com.dotcms.experiments.business.ExperimentsCacheImpl;
 import com.dotcms.graphql.GraphQLCache;
 import com.dotcms.graphql.business.GraphQLSchemaCache;
+import com.dotcms.jobs.business.job.JobCache;
+import com.dotcms.jobs.business.job.JobCacheImpl;
 import com.dotcms.notifications.business.NewNotificationCache;
 import com.dotcms.notifications.business.NewNotificationCacheImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
@@ -365,6 +367,13 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
+	 * This will get you an instance of the {@link JobCache} singleton cache.
+	 */
+	public static JobCache getJobCache() {
+		return (JobCache) getInstance(CacheIndex.JOB_CACHE);
+	}
+
+	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
 	 * @return
@@ -476,8 +485,8 @@ enum CacheIndex
 	VariantCache("VariantCache"),
 	EXPERIMENTS_CACHE("ExperimentsCache"),
 	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
-
-	Javascript("Javascript");
+	Javascript("Javascript"),
+	JOB_CACHE("JobCache");
 
 	Cachable create() {
 		switch(this) {
@@ -533,7 +542,7 @@ enum CacheIndex
 			case EXPERIMENTS_CACHE: return new ExperimentsCacheImpl();
 			case CHAINABLE_404_STORAGE_CACHE: return new Chainable404StorageCache();
 			case Javascript: return new JsCache();
-
+			case JOB_CACHE: return new JobCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

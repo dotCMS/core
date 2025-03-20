@@ -37,6 +37,11 @@ export function withLayout() {
                     },
                     pageId: response?.page.identifier
                 };
+            }),
+            $canEditLayout: computed<boolean>(() => {
+                const { page, template } = pageAPIResponse() ?? {};
+
+                return page?.canEdit || template?.drawed;
             })
         })),
         withMethods((store) => {

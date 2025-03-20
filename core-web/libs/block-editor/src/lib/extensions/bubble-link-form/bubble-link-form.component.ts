@@ -245,15 +245,22 @@ export class BubbleLinkFormComponent implements OnInit {
                     const { languageId } = contentlet;
                     contentlet.language = this.getContentletLanguage(languageId);
 
+                    // The URLs for urlContentMaps have this format: /content.<contentlet inode>
+                    // So we need to replace it with the actual URL which is stored in urlMap
+                    const cleanedContentlet = {
+                        ...contentlet,
+                        url: contentlet.URL_MAP_FOR_CONTENT ? contentlet.urlMap : contentlet.url
+                    };
+
                     return {
                         label: contentlet.title,
                         icon: 'contentlet/image',
                         data: {
-                            contentlet: contentlet
+                            contentlet: cleanedContentlet
                         },
                         command: () => {
                             this.onSelection({
-                                payload: contentlet,
+                                payload: cleanedContentlet,
                                 type: {
                                     name: 'dotContent'
                                 }

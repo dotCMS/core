@@ -24,6 +24,7 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import javax.ws.rs.QueryParam;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -459,6 +460,7 @@ public class PortletResource implements Serializable {
      * @param request
      * @param httpResponse
      * @param contentTypeVariable - content type variable name
+     * @param languageId - The language to be used for the search. If not set, the user's language Id will be used
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
@@ -470,7 +472,8 @@ public class PortletResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getCreateContentURL(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse httpResponse,
-                                              @PathParam("contentTypeVariable") String contentTypeVariable)
+                                              @PathParam("contentTypeVariable") String contentTypeVariable,
+                                              @QueryParam("language_id") String languageId)
             throws DotDataException, DotSecurityException {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -485,8 +488,8 @@ public class PortletResource implements Serializable {
                 "/ext/contentlet/edit_contentlet";
 
         return Response.ok(
-                        new ResponseEntityView((
-                                ContentTypeUtil.getInstance().getActionUrl(request,contentTypeId,user,strutsAction))))
-                .build();
+                            new ResponseEntityView((
+                                    ContentTypeUtil.getInstance().getActionUrl(request,contentTypeId,user,strutsAction, languageId))))
+                    .build();
     }
 }

@@ -1,0 +1,58 @@
+Name,Section,Type,Steps (Instructions),Steps (Expected Results),Preconditions,Status,
+Check if Pages portlet is available for community and enterprise edition,Pages,Functional," 1: Open dotCMS in community and enterprise editions
+ 2: Verify the Pages portlet is available",Pages portlet is available in both community and enterprise editions,dotCMS is running in community or enterprise edition,,
+Verify bookmark section is displayed,Pages,Functional," 1: Open Pages portlet
+ 2: Verify the bookmark section is displayed",Bookmark section is displayed,Pages portlet is open,,
+Check if bookmark section can be expanded and collapsed,Pages,Functional," 1: Open bookmark section
+ 2: Expand and collapse the section",Bookmark section can be expanded and collapsed,Bookmark section is present,,
+Verify thumbnail is displayed for each page in the bookmark,Pages,Functional," 1: Add pages to bookmark
+ 2: Verify thumbnails are displayed for each bookmark",Thumbnails are displayed for each bookmarked page,Pages are added to bookmark,,
+Check if bookmark can be edited,Pages,Functional," 1: Open bookmark section
+ 2: Edit a bookmark",Bookmark is edited successfully,Bookmark is present for editing,,"shows the original title of the page, not the custom one"
+Check if bookmark can be removed,Pages,Functional," 1: Open bookmark section
+ 2: Remove a bookmark",Bookmark is removed successfully,Bookmark is present for removal,,
+Verify all sub-actions are displayed when bookmark options are expanded,Pages,Functional," 1: Expand bookmark options
+ 2: Verify all available sub-actions are displayed",All sub-actions are displayed when bookmark options are expanded,Bookmark options are expanded,,
+Ensure listing of all pages of the selected host under bookmark section,Pages,Functional," 1: Select a host
+ 2: Verify all pages of the selected host are listed under the bookmark section",All pages of the selected host are listed under the bookmark section,Host is selected and pages are available,,
+Validate filtering of pages by search component consistency,Pages,Functional," 1: Use the search component
+ 2: Filter pages by consistency",Pages are filtered correctly by consistency,Pages and search component are available,,
+Validate filtering of pages by language,Pages,Functional," 1: Use the language filter
+ 2: Filter pages by language",Pages are filtered correctly by language,Language filter and pages are available,,
+"Verify functionality of ""show archived"" checkbox",Pages,Functional," 1: Check the ""show archived"" checkbox
+ 2: Verify archived pages are displayed","Archived pages are displayed when ""show archived"" is checked",Archived pages are available,,
+Check if pages can be sorted by title,Pages,Functional," 1: Open pages list
+ 2: Sort pages by title",Pages are sorted by title successfully,Pages list is available,,
+Check if pages can be sorted by URL,Pages,Functional," 1: Open pages list
+ 2: Sort pages by URL",Pages are sorted by URL successfully,Pages list is available,,
+Check if pages can be sorted by type,Pages,Functional," 1: Open pages list
+ 2: Sort pages by type",Pages are sorted by type successfully,Pages list is available,,
+Check if pages can be sorted by status,Pages,Functional," 1: Open pages list
+ 2: Sort pages by status",Pages are sorted by status successfully,Pages list is available,,clarify how the status is determined
+Check if pages can be sorted by last edited date,Pages,Functional," 1: Open pages list
+ 2: Sort pages by last edited date",Pages are sorted by last edited date successfully,Pages list is available,,
+Verify all sub-actions in the page actions section are functional,Pages,Functional," 1: Open the page actions section
+ 2: Execute each sub-action",All sub-actions in the page actions section are executed successfully,Page actions section is available,,move and delete actions dont refresh data table
+Check if new pages can be created from the portlet,Pages,Functional," 1: Open Pages portlet
+ 2: Create a new page",New page is created successfully from the portlet,Pages portlet is open and available for creating a new page,,
+Verify adding a page as a bookmark from the pages list,Pages,Functional," 1: Open pages list
+ 2: Add a page as a bookmark",Page is added as a bookmark from the pages list,Pages list is available for adding bookmarks,,
+"Check if adding a page as a bookmark requests required fields: title, URL, order",Pages,Functional," 1: Add a page as a bookmark
+ 2: Verify required fields: title, URL, order are requested","Required fields (title, URL, order) are requested when adding a page as a bookmark",Bookmark modal is available,,
+Ensure live thumbnail generation when adding page as bookmark,Pages,Functional," 1: Add a page as a bookmark
+ 2: Verify live thumbnail is generated",Live thumbnail is generated successfully when adding page as bookmark,Bookmark modal is available,,
+Check if thumbnail reloads when editing bookmark,Pages,Functional," 1: Edit a bookmark
+ 2: Click on reload button 
+ 3: Verify the thumbnail is reloaded",Thumbnail is reloaded successfully when editing bookmark,Bookmark modal is available for editing,,must reload to see new thumbnail in portlet
+Check if page can be removed as bookmark when editing,Pages,Functional," 1: Edit a bookmark
+ 2: Remove the page as a bookmark",Page is removed as bookmark successfully when editing,Bookmark modal is available for editing,,
+Verify redirection to edit page when clicking on bookmark,Pages,Functional," 1: Click on a bookmark
+ 2: Verify redirection to edit the page",User is redirected to edit the page when clicking on bookmark,Bookmark section is available,,main menu selects the Broser portlet instead of Pages
+Check if full page URL expands on mouse-over in bookmark section,Pages,Functional," 1: Hover over a bookmark
+ 2: Verify the full page URL expands",Full page URL expands on mouse-over in bookmark section,Bookmark section is available,,
+Verify pagination functionality in the pages list,Pages,Functional," 1: Open pages list
+ 2: Verify pagination is working",Pagination works as expected in the pages list,Pages list is available with pagination,,
+Check if portlet reloads when changing site selector,Pages,Functional," 1: Change the site using site selector
+ 2: Verify the portlet reloads",Portlet reloads successfully when changing the site using the site selector,Site selector is available,,
+Ensure pages are filtered by site using the site selector,Pages,Functional," 1: Use the site selector
+ 2: Filter pages by site",Pages are filtered by site successfully using the site selector,Site selector and pages are available,,

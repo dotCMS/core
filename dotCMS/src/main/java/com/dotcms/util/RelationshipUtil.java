@@ -82,21 +82,29 @@ public class RelationshipUtil {
         //LinkedHashMap to preserve the order of the contentlets
         final Map<String, Contentlet> relatedContentlets = new LinkedHashMap<>();
 
+        boolean isLuceneQuery = UtilMethods.isLuceneQuery(filter);
+
         //Filter can be an identifier or a lucene query (comma separated)
         for (final String elem : filter.split(StringPool.COMMA)) {
-            if (UUIDUtil.isUUID(elem.trim()) && !relatedContentlets.containsKey(elem.trim())) {
-                final Identifier identifier = identifierAPI.find(elem.trim());
-                final Contentlet relatedContentlet = contentletAPI
-                        .findContentletForLanguage(language, identifier);
-                relatedContentlets.put(relatedContentlet.getIdentifier(), isCheckout ? contentletAPI
-                        .checkout(relatedContentlet.getInode(), user, respectFrontendRoles)
-                        : relatedContentlet);
-            } else {
-                relatedContentlets
-                        .putAll((isCheckout ? contentletAPI.checkoutWithQuery(elem, user, false)
-                                : contentletAPI.search(elem, 0, 0, sortBy, user, false)).stream()
-                                .collect(Collectors
-                                        .toMap(Contentlet::getIdentifier, Function.identity(),(oldValue, newValue) -> oldValue)));
+            if (!filter.isEmpty()) {
+                final boolean isUUID = UUIDUtil.isUUID(elem.trim());
+                if (!isUUID && !isLuceneQuery) {
+                    throw new DotValidationException("The field has a value (" + filter + ") that is not an identifier or a lucene query");
+                }
+                if (isUUID && !relatedContentlets.containsKey(elem.trim())) {
+                    final Identifier identifier = identifierAPI.find(elem.trim());
+                    final Contentlet relatedContentlet = contentletAPI
+                            .findContentletForLanguage(language, identifier);
+                    relatedContentlets.put(relatedContentlet.getIdentifier(), isCheckout ? contentletAPI
+                            .checkout(relatedContentlet.getInode(), user, respectFrontendRoles)
+                            : relatedContentlet);
+                } else {
+                    relatedContentlets
+                            .putAll((isCheckout ? contentletAPI.checkoutWithQuery(elem, user, false)
+                                    : contentletAPI.search(elem, 0, 0, sortBy, user, false)).stream()
+                                    .collect(Collectors
+                                            .toMap(Contentlet::getIdentifier, Function.identity(), (oldValue, newValue) -> oldValue)));
+                }
             }
         }
 

@@ -1,0 +1,77 @@
+@if ($store.isLoaded() || $store.isSaving()) {
+    @let contentType = $store.contentType();
+    @let variable = contentType.variable;
+    @let showSidebar = $store.isSidebarOpen();
+    @let showSelectWorkflowWarning = $store.showSelectWorkflowWarning();
+
+    <div class="edit-content-layout__topBar" data-testId="edit-content-layout__topBar">
+        @if ($store.isEnabledNewContentEditor()) {
+            <p-messages
+                styleClass="edit-content-layout__beta-message"
+                severity="success"
+                data-testId="edit-content-layout__beta-message">
+                <ng-template pTemplate>
+                    <i class="pi pi-info-circle"></i>
+                    <div>
+                        <span
+                            [innerHTML]="
+                                ('edit.content.layout.back.to.old.edit.content' | dm) + ' '
+                            "></span>
+                        <a
+                            [routerLink]="'/content-types-angular/edit/' + variable"
+                            data-testId="beta-message-content-type">
+                            {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
+                        </a>
+                        <span>
+                            {{ ' '
+                            }}{{ 'edit.content.layout.back.to.old.edit.content.subtitle' | dm }}
+                        </span>
+                    </div>
+                </ng-template>
+            </p-messages>
+        }
+
+        @if (showSelectWorkflowWarning) {
+            <p-messages
+                styleClass="edit-content-layout__select-workflow-warning"
+                severity="warn"
+                data-testId="edit-content-layout__select-workflow-warning">
+                <ng-template pTemplate>
+                    <i class="pi pi-info-circle"></i>
+                    <div>
+                        <span
+                            [innerHTML]="
+                                ('edit.content.layout.select.workflow.warning' | dm) + ' '
+                            "></span>
+                        <a
+                            href="#"
+                            data-testId="select-workflow-link"
+                            (click)="$event.preventDefault(); selectWorkflow()">
+                            {{ 'edit.content.layout.select.workflow.warning.switch' | dm }}
+                        </a>
+                        <span
+                            [innerHTML]="
+                                ('edit.content.layout.select.workflow.warning.subtitle' | dm) + ' '
+                            "></span>
+                    </div>
+                </ng-template>
+            </p-messages>
+        }
+    </div>
+
+    <dot-edit-content-form
+        data-testId="edit-content-layout__body"
+        (changeValue)="onFormChange($event)"
+        class="edit-content-layout__body" />
+
+    @if (showSidebar) {
+        @defer (when showSidebar) {
+            <dot-edit-content-sidebar
+                [(showDialog)]="$showDialog"
+                data-testId="edit-content-layout__sidebar"
+                class="edit-content-layout__sidebar" />
+        }
+    }
+}
+
+<p-confirmDialog />

@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Card, CardModule } from 'primeng/card';
 
@@ -42,7 +42,8 @@ describe('DotAssetCardComponent', () => {
         const language = spectator.query('[data-testId="dot-card-language"]');
 
         expect(title.innerHTML.trim()).toBe(contentlet.fileName);
-        expect(language.innerHTML.trim()).toBe(contentlet.language);
+        const languageContent = contentlet.language as string;
+        expect(language.innerHTML.trim()).toBe(languageContent);
     });
 
     it('should display the contentlet title when the fileName property is empty', () => {

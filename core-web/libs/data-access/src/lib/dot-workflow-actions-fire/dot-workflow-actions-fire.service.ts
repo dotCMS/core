@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { pluck, take } from 'rxjs/operators';
@@ -22,6 +22,7 @@ interface DotActionRequestOptions {
 export interface DotFireActionOptions<T> {
     actionId: string;
     inode?: string;
+    identifier?: string;
     data?: T;
 }
 
@@ -51,15 +52,21 @@ export class DotWorkflowActionsFireService {
     fireTo<T = Record<string, string>>(
         options: DotFireActionOptions<T>
     ): Observable<DotCMSContentlet> {
-        const { actionId, inode, data } = options;
-        const queryInode = inode ? `inode=${inode}&` : '';
+        const { actionId, inode, data, identifier } = options;
+        let urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
+
+        if (inode) {
+            urlParams = urlParams.set('inode', inode);
+        }
+
+        if (identifier) {
+            urlParams = urlParams.set('identifier', identifier);
+        }
+
+        const url = `${this.BASE_URL}/actions/${actionId}/fire`;
 
         return this.httpClient
-            .put(
-                `${this.BASE_URL}/actions/${actionId}/fire?${queryInode}indexPolicy=WAIT_FOR`,
-                data,
-                { headers: this.defaultHeaders }
-            )
+            .put(url, data, { headers: this.defaultHeaders, params: urlParams })
             .pipe(pluck('entity'));
     }
 
@@ -185,9 +192,21 @@ export class DotWorkflowActionsFireService {
         const bodyRequest = individualPermissions
             ? { contentlet, individualPermissions }
             : { contentlet };
+        const params = new URLSearchParams({});
 
-        if (data['inode']) {
-            url += `?inode=${data['inode']}`;
+        // It's not best approach but this legacy code
+        if (contentlet['inode']) {
+            params.append('inode', contentlet['inode']);
+            delete contentlet['inode'];
+        }
+
+        if (contentlet['indexPolicy']) {
+            params.append('indexPolicy', contentlet['indexPolicy']);
+            delete contentlet['indexPolicy'];
+        }
+
+        if (params.toString()) {
+            url = `${url}?${params.toString()}`;
         }
 
         if (formData) {

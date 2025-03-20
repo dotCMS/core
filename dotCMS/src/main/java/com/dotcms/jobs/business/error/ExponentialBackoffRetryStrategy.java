@@ -16,7 +16,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     private final long maxDelay;
     private final double backoffFactor;
     private final int maxRetries;
-    private final Set<Class<? extends Throwable>> retryableExceptions;
+    private final Set<Class<? extends Throwable>> nonRetryableExceptions;
     private final SecureRandom random = new SecureRandom();
 
     /**
@@ -36,14 +36,14 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
      * Constructs an ExponentialBackoffRetryStrategy with the specified parameters and retryable
      * exceptions.
      *
-     * @param initialDelay        The initial delay between retries in milliseconds.
-     * @param maxDelay            The maximum delay between retries in milliseconds.
-     * @param backoffFactor       The factor by which the delay increases with each retry.
-     * @param maxRetries          The maximum number of retry attempts allowed.
-     * @param retryableExceptions A set of exception classes that are considered retryable.
+     * @param initialDelay           The initial delay between retries in milliseconds.
+     * @param maxDelay               The maximum delay between retries in milliseconds.
+     * @param backoffFactor          The factor by which the delay increases with each retry.
+     * @param maxRetries             The maximum number of retry attempts allowed.
+     * @param nonRetryableExceptions A set of exception classes that are considered non retryable.
      */
     public ExponentialBackoffRetryStrategy(long initialDelay, long maxDelay, double backoffFactor,
-            int maxRetries, Set<Class<? extends Throwable>> retryableExceptions) {
+            int maxRetries, Set<Class<? extends Throwable>> nonRetryableExceptions) {
 
         if (initialDelay <= 0 || maxDelay <= 0 || backoffFactor <= 1) {
             throw new IllegalArgumentException("Invalid retry strategy parameters");
@@ -53,7 +53,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
         this.maxDelay = maxDelay;
         this.backoffFactor = backoffFactor;
         this.maxRetries = maxRetries;
-        this.retryableExceptions = new HashSet<>(retryableExceptions);
+        this.nonRetryableExceptions = new HashSet<>(nonRetryableExceptions);
     }
 
     /**
@@ -65,7 +65,7 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
      */
     @Override
     public boolean shouldRetry(final Job job, final Class<? extends Throwable> exceptionClass) {
-        return job.retryCount() < maxRetries && isRetryableException(exceptionClass);
+        return job.retryCount() < maxRetries && !isNonRetryableException(exceptionClass);
     }
 
     /**
@@ -93,25 +93,22 @@ public class ExponentialBackoffRetryStrategy implements RetryStrategy {
     }
 
     @Override
-    public boolean isRetryableException(final Class<? extends Throwable> exceptionClass) {
+    public boolean isNonRetryableException(final Class<? extends Throwable> exceptionClass) {
         if (exceptionClass == null) {
             return false;
         }
-        if (retryableExceptions.isEmpty()) {
-            return true; // If no specific exceptions are set, all are retryable
-        }
-        return retryableExceptions.stream()
+        return nonRetryableExceptions.stream()
                 .anyMatch(clazz -> clazz.isAssignableFrom(exceptionClass));
     }
 
     @Override
-    public void addRetryableException(final Class<? extends Throwable> exceptionClass) {
-        retryableExceptions.add(exceptionClass);
+    public void addNonRetryableException(final Class<? extends Throwable> exceptionClass) {
+        nonRetryableExceptions.add(exceptionClass);
     }
 
     @Override
-    public Set<Class<? extends Throwable>> getRetryableExceptions() {
-        return Set.copyOf(retryableExceptions);
+    public Set<Class<? extends Throwable>> getNonRetryableExceptions() {
+        return Set.copyOf(nonRetryableExceptions);
     }
 
 }

@@ -6,6 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export interface SiteParams {
     archived: boolean;
@@ -13,9 +14,25 @@ export interface SiteParams {
     system: boolean;
 }
 
+export interface ContentByFolderParams {
+    hostFolderId: string;
+    showLinks?: boolean;
+    showDotAssets?: boolean;
+    showArchived?: boolean;
+    sortByDesc?: boolean;
+    showPages?: boolean;
+    showFiles?: boolean;
+    showFolders?: boolean;
+    showWorking?: boolean;
+    extensions?: string[];
+    mimeTypes?: string[];
+}
+
 export const BASE_SITE_URL = '/api/v1/site';
 
 export const DEFAULT_PER_PAGE = 10;
+
+export const DEFAULT_PAGE = 1;
 
 @Injectable({
     providedIn: 'root'
@@ -41,16 +58,17 @@ export class DotSiteService {
      * @return {*}  {Observable<Site[]>}
      * @memberof DotSiteService
      */
-    getSites(filter = '*', perPage?: number): Observable<Site[]> {
+    getSites(filter = '*', perPage?: number, page?: number): Observable<Site[]> {
         return this.#http
-            .get<{ entity: Site[] }>(this.getSiteURL(filter, perPage))
+            .get<{ entity: Site[] }>(this.getSiteURL(filter, perPage, page))
             .pipe(pluck('entity'));
     }
 
-    private getSiteURL(filter: string, perPage?: number): string {
+    private getSiteURL(filter: string, perPage?: number, page?: number): string {
         const searchParams = new URLSearchParams({
             filter,
             per_page: `${perPage || DEFAULT_PER_PAGE}`,
+            page: `${page || DEFAULT_PAGE}`,
             archived: `${this.#defaultParams.archived}`,
             live: `${this.#defaultParams.live}`,
             system: `${this.#defaultParams.system}`
@@ -69,5 +87,17 @@ export class DotSiteService {
         return this.#http
             .get<{ entity: Site }>(`${BASE_SITE_URL}/currentSite`)
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Retrieves contentlets from a specified folder.
+     *
+     * @param params - Parameters defining the folder and retrieval options.
+     * @returns An observable emitting an array of `DotCMSContentlet` items.
+     */
+    getContentByFolder(params: ContentByFolderParams) {
+        return this.#http
+            .post<{ entity: { list: DotCMSContentlet[] } }>('/api/v1/browser', params)
+            .pipe(pluck('entity', 'list'));
     }
 }

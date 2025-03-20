@@ -16,7 +16,6 @@
 
         <version.spotless.plugin>2.37.0</version.spotless.plugin>
         <batik.version>1.16</batik.version>
-        <glowroot.version>0.14.1</glowroot.version>
         <version.cargo.plugin>1.10.6</version.cargo.plugin>
         <assembly-directory>${basedir}/target/dist</assembly-directory>
         <clean.docker.volumes>true</clean.docker.volumes>
@@ -439,6 +438,7 @@
                     <includes>
                         <include>**/MainSuite1*.java</include>
                         <include>**/MainSuite2*.java</include>
+                        <include>**/MainSuite3*.java</include>
                         <include>**/Junit5Suite*.java</include>
                     </includes>
                 </configuration>

@@ -13,6 +13,7 @@ export default [
             '/assets',
             '/dotcms-block-editor',
             '/dotcms-binary-field-builder',
+            '/edit-content-bridge',
             '/categoriesServlet',
             '/JSONTags',
             '/api/vtl',
@@ -24,6 +25,8 @@ export default [
         pathRewrite: {
             '^/assets/manifest.json': '/dotAdmin/assets/manifest.json',
             '^/assets/monaco-editor/min': '/dotAdmin/assets/monaco-editor/min',
+            '^/assets/edit-ema': '/dotAdmin/assets/edit-ema',
+            '^/assets/seo': '/dotAdmin/assets/seo',
             '^/assets': '/dotAdmin',
             '^/tinymce': '/dotAdmin/tinymce'
         }

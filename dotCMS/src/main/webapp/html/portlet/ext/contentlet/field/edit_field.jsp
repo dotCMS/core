@@ -118,32 +118,36 @@
 </style>
 
 <div class="fieldWrapper" >
-    <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
-        <% if (hint != null) {%>
-        <a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
-        <span dojoType="dijit.Tooltip" connectId="tip-<%=field.getVelocityVarName()%>" position="above" style="width:100px;">
-				<span class="contentHint"><%=hint%></span>
-			</span>
-        <%}%>
+    <%
+    final com.dotcms.contenttype.model.field.Field newField2 = new LegacyFieldTransformer(field).from();
+    final com.dotcms.contenttype.model.field.FieldVariable hideLabelFieldVar = newField2.fieldVariablesMap().get("hideLabel");
+    if (hideLabelFieldVar == null || !Boolean.parseBoolean(hideLabelFieldVar.value())) { %>
+        <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
+            <% if (hint != null) {%>
+            <a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
+            <span dojoType="dijit.Tooltip" connectId="tip-<%=field.getVelocityVarName()%>" position="above" style="width:100px;">
+                    <span class="contentHint"><%=hint%></span>
+                </span>
+            <%}%>
 
-        <% if(field.isRequired()) {%>
-        <label for="<%=field.getVelocityVarName()%>_field" class="required">
-		<%} else {%>
-			<label for="<%=field.getVelocityVarName()%>_field">
-		<% } %>
-		<%
-            if(!field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())&&
-                    !field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.HIDDEN.toString()) &&
-                    ! "constant".equals(field.getFieldType())
-
-                    ) {
-        %>
-     		<%=field.getFieldName()%></label>
-		<% } %>
-    </div>
+            <% if(field.isRequired()) {%>
+            <label for="<%=field.getVelocityVarName()%>_field" class="required">
+            <%} else {%>
+                <label for="<%=field.getVelocityVarName()%>_field">
+            <% } %>
+            <%
+                if(!field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())&&
+                        !field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) &&
+                        !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
+                        !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
+                        !field.getFieldType().equals(Field.FieldType.HIDDEN.toString()) &&
+                        ! "constant".equals(field.getFieldType())
+                        ) {
+            %>
+                <%=field.getFieldName()%></label>
+            <% } %>
+        </div>
+    <% } %>
 
     <div class="fieldValue field__<%=field.getFieldType()%> <%= fullScreenClass%>" id="<%=field.getVelocityVarName()%>_field">
         <%
@@ -238,8 +242,9 @@
                 Logger.error(this.getClass(), e.getMessage());
             }
 
-            List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
-            String fieldVariablesContent = mapper.writeValueAsString(acceptTypes); // Field Variables
+            List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+            String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
+
             %>
             <script src="/html/showdown.min.js"></script>
             <div  id="block-editor-<%=field.getVelocityVarName()%>-container">
@@ -462,7 +467,7 @@
                         }
                     }
             %>
-                <div class="wysiwyg-container" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" style="<%= fullScreenHeight%>" >
+                <div class="wysiwyg-container" id="wysiwyg-container-<%=field.getVelocityVarName()%>" data-select-folder="<%=String.join(", ", defaultPathFolderPathIds)%>" style="<%= fullScreenHeight%>" >
             <% if (dragAndDrop) {  %>
                   <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="wysiwyg__dot-asset-drop-zone"></dot-asset-drop-zone>
             <% }  %>

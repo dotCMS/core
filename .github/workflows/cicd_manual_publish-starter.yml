@@ -9,8 +9,16 @@ on:
         options:
           - 'full'
           - 'empty'
+      old-assets:
+        description: 'Include old assets'
+        required: true
+        type: boolean
       changelog:
         description: 'Changes description'
+        required: true
+        type: string
+      issue-number:
+        description: 'Related issue number. Required to create Empty Starter PR.'
         required: true
         type: string
       dry-run:
@@ -28,13 +36,13 @@ env:
   EMPTY_STARTER_TOKEN: ${{ secrets.DOT_EMPTY_STARTER_ACCESS_TOKEN }}
   FULL_STARTER_URL: ${{ vars.DOT_STARTER_URL }}
   FULL_STARTER_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
-  DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=true
+  DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=${{ github.event.inputs.old-assets }}
 
 jobs:
   get-starter:
     runs-on: macos-13
     if: github.repository == 'dotcms/core'
-    environment: trunk
+    environment: starter
     steps:
       - name: 'Github context'
         run: |
@@ -87,11 +95,12 @@ jobs:
           
   deploy-artifacts:
     needs: [ get-starter ]
-    runs-on: ubuntu-20.04
-    environment: trunk
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: starter
     outputs:
       filename: ${{ steps.deploy-artifacts.outputs.filename }}
       url: ${{ steps.deploy-artifacts.outputs.url }}
+      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}      
     steps:
       - uses: jfrog/setup-jfrog-cli@v4
         env:
@@ -152,41 +161,27 @@ jobs:
           echo "::notice::Changelog: ${{ github.event.inputs.changelog }}"
           echo "::endgroup::"
 
-  update-pom:
-    if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == false }}
-    needs: [ deploy-artifacts ]
-    runs-on: ubuntu-20.04
-    environment: trunk
-    outputs:
-      pull-request-url: ${{ steps.create-pull-request.outputs.pull-request-url }}
-    steps:
-      - uses: actions/checkout@v4
-      
       - name: 'Update pom.xml'
+        if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
         id: update-pom
         working-directory: ${{ github.workspace }}/parent
         env:
-          FILENAME: ${{ needs.deploy-artifacts.outputs.filename }}
+          FILENAME: ${{ steps.deploy-artifacts.outputs.filename }}
         run: |
           echo "::group::Update pom.xml"
           echo "Updating pom.xml"
-        
           VERSION="${FILENAME%.*}"
-          
-          # Create an auxiliary branch for versioning updates
-          AUXILIARY_BRANCH=update-starter-version-${VERSION}-${{ github.run_id }}
-
+          AUXILIARY_BRANCH=${{ inputs.issue-number }}-update-starter-version-${VERSION}-${{ github.run_id }}
           sed -i "s/<starter.deploy.version>.*<\/starter.deploy.version>/<starter.deploy.version>${VERSION}<\/starter.deploy.version>/" pom.xml
-
           POM=$(cat pom.xml)
           echo "POM file: ${POM}"
-
           echo auxiliary-branch=${AUXILIARY_BRANCH} >> $GITHUB_OUTPUT
           echo starter-version=${VERSION} >> $GITHUB_OUTPUT
           echo "::notice::Auxiliary Branch: ${AUXILIARY_BRANCH}"
-          echo "::endgroup::"      
+          echo "::endgroup::"
 
       - name: 'Create Pull Request'
+        if: ${{ steps.update-pom.outcome == 'success' }}
         id: create-pull-request
         uses: peter-evans/create-pull-request@v6
         with:
@@ -198,13 +193,12 @@ jobs:
             This PR was created automatically to update the **starter.deploy.version** in pom.xml to [**${{ steps.update-pom.outputs.starter-version }}**].
           labels: |
             empty-starter
-            automated pr          
-        
+            automated pr            
+       
   send-notification:
-    needs: [ deploy-artifacts, update-pom ]
-    runs-on: ubuntu-20.04
-    environment: trunk
-    if: always() && github.event.inputs.dry-run == false
+    needs: [ deploy-artifacts ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    if: always() && github.event.inputs.dry-run == 'false'
     steps:
 
       - uses: actions/checkout@v4
@@ -215,6 +209,7 @@ jobs:
           echo "::group::Compose Message"
           ARTIFACT_FILENAME="${{ needs.deploy-artifacts.outputs.filename }}"
           ARTIFACT_URL="${{ needs.deploy-artifacts.outputs.url }}"
+          OLD_ASSETS="${{ github.event.inputs.old-assets }}"
           CHANGELOG="${{ github.event.inputs.changelog }}"
           PULL_REQUEST_URL="${{ needs.update-pom.outputs.pull-request-url }}"
           if [ "$STARTER_TYPE" == "empty" ]; then
@@ -226,6 +221,7 @@ jobs:
           > This automated script is happy to announce that a new *_${STARTER_TYPE} starter_* :package: \`${ARTIFACT_FILENAME}\` is now available on \`ARTIFACTORY\` :frog:!
           >
           > :link: ${ARTIFACT_URL}
+          > _Old assets included_: ${OLD_ASSETS}
           > *Changelog*
           > \`\`\`${CHANGELOG}\`\`\`
           >

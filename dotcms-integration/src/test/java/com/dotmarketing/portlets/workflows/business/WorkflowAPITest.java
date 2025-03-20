@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -34,6 +35,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -60,6 +62,7 @@ import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetPermissionsActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
@@ -133,6 +136,7 @@ import static org.junit.Assert.fail;
 public class WorkflowAPITest extends IntegrationTestBase {
 
     private static User user;
+    private static User adminUser;
     private static Host defaultHost;
     protected static ContentTypeAPIImpl contentTypeAPI;
     protected static FieldAPI fieldAPI;
@@ -348,6 +352,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
+        adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", user, false);
         defaultHost = hostAPI.findDefaultHost(user, false);
         contentTypeAPI = (ContentTypeAPIImpl) APILocator.getContentTypeAPI(user);
         fieldAPI = APILocator.getContentTypeFieldAPI();
@@ -1518,13 +1523,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertEquals(foundActions.size(), 5);
             ////
             final Contentlet testContentleti = testContentlet;
-            runNoLicense(()-> {
 
-               final List<WorkflowStep> steps = getSteps(testContentleti);
-
-                Assert.assertFalse(steps.isEmpty());
-                Assert.assertEquals(WorkflowAPI.SYSTEM_WORKFLOW_ID, steps.get(0).getSchemeId());
-            });
         } finally {
             contentletAPI.destroy(testContentlet, user, false);
         }
@@ -1554,9 +1553,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
          */
 
         Contentlet testContentlet1 = new Contentlet();
-        Contentlet testContentlet1Checkout = null;
-        Contentlet testContentlet2 = new Contentlet();
-        Contentlet testContentlet2Checkout = null;
+        Contentlet testContentlet1Checkout;
+        Contentlet testContentlet2;
+        Contentlet testContentlet2Checkout;
         Contentlet testContentletTop = new Contentlet();
         try {
             List<WorkflowScheme> workflowSchemes = new ArrayList<>();
@@ -1568,6 +1567,15 @@ public class WorkflowAPITest extends IntegrationTestBase {
             /* Associate the schemas to the content type */
             workflowAPI.saveSchemesForStruct(contentTypeStructure, workflowSchemes);
 
+            final Role role = APILocator.getRoleAPI().getUserRole(joeContributor);
+            List<Permission> permissionsToSave = new ArrayList<>();
+            permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, defaultHost.getPermissionId(), role.getId(), 7, true));
+            permissionAPI.assignPermissions(permissionsToSave, defaultHost, user, false);
+            permissionsToSave = new ArrayList<>();
+            permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, contentType.getPermissionId(), role.getId(),
+                    (PermissionAPI.PERMISSION_EDIT), false));
+            permissionAPI.assignPermissions(permissionsToSave, contentType, user, false);
+
             long time = System.currentTimeMillis();
 
             //Create a test contentlet
@@ -1576,10 +1584,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet1.setContentTypeId(contentType.id());
             testContentlet1.setHost(defaultHost.getIdentifier());
             testContentlet1.setIndexPolicy(IndexPolicy.FORCE);
-            testContentlet1 = contentletAPI.checkin(testContentlet1, user, false);
+            testContentlet1 = contentletAPI.checkin(testContentlet1, joeContributor, false);
             APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet1, user);
 
-            final Role role = APILocator.getRoleAPI().getUserRole(billIntranet);
             //Adding permissions to the just created contentlet
             List<Permission> permissions = new ArrayList<>();
             Permission p1 = new Permission(
@@ -1589,41 +1596,39 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     true);
 
             permissions.add(p1);
-
             APILocator.getPermissionAPI().save(permissions, testContentlet1, user, false);
 
             // making more versions
-            testContentlet1Checkout = contentletAPI.checkout(testContentlet1.getInode(), user, false);
+            testContentlet1Checkout = contentletAPI.checkout(testContentlet1.getInode(), joeContributor, false);
             testContentlet1Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
             testContentlet1Checkout.setIndexPolicy(IndexPolicy.FORCE);
-            testContentlet2 = contentletAPI.checkin(testContentlet1Checkout, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2, user);
+            testContentlet2 = contentletAPI.checkin(testContentlet1Checkout, joeContributor, false);
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2, user);
 
             // top version
-            testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), user, false);
+            testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), joeContributor, false);
             testContentlet2Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
             testContentlet2Checkout.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet1Checkout.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
-            testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2Checkout, user);
+            testContentletTop = contentletAPI.checkin(testContentlet2Checkout, joeContributor, false);
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2Checkout, user);
 
             // expected behavior
-            List<WorkflowAction> foundActions = APILocator.getWorkflowAPI().findAvailableActions(testContentletTop, billIntranet);
-            assertNotNull(foundActions);
-            assertFalse(foundActions.isEmpty());
+            List<WorkflowAction> foundActions = workflowAPI.findAvailableActions(testContentletTop, joeContributor);
+            assertFalse("The list of available actions for 'testContentletTop' cannot be empty", UtilMethods.isNotSet(foundActions));
             assertTrue(foundActions.size() > 1);
 
             // no top version
-            foundActions = APILocator.getWorkflowAPI()
-                    .findAvailableActions(testContentlet2, billIntranet);
-            assertNotNull(foundActions);
-            assertTrue(foundActions.isEmpty());
+            foundActions = workflowAPI.findAvailableActions(testContentlet2, joeContributor);
+            assertTrue("The list of available actions for 'testContentlet2' MUST be empty", UtilMethods.isNotSet(foundActions));
         } finally {
             try {
                 final Contentlet contentletToDelete = contentletAPI.findContentletByIdentifierAnyLanguage(testContentletTop.getIdentifier());
 
                 contentletAPI.destroy(contentletToDelete, user, false);
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                // Ignore exception
+            }
         }
     }
     /**
@@ -4259,21 +4264,30 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         // Add actions to the Steps: Two actions and one separator in Step 1, and one action in
         // Step 2
+        final Role role = APILocator.getRoleAPI().getUserRole(joeContributor);
         final WorkflowAction workflowAction1Step1 = addWorkflowAction(workflowAction1NameStep1, 1,
-                workflowStep1.getId(), workflowStep1.getId(), intranet, workflowScheme.getId());
+                workflowStep1.getId(), workflowStep1.getId(), role, workflowScheme.getId());
         addWorkflowAction(WorkflowAction.SEPARATOR, 2, workflowStep1.getId(),
-                workflowStep1.getId(), intranet, workflowScheme.getId(), Map.of("subtype",
+                workflowStep1.getId(), role, workflowScheme.getId(), Map.of("subtype",
                         WorkflowAction.SEPARATOR));
         addWorkflowAction(workflowAction3NameStep1, 3, workflowStep1.getId(),
-                workflowStep1.getId(), intranet, workflowScheme.getId());
+                workflowStep1.getId(), role, workflowScheme.getId());
 
         addWorkflowAction(workflowAction1NameStep2, 1, workflowStep2.getId(),
-                workflowStep2.getId(), intranet, workflowScheme.getId());
+                workflowStep2.getId(), role, workflowScheme.getId());
 
         // Assign the Workflow Scheme to a test Content Type
         final ContentType testContentType = insertContentType(typeName, BaseContentType.CONTENT);
         final Structure testContentTypeStruct = new StructureTransformer(testContentType).asStructure();
         workflowAPI.saveSchemesForStruct(testContentTypeStruct, List.of(workflowScheme));
+
+        List<Permission> permissionsToSave = new ArrayList<>();
+        permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, defaultHost.getPermissionId(), role.getId(), 7, true));
+        permissionAPI.assignPermissions(permissionsToSave, defaultHost, user, false);
+        permissionsToSave = new ArrayList<>();
+        permissionsToSave.add(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, testContentTypeStruct.getPermissionId(), role.getId(),
+                (PermissionAPI.PERMISSION_EDIT), false));
+        permissionAPI.assignPermissions(permissionsToSave, testContentTypeStruct, user, false);
 
         // Create a test contentlet
         Contentlet testContentlet1 = new Contentlet();
@@ -4282,13 +4296,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
         testContentlet1.setContentTypeId(testContentType.id());
         testContentlet1.setHost(defaultHost.getIdentifier());
         testContentlet1.setIndexPolicy(IndexPolicy.FORCE);
-        testContentlet1 = contentletAPI.checkin(testContentlet1, user, false);
+        testContentlet1 = contentletAPI.checkin(testContentlet1, joeContributor, false);
         testContentlet1 = fireWorkflowAction(testContentlet1, null, workflowAction1Step1,
-                StringPool.BLANK, StringPool.BLANK, user);
+                StringPool.BLANK, StringPool.BLANK, joeContributor);
         workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet1, user);
 
         // Adding permissions to the just created contentlet
-        final Role role = roleAPI.getUserRole(billIntranet);
+        //final Role role = roleAPI.getUserRole(billIntranet);
         final Permission p1 = new Permission(testContentlet1.getPermissionId(), role.getId(),
                 (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT), true);
         final List<Permission> permissions = List.of(p1);
@@ -4296,11 +4310,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         // Checkout the created Contentlet
         final Contentlet testContentlet1Checkout =
-                contentletAPI.checkout(testContentlet1.getInode(), user, false);
+                contentletAPI.checkout(testContentlet1.getInode(), joeContributor, false);
         final List<WorkflowAction> foundActions =
-                workflowAPI.findAvailableActions(testContentlet1Checkout, billIntranet);
+                workflowAPI.findAvailableActions(testContentlet1Checkout, joeContributor);
 
-        assertNotNull(foundActions);
+        assertFalse("The list of available actions for the test Contentlet cannot be empty", UtilMethods.isNotSet(foundActions));
+        assertEquals("The list of available actions for the test Contentlet must have 3 elements", 3, foundActions.size());
         assertEquals("The second Workflow Action must be of subtype SEPARATOR",
                 WorkflowAction.SEPARATOR, foundActions.get(1).getMetadata().get("subtype"));
     }
@@ -4896,6 +4911,113 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         }
 
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#fireContentWorkflow(Contentlet, ContentletDependencies)}
+     * Given Scenario: Reset permissions to a contentlet from workflow action
+     * ExpectedResult: The reset of the permissions should be done successfully when firing workflow action
+     *
+     */
+    @Test
+    public void test_reset_permissions_subaction() throws DotDataException, DotSecurityException {
+
+        ContentType cType = createContentType("test");
+
+
+         Contentlet contentlet = new ContentletDataGen(cType.id())
+                .host(APILocator.systemHost())
+                .nextPersisted();
+
+        //Get original size permissions
+        final int originalSizePermissions = APILocator.getPermissionAPI().getPermissions(contentlet).size();
+
+        Role limitedUserRole = TestUserUtils.getBackendRole();
+
+        addPermission(limitedUserRole, contentlet, PermissionLevel.READ);
+
+        //Since we're setting permissions individually, should be only 1 permission
+        Assert.assertEquals(1, APILocator.getPermissionAPI().getPermissions(contentlet).size());
+
+
+        final long time = System.currentTimeMillis();
+        final String workflowSchemeName = "WorkflowSchemeTestResetPermissions_" + time;
+        final String workflowScheme3Step1Name = "WorkflowSchemeResetPermissionsStep1_" + time;
+        final String workflowScheme3Step1ActionResetPermissions = "Reset" + time;
+        final WorkflowScheme workflowScheme = addWorkflowScheme(workflowSchemeName);
+
+        final Set<String> schemes = new HashSet<>();
+        schemes.add(workflowScheme.getId());
+        workflowAPI.saveSchemeIdsForContentType(cType, schemes);
+
+        final WorkflowStep workflowSchemeStep = addWorkflowStep(workflowScheme3Step1Name, 1, false, false,
+                workflowScheme.getId());
+
+        /* Generate actions */
+        final WorkflowAction workflowSchemeResetPermissionAction = addWorkflowAction(workflowScheme3Step1ActionResetPermissions, 1,
+                workflowSchemeStep.getId(), workflowSchemeStep.getId(), contributor,
+                workflowScheme.getId());
+
+
+        addSubActionClass("Reset Permissions", workflowSchemeResetPermissionAction.getId(), ResetPermissionsActionlet.class, 0);
+
+
+
+        List<WorkflowStep> steps = workflowAPI.findSteps(workflowScheme);
+        assertNotNull(steps);
+        assertEquals(1, steps.size());
+
+        //check available actions for admin user
+        List<WorkflowAction> actions = workflowAPI.findActions(steps, user);
+        assertNotNull(actions);
+        assertEquals(1, actions.size());
+
+        actions = workflowAPI.findActions(steps, user, null);
+        assertNotNull(actions);
+        assertEquals(1, actions.size());
+
+        final ContentletRelationships contentletRelationships = APILocator.getContentletAPI()
+                .getAllRelationships(contentlet);
+
+        //Reset permissions
+        contentlet = fireWorkflowAction(contentlet, contentletRelationships, workflowSchemeResetPermissionAction,
+                StringPool.BLANK, StringPool.BLANK, user);
+
+
+        //After reset permissions, the permissions should be back to their original size
+        Assert.assertEquals(originalSizePermissions, APILocator.getPermissionAPI().getPermissions(contentlet).size());
+
+    }
+
+    private void addPermission(
+            final Role role,
+            final Permissionable contentType,
+            final PermissionLevel permissionLevel)
+
+            throws DotDataException, DotSecurityException {
+
+        APILocator.getPermissionAPI().save(
+                getPermission(role, contentType, permissionLevel.getType()),
+                contentType, adminUser, false);
+    }
+
+
+    private Permission getPermission(
+            final Role role,
+            final Permissionable permissionable,
+            final int permissionPublish) {
+
+        final Permission publishPermission = new Permission();
+        publishPermission.setInode(permissionable.getPermissionId());
+        publishPermission.setRoleId(role.getId());
+        publishPermission.setPermission(permissionPublish);
+        return publishPermission;
+    }
+
+    private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
+        return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+                .owner(user.getUserId()).build());
     }
 
 }

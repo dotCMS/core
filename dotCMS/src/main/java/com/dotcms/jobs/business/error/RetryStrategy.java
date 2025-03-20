@@ -35,25 +35,25 @@ public interface RetryStrategy {
     int maxRetries();
 
     /**
-     * Determines whether a given exception is retryable according to this strategy.
+     * Determines whether a given exception is not retryable according to this strategy.
      *
      * @param exceptionClass The class of the exception to check.
-     * @return true if the exception is retryable, false otherwise.
+     * @return true if the exception is not retryable, false otherwise.
      */
-    boolean isRetryableException(Class<? extends Throwable> exceptionClass);
+    boolean isNonRetryableException(Class<? extends Throwable> exceptionClass);
 
     /**
-     * Adds an exception class to the set of retryable exceptions.
+     * Adds an exception class to the set of non retryable exceptions.
      *
-     * @param exceptionClass The exception class to be considered retryable.
+     * @param exceptionClass The exception class to be considered non retryable.
      */
-    void addRetryableException(Class<? extends Throwable> exceptionClass);
+    void addNonRetryableException(Class<? extends Throwable> exceptionClass);
 
     /**
-     * Returns an unmodifiable set of the currently registered retryable exceptions.
+     * Returns an unmodifiable set of the currently registered non retryable exceptions.
      *
-     * @return An unmodifiable set of retryable exception classes.
+     * @return An unmodifiable set of non retryable exception classes.
      */
-    Set<Class<? extends Throwable>> getRetryableExceptions();
+    Set<Class<? extends Throwable>> getNonRetryableExceptions();
 
 }

@@ -52,6 +52,12 @@ export class DotWorkflowActionsComponent implements OnChanges {
      */
     loading = input<boolean>(false);
     /**
+     * Disable the actions
+     *
+     * @memberof DotWorkflowActionsComponent
+     */
+    disabled = input<boolean>(false);
+    /**
      * Group the actions by separator
      *
      * @memberof DotWorkflowActionsComponent

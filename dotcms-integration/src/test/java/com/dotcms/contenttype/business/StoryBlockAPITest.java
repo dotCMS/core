@@ -1,38 +1,68 @@
 
 package com.dotcms.contenttype.business;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.business.json.ContentletJsonHelper;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test for {@link StoryBlockAPI}
  * @author jsanca
  */
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class StoryBlockAPITest extends IntegrationTestBase {
+
+    @DataProvider
+    public static Object[] depthValues() {
+        return new Integer[]{0, 1, 2, 3};
+    }
 
     private static final String JSON_SELF_REFERENCE =
             "{\n" +
@@ -292,24 +322,38 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         APILocator.getContentletAPI().publish(
                 APILocator.getContentletAPI().checkin(newRichTextContentlet, APILocator.systemUser(), false), APILocator.systemUser(), false);
 
-        // 5) ask for refreshing references, the new changes of the rich text contentlet should be reflected on the json
-        final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson, "1234");
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
 
-        // 6) check if the results are ok.
-        assertTrue(refreshResult.isRefreshed());
-        assertNotNull(refreshResult.getValue());
-        final Map    refreshedStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                                                              .readValue(Try.of(() -> refreshResult.getValue().toString())
-                                                                                 .getOrElse(StringPool.BLANK), LinkedHashMap.class);
-        final List refreshedContentList = (List) refreshedStoryBlockMap.get("content");
-        final Optional<Object> refreshedfirstContentletMap = refreshedContentList.stream()
-                                                                     .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
+        try {
+            final HttpServletRequest request = new MockAttributeRequest(mock(HttpServletRequest.class));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-        assertTrue(refreshedfirstContentletMap.isPresent());
-        final Map refreshedContentletMap = (Map) Map.class.cast(Map.class.cast(refreshedfirstContentletMap.get()).get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
-        assertEquals(refreshedContentletMap.get("identifier"), newRichTextContentlet.getIdentifier());
-        assertEquals("Expected Generic Content title doesn't match the one in the Contentlet", "Title2", newRichTextContentlet.getStringProperty("title"));
-        assertEquals("Expected Generic Content body doesn't match the one in the Contentlet", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT,  newRichTextContentlet.getStringProperty("body"));
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            // 5) ask for refreshing references, the new changes of the rich text contentlet should be reflected on the json
+            final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson, "1234");
+
+            // 6) check if the results are ok.
+            assertTrue(refreshResult.isRefreshed());
+            assertNotNull(refreshResult.getValue());
+            final Map refreshedStoryBlockMap = ContentletJsonHelper.INSTANCE.get().objectMapper()
+                    .readValue(Try.of(() -> refreshResult.getValue().toString())
+                            .getOrElse(StringPool.BLANK), LinkedHashMap.class);
+            final List refreshedContentList = (List) refreshedStoryBlockMap.get("content");
+            final Optional<Object> refreshedfirstContentletMap = refreshedContentList.stream()
+                    .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
+
+            assertTrue(refreshedfirstContentletMap.isPresent());
+            final Map refreshedContentletMap = (Map) Map.class.cast(Map.class.cast(refreshedfirstContentletMap.get()).get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
+            assertEquals(refreshedContentletMap.get("identifier"), newRichTextContentlet.getIdentifier());
+            assertEquals("Expected Generic Content title doesn't match the one in the Contentlet", "Title2", newRichTextContentlet.getStringProperty("title"));
+            assertEquals("Expected Generic Content body doesn't match the one in the Contentlet", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT, newRichTextContentlet.getStringProperty("body"));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
     }
 
     /**
@@ -424,5 +468,363 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         assertFalse(result.isRefreshed());
 
     }
-    
+
+    /**
+     * Method to test: {@link StoryBlockAPIImpl#refreshReferences(Contentlet)}
+     * When:
+     * - We have a Content Type with 3 fields:
+     *      TextField this is like the title
+     *      RelationshipField MANY_TO_MANY relationship to itself
+     *      BlocEditorField
+     * - Now we are going to create 3 Contentlets:
+     *      A: related to C
+     *         Add in BLockEditor: B and C
+     *      B: related to A
+     *         Add in BLockEditor: A and C
+     *      C: related to B
+     *         Add in BLockEditor: A and B
+     * And we are going to load A
+     *
+     * Should: return the right depth all the time and don't throw a {@link OutOfMemoryError} or {@link StackOverflowError}
+     * @param depth
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("depthValues")
+    public void testCycleRelationshipAndBlockEditor(final int depth) throws Exception {
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        
+        final Field storyBlockField = new FieldDataGen()
+                .type(StoryBlockField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+        
+        final Field relationshipField = APILocator.getContentTypeFieldAPI().save(
+                FieldBuilder.builder(RelationshipField.class)
+                    .name("rel")
+                    .contentTypeId(contentType.id())
+                    .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                    .relationType(contentType.variable()).build(), APILocator.systemUser());
+
+        final Field titleField = new FieldDataGen().contentTypeId(contentType.id()).type(TextField.class).nextPersisted();
+
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.id());
+
+        Contentlet contentA = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "A").nextPersisted();
+        Contentlet contentB = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "B").nextPersisted();
+        Contentlet contentC = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "C").nextPersisted();
+
+        final Contentlet contentACompleteANdPublish = setFieldsAndPublishBothAsBlockEditor(contentA, relationshipField,
+                storyBlockField, contentC, contentB);
+
+        final Contentlet contentBCompleteANdPublish = setFieldsAndPublishBothAsBlockEditor(contentB, relationshipField,
+                storyBlockField, contentA, contentC);
+
+        final Contentlet contentCCompleteANdPublish = setFieldsAndPublishBothAsBlockEditor(contentC, relationshipField,
+                storyBlockField, contentB, contentA);
+
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        try {
+            final HttpServletRequest request = new MockAttributeRequest(mock(HttpServletRequest.class));
+            request.setAttribute(WebKeys.HTMLPAGE_DEPTH, String.valueOf(depth));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            Contentlet contentAFromAPI = APILocator.getContentletAPI()
+                    .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
+
+            Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
+            List<Map<String, Object>> blockValue = (List<Map<String, Object>>) blockEditorMap.get("content");
+
+            assertEquals(3, blockValue.size());
+
+            for (int i = 0; i < blockValue.size(); i++) {
+
+                if (blockValue.get(i).get("type").equals("dotContent")) {
+                    Map<String, Object> blockEditorItem = (Map<String, Object>)
+                            ((Map<String, Object>) blockValue.get(i).get("attrs")).get("data");
+
+                    assertEquals(i == 0 ? contentB.getIdentifier() : contentC.getIdentifier(), blockEditorItem.get("identifier"));
+
+                    List<Object> relatedContent = (List<Object>) blockEditorItem.get(relationshipField.variable());
+                    assertEquals(1, relatedContent.size());
+
+                    if (depth == 0) {
+                        assertEquals( i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
+                                relatedContent.get(0).toString());
+                    } else if (depth == 1){
+                        assertEquals(  i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
+                                ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
+
+                        assertNull( ((Map<String, Object>) relatedContent.get(0)).get(relationshipField.variable()));
+                    } else if (depth > 1 && i == 0) {
+                        assertEquals(i == 0 ? contentA.getIdentifier() : contentB.getIdentifier(),
+                                ((Map<String, Object>) relatedContent.get(0)).get("identifier"));
+
+                        final List<Object> secondLevelRelatedContents = (List<Object>)
+                                ((Map<String, Object>) relatedContent.get(0)).get(relationshipField.variable());
+
+                        assertEquals(1, secondLevelRelatedContents.size());
+
+                        if (depth == 2) {
+                            assertEquals(i == 0 ? contentC.getIdentifier() : contentA.getIdentifier(),
+                                    secondLevelRelatedContents.get(0).toString());
+                        } else {
+                           final  Map<String, Object> secondLevelRelatedContent = (Map<String, Object>) secondLevelRelatedContents.get(0);
+                            assertEquals(i == 0 ? contentC.getIdentifier() : contentA.getIdentifier(),
+                                    secondLevelRelatedContent.get("identifier"));
+
+                            assertNull(secondLevelRelatedContent.get(relationshipField.variable()));
+                        }
+                    }
+                }
+            }
+        }finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
+    }
+
+    /**
+     * When:
+     * - We have a Content Type with 3 fields:
+     *      TextField this is like the title
+     *      RelationshipField ONE_TO_ONE relationship to itself
+     *      BlocEditorField
+     * - Now we are going to create some Contentlets:
+     *      A: related to B
+     *         Add in BLockEditor C
+     *      B: related to D
+     *         Add in BLockEditor: E
+     *      C: related to F
+     *         Add in BLockEditor G
+     *      F: related to H
+     *         Add in BLockEditor I
+     *      H: related to K
+     *         Add in BLockEditor K
+     * And we are going to load A
+     *
+     * Should: return the right depth all the time
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("depthValues")
+    public void hydrateWithBlockEditorAndRelationship(final int depth) throws Exception {
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Field storyBlockField = new FieldDataGen()
+                .type(StoryBlockField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+
+        final Field relationshipField = APILocator.getContentTypeFieldAPI().save(
+                FieldBuilder.builder(RelationshipField.class)
+                        .name("rel")
+                        .contentTypeId(contentType.id())
+                        .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()))
+                        .relationType(contentType.variable()).build(), APILocator.systemUser());
+
+        final Field titleField = new FieldDataGen().contentTypeId(contentType.id()).type(TextField.class).nextPersisted();
+
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.id());
+
+        Contentlet contentA = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "A").nextPersisted();
+        Contentlet contentB = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "B").nextPersisted();
+        Contentlet contentC = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "C").nextPersisted();
+        Contentlet contentD = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "D").nextPersistedAndPublish();
+        Contentlet contentE = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "E").nextPersistedAndPublish();
+        Contentlet contentF = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "F").nextPersisted();
+        Contentlet contentG = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "G").nextPersistedAndPublish();
+        Contentlet contentH = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "H").nextPersisted();
+        Contentlet contentI = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "I").nextPersistedAndPublish();
+        Contentlet contentJ = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "J").nextPersistedAndPublish();
+        Contentlet contentK = new ContentletDataGen(contentType).languageId(language.getId()).setProperty(titleField.variable(), "K").nextPersistedAndPublish();
+
+        final Contentlet contentACompleteANdPublish = setFieldsAndPublish(contentA, relationshipField,
+                storyBlockField, contentB, contentC);
+
+        final Contentlet contentBCompleteANdPublish = setFieldsAndPublish(contentB, relationshipField,
+                storyBlockField, contentD, contentE);
+
+        final Contentlet contentCCompleteANdPublish = setFieldsAndPublish(contentC, relationshipField,
+                storyBlockField, contentF, contentG);
+
+        final Contentlet contentFCompleteANdPublish = setFieldsAndPublish(contentF, relationshipField,
+                storyBlockField, contentH, contentI);
+
+        final Contentlet contentHCompleteANdPublish = setFieldsAndPublish(contentH, relationshipField,
+                storyBlockField, contentJ, contentK);
+
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        try {
+            final HttpServletRequest request  = mock(HttpServletRequest.class);
+            when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn(String.valueOf(depth));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            final HttpServletResponse response  = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            Contentlet contentAFromAPI = APILocator.getContentletAPI()
+                    .find(contentACompleteANdPublish.getInode(), APILocator.systemUser(), false);
+
+            Map<String, Object> blockEditorMap = JsonUtil.getJsonFromString(contentAFromAPI.getStringProperty(storyBlockField.variable()));
+            List<Map<String, Object>> blockValue = (List<Map<String, Object>>) blockEditorMap.get("content");
+
+            assertEquals(2, blockValue.size());
+
+            Map<String, Object> blockEditorItem = blockValue.get(0);
+            final Map<String, Object> blockEditorContent = (Map<String, Object>) ((Map<String, Object>) blockEditorItem.get("attrs")).get("data");
+            assertEquals(contentC.getIdentifier(), blockEditorContent.get("identifier"));
+
+            if (depth == 0) {
+                assertEquals(contentF.getIdentifier(), blockEditorContent.get(relationshipField.variable()));
+            } else if (depth == 1) {
+                assertEquals(contentF.getIdentifier(),
+                        ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get("identifier"));
+
+                assertNull(contentF.getIdentifier(),
+                        ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get(relationshipField.variable()));
+            } else if (depth > 1) {
+                assertEquals(contentF.getIdentifier(),
+                        ((Map<String, Object>) blockEditorContent.get(relationshipField.variable())).get("identifier"));
+
+                final Map<String, Object> secondLevelRelatedContent = (Map<String, Object>) blockEditorContent.get(relationshipField.variable());
+                assertEquals(contentF.getIdentifier(), secondLevelRelatedContent.get("identifier"));
+
+                if (depth == 2) {
+                    assertEquals(contentH.getIdentifier(), secondLevelRelatedContent.get(relationshipField.variable()));
+                } else {
+                    assertEquals(contentH.getIdentifier(),
+                            ((Map<String, Object>) secondLevelRelatedContent.get(relationshipField.variable())).get("identifier"));
+
+                    assertNull(
+                            ((Map<String, Object>) secondLevelRelatedContent.get(relationshipField.variable()))
+                                    .get(relationshipField.variable()));
+                }
+            }
+        }finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
+    }
+
+    private static Contentlet setFieldsAndPublish(final Contentlet parentContent, final Field relationshipField,
+                                                                   final Field storyBlockField, Contentlet relatedContent, Contentlet insideContentEditor)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet checkout = ContentletDataGen.checkout(parentContent);
+
+        final ContentletRelationships contentletARelationships = setRelationshipField(relationshipField, checkout, relatedContent);
+        setBlockEditorField(checkout, storyBlockField, insideContentEditor);
+
+        //Checkin of the parent to validate Relationships
+        final Contentlet contentAComplete = APILocator.getContentletAPI().checkin(checkout, contentletARelationships,
+                null, null, APILocator.systemUser(), false);
+        return ContentletDataGen.publish(contentAComplete);
+    }
+
+    private static Contentlet setFieldsAndPublishBothAsBlockEditor(final Contentlet parentContent, final Field relationshipField,
+                                                   final Field storyBlockField, Contentlet relatedContent, Contentlet insideContentEditor)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet checkout = ContentletDataGen.checkout(parentContent);
+
+        final ContentletRelationships contentletARelationships = setRelationshipField(relationshipField, checkout, relatedContent);
+        setBlockEditorField(checkout, storyBlockField, insideContentEditor, relatedContent);
+
+        //Checkin of the parent to validate Relationships
+        final Contentlet contentAComplete = APILocator.getContentletAPI().checkin(checkout, contentletARelationships,
+                null, null, APILocator.systemUser(), false);
+        return ContentletDataGen.publish(contentAComplete);
+    }
+
+    private static void setBlockEditorField(final Contentlet parentContent,
+                                            final Field storyBlockField, final Contentlet insideBlockEditor1, Contentlet insideBlockEditor2) {
+        final String storyBlockJSON = "{" +
+            "\"type\": \"doc\"," +
+            "\"content\": [" +
+                "{" +
+                    "\"type\": \"dotContent\"," +
+                    "\"attrs\": {" +
+                        "\"data\": {" +
+                            "\"identifier\": \"%s\"," +
+                            "\"languageId\": %s" +
+                        "}" +
+                    "}" +
+                "}," +
+                "{" +
+                    "\"type\": \"dotContent\"," +
+                    "\"attrs\": {" +
+                        "\"data\": {" +
+                            "\"identifier\": \"%s\"," +
+                            "\"languageId\": %s" +
+                        "}" +
+                    "}" +
+                "}," +
+                "{" +
+                    "\"type\": \"paragraph\"," +
+                    "\"attrs\": {" +
+                        "\"textAlign\": \"left\"" +
+                    "}" +
+                "}" +
+            "]" +
+        "}";
+
+        parentContent.setProperty(storyBlockField.variable(), String.format(storyBlockJSON, insideBlockEditor1.getIdentifier(),
+                insideBlockEditor1.getLanguageId(), insideBlockEditor2.getIdentifier(), insideBlockEditor2.getLanguageId()));
+    }
+
+    private static void setBlockEditorField(final Contentlet parentContent,
+                                            final Field storyBlockField, final Contentlet insideBlockEditor1) {
+        final String storyBlockJSON = "{" +
+            "\"type\": \"doc\"," +
+            "\"content\": [" +
+                "{" +
+                    "\"type\": \"dotContent\"," +
+                    "\"attrs\": {" +
+                        "\"data\": {" +
+                            "\"identifier\": \"%s\"," +
+                            "\"languageId\": %s" +
+                        "}" +
+                    "}" +
+                "}," +
+                "{" +
+                    "\"type\": \"paragraph\"," +
+                    "\"attrs\": {" +
+                        "\"textAlign\": \"left\"" +
+                    "}" +
+                "}" +
+            "]" +
+        "}";
+
+        parentContent.setProperty(storyBlockField.variable(), String.format(storyBlockJSON, insideBlockEditor1.getIdentifier(),
+                insideBlockEditor1.getLanguageId()));
+    }
+
+    private static ContentletRelationships setRelationshipField(final Field relationshipField,
+                                                                final Contentlet parentContent, final Contentlet relatedContent)
+            throws DotDataException, DotSecurityException {
+
+        final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(relationshipField, APILocator.systemUser());
+        //Relate contentlets
+        final ContentletRelationships contentletRelationships = new ContentletRelationships(parentContent);
+
+        final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
+                contentletRelationships.new ContentletRelationshipRecords(relationship, true);
+        contentletRelationshipRecords.setRecords(CollectionsUtils.list(relatedContent));
+        contentletRelationships.getRelationshipsRecords().add(contentletRelationshipRecords);
+        return contentletRelationships;
+    }
+
 }

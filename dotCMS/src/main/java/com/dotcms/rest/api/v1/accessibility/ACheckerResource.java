@@ -21,6 +21,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -114,6 +115,7 @@ public class ACheckerResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes({MediaType.APPLICATION_JSON})
     @Operation(
             operationId = "postValidateContent",
             summary = "Validates content",
@@ -215,6 +217,7 @@ public class ACheckerResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )

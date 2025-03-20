@@ -1,13 +1,18 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.cdi.CDIUtils;
+import com.dotcms.featureflag.FeatureFlagName;
+import com.dotcms.telemetry.rest.TelemetryResource;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
-import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.Lazy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +42,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 				@Tag(name = "Workflow"),
 				@Tag(name = "Page"),
 				@Tag(name = "Content Type"),
+				@Tag(name = "Content Type Field"),
 				@Tag(name = "Content Delivery"),
 				@Tag(name = "Bundle"),
 				@Tag(name = "Navigation"),
@@ -46,18 +52,23 @@ import org.glassfish.jersey.server.ResourceConfig;
 )
 public class DotRestApplication extends ResourceConfig {
 
-	public DotRestApplication() {
+	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
+			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, false));
 
+	public DotRestApplication() {
+		final List<String> packages = new ArrayList<>(List.of(
+				"com.dotcms.rest",
+				"com.dotcms.contenttype.model.field",
+				"com.dotcms.rendering.js",
+				"com.dotcms.ai.rest",
+				"io.swagger.v3.jaxrs2"));
+		if (Boolean.TRUE.equals(ENABLE_TELEMETRY_FROM_CORE.get())) {
+			packages.add(TelemetryResource.class.getPackageName());
+		}
 		register(MultiPartFeature.class).
 		register(JacksonJaxbJsonProvider.class).
 		registerClasses(customClasses.keySet()).
-		packages(
-		  "com.dotcms.rest",
-		  "com.dotcms.contenttype.model.field",
-		  "com.dotcms.rendering.js",
-		  "com.dotcms.ai.rest",
-		  "io.swagger.v3.jaxrs2"
-		);
+		packages(packages.toArray(new String[0]));
 	}
 
 	/**
@@ -69,8 +80,13 @@ public class DotRestApplication extends ResourceConfig {
 	 * adds a class and reloads
 	 * @param clazz the class ot add
 	 */
-	public static synchronized void addClass(Class<?> clazz) {
+	public static synchronized void addClass(final Class<?> clazz) {
 		if(clazz==null){
+			return;
+		}
+		if (Boolean.TRUE.equals(ENABLE_TELEMETRY_FROM_CORE.get())
+				&& clazz.getName().equalsIgnoreCase("com.dotcms.experience.TelemetryResource")) {
+			Logger.warn(DotRestApplication.class, "Bypassing activation of Telemetry REST Endpoint from OSGi");
 			return;
 		}
 		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {

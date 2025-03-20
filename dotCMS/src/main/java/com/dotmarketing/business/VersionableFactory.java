@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.variant.model.Variant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.dotmarketing.beans.Identifier;
@@ -107,6 +108,15 @@ public abstract class VersionableFactory {
 	 * @throws DotStateException
 	 */
 	protected abstract VersionInfo getVersionInfo(String identifier) throws DotDataException, DotStateException;
+
+	/**
+	 * Get a list of all the working versions of a contentlet excluding the one with the specified language id.
+	 * @param identifier
+	 * @param lang
+	 * @return List of the rows (working_inode + lang)
+	 * @throws DotDataException
+	 */
+	protected abstract List<Map<String, Object>> getWorkingVersionsExcludingLanguage(String identifier, long lang) throws DotDataException;
 
 	/**
 	 * 

@@ -1,4 +1,4 @@
-import { PageApiOptions } from '../../client/sdk-js-client';
+import { PageApiOptions } from '../../deprecated/sdk-js-client';
 
 /**
  * Interface representing the properties for page request parameters.
@@ -41,9 +41,7 @@ export const getPageRequestParams = ({
     const finalParams: Record<string, unknown> = {};
     const dotMarketingPersonaId = copiedParams['com.dotmarketing.persona.id'] || '';
 
-    if (copiedParams['mode']) {
-        finalParams['mode'] = copiedParams['mode'];
-    }
+    finalParams['mode'] = copiedParams['mode'] || 'LIVE';
 
     if (copiedParams['language_id']) {
         finalParams['language_id'] = copiedParams['language_id'];
@@ -55,6 +53,10 @@ export const getPageRequestParams = ({
 
     if (copiedParams['personaId'] || dotMarketingPersonaId) {
         finalParams['personaId'] = copiedParams['personaId'] || dotMarketingPersonaId;
+    }
+
+    if (copiedParams['publishDate']) {
+        finalParams['publishDate'] = copiedParams['publishDate'];
     }
 
     return {

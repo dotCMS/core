@@ -53,6 +53,7 @@
 .page-tools-list__description {
     margin: 0;
     line-height: $line-height;
+    word-break: normal;
 }
 
 .page-tools-external-link {

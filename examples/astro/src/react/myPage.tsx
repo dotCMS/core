@@ -8,15 +8,21 @@ import type { FC } from "react";
 
 import { Navigation } from "./layout/navigation";
 import { Footer } from "./layout/footer/footer";
+import NotFound from "./components/notFound";
+
 import type { DotcmsNavigationItem, DotCMSPageAsset } from "@dotcms/types";
 
 export type MyPageProps = {
-  pageAsset: DotCMSPageAsset | undefined;
-  nav: DotcmsNavigationItem[] | undefined;
+  pageAsset?: DotCMSPageAsset;
+  nav?: DotcmsNavigationItem[];
 };
 
 export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
   pageAsset = usePageAsset(pageAsset);
+
+  if (!pageAsset) {
+    return <NotFound />;
+  }
 
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-lime-50">
@@ -26,7 +32,7 @@ export const MyPage: FC<MyPageProps> = ({ pageAsset, nav }) => {
         </Header>
       )}
 
-      <main className="container flex flex-col gap-8 m-auto">
+      <main className="container m-auto">
         <DotcmsLayout
           pageContext={{
             components: componentsMap,

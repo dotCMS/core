@@ -51,6 +51,7 @@ List<ContentType> structs = APILocator.getContentTypeAPI(APILocator.systemUser()
 <script language="Javascript">
 dojo.require("dijit.Editor");
 dojo.require("dijit.form.MultiSelect");
+dojo.require("dijit.form.ValidationTextBox")
 
 
 var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
@@ -1141,21 +1142,115 @@ function assetHostListTable_deleteHost(hostId){
         assetExportDialog = new dijit.Dialog({
             title: "<%= LanguageUtil.get(pageContext, "Import/Export-dotCMS-Content") %>",
             content: "<%= LanguageUtil.get(pageContext, "download-assets-include-old-versions") %>",
+            style: "maxWidth: 400px;",
             onBlur: () => {
                 if (assetExportDialog.open) {
                     assetExportDialog.hide();
                 }
             }
         });
-        const btnContainer = document.createElement("div");
-        const btnConfirm = createDialogBtn("<%= LanguageUtil.get(pageContext, "Yes") %>", downloadUrl + "?oldAssets=true");
-        const btnReject = createDialogBtn("<%= LanguageUtil.get(pageContext, "No") %>", downloadUrl + "?oldAssets=false");
-        btnContainer.className = "dialogBtnContainer";
-        // Add the buttons to the container
-        btnContainer.appendChild(btnConfirm.domNode)
-        btnContainer.appendChild(btnReject.domNode);
-        // Add the container to the dialog
+
+        if(dijit.byId("oldAssetsRadioIdTrue") != null){
+            dijit.byId("oldAssetsRadioIdTrue").destroy();
+            dijit.byId("oldAssetsRadioIdFalse").destroy();
+            dijit.byId("maxFileSize").destroy();
+        }
+
+        let btnContainer = document.createElement("div");
+        btnContainer.style.padding = "10px";
+        btnContainer.style.textAlign = "center";
+        let radioButton = new dijit.form.RadioButton({
+            name: "oldAssetsRadio",
+            id:"oldAssetsRadioIdTrue",
+            value: "true",
+            checked: false
+        });
+        let label = document.createElement("label");
+        label.style.paddingRight = "30px";
+        label.style.paddingLeft = "5px";
+        label.htmlFor = "oldAssetsRadioIdTrue";
+        label.innerHTML = "<%= LanguageUtil.get(pageContext, "Yes") %>";
+        btnContainer.appendChild(radioButton.domNode);
+        btnContainer.appendChild(label);
+
+
+        radioButton = new dijit.form.RadioButton({
+            name: "oldAssetsRadio",
+            id:"oldAssetsRadioIdFalse",
+            value: "false",
+            checked: true
+        });
+        label = document.createElement("label");
+        label.style.paddingRight = "10px";
+        label.style.paddingLeft = "5px";
+
+        label.htmlFor = "oldAssetsRadioIdFalse";
+        label.innerHTML = "<%= LanguageUtil.get(pageContext, "No") %>";
+        btnContainer.appendChild(radioButton.domNode);
+        btnContainer.appendChild(label);
         assetExportDialog.containerNode.appendChild(btnContainer);
+
+
+        btnContainer = document.createElement("div");
+        btnContainer.style.textAlign = "center";
+
+
+        let input = new dijit.form.ValidationTextBox({
+            name: "maxFileSize",
+            id:"maxFileSize",
+            required: false,
+            label: "E.g: 1mb, 512k, 2gb",
+            placeHolder: "512k, 1mb, 2gb...",
+            regExp: "([0-9]+)\\s?(b|kb|mb|gb|k|m|g)?",
+            invalidMessage: "<%= LanguageUtil.get(pageContext, "Invalid-Size") %>",
+
+        });
+        input.domNode.style.width = "150px";
+        input.domNode.style.margin = "auto";
+        let labelDiv = document.createElement("div");
+        labelDiv.style.paddingTop = "10px";
+        labelDiv.style.paddingBottom = "10px";
+        labelDiv.innerHTML = "Max file size for included assets? Leave empty for no limit.";
+        btnContainer.appendChild(labelDiv);
+        btnContainer.appendChild(input.domNode);
+        labelDiv = document.createElement("div");
+        labelDiv.style.padding = "10px";
+        labelDiv.innerHTML="Leave empty for no limit"
+        //btnContainer.appendChild(labelDiv);
+        assetExportDialog.containerNode.appendChild(btnContainer);
+
+
+
+
+        let buttonDiv = document.createElement("div");
+        buttonDiv.style.padding = "20px";
+
+
+        buttonDiv.style.textAlign = "center";
+
+        let button = new dijit.form.Button({
+            label: "Download Now",
+            class: "dialogButton",
+            onClick: () => {
+                if(!dijit.byId("maxFileSize").isValid()){
+                    alert("Invalid file size");
+                    return;
+                }
+                let oldAssets = dijit.byId("oldAssetsRadioIdTrue").checked;
+                let maxFileSize = dijit.byId("maxFileSize").get("value");
+
+                alert(downloadUrl + "?oldAssets=" + oldAssets + "&maxSize=" + maxFileSize)
+                location.href = downloadUrl + "?oldAssets=" + oldAssets + "&maxSize=" + maxFileSize;
+                assetExportDialog.hide();
+            }
+        });
+        button.domNode.style.width = "130px";
+
+        buttonDiv.appendChild(button.domNode);
+
+        assetExportDialog.containerNode.appendChild(buttonDiv);
+
+
         assetExportDialog.show();
     }
 
@@ -1295,31 +1390,40 @@ dd.leftdl {
                         <div id="cacheStatsCp" dojoType="dojox.layout.ContentPane" parseOnLoad="true" style="text-align: center;min-height: 100px;">
 
 
+                            <%
+
+                                long maxMemory = Runtime.getRuntime().maxMemory();
+                                long totalMemoryInUse = Runtime.getRuntime().totalMemory();
+                                long freeMemory = Runtime.getRuntime().freeMemory();
+                                long usedMemory = totalMemoryInUse - freeMemory;
+                                long availableMemory = maxMemory - usedMemory;
+
+                            %>
                             <div style="padding-bottom:30px;">
 
                                 <table class="listingTable shadowBox" style="width:400px">
                                     <tr>
-                                        <th><%= LanguageUtil.get( pageContext, "Total-Memory-Available" ) %>
+                                        <th><%= LanguageUtil.get( pageContext, "Total-Memory-Available" ) %> / Xmx
                                         </th>
-                                        <td align="right"><%=UtilMethods.prettyByteify( Runtime.getRuntime().maxMemory() )%>
+                                        <td align="right"><%=UtilMethods.prettyByteify( maxMemory )%>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><%= LanguageUtil.get( pageContext, "Memory-Allocated" ) %>
                                         </th>
-                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() )%>
+                                        <td align="right"><%= UtilMethods.prettyByteify( totalMemoryInUse )%>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><%= LanguageUtil.get( pageContext, "Filled-Memory" ) %>
                                         </th>
-                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() )%>
+                                        <td align="right"><%= UtilMethods.prettyByteify( usedMemory )%>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><%= LanguageUtil.get( pageContext, "Free-Memory" ) %>
                                         </th>
-                                        <td align="right"><%= UtilMethods.prettyByteify( Runtime.getRuntime().freeMemory() )%>
+                                        <td align="right"><%= UtilMethods.prettyByteify( availableMemory )%>
                                         </td>
                                     </tr>
                                 </table>

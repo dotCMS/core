@@ -7,19 +7,17 @@ import { computed, inject } from '@angular/core';
 
 import { tap, exhaustMap, switchMap, map, filter } from 'rxjs/operators';
 
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
+
 import {
     TreeNodeItem,
     TreeNodeSelectItem
 } from '../../../models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
-
-import type { CustomTreeNode } from './../../../models/dot-edit-content-host-folder-field.interface';
 
 export const PEER_PAGE_LIMIT = 7000;
 
 export const SYSTEM_HOST_NAME = 'System Host';
-
-export type ComponentStatus = 'INIT' | 'LOADING' | 'LOADED' | 'SAVING' | 'IDLE' | 'FAILED';
 
 export type HostFolderFiledState = {
     nodeSelected: TreeNodeItem | null;
@@ -33,7 +31,7 @@ export const initialState: HostFolderFiledState = {
     nodeSelected: null,
     nodeExpaned: null,
     tree: [],
-    status: 'INIT',
+    status: ComponentStatus.INIT,
     error: null
 };
 
@@ -44,8 +42,8 @@ export const HostFolderFiledStore = signalStore(
             const currentStatus = status();
 
             return {
-                'pi-spin pi-spinner': currentStatus === 'LOADING',
-                'pi-chevron-down': currentStatus !== 'LOADING'
+                'pi-spin pi-spinner': currentStatus === ComponentStatus.LOADING,
+                'pi-chevron-down': currentStatus !== ComponentStatus.LOADING
             };
         }),
         pathToSave: computed(() => {
@@ -70,10 +68,14 @@ export const HostFolderFiledStore = signalStore(
              */
             loadSites: rxMethod<{ path: string | null; isRequired: boolean }>(
                 pipe(
-                    tap(() => patchState(store, { status: 'LOADING' })),
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(({ path, isRequired }) => {
                         return dotEditContentService
-                            .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
+                            .getSitesTreePath({
+                                perPage: PEER_PAGE_LIMIT,
+                                filter: '*',
+                                page: 1
+                            })
                             .pipe(
                                 map((sites) => {
                                     if (isRequired) {
@@ -85,9 +87,16 @@ export const HostFolderFiledStore = signalStore(
                                     return sites;
                                 }),
                                 tapResponse({
-                                    next: (sites) => patchState(store, { tree: sites }),
-                                    error: () => patchState(store, { status: 'FAILED', error: '' }),
-                                    finalize: () => patchState(store, { status: 'LOADED' })
+                                    next: (sites) =>
+                                        patchState(store, {
+                                            tree: sites,
+                                            status: ComponentStatus.LOADED
+                                        }),
+                                    error: () =>
+                                        patchState(store, {
+                                            status: ComponentStatus.ERROR,
+                                            error: ''
+                                        })
                                 }),
                                 map((sites) => ({
                                     path,
@@ -125,11 +134,11 @@ export const HostFolderFiledStore = signalStore(
                     }),
                     filter(({ path }) => !!path),
                     switchMap(({ path, sites }) => {
-                        const newPath = path.replace('//', '');
-                        const hasPaths = newPath.includes('/');
+                        const hasPaths = path.includes('/');
+
                         if (!hasPaths) {
-                            const response: CustomTreeNode = {
-                                node: sites.find((item) => item.key === path),
+                            const response = {
+                                node: sites.find((item) => item.data.hostname === path),
                                 tree: null
                             };
 
@@ -146,8 +155,9 @@ export const HostFolderFiledStore = signalStore(
 
                         if (tree) {
                             const currentTree = store.tree();
+
                             const newTree = currentTree.map((item) => {
-                                if (item.key === tree.path) {
+                                if (item.data.hostname === tree.parent.hostName) {
                                     return {
                                         ...item,
                                         children: [...tree.folders]
@@ -172,11 +182,13 @@ export const HostFolderFiledStore = signalStore(
                         const { node } = event;
                         const { hostname, path } = node.data;
 
-                        return dotEditContentService.getFoldersTreeNode(hostname, path).pipe(
-                            tap((children) => {
+                        const fullPath = `${hostname}/${path}`;
+
+                        return dotEditContentService.getFoldersTreeNode(fullPath).pipe(
+                            tap(({ folders }) => {
                                 node.leaf = true;
                                 node.icon = 'pi pi-folder-open';
-                                node.children = [...children];
+                                node.children = [...folders];
                                 patchState(store, { nodeExpaned: node });
                             })
                         );

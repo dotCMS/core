@@ -1,0 +1,37 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-1;
+    padding-top: 0.15rem;
+
+    p-skeleton {
+        width: 100%;
+    }
+
+    ::ng-deep {
+        p-chip {
+            position: relative;
+
+            &:has(.default)::after {
+                content: "";
+                background-color: $color-accessible-text-fuchsia;
+                border-radius: $notification-dot-badge-size;
+                width: $notification-dot-badge-size;
+                height: $notification-dot-badge-size;
+                position: absolute;
+                top: -2px;
+                right: -4px;
+            }
+
+            &:not(:has(.p-chip-filled)) {
+                cursor: pointer;
+            }
+
+            .p-chip-white {
+                color: $color-palette-primary-500;
+            }
+        }
+    }
+}

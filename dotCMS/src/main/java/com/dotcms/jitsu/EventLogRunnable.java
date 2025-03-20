@@ -72,7 +72,16 @@ public class EventLogRunnable implements Runnable {
         this.eventPayload = ()-> convertToEventPayload(payloadSupplier.get());
     }
 
-    private EventsPayload convertToEventPayload(final List<Map<String, Serializable>> listStringSerializableMap) {
+    /**
+     * Returns the generated event payload as an {@link Optional} object.
+     *
+     * @return {@link Optional} of {@link EventsPayload}.
+     */
+    public Optional<EventsPayload> getEventPayload() {
+        return Optional.ofNullable(eventPayload.get());
+    }
+
+    protected EventsPayload convertToEventPayload(final List<Map<String, Serializable>> listStringSerializableMap) {
 
         return new AnalyticsEventsPayload(listStringSerializableMap);
     }
@@ -108,7 +117,7 @@ public class EventLogRunnable implements Runnable {
             .setParams(Map.of("token", analyticsApp.getAnalyticsProperties().analyticsKey()))
             .setTimeout(4000)
             .setHeaders(POSTING_HEADERS)
-            .setThrowWhenNot2xx(false);
+            .setThrowWhenError(false);
     }
 
 

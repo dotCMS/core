@@ -121,6 +121,7 @@ public class AuthenticationResource implements Serializable {
                             schema = @Schema(implementation = ResponseEntityUserMapView.class))),
                     @ApiResponse(responseCode = "401", description = "User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden request"),
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
                     @ApiResponse(responseCode = "500", description = "Unexpected error")
                 }
             )

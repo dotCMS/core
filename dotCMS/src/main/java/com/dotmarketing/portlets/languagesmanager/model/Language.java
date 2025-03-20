@@ -46,31 +46,37 @@ public class Language implements Serializable, ManifestItem {
      * @param language
      * @param country
      */
-    public Language(long id, String languageCode, String countryCode, String language, String country) {
+    public Language(final long id, final String languageCode, final String countryCode, final String language, final String country) {
+        this(id, languageCode, countryCode, language, country, null);
+    }
+
+    public Language() {
+        this(0L);
+    }
+
+    public Language(long id) {
+        this(id, BLANK, BLANK, BLANK, BLANK);
+    }
+
+    /**
+     * Creates a new Language object with the specified properties.
+     *
+     * @param id           The unique identifier of the language.
+     * @param languageCode The language code of the language.
+     * @param countryCode  The country code of the language.
+     * @param language     The name of the language.
+     * @param country      The name of the country.
+     * @param isoCode      The ISO code of the language.
+     */
+    public Language(final long id, final String languageCode, final String countryCode,
+                    final String language, final String country, final String isoCode) {
         super();
         this.id = id;
         this.languageCode = languageCode;
         this.countryCode = countryCode;
         this.language = language;
         this.country = country;
-    }
-
-    public Language() {
-        super();
-        this.id = 0;
-        this.languageCode = BLANK;
-        this.countryCode = BLANK;
-        this.language = BLANK;
-        this.country = BLANK;
-    }
-
-    public Language(long id) {
-        super();
-        this.id = id;
-        this.languageCode = BLANK;
-        this.countryCode = BLANK;
-        this.language = BLANK;
-        this.country = BLANK;
+        this.isoCode = isoCode;
     }
 
     /**

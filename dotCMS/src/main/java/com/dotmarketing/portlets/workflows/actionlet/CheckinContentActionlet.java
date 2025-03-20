@@ -1,17 +1,23 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.workflows.model.CheckboxWorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 /**
  * {@link WorkFlowActionlet} that unlock a {@link Contentlet}
@@ -21,7 +27,7 @@ import com.dotmarketing.util.Logger;
  */
 public class CheckinContentActionlet extends WorkFlowActionlet {
 
-
+	public static final String FORCE_UNLOCK_ALLOWED = "force-unlock";
 
 	/**
 	 * 
@@ -37,15 +43,27 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 		return "This actionlet will unlock the content.";
 	}
 
-	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
+	public void executeAction(final WorkflowProcessor processor,
+							  final Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 		try {
 
 			final Contentlet contentlet = processor.getContentlet();
+			User user = processor.getUser();
+			final boolean forceUnlock = ConversionUtils.toBoolean(params.get(FORCE_UNLOCK_ALLOWED).getValue(), false);
 			DotPreconditions.checkNotNull(contentlet);
 
 			if (!contentlet.isNew() && contentlet.isLocked()) {
+
 				contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
-				APILocator.getContentletAPI().unlock(contentlet, processor.getUser(),
+				if (forceUnlock) {
+
+					final User finalUser = user;
+					user = user.isAdmin()
+							|| Try.of(()->APILocator.getContentletAPI().canLock(contentlet, finalUser)).getOrElse(false)?
+							user:APILocator.systemUser();
+				}
+
+				APILocator.getContentletAPI().unlock(contentlet, user,
 						processor.getContentletDependencies() != null
 								&& processor.getContentletDependencies().isRespectAnonymousPermissions());
 			}
@@ -65,6 +83,10 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 	@Override
 	public  List<WorkflowActionletParameter> getParameters() {
 
-		return null;
+		final List<WorkflowActionletParameter> workflowActionletParameters = new ArrayList<>();
+
+		workflowActionletParameters.add(new CheckboxWorkflowActionletParameter(FORCE_UNLOCK_ALLOWED, "Force Unlock", "false", false));
+
+		return workflowActionletParameters;
 	}
 }

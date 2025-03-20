@@ -148,7 +148,11 @@ export class BubbleFormView extends BubbleMenuView {
             content: this.element,
             onShow: () => {
                 requestAnimationFrame(() => {
-                    this.component.instance.inputs.first.nativeElement.focus();
+                    // firefox validation because of https://github.com/dotCMS/core/issues/30327
+                    const isFirefox = /firefox/i.test(navigator.userAgent);
+                    if (!isFirefox) {
+                        this.component.instance.inputs.first.nativeElement.focus();
+                    }
                 });
             }
         });

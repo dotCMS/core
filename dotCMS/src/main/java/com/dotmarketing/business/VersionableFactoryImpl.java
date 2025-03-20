@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -237,6 +238,13 @@ public class VersionableFactoryImpl extends VersionableFactory {
             Logger.debug(this.getClass(), "findAllVersions query: " + dh.getQuery());
             return (List<Versionable>) dh.list();
         }
+	}
+
+	@Override
+	protected List<Map<String, Object>> getWorkingVersionsExcludingLanguage(final String identifier, final long lang) throws DotDataException {
+
+		return new DotConnect().setSQL("select working_inode, lang from contentlet_version_info where identifier = ? and lang != ?")
+				.addParam(identifier).addParam(lang).loadObjectResults();
 	}
 
     @Override

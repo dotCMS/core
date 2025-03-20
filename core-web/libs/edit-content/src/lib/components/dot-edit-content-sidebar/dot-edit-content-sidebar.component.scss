@@ -1,0 +1,87 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    width: 350px;
+    height: 100%;
+    padding-bottom: $spacing-0;
+    flex-direction: column;
+    align-items: flex-start;
+    border-left: 1px solid $color-palette-gray-400;
+    background: $color-palette-gray-100;
+    box-shadow: $shadow-m;
+    position: relative;
+
+    ::ng-deep {
+        .tabview-append-content {
+            min-height: 52px;
+            border-left: 1px solid $color-palette-black-op-10;
+            display: flex;
+            align-items: center;
+        }
+        .p-tabview-nav-container {
+            padding: 0;
+            border: solid 1px $color-palette-gray-300;
+            border-right: none;
+            overflow: initial;
+            position: initial;
+            border-left: none;
+        }
+
+        .p-tabview-nav-content .p-tabview-nav {
+            border: none;
+            min-height: 52px;
+            min-width: auto;
+        }
+
+        .p-tabview-nav-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: $spacing-3;
+            overflow: visible;
+        }
+
+        dot-copy-button button.p-button:not(.p-button-icon-only).p-button-sm {
+            padding: 0;
+
+            .p-button-label {
+                font-size: $font-size-md;
+                text-transform: none;
+            }
+        }
+
+        .p-tabview {
+            .p-tabview-nav-container {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background-color: $color-palette-gray-100;
+            }
+        }
+    }
+}
+
+.temporal-content {
+    padding-top: $spacing-3;
+    padding-left: $spacing-3;
+    display: flex;
+    width: 100%;
+}
+
+.content-sidebar {
+    overflow: auto;
+    width: 100%;
+}
+
+.content-sidebar__close {
+    padding: $spacing-1 $spacing-1 $spacing-1 $spacing-2;
+    button {
+        rect {
+            stroke: $color-palette-primary;
+        }
+        path {
+            fill: $color-palette-primary;
+        }
+    }
+}

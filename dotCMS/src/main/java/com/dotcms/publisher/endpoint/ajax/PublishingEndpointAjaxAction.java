@@ -108,7 +108,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
         		return;
         	}
 
-        	String serverName = request.getParameter("serverName");
+        	String serverName = request.getParameter("serverName"); // endpoint name
         	PublishingEndPoint existingServer = APILocator.getPublisherEndPointAPI().findEndPointByName(serverName);
 
         	if(existingServer!=null) {

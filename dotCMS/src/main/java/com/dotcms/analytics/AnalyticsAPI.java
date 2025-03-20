@@ -7,10 +7,8 @@ import com.dotcms.analytics.model.AccessTokenStatus;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.exception.AnalyticsException;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.util.Config;
 
 import java.time.Instant;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Analytics functionality interface.
@@ -19,41 +17,26 @@ import java.util.concurrent.TimeUnit;
  */
 public interface AnalyticsAPI {
 
-    String ANALYTICS_USE_DUMMY_TOKEN_KEY = "analytics.use.dummy.token";
-    String ANALYTICS_IDP_URL_KEY = "analytics.idp.url";
+    String BEARER = "Bearer ";
+    String ANALYTICS_IDP_URL_KEY = "ANALYTICS_IDP_URL";
+    String ANALYTICS_USE_DUMMY_TOKEN_KEY = "ANALYTICS_USE_DUMMY_TOKEN";
     String ANALYTICS_ACCESS_TOKEN_KEY_PREFIX = "ANALYTICS_ACCESS_TOKEN";
-
-    String ANALYTICS_ACCESS_TOKEN_TTL_KEY = "analytics.accesstoken.ttl";
-    int ANALYTICS_ACCESS_TOKEN_TTL = Config.getIntProperty(
-        ANALYTICS_ACCESS_TOKEN_TTL_KEY,
-        (int) TimeUnit.HOURS.toSeconds(1));
-
-    String ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY = "analytics.accesstoken.ttlwindow";
-    int ANALYTICS_ACCESS_TOKEN_TTL_WINDOW = Config.getIntProperty(
-        ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY,
-        (int) TimeUnit.MINUTES.toSeconds(1));
-
-    String ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY = "analytics.accesstoken.renewattempts";
-    int ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS = Config.getIntProperty(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY, 3);
-    String ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY = "analytics.accesstoken.renewtimeout";
-    int ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT = Config.getIntProperty(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY, 4000);
-
-    String ANALYTICS_KEY_RENEW_ATTEMPTS_KEY = "analytics.key.renewattempts";
-    int ANALYTICS_KEY_RENEW_ATTEMPTS = Config.getIntProperty(ANALYTICS_KEY_RENEW_ATTEMPTS_KEY, 3);
-    String ANALYTICS_KEY_RENEW_TIMEOUT_KEY = "analytics.key.renewtimeout";
-    int ANALYTICS_KEY_RENEW_TIMEOUT = Config.getIntProperty(ANALYTICS_KEY_RENEW_TIMEOUT_KEY, 4000);
-
+    String ANALYTICS_ACCESS_TOKEN_TTL_KEY = "ANALYTICS_ACCESSTOKEN_TTL";
+    String ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY = "ANALYTICS_ACCESSTOKEN_TTLWINDOW";
+    String ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY = "ANALYTICS_ACCESSTOKEN_RENEWATTEMPTS";
+    String ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT_KEY = "ANALYTICS_ACCESSTOKEN_RENEWTIMEOUT";
+    String ANALYTICS_KEY_RENEW_ATTEMPTS_KEY = "ANALYTICS_KEY_RENEWATTEMPTS";
+    String ANALYTICS_KEY_RENEW_TIMEOUT_KEY = "ANALYTICS_KEY_RENEWTIMEOUT";
     String ANALYTICS_ACCESS_TOKEN_THREAD_NAME = "access-token-renew";
 
     AccessToken DUMMY_TOKEN = AccessToken.builder()
         .accessToken("dummy_token")
         .clientId("dummy")
-        .tokenType("Bearer")
+        .tokenType(BEARER.trim())
         .expiresIn(Integer.MAX_VALUE)
         .status(AccessTokenStatus.builder().tokenStatus(TokenStatus.OK).build())
         .issueDate(Instant.now())
         .build();
-
 
     /**
      * Fetches an {@link AccessToken} instance from cache.

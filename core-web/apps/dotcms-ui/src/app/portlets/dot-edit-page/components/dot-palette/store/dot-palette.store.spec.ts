@@ -6,6 +6,7 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
     DotContentTypeService,
     DotESContentService,
+    DotPropertiesService,
     DotSessionStorageService,
     PaginatorService
 } from '@dotcms/data-access';
@@ -110,18 +111,29 @@ class MockContentTypeService {
     }
 }
 
+const SORTED_CONTENT_TYPE_MOCK = contentTypeDataMock.sort((a, b) =>
+    a.name.localeCompare(b.name)
+) as DotCMSContentType[];
+
 describe('DotPaletteStore', () => {
     let dotPaletteStore: DotPaletteStore;
     let paginatorService: PaginatorService;
     let dotContentTypeService: DotContentTypeService;
     let dotESContentService: DotESContentService;
     let dotSessionStorageService: DotSessionStorageService;
+    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 DotPaletteStore,
                 DotSessionStorageService,
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKeyAsList: () => of([])
+                    }
+                },
                 { provide: PaginatorService, useClass: MockPaginatorService },
                 { provide: DotContentTypeService, useClass: MockContentTypeService },
                 { provide: DotESContentService, useClass: MockESPaginatorService }
@@ -132,6 +144,7 @@ describe('DotPaletteStore', () => {
         dotContentTypeService = TestBed.inject(DotContentTypeService);
         dotESContentService = TestBed.inject(DotESContentService);
         dotSessionStorageService = TestBed.inject(DotSessionStorageService);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
     });
 
     // Updaters
@@ -182,27 +195,42 @@ describe('DotPaletteStore', () => {
 
     // Effects
     it('should load contentTypes to store', (done) => {
-        const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
         spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
-            of(sortedDataMock as DotCMSContentType[])
+            of(SORTED_CONTENT_TYPE_MOCK)
         );
         spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
+
         dotPaletteStore.loadContentTypes(['blog', 'banner']);
         dotPaletteStore.vm$.subscribe((data) => {
-            expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);
+            expect(data.contentTypes).toEqual(SORTED_CONTENT_TYPE_MOCK);
             done();
         });
     });
 
-    it('should load inly widgets to store if allowedContent is empty', (done) => {
-        const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
+    it("should load contentTypes and remove the hidden is the CONTENT_PALETTE_HIDDEN_CONTENT_TYPES is setted'", (done) => {
+        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
+            of(SORTED_CONTENT_TYPE_MOCK)
+        );
+        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
+        spyOn(dotPropertiesService, 'getKeyAsList').and.returnValue(of(['Form']));
+
+        const expectedData = SORTED_CONTENT_TYPE_MOCK.filter((item) => item.variable !== 'Form');
+
+        dotPaletteStore.loadContentTypes(['blog', 'banner']);
+        dotPaletteStore.vm$.subscribe((data) => {
+            expect(data.contentTypes).toEqual(expectedData);
+            done();
+        });
+    });
+
+    it('should load only widgets to store if allowedContent is empty', (done) => {
         spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(of([]));
         spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(
-            of(sortedDataMock as DotCMSContentType[])
+            of(SORTED_CONTENT_TYPE_MOCK)
         );
         dotPaletteStore.loadContentTypes([]);
         dotPaletteStore.vm$.subscribe((data) => {
-            expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);
+            expect(data.contentTypes).toEqual(SORTED_CONTENT_TYPE_MOCK);
             done();
         });
 

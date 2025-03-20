@@ -1,0 +1,79 @@
+# Semgrep Phase Workflow
+#
+# This reusable workflow is responsible for running Semgrep analysis on the codebase
+#
+# Key features:
+# - Runs Semgrep analysis on the codebase
+# - Configurable timeout for quality gate check
+# - Outputs quality gate status for further use
+
+name: Semgrep Phase
+
+on:
+  workflow_call:
+    inputs:
+      artifact-run-id:
+        description: 'The run id of the build to download artifacts from.'
+        default: ${{ github.run_id }}
+        type: string
+    secrets:
+      SEMGREP_APP_TOKEN:
+        required: true
+
+jobs:
+  buildmavenDepTree:
+    name: Semgrep Dep Tree
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    # Only run on main branch or pull requests in the main repository
+    if: |
+      (github.ref == 'refs/heads/main' || github.event_name == 'pull_request') && github.repository == 'dotCMS/core'
+    steps:
+      # Checkout the repository with full history for accurate analysis
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Create dependency files for semgrep analysis
+      - name: Build Dependency Tre
+        uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: "Dependency Tree Scan"
+          artifacts-from: ${{ inputs.artifact-run-id }}
+          require-main: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          require-graalvm: false
+          requires-node: false
+          maven-args: dependency:tree -DoutputFile=maven_dep_tree.txt
+      - name: Create Zip File
+        run: find . -type f -name 'maven_dep_tree.txt' -exec zip -r dependency-tree.zip {} +
+      - name: Upload Dependency Zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-tree
+          path: dependency-tree.zip
+
+  semgrep:
+    needs: buildmavenDepTree
+    name: Scan
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    env:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+      NO_FAIL: ${{ vars.SEMGREP_NO_FAIL || 'false' }}
+    container:
+      image: semgrep/semgrep
+    # Skip any PR created by dependabot to avoid permission issues:
+    if: (github.actor != 'dependabot[bot]')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifact from the previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-tree
+      - name: Semgrep Scan
+        run: |
+          unzip -o dependency-tree.zip
+          if [ "${NO_FAIL}" = "true" ]; then
+            semgrep ci || echo "Semgrep completed with errors, but continuing due to NO_FAIL=true"
+          else
+            semgrep ci
+          fi

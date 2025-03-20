@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0a7ed4a9-b343-4a56-8d63-39ef0ec770e1",
+		"_postman_id": "619a5b39-7d5c-433c-b55d-ccf00c6ddd2a",
 		"name": "LanguageResource",
 		"description": "This collections is focused on the /v2/languages resource\nThis should cover Language CRUD Operations",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -495,6 +495,51 @@
 								"v2",
 								"languages",
 								"iso"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Default Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function() {",
+									"    pm.response.to.be.ok ",
+									"});",
+									"",
+									"pm.test(\"Test content must only be available in English\", function() {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity.id).to.equal(1, \"The expected default Language must be ID 1\");",
+									"    pm.expect(jsonData.entity.language).to.equal(\"English\", \"The expected default Language must be English\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/_getdefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"_getdefault"
 							]
 						}
 					},
@@ -2582,6 +2627,255 @@
 				}
 			],
 			"description": "Delete Language associated to an Existing Content-Type Should Fail"
+		},
+		{
+			"name": "Check ISO Code",
+			"item": [
+				{
+					"name": "Create Test Content",
+					"item": [
+						{
+							"name": "Create test Content Type",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content Type created successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the test Content Type\");",
+											"    pm.collectionVariables.set(\"testCTVarName\", jsonData.entity[0].variable);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"defaultType\":false,\n   \"icon\":\"360\",\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"My Test CT\",\n   \"systemActionMappings\": {\n        \"NEW\": \"\"\n    },\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ],\n   \"fields\": [{\n       \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n\t\t\"dataType\": \"TEXT\",\n\t\t\"fieldType\": \"Text\",\n\t\t\"fieldTypeLabel\": \"Text\",\n\t\t\"fieldVariables\": [],\n\t\t\"fixed\": false,\n\t\t\"iDate\": 1606168746000,\n\t\t\"indexed\": true,\n\t\t\"listed\": false,\n\t\t\"modDate\": 1606168746000,\n\t\t\"name\": \"Title\",\n\t\t\"readOnly\": false,\n\t\t\"required\": false,\n\t\t\"searchable\": true,\n\t\t\"sortOrder\": 1,\n\t\t\"unique\": false,\n\t\t\"variable\": \"title\"\n    }\n   ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "### Create Content Type\n\nThis endpoint allows you to create a new content type. The request should be sent as an HTTP POST to `{{serverURL}}/api/v1/contenttype`.\n\n#### Request Body\n\nThe request should include the following parameters in the raw request body:\n\n- `defaultType` (boolean): Indicates whether it is the default type.\n    \n- `icon` (string): The icon for the content type.\n    \n- `fixed` (boolean): Indicates whether the content type is fixed.\n    \n- `system` (boolean): Indicates whether the content type is a system type.\n    \n- `clazz` (string): The class of the content type.\n    \n- `description` (string): Description of the content type.\n    \n- `host` (string): The host of the content type.\n    \n- `folder` (string): The folder of the content type.\n    \n- `name` (string): The name of the content type.\n    \n- `systemActionMappings` (object): System action mappings for the content type.\n    \n- `workflow` (array): Array of workflows associated with the content type.\n    \n- `fields` (array): Array of fields for the content type.\n    \n\n#### Response\n\nUpon successful execution, the response will have a status code of 200 and a JSON object with the newly created content type entity, including its fields, workflows, and other metadata."
+							},
+							"response": []
+						},
+						{
+							"name": "Create test Contentlet",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Contentlet created successfully\", function() {",
+											"    const jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0, \"An error occurred when creating the test Contentlet\");",
+											"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+											"    const key = Object.keys(jsonData.entity.results[0]);",
+											"    pm.collectionVariables.set(\"testContentID\", jsonData.entity.results[0][key].identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{testCTVarName}}\",\n            \"title\": \"My test contentlet\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "### Perform Workflow Action to Publish Content\n\nThis endpoint allows you to trigger the default workflow action for publishing content.\n\n#### Request Body\n\n- The request should be sent as an HTTP POST to `{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR`.\n    \n- { \"contentlets\": \\[ { \"contentType\": \"{{testCTVarName}}\", \"title\": \"My test contentlet\", \"contentHost\": \"default\" } \\]}\n    \n\n#### Response\n\n- **Status**: 200\n    \n- **Content-Type**: application/json\n    \n- The response will include the published content entity with its details, such as auto-assign workflow status, content properties, creation date, modification date, and publishing details.\n    \n- The response also includes a summary of the affected content, success count, fail count, and time taken for the operation."
+							},
+							"response": []
+						},
+						{
+							"name": "Create test Language",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Check that the expected Language info is returned\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.country).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.countryCode).to.eql(\"\");",
+											"    pm.expect(jsonData.entity.defaultLanguage).to.eql(false);",
+											"    pm.expect(jsonData.entity.isoCode).to.eql(\"qwert\");",
+											"    pm.expect(jsonData.entity.language).to.eql(\"qwerty\");",
+											"    pm.expect(jsonData.entity.languageCode).to.eql(\"qwert\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"country\": \"\",\n    \"countryCode\": \"\",\n    \"language\": \"qwerty\",\n    \"languageCode\": \"qwert\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages"
+									]
+								},
+								"description": "### Add Language\n\nThis endpoint allows you to add a new language with the specified country, country code, language, and language code.\n\n#### Request Body\n\n- country (string, optional): The name of the country.\n    \n- countryCode (string, optional): The country code.\n    \n- language (string): The name of the language.\n    \n- languageCode (string): The language code.\n    \n\n#### Response\n\nUpon successful execution, the API returns a JSON object with the following fields:\n\n- entity (object): Contains information about the newly added language, including country, country code, default language status, ID, ISO code, language, and language code.\n    \n- errors (array): An array of any errors encountered during the request.\n    \n- i18nMessagesMap (object): Internationalization messages map.\n    \n- messages (array): Any additional messages related to the request.\n    \n- pagination (null): Pagination information, if applicable.\n    \n- permissions (array): Permissions related to the request."
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Getting languages for Contentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Check that all Languages have the ISO Code\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    entity.forEach(function(lang) { ",
+									"        pm.expect(lang.isoCode).to.not.equal('', \"ISO Code for language '\" + lang.language + \"'_'\" + lang.country + \"' must ALWAYS be set\");",
+									"    });",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/{{testContentID}}/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{testContentID}}",
+								"languages"
+							]
+						},
+						"description": "This endpoint retrieves the languages available for a specific content identified by the 'testContentID', and checks that the ISO Code is set in ALL of them.\n\n### Request\n\n- Method: GET\n    \n- URL: {{serverURL}}/api/v1/content/{{testContentID}}/languages\n    \n\n### Response\n\nThe response will be in JSON format and will include the following fields:\n\n- `entity`: An array of objects containing information about the available languages, including country, country code, language, language code, and translation status.\n    \n- `errors`: An array of any errors encountered during the request.\n    \n- `i18nMessagesMap`: An object containing internationalization messages.\n    \n- `messages`: An array of messages.\n    \n- `pagination`: Information about pagination, if applicable.\n    \n- `permissions`: An array of permissions.\n    \n\nExample response:\n\n``` json\n{\n    \"entity\": [\n        {\n            \"country\": \"\",\n            \"countryCode\": \"\",\n            \"id\": 0,\n            \"isoCode\": \"\",\n            \"language\": \"\",\n            \"languageCode\": \"\",\n            \"translated\": true\n        }\n    ],\n    \"errors\": [],\n    \"i18nMessagesMap\": {},\n    \"messages\": [],\n    \"pagination\": null,\n    \"permissions\": []\n}\n\n ```"
+					},
+					"response": []
+				}
+			],
+			"description": "Verifies that the ISO COde attribute in the Language object returned via REST is always set. This property is particularly important in the new Contentlet Edit Mode as it allows FE devs to display the list of languages that a content is/is not available in."
 		},
 		{
 			"name": "Duplicate Key Case",

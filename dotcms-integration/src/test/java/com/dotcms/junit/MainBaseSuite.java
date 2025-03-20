@@ -40,7 +40,7 @@ public class MainBaseSuite extends Suite {
             Logger.info(MainBaseSuite.class, "EMD  IntegrationTestInit *****************************");
 
         } catch (Exception e) {
-            throw new DotRuntimeException("Failed to initialize Integration tests");
+            throw new DotRuntimeException("Failed to initialize Integration tests", e);
         }
 
         List<Runner> runners = new LinkedList<>();
@@ -55,7 +55,7 @@ public class MainBaseSuite extends Suite {
 
     private static class DotRunner extends Runner {
 
-        private Runner runner;
+        private final Runner runner;
 
         DotRunner(Runner runner) {
             this.runner = runner;

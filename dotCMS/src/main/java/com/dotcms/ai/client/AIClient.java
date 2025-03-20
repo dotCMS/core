@@ -1,14 +1,7 @@
 package com.dotcms.ai.client;
 
 import com.dotcms.ai.domain.AIProvider;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpUriRequest;
 
-import javax.ws.rs.HttpMethod;
 import java.io.OutputStream;
 import java.io.Serializable;
 
@@ -45,29 +38,6 @@ public interface AIClient {
             throw new UnsupportedOperationException("Noop client does not support sending requests");
         }
     };
-
-    /**
-     * Resolves the appropriate HTTP method for the given method name and URL.
-     *
-     * @param method the HTTP method name (e.g., "GET", "POST", "PUT", "DELETE", "patch")
-     * @param url the URL to which the request will be sent
-     * @return the corresponding {@link HttpUriRequest} for the given method and URL
-     */
-    static HttpUriRequest resolveMethod(final String method, final String url) {
-        switch(method) {
-            case HttpMethod.POST:
-                return new HttpPost(url);
-            case HttpMethod.PUT:
-                return new HttpPut(url);
-            case HttpMethod.DELETE:
-                return new HttpDelete(url);
-            case "patch":
-                return new HttpPatch(url);
-            case HttpMethod.GET:
-            default:
-                return new HttpGet(url);
-        }
-    }
 
     /**
      * Validates and casts the given AI request to a {@link JSONObjectAIRequest}.

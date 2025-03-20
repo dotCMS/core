@@ -121,6 +121,11 @@
             "cache": true,
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
+        },
+        "@nx/js:tsc": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": ["production", "^production"]
         }
     },
     "namedInputs": {
@@ -161,6 +166,12 @@
                 "testTargetName": "test",
                 "serveTargetName": "serve",
                 "serveStaticTargetName": "serve-static"
+            }
+        },
+        {
+            "plugin": "@nx/rollup/plugin",
+            "options": {
+                "buildTargetName": "rollup:build"
             }
         }
     ],

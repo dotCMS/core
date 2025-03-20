@@ -7,6 +7,7 @@ import com.dotcms.ai.client.AIProxyStrategy;
 import com.dotcms.ai.client.AIRequest;
 import com.dotcms.ai.domain.AIResponse;
 import com.dotcms.ai.client.AIResponseEvaluator;
+import com.dotcms.ai.domain.AIResponseData;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,6 +16,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -53,10 +55,10 @@ public class AIProxiedClientTest {
      */
     @Test
     public void testSendToAI_withValidRequest() {
-        AIRequest<Serializable> request = mock(AIRequest.class);
-        OutputStream output = mock(OutputStream.class);
+        final AIRequest<Serializable> request = mock(AIRequest.class);
+        final OutputStream output = mock(OutputStream.class);
 
-        AIResponse response = proxiedClient.sendToAI(request, output);
+        final AIResponse response = proxiedClient.sendToAI(request, output);
 
         verify(mockClientStrategy).applyStrategy(mockClient, mockResponseEvaluator, request, output);
         assertEquals(AIResponse.EMPTY, response);
@@ -71,15 +73,19 @@ public class AIProxiedClientTest {
      */
     @Test
     public void testSendToAI_withNullOutput() {
-        AIRequest<Serializable> request = mock(AIRequest.class);
-        AIResponse response = proxiedClient.sendToAI(request, null);
+        final AIRequest<Serializable> request = mock(AIRequest.class);
+        final AIResponseData aiResponseData = mock(AIResponseData.class);
+        when(mockClientStrategy
+                .applyStrategy(
+                        eq(mockClient),
+                        eq(mockResponseEvaluator),
+                        eq(request),
+                        any(OutputStream.class)))
+                .thenReturn(aiResponseData);
 
-        verify(mockClientStrategy).applyStrategy(
-                eq(mockClient),
-                eq(mockResponseEvaluator),
-                eq(request),
-                any(OutputStream.class));
-        assertEquals("", response.getResponse());
+        final AIResponse response = proxiedClient.sendToAI(request, new ByteArrayOutputStream());
+
+        assertNull(response.getResponse());
     }
 
     /**
@@ -92,10 +98,10 @@ public class AIProxiedClientTest {
     @Test
     public void testSendToAI_withNoopClient() {
         proxiedClient = AIProxiedClient.NOOP;
-        AIRequest<Serializable> request = AIRequest.builder().build();
-        OutputStream output = new ByteArrayOutputStream();
+        final AIRequest<Serializable> request = AIRequest.builder().build();
+        final OutputStream output = new ByteArrayOutputStream();
 
-        AIResponse response = proxiedClient.sendToAI(request, output);
+        final AIResponse response = proxiedClient.sendToAI(request, output);
 
         assertEquals(AIResponse.EMPTY, response);
     }

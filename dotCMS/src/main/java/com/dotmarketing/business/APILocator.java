@@ -94,6 +94,7 @@ import com.dotcms.storage.FileStorageAPI;
 import com.dotcms.storage.FileStorageAPIImpl;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
+import com.dotcms.telemetry.business.MetricsAPI;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.util.FileWatcherAPI;
@@ -1163,6 +1164,11 @@ public class APILocator extends Locator<APIIndex> {
 		return (AnalyticsAPI) getInstance(APIIndex.ANALYTICS_API);
 	}
 
+	/**
+	 * Returns a single instance of the {@link ContentTypeDestroyAPI} class.
+	 *
+	 * @return The {@link ContentTypeDestroyAPI} instance.
+	 */
 	public static ContentTypeDestroyAPI getContentTypeDestroyAPI() {
 		return (ContentTypeDestroyAPI) getInstance(APIIndex.CONTENT_TYPE_DESTROY_API);
 	}
@@ -1191,6 +1197,15 @@ public class APILocator extends Locator<APIIndex> {
 	 */
 	public static ContentAnalyticsAPI getContentAnalyticsAPI() {
 		return (ContentAnalyticsAPI) getInstance(APIIndex.CONTENT_ANALYTICS_API);
+	}
+
+	/**
+	 * Returns a single instance of the {@link MetricsAPI} class via CDI.
+	 *
+	 * @return The {@link MetricsAPI} instance.
+	 */
+	public static MetricsAPI getMetricsAPI() {
+		return CDIUtils.getBeanThrows(MetricsAPI.class);
 	}
 
 	/**
@@ -1443,8 +1458,8 @@ enum APIIndex
 			case SYSTEM_API: return new SystemAPIImpl();
 			case ARTIFICIAL_INTELLIGENCE_API: return new DotAIAPIFacadeImpl();
 			case ACHECKER_API: return new ACheckerAPIImpl();
-			case CONTENT_ANALYTICS_API: CDIUtils.getBean(ContentAnalyticsAPI.class).orElseThrow(() -> new DotRuntimeException("Content Analytics API not found"));
-			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBean(JobQueueManagerAPI.class).orElseThrow(() -> new DotRuntimeException("JobQueueManagerAPI not found"));
+			case CONTENT_ANALYTICS_API: return CDIUtils.getBeanThrows(ContentAnalyticsAPI.class);
+			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBeanThrows(JobQueueManagerAPI.class);
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

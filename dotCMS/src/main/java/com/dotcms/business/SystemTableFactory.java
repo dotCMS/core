@@ -44,4 +44,9 @@ public interface SystemTableFactory  {
      * Clear the cache
      */
     void clearCache();
+
+    /**
+     * Checks if the system table exists, otherwise will create it
+     */
+    void initIfNeeded();
 }

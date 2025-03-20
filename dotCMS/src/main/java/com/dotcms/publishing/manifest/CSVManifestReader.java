@@ -6,15 +6,9 @@ import static java.util.stream.Collectors.toSet;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.liferay.util.StringPool;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.io.*;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
@@ -117,16 +111,22 @@ public class CSVManifestReader implements ManifestReader{
 
         public CSVManifestItem(final String line) {
             final String[] lineSplit = line.split(StringPool.COMMA);
+            //If the title contains a quote, it means it has a comma
+            final boolean containsCommas = lineSplit[4].contains("\"");
+            //If it contains a comma, then get the whole title without separating it by commas
+            final String title = containsCommas ? line.substring(line.indexOf("\"") + 1, line.lastIndexOf("\"")) : lineSplit[4];
+            //Also get the number of commas in the title, to know how many columns to skip
+            final int numberOfCommas = containsCommas ? title.length() - title.replace(",", "").length() : 0;
             this.manifestInfo = new ManifestInfoBuilder()
                     .objectType(lineSplit[1])
                     .id(lineSplit[2])
                     .inode(lineSplit[3])
-                    .title(lineSplit[4])
-                    .siteId(lineSplit[5])
-                    .path(lineSplit[6])
+                    .title(title)
+                    .siteId(lineSplit[5+numberOfCommas])
+                    .path(lineSplit[6+numberOfCommas])
                     .build();
 
-            reason = lineSplit[0].equals("INCLUDED") ? lineSplit[8] : lineSplit[7];
+            reason = lineSplit[0].equals("INCLUDED") ? lineSplit[8+numberOfCommas] : lineSplit[7+numberOfCommas];
         }
 
         public ManifestInfo getManifestInfo() {

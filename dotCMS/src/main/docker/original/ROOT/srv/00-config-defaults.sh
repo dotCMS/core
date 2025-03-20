@@ -112,4 +112,5 @@ export CUSTOM_STARTER_URL=${CUSTOM_STARTER_URL:-""}
 ## This needs to be set in order for catalina to read environmental properties
 export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
 
-
+## export the environment variable for jemalloc
+export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"}

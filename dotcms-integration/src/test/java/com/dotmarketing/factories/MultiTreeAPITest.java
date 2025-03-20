@@ -59,6 +59,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
     final static int runs =2;
     final static int contentlets =5;
+
     @BeforeClass
     public static void initData() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -66,12 +67,6 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         buildInitalData();
     }
     
-    public static void testUpgradeTask() throws Exception {
-        Task04315UpdateMultiTreePK task = Task04315UpdateMultiTreePK.class.getDeclaredConstructor().newInstance();
-        task.executeUpgrade();
-    }
-
-
     public static void buildInitalData() throws Exception {
         buildInitalData(VariantAPI.DEFAULT_VARIANT.name());
 

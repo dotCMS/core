@@ -1,7 +1,8 @@
-import { AbstractControl } from '@angular/forms';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 const QUERY_PARAM_NAME_REGEX = /^[a-zA-Z0-9\-_]+$/;
 const ALPHA_NUMERIC_REGEX = /^[a-zA-Z0-9_]*$/;
+const URL_REGEX = /^(ftp|http|https):\/\/[^ "]+$/;
 
 const DOT_ERROR_MESSAGES = {
     alphaNumericErrorMsg: {
@@ -12,6 +13,9 @@ const DOT_ERROR_MESSAGES = {
     },
     whiteSpaceOnlyMgs: {
         whiteSpaceOnly: 'dot.common.form.field.validation.noWhitespace'
+    },
+    urlMsg: {
+        invalidUrl: 'dot.common.form.field.validation.url'
     }
 };
 
@@ -45,5 +49,15 @@ export class DotValidators {
         return notOnlySpacesPattern.test(control.value)
             ? null
             : DOT_ERROR_MESSAGES.whiteSpaceOnlyMgs;
+    }
+
+    /**
+     * Validate if the given control value is a valid URL
+     *
+     * @param {AbstractControl} control
+     * @returns {ValidationErrors | null}
+     */
+    static url(control: AbstractControl): ValidationErrors | null {
+        return URL_REGEX.test(control.value) ? null : DOT_ERROR_MESSAGES.urlMsg;
     }
 }

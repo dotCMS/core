@@ -1,6 +1,8 @@
 package com.dotmarketing.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -61,4 +63,20 @@ public class UtilMethodsITest {
         }
 
     }
+
+
+    @Test
+    public void test_isSet_with_null_object() {
+        String obj=null;
+        assertFalse(UtilMethods.isSet(() -> obj.toString()));
+    }
+
+
+    @Test
+    public void test_isEmpty_with_null_object() {
+        String obj=null;
+        assertTrue(UtilMethods.isEmpty(() -> obj.toString()));
+    }
+
+
 }

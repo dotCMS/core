@@ -17,8 +17,10 @@ import {
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { ActionPayload, VTLFile } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
@@ -33,7 +35,7 @@ const INITIAL_ACTIONS_CONTAINER_WIDTH = 128;
 @Component({
     selector: 'dot-ema-contentlet-tools',
     standalone: true,
-    imports: [NgStyle, ButtonModule, MenuModule, JsonPipe],
+    imports: [NgStyle, ButtonModule, MenuModule, JsonPipe, TooltipModule, DotMessagePipe],
     templateUrl: './ema-contentlet-tools.component.html',
     styleUrls: ['./ema-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -47,6 +49,7 @@ export class EmaContentletToolsComponent implements OnChanges {
 
     @Input() contentletArea: ContentletArea;
     @Input() isEnterprise: boolean;
+    @Input() disableDeleteButton: string;
 
     @Output() addContent = new EventEmitter<ActionPayload>();
     @Output() addForm = new EventEmitter<ActionPayload>();
@@ -93,6 +96,7 @@ export class EmaContentletToolsComponent implements OnChanges {
     ];
 
     readonly items = signal<MenuItem[]>(this.#comunityItems);
+
     protected styles: Record<string, { [klass: string]: unknown }> = {};
 
     ngOnChanges(changes: SimpleChanges): void {

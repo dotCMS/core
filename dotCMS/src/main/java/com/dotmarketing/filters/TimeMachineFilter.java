@@ -1,6 +1,9 @@
 package com.dotmarketing.filters;
 
 
+import static com.dotmarketing.filters.CMSUrlUtil.isDotAdminRequest;
+
+import com.dotcms.rest.api.v1.page.PageResource;
 import javax.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
@@ -45,6 +48,7 @@ import javax.servlet.http.HttpServletResponse;
  * @since May 31, 2012
  *
  */
+@Deprecated(since = "250221", forRemoval = true)
 public class TimeMachineFilter implements Filter {
 
     ServletContext ctx;
@@ -67,10 +71,18 @@ public class TimeMachineFilter implements Filter {
 		    chain.doFilter(request, response);
 		    return;
 		}
+
+		// If there's a session attribute that indicates that the request is a page resource, then skip the filter
+		// This is a temporary fix to avoid the filter to be executed when the request is a page resource until we retire the old
+		if(null != req.getSession().getAttribute(PageResource.IS_PAGE_RESOURCE)){
+			chain.doFilter(request, response);
+			return;
+		}
+
 		if(!uri.startsWith("/")) {
 		    uri="/"+uri;
 		}
-		if(uri != null && uri.startsWith("/admin") && req.getSession().getAttribute("tm_date")!=null){
+		if(uri.startsWith("/admin") && req.getSession().getAttribute("tm_date") != null){
 			req.getSession().removeAttribute(TM_DATE_VAR);
 			req.getSession().removeAttribute(TM_LANG_VAR);
 			req.getSession().removeAttribute(TM_HOST_VAR);
@@ -80,7 +92,7 @@ public class TimeMachineFilter implements Filter {
 		if(req.getSession().getAttribute("tm_date")!=null && urlUtil.amISomething(uri,(Host)req.getSession().getAttribute("tm_host")
 				,Long.parseLong((String)req.getSession().getAttribute("tm_lang")))) {
 			com.liferay.portal.model.User user = null;
-			PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
+			PageMode.setPageMode(req, PageMode.PREVIEW_MODE,false);
 			try {
 				user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest) request);
 				if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("time-machine", user)){

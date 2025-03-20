@@ -23,17 +23,17 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import javax.servlet.http.HttpSession;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
+import java.io.IOException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import javax.servlet.http.HttpSession;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 public class VelocityServlet extends HttpServlet {
 
@@ -64,25 +64,42 @@ public class VelocityServlet extends HttpServlet {
         final LoginMode loginMode = LoginMode.get(request);
         Logger.debug(VelocityServlet.class, "VelocityServlet_processPageMode LoginMode: " + loginMode.toString());
 
-        if (LoginMode.UNKNOWN == loginMode) {
+        if (null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)){
+            return PageMode.get(request);
+        }
 
-            return user.isFrontendUser()
-                    ? PageMode.setPageMode(request, PageMode.LIVE)
-                    :  useNavigateMode(request, loginMode)
-                    ? PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE)
-                    :  PageMode.setPageMode(request, PageMode.LIVE);
+        if (LoginMode.UNKNOWN == loginMode) {
+            return determinePageMode(request, user, LoginMode.UNKNOWN);
         }
 
         if ( LoginMode.FE == loginMode) {
-            return PageMode.setPageMode(request, PageMode.LIVE);
+            return PageMode.setPageMode(request, PageMode.LIVE, false);
         }
 
         return  useNavigateMode(request, loginMode) ?
-                 PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE) : PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
+                 PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE, false) : PageMode.setPageMode(request, PageMode.PREVIEW_MODE, false);
+    }
+
+    /**
+     * This method will determine the page mode based on the user and the login mode
+     * @param request HttpServletRequest
+     * @param user User
+     * @param loginMode LoginMode
+     * @return PageMode
+     */
+    private static PageMode determinePageMode(HttpServletRequest request, User user, LoginMode loginMode) {
+        if (user.isFrontendUser()) {
+            return PageMode.setPageMode(request, PageMode.LIVE, false);
+        }
+
+        if (useNavigateMode(request, loginMode)) {
+            return PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE,false);
+        }
+
+        return PageMode.setPageMode(request, PageMode.LIVE, false);
     }
 
     private static boolean useNavigateMode(final HttpServletRequest request, LoginMode loginMode) {
-
 
         if (LoginMode.FE == loginMode) {
             return false;
@@ -156,7 +173,9 @@ public class VelocityServlet extends HttpServlet {
                     request,
                     response
             );
+
             Logger.debug(this, "VelocityServlet_service pageHtml: " + pageHtml);
+
             response.getOutputStream().write(pageHtml.getBytes());
         } catch (ResourceNotFoundException rnfe) {
             Logger.warnAndDebug(this.getClass(), "ResourceNotFoundException" + rnfe.toString(), rnfe);

@@ -681,10 +681,16 @@
 							|| (!item[fieldName] && item['hasImageFields'] === 'true') ) {
                         createImageCell(row, item);
                     } else{
-							var fieldCell = row.insertCell(row.cells.length);
+						var fieldCell = row.insertCell(row.cells.length);
+						if (fieldName === "id"){
+							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
+									item,
+									item["siblings"][0][fieldName] || item["siblings"][0][fieldName.toUpperCase()] || item[fieldName]);
+						} else {
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
 									item[fieldName] || "");
+						}
 
                     }
                 });

@@ -140,27 +140,11 @@
 		</tr>
 		<tr>
 			<td></td>
-			<td colspan="2">
-				<div style="width: 100px"><%= LanguageUtil.get(pageContext, "configuration_cluster_address") %>:  {assets.path}</div>
-			</td>
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_address") %></td>
+			<td align="right">{assets.path}</td>
+
 		</tr>
 	</table>
-	<table class="network-action__list">
-		<tr>
-			<td><span class="licenseIcon"></span></td>
-			<td><b><%= LanguageUtil.get(pageContext, "configuration_cluster_license_repo") %></b></td>
-			<td></td>
-		</tr>
-		<tr>
-			<td></td>
-			<td><%= LanguageUtil.get(pageContext, "Total") %></td>
-			<td align="right">{licenseRepo.total}</td>
-		</tr>
-		<tr>
-			<td></td>
-			<td><%= LanguageUtil.get(pageContext, "Available") %></td>
-			<td align="right">{licenseRepo.available}</td>
-		</tr>
-	</table>
+
 	<a href="javascript:loadNetworkTab();" class="network-action__btn-refresh"><%= LanguageUtil.get(pageContext, "Refresh") %> <%= LanguageUtil.get(pageContext, "Status") %></a>
 </div>

@@ -30,6 +30,7 @@
         <module>reports</module>
         <module>e2e/dotcms-e2e-java</module>
         <module>e2e/dotcms-e2e-node</module>
+        <module>test-karate</module>
     </modules>
     <repositories>
         <repository>
@@ -100,5 +101,21 @@
             </extension>
         </extensions>
     </build>
+
+    <profiles>
+        <profile>
+            <id>jmeter</id>
+            <activation>
+                <property>
+                    <name>jmeter.test.skip</name>
+                    <value>false</value>
+                </property>
+            </activation>
+            <modules>
+                <module>test-jmeter</module>
+            </modules>
+        </profile>
+    </profiles>
+
 
 </project>

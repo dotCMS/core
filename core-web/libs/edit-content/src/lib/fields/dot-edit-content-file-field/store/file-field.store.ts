@@ -1,4 +1,4 @@
-import { tapResponse } from '@ngrx/component-store';
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -7,18 +7,20 @@ import { computed, inject } from '@angular/core';
 
 import { filter, switchMap, tap } from 'rxjs/operators';
 
-import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import {
+    INPUT_TYPE,
+    FILE_STATUS,
+    UIMessage,
+    UploadedFile
+} from '@dotcms/edit-content/models/dot-edit-content-file.model';
 
 import { INPUT_CONFIG } from '../dot-edit-content-file-field.const';
-import { INPUT_TYPES, FILE_STATUS, UIMessage, PreviewFile } from '../models';
 import { DotFileFieldUploadService } from '../services/upload-file/upload-file.service';
 import { getUiMessage } from '../utils/messages';
 
 export interface FileFieldState {
-    contentlet: DotCMSContentlet | null;
-    tempFile: DotCMSTempFile | null;
     value: string;
-    inputType: INPUT_TYPES | null;
+    inputType: INPUT_TYPE | null;
     fileStatus: FILE_STATUS;
     dropZoneActive: boolean;
     isEnterprise: boolean;
@@ -31,12 +33,10 @@ export interface FileFieldState {
     acceptedFiles: string[];
     maxFileSize: number | null;
     fieldVariable: string;
-    previewFile: PreviewFile | null;
+    uploadedFile: UploadedFile | null;
 }
 
 const initialState: FileFieldState = {
-    contentlet: null,
-    tempFile: null,
     value: '',
     inputType: null,
     fileStatus: 'init',
@@ -51,10 +51,11 @@ const initialState: FileFieldState = {
     acceptedFiles: [],
     maxFileSize: null,
     fieldVariable: '',
-    previewFile: null
+    uploadedFile: null
 };
 
 export const FileFieldStore = signalStore(
+    { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState(initialState),
     withComputed(({ fileStatus }) => ({
         isInit: computed(() => {
@@ -82,17 +83,29 @@ export const FileFieldStore = signalStore(
              * @param initState
              */
             initLoad: (initState: {
-                inputType: FileFieldState['inputType'];
+                inputType: INPUT_TYPE;
                 fieldVariable: FileFieldState['fieldVariable'];
+                isAIPluginInstalled?: boolean;
             }) => {
-                const { inputType, fieldVariable } = initState;
+                const { inputType, fieldVariable, isAIPluginInstalled } = initState;
 
                 const actions = INPUT_CONFIG[inputType] || {};
 
                 patchState(store, {
                     inputType,
                     fieldVariable,
+                    isAIPluginInstalled,
                     ...actions
+                });
+            },
+            /**
+             * Sets the maximum file size allowed for uploads.
+             *
+             * @param {number} maxFileSize - The maximum file size.
+             */
+            setMaxSizeFile: (maxFileSize: number) => {
+                patchState(store, {
+                    maxFileSize
                 });
             },
             /**
@@ -116,8 +129,7 @@ export const FileFieldStore = signalStore(
              */
             removeFile: () => {
                 patchState(store, {
-                    contentlet: null,
-                    tempFile: null,
+                    uploadedFile: null,
                     value: '',
                     fileStatus: 'init',
                     uiMessage: getUiMessage('DEFAULT')
@@ -130,6 +142,17 @@ export const FileFieldStore = signalStore(
             setDropZoneState: (state: boolean) => {
                 patchState(store, {
                     dropZoneActive: state
+                });
+            },
+            /**
+             * setPreviewFile is used to set previewFile
+             * @param file uploaded file
+             */
+            setPreviewFile: (file: UploadedFile) => {
+                patchState(store, {
+                    fileStatus: 'preview',
+                    uploadedFile: file,
+                    value: file.source === 'temp' ? file.file.id : file.file.identifier
                 });
             },
             /**
@@ -163,25 +186,33 @@ export const FileFieldStore = signalStore(
                         return true;
                     }),
                     switchMap((file) => {
-                        return uploadService.uploadDotAsset(file).pipe(
-                            tapResponse({
-                                next: (file) => {
-                                    patchState(store, {
-                                        tempFile: null,
-                                        contentlet: file,
-                                        fileStatus: 'preview',
-                                        value: file.identifier,
-                                        previewFile: { source: 'contentlet', file }
-                                    });
-                                },
-                                error: () => {
-                                    patchState(store, {
-                                        fileStatus: 'init',
-                                        uiMessage: getUiMessage('SERVER_ERROR')
-                                    });
-                                }
+                        return uploadService
+                            .uploadFile({
+                                file,
+                                uploadType: 'dotasset',
+                                acceptedFiles: store.acceptedFiles(),
+                                maxSize: store.maxFileSize() ? `${store.maxFileSize()}` : null
                             })
-                        );
+                            .pipe(
+                                tapResponse({
+                                    next: (uploadedFile) => {
+                                        patchState(store, {
+                                            fileStatus: 'preview',
+                                            value:
+                                                uploadedFile.source === 'temp'
+                                                    ? uploadedFile.file.id
+                                                    : uploadedFile.file.identifier,
+                                            uploadedFile
+                                        });
+                                    },
+                                    error: () => {
+                                        patchState(store, {
+                                            fileStatus: 'init',
+                                            uiMessage: getUiMessage('SERVER_ERROR')
+                                        });
+                                    }
+                                })
+                            );
                     })
                 )
             ),
@@ -196,11 +227,9 @@ export const FileFieldStore = signalStore(
                             tapResponse({
                                 next: (file) => {
                                     patchState(store, {
-                                        tempFile: null,
-                                        contentlet: file,
                                         fileStatus: 'preview',
                                         value: file.identifier,
-                                        previewFile: { source: 'contentlet', file }
+                                        uploadedFile: { source: 'contentlet', file }
                                     });
                                 },
                                 error: () => {

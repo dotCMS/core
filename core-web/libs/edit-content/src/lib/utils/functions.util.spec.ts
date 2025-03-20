@@ -1,21 +1,30 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 
-import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeFieldVariable,
+    DotLanguage,
+    UI_STORAGE_KEY
+} from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
+import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
-    getFieldVariablesParsed,
-    isValidJson,
-    stringToJson,
     createPaths,
-    getPersistSidebarState,
-    setPersistSidebarState
+    generatePreviewUrl,
+    getFieldVariablesParsed,
+    getStoredUIState,
+    isFilteredType,
+    isValidJson,
+    sortLocalesTranslatedFirst,
+    stringToJson
 } from './functions.util';
 import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
 import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
-import { SIDEBAR_LOCAL_STORAGE_KEY } from '../models/dot-edit-content.constant';
+import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 
 describe('Utils Functions', () => {
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
@@ -428,6 +437,7 @@ describe('Utils Functions', () => {
                                     fieldTypeLabel: 'Row',
                                     fieldVariables: [],
                                     fixed: false,
+                                    forceIncludeInApi: false,
                                     iDate: 1697051073000,
                                     id: 'a31ea895f80eb0a3754e4a2292e09a52',
                                     indexed: false,
@@ -602,34 +612,217 @@ describe('Utils Functions', () => {
         });
     });
 
-    describe('Sidebar State Persistence', () => {
+    describe('UI State Storage', () => {
         beforeEach(() => {
-            localStorage.clear();
+            sessionStorage.clear();
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            jest.spyOn(console, 'warn').mockImplementation(() => {});
         });
 
-        describe('getPersistSidebarState', () => {
-            it('should return true when localStorage is empty', () => {
-                expect(getPersistSidebarState()).toBe(true);
-            });
-
-            it('should return true when localStorage value is "true"', () => {
-                localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, 'true');
-                expect(getPersistSidebarState()).toBe(true);
-            });
-
-            it('should return false when localStorage value is "false"', () => {
-                localStorage.setItem(SIDEBAR_LOCAL_STORAGE_KEY, 'false');
-                expect(getPersistSidebarState()).toBe(false);
-            });
+        afterEach(() => {
+            jest.restoreAllMocks();
         });
 
-        describe('setPersistSidebarState', () => {
-            it('should set the value in localStorage', () => {
-                setPersistSidebarState('true');
-                expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('true');
+        describe('getStoredUIState', () => {
+            it('should return default state when sessionStorage is empty', () => {
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+            });
 
-                setPersistSidebarState('false');
-                expect(localStorage.getItem(SIDEBAR_LOCAL_STORAGE_KEY)).toBe('false');
+            it('should return stored state from sessionStorage', () => {
+                const mockState = {
+                    activeTab: 2,
+                    isSidebarOpen: false,
+                    activeSidebarTab: 1
+                };
+                sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
+
+                const state = getStoredUIState();
+                expect(state).toEqual(mockState);
+            });
+
+            it('should return default state and warn when sessionStorage has invalid JSON', () => {
+                sessionStorage.setItem(UI_STORAGE_KEY, 'invalid-json');
+
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+                expect(console.warn).toHaveBeenCalledWith(
+                    'Error reading UI state from sessionStorage:',
+                    expect.any(Error)
+                );
+            });
+
+            it('should return default state and warn when sessionStorage throws error', () => {
+                const mockGetItem = jest.fn(() => {
+                    throw new Error('Storage error');
+                });
+
+                Object.defineProperty(window, 'sessionStorage', {
+                    value: {
+                        getItem: mockGetItem
+                    }
+                });
+
+                const state = getStoredUIState();
+                expect(state).toEqual({
+                    activeTab: 0,
+                    isSidebarOpen: true,
+                    activeSidebarTab: 0
+                });
+                expect(console.warn).toHaveBeenCalledWith(
+                    'Error reading UI state from sessionStorage:',
+                    expect.any(Error)
+                );
+            });
+        });
+    });
+
+    describe('isFilteredType', () => {
+        it('should correctly identify filtered and non-filtered field types', () => {
+            const allFields = MOCK_CONTENTTYPE_2_TABS.fields;
+            const nonFormControlFieldTypes = Object.values(NON_FORM_CONTROL_FIELD_TYPES);
+
+            // Verify that none of the form control fields are filtered types
+            MOCK_FORM_CONTROL_FIELDS.forEach((field) => {
+                expect(isFilteredType(field)).toBe(false);
+            });
+
+            const filteredFields = allFields.filter((field) => {
+                return !isFilteredType(field);
+            });
+
+            expect(filteredFields.length).toBe(MOCK_FORM_CONTROL_FIELDS.length);
+
+            filteredFields.forEach((field) => {
+                const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
+                expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
+            });
+        });
+    });
+
+    describe('sortLocalesTranslatedFirst', () => {
+        it('sorts locales with translated ones first', () => {
+            const locales = [
+                { languageCode: 'en', translated: true },
+                { languageCode: 'fr', translated: false },
+                { languageCode: 'es', translated: true },
+                { languageCode: 'de', translated: false }
+            ] as DotLanguage[];
+
+            const result = sortLocalesTranslatedFirst(locales);
+
+            expect(result).toEqual([
+                { languageCode: 'en', translated: true },
+                { languageCode: 'es', translated: true },
+                { languageCode: 'fr', translated: false },
+                { languageCode: 'de', translated: false }
+            ]);
+        });
+
+        it('returns an empty array when input is empty', () => {
+            const locales: DotLanguage[] = [];
+
+            const result = sortLocalesTranslatedFirst(locales);
+
+            expect(result).toEqual([]);
+        });
+
+        it('returns the same array when all locales are translated', () => {
+            const locales = [
+                { languageCode: 'en', translated: true },
+                { languageCode: 'es', translated: true }
+            ] as DotLanguage[];
+
+            const result = sortLocalesTranslatedFirst(locales);
+
+            expect(result).toEqual(locales);
+        });
+
+        it('returns the same array when no locales are translated', () => {
+            const locales = [
+                { languageCode: 'fr', translated: false },
+                { languageCode: 'de', translated: false }
+            ] as DotLanguage[];
+
+            const result = sortLocalesTranslatedFirst(locales);
+
+            expect(result).toEqual(locales);
+        });
+    });
+
+    describe('generatePreviewUrl', () => {
+        it('should generate the correct preview URL when all attributes are present', () => {
+            const contentlet = createFakeContentlet({
+                URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            const expectedUrl =
+                'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Fpost%2F5-snow-sports-to-try-this-winter%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE';
+
+            expect(generatePreviewUrl(contentlet)).toBe(expectedUrl);
+        });
+
+        it('should return an empty string if URL_MAP_FOR_CONTENT is missing', () => {
+            const contentlet = createFakeContentlet({
+                URL_MAP_FOR_CONTENT: undefined,
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+
+        it('should return an empty string if host is missing', () => {
+            const contentlet = createFakeContentlet({
+                URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
+                host: undefined,
+                languageId: 1
+            });
+
+            expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+
+        it('should return an empty string if languageId is missing', () => {
+            const contentlet = createFakeContentlet({
+                URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: undefined
+            });
+
+            expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+    });
+
+    describe('prepareContentletForCopy', () => {
+        it('should prepare a contentlet for copying by setting locked to false and removing lockedBy', () => {
+            // Arrange
+            const contentlet = createFakeContentlet({
+                locked: true,
+                lockedBy: {
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    userId: 'user123'
+                }
+            });
+
+            // Act
+            const result = functionsUtil.prepareContentletForCopy(contentlet);
+
+            // Assert
+            expect(result).toEqual({
+                ...contentlet,
+                locked: false,
+                lockedBy: undefined
             });
         });
     });

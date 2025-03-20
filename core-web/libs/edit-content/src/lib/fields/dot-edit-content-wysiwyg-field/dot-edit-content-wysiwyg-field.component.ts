@@ -8,32 +8,43 @@ import {
     inject,
     input,
     model,
-    signal
+    Signal,
+    signal,
+    viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
+import { AutoComplete, AutoCompleteModule, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { take } from 'rxjs/operators';
+
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotWysiwygMonacoComponent } from './components/dot-wysiwyg-monaco/dot-wysiwyg-monaco.component';
 import { DotWysiwygTinymceComponent } from './components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component';
 import {
     AvailableEditor,
-    AvailableLanguageMonaco,
     COMMENT_TINYMCE,
     DEFAULT_EDITOR,
-    DEFAULT_MONACO_LANGUAGE,
-    EditorOptions,
-    HtmlTags,
-    JsKeywords,
-    MdSyntax,
-    MonacoLanguageOptions
+    EditorOptions
 } from './dot-edit-content-wysiwyg-field.constant';
-import { CountOccurrences, shouldUseDefaultEditor } from './dot-edit-content-wysiwyg-field.utils';
+import { shouldUseDefaultEditor } from './dot-edit-content-wysiwyg-field.utils';
+
+interface LanguageVariable {
+    key: string;
+    value: string;
+}
+
+// Quantity of language variables to show in the autocomplete
+const MAX_LANGUAGES_SUGGESTIONS = 20;
 
 /**
  * Component representing a WYSIWYG (What You See Is What You Get) editor field for editing content in DotCMS.
@@ -48,18 +59,50 @@ import { CountOccurrences, shouldUseDefaultEditor } from './dot-edit-content-wys
         DotWysiwygTinymceComponent,
         DotWysiwygMonacoComponent,
         MonacoEditorModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        AutoCompleteModule,
+        DotMessagePipe,
+        InputGroupModule,
+        InputGroupAddonModule,
+        TooltipModule
     ],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
     styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
     host: {
-        class: 'wysiwyg__wrapper'
+        class: 'dot-wysiwyg__wrapper'
     },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
+    /**
+     * Clear the autocomplete when the overlay is hidden.
+     */
+    onHideOverlay() {
+        this.$autoComplete()?.clear();
+    }
+
+    /**
+     * Signal to get the TinyMCE component.
+     */
+    $tinyMCEComponent: Signal<DotWysiwygTinymceComponent | undefined> = viewChild(
+        DotWysiwygTinymceComponent
+    );
+
+    /**
+     * Signal to get the Monaco component.
+     */
+    $monacoComponent: Signal<DotWysiwygMonacoComponent | undefined> =
+        viewChild(DotWysiwygMonacoComponent);
+
+    /**
+     * Signal to get the autocomplete component.
+     */
+    $autoComplete = viewChild<AutoComplete>(AutoComplete);
+
     #confirmationService = inject(ConfirmationService);
     #dotMessageService = inject(DotMessageService);
+    #dotLanguagesService = inject(DotLanguagesService);
+
     /**
      * This variable represents a required content type field in DotCMS.
      */
@@ -126,51 +169,41 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
         return contentlet[fieldValue] as string;
     });
 
-    /**
-     * A computed property that determines the appropriate language mode for the content editor.
-     * This is based on the content type present in the editor.
-     */
-    $contentLanguageUsed = computed(() => {
-        if (this.$contentEditorUsed() !== AvailableEditor.Monaco) {
-            return DEFAULT_MONACO_LANGUAGE;
-        }
-
-        const content = this.$fieldContent();
-
-        if (!content) {
-            return DEFAULT_MONACO_LANGUAGE;
-        }
-
-        if (JsKeywords.some((keyword) => content.includes(keyword))) {
-            return AvailableLanguageMonaco.Javascript;
-        }
-
-        if (HtmlTags.some((tag) => content.indexOf(tag) !== -1)) {
-            return AvailableLanguageMonaco.Html;
-        }
-
-        const mdScore = MdSyntax.reduce(
-            (score, syntax) => score + CountOccurrences(content, syntax),
-            0
-        );
-        if (mdScore > 2) {
-            return AvailableLanguageMonaco.Markdown;
-        }
-
-        return AvailableLanguageMonaco.PlainText;
-    });
-
     readonly editorTypes = AvailableEditor;
     readonly editorOptions = EditorOptions;
-    readonly monacoLanguagesOptions = MonacoLanguageOptions;
+
+    /**
+     * Signal to store the language variables, for later use in the autocomplete
+     * depending of the search query.
+     */
+    $languageVariables = signal<LanguageVariable[]>([]);
+
+    /**
+     * Signal to store the selected item from the autocomplete.
+     */
+    $selectedItem = model<string>('');
+
+    /**
+     * Computed property to filter the language variables based on the search query.
+     */
+    $filteredSuggestions = computed(() => {
+        const term = this.$selectedItem()?.toLowerCase();
+        const languageVariables = this.$languageVariables();
+
+        if (!term) {
+            return [];
+        }
+
+        return languageVariables
+            .filter((variable) => variable.key.toLowerCase().includes(term))
+            .slice(0, MAX_LANGUAGES_SUGGESTIONS);
+    });
 
     ngAfterViewInit(): void {
         // Assign the selected editor value
         this.$selectedEditorDropdown.set(this.$contentEditorUsed());
         // Editor showed
         this.$displayedEditor.set(this.$contentEditorUsed());
-        // Assign the selected language
-        this.$selectedLanguageDropdown.set(this.$contentLanguageUsed());
     }
 
     /**
@@ -205,5 +238,110 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
         } else {
             this.$displayedEditor.set(newEditor);
         }
+    }
+
+    /**
+     * Search for language variables.
+     *
+     * @return {void}
+     */
+    loadSuggestions() {
+        if (this.$languageVariables().length === 0) {
+            this.getLanguageVariables();
+        } else {
+            /**
+             * Set the autocomplete loading to false and show the overlay if there are suggestions.
+             * this for handle the bug in the autocomplete and show the loading icon when there are suggestions
+             */
+            const autocomplete = this.$autoComplete();
+            if (autocomplete) {
+                autocomplete.loading = false;
+                if (this.$filteredSuggestions().length > 0) {
+                    autocomplete.overlayVisible = true;
+                }
+
+                autocomplete.cd.markForCheck();
+            }
+        }
+    }
+
+    /**
+     * Handles the selection of a language variable from the autocomplete.
+     *
+     * @param {AutoCompleteSelectEvent} $event - The event object containing the selected value.
+     * @return {void}
+     */
+    onSelectLanguageVariable($event: AutoCompleteSelectEvent) {
+        const { value } = $event;
+
+        if (this.$displayedEditor() === AvailableEditor.TinyMCE) {
+            const tinyMCE = this.$tinyMCEComponent();
+            if (tinyMCE) {
+                tinyMCE.insertContent(`$text.get('${value.key}')`);
+                this.resetAutocomplete();
+            } else {
+                console.warn('TinyMCE component is not available');
+            }
+        } else if (this.$displayedEditor() === AvailableEditor.Monaco) {
+            const monaco = this.$monacoComponent();
+            if (monaco) {
+                monaco.insertContent(`$text.get('${value.key}')`);
+                this.resetAutocomplete();
+            } else {
+                console.warn('Monaco component is not available');
+            }
+        }
+    }
+
+    /**
+     * Resets the autocomplete state.
+     */
+    private resetAutocomplete() {
+        this.$autoComplete()?.clear();
+    }
+
+    /**
+     * Fetches language variables from the DotCMS Languages API and formats them for use in the autocomplete.
+     */
+    getLanguageVariables() {
+        // TODO: This is a temporary solution to get the language variables from the DotCMS Languages API.
+        // We need a way to get the current language from the contentlet.
+        this.#dotLanguagesService
+            .getLanguageVariables()
+            .pipe(take(1))
+            .subscribe({
+                next: (variables) => {
+                    const formattedVariables = Object.entries(variables)
+                        .map(([key, langObj]) => {
+                            // Try to get the English value first
+                            let value = langObj['en-us']?.value;
+
+                            // If there is no English value, search for it in other languages
+                            if (!value) {
+                                for (const lang in langObj) {
+                                    if (langObj[lang]?.value) {
+                                        value = langObj[lang].value;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // If there is no value, use the key
+                            if (!value) {
+                                value = key;
+                            }
+
+                            return { key, value };
+                        })
+                        .filter(
+                            (variable) => variable.value !== null && variable.value !== undefined
+                        );
+
+                    this.$languageVariables.set(formattedVariables);
+                },
+                error: (error) => {
+                    console.error('Error fetching language variables:', error);
+                }
+            });
     }
 }

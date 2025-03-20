@@ -1,0 +1,71 @@
+#
+# GitHub Actions Workflow for LTS Auto-run Tests
+# This file is a GitHub Actions workflow configuration for running automated tests on long-term support (LTS) branches.
+# It defines a series of jobs that are triggered on pushes to branches matching the pattern release-*. The workflow includes the following jobs:
+# Initialize: Sets up the environment and performs initial validation.
+# Build: Compiles the project if no artifacts were found during initialization.
+# Test: Runs various tests (unit, integration, frontend, etc.) based on the outputs from the initialization step.
+# Finalize: Aggregates and finalizes the results from the previous jobs.
+# The workflow uses concurrency control to manage multiple runs and cancels in-progress runs for the same branch or pull request to prevent delays.
+#
+
+name: 'LTS Auto-run Tests'
+
+on:
+  push:
+    branches:
+      - release-*
+
+# Concurrency group to manage multiple runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
+  cancel-in-progress: true
+
+jobs:
+  # Initialize the PR check process
+  initialize:
+    name: Initialize
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      validation-level: 'full'
+
+  # Build job - only runs if no artifacts were found during initialization
+  build:
+    name: PR Build
+    needs: [ initialize ]
+    if: needs.initialize.outputs.build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+      version: '24.12.27'
+    permissions:
+      contents: read
+      packages: write
+
+  # Test job - runs various tests based on initialization outputs
+  test:
+    name: PR Test
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
+      integration: ${{ needs.initialize.outputs.backend == 'true' }}
+      postman: ${{ needs.initialize.outputs.backend == 'true' }}
+      karate: ${{ needs.initialize.outputs.backend == 'true' }}
+      frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
+      cli: ${{ needs.initialize.outputs.cli == 'true' }}
+      e2e: ${{ needs.initialize.outputs.build == 'true' }}
+    secrets:
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+
+  # Finalize job - aggregates results from previous jobs
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ test ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      needsData: ${{ toJson(needs) }}

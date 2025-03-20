@@ -10,10 +10,12 @@ import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ImmutablePageContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.workflow.ImmutableWorkflow;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.Workspace;
+import com.dotcms.model.contenttype.AbstractSaveContentTypeRequest;
 import com.dotcms.model.contenttype.SaveContentTypeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -63,18 +65,32 @@ public class ContentTypesTestHelperService {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
 
-        final long identifier = System.currentTimeMillis();
-        final String varName = "var_" + identifier;
-
         final ImmutableSimpleContentType contentType = buildContentType(
                 null, null, detailPage, urlMapPattern
         );
 
-        final SaveContentTypeRequest saveRequest = SaveContentTypeRequest.builder().
-                from(contentType).build();
+        final SaveContentTypeRequest saveRequest = AbstractSaveContentTypeRequest.builder()
+                .of(contentType).build();
         contentTypeAPI.createContentTypes(List.of(saveRequest));
 
-        return varName;
+        // Make sure the content type is created, and we are giving the server some time to process
+        findContentType(contentType.variable()).orElseThrow(() -> new RuntimeException(
+                "Content type not found after creation: " + contentType.variable()
+        ));
+
+        return contentType.variable();
+    }
+
+    /**
+     * Creates a HTML page content type descriptor in the given workspace.
+     *
+     * @param workspace The workspace in which the content type descriptor should be created.
+     * @return The result of the content type descriptor creation.
+     * @throws IOException If an error occurs while writing the content type descriptor to disk.
+     */
+    public ContentTypeDescriptorCreationResult createPageContentTypeDescriptor(Workspace workspace)
+            throws IOException {
+        return createPageContentTypeDescriptor(workspace, null, null);
     }
 
     /**
@@ -157,6 +173,33 @@ public class ContentTypesTestHelperService {
     }
 
     /**
+     * Creates a HTML page content type descriptor in the given workspace.
+     *
+     * @param workspace  The workspace in which the content type descriptor should be created.
+     * @param identifier The identifier of the content type.
+     * @param variable   The variable of the content type.
+     * @return The result of the content type descriptor creation.
+     * @throws IOException If an error occurs while writing the content type descriptor to disk.
+     */
+    public ContentTypeDescriptorCreationResult createPageContentTypeDescriptor(
+            Workspace workspace, final String identifier, final String variable)
+            throws IOException {
+
+        final ImmutablePageContentType contentType = buildPageContentType(
+                identifier, variable
+        );
+
+        final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
+        final String asString = objectMapper.writeValueAsString(contentType);
+
+        final Path path = Path.of(workspace.contentTypes().toString(),
+                String.format("%s.json", contentType.variable()));
+        Files.writeString(path, asString);
+
+        return new ContentTypeDescriptorCreationResult(contentType.variable(), path);
+    }
+
+    /**
      * Builds a content type object.
      *
      * @param identifier    The identifier of the content type.
@@ -184,6 +227,76 @@ public class ContentTypesTestHelperService {
                 .folder("SYSTEM_FOLDER")
                 .detailPage(detailPage)
                 .urlMapPattern(urlMapPattern)
+                .addFields(
+                        ImmutableBinaryField.builder()
+                                .name("__bin_var__" + millis)
+                                .fixed(false)
+                                .listed(true)
+                                .searchable(true)
+                                .unique(false)
+                                .indexed(true)
+                                .readOnly(false)
+                                .forceIncludeInApi(false)
+                                .modDate(new Date())
+                                .required(false)
+                                .variable("lol")
+                                .sortOrder(1)
+                                .dataType(DataTypes.SYSTEM).build(),
+                        ImmutableTextField.builder()
+                                .indexed(true)
+                                .dataType(DataTypes.TEXT)
+                                .fieldType("text")
+                                .readOnly(false)
+                                .required(true)
+                                .searchable(true)
+                                .listed(true)
+                                .sortOrder(2)
+                                .searchable(true)
+                                .name("Name")
+                                .variable("name")
+                                .fixed(false)
+                                .build()
+                )
+                .workflows(
+                        List.of(
+                                ImmutableWorkflow.builder()
+                                        .id(SYSTEM_WORKFLOW_ID)
+                                        .variableName(SYSTEM_WORKFLOW_VARIABLE_NAME)
+                                        .build()
+                        )
+                );
+
+        if (identifier != null) {
+            builder.id(identifier);
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * Builds a HTML page content type object.
+     *
+     * @param identifier The identifier of the content type.
+     * @param variable   The variable of the content type.
+     * @return The content type object.
+     */
+    private ImmutablePageContentType buildPageContentType(
+            final String identifier, final String variable) {
+
+        final long millis = System.currentTimeMillis();
+        final String contentTypeVariable = Objects.requireNonNullElseGet(variable,
+                () -> "var_" + millis);
+
+        var builder = ImmutablePageContentType.builder()
+                .baseType(BaseContentType.HTMLPAGE)
+                .description("ct for testing.")
+                .name("name-" + contentTypeVariable)
+                .variable(contentTypeVariable)
+                .modDate(new Date())
+                .fixed(true)
+                .iDate(new Date())
+                .host("SYSTEM_HOST")
+                .folder("SYSTEM_FOLDER")
                 .addFields(
                         ImmutableBinaryField.builder()
                                 .name("__bin_var__" + millis)

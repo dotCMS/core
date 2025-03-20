@@ -71,7 +71,7 @@ on:
 
 jobs:
   publish-sdk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Publish to NPM
         uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk

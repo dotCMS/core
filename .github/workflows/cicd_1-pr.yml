@@ -67,6 +67,7 @@ jobs:
       jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
       integration: ${{ needs.initialize.outputs.backend == 'true' }}
       postman: ${{ needs.initialize.outputs.backend == 'true' }}
+      karate: ${{ needs.initialize.outputs.backend == 'true' }}
       frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
       cli: ${{ needs.initialize.outputs.cli == 'true' }}
       e2e: ${{ needs.initialize.outputs.build == 'true' }}
@@ -77,17 +78,33 @@ jobs:
   sonar:
     name: PR SonarQube
     needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true'
+    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
+      (
+      (github.event_name == 'workflow_dispatch' && !inputs.disable-sonar) ||
+      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SONAR != 'true')
+      )
     uses: ./.github/workflows/cicd_comp_sonarqube-phase.yml
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
+  semgrep:
+    name: PR Semgrep
+    needs: [ initialize,build ]
+    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
+      (
+      (github.event_name == 'workflow_dispatch' && !inputs.disable-semgrep) ||
+      (github.event_name != 'workflow_dispatch' && vars.DISABLE_SEMGREP != 'true')
+      )
+    uses: ./.github/workflows/cicd_comp_semgrep-phase.yml
+    secrets:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ sonar,test ]
+    needs: [ sonar,semgrep,test ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

@@ -444,6 +444,7 @@ public class CMSConfigResource {
     /**
      * Deletes a given end point
      *
+     * @deprecated use {@link EndpointResource#delete(HttpServletRequest, HttpServletResponse, String)}
      * @param request
      * @param user
      * @param password
@@ -452,6 +453,7 @@ public class CMSConfigResource {
      * @throws JSONException
      * @throws IOException
      */
+    @Deprecated
     @POST
     @Path ("/deleteEndpoint")
     @Produces (MediaType.APPLICATION_JSON)

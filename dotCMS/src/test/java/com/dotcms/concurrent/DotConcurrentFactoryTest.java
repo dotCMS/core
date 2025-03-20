@@ -2,7 +2,6 @@ package com.dotcms.concurrent;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
-import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.json.JSONException;
 import org.junit.Test;
@@ -90,27 +89,6 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         assertEquals(6, scenarios1Count);
         assertEquals(14, scenarios2Count);
 
-    }
-
-    /**
-     * Method to test: {@link DotSubmitter#submit(Runnable)}
-     * Given Scenario: Just running task to see if works
-     * ExpectedResult: The executeCheck should be called
-     *
-     */
-    @Test
-    public void testSubmit_Single_Submitter_Config() throws JSONException, ExecutionException, InterruptedException {
-
-        final ElasticReadOnlyCommand esReadOnlyMonitor = mock(ElasticReadOnlyCommand.class);
-        final DotConcurrentFactory dotConcurrentFactory =
-                DotConcurrentFactory.getInstance();
-        final DotSubmitter submitter =
-                dotConcurrentFactory.getSingleSubmitter();
-        submitter.submit(()-> esReadOnlyMonitor.executeCheck()).get();
-
-        DateUtil.sleep(DateUtil.SECOND_MILLIS);
-
-        verify(esReadOnlyMonitor).executeCheck();
     }
 
     /**

@@ -70,6 +70,7 @@ export class DotEditContentHostFolderFieldComponent implements OnInit {
     ngOnInit() {
         const currentPath = this.formControl.value;
         const isRequired = this.formControl.hasValidator(Validators.required);
+
         this.store.loadSites({
             path: currentPath,
             isRequired

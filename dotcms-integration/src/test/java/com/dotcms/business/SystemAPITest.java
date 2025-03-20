@@ -4,10 +4,15 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDuplicateDataException;
+import com.dotmarketing.startup.runalways.Task00002LoadClusterLicenses;
+import com.dotmarketing.startup.runonce.Task230707CreateSystemTable;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -143,5 +148,28 @@ public class SystemAPITest extends IntegrationTestBase  {
                 }
             }
         }
+    }
+
+    /**
+     * Method to test: {@link SystemAPI#getSystemTable()}
+     * Given Scenario:
+     *  1) deletes the system table if exist
+     *  2) call the init method to redo
+     * ExpectedResult: Since the API creates the table if not exist, the call should be successful
+     * @throws Throwable
+     */
+    @Test()
+    public void test_drop_and_re_init () throws Throwable {
+
+        LocalTransaction.wrap(()->Try.run(()->new DotConnect().executeStatement("DROP TABLE IF EXISTS system_table")));
+        final SystemTable systemTable = APILocator.getSystemAPI().getSystemTable();
+        Assert.assertNotNull(systemTable);
+        boolean shouldRun = LocalTransaction.wrapReturn(()->new Task230707CreateSystemTable().forceRun());
+        Assert.assertTrue("The table should not exist here", shouldRun);
+        SystemTableImpl.class.cast(systemTable).initIfNeeded(); // re-create the table
+        shouldRun = LocalTransaction.wrapReturn(()->new Task230707CreateSystemTable().forceRun());
+        Assert.assertFalse(shouldRun); // this second time should exist since the table was recreated
+        // the idea would be on runtime if the system table is being instance and the table does not exist, it should be created
+        // since the IT initialization flow works, the system table is being created in advance so the init was already called, so need to emulate the drop
     }
 }

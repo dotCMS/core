@@ -55,6 +55,8 @@ export function withClient() {
                 },
                 setClientConfiguration: ({ query, params }: ClientRequestProps) => {
                     patchState(store, {
+                        // Added this to avoid the client ready event to be triggered
+                        isClientReady: true,
                         clientRequestProps: {
                             query,
                             params

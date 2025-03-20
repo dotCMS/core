@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -35,7 +34,6 @@ import { CategoryFieldStore } from './store/content-category-field.store';
     imports: [
         ReactiveFormsModule,
         ButtonModule,
-        NgClass,
         DotMessagePipe,
         DotCategoryFieldChipsComponent,
         DotCategoryFieldDialogComponent
@@ -75,7 +73,8 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
      *
      * @returns {Boolean} - True if there are selected categories, false otherwise.
      */
-    $hasSelectedCategories = computed(() => !!this.store.selected());
+    $hasSelectedCategories = computed(() => this.store.selected().length > 0);
+
     /**
      * Getter to retrieve the category field control.
      *
@@ -99,7 +98,8 @@ export class DotEditContentCategoryFieldComponent implements OnInit {
                 const categoryValues = this.store.selected();
 
                 if (this.categoryFieldControl) {
-                    this.categoryFieldControl.setValue(categoryValues);
+                    const inodes = categoryValues?.map((category) => category.inode) ?? [];
+                    this.categoryFieldControl.setValue(inodes);
                 }
             },
             {

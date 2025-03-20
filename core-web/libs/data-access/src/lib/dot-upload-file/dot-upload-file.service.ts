@@ -87,18 +87,30 @@ export class DotUploadFileService {
     }
 
     /**
-     * Uploads a file to dotCMS and creates a new dotAsset contentlet
-     * @param file the file to be uploaded
-     * @returns an Observable that emits the created contentlet
+     * Uploads a file or a string as a dotAsset contentlet.
+     *
+     * If a File is passed, it will be uploaded and the asset will be created
+     * with the file name as the contentlet name.
+     *
+     * If a string is passed, it will be used as the asset id.
+     *
+     * @param file The file to be uploaded or the asset id.
+     * @returns An observable that resolves to the created contentlet.
      */
-    uploadDotAsset(file: File) {
-        const formData = new FormData();
-        formData.append('file', file);
+    uploadDotAsset(file: File | string): Observable<DotCMSContentlet> {
+        if (file instanceof File) {
+            const formData = new FormData();
+            formData.append('file', file);
 
-        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(
-            'dotAsset',
-            { file: file.name },
-            formData
-        );
+            return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>(
+                'dotAsset',
+                { file: file.name },
+                formData
+            );
+        }
+
+        return this.#workflowActionsFireService.newContentlet<DotCMSContentlet>('dotAsset', {
+            asset: file
+        });
     }
 }

@@ -58,7 +58,7 @@
     background: $white;
     color: $black;
     padding: $spacing-4;
-    word-break: break-all;
+    word-break: break-word;
 }
 .p-dialog:has(.p-dialog-header) .p-dialog-content {
     padding-top: 0;
@@ -109,6 +109,13 @@
     background-color: transparent;
     -webkit-backdrop-filter: blur($blur-md);
     backdrop-filter: blur($blur-md);
+    padding: 0;
+    align-items: center;
+}
+
+.p-dialog-mask.p-dialog-mask-dynamic.p-component-overlay {
+    padding: 0;
+    align-items: center;
 }
 
 .p-dialog-mask.p-dialog-mask-transparent-nested.p-component-overlay {

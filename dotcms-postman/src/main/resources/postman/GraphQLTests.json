@@ -2826,7 +2826,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "{\n    page(url: \"/myCoolPageWithDotAsset\", pageMode: \"WORKING\") {\n    title\n  }\n}\n\n",
+										"query": "{\n    page(url: \"/destinations/costa-rica\", pageMode: \"WORKING\") {\n    title\n  }\n}\n\n",
 										"variables": ""
 									}
 								},

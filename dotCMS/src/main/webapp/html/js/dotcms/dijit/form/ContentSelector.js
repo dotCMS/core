@@ -39,6 +39,8 @@
  *
  * title: non-required - Title of the dialog.
  *
+ * variantName: non-required - this is used to search content of particular variant.
+ * 
  * onFileSelected: non-required - JS script or JS function callback to be executed when the user selects a content from the results,
  *
  * the content object is passed to the function.
@@ -104,6 +106,7 @@ dojo.declare(
         selectButtonLabel: 'Select',
         useRelateContentOnSelect: false,
         selectedInodesSet: new Set(),
+        variantName: 'DEFAULT',
 
         setSelectedInode: function (selectBtn) {
             if (selectBtn.checked) {
@@ -1097,7 +1100,6 @@ dojo.declare(
                     });
             }
 
-            const variantName = window.sessionStorage.getItem('variantName') || 'DEFAULT';
             ContentletAjax.searchContentlets(
                 searchFor,
                 fieldsValues,
@@ -1111,7 +1113,7 @@ dojo.declare(
                 this.currentSortBy,
                 null,
                 null,
-                variantName,
+                this.variantName,
                 dojo.hitch(this, this._fillResults)
             );
 
@@ -1320,7 +1322,6 @@ dojo.declare(
                     );
                     if (selectButton.onclick == undefined) {
                         selectButton.onclick = dojo.hitch(this, function (event) {
-                            event.stopPropagation();
                             selected(this, asset);
                         });
                     }

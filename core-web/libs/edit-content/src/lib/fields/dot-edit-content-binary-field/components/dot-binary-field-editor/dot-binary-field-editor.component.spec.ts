@@ -167,7 +167,7 @@ describe('DotBinaryFieldEditorComponent', () => {
         it('should force html language on vtl files', fakeAsync(() => {
             const expectedMonacoOptions = {
                 ...DEFAULT_BINARY_FIELD_MONACO_CONFIG,
-                language: 'html'
+                language: 'velocity'
             };
 
             spectator.detectChanges();
@@ -288,6 +288,23 @@ describe('DotBinaryFieldEditorComponent', () => {
                     'This type of file is not supported. Please use a image/*, .ts file.'
             });
             expect(component.form.valid).toBe(false);
+        }));
+
+        it('should set form as valid when there is no extension', fakeAsync(() => {
+            dotBinaryFieldValidatorService.setAccept([]);
+            spectator.detectChanges();
+
+            const spy = jest.spyOn(component.name, 'setErrors');
+
+            component.form.setValue({
+                name: 'testNoExtension',
+                content: 'test'
+            });
+
+            tick(1000);
+
+            expect(spy).not.toHaveBeenCalled();
+            expect(component.form.valid).toBe(true);
         }));
 
         afterEach(() => {

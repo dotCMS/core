@@ -1,22 +1,18 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
+import { Toast } from 'primeng/toast';
 
 import { EditContentShellComponent } from './edit-content.shell.component';
 
-describe('EditContentComponent', () => {
-    let component: EditContentShellComponent;
-    let fixture: ComponentFixture<EditContentShellComponent>;
+describe('EditContentShellComponent', () => {
+    let spectator: Spectator<EditContentShellComponent>;
+    const createComponent = createComponentFactory(EditContentShellComponent);
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [EditContentShellComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(EditContentShellComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    beforeEach(() => {
+        spectator = createComponent();
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    it('should have p-toast component', () => {
+        expect(spectator.query(Toast)).toBeTruthy();
     });
 });

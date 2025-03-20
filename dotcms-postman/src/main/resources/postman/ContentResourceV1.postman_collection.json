@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "432048a5-eb89-43a5-9828-e4d69ff200dc",
+		"_postman_id": "15e5191d-c7ec-4e91-aded-f855ce7d4f00",
 		"name": "ContentResourceV1",
 		"description": "This folder contains a comprehensive set of API requests related to the `ContentResourceV1` API endpoints. These requests cover various operations such as creating, retrieving and updating content. The folder is organized to help developers and testers efficiently validate and interact with the content resource endpoints in the system.\n\n#### Objectives:\n\n1. **Create Content**:\n    \n    - Test the creation of new content items with valid and invalid data.\n        \n    - Ensure that the response includes all necessary details for the created content.\n        \n2. **Retrieve Content**:\n    \n    - Validate the retrieval of content items by ID.\n        \n    - Ensure the response contains accurate and complete content details.\n        \n3. **Update Content**:\n    \n    - Test updating existing content items with valid and invalid data.\n        \n    - Verify that the response reflects the updated content accurately.\n        \n    - Ensure that only authorized users can update content.\n        \n4. **Error Handling**:\n    \n    - Verify that the API returns appropriate error messages for invalid requests.\n        \n    - Ensure the correct HTTP status codes are used for different error scenarios.\n        \n5. **Security**:\n    \n    - Validate that only authorized users can perform operations on the content.\n        \n    - Ensure that all security protocols are enforced during API interactions.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -2457,6 +2457,653 @@
 				}
 			],
 			"description": "This folder contains a comprehensive set of requests designed to handle the creation, relationship management, and updating of content within our application. These requests are essential for ensuring that content operations are performed correctly and efficiently.  \n  \nThis will include both possitive and negative testing."
+		},
+		{
+			"name": "Retrieving Content",
+			"item": [
+				{
+					"name": "Available Langs for Contentlet",
+					"item": [
+						{
+							"name": "Creating Test Generic Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test content created successfully\", function () {",
+											"    const jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"    ",
+											"    const jsonKey = Object.keys(jsonData.entity.results[0]);",
+											"    const potentialErrorMsg = jsonData.entity.results[0][jsonKey].errorMessage;",
+											"    pm.expect(potentialErrorMsg).to.equal(undefined, \"An error occurred when creating the test Contentlet\")",
+											"    ",
+											"    pm.collectionVariables.set(\"testContentId\", jsonData.entity.results[0][jsonKey].identifier);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"webPageContent\",\n            \"title\": \"Test Generic Content\",\n            \"contentHost\": \"default\",\n            \"body\": \"This is my Test Generic Content\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "\nThe API endpoint triggers the publication of specified content items. Upon successful execution, the response is returned in the form of a JSON schema.\n\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"results\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"additionalProperties\": {\n              \"type\": \"object\",\n              \"properties\": {\n                \"errorMessage\": {\n                  \"type\": \"string\"\n                },\n                \"identifier\": {\n                  \"type\": [\"string\", \"null\"]\n                },\n                \"inode\": {\n                  \"type\": [\"string\", \"null\"]\n                }\n              }\n            }\n          }\n        },\n        \"summary\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"affected\": {\n              \"type\": \"integer\"\n            },\n            \"failCount\": {\n              \"type\": \"integer\"\n            },\n            \"successCount\": {\n              \"type\": \"integer\"\n            },\n            \"time\": {\n              \"type\": \"integer\"\n            }\n          }\n        }\n      }\n    },\n    \"errors\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"i18nMessagesMap\": {\n      \"type\": \"object\"\n    },\n    \"messages\": {\n      \"type\": \"array\",\n      \"items\": {}\n    },\n    \"permissions\": {\n      \"type\": \"array\",\n      \"items\": {}\n    }\n  }\n}\n```\n"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Available Langs for Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Check that the test Contentlet is available in English, no matter how many languages there are\", function () {",
+											"    const entity = pm.response.json().entity;",
+											"    var isTranslated = false;",
+											"    entity.forEach(function(lang) {",
+											"        if (1 == lang.id && lang.translated) {",
+											"            isTranslated = true;",
+											"        }",
+											"    });",
+											"    pm.expect(isTranslated).to.be.equal(true, 'The test Contentlet must be available in English');",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/{{testContentId}}/languages",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"{{testContentId}}",
+										"languages"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"pm.test(\"HTTP Status code must be successful\", function() {",
+									"    pm.response.to.be.ok ",
+									"});",
+									""
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "AvailableLangs404",
+					"item": [
+						{
+							"name": "404",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 404\", function () {",
+											"    pm.response.to.have.status(404);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/xxxx/languages",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"xxxx",
+										"languages"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "LockUnLock",
+			"item": [
+				{
+					"name": "CreateRichText",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Valid response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentletIdentifier\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"contentletInode\", jsonData.entity.inode);",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"webPageContent\",\n        \"contentHost\": \"default\",\n        \"title\": \"Test{{$timestamp}}\",\n        \"body\": \"Test{{$timestamp}}\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "\n### Update Workflow Action\n\nThis endpoint allows you to fire any action using the actionId.\n\n#### Request Body\nThe request should include a JSON payload with the following structure:\n```json\n{\n  \"contentlet\": {\n    \"stInode\": \"\",\n    \"languageId\": 0,\n    \"key\": \"\",\n    \"value\": \"\"\n  }\n}\n```\n\nOptional: If you pass ?inode={inode}, you don't need a body here.\n\n#### Response\nThe response is a JSON object with the following schema:\n```json\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"entity\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"AUTO_ASSIGN_WORKFLOW\": { \"type\": \"boolean\" },\n        \"__IS_NEW_CONTENT__\": { \"type\": \"boolean\" },\n        \"archived\": { \"type\": \"boolean\" },\n        \"baseType\": { \"type\": \"string\" },\n        \"contentType\": { \"type\": \"string\" },\n        \"creationDate\": { \"type\": \"number\" },\n        \"folder\": { \"type\": \"string\" },\n        \"hasLiveVersion\": { \"type\": \"boolean\" },\n        \"hasTitleImage\": { \"type\": \"boolean\" },\n        \"host\": { \"type\": \"string\" },\n        \"hostName\": { \"type\": \"string\" },\n        \"identifier\": { \"type\": \"string\" },\n        \"inode\": { \"type\": \"string\" },\n        \"key\": { \"type\": \"string\" },\n        \"languageId\": { \"type\": \"number\" },\n        \"live\": { \"type\": \"boolean\" },\n        \"locked\": { \"type\": \"boolean\" },\n        \"modDate\": { \"type\": \"number\" },\n        \"modUser\": { \"type\": \"string\" },\n        \"modUserName\": { \"type\": \"string\" },\n        \"owner\": { \"type\": \"string\" },\n        \"ownerName\": { \"type\": \"string\" },\n        \"publishDate\": { \"type\": \"number\" },\n        \"publishUser\": { \"type\": \"string\" },\n        \"publishUserName\": { \"type\": \"string\" },\n        \"sortOrder\": { \"type\": \"number\" },\n        \"stInode\": { \"type\": \"string\" },\n        \"title\": { \"type\": \"string\" },\n        \"titleImage\": { \"type\": \"string\" },\n        \"url\": { \"type\": \"string\" },\n        \"value\": { \"type\": \"string\" },\n        \"working\": { \"type\": \"boolean\" }\n      }\n    },\n    \"errors\": { \"type\": \"array\", \"items\": {} },\n    \"i18nMessagesMap\": { \"type\": \"object\" },\n    \"messages\": { \"type\": \"array\", \"items\": {} },\n    \"pagination\": { \"type\": \"null\" },\n    \"permissions\": { \"type\": \"array\", \"items\": {} }\n  }\n}\n```\n"
+					},
+					"response": []
+				},
+				{
+					"name": "CanLock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let id = pm.collectionVariables.get('contentletIdentifier');",
+									"const responseJson = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(responseJson.entity.canLock).to.eql(true);",
+									"    pm.expect(responseJson.entity.id).to.eql(id);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_canlock/{{contentletIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_canlock",
+								"{{contentletIdentifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Lock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let id = pm.collectionVariables.get('contentletIdentifier');",
+									"const responseJson = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(responseJson.entity.locked).to.eql(true);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_lock/{{contentletIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_lock",
+								"{{contentletIdentifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckIfIsLocked",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let id = pm.collectionVariables.get('contentletIdentifier');",
+									"const responseJson = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(responseJson.entity.canLock).to.eql(true);",
+									"    pm.expect(responseJson.entity.id).to.eql(id);",
+									"    pm.expect(responseJson.entity.locked).to.eql(true);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_canlock/{{contentletIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_canlock",
+								"{{contentletIdentifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetContentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let id = pm.collectionVariables.get('contentletIdentifier');",
+									"const responseJson = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(responseJson.entity.identifier).to.eql(id);",
+									"    pm.expect(responseJson.entity.locked).to.eql(true);",
+									"    pm.expect(responseJson.entity.lockedBy.firstName).to.eql(\"Admin\");",
+									"    pm.expect(responseJson.entity.lockedBy.userId).to.eql(\"dotcms.org.1\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/{{contentletIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{contentletIdentifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unlock",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let id = pm.collectionVariables.get('contentletIdentifier');",
+									"const responseJson = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(responseJson.entity.locked).to.eql(false);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_unlock/{{contentletIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_unlock",
+								"{{contentletIdentifier}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckIfIsUnLocked",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let id = pm.collectionVariables.get('contentletIdentifier');",
+									"const responseJson = pm.response.json();",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(responseJson.entity.canLock).to.eql(true);",
+									"    pm.expect(responseJson.entity.id).to.eql(id);",
+									"    pm.expect(responseJson.entity.locked).to.eql(false);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_canlock/{{contentletIdentifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_canlock",
+								"{{contentletIdentifier}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"if (!pm.environment.get('jwt')) {",
+							"    console.log(\"generating....\")",
+							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"",
+							"    if (!pm.environment.get('jwt')) {",
+							"        const username = pm.environment.get(\"user\");",
+							"        const password = pm.environment.get(\"password\");",
+							"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+							"",
+							"        const requestOptions = {",
+							"            url: apiUrl,",
+							"            method: \"POST\",",
+							"            header: {",
+							"                \"accept\": \"*/*\",",
+							"                \"content-type\": \"application/json\",",
+							"                \"Authorization\": `Basic ${basicAuth}`",
+							"            },",
+							"            body: {",
+							"                mode: \"raw\",",
+							"                raw: JSON.stringify({",
+							"                    \"expirationSeconds\": 7200,",
+							"                    \"userId\": \"dotcms.org.1\",",
+							"                    \"network\": \"0.0.0.0/0\",",
+							"                    \"claims\": {\"label\": \"postman-tests\"}",
+							"                })",
+							"            }",
+							"        };",
+							"",
+							"        pm.sendRequest(requestOptions, function (err, response) {",
+							"            if (err) {",
+							"                console.log(err);",
+							"            } else {",
+							"                const jwt = response.json().entity.jwt;",
+							"                pm.environment.set('jwt', jwt);",
+							"                console.log(jwt);",
+							"            }",
+							"        });",
+							"    }",
+							"}",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
 		}
 	],
 	"auth": {
@@ -2529,6 +3176,16 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "contentletIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentletInode",
+			"value": ""
 		}
 	]
 }

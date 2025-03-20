@@ -657,7 +657,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 					for (final Object name : searchParams.filteringCriteria().values()) {
 
-						if (container.getName().toLowerCase().contains(name.toString())) {
+						if (container.getName().toLowerCase().contains(name.toString().toLowerCase())) {
 							return true;
 						}
 					}

@@ -45,13 +45,13 @@ describe('ContentletStatusPipe', () => {
         expect(result.classes).toBe('p-chip-gray');
     });
 
-    it('should transform contentlet status to "Revision"', () => {
+    it('should transform contentlet status to "Published"', () => {
         const contentlet = { live: true, working: true, archived: false } as DotCMSContentlet;
 
         const result = pipe.transform(contentlet);
 
-        expect(result.label).toBe('Revision');
-        expect(result.classes).toBe('p-chip-pink');
+        expect(result.label).toBe('Published');
+        expect(result.classes).toBe('p-chip-success');
     });
 
     it('should transform contentlet status to empty label and default classes', () => {
@@ -61,5 +61,12 @@ describe('ContentletStatusPipe', () => {
 
         expect(result.label).toBe('');
         expect(result.classes).toBe('');
+    });
+
+    it('should transform undefined contentlet to "New" status', () => {
+        const result = pipe.transform(undefined);
+
+        expect(result.label).toBe('New');
+        expect(result.classes).toBe('p-chip-blue');
     });
 });

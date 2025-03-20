@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Button } from 'primeng/button';
 import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
@@ -98,8 +98,8 @@ describe('DotWorkflowActionsComponent', () => {
 
         it('should render the empty button with loading', () => {
             spectator.setInput('loading', true);
-
             spectator.detectChanges();
+
             const button = spectator.query(Button);
 
             expect(button.loading).toBeTruthy();
@@ -109,10 +109,9 @@ describe('DotWorkflowActionsComponent', () => {
 
         it('should render the empty button with disabled', () => {
             spectator.setInput('loading', false);
+            spectator.detectChanges();
 
             const button = spectator.query(Button);
-
-            spectator.detectChanges();
 
             expect(button.disabled).toBeTruthy();
             expect(button.loading).toBeFalsy();
@@ -128,7 +127,7 @@ describe('DotWorkflowActionsComponent', () => {
         });
 
         it('should emit the action when click on a split button', () => {
-            const spy = spyOn(spectator.component.actionFired, 'emit');
+            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
             const splitButton = spectator.query('.p-splitbutton > button');
             splitButton.dispatchEvent(new Event('click'));
 
@@ -185,6 +184,37 @@ describe('DotWorkflowActionsComponent', () => {
             const splitButton = spectator.query(SplitButton);
 
             expect(button.loading).toBeTruthy();
+            expect(splitButton.disabled).toBeTruthy();
+        });
+    });
+
+    describe('disabled', () => {
+        beforeEach(() => {
+            spectator.setInput('actions', [
+                ...WORKFLOW_ACTIONS_MOCK,
+                WORKFLOW_ACTIONS_SEPARATOR_MOCK,
+                WORKFLOW_ACTIONS_MOCK[0]
+            ]);
+            spectator.detectChanges();
+        });
+
+        it('should disable the button', () => {
+            const button = spectator.query(Button);
+            expect(button.disabled).toBeFalsy();
+
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(button.disabled).toBeTruthy();
+        });
+
+        it('should disabled split buttons ', () => {
+            const splitButton = spectator.query(SplitButton);
+            expect(splitButton.disabled).toBeFalsy();
+
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
             expect(splitButton.disabled).toBeTruthy();
         });
     });

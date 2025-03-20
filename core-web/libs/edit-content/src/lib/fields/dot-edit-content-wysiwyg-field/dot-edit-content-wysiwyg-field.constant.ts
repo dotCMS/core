@@ -28,7 +28,8 @@ export enum AvailableLanguageMonaco {
     PlainText = 'plaintext',
     Javascript = 'javascript',
     Markdown = 'markdown',
-    Html = 'html'
+    Html = 'html',
+    Velocity = 'velocity'
 }
 
 /**
@@ -80,7 +81,7 @@ export const DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG: MonacoEditorConstructionOption
     ...DEFAULT_MONACO_CONFIG,
     language: DEFAULT_MONACO_LANGUAGE,
     automaticLayout: true,
-    theme: 'vs'
+    theme: 'dotTheme'
 };
 
 /**
@@ -120,7 +121,7 @@ export const DEFAULT_TINYMCE_CONFIG: Partial<RawEditorOptions> = {
  * - `\`\`\`` for code blocks.
  * - `>[` for blockquotes.
  */
-export const MdSyntax = ['# ', '## ', '### ', '- ', '* ', '1. ', '```', '>['];
+export const MD_SYNTAX = ['# ', '## ', '### ', '- ', '* ', '1. ', '```', '>['];
 
 /**
  * HtmlTags is an array containing a list of common HTML tag names.
@@ -131,7 +132,7 @@ export const MdSyntax = ['# ', '## ', '### ', '- ', '* ', '1. ', '```', '>['];
  *
  * This array can be used to identify or manipulate these specific HTML elements in a web development context.
  */
-export const HtmlTags = ['<div', '<p>', '<span', '<a ', '<img', '<ul', '<li', '<table'];
+export const HTML_TAGS = ['<div', '<p>', '<span', '<a ', '<img', '<ul', '<li', '<table'];
 
 /**
  * An array of common JavaScript keywords and operators.
@@ -140,7 +141,7 @@ export const HtmlTags = ['<div', '<p>', '<span', '<a ', '<img', '<ul', '<li', '<
  * defining functions, classes, and imports.
  *
  */
-export const JsKeywords = [
+export const JS_KEYWORDS = [
     'function',
     'const ',
     'let ',
@@ -160,3 +161,45 @@ export const JsKeywords = [
  * @constant {string} COMMENT_TINYMCE
  */
 export const COMMENT_TINYMCE = '<!--dotcms:wysiwyg-->';
+
+/**
+ * The theme definition for the Velocity language in Monaco Editor.
+ */
+export const VELOCITY_THEME = {
+    base: 'vs',
+    inherit: true,
+    rules: [
+        { token: 'keyword.velocity', foreground: '0000FF', fontStyle: 'bold' },
+        { token: 'variable.velocity', foreground: '008080' },
+        { token: 'function.velocity', foreground: 'FF00FF' },
+        { token: 'comment.velocity', foreground: '008000', fontStyle: 'italic' },
+        { token: 'string.velocity', foreground: 'A31515' },
+        { token: 'number.velocity', foreground: '098658' },
+        { token: 'operator.velocity', foreground: '000000' },
+        { token: 'delimiter.velocity', foreground: '000000' },
+        { token: 'tag.html', foreground: '800000' },
+        { token: 'delimiter.html', foreground: '800000' }
+    ],
+    colors: {
+        'editor.foreground': '#000000',
+        'editor.background': '#FFFFFF'
+    }
+};
+
+// Velocity-specific patterns
+export const VELOCITY_PATTERNS = [
+    /#if\s*\(/,
+    /#else/,
+    /#elseif\s*\(/,
+    /#end/,
+    /#foreach\s*\(/,
+    /#set\s*\(/,
+    /\$\{.*?\}/,
+    /\$!?\{.*?\}/,
+    /\$[a-zA-Z][a-zA-Z0-9]*/,
+    /\$dotcontent\.pull/,
+    /#dotParse/,
+    /\$UtilMethods/,
+    /\$date\.format/,
+    /\$esc\.html/
+];

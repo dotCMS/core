@@ -1,62 +1,15 @@
-/* 
-* Licensed to dotCMS LLC under the dotCMS Enterprise License (the
-* “Enterprise License”) found below 
-* 
-* Copyright (c) 2023 dotCMS Inc.
-* 
-* With regard to the dotCMS Software and this code:
-* 
-* This software, source code and associated documentation files (the
-* "Software")  may only be modified and used if you (and any entity that
-* you represent) have:
-* 
-* 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
-* of Service, available at https://www.dotcms.com/terms (the “Enterprise
-* Terms”) or have another agreement governing the licensing and use of the
-* Software between you and dotCMS. 2. Each dotCMS instance that uses
-* enterprise features enabled by the code in this directory is licensed
-* under these agreements and has a separate and valid dotCMS Enterprise
-* server key issued by dotCMS.
-* 
-* Subject to these terms, you are free to modify this Software and publish
-* patches to the Software if you agree that dotCMS and/or its licensors
-* (as applicable) retain all right, title and interest in and to all such
-* modifications and/or patches, and all such modifications and/or patches
-* may only be used, copied, modified, displayed, distributed, or otherwise
-* exploited with a valid dotCMS Enterprise license for the correct number
-* of dotCMS instances.  You agree that dotCMS and/or its licensors (as
-* applicable) retain all right, title and interest in and to all such
-* modifications.  You are not granted any other rights beyond what is
-* expressly stated herein.  Subject to the foregoing, it is forbidden to
-* copy, merge, publish, distribute, sublicense, and/or sell the Software.
-* 
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-* 
-* For all third party components incorporated into the dotCMS Software,
-* those components are licensed under the original license provided by the
-* owner of the applicable component.
+/*
+*
+* Copyright (c) 2025 dotCMS LLC
+* Use of this software is governed by the Business Source License included 
+* in the LICENSE file found at in the root directory of software.
+* SPDX-License-Identifier: BUSL-1.1
+*
 */
 
 package com.dotcms.enterprise;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.time.temporal.ChronoUnit;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
@@ -67,18 +20,30 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.enterprise.license.LicenseRepoDAO;
 import com.dotcms.enterprise.license.LicenseType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import static com.dotcms.util.CollectionsUtils.list;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Provides utility methods to access to licensing information in dotCMS.
@@ -99,7 +64,7 @@ public class LicenseUtil {
 	 *         false.
 	 */
 	public static boolean isASAllowed() {
-		return LicenseManager.getInstance().isASEnabled();
+		return true;
 	}
 
 	/**
@@ -179,6 +144,16 @@ public class LicenseUtil {
 	    return LicenseManager.getInstance().getDisplayServerId();
 	}
 
+
+
+
+	public static void deleteOldLicenses() {
+		try {
+			LicenseRepoDAO.deleteOldLicenses();
+		}catch(Exception e){
+			Logger.warn(LicenseUtil.class, "Error deleting old licenses", e);
+		}
+	}
 	/**
 	 * 
 	 * @param serverId
@@ -202,19 +177,7 @@ public class LicenseUtil {
 	 * @return The license level.
 	 */
 	public static int getLevel(){
-		try{
-			boolean perpetual = LicenseManager.getInstance().isPerpetual();
-			Date validUntil = LicenseManager.getInstance().getValidUntil();
-			if(!perpetual && UtilMethods.isSet(validUntil) && validUntil.before(Calendar.getInstance().getTime())){
-				return LicenseLevel.COMMUNITY.level;
-			}
-			else {
-			    return LicenseManager.getInstance().getLevel();
-			}
-		}catch (Throwable e) {
-			Logger.debug(LicenseUtil.class, e.getMessage());
-			return LicenseLevel.COMMUNITY.level;
-		}
+		return LicenseLevel.PLATFORM.level;
 	}
 
 	/**
@@ -373,7 +336,7 @@ public class LicenseUtil {
 	 *             The licenses could not be added to the server.
 	 */
     public static void uploadLicenseRepoFile(InputStream in) throws DotDataException, IOException {
-        LicenseManager.getInstance().insertAvailableLicensesFromZipFile(in);
+        //LicenseManager.getInstance().insertAvailableLicensesFromZipFile(in);
     }
 
     /**
@@ -499,6 +462,17 @@ public class LicenseUtil {
 						Logger.info(LicenseUtil.class,message.create().getMessage().toString());
 					},
 					3000, TimeUnit.MILLISECONDS);
+		}
+	}
+
+	public static String getLicenseText() {
+
+		Path path = Paths.get(Config.CONTEXT.getRealPath("/WEB-INF/LICENSE"));
+		try (InputStream fis = Files.newInputStream(path)) {
+			return IOUtils.toString(fis, StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			Logger.error(LicenseUtil.class, "Error reading LICENSE file", e);
+			return "Please see the LICENSE file in the root directory of the dotCMS git hub repo: https://github.com/dotCMS/core/blob/main/LICENSE";
 		}
 	}
 

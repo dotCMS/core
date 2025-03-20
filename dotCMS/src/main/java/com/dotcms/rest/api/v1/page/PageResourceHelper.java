@@ -568,7 +568,10 @@ public class PageResourceHelper implements Serializable {
      * language or not.
      *
      * @throws DotDataException An error occurred when interacting with the database.
+     *
+     * @deprecated This method is deprecated and will be removed in future versions.
      */
+    @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public List<ExistingLanguagesForPageView> getExistingLanguagesForPage(final String pageId, final User user) throws DotDataException {
         DotPreconditions.checkNotNull(pageId, "Page ID cannot be null");
         DotPreconditions.checkNotNull(user, "User cannot be null");
@@ -602,8 +605,9 @@ public class PageResourceHelper implements Serializable {
         final Optional<CachedVanityUrl> vanityUrlOpt =
                 this.vanityUrlAPI.resolveVanityUrl(correctedUri, site, language);
         if (vanityUrlOpt.isPresent()) {
-            DotPreconditions.checkArgument(!this.vanityUrlAPI.isSelfReferenced(vanityUrlOpt.get()
-                    , correctedUri));
+            if (this.vanityUrlAPI.isSelfReferenced(vanityUrlOpt.get(), correctedUri)){
+                return Optional.empty();
+            }
             return vanityUrlOpt;
         }
         return Optional.empty();

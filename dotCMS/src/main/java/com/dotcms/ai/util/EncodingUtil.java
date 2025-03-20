@@ -37,7 +37,7 @@ public class EncodingUtil {
         final Model currentModel = aiModel.getCurrent();
 
         if (Objects.isNull(currentModel)) {
-            AppConfig.debugLogger(
+            appConfig.debugLogger(
                     getClass(),
                     () -> String.format(
                             "No current model found for type [%s], meaning the are all are exhausted",
@@ -47,16 +47,17 @@ public class EncodingUtil {
 
         return registry
                 .getEncodingForModel(currentModel.getName())
-                .or(() -> modelFallback(aiModel, currentModel));
+                .or(() -> modelFallback(appConfig, aiModel, currentModel));
     }
 
     public Optional<Encoding> getEncoding() {
         return getEncoding(ConfigService.INSTANCE.config(), AIModelType.EMBEDDINGS);
     }
 
-    private Optional<Encoding> modelFallback(final AIModel aiModel,
+    private Optional<Encoding> modelFallback(final AppConfig appConfig,
+                                             final AIModel aiModel,
                                              final Model currentModel) {
-        AppConfig.debugLogger(
+        appConfig.debugLogger(
                 getClass(),
                 () -> String.format(
                         "Model [%s] is not suitable for encoding, marking it as invalid and falling back to other models",
@@ -74,7 +75,7 @@ public class EncodingUtil {
                     final Optional<Encoding> encoding = registry.getEncodingForModel(model.getName());
                     if (encoding.isEmpty()) {
                         model.setStatus(ModelStatus.INVALID);
-                        AppConfig.debugLogger(
+                        appConfig.debugLogger(
                                 getClass(),
                                 () -> String.format(
                                         "Model [%s] is not suitable for encoding, marking as invalid",
@@ -83,7 +84,7 @@ public class EncodingUtil {
                     }
 
                     aiModel.setCurrentModelIndex(model.getIndex());
-                    AppConfig.debugLogger(
+                    appConfig.debugLogger(
                             getClass(),
                             () -> "Model [" + model.getName() + "] found, setting as current model");
                     return encoding.get();

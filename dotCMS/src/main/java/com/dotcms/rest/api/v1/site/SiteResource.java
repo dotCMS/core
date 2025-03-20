@@ -884,6 +884,7 @@ public class SiteResource implements Serializable {
 
         if (UtilMethods.isSet(siteForm.getTagStorage())) {
             final Host tagStorageSite =
+                    
                     Try.of(() -> this.siteHelper.getSite(APILocator.systemUser(), siteForm.getTagStorage())).getOrNull();
             if (null == tagStorageSite) {
                 throw new IllegalArgumentException(String.format("Tag Storage Site '%s' was not found", siteForm.getTagStorage()));

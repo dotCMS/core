@@ -9,6 +9,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
 import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import {
@@ -22,6 +23,7 @@ import { By } from '@angular/platform-browser';
 
 import { ButtonModule, Button } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotAiService,
@@ -31,7 +33,7 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotEditContentBinaryFieldComponent } from '@dotcms/edit-content';
-import { DotAiImagePromptStore, DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
+import { DropZoneErrorType, DropZoneFileEvent } from '@dotcms/ui';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotBinaryFieldPreviewComponent } from './components/dot-binary-field-preview/dot-binary-field-preview.component';
@@ -90,14 +92,15 @@ describe('DotEditContentBinaryFieldComponent', () => {
         component: DotEditContentBinaryFieldComponent,
         componentProviders: [
             DotBinaryFieldStore,
-            DotAiImagePromptStore,
             DotBinaryFieldEditImageService,
-            DotAiService
+            DotAiService,
+            DialogService
         ],
         componentViewProviders: [
             { provide: ControlContainer, useValue: createFormGroupDirectiveMock() }
         ],
         providers: [
+            provideHttpClient(),
             DotBinaryFieldValidatorService,
             {
                 provide: DotLicenseService,
@@ -586,7 +589,7 @@ describe('DotEditContentBinaryFieldComponent - ControlValueAccessor', () => {
             ReactiveFormsModule,
             DotEditContentBinaryFieldComponent
         ],
-        providers: [DotAiService, DotAiImagePromptStore]
+        providers: [DotAiService, provideHttpClient()]
     });
 
     beforeEach(() => {

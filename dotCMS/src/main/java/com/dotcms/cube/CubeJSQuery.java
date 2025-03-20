@@ -1,6 +1,5 @@
 package com.dotcms.cube;
 
-
 import com.dotcms.cube.filters.Filter;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.LogicalFilter;
@@ -22,83 +21,88 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-
 /**
- * Represents a Cube JS Query
- * You can use the {@link Builder} to create a CubeJSQuery and later using the
- * {@link CubeJSQuery#toString()}.
- *
- * Examples:
- *
- * <code>
+ * Represents a CubeJS Query. You can use the {@link Builder} to create a CubeJSQuery, and then,
+ * call the {@link CubeJSQuery#toString()} method to generate it. For instance, you can have the
+ * following Java code:
+ * <pre>
+ *    {@code
  *    final CubeJSQuery cubeJSQuery = new Builder()
  *                 .dimensions("Events.experiment")
  *                 .measures("Events.count")
  *                 .filter("Events.variant", SimpleFilter.Operator.EQUALS, "B")
  *                 .build();
- * </code>
- *
- * To get:
- *
- * <code>
+ *    }
+ * </pre>
+ * To generate this CubeJS query:
+ * <pre>
+ * {@code
  *   {
- *   "dimensions": [
- *     "Events.experiment"
- *   ],
- *   {
- *   "measures": [
- *     "Events.count"
- *   ],
- *   filters: [
- *      {
- *          member: "Events.variant",
- *          operator: "equals",
- *          values: ["B"]
- *      }
- *   ]
+ *     "dimensions": [
+ *       "Events.experiment"
+ *     ],
+ *     {
+ *       "measures": [
+ *         "Events.count"
+ *       ],
+ *       filters: [
+ *         {
+ *           member: "Events.variant",
+ *           operator: "equals",
+ *           values: ["B"]
+ *         }
+ *       ]
+ *     }
+ *   }
  * }
- * </code>
- *
- * @see <a href="https://cube.dev/docs/query-format">CubeJS Query format</a>
+ * </pre>
+ * <p>
+ * For more information on the CbeJS query format, please refer to the <a
+ * href="https://cube.dev/docs/query-format">official CubeJS Query format documentation.</a>
  */
 public class CubeJSQuery {
 
-    private String[] dimensions;
-    private String[] measures;
-    private Filter[] filters;
+    private final String[] dimensions;
+    private final String[] measures;
+    private final Filter[] filters;
 
-    private OrderItem[] orders;
+    private final OrderItem[] orders;
+    private final TimeDimension[] timeDimensions;
 
-    private long limit = -1;
-    private long offset = -1;
-    private TimeDimension[] timeDimensions;
-
+    private final long limit;
+    private final long offset;
 
     private CubeJSQuery(final Builder builder) {
         this.dimensions = builder.dimensions;
         this.measures = builder.measures;
-        this.filters = builder.filters.toArray(new Filter[builder.filters.size()]);
-        this.orders = builder.orders.toArray(new OrderItem[builder.orders.size()]);
+        this.filters = builder.filters.toArray(new Filter[0]);
+        this.orders = builder.orders.toArray(new OrderItem[0]);
         this.limit = builder.limit;
         this.offset = builder.offset;
-        this.timeDimensions = builder.timeDimensions.toArray(new TimeDimension[builder.timeDimensions.size()]);
+        this.timeDimensions = builder.timeDimensions.toArray(new TimeDimension[0]);
     }
 
     @Override
     public String toString() {
         if (!UtilMethods.isSet(dimensions) && !UtilMethods.isSet(measures)) {
-            throw new IllegalStateException("Must set dimensions or measures");
+            throw new IllegalStateException("The 'dimensions' and 'measures' parameters must be set");
         }
-
         try {
             return JsonUtil.getJsonAsString(getMap());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Returns the CubeJS Query as a Map composed of its different parameters. Keep in mind that
+     * this is used for both generating the actual CubeJS query, and  the JSON data as String.
+     *
+     * @return The CubeJS Query as a Map of attributes and their values.
+     */
     private Map<String, Object> getMap() {
         final Map<String, Object> map = new HashMap<>();
 
@@ -127,7 +131,19 @@ public class CubeJSQuery {
         }
 
         if (timeDimensions.length > 0) {
-            map.put("timeDimensions", timeDimensions);
+            final Set<Map<String, Object>> correctedTimeDimensions = Arrays.stream(this.timeDimensions)
+                    .map(timeDimension -> {
+                        final Map<String, Object> dataMap = new LinkedHashMap<>();
+                        dataMap.put("dimension", timeDimension.getDimension());
+                        dataMap.put("granularity", timeDimension.getGranularity());
+                        if (UtilMethods.isSet(timeDimension.getDateRange())) {
+                            // If the 'dateRange' parameter is not set, then it must NOT be
+                            // part of the data map, or the CubeJS query will fail
+                            dataMap.put("dateRange", timeDimension.getDateRange());
+                        }
+                        return dataMap;
+                    }).collect(Collectors.toSet());
+            map.put("timeDimensions", correctedTimeDimensions);
         }
 
         return map;
@@ -145,7 +161,7 @@ public class CubeJSQuery {
     }
     private List<Map<String, Object>> getFiltersAsMap() {
         return Arrays.stream(filters)
-                .map(filter -> filter.asMap())
+                .map(Filter::asMap)
                 .collect(Collectors.toList());
     }
 
@@ -203,36 +219,36 @@ public class CubeJSQuery {
         private Collection<OrderItem> orders = new ArrayList<>();
         private long limit = -1;
         private long offset = -1;
-        private List<TimeDimension> timeDimensions = new ArrayList<>();
+        private final List<TimeDimension> timeDimensions = new ArrayList<>();
 
         /**
-         * Merge two {@link CubeJSQuery}, each section of the Query is merge ignoring duplicated values
-         * for example If we have:
-         *
-         * Query 1:
-         * <code>
+         * Merges two {@link CubeJSQuery} objects. Each section of the Query is merged by ignoring
+         * duplicate values. For instance, if we have the following queries:
+         * <pre>
+         * Query #1:
+         * {@code
          *     {
          *         "dimensions": [
          *              "Events.Experiment",
          *              "Events.variant"
          *         ]
          *     }
-         * </code>
-         *
-         * * Query 2:
-         * Query 1:
-         * <code>
+         * }
+         * </pre>
+         * <pre>
+         * Query #2:
+         * {@code
          *     {
          *         "dimensions": [
          *              "Events.Experiment",
          *              "Events.eventType"
          *         ]
          *     }
-         * </code>
-         *
+         * }
+         * </pre>
          * The result is going to be:
-         *
-         * <code>
+         * <pre>
+         * {@code
          *     {
          *         "dimensions": [
          *              "Events.Experiment",
@@ -240,13 +256,14 @@ public class CubeJSQuery {
          *              "Events.eventType"
          *         ]
          *     }
-         * </code>
+         * }
+         * </pre>
+         * The same will happen with others section such as: measures, filters and order.
          *
-         * The same happens with others section like: measures, filters and order.
+         * @param cubeJSQuery1 The first {@link CubeJSQuery} to merge.
+         * @param cubeJSQuery2 The second {@link CubeJSQuery} to merge.
          *
-         * @param cubeJSQuery1
-         * @param cubeJSQuery2
-         * @return
+         * @return A new {@link CubeJSQuery} object with the merged values.
          */
         public static CubeJSQuery merge(final CubeJSQuery cubeJSQuery1, final CubeJSQuery cubeJSQuery2) {
             final Collection<String> dimensionsMerged = merge(
@@ -289,12 +306,12 @@ public class CubeJSQuery {
         }
 
         public Builder dimensions(final Collection<String> dimensions) {
-            this.dimensions = dimensions.toArray(new String[dimensions.size()]);
+            this.dimensions = dimensions.toArray(new String[0]);
             return this;
         }
 
         public Builder measures(final Collection<String> measures) {
-            this.measures = measures.toArray(new String[measures.size()]);
+            this.measures = measures.toArray(new String[0]);
             return this;
         }
 
@@ -354,7 +371,7 @@ public class CubeJSQuery {
 
         public Builder limit(final long limit) {
 
-            DotPreconditions.checkArgument(limit >= 0, "Limit must be greater than 0");
+            DotPreconditions.checkArgument(limit >= 0, "Limit must be greater than or equal to 0");
             DotPreconditions.checkArgument(limit <= 50000, "Limit must be less than or equal to 50000");
 
             this.limit = limit;
@@ -368,7 +385,11 @@ public class CubeJSQuery {
         }
 
         public Builder timeDimension(final String dimension, final String granularity) {
-            this.timeDimensions.add(new TimeDimension(dimension, granularity));
+            return timeDimension(dimension, granularity, null);
+        }
+
+        public Builder timeDimension(final String dimension, final String granularity, final String dateRange) {
+            this.timeDimensions.add(new TimeDimension(dimension, granularity, dateRange));
             return this;
         }
 
@@ -381,10 +402,14 @@ public class CubeJSQuery {
     public static class TimeDimension {
         String dimension;
         String granularity;
+        String dateRange;
 
-        public TimeDimension(String dimension, String granularity) {
+        public TimeDimension(final String dimension,
+                             final String granularity,
+                             final String dateRange) {
             this.dimension = dimension;
             this.granularity = granularity;
+            this.dateRange = dateRange;
         }
 
         public String getDimension() {
@@ -394,11 +419,15 @@ public class CubeJSQuery {
         public String getGranularity() {
             return granularity;
         }
+
+        public String getDateRange() {
+            return dateRange;
+        }
     }
 
     public static class OrderItem {
-        private String orderBy;
-        private Order order;
+        private final String orderBy;
+        private final Order order;
 
         public OrderItem(final String orderBy, final Order order) {
             this.orderBy = orderBy;
@@ -430,4 +459,5 @@ public class CubeJSQuery {
             return Objects.hash(orderBy, order);
         }
     }
+
 }

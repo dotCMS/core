@@ -153,6 +153,13 @@ p-chip .p-chip {
         color: $white;
     }
 
+    &.p-chip-dashed {
+        border-style: dashed;
+        background-color: $white;
+        border-color: $color-palette-primary-shade;
+        color: $color-palette-primary-shade;
+    }
+
     // Severity
 
     @each $color-name, $value in $colors {
@@ -163,6 +170,11 @@ p-chip .p-chip {
             &.p-chip-outlined {
                 background-color: $white;
                 color: #{map.get($value, shade, color)};
+                border-color: #{map.get($value, shade, color)};
+            }
+            &.p-chip-dashed {
+                border-style: dashed;
+                background-color: $white;
                 border-color: #{map.get($value, shade, color)};
             }
             &.p-chip-filled {
@@ -179,6 +191,10 @@ p-chip .p-chip {
         &.p-chip-outlined {
             color: $color-palette-gray-900;
         }
+
+        &.p-chip-dashed {
+            border-color: $color-palette-gray-500;
+        }
     }
 
     &.p-chip-white {
@@ -194,7 +210,7 @@ p-chip .p-chip {
         padding: 0 $spacing-1;
         border-radius: $border-radius-sm;
         font-size: $font-size-sm;
-        height: $field-height-sm;
+        height: $font-size-xl;
 
         .p-chip-text {
             font-size: $font-size-sm;

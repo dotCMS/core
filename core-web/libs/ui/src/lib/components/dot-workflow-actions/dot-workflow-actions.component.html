@@ -4,7 +4,7 @@
     @if (subActions.length) {
         <p-splitButton
             (onClick)="mainAction?.command({ originalEvent: $event })"
-            [disabled]="loading()"
+            [disabled]="loading() || disabled()"
             [styleClass]="sizeClass"
             [model]="subActions"
             [outlined]="!$first"
@@ -13,6 +13,7 @@
         <p-button
             (onClick)="mainAction?.command({ originalEvent: $event })"
             [loading]="loading()"
+            [disabled]="disabled()"
             [styleClass]="sizeClass + (!$first ? ' p-button-outlined' : '')"
             [label]="mainAction.label" />
     }

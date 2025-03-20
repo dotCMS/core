@@ -5,20 +5,7 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotmarketing.util.Config" %>
-
-<%  if(!Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) { //In case user tries to acess jsp directly%>
-<%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>
-<%
-        return;
-    }
-%>
-
-<%  if( LicenseUtil.getLevel()<LicenseLevel.PROFESSIONAL.level){ %>
-    <%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>
-<%
-        return;
-    }
-%>
+<%@ include file="/html/common/uservalidation.jsp"%>
 
 <style media="all" type="text/css">
     .error-detail {
@@ -56,7 +43,7 @@
 
             jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp",
             nodeData:undefined,
-            licenseData:undefined,
+
             actionPanelHtml:undefined,
             myServerId : "<%=APILocator.getServerAPI().readServerId()%>",
             ff : 0,
@@ -145,7 +132,7 @@
 
 				var result = actionPanelTable.actionPanelHtml;
                 var output = '';
-				if(this.nodeData != undefined && this.licenseData !=undefined && this.actionPanelHtml!=undefined){
+				if(this.nodeData != undefined  && this.actionPanelHtml!=undefined){
 				const clusterHealth = this.nodeData.clusterHealth;
 
                 require(["dojo/_base/lang"], function(lang){
@@ -188,11 +175,7 @@
                               canWrite: nodeStatus.assetsCanWrite,
                               path: nodeStatus.assetsPath
                           },
-	
-                          licenseRepo: {
-                              total: actionPanelTable.licenseData.total,
-                              available: actionPanelTable.licenseData.available
-                          },
+
 
                           server: {
                               serverID: nodeStatus.serverId.substring(0,8),
@@ -258,7 +241,6 @@
             
             refreshData : function(){
             	this.loadNodeData();
-            	this.loadLicenseData();
             	this.loadActionPanelHtml();
             },
 
@@ -285,22 +267,8 @@
                 dojo.xhrGet(xhrArgs);
             },
             
-            loadLicenseData : function() {
-                licxhr = {
-                        url : "/api/cluster/licenseRepoStatus",
-                        handleAs : "json",
-                        sync: true,
-                        load : function(data) {
-                        	actionPanelTable.licenseData = data;
-                        	actionPanelTable.toggle();
-                        },
-                        error : function(error) {
-                        	actionPanel.innerHTML = "An unexpected error occurred: " + error;
-                        }
-                    };
-                    dojo.xhrGet(licxhr);
-            },
-            
+
+
             loadActionPanelHtml : function(){
                 // Execute a HTTP GET request
                 dojo.xhr.get({
@@ -320,7 +288,7 @@
                         + "<th width='7%'>&nbsp;</th>"
                         + "<th width='7%'>&nbsp;</th>"
                         + "<th width='15%'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
-                        + "<th width='15%'><%= LanguageUtil.get(pageContext, "license-serial") %></th>"
+                        + "<th width='15%'><%= LanguageUtil.get(pageContext, "version") %></th>"
                         + "<th width='20%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
                         + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
                         + "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
@@ -358,8 +326,8 @@
                         + "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
                             + "<td align='center'><img src='/html/images/skin/icon-server.png' class='icon network__listing-icon' /></td>"
                             + "<td align='center' style='color:#8c9ca9;'>" + (item.serverId==actionPanelTable.myServerId?"<i class='userIcon'></i>":"")+"</td>"
-                            + "<td>" + item.displayServerId + "</td>"
                             + "<td>" + item.licenseId + "</td>"
+                            + "<td>" + item.key + "</td>"
                             + "<td>" + item.friendlyName + "</td>"
                             + "<td align='left'>"+item.ipAddress+"</td>"
                             + "<td align='left'>"+item.contacted+"</td>"

@@ -1,4 +1,3 @@
-# action.yml
 name: 'Link Pull Request to Issue'
 on:
   workflow_call:
@@ -21,7 +20,7 @@ env:
 
 jobs:
   link-pr-to-issue:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - run: echo 'GitHub context'
         env:
