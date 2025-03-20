@@ -7,8 +7,6 @@ export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encodin
 
 export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
 
-# CATALINA_OPTS is used for the settings specifically for the Tomcat JVM
-export CATALINA_OPTS=${CATALINA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $CMS_JAVA_OPTS"}
 # Asset and Internal Paths
 export DOT_ASSET_REAL_PATH=${DOT_ASSET_REAL_PATH:-"/data/shared/assets"}
 export DOT_DYNAMIC_CONTENT_PATH=${DOT_DYNAMIC_CONTENT_PATH:-"/data/local/dotsecure"}
