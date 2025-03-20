@@ -26,6 +26,7 @@ export interface EsQueryParamsSearch {
 export interface DotContentSearchParams {
     globalSearch?: string;
     systemSearchableFields?: Record<string, unknown>;
+    searchableFieldsByContentType?: Record<string, Record<string, unknown>>;
     page?: number;
     perPage?: number;
 }
@@ -58,22 +59,26 @@ export class DotContentSearchService {
      * @param params Search parameters including globalSearch, systemSearchableFields, page, and perPage
      * @returns Observable with an array of DotCMSContentlet objects
      */
-    public search(params: DotContentSearchParams): Observable<DotCMSContentlet[]> {
+    search(params: DotContentSearchParams): Observable<DotCMSContentlet[]> {
         const payload: Partial<DotContentSearchParams> = {};
 
-        if (params.globalSearch !== undefined) {
+        if (params.globalSearch ?? null) {
             payload.globalSearch = params.globalSearch;
         }
 
-        if (params.systemSearchableFields !== undefined) {
+        if (params.systemSearchableFields ?? null) {
             payload.systemSearchableFields = params.systemSearchableFields;
         }
 
-        if (params.page !== undefined) {
+        if (params.searchableFieldsByContentType ?? null) {
+            payload.searchableFieldsByContentType = params.searchableFieldsByContentType;
+        }
+
+        if (params.page ?? null) {
             payload.page = params.page;
         }
 
-        if (params.perPage !== undefined) {
+        if (params.perPage ?? null) {
             payload.perPage = params.perPage;
         }
 

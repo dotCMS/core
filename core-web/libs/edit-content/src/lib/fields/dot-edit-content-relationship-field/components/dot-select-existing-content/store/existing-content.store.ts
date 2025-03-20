@@ -11,9 +11,13 @@ import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
 import { SelectionMode } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
-import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+import {
+    RelationshipFieldService,
+    RelationshipFieldQueryParams
+} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
+    contentTypeId: string;
     data: DotCMSContentlet[];
     status: ComponentStatus;
     selectionMode: SelectionMode | null;
@@ -28,6 +32,7 @@ export interface ExistingContentState {
 }
 
 const initialState: ExistingContentState = {
+    contentTypeId: null,
     data: [],
     columns: [],
     status: ComponentStatus.INIT,
@@ -100,6 +105,7 @@ export const ExistingContentStore = signalStore(
                             tapResponse({
                                 next: ([columns, data]) => {
                                     patchState(store, {
+                                        contentTypeId,
                                         columns,
                                         data,
                                         status: ComponentStatus.LOADED,
@@ -147,9 +153,62 @@ export const ExistingContentStore = signalStore(
                     }
                 });
             },
-            search: (_search: SearchParams) => {
-                // TODO: Implement search
-            }
+            /**
+             * Searches for content based on the provided search parameters.
+             * @param searchParams The search parameters to use for filtering content.
+             * @returns An observable that completes when the search has been performed.
+             */
+            search: rxMethod<SearchParams>(
+                pipe(
+                    tap(() =>
+                        patchState(store, {
+                            status: ComponentStatus.LOADING,
+                            // Reset pagination when performing a new search
+                            pagination: {
+                                ...store.pagination(),
+                                offset: 0,
+                                currentPage: 1
+                            }
+                        })
+                    ),
+                    switchMap((searchParams) => {
+                        // Map SearchParams to RelationshipFieldQueryParams
+                        const queryParams: RelationshipFieldQueryParams = {
+                            contentTypeId: store.contentTypeId(),
+                            page: store.pagination().currentPage,
+                            perPage: store.pagination().rowsPerPage,
+                        };
+
+                        if (searchParams.query) {
+                            queryParams.globalSearch = searchParams.query;
+                        }
+
+                        if (Object.keys(searchParams.systemSearchableFields).length > 0) {
+                            queryParams.systemSearchableFields = {
+                                ...searchParams.systemSearchableFields
+                            };
+                        }
+
+                        return relationshipFieldService.search(queryParams).pipe(
+                            tapResponse({
+                                next: (data) => {
+                                    patchState(store, {
+                                        data,
+                                        status: ComponentStatus.LOADED
+                                    });
+                                },
+                                error: (error) => {
+                                    patchState(store, {
+                                        status: ComponentStatus.ERROR,
+                                        errorMessage: 'dot.file.relationship.dialog.search.failed'
+                                    });
+                                    console.error('Search failed:', error);
+                                }
+                            })
+                        );
+                    })
+                )
+            )
         };
     })
 );

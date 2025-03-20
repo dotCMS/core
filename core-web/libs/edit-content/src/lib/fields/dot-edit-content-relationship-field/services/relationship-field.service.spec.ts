@@ -336,6 +336,7 @@ describe('RelationshipFieldService', () => {
         const searchTerm = 'query';
         const page = 1;
         const perPage = 10;
+        const searchableFieldsByContentType = { [contentTypeId]: {} };
 
         const mockFakeContentlets = [
             createFakeContentlet({
@@ -353,11 +354,7 @@ describe('RelationshipFieldService', () => {
         it('should search contentlets with correct parameters', (done) => {
             const expectedParams: DotContentSearchParams = {
                 globalSearch: searchTerm,
-                systemSearchableFields: {
-                    contentType: contentTypeId,
-                    deleted: false,
-                    working: true
-                },
+                searchableFieldsByContentType,
                 page,
                 perPage
             };
@@ -365,7 +362,12 @@ describe('RelationshipFieldService', () => {
             dotContentSearchService.search.mockReturnValue(of(mockFakeContentlets));
 
             spectator.service
-                .search({ contentTypeId, searchTerm, page, perPage })
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage,
+                })
                 .subscribe((results) => {
                     expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
                     expect(results.length).toBe(2);
@@ -390,7 +392,12 @@ describe('RelationshipFieldService', () => {
             dotContentSearchService.search.mockReturnValue(of(contentletsWithoutTitle));
 
             spectator.service
-                .search({ contentTypeId, searchTerm, page, perPage })
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage,
+                })
                 .subscribe((results) => {
                     expect(results[0].title).toBe('789'); // Should use identifier when title is null
                     expect(results[0].language).toEqual(mockLocales[0]);
@@ -402,7 +409,12 @@ describe('RelationshipFieldService', () => {
             dotContentSearchService.search.mockReturnValue(of([]));
 
             spectator.service
-                .search({ contentTypeId, searchTerm, page, perPage })
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage,
+                })
                 .subscribe((results) => {
                     expect(dotContentSearchService.search).toHaveBeenCalled();
                     expect(results).toEqual([]);
@@ -413,17 +425,20 @@ describe('RelationshipFieldService', () => {
         it('should handle optional parameters correctly', () => {
             const expectedParams: DotContentSearchParams = {
                 globalSearch: '',
-                systemSearchableFields: {
-                    contentType: contentTypeId,
-                    deleted: false,
-                    working: true
-                }
+                searchableFieldsByContentType,
+                page,
+                perPage
             };
 
             dotContentSearchService.search.mockReturnValue(of(mockFakeContentlets));
 
             spectator.service
-                .search({ contentTypeId, searchTerm: expectedParams.globalSearch, page, perPage })
+                .search({
+                    contentTypeId,
+                    globalSearch: '',
+                    page,
+                    perPage,
+                })
                 .subscribe(() => {
                     expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
                 });
@@ -437,7 +452,12 @@ describe('RelationshipFieldService', () => {
             dotContentSearchService.search.mockReturnValue(throwError(() => errorResponse));
 
             spectator.service
-                .search({ contentTypeId, searchTerm, page, perPage })
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage,
+                })
                 .subscribe((results) => {
                     expect(dotContentSearchService.search).toHaveBeenCalled();
                     expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
@@ -462,7 +482,12 @@ describe('RelationshipFieldService', () => {
             dotContentSearchService.search.mockReturnValue(of(customContentlets));
 
             spectator.service
-                .search({ contentTypeId, searchTerm, page, perPage })
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage,
+                })
                 .subscribe((results) => {
                     expect(results[0].title).toBe('Custom Title');
                     expect(results[1].title).toBe('def456'); // Should use identifier for empty title
@@ -482,12 +507,8 @@ describe('RelationshipFieldService', () => {
 
             const expectedParams: DotContentSearchParams = {
                 globalSearch: searchTerm,
-                systemSearchableFields: {
-                    contentType: contentTypeId,
-                    ...additionalFields,
-                    deleted: false,
-                    working: true
-                },
+                systemSearchableFields: { ...additionalFields },
+                searchableFieldsByContentType,
                 page,
                 perPage
             };
@@ -497,7 +518,7 @@ describe('RelationshipFieldService', () => {
             spectator.service
                 .search({
                     contentTypeId,
-                    searchTerm,
+                    globalSearch: searchTerm,
                     page,
                     perPage,
                     systemSearchableFields: additionalFields
@@ -521,7 +542,12 @@ describe('RelationshipFieldService', () => {
             dotContentSearchService.search.mockReturnValue(of(contentletsWithUndefinedTitle));
 
             spectator.service
-                .search({ contentTypeId, searchTerm, page, perPage })
+                .search({
+                    contentTypeId,
+                    globalSearch: searchTerm,
+                    page,
+                    perPage,
+                })
                 .subscribe((results) => {
                     expect(results[0].title).toBe('undefined-title'); // Should use identifier when title is undefined
                     expect(results[0].language).toEqual(mockLocales[0]);

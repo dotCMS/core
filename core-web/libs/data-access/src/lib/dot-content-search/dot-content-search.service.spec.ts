@@ -58,6 +58,7 @@ describe('DotContentSearchService', () => {
             const params: DotContentSearchParams = {
                 globalSearch: 'test query',
                 systemSearchableFields: { languageId: 1 },
+                searchableFieldsByContentType: { Blog: { title: 'test' } },
                 page: 0,
                 perPage: 10
             };
@@ -71,6 +72,7 @@ describe('DotContentSearchService', () => {
             expect(req.request.body).toEqual({
                 globalSearch: 'test query',
                 systemSearchableFields: { languageId: 1 },
+                searchableFieldsByContentType: { Blog: { title: 'test' } },
                 page: 0,
                 perPage: 10
             });
@@ -121,6 +123,30 @@ describe('DotContentSearchService', () => {
             const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
             expect(req.request.body).toEqual({
                 systemSearchableFields: { languageId: 1, contentType: 'Blog' }
+            });
+
+            req.flush({
+                entity: {
+                    jsonObjectView: {
+                        contentlets: mockContentlets
+                    }
+                }
+            });
+        });
+
+        it('should call the search endpoint with only searchableFieldsByContentType parameter', (done) => {
+            const params: DotContentSearchParams = {
+                searchableFieldsByContentType: { Blog: { title: 'test' } }
+            };
+
+            spectator.service.search(params).subscribe((result) => {
+                expect(result).toEqual(mockContentlets);
+                done();
+            });
+
+            const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
+            expect(req.request.body).toEqual({
+                searchableFieldsByContentType: { Blog: { title: 'test' } }
             });
 
             req.flush({

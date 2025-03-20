@@ -18,12 +18,10 @@ import { Column } from '../models/column.model';
 
 type LanguagesMap = Record<number, DotLanguage>;
 
-export interface RelationshipFieldQueryParams {
+export interface RelationshipFieldQueryParams extends Required<Pick<DotContentSearchParams, 'page' | 'perPage'>> {
+    globalSearch?: DotContentSearchParams['globalSearch'];
     contentTypeId: string;
-    searchTerm: string;
-    page: number;
-    perPage: number;
-    systemSearchableFields?: Record<string, unknown>;
+    systemSearchableFields?: DotContentSearchParams['systemSearchableFields'];
 }
 
 @Injectable({
@@ -52,25 +50,51 @@ export class RelationshipFieldService {
 
     /**
      * Searches for relationship content items using the content search API
-     * @param contentTypeId The content type ID
-     * @param searchTerm Optional search term for filtering content
-     * @param page Optional page number for pagination
-     * @param perPage Optional number of items per page
-     * @param systemSearchableFields Optional additional search fields
-     * @returns Observable of DotCMSContentlet array
+     *
+     * @param queryParams - Object containing search parameters
+     * @param queryParams.contentTypeId - The content type ID to search within
+     * @param queryParams.page - Page number for pagination
+     * @param queryParams.perPage - Number of items per page
+     * @param queryParams.searchableFieldsByContentType - Configures which fields are searchable by content type
+     * @param queryParams.globalSearch - Optional. Global search term for filtering content
+     * @param queryParams.systemSearchableFields - Optional. Additional system fields to include in search
+     *
+     * @returns Observable<DotCMSContentlet[]> - Stream of content items with language information attached
+     *
+     * @example
+     * // Basic search with pagination
+     * service.search({
+     *   contentTypeId: 'news',
+     *   page: 1,
+     *   perPage: 10,
+     *   searchableFieldsByContentType: { news: {} }
+     * });
+     *
+     * // Search with global term
+     * service.search({
+     *   contentTypeId: 'news',
+     *   page: 1,
+     *   perPage: 10,
+     *   searchableFieldsByContentType: { news: {} },
+     *   globalSearch: 'latest'
+     * });
      */
     search(queryParams: RelationshipFieldQueryParams): Observable<DotCMSContentlet[]> {
         const params: DotContentSearchParams = {
-            globalSearch: queryParams.searchTerm,
-            systemSearchableFields: {
-                ...queryParams.systemSearchableFields,
-                contentType: queryParams.contentTypeId,
-                deleted: false,
-                working: true
+            searchableFieldsByContentType: {
+                [queryParams.contentTypeId]: {}
             },
             page: queryParams.page,
             perPage: queryParams.perPage
         };
+
+        if (queryParams.globalSearch ?? null) {
+            params.globalSearch = queryParams.globalSearch;
+        }
+
+        if (queryParams.systemSearchableFields ?? null) {
+            params.systemSearchableFields = { ...queryParams.systemSearchableFields };
+        }
 
         return this.#contentSearchService.search(params).pipe(
             switchMap((contentlets) => {
