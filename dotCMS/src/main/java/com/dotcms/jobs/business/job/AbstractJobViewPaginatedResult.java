@@ -7,10 +7,10 @@ import org.immutables.value.Value;
 
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonSerialize(as = JobPaginatedResult.class)
-@JsonDeserialize(as = JobPaginatedResult.class)
-public interface AbstractJobPaginatedResult extends JobPaginatedResultContract<Job> {
+@JsonSerialize(as = JobViewPaginatedResult.class)
+@JsonDeserialize(as = JobViewPaginatedResult.class)
+public interface AbstractJobViewPaginatedResult extends JobPaginatedResultContract<JobView> {
 
-    List<Job> jobs();
+    List<JobView> jobs();
 
 }

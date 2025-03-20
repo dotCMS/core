@@ -326,4 +326,27 @@ public class ContentImportHelper {
             throw new DotDataException("Error processing file upload: " + e.getMessage());
         }
     }
+
+    /**
+     * Converts a Job object to a JobView object.
+     * @param job The Job object to convert.
+     * @return The JobView object.
+     */
+    JobView view(final Job job) {
+        return JobView.builder().from(job).build();
+    }
+
+    /**
+     * Converts a JobPaginatedResult object to a JobViewPaginatedResult object.
+     * @param result The JobPaginatedResult object to convert.
+     * @return The JobViewPaginatedResult object.
+     */
+    JobViewPaginatedResult view(final JobPaginatedResult result) {
+        return JobViewPaginatedResult.builder()
+                .page(result.page())
+                .pageSize(result.pageSize())
+                .total(result.total())
+                .jobs(result.jobs().stream().map(this::view).collect(Collectors.toList()))
+                .build();
+    }
 }
