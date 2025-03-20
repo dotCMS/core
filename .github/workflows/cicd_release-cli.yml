@@ -266,8 +266,28 @@ jobs:
             NPM_PACKAGE_VERSION=${MVN_BASE_VERSION}${RC_SUFFIX}
           else
             echo "::debug::Release version found."
+            # Normalize release version by removing leading zeros from each component
+            # Split the version into main version and pre-release parts (if any)
+            MAIN_VERSION=$(echo "$MVN_PACKAGE_VERSION" | cut -d '-' -f 1)
+            PRE_RELEASE=$(echo "$MVN_PACKAGE_VERSION" | cut -s -d '-' -f 2)
+          
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$MAIN_VERSION"
+            MAJOR=$(echo "$MAJOR" | sed 's/^0*//')
+            MINOR=$(echo "$MINOR" | sed 's/^0*//')
+            PATCH=$(echo "$PATCH" | sed 's/^0*//')
+            NORMALIZED_MAIN="${MAJOR}.${MINOR}.${PATCH}"
+
+            if [[ -n "$PRE_RELEASE" ]]; then
+              # Remove leading zeros from the pre-release part as well
+              PRE_RELEASE=$(echo "$PRE_RELEASE" | sed 's/^0*//')
+              NORMALIZED_VERSION="${NORMALIZED_MAIN}-${PRE_RELEASE}"
+            else
+              NORMALIZED_VERSION="${NORMALIZED_MAIN}"
+            fi
+
             NPM_PACKAGE_VERSION_TAG="latest"
-            NPM_PACKAGE_VERSION=${MVN_PACKAGE_VERSION}
+            NPM_PACKAGE_VERSION="${NORMALIZED_VERSION}"
+            echo "::debug::Normalized NPM_PACKAGE_VERSION: ${NPM_PACKAGE_VERSION}"
           fi;
           echo "::debug::NPM_PACKAGE_VERSION: $NPM_PACKAGE_VERSION"
           echo "::debug::NPM_PACKAGE_VERSION_TAG: $NPM_PACKAGE_VERSION_TAG"
