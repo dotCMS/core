@@ -1815,7 +1815,7 @@
                               -->
                             <location>${exploded-webapp-dir}</location>
                             <properties>
-                                <context>/</context>
+                                <context/>
                             </properties>
                         </deployable>
                     </deployables>
@@ -2001,10 +2001,6 @@
                                             <todir>bin</todir>
                                         </configfile>
                                         <configfile>
-                                            <file>${tomcat9-overrides}/bin/setenv.bat</file>
-                                            <todir>bin</todir>
-                                        </configfile>
-                                        <configfile>
                                             <file>${tomcat9-overrides}/bin/setenv.sh</file>
                                             <todir>bin</todir>
                                         </configfile>
@@ -2014,10 +2010,6 @@
                                         </configfile>
                                         <configfile>
                                             <file>${tomcat9-overrides}/conf/context.xml</file>
-                                            <todir>conf</todir>
-                                        </configfile>
-                                        <configfile>
-                                            <file>${tomcat9-overrides}/conf/local.dotcms.site.pem</file>
                                             <todir>conf</todir>
                                         </configfile>
                                     </configfiles>
