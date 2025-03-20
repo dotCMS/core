@@ -176,7 +176,7 @@ export const ExistingContentStore = signalStore(
                         const queryParams: RelationshipFieldQueryParams = {
                             contentTypeId: store.contentTypeId(),
                             page: store.pagination().currentPage,
-                            perPage: store.pagination().rowsPerPage,
+                            perPage: store.pagination().rowsPerPage
                         };
 
                         if (searchParams.query) {

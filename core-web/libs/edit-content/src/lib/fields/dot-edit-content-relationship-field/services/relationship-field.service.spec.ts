@@ -366,7 +366,7 @@ describe('RelationshipFieldService', () => {
                     contentTypeId,
                     globalSearch: searchTerm,
                     page,
-                    perPage,
+                    perPage
                 })
                 .subscribe((results) => {
                     expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
@@ -396,7 +396,7 @@ describe('RelationshipFieldService', () => {
                     contentTypeId,
                     globalSearch: searchTerm,
                     page,
-                    perPage,
+                    perPage
                 })
                 .subscribe((results) => {
                     expect(results[0].title).toBe('789'); // Should use identifier when title is null
@@ -413,7 +413,7 @@ describe('RelationshipFieldService', () => {
                     contentTypeId,
                     globalSearch: searchTerm,
                     page,
-                    perPage,
+                    perPage
                 })
                 .subscribe((results) => {
                     expect(dotContentSearchService.search).toHaveBeenCalled();
@@ -437,7 +437,7 @@ describe('RelationshipFieldService', () => {
                     contentTypeId,
                     globalSearch: '',
                     page,
-                    perPage,
+                    perPage
                 })
                 .subscribe(() => {
                     expect(dotContentSearchService.search).toHaveBeenCalledWith(expectedParams);
@@ -456,7 +456,7 @@ describe('RelationshipFieldService', () => {
                     contentTypeId,
                     globalSearch: searchTerm,
                     page,
-                    perPage,
+                    perPage
                 })
                 .subscribe((results) => {
                     expect(dotContentSearchService.search).toHaveBeenCalled();
@@ -486,7 +486,7 @@ describe('RelationshipFieldService', () => {
                     contentTypeId,
                     globalSearch: searchTerm,
                     page,
-                    perPage,
+                    perPage
                 })
                 .subscribe((results) => {
                     expect(results[0].title).toBe('Custom Title');
@@ -546,7 +546,7 @@ describe('RelationshipFieldService', () => {
                     contentTypeId,
                     globalSearch: searchTerm,
                     page,
-                    perPage,
+                    perPage
                 })
                 .subscribe((results) => {
                     expect(results[0].title).toBe('undefined-title'); // Should use identifier when title is undefined

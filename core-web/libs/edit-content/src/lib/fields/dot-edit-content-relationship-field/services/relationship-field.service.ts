@@ -18,7 +18,8 @@ import { Column } from '../models/column.model';
 
 type LanguagesMap = Record<number, DotLanguage>;
 
-export interface RelationshipFieldQueryParams extends Required<Pick<DotContentSearchParams, 'page' | 'perPage'>> {
+export interface RelationshipFieldQueryParams
+    extends Required<Pick<DotContentSearchParams, 'page' | 'perPage'>> {
     globalSearch?: DotContentSearchParams['globalSearch'];
     contentTypeId: string;
     systemSearchableFields?: DotContentSearchParams['systemSearchableFields'];
