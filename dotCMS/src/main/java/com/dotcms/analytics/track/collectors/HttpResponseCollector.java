@@ -1,6 +1,7 @@
 package com.dotcms.analytics.track.collectors;
 
-import com.dotcms.analytics.track.matchers.HttpResponseMatcher;
+import com.dotcms.analytics.track.matchers.FilesRequestMatcher;
+import com.dotcms.analytics.track.matchers.PagesAndUrlMapsRequestMatcher;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 
 import javax.servlet.http.HttpServletResponse;
@@ -11,7 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 public class HttpResponseCollector implements Collector {
     @Override
     public boolean test(CollectorContextMap collectorContextMap) {
-        return HttpResponseMatcher.HTTP_RESPONSE_MATCHER.equals(collectorContextMap.getRequestMatcher().getId()) ;
+        return FilesRequestMatcher.FILES_MATCHER_ID.equals(collectorContextMap.getRequestMatcher().getId()) ||
+                PagesAndUrlMapsRequestMatcher.PAGES_AND_URL_MAPS_MATCHER_ID.equals(collectorContextMap.getRequestMatcher().getId());
     }
 
     @Override
