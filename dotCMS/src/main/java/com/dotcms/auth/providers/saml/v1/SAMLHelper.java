@@ -15,10 +15,8 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -26,10 +24,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.SecurityLogger;
@@ -56,9 +51,13 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
 
@@ -520,23 +519,8 @@ public class SAMLHelper {
                 Logger.debug(this, () -> "Role Patterns: " + this.toString(rolePatterns) + ", remove role prefix: " + removeRolePrefix);
 
                 // add roles
-                for (final String role : roleList) {
-
-                    if (null != rolePatterns && rolePatterns.length > 0) {
-                        if (!this.isValidRole(role, rolePatterns)) {
-                            // when there are role filters and the current roles is not a valid role, we have to filter it.
-
-                            Logger.debug(this, () -> "Skipping role: " + role);
-                            continue;
-                        } else {
-
-                            Logger.debug(this, () -> "Role Patterns: " + this.toString(rolePatterns) + ", remove role prefix: "
-                                    + removeRolePrefix + ": true");
-                        }
-                    }
-
-                    this.addRole(user, removeRolePrefix, this.processReplacement(role, roleKeySubstitutionOpt) );
-                }
+                addIDPRoles(user, roleList, rolePatterns, removeRolePrefix,
+                        roleKeySubstitutionOpt, identityProviderConfiguration);
             }
 
             return;
@@ -544,6 +528,55 @@ public class SAMLHelper {
 
         Logger.info(this, "Roles have been ignore by the build roles strategy: " + buildRolesStrategy
                 + ", or roles have been not set from the IdP");
+    }
+
+    private void addIDPRoles(final User user,
+                             final List<String> roleList,
+                             final String[] rolePatterns,
+                             final String removeRolePrefix,
+                             final Optional<Tuple2<String, String>> roleKeySubstitutionOpt,
+                             final IdentityProviderConfiguration identityProviderConfiguration) throws DotDataException {
+
+        final RoleGroupMappingStrategy roleGroupMappingStrategy = getRoleGroupMappingStrategy(identityProviderConfiguration);
+
+        Logger.debug(this, ()-> "Using roleGroupMappingStrategy: " + roleGroupMappingStrategy);
+        for (final String roleGroup : roleList) {
+
+            final Collection<String> rolesMapped = Objects.nonNull(roleGroupMappingStrategy)?
+                    roleGroupMappingStrategy.getRolesForGroup(roleGroup, identityProviderConfiguration): List.of(roleGroup);
+
+            Logger.debug(this, ()-> "Roles Mapped: " + rolesMapped);
+
+            for (final String role : rolesMapped) {
+                if (null != rolePatterns && rolePatterns.length > 0) {
+                    if (!this.isValidRole(role, rolePatterns)) {
+                        // when there are role filters and the current roles is not a valid role, we have to filter it.
+
+                        Logger.debug(this, () -> "Skipping role: " + role);
+                        continue;
+                    } else {
+
+                        Logger.debug(this, () -> "Role Patterns: " + this.toString(rolePatterns) + ", remove role prefix: "
+                                + removeRolePrefix + ": true");
+                    }
+                }
+
+                this.addRole(user, removeRolePrefix, this.processReplacement(role, roleKeySubstitutionOpt));
+            }
+        }
+    }
+
+    private static final RoleGroupMappingStrategy NOTHING_ROLE_GROUP_MAPPING_STRATEGY = (roleGroupKey, identityProviderConfiguration) -> List.of(roleGroupKey);
+    private static Map<String, RoleGroupMappingStrategy> roleGroupMappingStrategiesMap =
+            new ConcurrentHashMap<>(Map.of("saml.roles.group.mapping.strategy.bycontenttype", new ContentTypeRoleGroupMappingStrategyImpl()));
+
+    private RoleGroupMappingStrategy getRoleGroupMappingStrategy(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        Logger.debug(this, ()-> "Getting the role group mapping strategy");
+        return identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_ROLE_GROUP_MAPPING_STRATEGY.getPropertyName())?
+                roleGroupMappingStrategiesMap.get(
+                    identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_ROLE_GROUP_MAPPING_STRATEGY.getPropertyName()).toString()):
+                NOTHING_ROLE_GROUP_MAPPING_STRATEGY;
     }
 
     protected String processReplacement(final String role, final Optional<Tuple2<String, String>> roleKeySubstitutionOpt) {
