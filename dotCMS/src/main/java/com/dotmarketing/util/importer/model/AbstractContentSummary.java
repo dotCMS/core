@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 /**
  * AbstractContentSummary represents a summary of content operation statistics,
@@ -96,4 +97,21 @@ public interface AbstractContentSummary extends Serializable {
     @JsonProperty("failed")
     int failedDisplay();
 
+    /**
+     * number of times a commit operation was performed
+     * Mostly here for debugging/testing purposes
+     * @return number of commits
+     */
+    @Default
+    @JsonIgnore
+    default int commits(){ return 0; }
+
+    /**
+     * number of times a rollback operation was performed
+     * Mostly here for debugging/testing purposes
+     * @return number of rollbacks
+     */
+    @Default
+    @JsonIgnore
+    default int rollbacks(){ return 0; }
 }

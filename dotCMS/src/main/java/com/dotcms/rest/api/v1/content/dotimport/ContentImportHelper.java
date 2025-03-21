@@ -273,6 +273,15 @@ public class ContentImportHelper {
         if (form.getFields() != null && !form.getFields().isEmpty()) {
             jobParameters.put("fields", form.getFields());
         }
+
+        if(null != form.getStopOnError()){
+            jobParameters.put("stopOnError", form.getStopOnError());
+        }
+
+        if(null != form.getCommitGranularity()){
+            jobParameters.put("commitGranularity", form.getCommitGranularity());
+        }
+
     }
 
     /**

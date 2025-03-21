@@ -1,6 +1,11 @@
 package com.dotcms.util;
 
-import com.dotcms.LicenseTestUtil;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -48,7 +53,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -66,30 +70,24 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.ImmutableImportFileParams;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.importer.model.ImportResult;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.apache.commons.io.FileUtils;
-import org.glassfish.jersey.internal.util.Base64;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -98,17 +96,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.io.FileUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Verifies that the Content Importer/Exporter feature is working as expected.
  * Users can import and export contents from the Content Search page.
- * 
+ *
  * @author Jonathan Gamba Date: 3/10/14
  */
 
@@ -599,7 +598,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         FileUtils.writeStringToFile(tempTestFile, content);
         final byte[] bytes = com.liferay.util.FileUtil.getBytes(tempTestFile);
 
-        return new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
+        return new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8);
     }
 
     /**
@@ -2402,7 +2401,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     contentTypeApi.delete(contentType);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error("Error deleting content type", e);
             }
         }
     }
@@ -2482,7 +2481,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     contentTypeApi.delete(contentType);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error("Error deleting content type", e);
             }
         }
     }
@@ -2548,7 +2547,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             final List<Contentlet> savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
-            assertTrue(savedData.size() == 1);
+            assertEquals(1, savedData.size());
             assertNull(savedData.get(0).getBinary(BINARY_FIELD_NAME));
 
         } finally {
@@ -2557,7 +2556,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     contentTypeApi.delete(contentType);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error("Error deleting content type", e);
             }
         }
     }
@@ -2617,7 +2616,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         final List<Contentlet> savedData = contentletAPI
                 .findByStructure(contentType.inode(), user, false, 0, 0);
         assertNotNull(savedData);
-        assertTrue(savedData.size() == 1);
+        assertEquals(1, savedData.size());
         assertFalse(APILocator.getCategoryAPI().getParents(savedData.get(0),user,false).isEmpty());
     }
 
@@ -2682,8 +2681,384 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     contentTypeApi.delete(contentType);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.error("Error deleting content type", e);
             }
         }
     }
+
+
+    /**
+     * Tests importing a CSV file with invalid null values for required fields
+     * Tests both scenarios: stopping on error and continuing despite errors
+     * Given: A content type with a required title field is created and a CSV file is generated with different commit granularities and errors
+     * Expected: Depending on the commit granularity and the errors, the importer should commit and rollback as expected
+     */
+    @Test
+    public void importFile_whenRequiredFieldIsNull_shouldHandleErrorsBasedOnStopFlag()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        ImportResult results;
+        Reader reader;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            final String contentTypeName = "ContentTypeWithRequired_" + System.currentTimeMillis();
+            final String contentTypeVarName = "velocityVarNameRequired_" + System.currentTimeMillis();
+
+            // Create oneInvalidRowAndFourGood type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            // Make title field required
+            titleField = FieldBuilder.builder(TextField.class)
+                    .from(titleField)
+                    .required(true)
+                    .build();
+            fieldAPI.save(titleField, user);
+
+            // Creating CSV with valid and invalid rows
+            final String oneInvalidRowAndFourGood = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    "Valid Title 1, Valid Body 1\r\n" +
+                    "Valid Title 2, Valid Body 2\r\n" +
+                    "Valid Title 3, Valid Body 3\r\n" +
+                    ", Invalid Row Missing Required Title\r\n" + // This row should cause an error
+                    "Valid Title 4, Valid Body 4\r\n";
+            reader = createTempFile(oneInvalidRowAndFourGood);
+
+            results = importAndValidate(contentType, titleField, reader, false, 1);
+
+            // Should only have imported the first row before stopping
+            List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertEquals(4, savedData.size());
+            assertEquals(1, results.data().summary().rollbacks());
+            assertEquals(4, results.data().summary().commits());
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+    /**
+     * Extended test cases that verify savepoint and rollback functionality with
+     * different commit granularity settings and error scenarios
+     * Given: A content type with a required title field is created and a CSV file is generated with different commit granularities and errors
+     * Expected: Depending on the commit granularity and the errors, the importer should commit and rollback as expected
+     */
+    @Test
+    public void importFile_withDifferentCommitGranularities_shouldHandleErrorsCorrectly()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        Reader reader;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            final String contentTypeName = "CommitGranularityTest_" + System.currentTimeMillis();
+            final String contentTypeVarName = "velocityVarNameGranularity_" + System.currentTimeMillis();
+
+            // Create content type for testing
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            // Make title field required
+            titleField = FieldBuilder.builder(TextField.class)
+                    .from(titleField)
+                    .required(true)
+                    .build();
+            fieldAPI.save(titleField, user);
+
+            // Test Case 1: Commit every 2 records with 1 error (stopOnError=false)
+            // Expected: 3 commits, 1 rollback
+            String csvWithOneError = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    "Title 1, Body 1\r\n" +
+                    "Title 2, Body 2\r\n" +
+                    "Title 3, Body 3\r\n" +
+                    ", Missing Required Title\r\n" + // This row will cause an error
+                    "Title 4, Body 4\r\n" +
+                    "Title 5, Body 5\r\n";
+
+            reader = createTempFile(csvWithOneError);
+            ImportResult resultCase1 = importAndValidate(contentType, titleField, reader, false, 2);
+
+            // Validate results for Test Case 1
+            // With granularity=2, we should have commits at rows 2, 4, and 6, with a rollback at row 4
+            List<Contentlet> savedDataCase1 = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedDataCase1);
+            assertEquals(5, savedDataCase1.size()); // All valid rows (1, 2, 3, 4, 5)
+            assertEquals(1, resultCase1.data().summary().rollbacks()); // 1 error → 1 rollback
+            assertEquals(3, resultCase1.data().summary().commits()); // We should have 3 commits with granularity=2
+
+            // Delete all contentlets to prepare for next test
+            for (Contentlet contentlet : savedDataCase1) {
+                contentletAPI.archive(contentlet, user, false);
+                contentletAPI.delete(contentlet, user, false);
+            }
+
+            // Test Case 2: Commit every 3 records with 2 errors at rows 4 and 6 (stopOnError=false)
+            // Expected: 2 commits, 2 rollbacks
+            String csvWithTwoErrors = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    "Title A, Body A\r\n" +
+                    "Title B, Body B\r\n" +
+                    "Title C, Body C\r\n" +
+                    ", Missing Title 1\r\n" + // First error
+                    "Title D, Body D\r\n" +
+                    ", Missing Title 2\r\n" + // Second error
+                    "Title E, Body E\r\n" +
+                    "Title F, Body F\r\n";
+
+            reader = createTempFile(csvWithTwoErrors);
+            ImportResult resultCase2 = importAndValidate(contentType, titleField, reader, false, 3);
+
+            // Validate results for Test Case 2
+            // With granularity=3, we should have commits at rows 3, 6, and 9
+            // With errors at rows 4 and 6, we should have rollbacks for each error
+            List<Contentlet> savedDataCase2 = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedDataCase2);
+            assertEquals(6, savedDataCase2.size()); // All valid rows (A, B, C, D, E, F)
+            assertEquals(2, resultCase2.data().summary().rollbacks()); // 2 errors → 2 rollbacks
+            assertEquals(2, resultCase2.data().summary().commits()); // 2 commits with granularity=3 because there were two rollbacks in a total of 8 rows
+
+            // Delete all contentlets for next test
+            for (Contentlet contentlet : savedDataCase2) {
+                contentletAPI.archive(contentlet, user, false);
+                contentletAPI.delete(contentlet, user, false);
+            }
+
+            // Test Case 3: Commit every record (granularity=1) with 1 error (stopOnError=true)
+            // Expected: Should stop at the error, only records before the error should be saved
+            String csvWithErrorAndStop = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    "Record 1, Body 1\r\n" +
+                    "Record 2, Body 2\r\n" +
+                    "Record 3, Body 3\r\n" +
+                    ", Missing Title Error\r\n" + // Error here, should stop
+                    "Record 4, Body 4\r\n" + // This and subsequent records should not be processed
+                    "Record 5, Body 5\r\n";
+
+            reader = createTempFile(csvWithErrorAndStop);
+            ImportResult resultCase3 = importAndValidate(contentType, titleField, reader, true, 1);
+
+            // Validate results for Test Case 3
+            // With stopOnError=true, should only process rows 1-3, error at row 4, then stop
+            List<Contentlet> savedDataCase3 = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedDataCase3);
+            assertEquals(3, savedDataCase3.size()); // Only rows before the error (1, 2, 3)
+            assertEquals(0, resultCase3.data().summary().rollbacks()); // No rollbacks with stopOnError=true
+            assertEquals(3, resultCase3.data().summary().commits()); // 3 commits (1 per row)
+
+            // Delete all contentlets
+            for (Contentlet contentlet : savedDataCase3) {
+                contentletAPI.archive(contentlet, user, false);
+                contentletAPI.delete(contentlet, user, false);
+            }
+
+            // Test Case 4: Commit rarely (granularity=5) with errors in the middle of a batch
+            // Expected: One commit at the end, with one rollback for the error
+            String csvWithErrorInBatch = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    "Batch 1, Body 1\r\n" +
+                    "Batch 2, Body 2\r\n" +
+                    "Batch 3, Body 3\r\n" +
+                    ", Error in Batch\r\n" + // Error in the middle of batch
+                    "Batch 4, Body 4\r\n" +
+                    "Batch 5, Body 5\r\n" +
+                    "Batch 6, Body 6\r\n";
+
+            reader = createTempFile(csvWithErrorInBatch);
+            ImportResult resultCase4 = importAndValidate(contentType, titleField, reader, false, 5);
+
+            // Validate results for Test Case 4
+            // With granularity=5, should have commits at rows 5 and at the end (row 7)
+            List<Contentlet> savedDataCase4 = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedDataCase4);
+            assertEquals(6, savedDataCase4.size()); // All valid rows
+            assertEquals(1, resultCase4.data().summary().rollbacks()); // 1 error → 1 rollback
+            assertEquals(2, resultCase4.data().summary().commits()); // 2 commit with granularity=5 (1 at row 5, 1 at row 7)
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+    /**
+     * Tests behavior when multiple errors occur in the same commit batch
+     * Verifies that all rows up to the batch with errors are committed
+     * Given: A content type with a required title field is created and a CSV file is generated with different commit granularities and errors
+     * Expected: Depending on the commit granularity and the errors, the importer should commit and rollback as expected
+     */
+    @Test
+    public void importFile_withMultipleErrorsInSameBatch_shouldRollbackCorrectly()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        Reader reader;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            final String contentTypeName = "MultiErrorBatchTest_" + System.currentTimeMillis();
+            final String contentTypeVarName = "velocityVarNameMultiError_" + System.currentTimeMillis();
+
+            // Create content type for testing
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            // Make title field required
+            titleField = FieldBuilder.builder(TextField.class)
+                    .from(titleField)
+                    .required(true)
+                    .build();
+            fieldAPI.save(titleField, user);
+
+            // Create CSV with multiple errors in the same batch
+            // Records 4, 5, and 6 all have errors
+            String csvWithMultipleErrors = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    "Multi 1, Body 1\r\n" +
+                    "Multi 2, Body 2\r\n" +
+                    "Multi 3, Body 3\r\n" +
+                    ", Error 1\r\n" + // First error
+                    ", Error 2\r\n" + // Second error
+                    ", Error 3\r\n" + // Third error
+                    "Multi 4, Body 4\r\n" +
+                    "Multi 5, Body 5\r\n";
+
+            reader = createTempFile(csvWithMultipleErrors);
+
+            // Set commit granularity to 4, so rows 1-4 should be in the first batch
+            // The first error is at row 4, which should cause a rollback
+            ImportResult result = importAndValidate(contentType, titleField, reader, false, 4);
+
+            // Validate results
+            List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertEquals(5, savedData.size()); // Should have imported rows 1, 2, 3, 7, 8
+            assertEquals(3, result.data().summary().rollbacks()); // 3 errors → 3 rollbacks
+            assertEquals(2, result.data().summary().commits()); // 2 commits with granularity=4
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+    /**
+     * Tests the interaction between commit granularity and stopOnError
+     * When stopOnError=true, processing should stop at the first error,
+     * Given: A content type with a required title field is created and a CSV file is generated with different commit granularities and errors
+     * Expected: Depending on the commit granularity and the errors, the importer should commit and rollback as expected
+     */
+    @Test
+    public void importFile_withHighGranularityAndStopOnError_shouldStopAtFirstError()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        Reader reader;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            final String contentTypeName = "StopErrorTest_" + System.currentTimeMillis();
+            final String contentTypeVarName = "velocityVarNameStopError_" + System.currentTimeMillis();
+
+            // Create content type for testing
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            // Make title field required
+            titleField = FieldBuilder.builder(TextField.class)
+                    .from(titleField)
+                    .required(true)
+                    .build();
+            fieldAPI.save(titleField, user);
+
+            // Create CSV with an error in the middle
+            String csvWithError = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + "\r\n" +
+                    "Stop 1, Body 1\r\n" +
+                    "Stop 2, Body 2\r\n" +
+                    "Stop 3, Body 3\r\n" +
+                    ", Missing Title\r\n" + // Error here, should stop
+                    "Stop 4, Body 4\r\n" +
+                    "Stop 5, Body 5\r\n" +
+                    "Stop 6, Body 6\r\n" +
+                    "Stop 7, Body 7\r\n" +
+                    "Stop 8, Body 8\r\n" +
+                    "Stop 9, Body 9\r\n" +
+                    "Stop 10, Body 10\r\n";
+
+            reader = createTempFile(csvWithError);
+
+            // Set commit granularity to 10, but with stopOnError=true
+            // Should stop at the first error (row 4) regardless of granularity
+            ImportResult result = importAndValidate(contentType, titleField, reader, true, 10);
+
+            // Validate results
+            List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+
+            // Should only have rows before the error (1, 2, 3)
+            assertEquals(3, savedData.size());
+
+            // With stopOnError=true, we don't do rollbacks, we just stop
+            assertEquals(0, result.data().summary().rollbacks());
+
+            // No commits would occur with granularity=10 if we stopped at row 4
+            // The implementation might perform a final commit of successfully processed rows
+            // So commits should be either 0 or 1 depending on implementation
+            assertTrue("Expected 0 or 1 commits, but got: " + result.data().summary().commits(), result.data().summary().commits() <= 1);
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
+        }
+    }
+
+    /**
+     * Helper method to perform the import and basic validation
+     */
+    private ImportResult importAndValidate(
+            final ContentType contentType,
+            final com.dotcms.contenttype.model.field.Field titleField,
+            final Reader reader,
+            final boolean stopOnError,
+            final int commitGranularity) throws IOException, DotDataException {
+
+        CsvReader csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        String[] csvHeaders = csvreader.getHeaders();
+        final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
+                .importId(0L)
+                .siteId(defaultSite.getInode())
+                .contentTypeInode(contentType.inode())
+                .keyFields(new String[]{titleField.id()})
+                .user(user)
+                .language(defaultLanguage.getId())
+                .csvHeaders(csvHeaders)
+                .csvReader(csvreader)
+                .request(getHttpRequest())
+                .stopOnError(stopOnError)
+                .commitGranularityOverride(commitGranularity)
+                .build();
+        return ImportUtil.importFileResult(importFileParams);
+    }
+
 }

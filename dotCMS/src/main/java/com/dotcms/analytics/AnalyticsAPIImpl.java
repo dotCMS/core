@@ -420,13 +420,23 @@ public class AnalyticsAPIImpl implements AnalyticsAPI, EventSubscriber<SystemTab
             .setUrl(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
             .setTimeout(analyticsKeyRenewTimeout.get())
             .setTryAgainAttempts(analyticsKeyRenewAttempts.get())
-            .setAuthHeaders(accessToken.accessToken())
+            .setHeaders(analyticsKeyHeaders(accessToken))
             .setThrowWhenError(false)
             .build()
             .doResponse(AnalyticsKey.class);
         logKeyResponse(response, analyticsApp);
 
         return response;
+    }
+
+    /**
+     * Prepares access token request headers in a {@link Map} with values found in a {@link AccessToken} instance.
+     *
+     * @param accessToken access token
+     * @return map representation of http headers
+     */
+    private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
+        return CircuitBreakerUrl.authHeaders(AnalyticsHelper.get().formatBearer(accessToken));
     }
 
 }
