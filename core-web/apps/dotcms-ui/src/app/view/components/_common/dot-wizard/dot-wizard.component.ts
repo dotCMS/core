@@ -46,6 +46,11 @@ export class DotWizardComponent implements OnDestroy {
     formHosts: QueryList<DotContainerReferenceDirective>;
     @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
 
+    /**
+     * Flag to track if save operation is in progress
+     */
+    isSaving = false;
+
     private currentStep = 0;
     private componentsHost: DotContainerReferenceDirective[];
     private stepsValidation: boolean[];
@@ -91,24 +96,31 @@ export class DotWizardComponent implements OnDestroy {
     }
 
     /**
-     * handle the tab event, so when is the last field of a a step
-     * focus the next/submit button.
-     * @param {KeyboardEvent} event
-     * @memberof DotWizardComponent
+     * Handles tab key navigation to properly focus buttons after form elements
+     * @param event Keyboard event
      */
     handleTab(event: KeyboardEvent): void {
-        const [form]: HTMLFieldSetElement[] = event
-            .composedPath()
-            .filter((x: Node) => x.nodeName === 'FORM') as HTMLFieldSetElement[];
+        // Get the current step container
+        const stepContainer =
+            this.componentsHost[this.currentStep].viewContainerRef.element.nativeElement.parentNode;
 
-        if (form) {
-            if (form.elements.item(form.elements.length - 1) === event.target) {
+        // Get all focusable elements in the current step
+        const focusableElements = this.getFocusableElements(stepContainer);
+
+        // Get dialog action buttons
+        const actionButtons = Array.from(
+            document.querySelectorAll('.dot-wizard__footer button')
+        ) as HTMLElement[];
+
+        // If focusing on the last form element and tabbing forward, focus the action button
+        if (focusableElements.length > 0) {
+            const focusedElement = document.activeElement as HTMLElement;
+            const lastFormElement = focusableElements[focusableElements.length - 1];
+
+            if (lastFormElement === focusedElement && actionButtons.length > 0) {
                 event.preventDefault();
-                event.stopPropagation();
-                const acceptButton = document.getElementsByClassName(
-                    'dialog__button-accept'
-                )[0] as HTMLButtonElement;
-                acceptButton.focus();
+                // Focus the first button (usually Accept/Next)
+                this.attemptFocusElement(actionButtons[0]);
             }
         }
     }
@@ -167,18 +179,7 @@ export class DotWizardComponent implements OnDestroy {
         this.currentStep += next;
         this.focusFistFormElement();
         this.updateTransform();
-        if (this.isLastStep()) {
-            this.$dialogActions().accept.label = this.dotMessageService.get('send');
-            this.$dialogActions().cancel.disabled = false;
-        } else if (this.isFirstStep()) {
-            this.$dialogActions().cancel.disabled = true;
-            this.$dialogActions().accept.label = this.dotMessageService.get('next');
-        } else {
-            this.$dialogActions().cancel.disabled = false;
-            this.$dialogActions().accept.label = this.dotMessageService.get('next');
-        }
-
-        this.$dialogActions().accept.disabled = !this.stepsValidation[this.currentStep];
+        this.updateNavigationButtons();
     }
 
     private getAcceptAction(): void {
@@ -201,8 +202,14 @@ export class DotWizardComponent implements OnDestroy {
     }
 
     private sendValue(): void {
+        this.isSaving = true;
         this.dotWizardService.output$(this.wizardData);
-        this.close();
+
+        // Add a slight delay to show the loading state
+        setTimeout(() => {
+            this.isSaving = false;
+            this.close();
+        }, 300);
     }
 
     private updateTransform(): void {
@@ -210,22 +217,62 @@ export class DotWizardComponent implements OnDestroy {
     }
 
     private focusFistFormElement(): void {
-        let count = 0;
-        // need to wait dynamic component to load the form.
-        const interval = setInterval(() => {
-            const form: HTMLFormElement =
-                this.componentsHost[
-                    this.currentStep
-                ].viewContainerRef.element.nativeElement.parentNode.children[0].getElementsByTagName(
-                    'form'
-                )[0];
-            if (form || count === 10) {
-                clearInterval(interval);
-                (form.elements[0] as HTMLElement).focus();
-            }
+        // Wait for Angular change detection to complete
+        setTimeout(() => {
+            const stepContainer =
+                this.componentsHost[this.currentStep].viewContainerRef.element.nativeElement
+                    .parentNode;
 
-            count++;
-        }, 200);
+            // Find all focusable elements and focus the first valid one
+            const focusableElements = this.getFocusableElements(stepContainer);
+
+            if (focusableElements.length > 0) {
+                // Try to focus the first element
+                this.attemptFocusElement(focusableElements[0]);
+            }
+        }, 100);
+    }
+
+    /**
+     * Finds all focusable elements within a container
+     * @param container The container to search within
+     * @returns Array of focusable elements
+     */
+    private getFocusableElements(container: Element): HTMLElement[] {
+        // Comprehensive selector for all potentially focusable elements
+        const selector = `
+            a[href]:not([tabindex='-1']),
+            button:not([disabled]):not([tabindex='-1']),
+            textarea:not([disabled]):not([tabindex='-1']),
+            input:not([disabled]):not([tabindex='-1']),
+            select:not([disabled]):not([tabindex='-1']),
+            [tabindex]:not([tabindex='-1']),
+            p-dropdown > .p-element,
+            p-calendar > .p-element,
+            p-inputmask > .p-element
+        `;
+
+        return Array.from(container.querySelectorAll(selector)) as HTMLElement[];
+    }
+
+    /**
+     * Attempts to focus an element with special handling for PrimeNG components
+     * @param element The element to focus
+     */
+    private attemptFocusElement(element: HTMLElement): void {
+        // For PrimeNG components, find the actual input element
+        if (element.classList.contains('p-element')) {
+            // For dropdowns
+            const dropdown = element.querySelector('input, button, .p-dropdown');
+            if (dropdown) {
+                (dropdown as HTMLElement).focus();
+
+                return;
+            }
+        }
+
+        // For standard elements
+        element.focus();
     }
 
     private setCancelButton(): DialogButton {
@@ -242,5 +289,27 @@ export class DotWizardComponent implements OnDestroy {
             label: this.dotMessageService.get('previous'),
             disabled: true
         };
+    }
+
+    /**
+     * Updates the navigation buttons based on current step
+     */
+    private updateNavigationButtons(): void {
+        if (!this.$dialogActions()) {
+            return;
+        }
+
+        // Update accept button
+        this.$dialogActions().accept.label = this.isLastStep()
+            ? this.dotMessageService.get('send')
+            : this.dotMessageService.get('next');
+        this.$dialogActions().accept.disabled = !this.stepsValidation[this.currentStep];
+
+        // Update cancel/previous button
+        this.$dialogActions().cancel.disabled = this.isFirstStep();
+        this.$dialogActions().cancel.label =
+            this.componentsHost.length > 1 && !this.isFirstStep()
+                ? this.dotMessageService.get('previous')
+                : this.dotMessageService.get('cancel');
     }
 }
