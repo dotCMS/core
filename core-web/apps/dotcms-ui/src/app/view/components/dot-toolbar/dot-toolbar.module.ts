@@ -7,7 +7,6 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { DotCrumbtrailModule } from '@components/dot-crumbtrail/dot-crumbtrail.module';
-import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 
 import { DotToolbarNotificationModule } from './components/dot-toolbar-notifications/dot-toolbar-notifications.module';
 import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
@@ -25,7 +24,6 @@ import { DotToolbarComponent } from './dot-toolbar.component';
         HttpClientJsonpModule
     ],
     declarations: [DotToolbarComponent],
-    exports: [DotToolbarComponent],
-    providers: [DotGravatarService]
+    exports: [DotToolbarComponent]
 })
 export class DotToolbarModule {}

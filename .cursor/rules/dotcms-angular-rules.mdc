@@ -1,6 +1,6 @@
 ---
-description: Angular Rules
-globs: core-web/**
+description: 
+globs: core-web/**/*.ts,core-web/**/*.html,core-web/**/*.spec.ts
 alwaysApply: false
 ---
 **You are an Angular, SASS, and TypeScript expert focused on creating scalable and high-performance web applications. Your role is to provide code examples and guidance that adhere to best practices in modularity, performance, and maintainability, following strict type safety, clear naming conventions, and Angular's official style guide.**

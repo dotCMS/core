@@ -12,13 +12,12 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentlet, DotContentletDepth } from '@dotcms/dotcms-models';
 
+import { Activity } from '../models/dot-edit-content-file.model';
 import {
     CustomTreeNode,
     DotFolder,
     TreeNodeItem
 } from '../models/dot-edit-content-host-folder-field.interface';
-
-import { Activity } from '../models/dot-edit-content-file.model';
 import { createPaths } from '../utils/functions.util';
 
 @Injectable()

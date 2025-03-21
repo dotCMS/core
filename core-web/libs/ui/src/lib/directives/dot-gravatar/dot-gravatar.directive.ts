@@ -11,9 +11,10 @@ import { DotGravatarService } from '../../services/dot-gravatar/dot-gravatar.ser
  */
 @Directive({
     selector: 'p-avatar[dotGravatar]',
-    standalone: true
+    standalone: true,
+    providers: [DotGravatarService]
 })
-export class DotGravatarUIDirective implements OnInit {
+export class DotGravatarDirective implements OnInit {
     email = input<string>();
 
     constructor(

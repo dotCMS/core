@@ -11,7 +11,7 @@ import {
 import { AvatarModule } from 'primeng/avatar';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
+import { DotGravatarDirective } from '@dotcms/ui';
 
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
