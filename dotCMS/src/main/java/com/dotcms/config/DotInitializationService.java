@@ -136,7 +136,7 @@ public class DotInitializationService implements Serializable {
                 new DefaultVariantInitializer(),
                 new SystemTableInitializer(),
                 new EmbeddingsInitializer(),
-                new AIVisionInitializer()
+                new AIVisionInitializer(),
                 CDIUtils.getBeanThrows(UniqueFieldsTableCleanerInitializer.class),
                 CDIUtils.getBeanThrows(UniqueFieldsValidationInitializer.class),
                 new AnalyticsInitializer()

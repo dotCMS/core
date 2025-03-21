@@ -553,8 +553,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         addRewriteRule( rule );
     }
 
-
-
     /**
      * Register a WorkFlowActionlet service
      *
@@ -567,7 +565,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         final ServiceReference<?> serviceRefSelected = context.getServiceReference( WorkflowAPIOsgiService.class.getName() );
         if (serviceRefSelected == null) {
             return;
-
         }
 
         OSGIUtil.getInstance().setWorkflowOsgiService((WorkflowAPIOsgiService) context.getService(serviceRefSelected));
