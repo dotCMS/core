@@ -11,6 +11,10 @@ import static org.mockito.Mockito.*;
 
 
 class EmailUtilsTest {
+
+    private static final String DOT_MAIL_FROM_ADDRESS = "configured@example.com";
+    private static final String COMPANY_MAIL_ADDRESS = "from@example.com";
+
     private MailerWrapper mockMailer;
     private MailerWrapperFactory mockFactory;
     private User user;
@@ -34,40 +38,33 @@ class EmailUtilsTest {
         user.setLastName("Doe");
 
         company = new Company();
-        company.setEmailAddress("from@example.com");
+        company.setEmailAddress(COMPANY_MAIL_ADDRESS);
         company.setName("Acme Corp");
     }
 
     @Test
     void testSendMail_UsesConfiguredFromAddress_WhenSet() {
-        String configuredFromEmail = "configured@example.com";
-
         try (MockedStatic<Config> mockedConfig = mockStatic(Config.class)) {
             // Simulate DOT_MAIL_FROM_ADDRESS being set
             mockedConfig.when(() -> Config.getStringProperty("DOT_MAIL_FROM_ADDRESS", "from@example.com"))
-                    .thenReturn(configuredFromEmail);
+                    .thenReturn(DOT_MAIL_FROM_ADDRESS);
 
             // Act
             EmailUtils.sendMail(user, company, "Test Subject", "Test Body");
 
             // Assert
-            verify(mockMailer).setFromEmail(configuredFromEmail);
+            verify(mockMailer).setFromEmail(DOT_MAIL_FROM_ADDRESS);
             verify(mockMailer).sendMessage();
         }
     }
 
     @Test
     void testSendMail_UsesFallbackEmail_WhenNoConfigSet() {
-        String fallbackEmail = "from@example.com"; // Should default to company email
-
-        // Call the static sendMail method.
+        // Call the sendMail method.
         EmailUtils.sendMail(user, company, "Test Subject", "Test Body");
 
-        // Calculate what the expected from-email should be.
-        String expectedFromEmail = ConfigUtils.getGlobalFromAddressOrFallback("from@example.com");
-
         // Verify that setFromEmail was called with the expected value.
-        verify(mockMailer).setFromEmail(expectedFromEmail);
+        verify(mockMailer).setFromEmail(COMPANY_MAIL_ADDRESS);
 
         // Optionally, verify that sendMessage was called.
         verify(mockMailer).sendMessage();
