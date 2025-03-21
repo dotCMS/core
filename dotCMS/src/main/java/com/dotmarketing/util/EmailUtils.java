@@ -9,6 +9,7 @@ import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.sun.mail.pop3.POP3SSLStore;
@@ -54,9 +55,8 @@ public class EmailUtils {
 	// Use a MailerWrapperFactory to create Mailer instances.
 	private static MailerWrapperFactory mailerFactory = new MailerWrapperFactoryImpl();
 
-
-	// Allow overriding the factory (e.g., for tests).
-	public static void setMailerWrapperFactory(MailerWrapperFactory factory) {
+	@VisibleForTesting
+	static void setMailerWrapperFactory(MailerWrapperFactory factory) {
 		mailerFactory = factory;
 	}
 
