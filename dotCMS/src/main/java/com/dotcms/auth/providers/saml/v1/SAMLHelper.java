@@ -80,6 +80,11 @@ public class SAMLHelper {
 
     private static EmailGenStrategy emailGenStrategy = SAMLHelper::prefixRandomEmail;
 
+    protected static final RoleGroupMappingStrategy DEFAULT_ROLE_GROUP_MAPPING_STRATEGY = (roleGroupKey, identityProviderConfiguration) -> List.of(roleGroupKey);
+    public static final String SAML_ROLES_GROUP_MAPPING_STRATEGY_BYCONTENTTYPE = "saml.roles.group.mapping.strategy.bycontenttype";
+    private static Map<String, RoleGroupMappingStrategy> roleGroupMappingStrategiesMap =
+            new ConcurrentHashMap<>(Map.of(SAML_ROLES_GROUP_MAPPING_STRATEGY_BYCONTENTTYPE, new ContentTypeRoleGroupMappingStrategyImpl()));
+
     private static String prefixRandomEmail(final String email) {
 
         final int randomNumber = RandomUtils.nextInt();
@@ -530,6 +535,19 @@ public class SAMLHelper {
                 + ", or roles have been not set from the IdP");
     }
 
+    /**
+     * This method add the roles form the IDP to the user
+     * In addition apply any filter on rolePatterns if they are present
+     * Also, remove any prefix from the roles if it is present and use the roleKeySubstitutionOpt to do replacements over the role keys if it is present
+     * Finally, if the roleGroupMappingStrategy is present, it will use it to get the roles for the roleGroup
+     * @param user
+     * @param roleList
+     * @param rolePatterns
+     * @param removeRolePrefix
+     * @param roleKeySubstitutionOpt
+     * @param identityProviderConfiguration
+     * @throws DotDataException
+     */
     private void addIDPRoles(final User user,
                              final List<String> roleList,
                              final String[] rolePatterns,
@@ -566,9 +584,22 @@ public class SAMLHelper {
         }
     }
 
-    private static final RoleGroupMappingStrategy NOTHING_ROLE_GROUP_MAPPING_STRATEGY = (roleGroupKey, identityProviderConfiguration) -> List.of(roleGroupKey);
-    private static Map<String, RoleGroupMappingStrategy> roleGroupMappingStrategiesMap =
-            new ConcurrentHashMap<>(Map.of("saml.roles.group.mapping.strategy.bycontenttype", new ContentTypeRoleGroupMappingStrategyImpl()));
+    /**
+     * Allows to add a new strategy via osgi by strategyName
+     * @param strategyNameId String unique name for the strategy
+     * @param roleGroupMappingStrategy
+     */
+    public static void addRoleGroupMappingStrategy(final String strategyNameId, final RoleGroupMappingStrategy roleGroupMappingStrategy) {
+        Logger.debug(SAMLHelper.class, ()-> "Adding the role group mapping strategy: " + strategyNameId);
+        roleGroupMappingStrategiesMap.put(strategyNameId, roleGroupMappingStrategy);
+    }
+
+    public static void removeRoleGroupMappingStrategy(final String strategyNameId) {
+        if (roleGroupMappingStrategiesMap.containsKey(strategyNameId)) {
+            Logger.debug(SAMLHelper.class, ()-> "Removing the role group mapping strategy: " + strategyNameId);
+            roleGroupMappingStrategiesMap.remove(strategyNameId);
+        }
+    }
 
     private RoleGroupMappingStrategy getRoleGroupMappingStrategy(final IdentityProviderConfiguration identityProviderConfiguration) {
 
@@ -576,7 +607,7 @@ public class SAMLHelper {
         return identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_ROLE_GROUP_MAPPING_STRATEGY.getPropertyName())?
                 roleGroupMappingStrategiesMap.get(
                     identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_ROLE_GROUP_MAPPING_STRATEGY.getPropertyName()).toString()):
-                NOTHING_ROLE_GROUP_MAPPING_STRATEGY;
+                DEFAULT_ROLE_GROUP_MAPPING_STRATEGY;
     }
 
     protected String processReplacement(final String role, final Optional<Tuple2<String, String>> roleKeySubstitutionOpt) {
