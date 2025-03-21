@@ -12,7 +12,7 @@ import java.util.Objects;
  */
 public class VanitiesRequestMatcher implements RequestMatcher {
 
-    public static final String VANITIES_MATCHER_ID = "rules";
+    public static final String VANITIES_MATCHER_ID = "vanities";
 
     @Override
     public boolean runAfterRequest() {
