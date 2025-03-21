@@ -41,4 +41,14 @@ public class MailerWrapperImpl implements MailerWrapper {
     public void setFromName(String s) {
         mailer.setFromName(s);
     }
+
+    @Override
+    public void setHTMLAndTextBody(String emailText) {
+        mailer.setHTMLAndTextBody(emailText);
+    }
+
+    @Override
+    public void setTextBody(String emailText) {
+        mailer.setTextBody(emailText);
+    }
 }

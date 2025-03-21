@@ -8,5 +8,7 @@ public interface MailerWrapper {
     void setFromEmail(String email);
     void sendMessage();
     void setFromName(String s);
+    void setHTMLAndTextBody(String emailText);
+    void setTextBody(String emailText);
 }
 
