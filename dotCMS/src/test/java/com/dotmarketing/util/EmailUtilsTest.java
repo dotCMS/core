@@ -3,36 +3,62 @@ package com.dotmarketing.util;
 
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
 import static org.mockito.Mockito.*;
 
 
-public class EmailUtilsTest {
+class EmailUtilsTest {
+    private MailerWrapper mockMailer;
+    private MailerWrapperFactory mockFactory;
+    private User user;
+    private Company company;
 
-    @Test
-    public void testSendMail_setsFromEmailUsingConfigUtils() {
+    @BeforeEach
+    void setUp() {
         // Create a mock MailerWrapper.
-        MailerWrapper mockMailer = mock(MailerWrapper.class);
+        mockMailer = mock(MailerWrapper.class);
 
-        // Create a factory that always returns the mock MailerWrapper.
-        MailerWrapperFactory mockFactory = new MailerWrapperFactory() {
-            @Override
-            public MailerWrapper createMailer() {
-                return mockMailer;
-            }
-        };
+        // Factory always returns the mock MailerWrapper.
+        mockFactory = () -> mockMailer;
 
         // Override the factory in EmailUtils.
         EmailUtils.setMailerWrapperFactory(mockFactory);
 
-        // Create dummy User and Company objects.
-        User user = new User();
+        // Create common User and Company objects.
+        user = new User();
         user.setEmailAddress("john@example.com");
         user.setFirstName("John");
         user.setLastName("Doe");
-        Company company = new Company();
+
+        company = new Company();
         company.setEmailAddress("from@example.com");
         company.setName("Acme Corp");
+    }
+
+    @Test
+    void testSendMail_UsesConfiguredFromAddress_WhenSet() {
+        String configuredFromEmail = "configured@example.com";
+
+        try (MockedStatic<Config> mockedConfig = mockStatic(Config.class)) {
+            // Simulate DOT_MAIL_FROM_ADDRESS being set
+            mockedConfig.when(() -> Config.getStringProperty("DOT_MAIL_FROM_ADDRESS", "from@example.com"))
+                    .thenReturn(configuredFromEmail);
+
+            // Act
+            EmailUtils.sendMail(user, company, "Test Subject", "Test Body");
+
+            // Assert
+            verify(mockMailer).setFromEmail(configuredFromEmail);
+            verify(mockMailer).sendMessage();
+        }
+    }
+
+    @Test
+    void testSendMail_UsesFallbackEmail_WhenNoConfigSet() {
+        String fallbackEmail = "from@example.com"; // Should default to company email
 
         // Call the static sendMail method.
         EmailUtils.sendMail(user, company, "Test Subject", "Test Body");
