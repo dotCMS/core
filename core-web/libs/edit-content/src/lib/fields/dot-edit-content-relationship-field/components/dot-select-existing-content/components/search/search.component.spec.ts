@@ -109,15 +109,18 @@ describe('SearchComponent', () => {
             const formValues = component.form.getRawValue();
             expect(formValues).toEqual({
                 query: '',
-                languageId: -1,
-                siteId: ''
+                systemSearchableFields: {
+                    languageId: -1,
+                    siteId: ''
+                }
             });
         });
 
         it('should have valid form controls', () => {
             expect(component.form.get('query')).toBeTruthy();
-            expect(component.form.get('languageId')).toBeTruthy();
-            expect(component.form.get('siteId')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields').get('languageId')).toBeTruthy();
+            expect(component.form.get('systemSearchableFields').get('siteId')).toBeTruthy();
         });
     });
 
@@ -126,8 +129,10 @@ describe('SearchComponent', () => {
             // Set some values in the form
             component.form.patchValue({
                 query: 'test query',
-                languageId: 1,
-                siteId: 'site1'
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: 'site1'
+                }
             });
         });
 
@@ -137,8 +142,10 @@ describe('SearchComponent', () => {
             const formValues = component.form.getRawValue();
             expect(formValues).toEqual({
                 query: '',
-                languageId: -1,
-                siteId: ''
+                systemSearchableFields: {
+                    languageId: -1,
+                    siteId: ''
+                }
             });
         });
 
@@ -155,8 +162,10 @@ describe('SearchComponent', () => {
         it('should emit form values and hide overlay panel', () => {
             const searchParams: SearchParams = {
                 query: 'test search',
-                languageId: 2,
-                siteId: 'site123'
+                systemSearchableFields: {
+                    languageId: 2,
+                    siteId: 'site123'
+                }
             };
 
             const hideSpy = jest.spyOn(component.$overlayPanel(), 'hide');
@@ -176,8 +185,7 @@ describe('SearchComponent', () => {
 
             expect(searchSpy).toHaveBeenCalledWith({
                 query: '',
-                languageId: -1,
-                siteId: ''
+                systemSearchableFields: {}
             });
         });
 
@@ -211,8 +219,10 @@ describe('SearchComponent', () => {
 
             component.form.patchValue({
                 query: 'test search',
-                languageId: 1,
-                siteId: 'site123'
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: 'site123'
+                }
             });
 
             const openFiltersButton = spectator.query(
@@ -225,16 +235,20 @@ describe('SearchComponent', () => {
 
             expect(searchSpy).toHaveBeenCalledWith({
                 query: 'test search',
-                languageId: 1,
-                siteId: 'site123'
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: 'site123'
+                }
             });
         });
 
         it('should clear form when clear button is clicked', () => {
             component.form.patchValue({
                 query: 'test query',
-                languageId: 1,
-                siteId: 'site123'
+                systemSearchableFields: {
+                    languageId: 1,
+                    siteId: 'site123'
+                }
             });
 
             const openFiltersButton = spectator.query(
@@ -247,8 +261,10 @@ describe('SearchComponent', () => {
 
             expect(component.form.getRawValue()).toEqual({
                 query: '',
-                languageId: -1,
-                siteId: ''
+                systemSearchableFields: {
+                    languageId: -1,
+                    siteId: ''
+                }
             });
         });
     });
