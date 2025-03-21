@@ -1,0 +1,42 @@
+<!-- Activities List -->
+@if ($isLoading()) {
+    <dot-edit-content-sidebar-activities-skeleton />
+} @else if ($activities().length === 0) {
+    <span class="activities__empty" data-testid="empty-state">
+        {{ 'edit.content.sidebar.activities.empty' | dm }}
+    </span>
+} @else {
+    <ul class="activities__list" data-testid="activities-list">
+        @for (activity of $activities(); track activity.taskId) {
+            <li class="activities__item" data-testid="activity-item">
+                <div class="activities__header">
+                    <p-avatar
+                        dotGravatar
+                        [email]="activity.email"
+                        label="P"
+                        styleClass="mr-2 activities__avatar"
+                        shape="circle"
+                        [style]="{
+                            'width.px': 21,
+                            'height.px': 21,
+                            'font-size.px': 8,
+                            'line-height.px': 21
+                        }" />
+                    <span class="activities__user" data-testid="activity-user">
+                        {{ activity.postedBy }}
+                    </span>
+                    <span class="activities__date" data-testid="activity-date">
+                        {{ activity.createdDate | dotRelativeDate }}
+                    </span>
+                </div>
+                <span class="activities__description" data-testid="activity-description">
+                    {{ activity.commentDescription }}
+                </span>
+            </li>
+        } @empty {
+            <span class="activities__empty" data-testid="empty-state">
+                {{ 'edit.content.sidebar.activities.no.activities' | dm }}
+            </span>
+        }
+    </ul>
+}

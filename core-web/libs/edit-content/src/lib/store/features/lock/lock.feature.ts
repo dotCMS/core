@@ -5,8 +5,7 @@ import {
     type,
     withComputed,
     withHooks,
-    withMethods,
-    withState
+    withMethods
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -23,8 +22,7 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
 
-import { ContentState } from './content.feature';
-import { UserState } from './user.feature';
+import { EditContentState } from '../../edit-content.store';
 
 export interface LockState {
     lockError: string | null;
@@ -40,8 +38,7 @@ export const initialLockState: LockState = {
 
 export function withLock() {
     return signalStoreFeature(
-        { state: type<ContentState & UserState>() },
-        withState(initialLockState),
+        { state: type<EditContentState>() },
 
         withComputed((store, dotMessageService = inject(DotMessageService)) => ({
             /**

@@ -48,7 +48,7 @@
 
             <!-- Workflow section -->
 
-            <dot-edit-content-sidebar-section [title]="'Workflow' | dm">
+            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.workflow.title' | dm">
                 <dot-edit-content-sidebar-workflow
                     [workflowSelection]="$workflowSelection()"
                     [(showDialog)]="$showDialog"
@@ -58,6 +58,15 @@
                     [workflow]="$workflow()"
                     [isLoading]="$store.isLoadingWorkflow()"
                     data-testId="workflow" />
+            </dot-edit-content-sidebar-section>
+
+            <!-- Activities section -->
+            <dot-edit-content-sidebar-section
+                [title]="'edit.content.sidebar.activities.title' | dm">
+                <dot-edit-content-sidebar-activities
+                    [activities]="$activities()"
+                    [state]="$activitiesStatus()"
+                    data-testId="activities" />
             </dot-edit-content-sidebar-section>
         </p-tabPanel>
 

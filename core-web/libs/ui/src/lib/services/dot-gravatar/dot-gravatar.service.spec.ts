@@ -3,7 +3,7 @@ import md5 from 'md5';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
-import { DotGravatarService } from './dot-gravatar-service';
+import { DotGravatarService } from './dot-gravatar.service';
 
 const mockProfile = {
     displayName: 'admindotcms',

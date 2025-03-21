@@ -1,0 +1,76 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+}
+
+// Empty State
+.activities__empty {
+    display: block;
+    color: $color-palette-gray-800;
+    font-weight: $font-weight-regular-bold;
+}
+
+// List Elements
+.activities__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+}
+
+.activities__item {
+    padding: $spacing-2 0;
+    border-bottom: 1px solid $color-palette-gray-300;
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.activities__header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: $spacing-1;
+}
+
+.activities__user {
+    color: $black;
+    font-weight: $font-weight-bold;
+    font-size: $font-size-md;
+}
+
+.activities__date {
+    color: $black;
+    font-size: $font-size-sm;
+    margin-left: auto;
+}
+
+.activities__description {
+    display: block;
+    color: $color-palette-gray-800;
+    font-size: $font-size-md;
+    line-height: 140%;
+}
+
+// Custom styles for PrimeNG components
+::ng-deep {
+    // Usando la clase personalizada que agregamos
+    .p-avatar.activities__avatar {
+        width: 21px;
+        height: 21px;
+        font-size: $font-size-xs;
+        line-height: 21px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .p-avatar-text {
+            font-size: $font-size-xs;
+            line-height: 1;
+        }
+    }
+}
