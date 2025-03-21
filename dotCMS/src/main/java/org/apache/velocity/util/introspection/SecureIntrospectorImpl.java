@@ -113,6 +113,8 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
 			return true;
 		}
 
+
+
         /**
          * Always allow Class.getName()
          */
@@ -121,6 +123,20 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         {
             return true;
         }
+
+        // backporting
+        // https://github.com/apache/velocity-engine/pull/21/files
+        //
+        /**
+         * Always disallow ClassLoader, Thread and subclasses
+         */
+        if (ClassLoader.class.isAssignableFrom(clazz) ||
+                Thread.class.isAssignableFrom(clazz))
+        {
+            return false;
+        }
+
+
 
         /**
          * check the classname (minus any array info)
