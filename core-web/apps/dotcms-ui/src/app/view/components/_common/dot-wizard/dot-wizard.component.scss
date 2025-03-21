@@ -5,14 +5,11 @@
 }
 
 .dot-wizard__step {
-    width: 100%;
-    flex: 0 0 100%;
-    overflow-x: hidden;
+    width: $form-width;
+    flex-shrink: 0;
     opacity: 0;
     visibility: hidden;
-    transition:
-        opacity 0.3s ease-in-out,
-        visibility 0.3s ease-in-out;
+    transition: all $basic-speed ease-in-out;
 
     &--visible {
         opacity: 1;
@@ -21,61 +18,16 @@
 }
 
 .dot-wizard__view {
-    width: 100%;
-    max-width: $form-width;
+    width: $form-width;
     overflow: hidden;
-    position: relative;
 }
 
 .dot-wizard__container {
     display: flex;
-    transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    width: 100%;
 }
 
 .dot-wizard__footer {
     display: flex;
     justify-content: flex-end;
     gap: $spacing-1;
-    margin-top: $spacing-2;
-}
-
-// Simplified skeleton styles
-.dot-wizard__skeleton {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: $spacing-2;
-
-    &-item {
-        height: 2rem;
-        margin-bottom: $spacing-2;
-        position: relative;
-        overflow: hidden;
-
-        &::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            animation: skeleton-shine 1.5s infinite;
-        }
-
-        &--short {
-            width: 60%;
-        }
-    }
-}
-
-@keyframes skeleton-shine {
-    0% {
-        transform: translateX(-100%);
-    }
-    100% {
-        transform: translateX(100%);
-    }
 }
