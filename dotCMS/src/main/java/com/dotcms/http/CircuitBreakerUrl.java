@@ -10,6 +10,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -34,6 +35,8 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -381,6 +384,13 @@ public class CircuitBreakerUrl {
         if (UtilMethods.isSet(contentLengthHeader)) {
             response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
         }
+    }
+
+    public static Map<String, String> authHeaders(final String token) {
+        return ImmutableMap.<String, String>builder()
+                .put(HttpHeaders.AUTHORIZATION, token)
+                .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                .build();
     }
 
     /**
