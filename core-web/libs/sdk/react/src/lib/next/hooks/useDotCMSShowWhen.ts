@@ -13,26 +13,26 @@ import { UVE_MODE } from '@dotcms/uve/types';
  *
  * @example
  * // Basic usage: Check if the UVE is in edit mode
- * const showInEditMode = useShowInUVE(UVE_MODE.EDIT);
+ * const showInEditMode = useDotCMSShowWhen(UVE_MODE.EDIT);
  * if (showInEditMode) {
  *     // Render edit-specific components
  * }
  *
  * @example
  * // Check if the UVE is in preview mode
- * const showInPreviewMode = useShowInUVE(UVE_MODE.PREVIEW);
+ * const showInPreviewMode = useDotCMSShowWhen(UVE_MODE.PREVIEW);
  * if (showInPreviewMode) {
  *     // Render preview-specific components
  * }
  *
  * @example
  * // Check if the UVE is in live mode
- * const showInLiveMode = useShowInUVE(UVE_MODE.LIVE);
+ * const showInLiveMode = useDotCMSShowWhen(UVE_MODE.LIVE);
  * if (showInLiveMode) {
  *     // Render live-specific components
  * }
  */
-export const useShowInUVE = (when: UVE_MODE): boolean => {
+export const useDotCMSShowWhen = (when: UVE_MODE): boolean => {
     const [show, setShow] = useState(false);
 
     useEffect(() => {

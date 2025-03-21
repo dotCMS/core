@@ -10,6 +10,10 @@ import { DotCMSPageComponent, DotCMSPageContext } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
 
 /**
+ * @deprecated This service is deprecated and will be removed in future versions.
+ * Please use the new Page Context service from the main SDK.
+ * For more information, refer to the migration guide in the documentation.
+ *
  * @author dotCMS
  * @description This service is responsible for managing the page context.
  * @export
