@@ -12,7 +12,6 @@ import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { ContentletIdentifier } from '../../../models/dot-edit-content-field.type';
-
 import { Activity } from '../../../models/dot-edit-content-file.model';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EditContentState } from '../../edit-content.store';
