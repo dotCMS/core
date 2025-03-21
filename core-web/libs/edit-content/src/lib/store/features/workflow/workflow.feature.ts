@@ -5,8 +5,7 @@ import {
     type,
     withComputed,
     withHooks,
-    withMethods,
-    withState
+    withMethods
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
@@ -31,20 +30,16 @@ import {
 import {
     ComponentStatus,
     DotCMSWorkflow,
-    DotCMSWorkflowAction,
     DotContentletDepths,
     WorkflowStep,
     WorkflowTask
 } from '@dotcms/dotcms-models';
 import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
-import { ContentState } from './content.feature';
-import { LockState } from './lock.feature';
-
-import { parseCurrentActions } from '../../utils/workflows.utils';
-import { EditContentRootState } from '../edit-content.store';
-
-export type CurrentContentActionsWithScheme = Record<string, DotCMSWorkflowAction[]>;
+import { CurrentContentActionsWithScheme } from '../../../models/dot-edit-content-field.type';
+import { parseCurrentActions } from '../../../utils/workflows.utils';
+import { EditContentState } from '../../edit-content.store';
+import { LockState } from '../lock/lock.feature';
 
 // Define the extended lock state that includes the computed properties
 export interface ExtendedLockState extends LockState {
@@ -71,17 +66,6 @@ export interface WorkflowState {
     };
 }
 
-export const workflowInitialState: WorkflowState = {
-    currentSchemeId: null,
-    currentContentActions: {},
-    currentStep: null,
-    lastTask: null,
-    workflow: {
-        status: ComponentStatus.INIT,
-        error: null
-    }
-};
-
 /**
  * Signal store feature that manages the workflow component state in the edit content sidebar
  * Handles loading states, error handling, and workflow status for the current contentlet
@@ -90,8 +74,7 @@ export const workflowInitialState: WorkflowState = {
  */
 export function withWorkflow() {
     return signalStoreFeature(
-        { state: type<EditContentRootState & ContentState>() },
-        withState(workflowInitialState),
+        { state: type<EditContentState>() },
         withComputed((store) => ({
             /**
              * Computed property that determines if the workflow component is in a loading state

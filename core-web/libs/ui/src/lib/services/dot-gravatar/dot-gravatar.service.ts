@@ -25,7 +25,6 @@ interface DotProfile {
 /**
  * Connect with Gravatar API
  *
- * @deprecated Use the `DotGravatarService` from the `@dotcms/ui` package instead.
  * @export
  * @class DotGravatarService
  */

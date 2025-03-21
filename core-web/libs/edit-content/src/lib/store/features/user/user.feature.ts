@@ -1,5 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStoreFeature, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -25,7 +25,6 @@ export const userInitialState: UserState = {
  */
 export function withUser() {
     return signalStoreFeature(
-        withState(userInitialState),
         withMethods(
             (
                 store,

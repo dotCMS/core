@@ -1,6 +1,6 @@
 import { DotCMSWorkflow, DotCMSWorkflowAction, WorkflowStep } from '@dotcms/dotcms-models';
 
-import { CurrentContentActionsWithScheme } from '../store/features/workflow.feature';
+import { CurrentContentActionsWithScheme } from '../models/dot-edit-content-field.type';
 
 /**
  * Parses an array of workflow data and returns a new object with key-value pairs.

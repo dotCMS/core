@@ -4,6 +4,9 @@ import { Avatar } from 'primeng/avatar';
 
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 
+/**
+ * @deprecated Use the `DotGravatarDirective` from the `@dotcms/ui` package instead.
+ */
 @Directive({
     selector: 'p-avatar[dotGravatar]',
     standalone: true

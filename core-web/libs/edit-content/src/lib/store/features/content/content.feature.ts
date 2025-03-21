@@ -1,12 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStoreFeature,
-    type,
-    withComputed,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
 
@@ -35,12 +28,10 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotContentletState } from '@dotcms/edit-content/models/dot-edit-content.model';
 
-import { WorkflowState } from './workflow.feature';
-
-import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { transformFormDataFn } from '../../utils/functions.util';
-import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
-import { EditContentRootState } from '../edit-content.store';
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { transformFormDataFn } from '../../../utils/functions.util';
+import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
+import { EditContentState } from '../../edit-content.store';
 
 export interface ContentState {
     /** ContentType full data */
@@ -68,8 +59,7 @@ export const contentInitialState: ContentState = {
 
 export function withContent() {
     return signalStoreFeature(
-        { state: type<EditContentRootState & WorkflowState>() },
-        withState(contentInitialState),
+        { state: type<EditContentState>() },
         withComputed((store) => ({
             /**
              * Computed property that determines if the content is new.
