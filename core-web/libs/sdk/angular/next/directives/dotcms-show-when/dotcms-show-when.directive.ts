@@ -1,4 +1,4 @@
-import { Directive, Input, OnInit, ViewContainerRef, TemplateRef } from '@angular/core';
+import { Directive, Input, ViewContainerRef, TemplateRef, inject } from '@angular/core';
 
 import { getUVEState } from '@dotcms/uve';
 import { UVE_MODE, UVEState } from '@dotcms/uve/types';
@@ -13,40 +13,34 @@ import { UVE_MODE, UVEState } from '@dotcms/uve/types';
  *
  * @export
  * @class DotCMSShowWhenDirective
- * @implements {OnInit}
  */
 @Directive({
     selector: '[dotCMSShowWhen]',
     standalone: true
 })
-export class DotCMSShowWhenDirective implements OnInit {
-    #mode: UVE_MODE = UVE_MODE.EDIT;
+export class DotCMSShowWhenDirective {
+    #when: UVE_MODE = UVE_MODE.EDIT;
+    #hasView = false;
 
-    @Input() set mode(value: UVE_MODE) {
-        this.#mode = value;
+    @Input() set dotCMSShowWhen(value: UVE_MODE) {
+        this.#when = value;
         this.updateViewContainer();
     }
 
-    get shouldShow(): boolean {
-        const state: UVEState | undefined = getUVEState();
-
-        return state?.mode === this.#mode;
-    }
-
-    constructor(
-        private viewContainer: ViewContainerRef,
-        private templateRef: TemplateRef<unknown>
-    ) {}
-
-    ngOnInit(): void {
-        this.updateViewContainer();
-    }
+    #viewContainerRef = inject(ViewContainerRef);
+    #templateRef = inject(TemplateRef);
 
     private updateViewContainer() {
-        if (this.shouldShow) {
-            this.viewContainer.createEmbeddedView(this.templateRef);
-        } else {
-            this.viewContainer.clear();
+        const state: UVEState | undefined = getUVEState();
+
+        const shouldShow = state?.mode === this.#when;
+
+        if (shouldShow && !this.#hasView) {
+            this.#viewContainerRef.createEmbeddedView(this.#templateRef);
+            this.#hasView = true;
+        } else if (!shouldShow && this.#hasView) {
+            this.#viewContainerRef.clear();
+            this.#hasView = false;
         }
     }
 }
