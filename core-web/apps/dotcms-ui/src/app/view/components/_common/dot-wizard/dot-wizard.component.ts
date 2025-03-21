@@ -40,6 +40,7 @@ export class DotWizardComponent implements OnDestroy {
     wizardData: { [key: string]: string };
     $dialogActions = signal<DotDialogActions | null>(null);
     transform = '';
+    $stepsVisible = signal<boolean>(false);
 
     @Input() data: DotWizardInput;
     @ViewChildren(DotContainerReferenceDirective)
@@ -76,7 +77,10 @@ export class DotWizardComponent implements OnDestroy {
                 this.setDialogActions();
                 this.cd.detectChanges();
                 this.focusFistFormElement();
-            }, 1000);
+                setTimeout(() => {
+                    this.$stepsVisible.set(true);
+                }, 300);
+            }, 0);
         });
     }
 
@@ -93,6 +97,7 @@ export class DotWizardComponent implements OnDestroy {
         this.data = null;
         this.currentStep = 0;
         this.updateTransform();
+        this.$stepsVisible.set(false);
     }
 
     /**

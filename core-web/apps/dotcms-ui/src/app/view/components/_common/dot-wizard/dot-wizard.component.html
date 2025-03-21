@@ -15,7 +15,9 @@
                 class="dot-wizard__container"
                 (keydown.tab)="handleTab($event)">
                 @for (step of data.steps; track $index) {
-                    <div class="dot-wizard__step">
+                    <div
+                        class="dot-wizard__step"
+                        [class.dot-wizard__step--visible]="$stepsVisible()">
                         <ng-template dotContainerReference></ng-template>
                     </div>
                 }
