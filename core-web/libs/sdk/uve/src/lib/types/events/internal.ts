@@ -1,10 +1,10 @@
 /**
- * Actions received from the dotCMS UVE
+ * Actions received from the dotcms editor
  *
- * @internal
- * @enum {string}
+ * @export
+ * @enum {number}
  */
-export enum __NOTIFY_CLIENT__ {
+export enum __DOTCMS_UVE_EVENT__ {
     /**
      * Request to page to reload
      */
