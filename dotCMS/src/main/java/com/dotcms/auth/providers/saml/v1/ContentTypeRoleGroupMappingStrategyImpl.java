@@ -4,6 +4,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.SamlName;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -80,31 +82,38 @@ public class ContentTypeRoleGroupMappingStrategyImpl implements RoleGroupMapping
             final ContentType roleMapContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(roleMapKeyName);
             if (Objects.nonNull(roleMapContentType)) {
 
-                final List<Contentlet> roleMapContentlets = APILocator.getContentletAPI().findByStructure(roleMapContentType.id(),
-                        APILocator.systemUser(), false, 0, 0);
-                if (UtilMethods.isSet(roleMapContentlets)) {
-
-                    Logger.debug(this, () -> "Role Map Contentlets: " + roleMapContentlets.size());
-
-                    for (final Contentlet roleMapContentlet : roleMapContentlets) {
-
-                        final String roleGroupKey = roleMapContentlet.getStringProperty(roleMapFieldKeyName);
-                        final String roleKeyCommaSeparatedList = roleMapContentlet.getStringProperty(roleMapKeyValuesName);
-
-                        Logger.debug(this, () -> "Role Group Key: " + roleGroupKey +
-                                ", Role Key Comma Separated List: " + roleKeyCommaSeparatedList);
-
-                        if (UtilMethods.isSet(roleKeyCommaSeparatedList)) {
-
-                            this.roleKeyMappingsMap.put(roleGroupKey, Arrays.asList(StringUtils.split(roleKeyCommaSeparatedList, StringPool.COMMA)));
-                        } else {
-                            Logger.debug(this, () -> "Empty Role Map found for this key: " + roleGroupKey);
-                        }
-                    }
-                }
+                loadMappingRoles(roleMapContentType, roleMapFieldKeyName, roleMapKeyValuesName);
             }
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
+        }
+    }
+
+    private void loadMappingRoles(final ContentType roleMapContentType,
+                                  final String roleMapFieldKeyName,
+                                  final String roleMapKeyValuesName) throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> roleMapContentlets = APILocator.getContentletAPI().findByStructure(roleMapContentType.id(),
+                APILocator.systemUser(), false, 0, 0);
+        if (UtilMethods.isSet(roleMapContentlets)) {
+
+            Logger.debug(this, () -> "Role Map Contentlets: " + roleMapContentlets.size());
+
+            for (final Contentlet roleMapContentlet : roleMapContentlets) {
+
+                final String roleGroupKey = roleMapContentlet.getStringProperty(roleMapFieldKeyName);
+                final String roleKeyCommaSeparatedList = roleMapContentlet.getStringProperty(roleMapKeyValuesName);
+
+                Logger.debug(this, () -> "Role Group Key: " + roleGroupKey +
+                        ", Role Key Comma Separated List: " + roleKeyCommaSeparatedList);
+
+                if (UtilMethods.isSet(roleKeyCommaSeparatedList)) {
+
+                    this.roleKeyMappingsMap.put(roleGroupKey, Arrays.asList(StringUtils.split(roleKeyCommaSeparatedList, StringPool.COMMA)));
+                } else {
+                    Logger.debug(this, () -> "Empty Role Map found for this key: " + roleGroupKey);
+                }
+            }
         }
     }
 }
