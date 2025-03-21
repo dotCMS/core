@@ -44,7 +44,37 @@ export class DotRelativeDatePipe implements PipeTransform {
         const showRelativeTime = validTimeAfter ? diffTime < timeStampAfter : true;
 
         if (diffTime === 0 && showRelativeTime) {
-            return this.dotMessageService.get('Now');
+            const nowTimestamp = new Date().getTime();
+            const inputTimestamp = new Date(time).getTime();
+            const diffInSeconds = Math.abs(nowTimestamp - inputTimestamp) / 1000;
+
+            // Only consider dates in the past or now
+            // If it's a future date with the same day, we use the standard format
+            if (inputTimestamp > nowTimestamp) {
+                return this.dotFormatDateService.getRelative(endDate);
+            }
+
+            // Less than 30 seconds
+            if (diffInSeconds < 30) {
+                return this.dotMessageService.get('relative.date.now');
+            }
+
+            // Less than 2 minutes
+            if (diffInSeconds < 120) {
+                return this.dotMessageService.get('relative.date.minute.ago');
+            }
+
+            // Less than 1 hour
+            if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return this.dotMessageService.get('relative.date.minutes.ago', minutes.toString());
+            }
+
+            // Less than 24 hours
+            if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return this.dotMessageService.get('relative.date.hours.ago', hours.toString());
+            }
         }
 
         return showRelativeTime

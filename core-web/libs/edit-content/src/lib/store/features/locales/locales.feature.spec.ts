@@ -18,12 +18,12 @@ import {
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
-import { contentInitialState } from './content.feature';
 import { withLocales } from './locales.feature';
-import { workflowInitialState } from './workflow.feature';
 
-import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { initialRootState } from '../../store/edit-content.store';
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { initialRootState } from '../../edit-content.store';
+import { contentInitialState } from '../content/content.feature';
+import { workflowInitialState } from '../workflow/workflow.feature';
 
 const MOCK_LANGUAGES = [
     { id: 1, isoCode: 'en-us', translated: true },

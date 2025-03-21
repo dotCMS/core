@@ -4,7 +4,7 @@ import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { fakeAsync, tick, flush } from '@angular/core/testing';
+import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -19,7 +19,6 @@ import {
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
-import { contentInitialState, ContentState } from './content.feature';
 import { withWorkflow } from './workflow.feature';
 
 import {
@@ -27,10 +26,11 @@ import {
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
     MOCK_WORKFLOW_DATA,
     MOCK_WORKFLOW_STATUS
-} from '../../utils/edit-content.mock';
-import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
-import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
-import { initialRootState } from '../edit-content.store';
+} from '../../../utils/edit-content.mock';
+import { CONTENT_TYPE_MOCK } from '../../../utils/mocks';
+import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
+import { initialRootState } from '../../edit-content.store';
+import { contentInitialState, ContentState } from '../content/content.feature';
 
 const mockInitialStateWithContent: ContentState = {
     ...contentInitialState,

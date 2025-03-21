@@ -1,14 +1,11 @@
-import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 
-import { FormValues } from '../../models/dot-edit-content-form.interface';
+import { FormValues } from '../../../models/dot-edit-content-form.interface';
+import { EditContentState } from '../../edit-content.store';
 
 export interface FormState {
     formValues: FormValues;
 }
-
-const initialState: FormState = {
-    formValues: {}
-};
 
 /**
  * Feature that handles the form's state.
@@ -17,8 +14,7 @@ const initialState: FormState = {
  */
 export function withForm() {
     return signalStoreFeature(
-        withState(initialState),
-
+        { state: type<EditContentState>() },
         withMethods((store) => ({
             /**
              * Handles the form change event and stores the form values.

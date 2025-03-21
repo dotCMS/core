@@ -13,11 +13,12 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotContentletCanLock, DotCurrentUser } from '@dotcms/dotcms-models';
 
-import { contentInitialState } from './content.feature';
 import { initialLockState, withLock } from './lock.feature';
-import { userInitialState } from './user.feature';
 
-import { initialRootState } from '../edit-content.store';
+import { initialRootState } from '../../edit-content.store';
+import { contentInitialState } from '../content/content.feature';
+import { userInitialState } from '../user/user.feature';
+
 
 describe('LockFeature', () => {
     let spectator: SpectatorService<any>;

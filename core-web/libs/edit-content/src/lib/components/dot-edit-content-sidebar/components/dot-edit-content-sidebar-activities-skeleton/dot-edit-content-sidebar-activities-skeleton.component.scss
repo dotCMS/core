@@ -1,0 +1,15 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+}
+
+.activities__skeleton-item {
+    padding: $spacing-2 0;
+    margin-bottom: $spacing-1;
+}
+
+.activities__skeleton-item:last-child {
+    border-bottom: none;
+}
