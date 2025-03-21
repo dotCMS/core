@@ -83,6 +83,7 @@ export class SearchComponent {
     clearForm() {
         this.form.reset();
         this.$overlayPanel().hide();
+        this.onSearch.emit({});
     }
 
     /**

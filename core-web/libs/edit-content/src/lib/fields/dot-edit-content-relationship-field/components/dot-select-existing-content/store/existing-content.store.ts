@@ -183,7 +183,10 @@ export const ExistingContentStore = signalStore(
                             queryParams.globalSearch = searchParams.query;
                         }
 
-                        if (Object.keys(searchParams.systemSearchableFields).length > 0) {
+                        if (
+                            searchParams.systemSearchableFields &&
+                            Object.keys(searchParams.systemSearchableFields).length > 0
+                        ) {
                             queryParams.systemSearchableFields = {
                                 ...searchParams.systemSearchableFields
                             };
