@@ -51,6 +51,15 @@ public class EmailUtils {
    
 	@SuppressWarnings({ "unchecked"})
 
+	// Use a MailerWrapperFactory to create Mailer instances.
+	private static MailerWrapperFactory mailerFactory = new MailerWrapperFactoryImpl();
+
+
+	// Allow overriding the factory (e.g., for tests).
+	public static void setMailerWrapperFactory(MailerWrapperFactory factory) {
+		mailerFactory = factory;
+	}
+
 	public static  void  SendContentSubmitEmail (Map <String, String> map, Structure structure,
 			List<String> emails) {
 		Map<String, String> parameters = new HashMap<>();
@@ -432,14 +441,14 @@ public class EmailUtils {
 
 		final ConfigurationHelper helper = ConfigurationHelper.INSTANCE;
 
-		final Mailer mailer = new Mailer();
+		final MailerWrapper mailer = mailerFactory.createMailer();
 		mailer.setToEmail(user.getEmailAddress());
 		mailer.setToName(user.getFullName());
 		mailer.setSubject(subject);
 		mailer.setHTMLBody(body);
 
 		final Tuple2<String, String> mailAndSender = helper.parseMailAndSender(company.getEmailAddress());
-		mailer.setFromEmail(mailAndSender._1);
+		mailer.setFromEmail(ConfigUtils.getGlobalFromAddressOrFallback(mailAndSender._1));
 		mailer.setFromName(  UtilMethods.isSet(mailAndSender._2) ? mailAndSender._2 : company.getName() );
 		mailer.sendMessage();
 
