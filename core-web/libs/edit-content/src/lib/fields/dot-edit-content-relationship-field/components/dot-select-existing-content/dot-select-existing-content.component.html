@@ -10,12 +10,6 @@
             class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base">
             <p>{{ store.errorMessage() | dm }}</p>
         </div>
-    } @else if (data.length === 0) {
-        <div
-            class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base gap-2">
-            <i class="pi pi-folder-open"></i>
-            <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
-        </div>
     } @else {
         <p-table
             [columns]="columns"
@@ -95,6 +89,16 @@
                         </span>
                         <p-sortIcon [field]="'modDate'" />
                     </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td [colSpan]="columns.length + 5">
+                        <div class="flex justify-content-center p-6 text-base gap-2">
+                            <i class="pi pi-folder-open"></i>
+                            <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
+                        </div>
+                    </td>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-item let-columns="columns">

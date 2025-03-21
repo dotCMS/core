@@ -1,9 +1,11 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
+
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export enum ESOrderDirectionSearch {
     ASC = 'ASC',
@@ -21,11 +23,19 @@ export interface EsQueryParamsSearch {
     sortOrder?: ESOrderDirectionSearch;
 }
 
+export interface DotContentSearchParams {
+    globalSearch?: string;
+    systemSearchableFields?: Record<string, unknown>;
+    searchableFieldsByContentType?: Record<string, Record<string, unknown>>;
+    page?: number;
+    perPage?: number;
+}
+
 @Injectable({
     providedIn: 'root'
 })
 export class DotContentSearchService {
-    constructor(private http: HttpClient) {}
+    readonly #http = inject(HttpClient);
 
     /**
      * Returns a list of contentlets from Elastic Search endpoint
@@ -34,7 +44,7 @@ export class DotContentSearchService {
      * @memberof DotESContentService
      */
     public get<T>({ query, limit = 0, offset = 0 }: EsQueryParamsSearch): Observable<T> {
-        return this.http
+        return this.#http
             .post('/api/content/_search', {
                 query,
                 sort: 'score,modDate desc',
@@ -42,5 +52,38 @@ export class DotContentSearchService {
                 offset
             })
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Searches for contentlets using the new content search API
+     * @param params Search parameters including globalSearch, systemSearchableFields, page, and perPage
+     * @returns Observable with an array of DotCMSContentlet objects
+     */
+    search(params: DotContentSearchParams): Observable<DotCMSContentlet[]> {
+        const payload: Partial<DotContentSearchParams> = {};
+
+        if (params.globalSearch ?? null) {
+            payload.globalSearch = params.globalSearch;
+        }
+
+        if (params.systemSearchableFields ?? null) {
+            payload.systemSearchableFields = params.systemSearchableFields;
+        }
+
+        if (params.searchableFieldsByContentType ?? null) {
+            payload.searchableFieldsByContentType = params.searchableFieldsByContentType;
+        }
+
+        if (params.page ?? null) {
+            payload.page = params.page;
+        }
+
+        if (params.perPage ?? null) {
+            payload.perPage = params.perPage;
+        }
+
+        return this.#http
+            .post('/api/v1/content/search', payload)
+            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
     }
 }
