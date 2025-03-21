@@ -10,7 +10,7 @@ DAYS_VALID=365  # 1 years validity for development
 DOMAIN="local.dotcms.site"
 CERT_FILE_NAME="${DOMAIN}.pem"
 KEY_FILE_NAME="${DOMAIN}-key.pem"
-CERT_FOLDER=/data/shared/assets/server/certs
+CERT_FOLDER=/data/shared/assets/certs
 mkdir -p $CERT_FOLDER
 CERT_FILE="$CERT_FOLDER/$CERT_FILE_NAME"
 KEY_FILE="$CERT_FOLDER/$KEY_FILE_NAME"
