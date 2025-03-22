@@ -185,8 +185,16 @@
         <docker.data.shared.volume>${docker.run.context}_data-shared</docker.data.shared.volume>
         <docker.data.shared.volume.internal>/data/shared</docker.data.shared.volume.internal>
         <docker.container.name.pattern>${docker.run.context}_%a</docker.container.name.pattern>
-        <license.user.path>${user.home}/.dotcms/license/license.dat</license.user.path>
+        <user.dotcms.folder>${user.home}/.dotcms</user.dotcms.folder>
+        <license.user.path>${user.dotcms.folder}/license/license.dat</license.user.path>
         <license.use>false</license.use>
+        <cert.folder.path>${user.dotcms.folder}/certs</cert.folder.path>
+        <cert.prefix>localhost</cert.prefix>
+        <cert.name>${cert.prefix}.pem</cert.name>
+        <cert.key.name>${cert.prefix}-key.pem</cert.key.name>
+        <cert.file.path>${cert.folder.path}/${cert.name}</cert.file.path>
+        <cert.key.file.path>${cert.folder.path}/${cert.key.name}</cert.key.file.path>
+        <docker.cert.volume.internal>/certs</docker.cert.volume.internal>
         <dotcms.startup.timeout>300000</dotcms.startup.timeout>
         <docker.license.volume.internal>/data/local/dotsecure/license/license.dat</docker.license.volume.internal>
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
@@ -367,6 +375,7 @@
                                 <run>
                                     <ports combine.children="append">
                                         <port>tomcat.port:8080</port>
+                                        <port>tomcat.ssl.port:8443</port>
                                     </ports>
                                     <env>
                                         <CMS_JAVA_OPTS>${docker.debug.args}</CMS_JAVA_OPTS>
@@ -1253,6 +1262,40 @@
             </build>
         </profile>
         <profile>
+            <id>use-cert</id>
+            <activation>
+                <file>
+                    <exists>${cert.file.path}</exists>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${version.docker-maven.plugin}</version>
+                        <configuration>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <volumes>
+                                            <bind combine.children="append">
+                                                <volume>${cert.folder.path}:${docker.cert.volume.internal}</volume>
+                                            </bind>
+                                        </volumes>
+                                        <env>
+                                            <CMS_SSL_CERTIFICATE_FILE>${docker.cert.volume.internal}/${cert.name}</CMS_SSL_CERTIFICATE_FILE>
+                                            <CMS_SSL_CERTIFICATE_KEY_FILE>${docker.cert.volume.internal}/${cert.key.name}</CMS_SSL_CERTIFICATE_KEY_FILE>
+                                        </env>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>rewrite</id>
             <activation>
             </activation>
@@ -1490,6 +1533,8 @@
                                         <!-- Here is where you define your Ant tasks -->
                                         <!--suppress UnresolvedMavenProperty -->
                                         <echo message="DotCMS started on (use fixed with -Dtomcat.port=8080)    : http://localhost:${tomcat.port}/dotAdmin"/>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <echo message="DotCMS SSL started on (use fixed with -Dtomcat.ssl.port=8443)    : https://localhost:${tomcat.ssl.port}/dotAdmin"/>
 
                                         <!--suppress UnresolvedMavenProperty -->
                                         <echo message="Postgres started on  (use fixed with -Ddb.port=5423) : jdbc:postgresql://localhost:${db.port}/dotcms user = postgres pass = postgres"/>
@@ -1501,6 +1546,7 @@
                                         <ac:if>
                                             <ac:isset property="glowroot.port"/>
                                             <then>
+                                                <!--suppress UnresolvedMavenProperty -->
                                                 <echo message="Glowroot started on (use fixed with -Dglowroot.port=4000) : http://localhost:${glowroot.port}"/>
                                             </then>
                                         </ac:if>
