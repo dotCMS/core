@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.PortletID;
@@ -139,7 +140,7 @@ public class WorkflowEmailUtil {
 
             for (final String x : email) {
                 final Mailer mail = new Mailer();
-                mail.setFromEmail(emailAddress);
+                mail.setFromEmail(ConfigUtils.getGlobalFromAddressOrFallback(emailAddress));
                 mail.setFromName(fromName);
                 mail.setToEmail(x);
                 mail.setSubject(VelocityUtil.eval(subject, ctx));
