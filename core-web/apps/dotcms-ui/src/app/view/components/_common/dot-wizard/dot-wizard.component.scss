@@ -1,9 +1,22 @@
 @use "variables" as *;
 
+:host {
+    display: block;
+}
+
 .dot-wizard__step {
     width: $form-width;
     flex-shrink: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: all $basic-speed ease-in-out;
+
+    &--visible {
+        opacity: 1;
+        visibility: visible;
+    }
 }
+
 .dot-wizard__view {
     width: $form-width;
     overflow: hidden;
@@ -11,11 +24,10 @@
 
 .dot-wizard__container {
     display: flex;
-    transition: transform $basic-speed ease-in;
 }
 
 .dot-wizard__footer {
     display: flex;
-    justify-content: end;
+    justify-content: flex-end;
     gap: $spacing-1;
 }

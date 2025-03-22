@@ -40,6 +40,7 @@ export class DotWizardComponent implements OnDestroy {
     wizardData: { [key: string]: string };
     $dialogActions = signal<DotDialogActions | null>(null);
     transform = '';
+    $stepsVisible = signal<boolean>(false);
 
     @Input() data: DotWizardInput;
     @ViewChildren(DotContainerReferenceDirective)
@@ -71,7 +72,10 @@ export class DotWizardComponent implements OnDestroy {
                 this.setDialogActions();
                 this.cd.detectChanges();
                 this.focusFistFormElement();
-            }, 1000);
+                setTimeout(() => {
+                    this.$stepsVisible.set(true);
+                }, 250);
+            }, 0);
         });
     }
 
@@ -88,6 +92,7 @@ export class DotWizardComponent implements OnDestroy {
         this.data = null;
         this.currentStep = 0;
         this.updateTransform();
+        this.$stepsVisible.set(false);
     }
 
     /**
@@ -210,22 +215,62 @@ export class DotWizardComponent implements OnDestroy {
     }
 
     private focusFistFormElement(): void {
-        let count = 0;
-        // need to wait dynamic component to load the form.
-        const interval = setInterval(() => {
-            const form: HTMLFormElement =
-                this.componentsHost[
-                    this.currentStep
-                ].viewContainerRef.element.nativeElement.parentNode.children[0].getElementsByTagName(
-                    'form'
-                )[0];
-            if (form || count === 10) {
-                clearInterval(interval);
-                (form.elements[0] as HTMLElement).focus();
-            }
+        // Wait for Angular change detection to complete
+        setTimeout(() => {
+            const stepContainer =
+                this.componentsHost[this.currentStep].viewContainerRef.element.nativeElement
+                    .parentNode;
 
-            count++;
-        }, 200);
+            // Find all focusable elements and focus the first valid one
+            const focusableElements = this.getFocusableElements(stepContainer);
+
+            if (focusableElements.length > 0) {
+                // Try to focus the first element
+                this.attemptFocusElement(focusableElements[0]);
+            }
+        }, 100);
+    }
+
+    /**
+     * Finds all focusable elements within a container
+     * @param container The container to search within
+     * @returns Array of focusable elements
+     */
+    private getFocusableElements(container: Element): HTMLElement[] {
+        // Comprehensive selector for all potentially focusable elements
+        const selector = `
+            a[href]:not([tabindex='-1']),
+            button:not([disabled]):not([tabindex='-1']),
+            textarea:not([disabled]):not([tabindex='-1']),
+            input:not([disabled]):not([tabindex='-1']),
+            select:not([disabled]):not([tabindex='-1']),
+            [tabindex]:not([tabindex='-1']),
+            p-dropdown > .p-element,
+            p-calendar > .p-element,
+            p-inputmask > .p-element
+        `;
+
+        return Array.from(container.querySelectorAll(selector)) as HTMLElement[];
+    }
+
+    /**
+     * Attempts to focus an element with special handling for PrimeNG components
+     * @param element The element to focus
+     */
+    private attemptFocusElement(element: HTMLElement): void {
+        // For PrimeNG components, find the actual input element
+        if (element.classList.contains('p-element')) {
+            // For dropdowns
+            const dropdown = element.querySelector('input, button, .p-dropdown');
+            if (dropdown) {
+                (dropdown as HTMLElement).focus();
+
+                return;
+            }
+        }
+
+        // For standard elements
+        element.focus();
     }
 
     private setCancelButton(): DialogButton {
