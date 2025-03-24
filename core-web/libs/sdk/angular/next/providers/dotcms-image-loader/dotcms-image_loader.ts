@@ -59,7 +59,7 @@ export function provideDotCMSImageLoader(path?: string): Provider[] {
     return [
         {
             provide: IMAGE_LOADER,
-            useValue: (config: ImageLoaderConfig) => createDotCMSUrl(config, path)
+            useValue: (config: ImageLoaderConfig) => createDotCMSURL(config, path)
         }
     ];
 }
@@ -72,9 +72,7 @@ export function provideDotCMSImageLoader(path?: string): Provider[] {
  * @returns A fully qualified URL for the image
  * @internal
  */
-function createDotCMSUrl(config: ImageLoaderConfig, path?: string): string {
-    // console.log('createDotCMSUrl', config, path);
-
+function createDotCMSURL(config: ImageLoaderConfig, path?: string): string {
     const { loaderParams, src, width } = config;
     const params = loaderParams as DotCMSImageLoaderParams;
 

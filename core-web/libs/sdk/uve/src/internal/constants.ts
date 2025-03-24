@@ -1,6 +1,5 @@
-import { __NOTIFY_CLIENT__ } from './enums';
-
-import { UVECallback, UVEEvent } from '../lib/types';
+import { UVECallback, UVEEvent } from '../lib/types/editor/public';
+import { __DOTCMS_UVE_EVENT__ } from '../lib/types/events/internal';
 
 // TODO: WE NEED TO LOOK FOR ALL THE NOTIFY_CLIENT EVENTS AND ADD THEM TO THE UVE_EVENTS CONSTANT WHEN WE MIGRATE THE EDITOR TO THE NEW UVE LIBRARY
 
@@ -13,7 +12,7 @@ import { UVECallback, UVEEvent } from '../lib/types';
 export const __UVE_EVENTS__: Record<string, UVEEvent> = {
     changes: (callback: UVECallback) => {
         const messageCallback = (event: MessageEvent) => {
-            if (event.data.name === __NOTIFY_CLIENT__.UVE_SET_PAGE_DATA) {
+            if (event.data.name === __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA) {
                 callback(event.data.payload);
             }
         };

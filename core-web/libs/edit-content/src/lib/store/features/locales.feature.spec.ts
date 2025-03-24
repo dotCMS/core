@@ -8,7 +8,6 @@ import { Router } from '@angular/router';
 
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotCMSContentlet } from '@dotcms/angular';
 import {
     DotContentletService,
     DotHttpErrorManagerService,
@@ -16,7 +15,7 @@ import {
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotLanguage } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { contentInitialState } from './content.feature';
