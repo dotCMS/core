@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
 
-import { UVE_MODE, UVEEventType } from './types/editor/public';
-import { __DOTCMS_UVE_EVENT__ } from './types/events/internal';
-import { getUVEState, createUVESubscription } from './utils';
+import { getUVEState, createUVESubscription } from './core.utils';
+
+import { UVE_MODE, UVEEventType } from '../types/editor/public';
+import { __DOTCMS_UVE_EVENT__ } from '../types/events/internal';
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
