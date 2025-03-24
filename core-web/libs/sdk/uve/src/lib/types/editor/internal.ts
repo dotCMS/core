@@ -91,13 +91,16 @@ export interface ContentTypeMainFields {
  * Bound information for a contentlet.
  *
  * @interface ContentletBound
+ * Bound information for a contentlet.
+ *
+ * @interface DotCMSContentletBound
  * @property {number} x - The x-coordinate of the contentlet.
  * @property {number} y - The y-coordinate of the contentlet.
  * @property {number} width - The width of the contentlet.
  * @property {number} height - The height of the contentlet.
  * @property {string} payload - The payload data of the contentlet in JSON format.
  */
-export interface ContentletBound {
+export interface DotCMSContentletBound {
     x: number;
     y: number;
     width: number;
@@ -108,19 +111,19 @@ export interface ContentletBound {
 /**
  * Bound information for a container.
  *
- * @interface ContainerBound
+ * @interface DotCMSContainerBound
  * @property {number} x - The x-coordinate of the container.
  * @property {number} y - The y-coordinate of the container.
  * @property {number} width - The width of the container.
  * @property {number} height - The height of the container.
  * @property {string} payload - The payload data of the container in JSON format.
- * @property {ContentletBound[]} contentlets - An array of contentlets within the container.
+ * @property {DotCMSContentletBound[]} contentlets - An array of contentlets within the container.
  */
-export interface ContainerBound {
+export interface DotCMSContainerBound {
     x: number;
     y: number;
     width: number;
     height: number;
     payload: string;
-    contentlets: ContentletBound[];
+    contentlets: DotCMSContentletBound[];
 }
