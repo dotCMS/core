@@ -1,3 +1,5 @@
+import { ContentTypeMainFields } from "./internal";
+
 /**
  * Represents the state of the Universal Visual Editor (UVE)
  * @interface
@@ -138,3 +140,11 @@ export enum DotCMSUVEAction {
      */
     NOOP = 'noop'
 }
+
+
+/**
+ * The contentlet has the main fields and the custom fields of the content type.
+ *
+ * @template T - The custom fields of the content type.
+ */
+export type Contentlet<T> = T & ContentTypeMainFields;
