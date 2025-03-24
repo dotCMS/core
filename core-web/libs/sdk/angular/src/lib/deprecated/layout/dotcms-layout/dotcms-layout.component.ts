@@ -28,6 +28,10 @@ import { PageContextService } from '../../services/dotcms-context/page-context.s
 import { RowComponent } from '../row/row.component';
 
 /**
+ * @deprecated This component is deprecated and will be removed in future versions.
+ * Please use the new Page Layout component from the main SDK.
+ * For more information, refer to the migration guide in the documentation.
+ *
  * `DotcmsLayoutComponent` is a class that represents the layout for a DotCMS page.
  *  It includes a `pageAsset` property that represents the DotCMS page asset and a `components` property that represents the dynamic components for the page.
  *
