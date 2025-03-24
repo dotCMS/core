@@ -22,8 +22,6 @@ import { withLocales } from './locales.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { initialRootState } from '../../edit-content.store';
-import { contentInitialState } from '../content/content.feature';
-import { workflowInitialState } from '../workflow/workflow.feature';
 
 const MOCK_LANGUAGES = [
     { id: 1, isoCode: 'en-us', translated: true },
@@ -50,8 +48,6 @@ describe('LocalesFeature', () => {
     const withTest = () =>
         signalStoreFeature(
             withState({
-                ...contentInitialState,
-                ...workflowInitialState,
                 ...initialRootState,
                 formValues: {}
             }),

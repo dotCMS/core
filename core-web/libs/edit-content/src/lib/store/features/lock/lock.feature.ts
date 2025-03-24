@@ -24,18 +24,6 @@ import { DotCMSContentlet, DotContentletCanLock } from '@dotcms/dotcms-models';
 
 import { EditContentState } from '../../edit-content.store';
 
-export interface LockState {
-    lockError: string | null;
-    canLock: boolean;
-    lockSwitchLabel: string;
-}
-
-export const initialLockState: LockState = {
-    lockError: null,
-    canLock: false,
-    lockSwitchLabel: 'edit.content.unlocked'
-};
-
 export function withLock() {
     return signalStoreFeature(
         { state: type<EditContentState>() },

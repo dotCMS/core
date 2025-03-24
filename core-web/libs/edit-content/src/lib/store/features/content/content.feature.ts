@@ -16,46 +16,12 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    DotCMSContentlet,
-    DotCMSContentType,
-    DotCMSWorkflow,
-    DotCMSWorkflowAction,
-    DotContentletDepth,
-    FeaturedFlags,
-    WorkflowStep
-} from '@dotcms/dotcms-models';
-import { DotContentletState } from '@dotcms/edit-content/models/dot-edit-content.model';
+import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { transformFormDataFn } from '../../../utils/functions.util';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
-
-export interface ContentState {
-    /** ContentType full data */
-    contentType: DotCMSContentType | null;
-    /** Contentlet full data */
-    contentlet: DotCMSContentlet | null;
-    /** Schemas available for the content type */
-    schemes: Record<
-        string,
-        {
-            scheme: DotCMSWorkflow;
-            actions: DotCMSWorkflowAction[];
-            firstStep: WorkflowStep;
-        }
-    >;
-    initialContentletState: DotContentletState;
-}
-
-export const contentInitialState: ContentState = {
-    contentType: null,
-    contentlet: null,
-    schemes: {},
-    initialContentletState: 'new'
-};
 
 export function withContent() {
     return signalStoreFeature(

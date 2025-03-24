@@ -18,8 +18,7 @@ import { PasswordModule } from 'primeng/password';
 
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
-import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
+
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
@@ -41,7 +40,13 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotDialogModule, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotDialogModule,
+    DotGravatarDirective,
+    DotIconModule,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
@@ -88,7 +93,6 @@ describe('DotToolbarUserComponent', () => {
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 DotFormatDateService,
-                { provide: DotGravatarService, useClass: DotGravatarServiceMock },
                 DotToolbarUserStore
             ],
             imports: [

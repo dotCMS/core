@@ -28,9 +28,8 @@ import { withUser } from './features/user/user.feature';
 import { withWorkflow } from './features/workflow/workflow.feature';
 
 import { CurrentContentActionsWithScheme } from '../models/dot-edit-content-field.type';
-import { Activity } from '../models/dot-edit-content-file.model';
 import { FormValues } from '../models/dot-edit-content-form.interface';
-import { DotContentletState } from '../models/dot-edit-content.model';
+import { Activity, DotContentletState } from '../models/dot-edit-content.model';
 
 export interface EditContentState {
     // Root state

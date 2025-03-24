@@ -8,9 +8,9 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
-import { Activity } from '../../../../models/dot-edit-content-file.model';
+import { Activity } from '../../../../models/dot-edit-content.model';
 import { DotEditContentSidebarActivitiesSkeletonComponent } from '../dot-edit-content-sidebar-activities-skeleton/dot-edit-content-sidebar-activities-skeleton.component';
 
 /**
@@ -28,7 +28,8 @@ import { DotEditContentSidebarActivitiesSkeletonComponent } from '../dot-edit-co
         SkeletonModule,
         AvatarModule,
         DotRelativeDatePipe,
-        DotEditContentSidebarActivitiesSkeletonComponent
+        DotEditContentSidebarActivitiesSkeletonComponent,
+        DotGravatarDirective
     ],
     templateUrl: './dot-edit-content-sidebar-activities.component.html',
     styleUrls: ['./dot-edit-content-sidebar-activities.component.scss'],

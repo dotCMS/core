@@ -36,28 +36,6 @@ import { DotEditContentService } from '../../../services/dot-edit-content.servic
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
 
-export interface LocalesState {
-    locales: DotLanguage[] | null;
-    systemDefaultLocale: DotLanguage | null;
-    currentLocale: DotLanguage | null;
-    currentIdentifier: string | null;
-    localesStatus: {
-        status: ComponentStatus;
-        error: string;
-    };
-}
-
-export const localesInitialState: LocalesState = {
-    locales: null,
-    systemDefaultLocale: null,
-    currentLocale: null,
-    currentIdentifier: null,
-    localesStatus: {
-        status: ComponentStatus.INIT,
-        error: ''
-    }
-};
-
 export function withLocales() {
     return signalStoreFeature(
         { state: type<EditContentState>() },

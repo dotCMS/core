@@ -1,40 +1,51 @@
 import { ChangeDetectorRef, Directive, input, OnInit } from '@angular/core';
+import md5 from 'md5';
 
 import { Avatar } from 'primeng/avatar';
 
-import { DotGravatarService } from '../../services/dot-gravatar/dot-gravatar.service';
-
+const FALLBACK_AVATAR_LETTER = 'A';
+const DEFAULT_AVATAR_SHAPE = 'circle';
 /**
  * Directive that adds Gravatar functionality to PrimeNG Avatar component.
- * It fetches the user's Gravatar photo using their email and displays it in the avatar.
- * If no Gravatar is found or there's an error, it displays the first letter of the email as a fallback.
+ * It generates a Gravatar URL from an email and applies it to the avatar.
+ * If no email is provided, displays a default character.
  */
 @Directive({
     selector: 'p-avatar[dotGravatar]',
-    standalone: true,
-    providers: [DotGravatarService]
+    standalone: true
 })
 export class DotGravatarDirective implements OnInit {
-    email = input<string>();
+    email = input<string>('');
+
+    private readonly GRAVATAR_URL = 'https://www.gravatar.com/avatar/';
+    private readonly DEFAULT_SIZE = 48;
+    private readonly DEFAULT_RATING = 'g';
 
     constructor(
         private avatar: Avatar,
-        private cd: ChangeDetectorRef,
-        private gravatarService: DotGravatarService
+        private cd: ChangeDetectorRef
     ) {
-        this.avatar.shape = 'circle';
+        this.avatar.shape = DEFAULT_AVATAR_SHAPE;
     }
 
     ngOnInit(): void {
-        this.gravatarService.getPhoto(this.email()).subscribe(
-            (url: string) => {
-                this.avatar.image = url;
-                this.cd.detectChanges();
-            },
-            () => {
-                this.avatar.label = this.email()[0]?.toUpperCase();
-                this.cd.detectChanges();
-            }
-        );
+        const email = this.email();
+
+        if (!email) {
+            this.setFallbackAvatar(FALLBACK_AVATAR_LETTER);
+            return;
+        }
+
+        const hash = md5(email.trim().toLowerCase());
+        const gravatarUrl = `${this.GRAVATAR_URL}${hash}?s=${this.DEFAULT_SIZE}&r=${this.DEFAULT_RATING}`;
+
+        this.avatar.image = gravatarUrl;
+        this.cd.detectChanges();
+    }
+
+    private setFallbackAvatar(letter: string): void {
+        this.avatar.image = null;
+        this.avatar.label = letter;
+        this.cd.detectChanges();
     }
 }

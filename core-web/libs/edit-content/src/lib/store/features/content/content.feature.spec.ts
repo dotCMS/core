@@ -29,7 +29,6 @@ import { MOCK_WORKFLOW_STATUS } from '../../../utils/edit-content.mock';
 import { CONTENT_TYPE_MOCK } from '../../../utils/mocks';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
 import { initialRootState } from '../../edit-content.store';
-import { workflowInitialState } from '../workflow/workflow.feature';
 
 describe('ContentFeature', () => {
     let spectator: SpectatorService<any>;
@@ -43,7 +42,7 @@ describe('ContentFeature', () => {
 
     const createStore = createServiceFactory({
         service: signalStore(
-            withState({ ...initialRootState, ...workflowInitialState }),
+            withState({ ...initialRootState, ...initialRootState }),
             withContent()
         ),
         mocks: [

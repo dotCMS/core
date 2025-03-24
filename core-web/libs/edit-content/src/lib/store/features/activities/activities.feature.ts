@@ -12,22 +12,8 @@ import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { ContentletIdentifier } from '../../../models/dot-edit-content-field.type';
-import { Activity } from '../../../models/dot-edit-content-file.model';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EditContentState } from '../../edit-content.store';
-
-/**
- * Interface representing the activities state
- */
-export interface ActivitiesState {
-    /** List of activities */
-    activities: Activity[];
-
-    activitiesStatus: {
-        status: ComponentStatus;
-        error: string | null;
-    };
-}
 
 /**
  * Feature store for managing activities state
@@ -38,7 +24,7 @@ export function withActivities() {
         withMethods(
             (
                 store,
-                service = inject(DotEditContentService),
+                dotEditContentService = inject(DotEditContentService),
                 errorManager = inject(DotHttpErrorManagerService)
             ) => ({
                 /**
@@ -56,49 +42,7 @@ export function withActivities() {
                             });
                         }),
                         switchMap((identifier) =>
-                            service.getActivities(identifier).pipe(
-                                tapResponse({
-                                    next: (activities) => {
-                                        patchState(store, {
-                                            activities,
-                                            activitiesStatus: {
-                                                status: ComponentStatus.LOADED,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    error: (error: HttpErrorResponse) => {
-                                        errorManager.handle(error);
-                                        patchState(store, {
-                                            activitiesStatus: {
-                                                status: ComponentStatus.ERROR,
-                                                error: error.message
-                                            }
-                                        });
-                                    }
-                                })
-                            )
-                        )
-                    )
-                ),
-
-                /**
-                 * Creates a new activity for a given content identifier
-                 * @param params Parameters for creating an activity
-                 */
-                createActivity: rxMethod<{ identifier: ContentletIdentifier; comment: string }>(
-                    pipe(
-                        tap(() => {
-                            patchState(store, {
-                                activitiesStatus: {
-                                    status: ComponentStatus.LOADING,
-                                    error: null
-                                }
-                            });
-                        }),
-                        switchMap((params) =>
-                            service.createActivity(params.identifier, params.comment).pipe(
-                                switchMap(() => service.getActivities(params.identifier)),
+                            dotEditContentService.getActivities(identifier).pipe(
                                 tapResponse({
                                     next: (activities) => {
                                         patchState(store, {

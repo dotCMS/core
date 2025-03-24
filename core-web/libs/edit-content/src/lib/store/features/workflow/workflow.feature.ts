@@ -31,40 +31,12 @@ import {
     ComponentStatus,
     DotCMSWorkflow,
     DotContentletDepths,
-    WorkflowStep,
-    WorkflowTask
+    WorkflowStep
 } from '@dotcms/dotcms-models';
 import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
-import { CurrentContentActionsWithScheme } from '../../../models/dot-edit-content-field.type';
 import { parseCurrentActions } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
-import { LockState } from '../lock/lock.feature';
-
-// Define the extended lock state that includes the computed properties
-export interface ExtendedLockState extends LockState {
-    isContentLocked: () => boolean;
-}
-
-export interface WorkflowState {
-    /** Current workflow scheme id */
-    currentSchemeId: string | null;
-
-    /** Actions available for the current content */
-    currentContentActions: CurrentContentActionsWithScheme;
-
-    /** Current workflow step */
-    currentStep: WorkflowStep | null;
-
-    /** Last workflow task of the contentlet */
-    lastTask: WorkflowTask | null;
-
-    // Nested workflow status
-    workflow: {
-        status: ComponentStatus;
-        error: string | null;
-    };
-}
 
 /**
  * Signal store feature that manages the workflow component state in the edit content sidebar

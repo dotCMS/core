@@ -14,14 +14,6 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EditContentState } from '../../edit-content.store';
 
-export interface InformationState {
-    information: {
-        status: ComponentStatus;
-        error: string | null;
-        relatedContent: string;
-    };
-}
-
 /**
  * Signal store feature that manages the information component state in the edit content sidebar
  * Handles loading states, error handling, and related content count for the current contentlet

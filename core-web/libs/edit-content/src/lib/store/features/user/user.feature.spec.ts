@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { signalStore } from '@ngrx/signals';
+import { signalStore, withState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -9,6 +9,7 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { DotCurrentUserService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CurrentUserDataMock } from '@dotcms/utils-testing';
 
+import { initialRootState } from '../../edit-content.store';
 import { withUser } from './user.feature';
 
 describe('UserFeature', () => {
@@ -18,7 +19,7 @@ describe('UserFeature', () => {
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
 
     const createStore = createServiceFactory({
-        service: signalStore(withUser()),
+        service: signalStore(withState({ ...initialRootState }), withUser()),
         mocks: [DotCurrentUserService, DotHttpErrorManagerService]
     });
 

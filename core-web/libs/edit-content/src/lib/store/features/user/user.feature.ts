@@ -1,5 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, withMethods } from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -9,15 +9,7 @@ import { inject } from '@angular/core';
 import { switchMap } from 'rxjs/operators';
 
 import { DotCurrentUserService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCurrentUser } from '@dotcms/dotcms-models';
-
-export interface UserState {
-    currentUser: DotCurrentUser;
-}
-
-export const userInitialState: UserState = {
-    currentUser: null
-};
+import { EditContentState } from '../../edit-content.store';
 
 /**
  * Feature that manages the current user state
@@ -25,6 +17,7 @@ export const userInitialState: UserState = {
  */
 export function withUser() {
     return signalStoreFeature(
+        { state: type<EditContentState>() },
         withMethods(
             (
                 store,
