@@ -1,6 +1,5 @@
-import { UVE_MODE, UVECallback, UVEState, UVESubscription } from './types/editor/public';
-
-import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../internal/constants';
+import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../../internal/constants';
+import { UVE_MODE, UVECallback, UVEState, UVESubscription } from '../types/editor/public';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
