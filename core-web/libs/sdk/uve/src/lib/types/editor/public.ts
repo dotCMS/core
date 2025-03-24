@@ -1,4 +1,4 @@
-import { ContentTypeMainFields } from "./internal";
+import { ContentTypeMainFields } from './internal';
 
 /**
  * Represents the state of the Universal Visual Editor (UVE)
@@ -40,7 +40,7 @@ export enum UVE_MODE {
  * @callback UVECallback
  * @param {unknown} payload - The payload of the event
  */
-export type UVECallback = (payload: unknown) => void;
+export type UVECallback = (payload?: unknown) => void;
 
 /**
  * Unsubscribe function for UVE events
@@ -64,6 +64,20 @@ export type UVESubscription = {
  * @typedef {function} UVEEvent
  */
 export type UVEEvent = (callback: UVECallback) => UVESubscription;
+
+/**
+ * Available subscription events for UVE (Universal Visual Editor)
+ * @enum {string}
+ *
+ * @property {string} EDITOR_MESSAGES - Subscribe to editor messages like reload page, request bounds, and scroll events
+ * @property {string} CHANGES - Subscribe to page data changes from the editor
+ * @property {string} CONTENTLET_HOVER - Subscribe to contentlet hover events
+ */
+export enum UVESubscriptionEvent {
+    EDITOR_MESSAGES = 'editor-messages',
+    CHANGES = 'changes',
+    CONTENTLET_HOVER = 'contentlet-hover'
+}
 
 //TODO: Recheck this after changes
 /**
@@ -140,7 +154,6 @@ export enum DotCMSUVEAction {
      */
     NOOP = 'noop'
 }
-
 
 /**
  * The contentlet has the main fields and the custom fields of the content type.

@@ -63,18 +63,33 @@ export function getUVEState(): UVEState | undefined {
 /**
  * Creates a subscription to a UVE event.
  *
- * @param {string} event - The event to subscribe to.
- * @param {UVECallback} callback - The callback to call when the event is triggered.
- * @return {UnsubscribeUVE | undefined} The unsubscribe function if the event is valid, undefined otherwise.
+ * This function allows subscribing to various UVE events like editor messages, content changes,
+ * and contentlet hover events. It checks if the code is running inside the UVE and if the
+ * requested event exists before creating the subscription.
  *
+ * @export
+ * @param {string} event - The event to subscribe to (e.g. 'editor-messages', 'changes', 'contentlet-hover')
+ * @param {UVECallback} [callback=() => ({})] - The callback function to execute when the event occurs
+ * @return {UVESubscription} An object containing the unsubscribe function and event name
  * @example
  * ```ts
- * const unsubscribeChanges = createUVESubscription('changes', (payload) => {
- *   console.log(payload);
+ * // Subscribe with callback
+ * const subscription = createUVESubscription('changes', (payload) => {
+ *   console.log('Page data changed:', payload);
  * });
+ *
+ * // Subscribe without callback
+ * const editorSubscription = createUVESubscription('editor-messages');
+ *
+ * // Later when done
+ * subscription.unsubscribe();
+ * editorSubscription.unsubscribe();
  * ```
  */
-export function createUVESubscription(event: string, callback: UVECallback): UVESubscription {
+export function createUVESubscription(
+    event: string,
+    callback: UVECallback = () => ({})
+): UVESubscription {
     if (!getUVEState()) {
         console.warn('UVE Subscription: Not running inside UVE');
 

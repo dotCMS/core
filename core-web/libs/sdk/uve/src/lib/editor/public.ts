@@ -1,7 +1,6 @@
-import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from "../types/editor/internal";
-import { Contentlet, DotCMSUVEAction } from "../types/editor/public";
-import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from "../types/events/public";
-
+import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '../types/editor/internal';
+import { Contentlet, DotCMSUVEAction } from '../types/editor/public';
+import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from '../types/events/public';
 
 /**
  * Post message to dotcms page editor
@@ -13,7 +12,6 @@ import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from "../types/ev
 export function sendMessageToEditor<T = unknown>(message: DotCMSUVEMessage<T>) {
     window.parent.postMessage(message, '*');
 }
-
 
 /**
  * You can use this function to edit a contentlet in the editor.

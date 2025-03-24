@@ -86,3 +86,41 @@ export interface ContentTypeMainFields {
     contentTypeIcon: string;
     variant: string;
 }
+
+/**
+ * Bound information for a contentlet.
+ *
+ * @interface ContentletBound
+ * @property {number} x - The x-coordinate of the contentlet.
+ * @property {number} y - The y-coordinate of the contentlet.
+ * @property {number} width - The width of the contentlet.
+ * @property {number} height - The height of the contentlet.
+ * @property {string} payload - The payload data of the contentlet in JSON format.
+ */
+export interface ContentletBound {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    payload: string;
+}
+
+/**
+ * Bound information for a container.
+ *
+ * @interface ContainerBound
+ * @property {number} x - The x-coordinate of the container.
+ * @property {number} y - The y-coordinate of the container.
+ * @property {number} width - The width of the container.
+ * @property {number} height - The height of the container.
+ * @property {string} payload - The payload data of the container in JSON format.
+ * @property {ContentletBound[]} contentlets - An array of contentlets within the container.
+ */
+export interface ContainerBound {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    payload: string;
+    contentlets: ContentletBound[];
+}
