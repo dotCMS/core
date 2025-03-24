@@ -1,18 +1,22 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { fakeAsync, tick } from '@angular/core/testing';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { fakeAsync, tick } from '@angular/core/testing';
+
 import { delay } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { HttpCode } from '@dotcms/dotcms-js';
+import { withActivities } from './activities.feature';
+
 import { Activity } from '../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { initialRootState } from '../../edit-content.store';
-import { withActivities } from './activities.feature';
 
 describe('Activities Feature Store', () => {
     let spectator: SpectatorService<any>;

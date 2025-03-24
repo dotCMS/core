@@ -1,12 +1,12 @@
 import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
-
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotGravatarDirective } from '@dotcms/ui';
 
-import { Activity } from '../../../../models/dot-edit-content.model';
 import { DotEditContentSidebarActivitiesComponent } from './dot-edit-content-sidebar-activities.component';
+
+import { Activity } from '../../../../models/dot-edit-content.model';
 
 describe('DotEditContentSidebarActivitiesComponent', () => {
     let spectator: Spectator<DotEditContentSidebarActivitiesComponent>;

@@ -9,6 +9,7 @@ import { inject } from '@angular/core';
 import { switchMap } from 'rxjs/operators';
 
 import { DotCurrentUserService, DotHttpErrorManagerService } from '@dotcms/data-access';
+
 import { EditContentState } from '../../edit-content.store';
 
 /**

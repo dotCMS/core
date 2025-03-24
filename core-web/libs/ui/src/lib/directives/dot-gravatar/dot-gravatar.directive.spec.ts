@@ -1,66 +1,65 @@
-import { of, throwError } from 'rxjs';
-
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-
+import { fakeAsync, tick } from '@angular/core/testing';
+import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import md5 from 'md5';
 import { AvatarModule } from 'primeng/avatar';
-
-import { DotGravatarService } from 'libs/ui/src/lib/services/dot-gravatar-service';
 
 import { DotGravatarDirective } from './dot-gravatar.directive';
 
-@Component({
-    template: `
-        <p-avatar [email]="email" dotGravatar></p-avatar>
-    `
-})
-class TestHostComponent {
-    //Some dummy email from this post https://stackoverflow.com/questions/41786225/what-is-a-good-gravatar-example-email
-    email = 'jitewaboh@lagify.com';
-}
-
 describe('DotGravatarDirective', () => {
-    let fixture: ComponentFixture<TestHostComponent>;
-    let component: TestHostComponent;
-    let element: DebugElement;
+    let spectator: SpectatorHost<DotGravatarDirective>;
+    const createHost = createHostFactory({
+        component: DotGravatarDirective,
+        imports: [AvatarModule]
+    });
 
-    const testEmail = 'test@test.com';
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
-            imports: [AvatarModule, DotGravatarDirective],
-            providers: [
+    describe('when no email is provided', () => {
+        beforeEach(() => {
+            spectator = createHost(`
+                <p-avatar
+                    dotGravatar
+                    data-testid="gravatar-avatar">
+                </p-avatar>
+            `);
+        });
+
+        it('should set fallback values in the avatar component', () => {
+            const directive = spectator.component;
+            const avatarComponent = directive['avatar'];
+
+            expect(avatarComponent.shape).toBe('circle');
+            expect(avatarComponent.label).toBe('A');
+        });
+    });
+
+    describe('when email is provided', () => {
+        const testEmail = 'test@test.com';
+
+        it('should set correct gravatar URL in the avatar component', fakeAsync(() => {
+            spectator = createHost(
+                `
+                <p-avatar
+                    [email]="email"
+                    dotGravatar
+                    data-testid="gravatar-avatar">
+                </p-avatar>
+            `,
                 {
-                    provide: DotGravatarService,
-                    useValue: {
-                        getPhoto: (email: string) => {
-                            return email != testEmail
-                                ? of(
-                                      'https://www.gravatar.com/avatar/09abd59eb5653a7183ba812b8261f48b'
-                                  )
-                                : throwError(null);
-                        }
+                    hostProps: {
+                        email: testEmail
                     }
                 }
-            ]
-        });
-        fixture = TestBed.createComponent(TestHostComponent);
-        component = fixture.componentInstance;
-        element = fixture.debugElement;
-    });
+            );
+            spectator.detectChanges();
+            tick();
 
-    it('should show an image when a valid email is provided', () => {
-        fixture.detectChanges();
-        expect(element.query(By.css('img'))).toBeTruthy();
-    });
+            const directive = spectator.component;
+            const expectedHash = md5(testEmail.trim().toLowerCase());
+            const expectedUrl = `https://www.gravatar.com/avatar/${expectedHash}?s=48&r=g`;
 
-    it('should fallback to label when email is not found as gravatar user', () => {
-        component.email = testEmail;
-        fixture.detectChanges();
-
-        expect(element.query(By.css('.p-avatar-text')).nativeElement.textContent).toBe(
-            testEmail.charAt(0).toUpperCase()
-        );
+            // Verify the directive properly set the values in the avatar component
+            const avatarComponent = directive['avatar'];
+            expect(avatarComponent.shape).toBe('circle');
+            expect(avatarComponent.image).toBe(expectedUrl);
+        }));
     });
 });

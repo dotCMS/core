@@ -18,7 +18,6 @@ import { PasswordModule } from 'primeng/password';
 
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';

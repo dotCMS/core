@@ -67,12 +67,14 @@ export class DotRelativeDatePipe implements PipeTransform {
             // Less than 1 hour
             if (diffInSeconds < 3600) {
                 const minutes = Math.floor(diffInSeconds / 60);
+
                 return this.dotMessageService.get('relative.date.minutes.ago', minutes.toString());
             }
 
             // Less than 24 hours
             if (diffInSeconds < 86400) {
                 const hours = Math.floor(diffInSeconds / 3600);
+
                 return this.dotMessageService.get('relative.date.hours.ago', hours.toString());
             }
         }

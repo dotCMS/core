@@ -9,8 +9,9 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { DotCurrentUserService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CurrentUserDataMock } from '@dotcms/utils-testing';
 
-import { initialRootState } from '../../edit-content.store';
 import { withUser } from './user.feature';
+
+import { initialRootState } from '../../edit-content.store';
 
 describe('UserFeature', () => {
     let spectator: SpectatorService<any>;
