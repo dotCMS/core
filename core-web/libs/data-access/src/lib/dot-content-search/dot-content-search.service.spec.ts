@@ -59,7 +59,7 @@ describe('DotContentSearchService', () => {
                 globalSearch: 'test query',
                 systemSearchableFields: { languageId: 1 },
                 searchableFieldsByContentType: { Blog: { title: 'test' } },
-                page: 0,
+                page: 1,
                 perPage: 10
             };
 
@@ -73,7 +73,7 @@ describe('DotContentSearchService', () => {
                 globalSearch: 'test query',
                 systemSearchableFields: { languageId: 1 },
                 searchableFieldsByContentType: { Blog: { title: 'test' } },
-                page: 0,
+                page: 1,
                 perPage: 10
             });
 
