@@ -1,4 +1,4 @@
-import { UVE_MODE, UVECallback, UVEState, UVESubscription } from './types';
+import { UVE_MODE, UVECallback, UVEState, UVESubscription } from './types/editor/public';
 
 import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../internal/constants';
 
