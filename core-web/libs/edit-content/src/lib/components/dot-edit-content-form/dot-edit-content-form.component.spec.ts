@@ -17,7 +17,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputSwitch, InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { TabPanel, TabView } from 'primeng/tabview';
 
-import { DotCMSContentlet } from '@dotcms/angular';
 import {
     DotContentletService,
     DotContentTypeService,
@@ -32,6 +31,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import {
+    DotCMSContentlet,
     DotCMSWorkflowAction,
     DotContentletCanLock,
     DotContentletDepths
