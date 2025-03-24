@@ -54,12 +54,6 @@ import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
 
-class DotGravatarServiceMock {
-    getPhoto() {
-        return of('/some_avatar_url');
-    }
-}
-
 describe('DotToolbarUserComponent', () => {
     let fixture: ComponentFixture<DotToolbarUserComponent>;
     let de: DebugElement;

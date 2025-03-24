@@ -1,6 +1,8 @@
-import { fakeAsync, tick } from '@angular/core/testing';
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import md5 from 'md5';
+
+import { fakeAsync, tick } from '@angular/core/testing';
+
 import { AvatarModule } from 'primeng/avatar';
 
 import { DotGravatarDirective } from './dot-gravatar.directive';

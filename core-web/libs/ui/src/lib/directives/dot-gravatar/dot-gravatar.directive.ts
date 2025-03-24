@@ -1,5 +1,6 @@
-import { ChangeDetectorRef, Directive, input, OnInit } from '@angular/core';
 import md5 from 'md5';
+
+import { ChangeDetectorRef, Directive, input, OnInit } from '@angular/core';
 
 import { Avatar } from 'primeng/avatar';
 
@@ -33,6 +34,7 @@ export class DotGravatarDirective implements OnInit {
 
         if (!email) {
             this.setFallbackAvatar(FALLBACK_AVATAR_LETTER);
+
             return;
         }
 
