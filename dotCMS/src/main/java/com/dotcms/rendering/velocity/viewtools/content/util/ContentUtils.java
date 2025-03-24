@@ -234,19 +234,43 @@ public class ContentUtils {
 				//need to send the query with the defaults --- 
 			    List<Contentlet> contentlets=null;
 			    if(tmDate!=null && query.contains("+live:true")) {
-			        // with timemachine on!
+			        // with time machine on!
                     final Date futureDate = new Date(Long.parseLong(tmDate));
                     query = query.replaceAll("\\+live\\:true", "")
-                            .replaceAll("\\+working\\:true", "");
-                    final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate);
+							.replaceAll("\\+working\\:true", "");
+					final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate);
+					final String currentDate = ESMappingAPIImpl.datetimeFormat.format(new Date());
 
-                    final String notExpired = " +expdate:[" + formatedDate + " TO 29990101000000] ";
-                    final String workingQuery = query + " +working:true " +
-                            "+pubdate:[" + ESMappingAPIImpl.datetimeFormat.format(new Date())
-                            +
-                            " TO " + formatedDate + "] " + notExpired;
+                    //ES/OpenSearch Magic value constant for default/uninitialized dates or end of time dates
+					final String MAGIC_VALUE = "29990101000000";
+
+					// Query to get the contentlets that are not expired and also have an expiration date set
+					// By "set" we mean that the expiration date is not the default value used by ES/OpenSearch to construct the index
+					final String notExpired = " +(" +
+							"(-expdate_dotraw:" + MAGIC_VALUE + " +expdate:[" + formatedDate + " TO " + MAGIC_VALUE + "]) " +
+							"OR expdate_dotraw:" + MAGIC_VALUE +
+							") ";
+
+					final String pubDateCondition = " +(" +
+							"(-pubdate_dotraw:" + MAGIC_VALUE + " +pubdate:[" + currentDate + " TO " + formatedDate + "]) " +
+							"OR pubdate_dotraw:" + MAGIC_VALUE +
+							") ";
+
+					/*
+						+contenttype:footermenu +languageid:1
+						+(
+						  (-pubdate_dotraw:29990101000000 +pubdate:[20250324173146 TO 20250416173136]) //Apply range only if pubdate is not the default value that means it has been initialized
+						  OR pubdate_dotraw:29990101000000   //Otherwise, just return the piece of content because we dont have a "pubdate" set to compare to makes sense right?
+						 )
+					*/
+
+					// Apply publish-date conditions only to workingQuery
+					final String workingQuery = query + " +working:true " + pubDateCondition + notExpired;
                     final String liveQuery = query + " +live:true " + notExpired;
-		            
+
+					Logger.debug(ContentUtils.class, "Working Query: " + workingQuery);
+					Logger.debug(ContentUtils.class, "Live Query: " + liveQuery);
+
 		            final PaginatedArrayList<Contentlet> workingContent = (PaginatedArrayList<Contentlet>)conAPI.search(workingQuery, limit, offset, sort, user, respectFrontendRoles);
                     final PaginatedArrayList<Contentlet> liveContent = (PaginatedArrayList<Contentlet>)conAPI.search(liveQuery, limit, offset, sort, user, respectFrontendRoles);
 		            ret.setQuery(liveQuery);
@@ -276,18 +300,17 @@ public class ContentUtils {
 	        	                        else
 	        	                            comp=c2.compareTo(c1);
 	    	                        }
-	    	                    }   
+	    	                    }
 	    	                    return comp;
 	    	                }
 	    	            });
 		            }
 		            
-		            // truncate to respect limit
-		            if(contentlets.size()>limit){
+		            // truncate to respect limit, remember 0, means no limit
+		            if(limit > 0 && contentlets.size()>limit){
 		                contentlets = contentlets.subList(0, limit);
 		            }
-			    }
-			    else {
+			    } else {
 			        // normal query
 			        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, respectFrontendRoles);
 			        ret.setTotalResults(conts.getTotalResults());
