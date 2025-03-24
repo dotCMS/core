@@ -89,6 +89,7 @@ export class DotEditorModeSelectorComponent {
             toMode: mode
         });
 
-        this.#store.loadPageAsset({ mode: mode });
+        /* More info here: https://github.com/dotCMS/core/issues/31719 */
+        this.#store.loadPageAsset({ mode: mode, publishDate: undefined });
     }
 }

@@ -225,6 +225,10 @@ export class DotEmaShellComponent implements OnInit {
             params.mode = UVE_MODE.EDIT;
         }
 
+        if (params.mode !== UVE_MODE.LIVE && params.publishDate) {
+            delete params?.['publishDate'];
+        }
+
         if (queryParams['personaId']) {
             params['com.dotmarketing.persona.id'] = queryParams['personaId'];
         }
