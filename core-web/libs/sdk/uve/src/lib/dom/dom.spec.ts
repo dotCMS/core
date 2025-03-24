@@ -69,7 +69,7 @@ describe('getContentletsBound', () => {
         })
     ];
 
-    it('should return an array of contentlets bound from contentlet with data atrribute dotContainer ', () => {
+    it('should return an array of contentlets bound from contentlet with data attribute dotContainer ', () => {
         const result = getContentletsBound(containerRect, contentlets);
 
         expect(result).toEqual([
