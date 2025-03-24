@@ -89,9 +89,6 @@ export class DotEditorModeSelectorComponent {
             toMode: mode
         });
 
-        this.#store.loadPageAsset({
-            mode: mode,
-            publishDate: mode === UVE_MODE.LIVE ? new Date().toISOString() : undefined
-        });
+        this.#store.loadPageAsset({ mode: mode });
     }
 }
