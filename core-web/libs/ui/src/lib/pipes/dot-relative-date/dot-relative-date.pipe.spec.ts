@@ -26,7 +26,6 @@ const getDateAndTimeFormat = (date: Date): string => {
 describe('DotRelativeDatePipe', () => {
     let formatDateService: DotFormatDateService;
     let pipe: DotRelativeDatePipe;
-    let messageService: DotMessageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -54,7 +53,6 @@ describe('DotRelativeDatePipe', () => {
         });
 
         formatDateService = TestBed.inject(DotFormatDateService);
-        messageService = TestBed.inject(DotMessageService);
         pipe = TestBed.inject(DotRelativeDatePipe);
     });
 
