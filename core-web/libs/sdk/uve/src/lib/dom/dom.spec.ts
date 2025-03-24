@@ -1,6 +1,6 @@
-import { getContentletsBound, scrollIsInBottom } from './dom.utils';
+import { getDotCMSContentletsBound, computeScrollIsInBottom } from './dom.utils';
 
-describe('getContentletsBound', () => {
+describe('getDotCMSContentletsBound', () => {
     const createContentlet = ({
         x,
         y,
@@ -70,7 +70,7 @@ describe('getContentletsBound', () => {
     ];
 
     it('should return an array of contentlets bound from contentlet with data attribute dotContainer ', () => {
-        const result = getContentletsBound(containerRect, contentlets);
+        const result = getDotCMSContentletsBound(containerRect, contentlets);
 
         expect(result).toEqual([
             {
@@ -107,7 +107,7 @@ describe('getContentletsBound', () => {
     });
 
     it('should return an empty array if contentlets is empty', () => {
-        const result = getContentletsBound(containerRect, []);
+        const result = getDotCMSContentletsBound(containerRect, []);
 
         expect(result).toEqual([]);
     });
@@ -136,7 +136,7 @@ describe('getContentletsBound', () => {
         container.setAttribute('data-dot-identifier', '1');
         container.setAttribute('data-max-contentlets', '1');
         container.setAttribute('data-dot-uuid', '1');
-        const result = getContentletsBound(containerRect, contentletsWithMissingContainer);
+        const result = getDotCMSContentletsBound(containerRect, contentletsWithMissingContainer);
 
         expect(result).toEqual([
             {
@@ -181,7 +181,7 @@ describe('scrollIsInBottom', () => {
             value: 1000
         });
 
-        expect(scrollIsInBottom()).toBe(true);
+        expect(computeScrollIsInBottom()).toBe(true);
     });
 
     it('should return false when scroll position + viewport height is less than document height', () => {
@@ -201,6 +201,6 @@ describe('scrollIsInBottom', () => {
             value: 1000
         });
 
-        expect(scrollIsInBottom()).toBe(false);
+        expect(computeScrollIsInBottom()).toBe(false);
     });
 });

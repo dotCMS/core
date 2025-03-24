@@ -9,11 +9,11 @@ import { DotCMSContainerBound, DotCMSContentletBound } from '../types/editor/int
  * @example
  * ```ts
  * const containers = document.querySelectorAll('.container');
- * const bounds = getPageElementBound(containers);
+ * const bounds = getDotCMSPageElementBound(containers);
  * console.log(bounds);
  * ```
  */
-export function getPageElementBound(containers: HTMLDivElement[]): DotCMSContainerBound[] {
+export function getDotCMSPageElementBound(containers: HTMLDivElement[]): DotCMSContainerBound[] {
     return containers.map((container) => {
         const containerRect = container.getBoundingClientRect();
         const contentlets = Array.from(
@@ -26,9 +26,9 @@ export function getPageElementBound(containers: HTMLDivElement[]): DotCMSContain
             width: containerRect.width,
             height: containerRect.height,
             payload: JSON.stringify({
-                container: getContainerData(container)
+                container: getDotCMSContainerData(container)
             }),
-            contentlets: getContentletsBound(containerRect, contentlets)
+            contentlets: getDotCMSContentletsBound(containerRect, contentlets)
         };
     });
 }
@@ -44,11 +44,11 @@ export function getPageElementBound(containers: HTMLDivElement[]): DotCMSContain
  * ```ts
  * const containerRect = container.getBoundingClientRect();
  * const contentlets = container.querySelectorAll('.contentlet');
- * const bounds = getContentletsBound(containerRect, contentlets);
+ * const bounds = getDotCMSContentletsBound(containerRect, contentlets);
  * console.log(bounds); // Element bounds within the container
  * ```
  */
-export function getContentletsBound(
+export function getDotCMSContentletsBound(
     containerRect: DOMRect,
     contentlets: HTMLDivElement[]
 ): DotCMSContentletBound[] {
@@ -63,7 +63,7 @@ export function getContentletsBound(
             payload: JSON.stringify({
                 container: contentlet.dataset?.['dotContainer']
                     ? JSON.parse(contentlet.dataset?.['dotContainer'])
-                    : getClosestContainerData(contentlet),
+                    : getClosestDotCMSContainerData(contentlet),
                 contentlet: {
                     identifier: contentlet.dataset?.['dotIdentifier'],
                     title: contentlet.dataset?.['dotTitle'],
@@ -88,7 +88,7 @@ export function getContentletsBound(
  * console.log(data);
  * ```
  */
-export function getContainerData(container: HTMLElement) {
+export function getDotCMSContainerData(container: HTMLElement) {
     return {
         acceptTypes: container.dataset?.['dotAcceptTypes'] || '',
         identifier: container.dataset?.['dotIdentifier'] || '',
@@ -106,18 +106,18 @@ export function getContainerData(container: HTMLElement) {
  * @example
  * ```ts
  * const contentlet = document.querySelector('.contentlet');
- * const data = getClosestContainerData(contentlet);
+ * const data = getClosestDotCMSContainerData(contentlet);
  * console.log(data);
  * ```
  */
-export function getClosestContainerData(element: Element) {
+export function getClosestDotCMSContainerData(element: Element) {
     // Find the closest ancestor element with data-dot-object="container" attribute
     const container = element.closest('[data-dot-object="container"]') as HTMLElement;
 
     // If a container element is found
     if (container) {
         // Return the dataset of the container element
-        return getContainerData(container);
+        return getDotCMSContainerData(container);
     } else {
         // If no container element is found, return null
         console.warn('No container found for the contentlet');
@@ -134,10 +134,10 @@ export function getClosestContainerData(element: Element) {
  * @return {HTMLElement | null} The closest contentlet element or null if not found.
  * @example
  * const element = document.querySelector('.some-element');
- * const contentlet = findDotElement(element);
+ * const contentlet = findDotCMSElement(element);
  * console.log(contentlet);
  */
-export function findDotElement(element: HTMLElement | null): HTMLElement | null {
+export function findDotCMSElement(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
     if (
@@ -147,7 +147,7 @@ export function findDotElement(element: HTMLElement | null): HTMLElement | null 
         return element;
     }
 
-    return findDotElement(element?.['parentElement']);
+    return findDotCMSElement(element?.['parentElement']);
 }
 
 /**
@@ -158,16 +158,16 @@ export function findDotElement(element: HTMLElement | null): HTMLElement | null 
  * @return {HTMLElement | null} The closest VTL file element or null if not found.
  * @example
  * const element = document.querySelector('.some-element');
- * const vtlFile = findDotVTLElement(element);
+ * const vtlFile = findDotCMSVTLElement(element);
  * console.log(vtlFile);
  */
-export function findDotVTLElement(element: HTMLElement | null): HTMLElement | null {
+export function findDotCMSVTLElement(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
     if (element.dataset && element.dataset?.['dotObject'] === 'vtl-file') {
         return element;
     } else {
-        return findDotElement(element?.['parentElement']);
+        return findDotCMSElement(element?.['parentElement']);
     }
 }
 
@@ -180,11 +180,11 @@ export function findDotVTLElement(element: HTMLElement | null): HTMLElement | nu
  * @example
  * ```ts
  * const target = document.querySelector('.target-element');
- * const vtlData = findVTLData(target);
+ * const vtlData = findDotCMSVTLData(target);
  * console.log(vtlData);
  * ```
  */
-export function findVTLData(target: HTMLElement) {
+export function findDotCMSVTLData(target: HTMLElement) {
     const vltElements = target.querySelectorAll(
         '[data-dot-object="vtl-file"]'
     ) as NodeListOf<HTMLElement>;
@@ -208,12 +208,12 @@ export function findVTLData(target: HTMLElement) {
  * @return {boolean} True if the scroll position is at the bottom, otherwise false.
  * @example
  * ```ts
- * if (scrollIsInBottom()) {
+ * if (dotCMSScrollIsInBottom()) {
  *     console.log('Scrolled to the bottom');
  * }
  * ```
  */
-export function scrollIsInBottom() {
+export function computeScrollIsInBottom() {
     const documentHeight = document.documentElement.scrollHeight;
     const viewportHeight = window.innerHeight;
     const scrollY = window.scrollY;
