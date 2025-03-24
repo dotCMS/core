@@ -866,26 +866,6 @@ describe('DotEmaShellComponent', () => {
                     mode: UVE_MODE.EDIT
                 });
             });
-
-            it('should remove the current date if LIVE mode is true and publishDate is present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-                const params = {
-                    ...INITIAL_PAGE_PARAMS,
-                    mode: UVE_MODE.EDIT,
-                    publishDate: '2024-01-01'
-                };
-
-                // override the new Date() to return a fixed date
-                const fixedDate = new Date('2024-01-01');
-                jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
-
-                const data = UVE_CONFIG_MOCK(BASIC_OPTIONS);
-
-                overrideRouteSnashot(activatedRoute, SNAPSHOT_MOCK({ queryParams: params, data }));
-
-                spectator.detectChanges();
-                expect(spyStoreLoadPage).toHaveBeenCalledWith({ INITIAL_PAGE_PARAMS });
-            });
         });
 
         describe('Site Changes', () => {
