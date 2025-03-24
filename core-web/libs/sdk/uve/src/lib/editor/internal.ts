@@ -1,4 +1,4 @@
-import { ContainerBound, ContentletBound } from '@dotcms/uve/internal';
+import { DotCMSContainerBound, DotCMSContentletBound } from '@dotcms/uve/internal';
 import { DotCMSUVEAction } from '@dotcms/uve/types';
 
 import { sendMessageToEditor } from './public';
@@ -34,7 +34,7 @@ export function setBounds(): void {
  * console.log(bounds);
  * ```
  */
-export function getPageElementBound(containers: HTMLDivElement[]): ContainerBound[] {
+export function getPageElementBound(containers: HTMLDivElement[]): DotCMSContainerBound[] {
     return containers.map((container) => {
         const containerRect = container.getBoundingClientRect();
         const contentlets = Array.from(
@@ -72,7 +72,7 @@ export function getPageElementBound(containers: HTMLDivElement[]): ContainerBoun
 export function getContentletsBound(
     containerRect: DOMRect,
     contentlets: HTMLDivElement[]
-): ContentletBound[] {
+): DotCMSContentletBound[] {
     return contentlets.map((contentlet) => {
         const contentletRect = contentlet.getBoundingClientRect();
 

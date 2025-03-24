@@ -1,4 +1,4 @@
-import { ContainerBound, ContentTypeMainFields } from './internal';
+import { ContentTypeMainFields, DotCMSContainerBound } from './internal';
 
 /**
  * Represents the state of the Universal Visual Editor (UVE)
@@ -180,6 +180,6 @@ export enum UVEEventType {
 export type UVEEventPayloadMap = {
     [UVEEventType.CONTENT_CHANGES]: unknown;
     [UVEEventType.PAGE_RELOAD]: undefined;
-    [UVEEventType.REQUEST_BOUNDS]: ContainerBound[];
+    [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
 };
