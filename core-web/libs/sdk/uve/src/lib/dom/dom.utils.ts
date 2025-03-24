@@ -9,11 +9,11 @@ import { DotCMSContainerBound, DotCMSContentletBound } from '../types/editor/int
  * @example
  * ```ts
  * const containers = document.querySelectorAll('.container');
- * const bounds = getDotCMSPageElementBound(containers);
+ * const bounds = getDotCMSPageBounds(containers);
  * console.log(bounds);
  * ```
  */
-export function getDotCMSPageElementBound(containers: HTMLDivElement[]): DotCMSContainerBound[] {
+export function getDotCMSPageBounds(containers: HTMLDivElement[]): DotCMSContainerBound[] {
     return containers.map((container) => {
         const containerRect = container.getBoundingClientRect();
         const contentlets = Array.from(
@@ -148,27 +148,6 @@ export function findDotCMSElement(element: HTMLElement | null): HTMLElement | nu
     }
 
     return findDotCMSElement(element?.['parentElement']);
-}
-
-/**
- * Find the closest VTL file element based on HTMLElement.
- *
- * @export
- * @param {HTMLElement | null} element - The starting element.
- * @return {HTMLElement | null} The closest VTL file element or null if not found.
- * @example
- * const element = document.querySelector('.some-element');
- * const vtlFile = findDotCMSVTLElement(element);
- * console.log(vtlFile);
- */
-export function findDotCMSVTLElement(element: HTMLElement | null): HTMLElement | null {
-    if (!element) return null;
-
-    if (element.dataset && element.dataset?.['dotObject'] === 'vtl-file') {
-        return element;
-    } else {
-        return findDotCMSElement(element?.['parentElement']);
-    }
 }
 
 /**
