@@ -242,18 +242,18 @@ public class ContentUtils {
 					final String currentDate = ESMappingAPIImpl.datetimeFormat.format(new Date());
 
                     //ES/OpenSearch Magic value constant for default/uninitialized dates or end of time dates
-					final String MAGIC_VALUE = "29990101000000";
+					final String UNINITIALIZED_VALUE = "29990101000000";
 
 					// Query to get the contentlets that are not expired and also have an expiration date set
 					// By "set" we mean that the expiration date is not the default value used by ES/OpenSearch to construct the index
 					final String notExpired = " +(" +
-							"(-expdate_dotraw:" + MAGIC_VALUE + " +expdate:[" + formatedDate + " TO " + MAGIC_VALUE + "]) " +
-							"OR expdate_dotraw:" + MAGIC_VALUE +
+							"(-expdate_dotraw:" + UNINITIALIZED_VALUE + " +expdate:[" + formatedDate + " TO " + UNINITIALIZED_VALUE + "]) " +
+							"OR expdate_dotraw:" + UNINITIALIZED_VALUE +
 							") ";
 
 					final String pubDateCondition = " +(" +
-							"(-pubdate_dotraw:" + MAGIC_VALUE + " +pubdate:[" + currentDate + " TO " + formatedDate + "]) " +
-							"OR pubdate_dotraw:" + MAGIC_VALUE +
+							"(-pubdate_dotraw:" + UNINITIALIZED_VALUE + " +pubdate:[" + currentDate + " TO " + formatedDate + "]) " +
+							"OR pubdate_dotraw:" + UNINITIALIZED_VALUE +
 							") ";
 
 					/*
