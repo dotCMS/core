@@ -17,7 +17,7 @@ import { CLIENT_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { getUVEState } from '@dotcms/uve';
 import { DYNAMIC_COMPONENTS } from './components';
 import { DOTCMS_CLIENT_TOKEN } from '../app.config';
-import { DotShowInUVEDirective } from '@dotcms/angular/next';
+
 import { UVE_MODE } from '@dotcms/uve/types';
 
 export type PageError = {
@@ -41,8 +41,7 @@ type PageRender = {
         NavigationComponent,
         FooterComponent,
         ErrorComponent,
-        LoadingComponent,
-        DotShowInUVEDirective
+        LoadingComponent
     ],
 
     templateUrl: './pages.component.html',
@@ -65,8 +64,6 @@ export class DotCMSPagesComponent implements OnInit {
 
     // This should be PageApiOptions from @dotcms/client
     protected readonly editorConfig: any = { params: { depth: 2 } };
-
-    readonly UVE_MODE = UVE_MODE;
 
     ngOnInit() {
         if (getUVEState()) {
