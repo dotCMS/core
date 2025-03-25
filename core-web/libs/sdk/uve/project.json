@@ -44,7 +44,7 @@
             "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "outputPath": "dist/libs/sdk/uve",
+                "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
                 "outputFileName": "sdk-editor",
                 "format": ["esm"],
                 "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
