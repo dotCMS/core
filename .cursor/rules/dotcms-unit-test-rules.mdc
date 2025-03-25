@@ -73,7 +73,7 @@ expect(icon).toHaveClass('pi', 'pi-update');
 ## Basic Test Suite Template with Spectator
 
 ```typescript
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
 import { DotTestBed } from '@tests/dot-test-bed';
 
 describe('ComponentName', () => {
@@ -82,7 +82,7 @@ describe('ComponentName', () => {
         component: ComponentName,
         imports: [CommonModule, DotTestingModule],
         providers: [
-            MockProvider(RequiredService, {
+            mockProvider(RequiredService, {
                 methodName: () => of(mockData)
             })
         ]
@@ -154,7 +154,7 @@ describe('DotComponent', () => {
     const createComponent = createComponentFactory({
         component: DotComponent,
         imports: [DotTestingModule],
-        providers: [MockProvider(DotService)]
+        providers: [mockProvider(DotService)]
     });
 
     beforeEach(() => {
