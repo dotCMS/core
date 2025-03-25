@@ -171,7 +171,12 @@ export enum UVEEventType {
     /**
      * Triggered when scroll action is needed inside the iframe
      */
-    IFRAME_SCROLL = 'iframe-scroll'
+    IFRAME_SCROLL = 'iframe-scroll',
+
+    /**
+     * Triggered when a contentlet is hovered
+     */
+    CONTENTLET_HOVERED = 'contentlet-hovered'
 }
 
 /**
@@ -182,4 +187,6 @@ export type UVEEventPayloadMap = {
     [UVEEventType.PAGE_RELOAD]: undefined;
     [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
+    // TODO: Add type here
+    [UVEEventType.CONTENTLET_HOVERED]: unknown;
 };
