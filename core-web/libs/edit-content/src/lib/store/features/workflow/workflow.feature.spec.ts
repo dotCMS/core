@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { fakeAsync, tick, flush } from '@angular/core/testing';
+import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
 import {
+    DotContentTypeService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
@@ -19,7 +21,6 @@ import {
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
-import { contentInitialState, ContentState } from './content.feature';
 import { withWorkflow } from './workflow.feature';
 
 import {
@@ -27,17 +28,10 @@ import {
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
     MOCK_WORKFLOW_DATA,
     MOCK_WORKFLOW_STATUS
-} from '../../utils/edit-content.mock';
-import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
-import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
-import { initialRootState } from '../edit-content.store';
-
-const mockInitialStateWithContent: ContentState = {
-    ...contentInitialState,
-    contentlet: MOCK_CONTENTLET_1_TAB,
-    contentType: CONTENT_TYPE_MOCK,
-    schemes: parseWorkflows(MOCK_WORKFLOW_DATA)
-};
+} from '../../../utils/edit-content.mock';
+import { parseCurrentActions } from '../../../utils/workflows.utils';
+import { initialRootState } from '../../edit-content.store';
+import { withContent } from '../content/content.feature';
 
 describe('WorkflowFeature', () => {
     let spectator: SpectatorService<any>;
@@ -52,7 +46,17 @@ describe('WorkflowFeature', () => {
 
     const createStore = createServiceFactory({
         service: signalStore(
-            withState({ ...initialRootState, ...mockInitialStateWithContent }),
+            withState({
+                ...initialRootState,
+                schemes: {
+                    [MOCK_WORKFLOW_DATA[0].scheme.id]: {
+                        scheme: MOCK_WORKFLOW_DATA[0].scheme,
+                        actions: [MOCK_WORKFLOW_DATA[0].action],
+                        firstStep: MOCK_WORKFLOW_DATA[0].firstStep
+                    }
+                }
+            }),
+            withContent(),
             withWorkflow(),
             withMethods((store) => ({
                 updateContent: (content) => {
@@ -68,7 +72,8 @@ describe('WorkflowFeature', () => {
             DotMessageService,
             MessageService,
             Router,
-            DotWorkflowService
+            DotWorkflowService,
+            DotContentTypeService
         ]
     });
 
@@ -103,6 +108,7 @@ describe('WorkflowFeature', () => {
                 dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));
                 workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
                 dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                store.initializeExistingContent(MOCK_CONTENTLET_1_TAB.inode);
 
                 store.fireWorkflowAction(mockOptions);
                 tick();
@@ -130,6 +136,31 @@ describe('WorkflowFeature', () => {
 
                 expect(store.state()).toBe(ComponentStatus.LOADED);
                 expect(store.error()).toBe('Error firing workflow action');
+            }));
+
+            it('should handle reset action correctly', fakeAsync(() => {
+                // Initialize contentlet first
+                const mockContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '123' };
+                store.updateContent(mockContentlet);
+
+                workflowActionsFireService.fireTo.mockReturnValue(of({} as DotCMSContentlet));
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                workflowActionService.getByInode.mockReturnValue(of([]));
+                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+
+                store.fireWorkflowAction(mockOptions);
+                tick();
+                flush();
+
+                expect(store.getCurrentStep()).toBeNull();
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        detail: 'Success Message',
+                        icon: 'pi pi-spin pi-spinner',
+                        severity: 'info',
+                        summary: 'Success Message'
+                    })
+                );
             }));
         });
 
@@ -162,24 +193,6 @@ describe('WorkflowFeature', () => {
                 formData: {}
             };
 
-            it('should handle reset action correctly', fakeAsync(() => {
-                workflowActionsFireService.fireTo.mockReturnValue(of({} as DotCMSContentlet));
-
-                store.fireWorkflowAction(mockOptions);
-                tick();
-                flush();
-
-                expect(store.getCurrentStep()).toBeNull();
-                expect(messageService.add).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        detail: 'Success Message',
-                        icon: 'pi pi-spin pi-spinner',
-                        severity: 'info',
-                        summary: 'Success Message'
-                    })
-                );
-            }));
-
             it('should show processing message when action starts', fakeAsync(() => {
                 workflowActionsFireService.fireTo.mockReturnValue(of(MOCK_CONTENTLET_1_TAB));
 
@@ -211,6 +224,7 @@ describe('WorkflowFeature', () => {
                 const updatedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '456' };
                 dotEditContentService.getContentById.mockReturnValue(of(updatedContentlet));
                 workflowActionsFireService.fireTo.mockReturnValue(of(updatedContentlet));
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
 
                 store.fireWorkflowAction({
                     inode: '123',

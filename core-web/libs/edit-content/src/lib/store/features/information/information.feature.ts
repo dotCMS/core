@@ -1,11 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStoreFeature,
-    withComputed,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -17,23 +11,8 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { DotEditContentService } from '../../services/dot-edit-content.service';
-
-export interface InformationState {
-    information: {
-        status: ComponentStatus;
-        error: string | null;
-        relatedContent: string;
-    };
-}
-
-const initialState: InformationState = {
-    information: {
-        status: ComponentStatus.INIT,
-        error: null,
-        relatedContent: '0'
-    }
-};
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EditContentState } from '../../edit-content.store';
 
 /**
  * Signal store feature that manages the information component state in the edit content sidebar
@@ -41,7 +20,7 @@ const initialState: InformationState = {
  */
 export function withInformation() {
     return signalStoreFeature(
-        withState(initialState),
+        { state: type<EditContentState>() },
         withComputed(({ information }) => ({
             isLoadingInformation: computed(() => information().status === ComponentStatus.LOADING)
         })),

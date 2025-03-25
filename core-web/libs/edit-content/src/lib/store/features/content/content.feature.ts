@@ -1,12 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStoreFeature,
-    type,
-    withComputed,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
 
@@ -23,53 +16,16 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    DotCMSContentlet,
-    DotCMSContentType,
-    DotCMSWorkflow,
-    DotCMSWorkflowAction,
-    DotContentletDepth,
-    FeaturedFlags,
-    WorkflowStep
-} from '@dotcms/dotcms-models';
-import { DotContentletState } from '@dotcms/edit-content/models/dot-edit-content.model';
+import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
 
-import { WorkflowState } from './workflow.feature';
-
-import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { transformFormDataFn } from '../../utils/functions.util';
-import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
-import { EditContentRootState } from '../edit-content.store';
-
-export interface ContentState {
-    /** ContentType full data */
-    contentType: DotCMSContentType | null;
-    /** Contentlet full data */
-    contentlet: DotCMSContentlet | null;
-    /** Schemas available for the content type */
-    schemes: Record<
-        string,
-        {
-            scheme: DotCMSWorkflow;
-            actions: DotCMSWorkflowAction[];
-            firstStep: WorkflowStep;
-        }
-    >;
-    initialContentletState: DotContentletState;
-}
-
-export const contentInitialState: ContentState = {
-    contentType: null,
-    contentlet: null,
-    schemes: {},
-    initialContentletState: 'new'
-};
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { transformFormDataFn } from '../../../utils/functions.util';
+import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
+import { EditContentState } from '../../edit-content.store';
 
 export function withContent() {
     return signalStoreFeature(
-        { state: type<EditContentRootState & WorkflowState>() },
-        withState(contentInitialState),
+        { state: type<EditContentState>() },
         withComputed((store) => ({
             /**
              * Computed property that determines if the content is new.

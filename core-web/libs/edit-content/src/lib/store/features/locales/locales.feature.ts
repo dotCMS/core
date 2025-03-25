@@ -5,8 +5,7 @@ import {
     type,
     withComputed,
     withHooks,
-    withMethods,
-    withState
+    withMethods
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
@@ -17,7 +16,7 @@ import { Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, switchMap, take, map } from 'rxjs/operators';
+import { filter, map, switchMap, take } from 'rxjs/operators';
 
 import {
     DotContentletService,
@@ -33,40 +32,13 @@ import {
     sortLocalesTranslatedFirst
 } from '@dotcms/edit-content/utils/functions.util';
 
-import { ContentState } from './content.feature';
-import { FormState } from './form.feature';
-import { WorkflowState } from './workflow.feature';
-
-import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { EditContentRootState } from '../../store/edit-content.store';
-import { parseCurrentActions, parseWorkflows } from '../../utils/workflows.utils';
-
-export interface LocalesState {
-    locales: DotLanguage[] | null;
-    systemDefaultLocale: DotLanguage | null;
-    currentLocale: DotLanguage | null;
-    currentIdentifier: string | null;
-    localesStatus: {
-        status: ComponentStatus;
-        error: string;
-    };
-}
-
-export const localesInitialState: LocalesState = {
-    locales: null,
-    systemDefaultLocale: null,
-    currentLocale: null,
-    currentIdentifier: null,
-    localesStatus: {
-        status: ComponentStatus.INIT,
-        error: ''
-    }
-};
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
+import { EditContentState } from '../../edit-content.store';
 
 export function withLocales() {
     return signalStoreFeature(
-        { state: type<ContentState & FormState & WorkflowState & EditContentRootState>() },
-        withState(localesInitialState),
+        { state: type<EditContentState>() },
         withComputed((store) => ({
             /**
              * Computed property that indicates whether the locales are currently being loaded.

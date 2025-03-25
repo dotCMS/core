@@ -2,7 +2,7 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
-import { ContentState } from './content.feature';
+import { EditContentState } from '../../edit-content.store';
 
 /**
  * Feature that handles the sidebar's state and persistence.
@@ -11,7 +11,7 @@ import { ContentState } from './content.feature';
  */
 export function withSidebar() {
     return signalStoreFeature(
-        { state: type<ContentState>() },
+        { state: type<EditContentState>() },
         withComputed(({ contentlet }) => ({
             getCurrentContentIdentifier: computed(() => contentlet()?.identifier)
         }))

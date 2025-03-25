@@ -13,11 +13,9 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotContentletCanLock, DotCurrentUser } from '@dotcms/dotcms-models';
 
-import { contentInitialState } from './content.feature';
-import { initialLockState, withLock } from './lock.feature';
-import { userInitialState } from './user.feature';
+import { withLock } from './lock.feature';
 
-import { initialRootState } from '../edit-content.store';
+import { initialRootState } from '../../edit-content.store';
 
 describe('LockFeature', () => {
     let spectator: SpectatorService<any>;
@@ -29,10 +27,7 @@ describe('LockFeature', () => {
     const withTest = () =>
         signalStoreFeature(
             withState({
-                ...contentInitialState,
-                ...userInitialState,
-                ...initialRootState,
-                ...initialLockState
+                ...initialRootState
             }),
             withMethods((store) => ({
                 updateContent: (contentlet: DotCMSContentlet) => {

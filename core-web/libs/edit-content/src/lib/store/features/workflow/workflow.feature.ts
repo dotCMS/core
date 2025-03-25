@@ -5,8 +5,7 @@ import {
     type,
     withComputed,
     withHooks,
-    withMethods,
-    withState
+    withMethods
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
@@ -28,59 +27,11 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    DotCMSWorkflow,
-    DotCMSWorkflowAction,
-    DotContentletDepths,
-    WorkflowStep,
-    WorkflowTask
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSWorkflow, DotContentletDepths } from '@dotcms/dotcms-models';
 import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
 
-import { ContentState } from './content.feature';
-import { LockState } from './lock.feature';
-
-import { parseCurrentActions } from '../../utils/workflows.utils';
-import { EditContentRootState } from '../edit-content.store';
-
-export type CurrentContentActionsWithScheme = Record<string, DotCMSWorkflowAction[]>;
-
-// Define the extended lock state that includes the computed properties
-export interface ExtendedLockState extends LockState {
-    isContentLocked: () => boolean;
-}
-
-export interface WorkflowState {
-    /** Current workflow scheme id */
-    currentSchemeId: string | null;
-
-    /** Actions available for the current content */
-    currentContentActions: CurrentContentActionsWithScheme;
-
-    /** Current workflow step */
-    currentStep: WorkflowStep | null;
-
-    /** Last workflow task of the contentlet */
-    lastTask: WorkflowTask | null;
-
-    // Nested workflow status
-    workflow: {
-        status: ComponentStatus;
-        error: string | null;
-    };
-}
-
-export const workflowInitialState: WorkflowState = {
-    currentSchemeId: null,
-    currentContentActions: {},
-    currentStep: null,
-    lastTask: null,
-    workflow: {
-        status: ComponentStatus.INIT,
-        error: null
-    }
-};
+import { parseCurrentActions } from '../../../utils/workflows.utils';
+import { EditContentState } from '../../edit-content.store';
 
 /**
  * Signal store feature that manages the workflow component state in the edit content sidebar
@@ -90,8 +41,7 @@ export const workflowInitialState: WorkflowState = {
  */
 export function withWorkflow() {
     return signalStoreFeature(
-        { state: type<EditContentRootState & ContentState>() },
-        withState(workflowInitialState),
+        { state: type<EditContentState>() },
         withComputed((store) => ({
             /**
              * Computed property that determines if the workflow component is in a loading state

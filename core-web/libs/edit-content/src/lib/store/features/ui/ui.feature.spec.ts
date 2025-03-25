@@ -4,14 +4,13 @@ import { signalStore, signalStoreFeature, withState } from '@ngrx/signals';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { contentInitialState } from './content.feature';
 import { withUI } from './ui.feature';
 
-import { DotContentletState } from '../../models/dot-edit-content.model';
-import { getStoredUIState, saveStoreUIState } from '../../utils/functions.util';
-import { initialRootState } from '../edit-content.store';
+import { DotContentletState } from '../../../models/dot-edit-content.model';
+import { getStoredUIState, saveStoreUIState } from '../../../utils/functions.util';
+import { initialRootState } from '../../edit-content.store';
 
-jest.mock('../../utils/functions.util', () => ({
+jest.mock('../../../utils/functions.util', () => ({
     getStoredUIState: jest.fn(() => ({
         activeTab: 0,
         isSidebarOpen: true,
@@ -28,7 +27,6 @@ describe('UI Feature', () => {
         signalStoreFeature(
             withState({
                 ...initialRootState,
-                ...contentInitialState,
                 initialContentletState: 'edit' as DotContentletState
             })
         );

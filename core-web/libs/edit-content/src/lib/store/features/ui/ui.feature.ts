@@ -4,31 +4,13 @@ import {
     type,
     withComputed,
     withHooks,
-    withMethods,
-    withState
+    withMethods
 } from '@ngrx/signals';
 
 import { computed, effect, untracked } from '@angular/core';
 
-import { ContentState } from './content.feature';
-
-import { getStoredUIState, saveStoreUIState } from '../../utils/functions.util';
-import { EditContentRootState } from '../edit-content.store';
-
-export interface UIState {
-    /** Active tab index in the content editor */
-    activeTab: number;
-    /** Flag to control sidebar visibility */
-    isSidebarOpen: boolean;
-    /** Active tab in the sidebar */
-    activeSidebarTab: number;
-}
-
-export const uiInitialState: UIState = {
-    activeTab: 0,
-    isSidebarOpen: true,
-    activeSidebarTab: 0
-};
+import { getStoredUIState, saveStoreUIState } from '../../../utils/functions.util';
+import { EditContentState } from '../../edit-content.store';
 
 /**
  * Feature that manages UI-related state for the content editor
@@ -36,8 +18,8 @@ export const uiInitialState: UIState = {
  */
 export function withUI() {
     return signalStoreFeature(
-        { state: type<EditContentRootState & ContentState>() },
-        withState({ uiState: uiInitialState }),
+        { state: type<EditContentState>() },
+
         withComputed((store) => ({
             /**
              * Computed property that returns the currently active tab index.
