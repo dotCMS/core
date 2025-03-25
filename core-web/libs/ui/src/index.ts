@@ -45,6 +45,7 @@ export * from './lib/directives/dot-sidebar.directive';
 export * from './lib/directives/dot-dynamic.directive';
 export * from './lib/directives/dot-string-template-outlet.directive';
 export * from './lib/directives/dot-state-restore/dot-state-restore.directive';
+export * from './lib/directives/dot-gravatar/dot-gravatar.directive';
 
 // Services
 export * from './lib/services/clipboard/ClipboardUtil';

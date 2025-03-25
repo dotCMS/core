@@ -89,9 +89,7 @@ export class DotEditorModeSelectorComponent {
             toMode: mode
         });
 
-        this.#store.loadPageAsset({
-            mode: mode,
-            publishDate: mode === UVE_MODE.LIVE ? new Date().toISOString() : undefined
-        });
+        /* More info here: https://github.com/dotCMS/core/issues/31719 */
+        this.#store.loadPageAsset({ mode: mode, publishDate: undefined });
     }
 }

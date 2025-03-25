@@ -82,10 +82,12 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
+import java.sql.Savepoint;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -102,7 +104,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
@@ -144,13 +145,15 @@ public class ImportUtil {
 
     private static final int TEXT_FIELD_MAX_LENGTH = 255;
 
-    private final static String languageCodeHeader = "languageCode";
-    private final static String countryCodeHeader = "countryCode";
-    public final static String identifierHeader = "Identifier";
+    private static final String languageCodeHeader = "languageCode";
+    private static final String countryCodeHeader = "countryCode";
+    public static final String identifierHeader = "Identifier";
 
-    private final static int commitGranularity = 100;
+    public static final int COMMIT_GRANULARITY = Lazy.of(
+            () -> Config.getIntProperty("COMMIT_GRANULARITY", 100)
+    ).get();
 
-    public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
+    protected static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
         "MM/dd/yy hh:mm aa", "MM/dd/yyyy hh:mm aa",	"MM/dd/yy HH:mm", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy", "M/d/y", "M/d",
         "EEEE, MMMM dd, yyyy", "MM/dd/yyyy", "hh:mm:ss aa", "HH:mm:ss", "hh:mm aa", "yyyy-MM-dd" };
 
@@ -232,11 +235,23 @@ public class ImportUtil {
             String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn,
             int countryCodeHeaderColumn, Reader reader, String wfActionId,
             final HttpServletRequest request) throws DotRuntimeException, DotDataException {
-
-        ImportResult result = importFileResult(importId, currentSiteId, contentTypeInode,
-                keyfields, preview, isMultilingual, user, language, csvHeaders, csvreader,
-                languageCodeHeaderColumn, countryCodeHeaderColumn, wfActionId, 0,
-                request, null);
+        final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
+                .importId(importId)
+                .siteId(currentSiteId)
+                .contentTypeInode(contentTypeInode)
+                .keyFields(keyfields)
+                .preview(preview)
+                .isMultilingual(isMultilingual)
+                .user(user)
+                .language(language)
+                .csvHeaders(csvHeaders)
+                .csvReader(csvreader)
+                .languageCodeHeaderColumn(languageCodeHeaderColumn)
+                .countryCodeHeaderColumn(countryCodeHeaderColumn)
+                .request(request)
+                .workflowActionId(wfActionId)
+                .build();
+        final ImportResult result = importFileResult(importFileParams);
         return ImportResultConverter.toLegacyFormat(result, user);
     }
 
@@ -271,22 +286,24 @@ public class ImportUtil {
      * @throws DotRuntimeException If a critical error occurs
      * @throws DotDataException    If a data access error occurs
      */
-    public static ImportResult importFileResult(
-            Long importId, String currentSiteId, String contentTypeInode, String[] keyfields,
-            boolean preview, boolean isMultilingual, User user, long language,
-            String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn,
-            int countryCodeHeaderColumn, String wfActionId, final long fileTotalLines,
-            final HttpServletRequest request, final LongConsumer progressCallback)
+    /**
+     * Modified version of the importFileResult method that maintains consistent
+     * commit granularity even when errors and rollbacks occur.
+     */
+    public static ImportResult importFileResult(final ImportFileParams params)
             throws DotRuntimeException, DotDataException {
 
         Structure contentType = CacheLocator.getContentTypeCache()
-                .getStructureByInode(contentTypeInode);
+                .getStructureByInode(params.contentTypeInode());
         List<Permission> contentTypePermissions = permissionAPI.getPermissions(contentType);
         List<UniqueFieldBean> uniqueFieldBeans = new ArrayList<>();
 
         // Initialize processing variables
         int failedRows = 0;
         int lineNumber = 0;
+
+        // Track successful imports separately from line number for consistent commit granularity
+        int successfulImports = 0;
 
         // Initialize counters
         final Counters counters = new Counters();
@@ -314,16 +331,16 @@ public class ImportUtil {
         final List<String> updatedInodes = new ArrayList<>();
 
         try {
-            if ((csvHeaders != null) || (csvreader.readHeaders())) {
+            if ((params.csvHeaders() != null) || (params.csvReader().readHeaders())) {
 
                 // Process headers
-                if (csvHeaders != null) {
-                    headerValidation = importHeaders(csvHeaders, contentType, keyfields,
-                            isMultilingual, user, headers, keyFields, uniqueFields, relationships,
+                if (params.csvHeaders() != null) {
+                    headerValidation = importHeaders(params.csvHeaders(), contentType, params.keyFields(),
+                            params.isMultilingual(), params.user(), headers, keyFields, uniqueFields, relationships,
                             onlyChild, onlyParent);
                 } else {
-                    headerValidation = importHeaders(csvreader.getHeaders(), contentType, keyfields,
-                            isMultilingual, user, headers, keyFields, uniqueFields, relationships,
+                    headerValidation = importHeaders(params.csvReader().getHeaders(), contentType, params.keyFields(),
+                            params.isMultilingual(), params.user(), headers, keyFields, uniqueFields, relationships,
                             onlyChild, onlyParent);
                 }
 
@@ -344,24 +361,24 @@ public class ImportUtil {
                 }
 
                 lineNumber++;
-
+                Savepoint savepoint = null;
                 // Log preview/import status every 100 processed records
                 // Reading the whole file
                 if (!headers.isEmpty()) {
 
-                    if (!preview) {
+                    if (!params.preview()) {
                         HibernateUtil.startTransaction();
                     }
 
                     String[] csvLine;
-                    while (csvreader.readRecord()) {
+                    while (params.csvReader().readRecord()) {
 
                         lineNumber++;
-                        csvLine = csvreader.getValues();
+                        csvLine = params.csvReader().getValues();
                         LineImportResultBuilder resultBuilder = null;
 
                         // Check for cancellation
-                        if (ImportAuditUtil.cancelledImports.containsKey(importId)) {
+                        if (ImportAuditUtil.cancelledImports.containsKey(params.importId())) {
                             messages.add(ValidationMessage.builder()
                                     .type(ValidationMessageType.INFO)
                                     .lineNumber(lineNumber)
@@ -373,12 +390,12 @@ public class ImportUtil {
                         try {
 
                             Logger.debug(ImportUtil.class,
-                                    "Line " + lineNumber + ": (" + csvreader.getRawRecord() + ").");
+                                    "Line " + lineNumber + ": (" + params.csvReader().getRawRecord() + ").");
 
                             // Process language for line
-                            final Long languageToImport = processLanguage(language,
-                                    languageCodeHeaderColumn,
-                                    countryCodeHeaderColumn, csvLine);
+                            final Long languageToImport = processLanguage(params.language(),
+                                    params.languageCodeHeaderColumn(),
+                                    params.countryCodeHeaderColumn(), csvLine);
 
                             if (languageToImport != -1) {
 
@@ -393,15 +410,16 @@ public class ImportUtil {
                                         identifierColumnIndex, csvLine
                                 );
 
+                                savepoint = HibernateUtil.setSavepoint();
                                 //Importing content record...
                                 resultBuilder = new LineImportResultBuilder(lineNumber);
-                                importLine(csvLine, currentSiteId,
-                                        contentType, preview, isMultilingual, user, identifier,
+                                importLine(csvLine, params.siteId(),
+                                        contentType, params.preview(), params.isMultilingual(), params.user(), identifier,
                                         workflowActionIdColumnIndex, lineNumber, languageToImport,
                                         headers, keyFields, chosenKeyFields, keyContentUpdated,
                                         contentTypePermissions, uniqueFieldBeans, uniqueFields,
                                         relationships, onlyChild, onlyParent, sameKeyBatchInsert,
-                                        wfActionId, request, resultBuilder);
+                                        params.workflowActionId(), params.request(), resultBuilder);
                                 final var lineResult = resultBuilder.build();
                                 parseLineResults(counters, lineResult, messages, savedInodes,
                                         updatedInodes, true);
@@ -410,31 +428,52 @@ public class ImportUtil {
                                 if (!keyFields.isEmpty()) {
                                     storeKeyFieldValues(keyFields, csvLine, counters);
                                 }
+
+                                // Increment the successful imports counter
+                                successfulImports++;
+
+                                // Handle transaction commits based on successful imports instead of line number
+                                if (successfulImports % params.commitGranularityOverride() == 0) {
+                                    handleBatchCommit(params.preview(), lineNumber);
+                                    counters.incCommits();
+                                    savepoint = null;
+
+                                    Logger.debug(ImportUtil.class,
+                                            "Committed batch at line " + lineNumber + " after " +
+                                                    successfulImports + " successful imports.");
+                                }
                             } else {
                                 messages.add(ValidationMessage.builder()
                                         .type(ValidationMessageType.ERROR)
                                         .code(LANGUAGE_NOT_FOUND.name())
-                                        .message(LanguageUtil.get(user,
+                                        .message(LanguageUtil.get(params.user(),
                                                 "Locale-not-found-for-languageCode") + " ='"
-                                                + csvLine[languageCodeHeaderColumn]
+                                                + csvLine[params.languageCodeHeaderColumn()]
                                                 + "' countryCode='"
-                                                + csvLine[countryCodeHeaderColumn] + "'")
+                                                + csvLine[params.countryCodeHeaderColumn()] + "'")
                                         .context(Map.of(
-                                                "Language code", csvLine[languageCodeHeaderColumn],
-                                                "Country code", csvLine[countryCodeHeaderColumn]
+                                                "Language code", csvLine[params.languageCodeHeaderColumn()],
+                                                "Country code", csvLine[params.countryCodeHeaderColumn()]
                                         ))
                                         .lineNumber(lineNumber)
                                         .build());
-                            }
 
-                            // Handle transaction commits
-                            if (lineNumber % commitGranularity == 0) {
-                                handleBatchCommit(preview, lineNumber);
+                                // Count language errors as failures
+                                failedRows++;
                             }
 
                         } catch (Exception ex) {
 
                             failedRows++;
+
+                            // Roll back to savepoint on error
+                            if (!params.preview() && savepoint != null && !params.stopOnError()) {
+                                HibernateUtil.rollbackSavepoint(savepoint);
+                                counters.incRollbacks();
+
+                                Logger.debug(ImportUtil.class,
+                                        "Rolled back to savepoint at line " + lineNumber);
+                            }
 
                             // If we failed importing a line we need to make sure we track
                             // everything that was done so far
@@ -449,31 +488,47 @@ public class ImportUtil {
                             handleException(ex, lineNumber, messages);
 
                             Logger.warn(ImportUtil.class, "Error line: " + lineNumber +
-                                    " (" + csvreader.getRawRecord() + "). Line Ignored.");
+                                    " (" + params.csvReader().getRawRecord() + "). Line Ignored.");
+
+                            // Stop on first error if configured
+                            if (params.stopOnError()) {
+                                break;
+                            }
+
                         } finally {
                             // Update progress
-                            if (progressCallback != null) {
-                                progressCallback.accept(lineNumber);
+                            if (params.progressCallback() != null) {
+                                params.progressCallback().accept(lineNumber);
                             }
                         }
+                    } // End of while loop that reads the CSV file
+
+                    // Perform a final commit for any remaining records
+                    if (!params.preview() && successfulImports > 0 &&
+                            successfulImports % params.commitGranularityOverride() != 0) {
+                        handleBatchCommit(params.preview(), lineNumber);
+                        counters.incCommits();
+                        Logger.debug(ImportUtil.class,
+                                "Final commit at line " + lineNumber + " for remaining " +
+                                        (successfulImports % params.commitGranularityOverride()) + " records.");
                     }
 
                     // Finalize transaction if not preview
-                    if (!preview) {
+                    if (!params.preview()) {
                         HibernateUtil.closeAndCommitTransaction();
                     }
 
-                    if (!preview) {
+                    if (!params.preview()) {
                         if (counters.getContentUpdatedDuplicated() > 0 &&
                                 counters.getContentUpdatedDuplicated()
                                         > counters.getContentUpdated()) {
                             messages.add(ValidationMessage.builder()
                                     .type(ValidationMessageType.INFO)
                                     .message(counters.getContentUpdatedDuplicated() + " \""
-                                            + contentType.getName() + "\" " + LanguageUtil.get(user,
+                                            + contentType.getName() + "\" " + LanguageUtil.get(params.user(),
                                             "contentlets-updated-corresponding-to") + " "
                                             + counters.getContentUpdated() + " " + LanguageUtil.get(
-                                            user,
+                                            params.user(),
                                             "repeated-contents-based-on-the-key-provided"))
                                     .build()
                             );
@@ -484,7 +539,7 @@ public class ImportUtil {
                     messages.add(ValidationMessage.builder()
                             .type(ValidationMessageType.ERROR)
                             .code(HEADERS_NOT_FOUND.name())
-                            .message(LanguageUtil.get(user,
+                            .message(LanguageUtil.get(params.user(),
                                     "No-headers-found-on-the-file-nothing-will-be-imported"))
                             .build()
                     );
@@ -498,8 +553,18 @@ public class ImportUtil {
             failedRows++;
         }
 
+        // Add import statistics to messages
+        messages.add(ValidationMessage.builder()
+                .type(ValidationMessageType.INFO)
+                .message("Import statistics: " + successfulImports + " successful imports, " +
+                        failedRows + " failed rows, " +
+                        counters.getCommits() + " commits, " +
+                        counters.getRollbacks() + " rollbacks")
+                .build()
+        );
+
         // Preparing the response
-        return generateImportResult(preview, wfActionId, fileTotalLines, lineNumber, failedRows,
+        return generateImportResult(params, lineNumber, failedRows,
                 messages, fileInfoBuilder, counters, chosenKeyFields, contentType);
     }
 
@@ -524,13 +589,12 @@ public class ImportUtil {
      * @return an {@link ImportResult} object containing details about the operation, processed
      * data, validation messages, and summary information
      */
-    private static ImportResult generateImportResult(final boolean preview,
-            final String wfActionId, final long fileTotalLines, final int lineNumber,
+    private static ImportResult generateImportResult(final ImportFileParams params, final int lineNumber,
             final int failedRows, final List<ValidationMessage> messages,
             final Builder fileInfoBuilder, final Counters counters,
             final Set<String> chosenKeyFields, final Structure contentType) {
 
-        fileInfoBuilder.totalRows((int) fileTotalLines);
+        fileInfoBuilder.totalRows((int) params.fileTotalLines());
         final var fileInfo = fileInfoBuilder.build();
 
         final var infoMessages = messages.stream()
@@ -545,7 +609,7 @@ public class ImportUtil {
                 .filter(message -> message.type() == ValidationMessageType.ERROR)
                 .collect(Collectors.toList());
 
-        final String action = preview ? "Content preview" : "Content import";
+        final String action = params.preview() ? "Content preview" : "Content import";
         String statusMsg = String.format("%s has finished, %d lines were read correctly.", action,
                 lineNumber);
         statusMsg = !errorMessages.isEmpty() ? statusMsg + String.format(
@@ -574,9 +638,9 @@ public class ImportUtil {
 
         final var resultBuilder = ImportResult.builder();
         return resultBuilder
-                .type(preview ? OperationType.PREVIEW : OperationType.PUBLISH)
+                .type(params.preview() ? OperationType.PREVIEW : OperationType.PUBLISH)
                 .keyFields(calculatedKeyFields)
-                .workflowActionId(Optional.ofNullable(wfActionId))
+                .workflowActionId(Optional.ofNullable(params.workflowActionId()))
                 .contentTypeName(contentType.getName())
                 .contentTypeVariableName(contentType.getVelocityVarName())
                 .lastInode(Optional.ofNullable(counters.getLastInode()))
@@ -595,6 +659,8 @@ public class ImportUtil {
                                 .createdDisplay(createdContent)
                                 .updatedDisplay(updatedContent)
                                 .failedDisplay(failedRows)
+                                .commits(counters.getCommits())
+                                .rollbacks(counters.getRollbacks())
                                 .build())
                         .build())
                 .info(infoMessages)
@@ -625,16 +691,11 @@ public class ImportUtil {
             List<String> updatedInodes, final boolean updateCounters) {
 
         if (updateCounters) {
-            counters.setContentToCreate(
-                    counters.getContentToCreate() + lineResult.contentToCreate());
-            counters.setContentCreated(
-                    counters.getContentCreated() + lineResult.createdContent());
-            counters.setContentToUpdate(
-                    counters.getContentToUpdate() + lineResult.contentToUpdate());
-            counters.setContentUpdated(
-                    counters.getContentUpdated() + lineResult.updatedContent());
-            counters.setContentUpdatedDuplicated(
-                    counters.getContentUpdatedDuplicated() + lineResult.duplicateContent());
+            counters.incContentToCreate(lineResult.contentToCreate());
+            counters.incContentCreated(lineResult.createdContent());
+            counters.incContentToUpdate(lineResult.contentToUpdate());
+            counters.incContentUpdated(lineResult.updatedContent());
+            counters.incContentUpdatedDuplicated(lineResult.duplicateContent());
         }
 
         // Update results from line processing
@@ -683,7 +744,7 @@ public class ImportUtil {
      * @param lineNumber The number of entries processed during the batch operation.
      * @throws DotHibernateException If an error occurs while handling the Hibernate transaction.
      */
-    private static void handleBatchCommit(boolean preview, int lineNumber)
+    private static void handleBatchCommit(final boolean preview, final int lineNumber)
             throws DotHibernateException {
 
         final String action = preview ? "previewed." : "imported.";
@@ -2565,7 +2626,7 @@ public class ImportUtil {
             final User user
     ) throws DotDataException, DotSecurityException {
 
-        StringBuffer query = new StringBuffer()
+        StringBuilder query = new StringBuilder()
                 .append("+structureName:").append(contentType.getVelocityVarName())
                 .append(" +working:true +deleted:false")
                 .append(" +identifier:").append(identifier);
@@ -2627,7 +2688,7 @@ public class ImportUtil {
             final ContentletSearchResult.Builder builder
     ) throws DotDataException, DotSecurityException {
 
-        StringBuffer query = new StringBuffer()
+        StringBuilder query = new StringBuilder()
                 .append("+structureName:").append(contentType.getVelocityVarName())
                 .append(" +working:true +deleted:false");
 
@@ -2844,7 +2905,7 @@ public class ImportUtil {
             final User user
     ) throws DotDataException, DotSecurityException {
 
-        StringBuffer query = new StringBuffer()
+        StringBuilder query = new StringBuilder()
                 .append("+structureName:").append(contentType.getVelocityVarName())
                 .append(" +working:true +deleted:false")
                 .append(" +languageId:").append(language)
@@ -3103,7 +3164,7 @@ public class ImportUtil {
                         new ArrayList<>(categories));
             }
         } catch (DotContentletValidationException ex) {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             final Map<String, List<Field>> errors = ex.getNotValidFields();
             final Set<String> keys = errors.keySet();
             for (String key : keys) {
@@ -4270,7 +4331,7 @@ public class ImportUtil {
      * @return
      */
     private static String printSupportedDateFormats () {
-        StringBuffer ret = new StringBuffer("[ ");
+        StringBuilder ret = new StringBuilder("[ ");
         for (String pattern : IMP_DATE_FORMATS) {
             ret.append(pattern + ", ");
         }
@@ -4308,13 +4369,15 @@ public class ImportUtil {
      */
     public static class Counters {
 
-        public int contentToCreate = 0;
-        public int contentCreated = 0;
-        public int contentToUpdate = 0;
-        public int contentUpdated = 0;
-        public int contentUpdatedDuplicated = 0;
+        private int contentToCreate = 0;
+        private int contentCreated = 0;
+        private int contentToUpdate = 0;
+        private int contentUpdated = 0;
+        private int contentUpdatedDuplicated = 0;
+        private int commits = 0;
+        private int rollbacks = 0;
 
-        private Collection<Map<String, String>> keys = new ArrayList<>();
+        private final Collection<Map<String, String>> keys = new ArrayList<>();
 
         private String lastInode = "";
 
@@ -4322,40 +4385,40 @@ public class ImportUtil {
             return contentToCreate;
         }
 
-        public void setContentToCreate(int contentToCreate) {
-            this.contentToCreate = contentToCreate;
+        public void incContentToCreate(int contentToCreate) {
+            this.contentToCreate += contentToCreate;
         }
 
         public int getContentToUpdate() {
             return contentToUpdate;
         }
 
-        public void setContentToUpdate(int contentToUpdate) {
-            this.contentToUpdate = contentToUpdate;
+        public void incContentToUpdate(int contentToUpdate) {
+            this.contentToUpdate += contentToUpdate;
         }
 
         public int getContentCreated() {
             return contentCreated;
         }
 
-        public void setContentCreated(int contentCreated) {
-            this.contentCreated = contentCreated;
+        public void incContentCreated(int contentCreated) {
+            this.contentCreated += contentCreated;
         }
 
         public int getContentUpdated() {
             return contentUpdated;
         }
 
-        public void setContentUpdated(int contentUpdated) {
-            this.contentUpdated = contentUpdated;
+        public void incContentUpdated(int contentUpdated) {
+            this.contentUpdated += contentUpdated;
         }
 
         public int getContentUpdatedDuplicated() {
             return contentUpdatedDuplicated;
         }
 
-        public void setContentUpdatedDuplicated(int contentUpdatedDuplicated) {
-            this.contentUpdatedDuplicated = contentUpdatedDuplicated;
+        public void incContentUpdatedDuplicated(int contentUpdatedDuplicated) {
+            this.contentUpdatedDuplicated += contentUpdatedDuplicated;
         }
 
         public String getLastInode() {
@@ -4364,6 +4427,22 @@ public class ImportUtil {
 
         public void setLastInode(String lastInode) {
             this.lastInode = lastInode;
+        }
+
+        public void incCommits() {
+            commits++;
+        }
+
+        public void incRollbacks() {
+            rollbacks++;
+        }
+
+        int getCommits() {
+            return commits;
+        }
+
+        int getRollbacks(){
+            return rollbacks;
         }
 
         /**

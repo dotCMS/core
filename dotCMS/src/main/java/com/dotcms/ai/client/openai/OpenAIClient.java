@@ -49,10 +49,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @auhor vico
  */
-public class OpenAIClient implements AIClient, EventSubscriber<SystemTableUpdatedKeyEvent> {
+public class OpenAIClient implements AIClient {
 
-    private static final String AI_OPEN_AI_TIMEOUT_KEY = "AI_PROVIDERS_OPENAI_TIMEOUT";
-    private static final String AI_OPEN_AI_ATTEMPTS_KEY = "AI_PROVIDERS_OPENAI_ATTEMPTS";
+    private static final String AI_OPEN_AI_TIMEOUT_KEY = "AI_OPEN_AI_TIMEOUT_KEY";
+    private static final String AI_OPEN_AI_ATTEMPTS_KEY = "AI_OPEN_AI_ATTEMPTS_KEY";
     private static final Lazy<OpenAIClient> INSTANCE = Lazy.of(OpenAIClient::new);
 
     public static OpenAIClient get() {
@@ -60,11 +60,11 @@ public class OpenAIClient implements AIClient, EventSubscriber<SystemTableUpdate
     }
 
     private static long resolveTimeout() {
-        return Config.getLongProperty(AI_OPEN_AI_TIMEOUT_KEY, 5000L);
+        return Config.getLongProperty(AI_OPEN_AI_TIMEOUT_KEY, 120 * 1000L);
     }
 
     private static int resolveAttempts() {
-        return Config.getIntProperty(AI_OPEN_AI_ATTEMPTS_KEY, 5);
+        return Config.getIntProperty(AI_OPEN_AI_ATTEMPTS_KEY, 3);
     }
 
     private static CircuitBreakerUrl.Method resolveMethod(final JSONObjectAIRequest request) {
@@ -83,23 +83,8 @@ public class OpenAIClient implements AIClient, EventSubscriber<SystemTableUpdate
         }
     }
 
-    private final AtomicLong openAiTimeout;
-    private final AtomicInteger openAiAttempts;
 
-    private OpenAIClient() {
-        openAiTimeout = new AtomicLong(resolveTimeout());
-        openAiAttempts = new AtomicInteger(resolveAttempts());
-    }
 
-    @Override
-    public void notify(final SystemTableUpdatedKeyEvent event) {
-        Logger.info(this, String.format("Notify for event [%s]", event.getKey()));
-        if (event.getKey().contains(AI_OPEN_AI_TIMEOUT_KEY)) {
-            openAiTimeout.set(resolveTimeout());
-        } else if (event.getKey().contains(AI_OPEN_AI_ATTEMPTS_KEY)) {
-            openAiAttempts.set(resolveAttempts());
-        }
-    }
 
     /**
      * {@inheritDoc}
@@ -153,8 +138,8 @@ public class OpenAIClient implements AIClient, EventSubscriber<SystemTableUpdate
                     .setAuthHeaders(AIModels.BEARER + appConfig.getApiKey())
                     .setUrl(jsonRequest.getUrl())
                     .setRawData(payload.toString())
-                    .setTimeout(openAiTimeout.get())
-                    .setTryAgainAttempts(openAiAttempts.get())
+                    .setTimeout(resolveTimeout())
+                    .setTryAgainAttempts(resolveAttempts())
                     .setOverrideException(statusCode -> resolveException(jsonRequest, modelName, statusCode))
                     .setRaiseFailsafe(true)
                     .build()

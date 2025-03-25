@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, TemplateRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NavigationEnd } from '@angular/router';
@@ -17,6 +17,8 @@ import { CLIENT_ACTIONS, postMessageToEditor } from '@dotcms/client';
 import { getUVEState } from '@dotcms/uve';
 import { DYNAMIC_COMPONENTS } from './components';
 import { DOTCMS_CLIENT_TOKEN } from '../app.config';
+
+import { UVE_MODE } from '@dotcms/uve/types';
 
 export type PageError = {
     message: string;
@@ -41,6 +43,7 @@ type PageRender = {
         ErrorComponent,
         LoadingComponent
     ],
+
     templateUrl: './pages.component.html',
     styleUrl: './pages.component.css'
 })

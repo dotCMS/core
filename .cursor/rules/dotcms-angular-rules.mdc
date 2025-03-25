@@ -1,6 +1,7 @@
 ---
-description: Angular Rules
-globs: core-web/**
+description: 
+globs: core-web/**/*.ts,core-web/**/*.html,core-web/**/*.spec.ts
+alwaysApply: false
 ---
 **You are an Angular, SASS, and TypeScript expert focused on creating scalable and high-performance web applications. Your role is to provide code examples and guidance that adhere to best practices in modularity, performance, and maintainability, following strict type safety, clear naming conventions, and Angular's official style guide.**
 
@@ -18,6 +19,220 @@ globs: core-web/**
 ## Modern Angular Development Guidelines
 
 ### 1. Component Architecture and Patterns
+
+#### File Structure
+
+Every component MUST have three separate files:
+```
+feature/
+├── components/
+│   └── feature-list/
+│       ├── feature-list.component.ts    # Component logic
+│       ├── feature-list.component.html  # Template
+│       └── feature-list.component.scss  # Styles
+```
+
+❌ Avoid inline templates and styles:
+```typescript
+// ❌ Bad: Inline template and styles
+@Component({
+  selector: "dot-feature",
+  template: `<div>Inline template</div>`,
+  styles: [`:host { display: block }`]
+})
+```
+
+✅ Use separate files:
+```typescript
+// ✅ Good: Separate files
+@Component({
+  selector: "dot-feature",
+  templateUrl: "./feature.component.html",
+  styleUrls: ["./feature.component.scss"]
+})
+```
+
+#### SCSS Guidelines and Variables
+
+1. **Global Variables Usage**
+
+❌ Avoid hardcoding values:
+```scss
+// ❌ Bad: Hardcoded values
+.my-component {
+  padding: 16px;
+  color: #333;
+  background: #f5f5f5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+```
+
+✅ Always use global variables:
+```scss
+// ✅ Good: Using global variables
+@use "variables" as *;
+
+.my-component {
+  padding: $spacing-3;
+  color: $color-palette-gray-500;
+  background: $color-palette-gray-100;
+  box-shadow: $shadow-m;
+}
+```
+
+2. **Variables Categories Available**:
+   - Colors (`$color-palette-*`)
+   - Spacing (`$spacing-*`)
+   - Typography (`$font-size-*`)
+   - Shadows (`$shadow-*`)
+   - Breakpoints (`$screen-*`)
+   - Layout measurements (`$toolbar-height`, `$navigation-width`, etc.)
+   - Form elements (`$input-*`, `$label-*`)
+   - Animation timings (`$basic-speed`)
+
+3. **Required Import**:
+Every SCSS file MUST start with:
+```scss
+@use "variables" as *;
+```
+
+4. **Common Use Cases**:
+```scss
+.component {
+    // Spacing
+    padding: $spacing-3;
+    margin-bottom: $spacing-2;
+    
+    // Colors
+    color: $color-palette-primary;
+    background: $color-palette-gray-100;
+    border: 1px solid $color-palette-gray-400;
+    
+    // Typography
+    font-size: $font-size-md;
+    
+    // Shadows
+    box-shadow: $shadow-m;
+    
+    // Responsive
+    @media (max-width: $screen-md-max) {
+        padding: $spacing-2;
+    }
+}
+```
+
+#### BEM Naming Convention with Variables
+
+All component styles MUST follow BEM using a flat structure and global variables:
+
+```scss
+// feature-list.component.scss
+@use "variables" as *;
+
+// Block
+.feature-list {
+  padding: $spacing-3;
+  background: $color-palette-gray-100;
+  box-shadow: $shadow-m;
+}
+
+// Elements
+.feature-list__header {
+  margin-bottom: $spacing-2;
+  border-bottom: 1px solid $color-palette-gray-300;
+}
+
+.feature-list__item {
+  padding: $spacing-2;
+  background: $white;
+  border-radius: $border-radius-md;
+}
+
+// Modifiers
+.feature-list__item--active {
+  background: $color-palette-primary-op-10;
+  border: 1px solid $color-palette-primary;
+}
+
+.feature-list__item--disabled {
+  opacity: $field-disabled-opacity;
+  background: $color-palette-gray-200;
+}
+
+.feature-list--expanded {
+  padding: $spacing-4;
+}
+```
+
+❌ Avoid nesting with BEM:
+```scss
+// ❌ Bad: Nested BEM
+.feature-list {
+  &__header {
+    // styles
+  }
+  
+  &__item {
+    &--active {
+      // styles
+    }
+  }
+}
+```
+
+✅ Use flat structure:
+```scss
+// ✅ Good: Flat BEM
+.feature-list {
+  // block styles
+}
+
+.feature-list__header {
+  // element styles
+}
+
+.feature-list__item {
+  // element styles
+}
+
+.feature-list__item--active {
+  // modifier styles
+}
+```
+
+Benefits of Flat BEM Structure:
+- Easier to debug in browser dev tools
+- Clearer specificity
+- Better searchability in code
+- More predictable CSS output
+- Simpler maintenance
+- Better performance (browsers read selectors right-to-left)
+
+Rules for BEM Usage:
+1. Always use flat structure (avoid nesting with &)
+2. Use double underscore (__) for elements
+3. Use double hyphen (--) for modifiers
+4. Keep class names semantic and purpose-driven
+5. Maintain consistent naming across components
+6. Document complex class relationships with comments
+
+Example HTML with BEM classes:
+```html
+<div class="feature-list">
+  <header class="feature-list__header">
+    <h2 class="feature-list__title">Features</h2>
+  </header>
+  
+  <ul class="feature-list__items">
+    <li class="feature-list__item feature-list__item--active">
+      <span class="feature-list__item-text">Active Item</span>
+    </li>
+    <li class="feature-list__item feature-list__item--disabled">
+      <span class="feature-list__item-text">Disabled Item</span>
+    </li>
+  </ul>
+</div>
+```
 
 #### Signal-First Approach
 
@@ -641,3 +856,121 @@ Remember:
 - Implement error tracking
 - Use Angular DevTools
 - Profile rendering performance
+
+### Testing Guidelines
+
+#### Component Testing IDs
+
+Every component MUST include `data-testid` attributes following Testing Library's best practices. The format should be:
+
+```html
+<!-- Base Format -->
+data-testid="[what-it-is]-[what-it-does]"
+
+<!-- Examples -->
+<div data-testid="activities-container">
+  <header data-testid="activities-header">
+    <h2 data-testid="activities-title">Activities</h2>
+  </header>
+  
+  <ul data-testid="activities-list">
+    <li data-testid="activity-item">
+      <span data-testid="activity-description">Item Text</span>
+    </li>
+  </ul>
+
+  <!-- With states -->
+  <div data-testid="activity-item-active">Active Item</div>
+  <div data-testid="activity-item-disabled">Disabled Item</div>
+</div>
+```
+
+Rules for Test IDs:
+1. Use kebab-case for all test IDs
+2. Name should describe what the element is and/or does
+3. Every interactive element MUST have a `data-testid`
+4. Every container element that might need testing MUST have a `data-testid`
+
+Example with Common Patterns:
+
+```html
+<!-- Lists -->
+<ul data-testid="users-list">
+  <li data-testid="user-item">
+    <button data-testid="edit-button">Edit</button>
+  </li>
+</ul>
+
+<!-- Forms -->
+<form data-testid="login-form">
+  <input 
+    data-testid="username-input"
+    type="text"
+  >
+  <button data-testid="submit-button">Login</button>
+</form>
+
+<!-- States -->
+<div data-testid="error-message">Error message</div>
+<div data-testid="success-message">Success message</div>
+
+<!-- Loading States -->
+<div data-testid="loading-spinner">Loading...</div>
+<div data-testid="empty-state">No items found</div>
+```
+
+Common Elements and Their Test ID Patterns:
+- Buttons: `data-testid="submit-button"` o `data-testid="edit-button"`
+- Forms: `data-testid="login-form"` o `data-testid="search-form"`
+- Inputs: `data-testid="username-input"` o `data-testid="search-input"`
+- Lists: `data-testid="users-list"` o `data-testid="items-list"`
+- List items: `data-testid="user-item"` o `data-testid="list-item"`
+- Error messages: `data-testid="error-message"`
+- Loading indicators: `data-testid="loading-spinner"`
+- Empty states: `data-testid="empty-state"`
+- Modal/dialog: `data-testid="confirmation-dialog"`
+- Headers: `data-testid="page-header"` o `data-testid="section-header"`
+
+Benefits of Testing Library Pattern:
+- More intuitive for testing purposes
+- Focuses on user interaction and behavior
+- Less coupled to CSS structure
+- Easier to maintain
+- Better test readability
+- Follows industry best practices
+
+Testing Library Principles:
+1. Test your software the way users use it
+2. Find elements by accessibility roles and labels
+3. Prefer text content and accessibility roles over CSS selectors
+4. Avoid testing implementation details
+5. Keep tests simple and maintainable
+
+Example of a Component with Test IDs:
+```typescript
+@Component({
+  template: `
+    <div data-testid="user-profile">
+      @if (isLoading()) {
+        <div data-testid="loading-spinner">Loading...</div>
+      } @else if (error()) {
+        <div data-testid="error-message">{{ error() }}</div>
+      } @else {
+        <form data-testid="edit-profile-form">
+          <input 
+            data-testid="name-input"
+            type="text"
+            [formControl]="nameControl"
+          >
+          <button data-testid="save-button">
+            Save Changes
+          </button>
+        </form>
+      }
+    </div>
+  `
+})
+export class UserProfileComponent {
+  // ... component logic
+}
+```
