@@ -3092,7 +3092,7 @@ public class ImportUtil {
             // Validate relationships for the contentlet
             validateRelationships(lineNumber,
                     headers, categories, cont, csvRelationshipRecordsParentOnly,
-                    csvRelationshipRecordsChildOnly, csvRelationshipRecords);
+                    csvRelationshipRecordsChildOnly, csvRelationshipRecords, true);
 
             // Process workflow
             if (!preview) {
@@ -3143,7 +3143,8 @@ public class ImportUtil {
             final Contentlet cont,
             final Map<Relationship, List<Contentlet>> csvRelationshipRecordsParentOnly,
             final Map<Relationship, List<Contentlet>> csvRelationshipRecordsChildOnly,
-            final Map<Relationship, List<Contentlet>> csvRelationshipRecords
+            final Map<Relationship, List<Contentlet>> csvRelationshipRecords,
+            final boolean preview
     ) throws DotDataException {
 
         //Check the new contentlet with the validator
@@ -3152,8 +3153,9 @@ public class ImportUtil {
                         .equals(FieldType.RELATIONSHIP.toString())));
 
         try {
+
             if (skipRelationshipsValidation) {
-                conAPI.validateContentletNoRels(cont, new ArrayList<>(categories));
+                conAPI.validateContentletNoRels(cont, new ArrayList<>(categories), preview);
 
             } else {
                 ContentletRelationships contentletRelationships = loadRelationshipRecords(
@@ -3161,7 +3163,7 @@ public class ImportUtil {
                         csvRelationshipRecords, cont);
 
                 conAPI.validateContentlet(cont, contentletRelationships,
-                        new ArrayList<>(categories));
+                        new ArrayList<>(categories), preview);
             }
         } catch (DotContentletValidationException ex) {
             final StringBuilder sb = new StringBuilder();

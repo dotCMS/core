@@ -1,13 +1,16 @@
 package com.dotcms.util;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtil;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -43,6 +46,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -96,6 +100,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
 import org.glassfish.jersey.internal.util.Base64;
@@ -1668,7 +1673,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent
@@ -1740,7 +1745,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent
@@ -1812,7 +1817,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
-                    Map.of(relationship, CollectionsUtils.list(childContentlet)),
+                    Map.of(relationship, list(childContentlet)),
                     user, false);
 
             //Creating csv to update parent
@@ -3061,4 +3066,208 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         return ImportUtil.importFileResult(importFileParams);
     }
 
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * When:
+     * - Create a ContentType with a unique fields
+     * - Create a Contentlet with a value equals to 'A' in the unique fields value
+     * - Run the import with a file with 2 Contentlets with "A" and "B" as unique field values
+     * - Should create both Contentlets
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void testingImportWithUniqueFields() throws DotSecurityException, DotDataException, IOException {
+
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+
+            final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title").velocityVarName("title").type(TextField.class).next();
+
+            com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
+                    .name("unique").type(TextField.class).unique(true).next();
+
+            ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
+
+            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+            uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
+
+            String csvWContent = "A, A" + "\r\n" +
+                    "B, B" + "\r\n";
+
+            final Reader reader = createTempFile(csvWContent);
+
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
+
+           final  HashMap<String, List<String>> imported = ImportUtil.importFile(0L, defaultSite.getInode(),
+                   contentType.inode(),
+                    new String[]{titleField.id(), uniqueField.id()}, false, false,
+                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                    -1, reader,
+                    schemeStepActionResult1.getAction().getId(), getHttpRequest());
+
+           //Chekinf import result
+            final List<String> results = imported.get("results");
+            assertEquals(2, results.size());
+
+            assertTrue(results.contains(String.format("2 new \"%s\" were-created", contentType.name())));
+
+            final List<String> errors = imported.get("errors");
+            assertTrue( errors.isEmpty());
+
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
+                    APILocator.systemUser(), false, -1, 0);
+
+            assertEquals(2, contentlets.size());
+
+            final List<String> titles = contentlets.stream()
+                    .map(Contentlet::getTitle)
+                    .collect(Collectors.toList());
+
+            assertTrue(titles.contains("A"));
+            assertTrue(titles.contains("B"));
+
+            //Cheking unique_fields table
+            List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
+                            "WHERE supporting_values->>'contentTypeId' = ?")
+                    .addParam(contentType.id())
+                    .loadObjectResults();
+
+            assertEquals(2, maps.size());
+
+            final List<String> titlesUniqueFields = maps.stream()
+                    .map(entry -> getSupportingValues(entry))
+                    .flatMap(supportingValues -> ((List<String>) supportingValues.get("contentletIds")).stream())
+                    .map(id -> {
+                        try {
+                            return APILocator.getContentletAPI().findContentletByIdentifier(id, false, 1, APILocator.systemUser(), false);
+                        } catch (DotDataException | DotSecurityException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .map(Contentlet::getTitle)
+                    .collect(Collectors.toList());
+
+            assertTrue(titlesUniqueFields.contains("A"));
+            assertTrue(titlesUniqueFields.contains("B"));
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
+
+    private static Map<String, Object> getSupportingValues(Map<String, Object> entry)  {
+        try {
+            return JsonUtil.getJsonFromString(entry.get("supporting_values").toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean, User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * When:
+     * - Create a ContentType with a unique fields
+     * - Create a Contentlet with a value equals to 'A' in the unique fields value
+     * - Run the import in preview with a file with 2 Contentlets with "A" and "B" as unique field values
+     * - Should return a duplicate error and one Contentlet that is valid
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void testingImportPreviewWithUniqueFields() throws DotSecurityException, DotDataException, IOException {
+
+        final boolean oldEnabledDataBaseValidation = ESContentletAPIImpl.getFeatureFlagDbUniqueFieldValidation();
+
+        try {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(true);
+
+            final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
+
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title").velocityVarName("title").type(TextField.class).next();
+
+            com.dotcms.contenttype.model.field.Field uniqueField = new FieldDataGen()
+                    .name("unique").type(TextField.class).unique(true).next();
+
+            ContentType contentType = new ContentTypeDataGen().field(titleField).field(uniqueField).nextPersisted();
+
+            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+            uniqueField = fieldAPI.byContentTypeAndVar(contentType, uniqueField.variable());
+
+            final Contentlet contentlet = new ContentletDataGen(contentType)
+                    .setProperty(titleField.variable(), "C")
+                    .setProperty(uniqueField.variable(), "A")
+                    .nextPersisted();
+
+            String csvWContent = "A, A" + "\r\n" +
+                    "B, B" + "\r\n";
+
+            final Reader reader = createTempFile(csvWContent);
+
+            final CsvReader csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            final String[] csvHeaders = new String[]{titleField.variable(), uniqueField.variable()};
+
+            final  HashMap<String, List<String>> imported = ImportUtil.importFile(0L, defaultSite.getInode(),
+                    contentType.inode(),
+                    new String[]{titleField.id(), uniqueField.id()}, true, false,
+                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                    -1, reader,
+                    schemeStepActionResult1.getAction().getId(), getHttpRequest());
+
+            //Chekinf import result
+            final List<String> results = imported.get("results");
+            assertEquals(2, results.size());
+
+            final String resultErrorMessage = String.format("0 \"%s\" contentlets-updated-corresponding-to 0 repeated-contents-based-on-the-key-provided", contentType.name());
+
+            assertTrue(results.contains(String.format("0 new \"%s\" were-created", contentType.name())));
+            assertTrue(results.contains(resultErrorMessage));
+
+            final List<String> errors = imported.get("errors");
+            assertEquals(2, errors.size());
+
+            final String errorMessage = String.format("Line #2: Contentlet with ID 'Unknown/New' ['A'] has invalid/missing field(s). - Fields: [UNIQUE]: %s (%s)",
+                    uniqueField.name(), uniqueField.variable());
+
+            assertTrue(errors.contains(errorMessage));
+
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().findByStructure(contentType.inode(),
+                    APILocator.systemUser(), false, -1, 0);
+
+            assertEquals(1, contentlets.size());
+            assertEquals("C", contentlets.get(0).getTitle());
+
+            //Cheking unique_fields table
+            List<Map<String, Object>> maps = new DotConnect().setSQL("SELECT * FROM unique_fields " +
+                            "WHERE supporting_values->>'contentTypeId' = ?")
+                    .addParam(contentType.id())
+                    .loadObjectResults();
+
+            assertEquals(1, maps.size());
+
+            final Map<String, Object> supportingValues =
+                    getSupportingValues(maps.get(0));
+            final List<String> contentletIds = ((List<String>) supportingValues.get("contentletIds")).stream()
+                    .filter(id -> !contentlet.getIdentifier().equals(id))
+                    .collect(Collectors.toList());
+
+            assertTrue(contentletIds.isEmpty());
+        } finally {
+            ESContentletAPIImpl.setFeatureFlagDbUniqueFieldValidation(oldEnabledDataBaseValidation);
+        }
+    }
 }

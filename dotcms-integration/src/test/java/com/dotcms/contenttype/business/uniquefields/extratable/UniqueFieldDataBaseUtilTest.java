@@ -29,8 +29,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
@@ -115,24 +114,29 @@ public class UniqueFieldDataBaseUtilTest {
      */
     @Test
     public void dropUniqueFieldsTable() throws SQLException, DotDataException {
-        final Connection connection = DbConnectionFactory.getConnection();
-        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
-        dotDatabaseMetaData.dropTable(connection, "unique_fields");
-        assertFalse(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
-
         final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
-        uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
 
-        assertTrue(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
+        try {
+            final Connection connection = DbConnectionFactory.getConnection();
+            final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
+            dotDatabaseMetaData.dropTable(connection, "unique_fields");
+            assertFalse(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
 
-        new DotConnect().setSQL("INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (encode(sha256(?::bytea), 'hex'), ?)")
-                .addParam("Testing")
-                .addJSONParam("{\"test\": \"this is just a test\"}")
-                .loadObjectResults();
+            uniqueFieldDataBaseUtil.createUniqueFieldsValidationTable();
 
-        uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
+            assertTrue(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
 
-        assertFalse(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
+            new DotConnect().setSQL("INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES (encode(sha256(?::bytea), 'hex'), ?)")
+                    .addParam("Testing")
+                    .addJSONParam("{\"test\": \"this is just a test\"}")
+                    .loadObjectResults();
+
+            uniqueFieldDataBaseUtil.dropUniqueFieldsValidationTable();
+
+            assertFalse(dotDatabaseMetaData.tableExists(connection, "unique_fields"));
+        } finally {
+            uniqueFieldDataBaseUtil.createTableAndPopulate();
+        }
     }
 
     /**
@@ -808,4 +812,176 @@ public class UniqueFieldDataBaseUtilTest {
         uniqueFieldDataBaseUtil.removeLive(defaultContentlet);
     }
 
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#get(UniqueFieldCriteria)}
+     * when: Save a Unique fields value
+     * Should: be able to retrieve it from the hash
+     */
+    @Test
+    public void getFromHash() throws DotDataException {
+        final String uniqueValue = "unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersisted();
+
+        final UniqueFieldCriteria uniqueFieldCriteria = new Builder().setVariantName(contentlet.getVariantId())
+                .setLanguage(language)
+                .setContentType(contentlet.getContentType())
+                .setField(uniqueTextField)
+                .setSite(host)
+                .setLive(false)
+                .setValue(uniqueValue)
+                .build();
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+
+        final Map<String, Object> supportingValues =  new HashMap<>(uniqueFieldCriteria.toMap());
+        supportingValues.put(CONTENTLET_IDS_ATTR, List.of(contentlet.getIdentifier()));
+        supportingValues.put(UNIQUE_PER_SITE_ATTR, false);
+
+        uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
+
+        UniqueFieldDataBaseUtil.UniqueFieldValue uniqueFieldValue = uniqueFieldDataBaseUtil.get(uniqueFieldCriteria)
+                .orElseThrow();
+
+        Map<String, Object> supportingValuesFromDB = uniqueFieldValue.getSupportingValues();
+
+        assertEquals(uniqueValue, supportingValuesFromDB.get(FIELD_VALUE_ATTR));
+        assertEquals(language.getId(), Long.parseLong(supportingValuesFromDB.get(LANGUAGE_ID_ATTR).toString()));
+        assertEquals(contentType.id(), supportingValuesFromDB.get(CONTENT_TYPE_ID_ATTR));
+        assertEquals(uniqueTextField.variable(), supportingValuesFromDB.get(FIELD_VARIABLE_NAME_ATTR));
+        assertEquals(host.getIdentifier(), supportingValuesFromDB.get(SITE_ID_ATTR));
+        assertEquals(false, supportingValuesFromDB.get(LIVE_ATTR));
+
+        assertEquals(1, ((Collection) supportingValuesFromDB.get(CONTENTLET_IDS_ATTR)).size());
+        assertTrue(((Collection) supportingValuesFromDB.get(CONTENTLET_IDS_ATTR)).contains(contentlet.getIdentifier()));
+    }
+
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#updateContentListWithHash(String, List)}
+     * when: Update a unique field with a different list of contentlets
+     * Should: update the register
+     */
+    @Test
+    public void updateContentListWithHash() throws DotDataException {
+        final String uniqueValue = "unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersisted();
+
+        final UniqueFieldCriteria uniqueFieldCriteria = new Builder().setVariantName(contentlet.getVariantId())
+                .setLanguage(language)
+                .setContentType(contentlet.getContentType())
+                .setField(uniqueTextField)
+                .setSite(host)
+                .setLive(false)
+                .setValue(uniqueValue)
+                .build();
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+
+        final Map<String, Object> supportingValues =  new HashMap<>(uniqueFieldCriteria.toMap());
+        supportingValues.put(CONTENTLET_IDS_ATTR, List.of(contentlet.getIdentifier()));
+        supportingValues.put(UNIQUE_PER_SITE_ATTR, false);
+
+        uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
+
+        uniqueFieldDataBaseUtil.updateContentListWithHash(uniqueFieldCriteria.criteria(), list("1", "2"));
+
+        UniqueFieldDataBaseUtil.UniqueFieldValue uniqueFieldValue = uniqueFieldDataBaseUtil.get(uniqueFieldCriteria)
+                .orElseThrow();
+
+        Map<String, Object> supportingValuesFromDB = uniqueFieldValue.getSupportingValues();
+
+        assertEquals(2, ((Collection) supportingValuesFromDB.get(CONTENTLET_IDS_ATTR)).size());
+        assertTrue(((Collection) supportingValuesFromDB.get(CONTENTLET_IDS_ATTR)).contains("1"));
+        assertTrue(((Collection) supportingValuesFromDB.get(CONTENTLET_IDS_ATTR)).contains("2"));
+    }
+
+
+    /**
+     * Method to test: {@link UniqueFieldDataBaseUtil#updateContentListWithHash(String, List)}
+     * when: try to delete a unique_fields register using the hash
+     * Should: delete it
+     */
+    @Test
+    public void deleteByHash() throws DotDataException {
+        final String uniqueValue = "unique_value";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .nextPersisted();
+
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Field uniqueTextField = new FieldDataGen()
+                .contentTypeId(contentType.id())
+                .unique(true)
+                .type(TextField.class)
+                .nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(uniqueTextField.variable(), uniqueValue)
+                .nextPersisted();
+
+        final UniqueFieldCriteria uniqueFieldCriteria = new Builder().setVariantName(contentlet.getVariantId())
+                .setLanguage(language)
+                .setContentType(contentlet.getContentType())
+                .setField(uniqueTextField)
+                .setSite(host)
+                .setLive(false)
+                .setValue(uniqueValue)
+                .build();
+
+        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
+
+        final Map<String, Object> supportingValues =  new HashMap<>(uniqueFieldCriteria.toMap());
+        supportingValues.put(CONTENTLET_IDS_ATTR, List.of(contentlet.getIdentifier()));
+        supportingValues.put(UNIQUE_PER_SITE_ATTR, false);
+
+        uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
+
+        uniqueFieldDataBaseUtil.delete(uniqueFieldCriteria.criteria());
+
+        UniqueFieldDataBaseUtil.UniqueFieldValue uniqueFieldValue = uniqueFieldDataBaseUtil.get(uniqueFieldCriteria)
+                .orElseThrow();
+
+        assertFalse(uniqueFieldValue.getSupportingValues().isEmpty());
+    }
 }

@@ -68,6 +68,28 @@ public interface  UniqueFieldValidationStrategy {
         innerValidate(contentlet, uniqueField, value, contentType);
     }
 
+    default void validateInPreview(final Contentlet contentlet, final Field uniqueField)
+            throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
+
+        if (!uniqueField.unique()) {
+            throw new IllegalArgumentException(String.format("Field '%s' is not marked as 'unique'", uniqueField.variable()));
+        }
+
+        final Object value = contentlet.get(uniqueField.variable());
+        Objects.requireNonNull(contentlet);
+        Objects.requireNonNull(uniqueField);
+        Objects.requireNonNull(value);
+
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(contentlet.getContentTypeId());
+
+        DotPreconditions.isTrue(contentType.fields().stream()
+                        .anyMatch(contentTypeField -> Objects.equals(uniqueField.variable(), contentTypeField.variable())),
+                String.format("Field %s does not belong to the '%s' Content Type", uniqueField.variable(), contentType.variable()));
+
+        innerValidateInPreview(contentlet, uniqueField, value, contentType);
+    }
+
     /**
      * This method must be overridden for each {@link UniqueFieldValidationStrategy} implementation.
      * It runs the validation mechanism for the specific strategy. This method must be called by the
@@ -86,6 +108,12 @@ public interface  UniqueFieldValidationStrategy {
      void innerValidate(final Contentlet contentlet, final Field field, final Object fieldValue,
                                 final ContentType contentType)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException;
+
+    default void innerValidateInPreview(final Contentlet contentlet, final Field field, final Object fieldValue,
+                       final ContentType contentType)
+            throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
+
+    }
 
     /**
      * This method is called after a {@link Contentlet} is saved. It allows the Strategy to perform

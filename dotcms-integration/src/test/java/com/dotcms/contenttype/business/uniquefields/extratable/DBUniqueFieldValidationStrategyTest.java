@@ -126,7 +126,6 @@ public class DBUniqueFieldValidationStrategyTest {
                 .languageId(language.getId())
                 .next();
 
-
         final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
                 new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
         extraTableUniqueFieldValidationStrategy.validate(contentlet, uniqueField);
@@ -1022,4 +1021,79 @@ public class DBUniqueFieldValidationStrategyTest {
         }
     }
 
+    /**
+     * Method to test:  {@link DBUniqueFieldValidationStrategy#validateInPreview(Contentlet, Field)}
+     * When: Called the method with a 'unique_key_val' duplicated
+     * Should: Throw a {@link UniqueFieldValueDuplicatedException}
+     */
+    @Test
+    public void tryToInsertDuplicatedPreview() throws DotDataException, UniqueFieldValueDuplicatedException, DotSecurityException {
+        final Field uniqueField = new FieldDataGen().type(TextField.class).unique(true).next();
+        final ContentType contentType = new ContentTypeDataGen().field(uniqueField).nextPersisted();
+        final Object value =  "UniqueValue" + System.currentTimeMillis();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(uniqueField.variable(), value)
+                .host(site)
+                .languageId(language.getId())
+                .next();
+
+
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
+        extraTableUniqueFieldValidationStrategy.validate(contentlet, uniqueField);
+
+        try {
+
+            extraTableUniqueFieldValidationStrategy.validateInPreview(contentlet, uniqueField);
+            throw new AssertionError("UniqueFieldValueDupliacatedException expected");
+        } catch (UniqueFieldValueDuplicatedException e) {
+            final int countAfter = Integer.parseInt(new DotConnect()
+                    .setSQL("SELECT COUNT(*) as count " +
+                            "FROM unique_fields " +
+                            "WHERE supporting_values->>'contentTypeId' = ?")
+                    .addParam(contentType.id())
+                    .loadObjectResults()
+                    .get(0).get("count").toString());
+
+            assertEquals(1, countAfter);
+        }
+    }
+
+    /**
+     * Method to test:  {@link DBUniqueFieldValidationStrategy#validateInPreview(Contentlet, Field)}
+     * When: Called the method with a 'unique_key_val' not duplicated
+     * Should: insert nothing in the unique_fields table
+     */
+    @Test
+    public void validatePreview() throws DotDataException, UniqueFieldValueDuplicatedException, DotSecurityException {
+        final Field uniqueField = new FieldDataGen().type(TextField.class).unique(true).next();
+        final ContentType contentType = new ContentTypeDataGen().field(uniqueField).nextPersisted();
+        final Object value =  "UniqueValue" + System.currentTimeMillis();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(uniqueField.variable(), value)
+                .host(site)
+                .languageId(language.getId())
+                .next();
+
+
+        final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
+                new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
+        extraTableUniqueFieldValidationStrategy.validateInPreview(contentlet, uniqueField);
+
+        final int countAfter = Integer.parseInt(new DotConnect()
+                .setSQL("SELECT COUNT(*) as count " +
+                        "FROM unique_fields " +
+                        "WHERE supporting_values->>'contentTypeId' = ?")
+                .addParam(contentType.id())
+                .loadObjectResults()
+                .get(0).get("count").toString());
+
+        assertEquals(0, countAfter);
+    }
 }
