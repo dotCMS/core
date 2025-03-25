@@ -45,7 +45,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
-                "outputFileName": "sdk-editor",
+                "outputFileName": "editor",
                 "format": ["esm"],
                 "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
                 "project": "libs/sdk/uve/package.json",
