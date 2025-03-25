@@ -66,21 +66,20 @@ export function getUVEState(): UVEState | undefined {
     };
 }
 
-
 /**
  * Creates a subscription to a UVE event.
- * 
+ *
  * @param eventType - The type of event to subscribe to
  * @param callback - The callback function that will be called when the event occurs
  * @returns An event subscription that can be used to unsubscribe
- * 
+ *
  * @example
  * ```ts
  * // Subscribe to page changes
  * const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, (changes) => {
  *   console.log('Content changes:', changes);
  * });
- * 
+ *
  * // Later, unsubscribe when no longer needed
  * subscription.unsubscribe();
  * ```
