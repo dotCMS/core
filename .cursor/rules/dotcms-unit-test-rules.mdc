@@ -73,11 +73,13 @@ expect(icon).toHaveClass('pi', 'pi-update');
 ## Basic Test Suite Template with Spectator
 
 ```typescript
-import { createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, mockProvider, SpyObject } from '@ngneat/spectator/jest';
 import { DotTestBed } from '@tests/dot-test-bed';
 
 describe('ComponentName', () => {
     let spectator: Spectator<ComponentName>;
+    let service: SpyObject<RequiredService>;
+
     const createComponent = createComponentFactory({
         component: ComponentName,
         imports: [CommonModule, DotTestingModule],
@@ -90,6 +92,7 @@ describe('ComponentName', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        service = spectator.inject(RequiredService);
     });
 
     it('should create', () => {
@@ -142,15 +145,6 @@ spectator.setInput('users', [{ id: 1, name: 'John' }]);
 // Verify component reacts to input change
 expect(spectator.query(byTestId('user-list'))).toBeVisible();
 expect(spectator.query(byTestId('no-users-message'))).not.toBeVisible();
-```
-
-4. **ALWAYS use setInput for setting component inputs**
-```typescript
-// ❌ DON'T set inputs directly on the component
-spectator.component.inputProperty = 'some value';
-
-// ✅ USE spectator.setInput()
-spectator.setInput('inputProperty', 'some value');
 ```
 
 ## User-Centric Testing Guidelines
@@ -257,6 +251,7 @@ describe('ConfirmDialog', () => {
     });
 });
 ```
+
 
 ## Common Test Utilities
 
