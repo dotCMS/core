@@ -85,7 +85,8 @@ public class MonitorStats {
                 "esHealthy", this.esHealthy,
                 "cacheHealthy", this.cacheHealthy,
                 "localFSHealthy", this.localFSHealthy,
-                "assetFSHealthy", this.assetFSHealthy);
+                "assetFSHealthy", this.assetFSHealthy,
+                "contentAnalytics", this.contentAnalytics);
 
         return Map.of(
                 "dotCMSHealthy", this.isDotCMSHealthy(),
