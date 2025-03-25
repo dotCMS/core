@@ -12,7 +12,7 @@ import static org.mockito.Mockito.*;
 
 class EmailUtilsTest {
 
-    private static final String DOT_MAIL_FROM_ADDRESS = "configured@example.com";
+    private static final String MAIL_FROM_ADDRESS = "configured@example.com";
     private static final String COMPANY_MAIL_ADDRESS = "from@example.com";
 
     private MailerWrapper mockMailer;
@@ -46,14 +46,14 @@ class EmailUtilsTest {
     void testSendMail_UsesConfiguredFromAddress_WhenSet() {
         try (MockedStatic<Config> mockedConfig = mockStatic(Config.class)) {
             // Simulate DOT_MAIL_FROM_ADDRESS being set
-            mockedConfig.when(() -> Config.getStringProperty("DOT_MAIL_FROM_ADDRESS", "from@example.com"))
-                    .thenReturn(DOT_MAIL_FROM_ADDRESS);
+            mockedConfig.when(() -> Config.getStringProperty("MAIL_FROM_ADDRESS", "from@example.com"))
+                    .thenReturn(MAIL_FROM_ADDRESS);
 
             // Act
             EmailUtils.sendMail(user, company, "Test Subject", "Test Body");
 
             // Assert
-            verify(mockMailer).setFromEmail(DOT_MAIL_FROM_ADDRESS);
+            verify(mockMailer).setFromEmail(MAIL_FROM_ADDRESS);
             verify(mockMailer).sendMessage();
         }
     }
