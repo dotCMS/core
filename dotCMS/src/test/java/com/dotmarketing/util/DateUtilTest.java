@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -580,4 +581,73 @@ public class DateUtilTest extends UnitTestBase {
         Assert.assertEquals("2023-12-05", dateString2);
 
     }
+
+    @DataProvider
+    public static Object[][] isoDateFormats() {
+        return new Object[][] {
+                // isoDateString, year, month, day, hour, minute, second, millis
+                { "2025-03-21T13:18:00Z", 2025, 3, 21, 13, 18, 0, 0 },
+                { "2025-03-21T19:45:57.746Z", 2025, 3, 21, 19, 45, 57, 746 }
+        };
+    }
+
+    @Test
+    @UseDataProvider("isoDateFormats")
+    public void test_convertDate(String isoDateString, int expectedYear, int expectedMonth,
+            int expectedDay, int expectedHour, int expectedMinute,
+            int expectedSecond, int expectedMillis) throws ParseException {
+        // Test Date conversion
+        final Date date = DateUtil.convertDate(isoDateString);
+
+        // Verify date is not null
+        assertNotNull("Converted date should not be null", date);
+
+        // Convert to calendar to validate individual fields
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+
+        // Validate all date and time components
+        assertEquals("Year should match", expectedYear, calendar.get(java.util.Calendar.YEAR));
+        assertEquals("Month should match", expectedMonth - 1, calendar.get(java.util.Calendar.MONTH)); // Calendar months are 0-based
+        assertEquals("Day should match", expectedDay, calendar.get(java.util.Calendar.DAY_OF_MONTH));
+        assertEquals("Hour should match", expectedHour, calendar.get(java.util.Calendar.HOUR_OF_DAY));
+        assertEquals("Minute should match", expectedMinute, calendar.get(java.util.Calendar.MINUTE));
+        assertEquals("Second should match", expectedSecond, calendar.get(java.util.Calendar.SECOND));
+        assertEquals("Millisecond should match", expectedMillis, calendar.get(java.util.Calendar.MILLISECOND));
+
+        // Format and verify date string
+        final String dateString = DateUtil.formatDate(date, "yyyy-MM-dd");
+        assertEquals("Date string should match expected format",
+                String.format("%04d-%02d-%02d", expectedYear, expectedMonth, expectedDay),
+                dateString);
+
+        // Convert Date to Instant and validate again
+        final Instant instant = date.toInstant();
+        assertNotNull("Converted instant should not be null", instant);
+
+        // Convert to ZonedDateTime to easily access components
+        ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
+
+        // Validate all date and time components in the Instant
+        assertEquals("Year should match in Instant", expectedYear, zdt.getYear());
+        assertEquals("Month should match in Instant", expectedMonth, zdt.getMonthValue());
+        assertEquals("Day should match in Instant", expectedDay, zdt.getDayOfMonth());
+        assertEquals("Hour should match in Instant", expectedHour, zdt.getHour());
+        assertEquals("Minute should match in Instant", expectedMinute, zdt.getMinute());
+        assertEquals("Second should match in Instant", expectedSecond, zdt.getSecond());
+        assertEquals("Nanosecond should match in Instant", expectedMillis * 1_000_000, zdt.getNano());
+
+        // Verify ISO string from Instant matches original
+        String expectedIsoString = isoDateString;
+        String actualIsoString = instant.toString();
+
+        // Special handling for the no-milliseconds case
+        if (expectedMillis == 0) {
+            actualIsoString = actualIsoString.replace(".000Z", "Z");
+        }
+
+        assertEquals("ISO string representation should match", expectedIsoString, actualIsoString);
+    }
+
 }

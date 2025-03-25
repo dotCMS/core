@@ -54,11 +54,12 @@ public interface ContentletAPI {
 	 * Default formats for contentlets including timezones
 	 */
 	public static final String[] DEFAULT_DATE_FORMATS = new String[] {
-			// time zone
-			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+			// ISO 8601 formats with proper timezone handling
+			"yyyy-MM-dd'T'HH:mm:ss.SSSX",   // With milliseconds and timezone (2025-03-21T19:45:57.746Z)
+			"yyyy-MM-dd'T'HH:mm:ssX",       // Without milliseconds but with timezone (2025-03-21T13:18:00Z)
+			// "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",  //According to the AI this format is not correct as it expects a literal Z
 			"yyyy-MM-dd HH:mm:ss z Z", "d-MMM-yy z Z", "dd-MMM-yyyy z Z", "MM/dd/yy HH:mm:ss z Z",
 			"MM/dd/yy hh:mm:ss z Z", "MMMM dd, yyyy z Z", "M/d/y z Z", "MM/dd/yyyy z Z", "yyyy-MM-dd z Z",
-
 			"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
 			"MM/dd/yyyy hh:mm:ss aa", "MM/dd/yyyy hh:mm aa", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm:ss", "MM/dd/yy HH:mm",
 			"MM/dd/yy hh:mm:ss aa", "MM/dd/yy hh:mm:ss", "MM/dd/yyyy HH:mm:ss", "MM/dd/yyyy HH:mm", "MMMM dd, yyyy",

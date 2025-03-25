@@ -14,6 +14,7 @@ import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExp
 import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTypeTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
+import com.dotmarketing.util.DateUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -32,6 +33,7 @@ import org.junit.runners.Suite;
         CountVariantsInAllRunningExperimentsMetricTypeTest.class,
         CountVariantsInAllScheduledExperimentsMetricTypeTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
+        DateUtilTest.class
 })
 public class MainSuite3a {
 }

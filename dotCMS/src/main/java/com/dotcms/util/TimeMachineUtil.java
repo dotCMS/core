@@ -4,10 +4,12 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -76,17 +78,47 @@ public final class TimeMachineUtil {
      *         Returns an empty {@link Optional} if the date is invalid or does not meet the validation criteria.
      * @throws IllegalArgumentException If the date string cannot be parsed.
      */
-    public static Optional<Instant> parseTimeMachineDate(final String dateAsISO8601) {
+    public static Optional<Instant> parseTimeMachineDate(final String dateAsISO8601){
+        return parseTimeMachineDate(dateAsISO8601, true);
+    }
+
+    /**
+     * Parses and validates the given date string in ISO 8601 format.
+     * @param dateAsISO8601 The date string in ISO 8601 format. If null, an empty {@link Optional} is returned.
+     * @param applyGraceWindow If true, the grace window logic is applied to the date.
+     * @return
+     */
+    @VisibleForTesting
+    public static Optional<Instant> parseTimeMachineDate(final String dateAsISO8601,final boolean applyGraceWindow) {
+        // Early return for null input
         if (Objects.isNull(dateAsISO8601)) {
             return Optional.empty();
         }
-        Instant instant = Try.of(() -> DateUtil.convertDate(dateAsISO8601))
-                .map(Date::toInstant)
+
+        // Handle possible null from the Try operation
+        Try<Date> dateTry = Try.of(() -> DateUtil.convertDate(dateAsISO8601));
+
+        // If the date conversion fails or returns null, return empty
+        if (dateTry.isFailure() || dateTry.get() == null) {
+            throw new IllegalArgumentException(
+                    String.format("Error Parsing date: %s", dateAsISO8601));
+        }
+
+        // Proceed with converting to Instant
+
+        Instant instant = dateTry.map(date ->
+                        date.toInstant().atZone(ZoneId.of("UTC")).toInstant())
                 .getOrElseThrow(e ->
                         new IllegalArgumentException(
                                 String.format("Error Parsing date: %s", dateAsISO8601), e)
                 );
+
+        // If the grace window is not to be applied, return the instant
+        if (!applyGraceWindow) {
+            return Optional.of(instant);
+        }
         return isOlderThanGraceWindow(instant) ? Optional.of(instant) : Optional.empty();
+
     }
 
 
