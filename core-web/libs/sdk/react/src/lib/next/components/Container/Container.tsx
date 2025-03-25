@@ -1,6 +1,6 @@
 import { useContext, useMemo } from 'react';
 
-import { ContainerNoFound, EmptyContainer } from './ContainerFallbakcs';
+import { ContainerNoFound, EmptyContainer } from './ContainerFallbacks';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';

@@ -40,7 +40,12 @@ describe('DotRelativeDatePipe', () => {
                 },
                 {
                     provide: DotMessageService,
-                    useValue: new MockDotMessageService({ new: 'New' })
+                    useValue: new MockDotMessageService({
+                        'relative.date.now': 'Now',
+                        'relative.date.minute.ago': '1 minute ago',
+                        'relative.date.minutes.ago': '{0} minutes ago',
+                        'relative.date.hours.ago': '{0} hours ago'
+                    })
                 },
                 DotFormatDateService,
                 DotRelativeDatePipe
@@ -74,6 +79,18 @@ describe('DotRelativeDatePipe', () => {
             date.setDate(date.getDate() - 1);
             const dateAndTime = getDateAndTimeFormat(date);
             expect(pipe.transform(dateAndTime)).toEqual('1 day ago');
+        });
+
+        it('should return minutes ago for time less than 2 hours', () => {
+            const date = new Date();
+            date.setMinutes(date.getMinutes() - 30);
+            expect(pipe.transform(date.getTime())).toEqual('30 minutes ago');
+        });
+
+        it('should return hours ago for time less than 24 hours', () => {
+            const date = new Date();
+            date.setHours(date.getHours() - 5);
+            expect(pipe.transform(date.getTime())).toEqual('5 hours ago');
         });
     });
 
