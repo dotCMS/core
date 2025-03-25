@@ -1,4 +1,4 @@
-import { getPageElementBound } from '../lib/editor/internal';
+import { getDotCMSPageBounds } from '../lib/dom/dom.utils';
 import { UVEEventHandler, UVEEventSubscriber, UVEEventType } from '../lib/types/editor/public';
 import { __DOTCMS_UVE_EVENT__ } from '../lib/types/events/internal';
 
@@ -48,7 +48,7 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
                 const containers = Array.from(
                     document.querySelectorAll('[data-dot-object="container"]')
                 ) as HTMLDivElement[];
-                const positionData = getPageElementBound(containers);
+                const positionData = getDotCMSPageBounds(containers);
 
                 callback(positionData);
             }
