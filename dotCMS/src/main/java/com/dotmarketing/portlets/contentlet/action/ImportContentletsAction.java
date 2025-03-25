@@ -454,7 +454,6 @@ public class ImportContentletsAction extends DotPortletAction {
         Logger.info(this, String.format("-> File: %s", importForm.getFileName()));
         Logger.info(this, String.format("-> Content Type ID: %s", importForm.getStructure()));
 		HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentSiteId, importForm.getStructure(), importForm.getFields(), true, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, importForm.getWorkflowActionId(),httpReq);
-		//HibernateUtil.rollbackTransaction();
 		req.setAttribute("previewResults", results);
 	}
 
