@@ -31,6 +31,15 @@ export interface DotContentSearchParams {
     perPage?: number;
 }
 
+export interface DotContentSearchResponse {
+    entity: {
+        jsonObjectView: {
+            contentlets: DotCMSContentlet[];
+        };
+        resultsSize: number;
+    };
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -59,31 +68,31 @@ export class DotContentSearchService {
      * @param params Search parameters including globalSearch, systemSearchableFields, page, and perPage
      * @returns Observable with an array of DotCMSContentlet objects
      */
-    search(params: DotContentSearchParams): Observable<DotCMSContentlet[]> {
+    search(params: DotContentSearchParams): Observable<DotContentSearchResponse['entity']> {
         const payload: Partial<DotContentSearchParams> = {};
 
-        if (params.globalSearch ?? null) {
+        if (params.globalSearch !== undefined) {
             payload.globalSearch = params.globalSearch;
         }
 
-        if (params.systemSearchableFields ?? null) {
+        if (params.systemSearchableFields !== undefined) {
             payload.systemSearchableFields = params.systemSearchableFields;
         }
 
-        if (params.searchableFieldsByContentType ?? null) {
+        if (params.searchableFieldsByContentType !== undefined) {
             payload.searchableFieldsByContentType = params.searchableFieldsByContentType;
         }
 
-        if (params.page ?? null) {
+        if (params.page !== undefined) {
             payload.page = params.page;
         }
 
-        if (params.perPage ?? null) {
+        if (params.perPage !== undefined) {
             payload.perPage = params.perPage;
         }
 
         return this.#http
-            .post('/api/v1/content/search', payload)
-            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+            .post<DotContentSearchResponse>('/api/v1/content/search', payload)
+            .pipe(pluck('entity'));
     }
 }

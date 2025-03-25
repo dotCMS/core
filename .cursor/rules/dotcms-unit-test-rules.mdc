@@ -73,7 +73,7 @@ expect(icon).toHaveClass('pi', 'pi-update');
 ## Basic Test Suite Template with Spectator
 
 ```typescript
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
 import { DotTestBed } from '@tests/dot-test-bed';
 
 describe('ComponentName', () => {
@@ -82,8 +82,8 @@ describe('ComponentName', () => {
         component: ComponentName,
         imports: [CommonModule, DotTestingModule],
         providers: [
-            MockProvider(RequiredService, {
-                methodName: () => of(mockData)
+            mockProvider(RequiredService, {
+                methodName: jest.fn().mockReturnValue(of(mockData))
             })
         ]
     });
@@ -144,6 +144,15 @@ expect(spectator.query(byTestId('user-list'))).toBeVisible();
 expect(spectator.query(byTestId('no-users-message'))).not.toBeVisible();
 ```
 
+4. **ALWAYS use setInput for setting component inputs**
+```typescript
+// ❌ DON'T set inputs directly on the component
+spectator.component.inputProperty = 'some value';
+
+// ✅ USE spectator.setInput()
+spectator.setInput('inputProperty', 'some value');
+```
+
 ## User-Centric Testing Guidelines
 
 ### 1. Component Testing
@@ -154,7 +163,7 @@ describe('DotComponent', () => {
     const createComponent = createComponentFactory({
         component: DotComponent,
         imports: [DotTestingModule],
-        providers: [MockProvider(DotService)]
+        providers: [mockProvider(DotService)]
     });
 
     beforeEach(() => {

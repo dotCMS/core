@@ -3,7 +3,7 @@ import { forkJoin, Observable, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
@@ -18,11 +18,13 @@ import { Column } from '../models/column.model';
 
 type LanguagesMap = Record<number, DotLanguage>;
 
-export interface RelationshipFieldQueryParams
-    extends Required<Pick<DotContentSearchParams, 'page' | 'perPage'>> {
-    globalSearch?: DotContentSearchParams['globalSearch'];
+export type RelationshipFieldQueryParams = DotContentSearchParams & {
     contentTypeId: string;
-    systemSearchableFields?: DotContentSearchParams['systemSearchableFields'];
+};
+
+export interface RelationshipFieldSearchResponse {
+    contentlets: DotCMSContentlet[];
+    totalResults: number;
 }
 
 @Injectable({
@@ -33,21 +35,6 @@ export class RelationshipFieldService {
     readonly #contentSearchService = inject(DotContentSearchService);
     readonly #dotLanguagesService = inject(DotLanguagesService);
     readonly #httpErrorManagerService = inject(DotHttpErrorManagerService);
-
-    /**
-     * Gets relationship content items
-     * @returns Observable of RelationshipFieldItem array
-     */
-    getContent(contentTypeId: string): Observable<DotCMSContentlet[]> {
-        const query = `+contentType:${contentTypeId} +deleted:false +working:true`;
-
-        return this.#contentSearchService
-            .get({
-                query,
-                limit: 100
-            })
-            .pipe(pluck('jsonObjectView', 'contentlets'));
-    }
 
     /**
      * Searches for relationship content items using the content search API
@@ -80,7 +67,7 @@ export class RelationshipFieldService {
      *   globalSearch: 'latest'
      * });
      */
-    search(queryParams: RelationshipFieldQueryParams): Observable<DotCMSContentlet[]> {
+    search(queryParams: RelationshipFieldQueryParams): Observable<RelationshipFieldSearchResponse> {
         const params: DotContentSearchParams = {
             searchableFieldsByContentType: {
                 [queryParams.contentTypeId]: {}
@@ -98,17 +85,28 @@ export class RelationshipFieldService {
         }
 
         return this.#contentSearchService.search(params).pipe(
-            switchMap((contentlets) => {
+            switchMap(({ jsonObjectView: { contentlets }, resultsSize }) => {
                 if (!contentlets.length) {
-                    return of([]);
+                    return of({
+                        contentlets: [],
+                        totalResults: 0
+                    });
                 }
 
                 return this.#getLanguages().pipe(
-                    map((languages) => this.#prepareContent(contentlets, languages))
+                    map((languages) => ({
+                        contentlets: this.#prepareContent(contentlets, languages),
+                        totalResults: resultsSize
+                    }))
                 );
             }),
             catchError((error: HttpErrorResponse) => {
-                return this.#httpErrorManagerService.handle(error).pipe(map(() => []));
+                return this.#httpErrorManagerService.handle(error).pipe(
+                    map(() => ({
+                        contentlets: [],
+                        totalResults: 0
+                    }))
+                );
             })
         );
     }
@@ -118,15 +116,20 @@ export class RelationshipFieldService {
      * @param contentTypeId The content type ID
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
-    getColumnsAndContent(contentTypeId: string): Observable<[Column[], DotCMSContentlet[]] | null> {
+    getColumnsAndContent(
+        contentTypeId: string
+    ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
         return forkJoin([
             this.getColumns(contentTypeId),
-            this.getContent(contentTypeId),
+            this.search({ contentTypeId }),
             this.#getLanguages()
         ]).pipe(
-            map(([columns, content, languages]) => [
+            map(([columns, searchResponse, languages]) => [
                 columns,
-                this.#prepareContent(content, languages)
+                {
+                    contentlets: this.#prepareContent(searchResponse.contentlets, languages),
+                    totalResults: searchResponse.totalResults
+                }
             ]),
             catchError((error: HttpErrorResponse) => {
                 return this.#httpErrorManagerService.handle(error).pipe(map(() => null));

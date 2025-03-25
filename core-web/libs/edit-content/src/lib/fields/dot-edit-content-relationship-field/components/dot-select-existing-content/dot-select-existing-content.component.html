@@ -2,7 +2,6 @@
 @let columns = store.columns();
 @let pagination = store.pagination();
 @let selectionMode = store.selectionMode();
-@let totalItems = $items().length;
 
 <div class="flex flex-column gap-2 h-full justify-content-between">
     @if (store.errorMessage()) {
@@ -20,6 +19,7 @@
             [paginator]="data.length > pagination.rowsPerPage"
             [first]="pagination.offset"
             [rows]="pagination.rowsPerPage"
+            (onPage)="store.setOffset($event)"
             [scrollable]="true"
             styleClass="dotTable p-datatable-existing-content w-full">
             <ng-template pTemplate="caption">
@@ -134,25 +134,4 @@
             </ng-template>
         </p-table>
     }
-    <div class="flex justify-content-between">
-        <div>
-            <p class="text-primary-500">
-                {{ 'dot.file.relationship.dialog.selected.items' | dm: [totalItems.toString()] }}
-            </p>
-        </div>
-        <div class="flex gap-2">
-            <p-button
-                [label]="'Cancel' | dm"
-                [outlined]="true"
-                (onClick)="closeDialog()"
-                [text]="true"
-                severity="primary"
-                data-testId="cancel-button" />
-            <p-button
-                [disabled]="totalItems === 0"
-                (onClick)="applyChanges()"
-                [label]="$applyLabel()"
-                data-testId="apply-button" />
-        </div>
-    </div>
 </div>

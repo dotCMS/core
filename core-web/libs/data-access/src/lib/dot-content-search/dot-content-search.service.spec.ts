@@ -2,13 +2,13 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/
 
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import {
     DotContentSearchService,
     EsQueryParamsSearch,
-    DotContentSearchParams
+    DotContentSearchParams,
+    DotContentSearchResponse
 } from './dot-content-search.service';
 
 describe('DotContentSearchService', () => {
@@ -44,14 +44,20 @@ describe('DotContentSearchService', () => {
     });
 
     describe('search', () => {
-        let mockContentlets: DotCMSContentlet[];
+        const mockData: DotContentSearchResponse['entity'] = {
+            jsonObjectView: {
+                contentlets: []
+            },
+            resultsSize: 0
+        };
 
         beforeEach(() => {
-            mockContentlets = [
+            mockData.jsonObjectView.contentlets = [
                 createFakeContentlet(),
                 createFakeContentlet(),
                 createFakeContentlet()
             ];
+            mockData.resultsSize = mockData.jsonObjectView.contentlets.length;
         });
 
         it('should call the search endpoint with all provided parameters', (done) => {
@@ -64,7 +70,7 @@ describe('DotContentSearchService', () => {
             };
 
             spectator.service.search(params).subscribe((result) => {
-                expect(result).toEqual(mockContentlets);
+                expect(result).toEqual(mockData);
                 done();
             });
 
@@ -78,11 +84,7 @@ describe('DotContentSearchService', () => {
             });
 
             req.flush({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: mockContentlets
-                    }
-                }
+                entity: mockData
             });
         });
 
@@ -92,7 +94,7 @@ describe('DotContentSearchService', () => {
             };
 
             spectator.service.search(params).subscribe((result) => {
-                expect(result).toEqual(mockContentlets);
+                expect(result).toEqual(mockData);
                 done();
             });
 
@@ -102,11 +104,7 @@ describe('DotContentSearchService', () => {
             });
 
             req.flush({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: mockContentlets
-                    }
-                }
+                entity: mockData
             });
         });
 
@@ -116,7 +114,7 @@ describe('DotContentSearchService', () => {
             };
 
             spectator.service.search(params).subscribe((result) => {
-                expect(result).toEqual(mockContentlets);
+                expect(result).toEqual(mockData);
                 done();
             });
 
@@ -128,7 +126,7 @@ describe('DotContentSearchService', () => {
             req.flush({
                 entity: {
                     jsonObjectView: {
-                        contentlets: mockContentlets
+                        contentlets: mockData
                     }
                 }
             });
@@ -140,7 +138,7 @@ describe('DotContentSearchService', () => {
             };
 
             spectator.service.search(params).subscribe((result) => {
-                expect(result).toEqual(mockContentlets);
+                expect(result).toEqual(mockData);
                 done();
             });
 
@@ -150,11 +148,7 @@ describe('DotContentSearchService', () => {
             });
 
             req.flush({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: mockContentlets
-                    }
-                }
+                entity: mockData
             });
         });
 
@@ -165,7 +159,7 @@ describe('DotContentSearchService', () => {
             };
 
             spectator.service.search(params).subscribe((result) => {
-                expect(result).toEqual(mockContentlets);
+                expect(result).toEqual(mockData);
                 done();
             });
 
@@ -176,11 +170,7 @@ describe('DotContentSearchService', () => {
             });
 
             req.flush({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: mockContentlets
-                    }
-                }
+                entity: mockData
             });
         });
 
@@ -188,7 +178,7 @@ describe('DotContentSearchService', () => {
             const params: DotContentSearchParams = {};
 
             spectator.service.search(params).subscribe((result) => {
-                expect(result).toEqual(mockContentlets);
+                expect(result).toEqual(mockData);
                 done();
             });
 
@@ -196,17 +186,13 @@ describe('DotContentSearchService', () => {
             expect(req.request.body).toEqual({});
 
             req.flush({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: mockContentlets
-                    }
-                }
+                entity: mockData
             });
         });
 
         it('should handle empty contentlets array in response', (done) => {
             spectator.service.search({ globalSearch: 'nonexistent' }).subscribe((result) => {
-                expect(result).toEqual([]);
+                expect(result).toEqual(mockData);
                 done();
             });
 
