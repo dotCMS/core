@@ -1,20 +1,20 @@
 <p-dialog
     (visibleChange)="close()"
-    [visible]="!!data"
-    [header]="data?.title"
+    [visible]="!!$data()"
+    [header]="$data()?.title"
     [draggable]="false"
     [resizable]="false"
     [maximizable]="false"
     [modal]="true"
     appendTo="body"
     data-testId="dot-wizard">
-    @if (data?.steps?.length) {
+    @if ($data()?.steps?.length) {
         <div class="dot-wizard__view">
             <div
                 [ngStyle]="{ transform: transform }"
                 class="dot-wizard__container"
                 (keydown.tab)="handleTab($event)">
-                @for (step of data.steps; track $index) {
+                @for (step of $data().steps; track $index) {
                     <div
                         class="dot-wizard__step"
                         [class.dot-wizard__step--visible]="$stepsVisible()">
