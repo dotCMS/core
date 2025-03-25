@@ -29,7 +29,9 @@ import {
 import { DotContentletCanLock } from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
+import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
+import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
 
@@ -50,7 +52,8 @@ describe('DotEditContentSidebarComponent', () => {
         component: DotEditContentSidebarComponent,
         declarations: [
             MockComponent(DotEditContentSidebarInformationComponent),
-            MockComponent(DotEditContentSidebarWorkflowComponent)
+            MockComponent(DotEditContentSidebarWorkflowComponent),
+            MockComponent(DotEditContentSidebarActivitiesComponent)
         ],
         providers: [
             DotEditContentStore,
@@ -104,6 +107,7 @@ describe('DotEditContentSidebarComponent', () => {
         });
 
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
+        dotEditContentService.getActivities.mockReturnValue(of([]));
         dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
         dotContentletService.canLock.mockReturnValue(of({ canLock: true } as DotContentletCanLock));
 
@@ -122,6 +126,16 @@ describe('DotEditContentSidebarComponent', () => {
     it('should render DotEditContentSidebarWorkflowComponent', () => {
         const workflowComponent = spectator.query(DotEditContentSidebarWorkflowComponent);
         expect(workflowComponent).toBeTruthy();
+    });
+
+    it('should render DotEditContentSidebarLocalesComponent', () => {
+        const localesComponent = spectator.query(DotEditContentSidebarLocalesComponent);
+        expect(localesComponent).toBeTruthy();
+    });
+
+    it('should render DotEditContentSidebarActivitiesComponent', () => {
+        const activitiesComponent = spectator.query(DotEditContentSidebarActivitiesComponent);
+        expect(activitiesComponent).toBeTruthy();
     });
 
     it('should render PrimeNG TabView', () => {
