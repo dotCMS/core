@@ -3120,7 +3120,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             final List<String> results = imported.get("results");
             assertEquals(2, results.size());
 
-            final String expectedMessage = String.format("2 new \"%s\" were-created", contentType.name());
+            final String expectedMessage = String.format("2 New \"%s\" were created.", contentType.name());
             assertTrue(String.format("Expected Message %s, real messages", expectedMessage, results),
                     results.contains(expectedMessage));
 
@@ -3236,7 +3236,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             final String resultErrorMessage = String.format("0 \"%s\" contentlets-updated-corresponding-to 0 repeated-contents-based-on-the-key-provided", contentType.name());
 
-            final String expectedMessage = String.format("0 new \"%s\" were-created", contentType.name());
+            final String expectedMessage = String.format("0 New \"%s\" were created.", contentType.name());
             assertTrue(String.format("Expected message %s real message %s", expectedMessage, results),
                     results.contains(expectedMessage));
             assertTrue(results.contains(resultErrorMessage));
