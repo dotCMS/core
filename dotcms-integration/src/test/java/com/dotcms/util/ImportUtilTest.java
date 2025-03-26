@@ -3239,7 +3239,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             final String expectedMessage = String.format("0 New \"%s\" were created.", contentType.name());
             assertTrue(String.format("Expected message %s real message %s", expectedMessage, results),
                     results.contains(expectedMessage));
-            assertTrue(results.contains(resultErrorMessage));
+            assertTrue(String.format("Expected %s reals %s", resultErrorMessage, results),
+                    results.contains(resultErrorMessage));
 
             final List<String> errors = imported.get("errors");
             assertEquals(2, errors.size());
