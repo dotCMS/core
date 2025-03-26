@@ -18,7 +18,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
-import { SearchComponent } from './search.compoment';
+import { SearchComponent } from './search.component';
 
 describe('SearchComponent', () => {
     let spectator: Spectator<SearchComponent>;

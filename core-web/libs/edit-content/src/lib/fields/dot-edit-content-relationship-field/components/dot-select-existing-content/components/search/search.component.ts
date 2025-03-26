@@ -36,7 +36,7 @@ import { SiteFieldComponent } from './components/site-field/site-field.component
         LanguageFieldComponent,
         SiteFieldComponent
     ],
-    templateUrl: './search.compoment.html'
+    templateUrl: './search.component.html'
 })
 export class SearchComponent {
     /**

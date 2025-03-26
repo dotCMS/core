@@ -7,7 +7,7 @@ import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { DotMessageService } from '@dotcms/data-access';
 import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
-import { SearchComponent } from './components/search/search.compoment';
+import { SearchComponent } from './components/search/search.component';
 import { DotSelectExistingContentComponent } from './dot-select-existing-content.component';
 import { ExistingContentStore } from './store/existing-content.store';
 

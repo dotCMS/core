@@ -18,7 +18,7 @@ import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-stat
 import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { SearchComponent } from './components/search/search.compoment';
+import { SearchComponent } from './components/search/search.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { SelectionMode } from '../../models/relationship.models';
