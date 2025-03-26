@@ -295,6 +295,8 @@ export class DotEditContentService {
      * @returns Observable of the created activity
      */
     createActivity(identifier: string, comment: string): Observable<Activity> {
-        return this.#http.post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment });
+        return this.#http
+            .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
+            .pipe(pluck('entity'));
     }
 }

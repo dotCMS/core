@@ -1,30 +1,87 @@
 <!-- Activities List -->
-@if ($isLoading()) {
-    <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
-} @else {
-    <ul class="activities__list" data-testid="activities-list">
-        @for (activity of $activities(); track activity.taskId) {
-            <li class="activities__item" data-testid="activity-item">
-                <div class="activities__header">
-                    <p-avatar
-                        dotGravatar
-                        [email]="activity?.email"
-                        styleClass="mr-2 activities__avatar" />
-                    <span class="activities__user" data-testid="activity-user">
-                        {{ activity.postedBy }}
+<div class="activities">
+    @if ($isLoading()) {
+        <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
+    } @else {
+        <div class="activities__content">
+            <p-dataView
+                #dv
+                [value]="$activities()"
+                [rows]="10"
+                [layout]="'list'"
+                [paginator]="false"
+                [emptyMessage]="'edit.content.sidebar.activities.empty' | dm"
+                data-testid="activities-list">
+                <ng-template pTemplate="list" let-activities>
+                    @for (
+                        activity of activities;
+                        track activity.taskId + '_' + activity.createdDate
+                    ) {
+                        <div class="activities__item" data-testid="activity-item">
+                            <div class="activities__header">
+                                <p-avatar
+                                    dotGravatar
+                                    [email]="activity?.email"
+                                    styleClass="activities__avatar" />
+                                <span class="activities__user" data-testid="activity-user">
+                                    {{ activity.postedBy }}
+                                </span>
+                                <span class="activities__date" data-testid="activity-date">
+                                    {{ activity.createdDate | dotRelativeDate }}
+                                </span>
+                            </div>
+                            <span
+                                class="activities__description"
+                                data-testid="activity-description">
+                                {{ activity.commentDescription }}
+                            </span>
+                        </div>
+                    }
+                </ng-template>
+                <ng-template pTemplate="empty">
+                    <span class="activities__empty" data-testid="empty-state">
+                        {{ 'edit.content.sidebar.activities.empty' | dm }}
                     </span>
-                    <span class="activities__date" data-testid="activity-date">
-                        {{ activity.createdDate | dotRelativeDate }}
-                    </span>
-                </div>
-                <span class="activities__description" data-testid="activity-description">
-                    {{ activity.commentDescription }}
-                </span>
-            </li>
-        } @empty {
-            <span class="activities__empty" data-testid="empty-state">
-                {{ 'edit.content.sidebar.activities.empty' | dm }}
-            </span>
+                </ng-template>
+            </p-dataView>
+        </div>
+        @if (!$hideForm()) {
+            <div class="activities__footer" data-testid="activities-footer">
+                <form
+                    [formGroup]="form"
+                    (ngSubmit)="onSubmit()"
+                    class="activities__form"
+                    data-testid="activities-form">
+                    <textarea
+                        aria-label="Add Comment"
+                        pInputTextarea
+                        [rows]="5"
+                        autoResize="false"
+                        formControlName="comment"
+                        data-testid="activities-input"
+                        class="activities__input"
+                        [ngClass]="{
+                            'ng-invalid ng-dirty':
+                                form.get('comment')?.touched && form.get('comment')?.invalid
+                        }"></textarea>
+
+                    <div class="activities__actions">
+                        <p-button
+                            type="button"
+                            [disabled]="!form.dirty || $isSaving()"
+                            class="p-button-sm p-button-secondary activities__clear"
+                            data-testid="activities-clear"
+                            [label]="'edit.content.sidebar.activities.clear' | dm"
+                            (click)="clearComment()"></p-button>
+                        <p-button
+                            type="submit"
+                            [loading]="$isSaving()"
+                            class="p-button-sm p-button-primary activities__submit"
+                            data-testid="activities-submit"
+                            [label]="'edit.content.sidebar.activities.send' | dm" />
+                    </div>
+                </form>
+            </div>
         }
-    </ul>
-}
+    }
+</div>

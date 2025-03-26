@@ -6,17 +6,20 @@
 @let isLoadingInformation = $store.isLoadingInformation();
 @let referencePagesCount = $store.information.relatedContent();
 
-<aside class="content-sidebar">
+<aside class="content-sidebar h-full">
     <p-tabView
         [activeIndex]="activeIndex"
         (onChange)="onActiveIndexChange($event)"
+        styleClass="h-full flex flex-column"
         data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
         <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
 
-        <p-tabPanel [header]="'Info' | dm">
+        <p-tabPanel [header]="'Info' | dm" class="flex flex-column tab-panel">
             <!-- Information section -->
-            <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.general.title' | dm">
+            <dot-edit-content-sidebar-section
+                [title]="'edit.content.sidebar.general.title' | dm"
+                class="h-full">
                 <ng-template #sectionAction>
                     @if (!$store.isNew() && !$store.isCopyingLocale()) {
                         <dot-copy-button
@@ -47,7 +50,6 @@
             </dot-edit-content-sidebar-section>
 
             <!-- Workflow section -->
-
             <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.workflow.title' | dm">
                 <dot-edit-content-sidebar-workflow
                     [workflowSelection]="$workflowSelection()"
@@ -59,23 +61,26 @@
                     [isLoading]="$store.isLoadingWorkflow()"
                     data-testId="workflow" />
             </dot-edit-content-sidebar-section>
-
-            <!-- Activities section -->
-            <dot-edit-content-sidebar-section
-                [title]="'edit.content.sidebar.activities.title' | dm">
-                <dot-edit-content-sidebar-activities
-                    [activities]="$activities()"
-                    [state]="$activitiesStatus()"
-                    data-testId="activities" />
-            </dot-edit-content-sidebar-section>
         </p-tabPanel>
 
-        <p-tabPanel [header]="'History' | dm">
+        <p-tabPanel
+            [header]="'Activities' | dm"
+            class="h-full flex-column tab-panel tab-panel--activities">
             <ng-template pTemplate="content">
-                <span class="temporal-content">{{ 'coming.soon' | dm }}</span>
+                <!-- Activities section -->
+                <dot-edit-content-sidebar-section
+                    [title]="'edit.content.sidebar.activities.title' | dm"
+                    class="h-full">
+                    <dot-edit-content-sidebar-activities
+                        [initialContentletState]="$initialContentletState()"
+                        [activities]="$activities()"
+                        [status]="$activitiesStatus()"
+                        (commentSubmitted)="onCommentSubmitted($event)"
+                        data-testId="activities" />
+                </dot-edit-content-sidebar-section>
             </ng-template>
         </p-tabPanel>
-        <p-tabPanel [header]="'Settings' | dm">
+        <p-tabPanel [header]="'Settings' | dm" class="flex flex-column tab-panel">
             <ng-template pTemplate="content">
                 <span class="temporal-content">{{ 'coming.soon' | dm }}</span>
             </ng-template>
