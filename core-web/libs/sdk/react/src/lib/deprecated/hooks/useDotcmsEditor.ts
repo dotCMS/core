@@ -9,6 +9,7 @@ import {
     updateNavigation
 } from '@dotcms/client';
 import { createUVESubscription } from '@dotcms/uve';
+import { UVEEventType } from '@dotcms/uve/types';
 
 import { DotcmsPageProps } from '../components/DotcmsLayout/DotcmsLayout';
 import { DotCMSPageContext } from '../models';
@@ -55,7 +56,9 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
             return;
         }
 
-        const { unsubscribe } = createUVESubscription('changes', () => onReload());
+        const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, () =>
+            onReload()
+        );
 
         return () => unsubscribe();
     }, [onReload]);
@@ -79,7 +82,7 @@ export const useDotcmsEditor = ({ pageContext, config }: DotcmsPageProps) => {
             return;
         }
 
-        const { unsubscribe } = createUVESubscription('changes', (data) => {
+        const { unsubscribe } = createUVESubscription(UVEEventType.CONTENT_CHANGES, (data) => {
             const pageAsset = data as DotCMSPageContext['pageAsset'];
             setState((state) => ({ ...state, pageAsset }));
         });

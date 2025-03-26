@@ -160,6 +160,9 @@ describe('DotWizardComponent', () => {
     }));
 
     describe('multiple steps', () => {
+        let formOneFirst: DebugElement;
+        let formOneFirstSPy: jasmine.Spy;
+
         beforeEach(fakeAsync(() => {
             fixture = TestBed.createComponent(DotWizardComponent);
             component = fixture.componentInstance;
@@ -171,7 +174,10 @@ describe('DotWizardComponent', () => {
             dotWizardService.open(wizardInput);
             fixture.detectChanges();
             stepContainers = fixture.debugElement.queryAll(By.css('.dot-wizard__step'));
-            tick(2001); // interval time to focus first element.
+            tick(0); // interval time to render the elements.
+            formOneFirst = fixture.debugElement.query(By.css('.formOneFirst'));
+            formOneFirstSPy = spyOn(formOneFirst.nativeElement, 'focus');
+            tick(1001); // interval time to focus first element.
             fixture.detectChanges();
             acceptButton = fixture.debugElement.query(
                 By.css('[data-testid="dialog-accept-button"]')
@@ -188,11 +194,9 @@ describe('DotWizardComponent', () => {
         });
 
         it('should load steps and focus fist form element', () => {
-            const firstField = fixture.debugElement.query(By.css('.formOneFirst'));
-
             expect(component.formHosts.length).toEqual(2);
             expect(stepContainers.length).toEqual(2);
-            expect(firstField.nativeElement).toEqual(document.activeElement);
+            expect(formOneFirstSPy).toHaveBeenCalled();
         });
 
         it('should load buttons', () => {
