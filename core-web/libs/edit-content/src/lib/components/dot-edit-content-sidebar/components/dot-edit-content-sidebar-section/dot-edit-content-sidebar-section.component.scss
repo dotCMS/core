@@ -1,4 +1,9 @@
 @use "variables" as *;
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
 
 .dot-section {
     display: flex;
@@ -14,7 +19,7 @@
     align-items: center;
     padding: $spacing-1 0;
     position: sticky;
-    top: 53px;
+    top: 0;
     z-index: 1;
     background-color: $color-palette-gray-100;
     min-height: 48px;

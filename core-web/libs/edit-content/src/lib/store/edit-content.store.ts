@@ -96,6 +96,7 @@ export interface EditContentState {
 
     // Activities state
     activities: Activity[];
+    activityViewState: 'idle' | 'create';
     activitiesStatus: {
         status: ComponentStatus;
         error: string | null;
@@ -160,6 +161,7 @@ export const initialRootState: EditContentState = {
 
     // Activities state
     activities: [],
+    activityViewState: 'idle',
     activitiesStatus: {
         status: ComponentStatus.INIT,
         error: null
