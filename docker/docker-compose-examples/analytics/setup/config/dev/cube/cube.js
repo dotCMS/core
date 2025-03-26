@@ -22,12 +22,6 @@ module.exports = {
     preAggregationsSchema: ({ securityContext }) =>
         `pre_aggregations_${securityContext.customerId}`,*/
 
-    orchestratorOptions: {
-        queryCacheOptions: {
-            refreshKeyRenewalThreshold: 5 * 60 * 1000,
-        },
-    },
-
     queryRewrite: (query, { securityContext }) => {
         const tokenData = resolveToken(securityContext);
         console.log(`tokenData: ${JSON.stringify(tokenData, null, 2)}`);
