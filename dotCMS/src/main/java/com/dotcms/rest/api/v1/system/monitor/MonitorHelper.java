@@ -154,6 +154,11 @@ class MonitorHelper {
         return monitorStats;
     }
 
+    /**
+     * Determines if the content analytics is healthy by sending a test event to the analytics
+     * @param request
+     * @return
+     */
     private String isContentAnalytics(final HttpServletRequest request) {
 
         try {
