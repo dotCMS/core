@@ -108,14 +108,13 @@ describe('DotContentSearchService', () => {
             });
         });
 
-        it('should call the search endpoint with only systemSearchableFields parameter', (done) => {
+        it('should call the search endpoint with only systemSearchableFields parameter', () => {
             const params: DotContentSearchParams = {
                 systemSearchableFields: { languageId: 1, contentType: 'Blog' }
             };
 
             spectator.service.search(params).subscribe((result) => {
                 expect(result).toEqual(mockData);
-                done();
             });
 
             const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
