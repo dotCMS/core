@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -33,12 +33,11 @@ export class FooterComponent {
      * It provides access to the dialog's methods and properties.
      */
     readonly #dialogRef = inject(DynamicDialogRef);
-
     /**
-     * Determines the label for the apply button based on the number of selected items.
-     * @returns The localized message for the apply button
+     * A computed signal that determines the label for the apply button.
+     * It is used to display the appropriate message based on the number of selected items.
      */
-    applyLabel(): string {
+    $applyLabel = computed(() => {
         const count = this.store.items().length;
 
         const messageKey =
@@ -47,7 +46,7 @@ export class FooterComponent {
                 : 'dot.file.relationship.dialog.apply.entries';
 
         return this.#dotMessage.get(messageKey, count.toString());
-    }
+    });
 
     /**
      * A method that closes the existing content dialog.

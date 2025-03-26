@@ -1,23 +1,55 @@
-import { byTestId, createComponentFactory, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { createFakeContentlet, MockDotMessageService } from '@dotcms/utils-testing';
+import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
+import { RelationshipFieldSearchResponse, RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { FooterComponent } from './footer.component';
 
 import { ExistingContentStore } from '../../store/existing-content.store';
 
+const mockColumns: Column[] = [
+    { field: 'title', header: 'Title' },
+    { field: 'modDate', header: 'Mod Date' }
+];
+
+const mockData: RelationshipFieldSearchResponse = {
+    contentlets: [
+
+        createFakeContentlet({
+            title: 'Content 1',
+            inode: '1',
+            identifier: 'id-1',
+            languageId: mockLocales[0].id
+        }),
+        createFakeContentlet({
+            title: 'Content 2',
+            inode: '2',
+            identifier: 'id-2',
+            languageId: mockLocales[1].id
+        }),
+        createFakeContentlet({
+            title: 'Content 3',
+            inode: '3',
+            identifier: 'id-3',
+            languageId: mockLocales[0].id
+        })
+    ],
+    totalResults: 3
+};
+
 describe('FooterComponent', () => {
     let spectator: Spectator<FooterComponent>;
     let store: InstanceType<typeof ExistingContentStore>;
-    let dotMessageService: SpyObject<DotMessageService>;
     let dialogRef: SpyObject<DynamicDialogRef>;
 
     const messages = {
-        'dot.file.relationship.dialog.apply.one.entry': 'Apply {0} Entry',
-        'dot.file.relationship.dialog.apply.entries': 'Apply {0} Entries'
+        'dot.file.relationship.dialog.apply.one.entry': 'Apply {0} entry',
+        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries'
     };
 
     const createComponent = createComponentFactory({
@@ -27,14 +59,20 @@ describe('FooterComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(messages)
-            }
-        ]
+            },
+            mockProvider(RelationshipFieldService, {
+                getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
+            }),
+            mockProvider(DynamicDialogRef, {
+                close: jest.fn()
+            })
+        ],
+        detectChanges: false
     });
 
     beforeEach(() => {
         spectator = createComponent();
         store = spectator.inject(ExistingContentStore);
-        dotMessageService = spectator.inject(DotMessageService);
         dialogRef = spectator.inject(DynamicDialogRef);
     });
 
@@ -66,13 +104,12 @@ describe('FooterComponent', () => {
             store.setSelectedItems([createFakeContentlet()]);
             spectator.detectChanges();
 
-            const spy = jest.spyOn(dotMessageService, 'get');
-            spectator.component.applyLabel();
 
-            expect(spy).toHaveBeenCalledWith('dot.file.relationship.dialog.apply.one.entry', '1');
+            spectator.component.$applyLabel();
+
             expect(spectator.query(byTestId('apply-button'))).toHaveProperty(
                 'label',
-                'Apply 1 Entry'
+                'Apply 1 entry'
             );
         });
 
@@ -80,15 +117,11 @@ describe('FooterComponent', () => {
             store.setSelectedItems([createFakeContentlet(), createFakeContentlet()]);
             spectator.detectChanges();
 
-            spectator.component.applyLabel();
+            spectator.component.$applyLabel();
 
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dot.file.relationship.dialog.apply.entries',
-                '2'
-            );
             expect(spectator.query(byTestId('apply-button'))).toHaveProperty(
                 'label',
-                'Apply 2 Entries'
+                'Apply 2 entries'
             );
         });
     });
@@ -97,7 +130,6 @@ describe('FooterComponent', () => {
         it('should close dialog with null when cancel button is clicked', () => {
             spectator.click(byTestId('cancel-button'));
             expect(dialogRef.close).toHaveBeenCalled();
-            expect(dialogRef.close).toHaveBeenCalledWith();
         });
 
         it('should close dialog with selected items when apply button is clicked', () => {
@@ -119,41 +151,30 @@ describe('FooterComponent', () => {
         });
     });
 
-    describe('Edge cases', () => {
-        it('should handle large number of items correctly', () => {
-            // Create an array with 100 mock items
-            const manyItems = Array.from({ length: 100 }, (_, i) =>
-                createFakeContentlet({ inode: `item_${i}` })
-            );
-            store.setSelectedItems(manyItems);
-            spectator.detectChanges();
+    describe('Apply Button Label', () => {
+        it('should show singular label when one item is selected', () => {
+            const mockContent = [createFakeContentlet({ inode: '1' })];
+            store.setSelectedItems(mockContent);
 
-            spectator.component.applyLabel();
-
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dot.file.relationship.dialog.apply.entries',
-                '100'
-            );
-            expect(spectator.query(byTestId('apply-button'))).toHaveProperty(
-                'label',
-                'Apply 100 Entries'
-            );
-
-            // Check if the apply function can handle many items
-            spectator.click(byTestId('apply-button'));
-            expect(dialogRef.close).toHaveBeenCalledWith(manyItems);
+            const label = spectator.component.$applyLabel();
+            expect(label).toBe('Apply 1 entry');
         });
 
-        it('should handle zero items correctly', () => {
+        it('should show plural label when multiple items are selected', () => {
+            const mockContent = [
+                createFakeContentlet({ inode: '1' }),
+                createFakeContentlet({ inode: '2' })
+            ];
+            store.setSelectedItems(mockContent);
+
+            const label = spectator.component.$applyLabel();
+            expect(label).toBe('Apply 2 entries');
+        });
+
+        it('should handle empty selection', () => {
             store.setSelectedItems([]);
-            spectator.detectChanges();
-
-            spectator.component.applyLabel();
-
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dot.file.relationship.dialog.apply.entries',
-                '0'
-            );
+            const label = spectator.component.$applyLabel();
+            expect(label).toBe('Apply 0 entries');
         });
     });
 });

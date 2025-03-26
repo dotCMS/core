@@ -190,10 +190,14 @@ describe('DotContentSearchService', () => {
             });
         });
 
-        it('should handle empty contentlets array in response', (done) => {
+        it('should handle empty contentlets array in response', () => {
             spectator.service.search({ globalSearch: 'nonexistent' }).subscribe((result) => {
-                expect(result).toEqual(mockData);
-                done();
+                expect(result).toEqual({
+                    jsonObjectView: {
+                        contentlets: []
+                    },
+                    resultsSize: 0
+                });
             });
 
             const req = spectator.expectOne('/api/v1/content/search', HttpMethod.POST);
@@ -201,7 +205,8 @@ describe('DotContentSearchService', () => {
                 entity: {
                     jsonObjectView: {
                         contentlets: []
-                    }
+                    },
+                    resultsSize: 0
                 }
             });
         });

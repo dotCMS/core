@@ -174,7 +174,7 @@ export const ExistingContentStore = signalStore(
             previousPage: () => {
                 const { currentPage } = store.pagination();
 
-                if (currentPage === 0) {
+                if (currentPage === 1) {
                     return;
                 }
 
