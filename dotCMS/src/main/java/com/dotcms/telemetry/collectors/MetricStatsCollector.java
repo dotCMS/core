@@ -93,6 +93,7 @@ import com.dotcms.telemetry.collectors.template.TotalTemplatesInWorkingPagesData
 import com.dotcms.telemetry.collectors.theme.TotalFilesInThemeMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalLiveContainerDatabaseMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalLiveFilesInThemeMetricType;
+import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalThemeMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalThemeUsedInLiveTemplatesMetricType;
 import com.dotcms.telemetry.collectors.theme.TotalThemeUsedInWorkingTemplatesMetricType;
@@ -198,6 +199,7 @@ public final class MetricStatsCollector {
         metricStatsCollectors.add(new TotalLiveFilesInThemeMetricType());
         metricStatsCollectors.add(new TotalFilesInThemeMetricType());
         metricStatsCollectors.add(new TotalThemeMetricType());
+        metricStatsCollectors.add(new TotalSizeOfFilesPerThemeMetricType());
 
         metricStatsCollectors.add(new TotalLiveContainerDatabaseMetricType());
         metricStatsCollectors.add(new TotalWorkingContainerDatabaseMetricType());
