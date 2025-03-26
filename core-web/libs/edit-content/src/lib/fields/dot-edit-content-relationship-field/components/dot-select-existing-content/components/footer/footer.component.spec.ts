@@ -1,11 +1,21 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
-import { RelationshipFieldSearchResponse, RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+import {
+    RelationshipFieldSearchResponse,
+    RelationshipFieldService
+} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { FooterComponent } from './footer.component';
@@ -19,7 +29,6 @@ const mockColumns: Column[] = [
 
 const mockData: RelationshipFieldSearchResponse = {
     contentlets: [
-
         createFakeContentlet({
             title: 'Content 1',
             inode: '1',
@@ -54,6 +63,7 @@ describe('FooterComponent', () => {
 
     const createComponent = createComponentFactory({
         component: FooterComponent,
+        imports: [ButtonModule],
         providers: [
             ExistingContentStore,
             {
@@ -63,9 +73,7 @@ describe('FooterComponent', () => {
             mockProvider(RelationshipFieldService, {
                 getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
-            mockProvider(DynamicDialogRef, {
-                close: jest.fn()
-            })
+            { provide: DynamicDialogRef, useValue: { close: jest.fn() } }
         ],
         detectChanges: false
     });
@@ -76,10 +84,6 @@ describe('FooterComponent', () => {
         dialogRef = spectator.inject(DynamicDialogRef);
     });
 
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
-
     it('should create', () => {
         expect(spectator.component).toBeTruthy();
     });
@@ -88,29 +92,25 @@ describe('FooterComponent', () => {
         it('should show apply button as disabled when no items are selected', () => {
             spectator.detectChanges();
 
-            const applyButton = spectator.query(byTestId('apply-button'));
-            expect(applyButton).toHaveProperty('disabled', true);
+            const applyButton = spectator.query(byTestId('apply-button')).querySelector('button');
+            expect(applyButton.disabled).toBe(true);
         });
 
         it('should show apply button as enabled when items are selected', () => {
             store.setSelectedItems([createFakeContentlet()]);
             spectator.detectChanges();
 
-            const applyButton = spectator.query(byTestId('apply-button'));
-            expect(applyButton).toHaveProperty('disabled', false);
+            const applyButton = spectator.query(byTestId('apply-button')).querySelector('button');
+            expect(applyButton.disabled).toBe(false);
         });
 
         it('should show "Apply 1 Entry" label when 1 item is selected', () => {
             store.setSelectedItems([createFakeContentlet()]);
             spectator.detectChanges();
 
-
             spectator.component.$applyLabel();
 
-            expect(spectator.query(byTestId('apply-button'))).toHaveProperty(
-                'label',
-                'Apply 1 entry'
-            );
+            expect(spectator.query(byTestId('apply-button'))).toHaveText('Apply 1 entry');
         });
 
         it('should show "Apply X Entries" label when multiple items are selected', () => {
@@ -119,16 +119,14 @@ describe('FooterComponent', () => {
 
             spectator.component.$applyLabel();
 
-            expect(spectator.query(byTestId('apply-button'))).toHaveProperty(
-                'label',
-                'Apply 2 entries'
-            );
+            expect(spectator.query(byTestId('apply-button'))).toHaveText('Apply 2 entries');
         });
     });
 
     describe('Dialog actions', () => {
         it('should close dialog with null when cancel button is clicked', () => {
-            spectator.click(byTestId('cancel-button'));
+            const cancelButton = spectator.query(byTestId('cancel-button'));
+            spectator.click(cancelButton.querySelector('button'));
             expect(dialogRef.close).toHaveBeenCalled();
         });
 
@@ -137,7 +135,8 @@ describe('FooterComponent', () => {
             store.setSelectedItems(mockItems);
             spectator.detectChanges();
 
-            spectator.click(byTestId('apply-button'));
+            const applyButton = spectator.query(byTestId('apply-button'));
+            spectator.click(applyButton.querySelector('button'));
             expect(dialogRef.close).toHaveBeenCalledWith(mockItems);
         });
 

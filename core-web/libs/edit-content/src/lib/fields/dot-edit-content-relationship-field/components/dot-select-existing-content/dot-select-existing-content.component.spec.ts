@@ -12,7 +12,10 @@ import { DotSelectExistingContentComponent } from './dot-select-existing-content
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { Column } from '../../models/column.model';
-import { RelationshipFieldSearchResponse, RelationshipFieldService } from '../../services/relationship-field.service';
+import {
+    RelationshipFieldSearchResponse,
+    RelationshipFieldService
+} from '../../services/relationship-field.service';
 
 const mockColumns: Column[] = [
     { field: 'title', header: 'Title' },
@@ -21,7 +24,6 @@ const mockColumns: Column[] = [
 
 const mockData: RelationshipFieldSearchResponse = {
     contentlets: [
-
         createFakeContentlet({
             title: 'Content 1',
             inode: '1',
@@ -69,8 +71,7 @@ describe('DotSelectExistingContentComponent', () => {
                 getColumnsAndContent: jest.fn().mockReturnValue(of([mockColumns, mockData]))
             }),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: DynamicDialogConfig, useValue: mockDialogConfig },
-
+            { provide: DynamicDialogConfig, useValue: mockDialogConfig }
         ],
         declarations: [MockComponent(SearchComponent)],
         detectChanges: false
