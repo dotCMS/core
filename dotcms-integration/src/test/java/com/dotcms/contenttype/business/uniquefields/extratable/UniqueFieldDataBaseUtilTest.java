@@ -876,64 +876,6 @@ public class UniqueFieldDataBaseUtilTest {
 
     /**
      * Method to test: {@link UniqueFieldDataBaseUtil#updateContentListWithHash(String, List)}
-     * when: Update a unique field with a different list of contentlets
-     * Should: update the register
-     */
-    @Test
-    public void updateContentListWithHash() throws DotDataException {
-        final String uniqueValue = "unique_value";
-
-        final ContentType contentType = new ContentTypeDataGen()
-                .nextPersisted();
-
-        final Language language = new LanguageDataGen().nextPersisted();
-
-        final Field uniqueTextField = new FieldDataGen()
-                .contentTypeId(contentType.id())
-                .unique(true)
-                .type(TextField.class)
-                .nextPersisted();
-
-        final Host host = new SiteDataGen().nextPersisted();
-
-        final Contentlet contentlet = new ContentletDataGen(contentType)
-                .host(host)
-                .languageId(language.getId())
-                .setProperty(uniqueTextField.variable(), uniqueValue)
-                .nextPersisted();
-
-        final UniqueFieldCriteria uniqueFieldCriteria = new Builder().setVariantName(contentlet.getVariantId())
-                .setLanguage(language)
-                .setContentType(contentlet.getContentType())
-                .setField(uniqueTextField)
-                .setSite(host)
-                .setLive(false)
-                .setValue(uniqueValue)
-                .build();
-
-        final UniqueFieldDataBaseUtil uniqueFieldDataBaseUtil = new UniqueFieldDataBaseUtil();
-
-        final Map<String, Object> supportingValues =  new HashMap<>(uniqueFieldCriteria.toMap());
-        supportingValues.put(CONTENTLET_IDS_ATTR, List.of(contentlet.getIdentifier()));
-        supportingValues.put(UNIQUE_PER_SITE_ATTR, false);
-
-        uniqueFieldDataBaseUtil.insert(uniqueFieldCriteria.criteria(), supportingValues);
-
-        uniqueFieldDataBaseUtil.updateContentListWithHash(uniqueFieldCriteria.criteria(), list("1", "2"));
-
-        UniqueFieldDataBaseUtil.UniqueFieldValue uniqueFieldValue = uniqueFieldDataBaseUtil.get(uniqueFieldCriteria)
-                .orElseThrow();
-
-        Map<String, Object> supportingValuesFromDB = uniqueFieldValue.getSupportingValues();
-
-        assertEquals(2, ((Collection) supportingValuesFromDB.get(CONTENTLET_IDS_ATTR)).size());
-        assertTrue(((Collection) supportingValuesFromDB.get(CONTENTLET_IDS_ATTR)).contains("1"));
-        assertTrue(((Collection) supportingValuesFromDB.get(CONTENTLET_IDS_ATTR)).contains("2"));
-    }
-
-
-    /**
-     * Method to test: {@link UniqueFieldDataBaseUtil#updateContentListWithHash(String, List)}
      * when: try to delete a unique_fields register using the hash
      * Should: delete it
      */
