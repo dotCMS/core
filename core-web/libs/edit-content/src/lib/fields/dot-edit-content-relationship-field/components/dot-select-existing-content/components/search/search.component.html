@@ -2,7 +2,7 @@
     <p-inputGroup size="small">
         <input
             pInputText
-            type="search"
+            type="text"
             class="w-18rem"
             (keydown.enter)="doSearch()"
             [placeholder]="'dot.file.relationship.dialog.search.title' | dm"
@@ -18,7 +18,7 @@
 
     <p-overlayPanel #popover styleClass="w-20rem">
         <div class="flex flex-column gap-2">
-            <div class="flex flex-column gap-2">
+            <div class="flex flex-column gap-2" formGroupName="systemSearchableFields">
                 <dot-language-field formControlName="languageId" />
                 <dot-site-field formControlName="siteId" />
             </div>

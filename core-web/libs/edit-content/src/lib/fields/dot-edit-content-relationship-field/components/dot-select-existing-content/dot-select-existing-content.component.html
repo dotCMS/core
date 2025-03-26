@@ -2,19 +2,12 @@
 @let columns = store.columns();
 @let pagination = store.pagination();
 @let selectionMode = store.selectionMode();
-@let totalItems = $items().length;
 
 <div class="flex flex-column gap-2 h-full justify-content-between">
     @if (store.errorMessage()) {
         <div
             class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base">
             <p>{{ store.errorMessage() | dm }}</p>
-        </div>
-    } @else if (data.length === 0) {
-        <div
-            class="flex justify-content-center border-1 border-solid border-gray-400 p-6 border-round text-base gap-2">
-            <i class="pi pi-folder-open"></i>
-            <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
         </div>
     } @else {
         <p-table
@@ -26,6 +19,7 @@
             [paginator]="data.length > pagination.rowsPerPage"
             [first]="pagination.offset"
             [rows]="pagination.rowsPerPage"
+            (onPage)="store.setOffset($event)"
             [scrollable]="true"
             styleClass="dotTable p-datatable-existing-content w-full">
             <ng-template pTemplate="caption">
@@ -97,6 +91,16 @@
                     </th>
                 </tr>
             </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td [colSpan]="columns.length + 5">
+                        <div class="flex justify-content-center p-6 text-base gap-2">
+                            <i class="pi pi-folder-open"></i>
+                            <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
             <ng-template pTemplate="body" let-item let-columns="columns">
                 <tr [class.p-highlight]="checkIfSelected(item)">
                     <td class="max-w-5rem" pFrozenColumn alignFrozen="left" [frozen]="true">
@@ -130,25 +134,4 @@
             </ng-template>
         </p-table>
     }
-    <div class="flex justify-content-between">
-        <div>
-            <p class="text-primary-500">
-                {{ 'dot.file.relationship.dialog.selected.items' | dm: [totalItems.toString()] }}
-            </p>
-        </div>
-        <div class="flex gap-2">
-            <p-button
-                [label]="'Cancel' | dm"
-                [outlined]="true"
-                (onClick)="closeDialog()"
-                [text]="true"
-                severity="primary"
-                data-testId="cancel-button" />
-            <p-button
-                [disabled]="totalItems === 0"
-                (onClick)="applyChanges()"
-                [label]="$applyLabel()"
-                data-testId="apply-button" />
-        </div>
-    </div>
 </div>
