@@ -6,6 +6,7 @@ import { provideDotCMSImageLoader } from '@dotcms/angular';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
+import { APP_BASE_HREF } from '@angular/common';
 
 export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
 
@@ -19,6 +20,10 @@ const client = DotCmsClient.init(DOTCMS_CLIENT_CONFIG);
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    {
+      provide: APP_BASE_HREF,
+      useValue: '/'
+    },
     provideRouter(routes),
     /**
      * We provide the ⁠DOTCMS_CLIENT_TOKEN with the initialized ⁠DotCmsClient instance, enabling
