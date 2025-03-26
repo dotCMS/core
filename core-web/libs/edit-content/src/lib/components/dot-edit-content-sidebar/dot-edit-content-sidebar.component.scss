@@ -58,6 +58,13 @@
                 z-index: 2;
                 background-color: $color-palette-gray-100;
             }
+            .p-tabview-panels {
+                .p-tabview-panel {
+                    dot-edit-content-sidebar-section:last-of-type .dot-section {
+                        border-bottom: none;
+                    }
+                }
+            }
         }
     }
 }

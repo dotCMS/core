@@ -23,12 +23,13 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotSelectExistingContentComponent } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
 import { ContentletStatusPipe } from '@dotcms/edit-content/pipes/contentlet-status.pipe';
 import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { HeaderComponent } from './components/header/header.component';
+import { FooterComponent } from './components/dot-select-existing-content/components/footer/footer.component';
+import { HeaderComponent } from './components/dot-select-existing-content/components/header/header.component';
+import { DotSelectExistingContentComponent } from './components/dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 import { getContentTypeIdFromRelationship } from './utils';
@@ -42,9 +43,9 @@ import { getContentTypeIdFromRelationship } from './utils';
         MenuModule,
         DotMessagePipe,
         ChipModule,
-        PaginationComponent,
         ContentletStatusPipe,
-        LanguagePipe
+        LanguagePipe,
+        PaginationComponent
     ],
     providers: [
         RelationshipFieldStore,
@@ -274,7 +275,8 @@ export class DotEditContentRelationshipFieldComponent implements ControlValueAcc
                 currentItemsIds: this.store.data().map((item) => item.inode)
             },
             templates: {
-                header: HeaderComponent
+                header: HeaderComponent,
+                footer: FooterComponent
             }
         });
 

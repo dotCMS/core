@@ -38,3 +38,16 @@ export interface UIState {
     isSidebarOpen: boolean;
     activeSidebarTab: number;
 }
+
+/**
+ * Interface representing an activity in the content sidebar
+ */
+export interface Activity {
+    commentDescription: string;
+    createdDate: number;
+    email: string;
+    postedBy: string;
+    roleId: string;
+    taskId: string;
+    type: string;
+}
