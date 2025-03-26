@@ -20,7 +20,7 @@ import {
     updateNavigation
 } from '@dotcms/client';
 import { createUVESubscription } from '@dotcms/uve';
-import { UVESubscription } from '@dotcms/uve/types';
+import { UVEEventSubscription, UVEEventType } from '@dotcms/uve/types';
 
 import { DotCMSPageComponent } from '../../models';
 import { DotCMSPageAsset } from '../../models/dotcms.model';
@@ -118,7 +118,7 @@ export class DotcmsLayoutComponent implements OnInit {
     private client!: DotCmsClient;
     protected readonly pageAsset$ = this.pageContextService.currentPage$;
 
-    private uveSubscription?: UVESubscription;
+    private uveSubscription?: UVEEventSubscription;
 
     ngOnInit() {
         this.pageContextService.setContext(this.pageAsset, this.components);
@@ -135,7 +135,7 @@ export class DotcmsLayoutComponent implements OnInit {
             updateNavigation(pathname || '/');
         });
 
-        this.uveSubscription = createUVESubscription('changes', (data) => {
+        this.uveSubscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, (data) => {
             if (this.onReload) {
                 this.onReload();
 

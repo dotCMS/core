@@ -1,3 +1,5 @@
+@let data = $data();
+
 <p-dialog
     (visibleChange)="close()"
     [visible]="!!data"
@@ -15,13 +17,15 @@
                 class="dot-wizard__container"
                 (keydown.tab)="handleTab($event)">
                 @for (step of data.steps; track $index) {
-                    <div class="dot-wizard__step">
+                    <div
+                        class="dot-wizard__step"
+                        [class.dot-wizard__step--visible]="$stepsVisible()">
                         <ng-template dotContainerReference></ng-template>
                     </div>
                 }
             </div>
 
-            @if ($dialogActions()) {
+            @if ($dialogActions() && $stepsVisible()) {
                 <footer class="dot-wizard__footer">
                     @if ($dialogActions().cancel) {
                         <button

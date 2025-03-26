@@ -39,6 +39,25 @@
                 "extractCss": false,
                 "assets": [{ "input": "libs/sdk/uve", "output": ".", "glob": "*.md" }]
             }
+        },
+        "build:js": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "../dotCMS/src/main/webapp/html/js/editor-js",
+                "outputFileName": "editor",
+                "format": ["esm"],
+                "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
+                "project": "libs/sdk/uve/package.json",
+                "entryFile": "libs/sdk/uve/src/script/sdk-editor.ts",
+                "external": ["react/jsx-runtime"],
+                "rollupConfig": "@nrwl/react/plugins/bundle-rollup",
+                "compiler": "tsc",
+                "extractCss": false,
+                "minify": true,
+                "declaration": false,
+                "generatePackageJson": false
+            }
         }
     }
 }

@@ -22,7 +22,9 @@ export enum __DOTCMS_UVE_EVENT__ {
      */
     UVE_SCROLL_INSIDE_IFRAME = 'uve-scroll-inside-iframe',
     /**
-     * Set the page data
+     * TODO:
+     * Set the page data - This is used to catch the "changes" event.
+     * We must to re-check the name late.
      */
     UVE_SET_PAGE_DATA = 'uve-set-page-data',
     /**
