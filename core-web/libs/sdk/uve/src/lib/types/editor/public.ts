@@ -1,3 +1,5 @@
+import { ContentTypeMainFields, DotCMSContainerBound } from './internal';
+
 /**
  * Represents the state of the Universal Visual Editor (UVE)
  * @interface
@@ -35,33 +37,33 @@ export enum UVE_MODE {
 
 /**
  * Callback function for UVE events
- * @callback UVECallback
- * @param {unknown} payload - The payload of the event
+ * @callback UVEEventHandler
+ * @param {unknown} eventData - The event data
  */
-export type UVECallback = (payload: unknown) => void;
+export type UVEEventHandler = (eventData?: unknown) => void;
 
 /**
  * Unsubscribe function for UVE events
- * @callback UnsubscribeUVE
+ * @callback UVEUnsubscribeFunction
  */
-export type UnsubscribeUVE = () => void;
+export type UVEUnsubscribeFunction = () => void;
 
 /**
- * UVESubscription type
- * @typedef {Object} UVESubscription
- * @property {UnsubscribeUVE} unsubscribe - The unsubscribe function for the UVE event
+ * UVE event subscription type
+ * @typedef {Object} UVEEventSubscription
+ * @property {UVEUnsubscribeFunction} unsubscribe - The unsubscribe function for the UVE event
  * @property {string} event - The event name
  */
-export type UVESubscription = {
-    unsubscribe: UnsubscribeUVE;
+export type UVEEventSubscription = {
+    unsubscribe: UVEUnsubscribeFunction;
     event: string;
 };
 
 /**
  * UVE event type
- * @typedef {function} UVEEvent
+ * @typedef {function} UVEEventSubscriber
  */
-export type UVEEvent = (callback: UVECallback) => UVESubscription;
+export type UVEEventSubscriber = (callback: UVEEventHandler) => UVEEventSubscription;
 
 //TODO: Recheck this after changes
 /**
@@ -138,3 +140,53 @@ export enum DotCMSUVEAction {
      */
     NOOP = 'noop'
 }
+
+/**
+ * The contentlet has the main fields and the custom fields of the content type.
+ *
+ * @template T - The custom fields of the content type.
+ */
+export type Contentlet<T> = T & ContentTypeMainFields;
+
+/**
+ * Available events in the Universal Visual Editor
+ * @enum {string}
+ */
+export enum UVEEventType {
+    /**
+     * Triggered when page data changes from the editor
+     */
+    CONTENT_CHANGES = 'changes',
+
+    /**
+     * Triggered when the page needs to be reloaded
+     */
+    PAGE_RELOAD = 'page-reload',
+
+    /**
+     * Triggered when the editor requests container bounds
+     */
+    REQUEST_BOUNDS = 'request-bounds',
+
+    /**
+     * Triggered when scroll action is needed inside the iframe
+     */
+    IFRAME_SCROLL = 'iframe-scroll',
+
+    /**
+     * Triggered when a contentlet is hovered
+     */
+    CONTENTLET_HOVERED = 'contentlet-hovered'
+}
+
+/**
+ * Type definitions for each event's payload
+ */
+export type UVEEventPayloadMap = {
+    [UVEEventType.CONTENT_CHANGES]: unknown;
+    [UVEEventType.PAGE_RELOAD]: undefined;
+    [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
+    [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
+    // TODO: Add type here
+    [UVEEventType.CONTENTLET_HOVERED]: unknown;
+};

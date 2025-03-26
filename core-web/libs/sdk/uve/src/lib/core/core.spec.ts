@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/gl
 
 import { getUVEState, createUVESubscription } from './core.utils';
 
-import { UVE_MODE } from '../types/editor/public';
+import { UVE_MODE, UVEEventType } from '../types/editor/public';
 import { __DOTCMS_UVE_EVENT__ } from '../types/events/internal';
 
 describe('getUVEStatus', () => {
@@ -280,12 +280,12 @@ describe('createUVESubscription', () => {
         const spy = jest.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-        const subscription = createUVESubscription('test-event', noop);
+        const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, noop);
 
         expect(consoleWarnSpy).toHaveBeenCalledWith('UVE Subscription: Not running inside UVE');
         expect(subscription).toEqual({
             unsubscribe: expect.any(Function),
-            event: 'test-event'
+            event: UVEEventType.CONTENT_CHANGES
         });
     });
 
@@ -303,7 +303,7 @@ describe('createUVESubscription', () => {
         const spy = jest.spyOn(global, 'window', 'get');
         spy.mockReturnValue(mockWindow as unknown as Window & typeof globalThis);
 
-        const subscription = createUVESubscription('non-existent-event', noop);
+        const subscription = createUVESubscription('non-existent-event' as UVEEventType, noop);
 
         expect(consoleErrorSpy).toHaveBeenCalledWith(
             'UVE Subscription: Event non-existent-event not found'
@@ -332,7 +332,7 @@ describe('createUVESubscription', () => {
         spy.mockReturnValue(mockWindow as Window & typeof globalThis);
 
         const callback = jest.fn();
-        const subscription = createUVESubscription('changes', callback);
+        const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, callback);
 
         expect(subscription).toBeDefined();
         expect(subscription.event).toBe('changes');
@@ -360,7 +360,7 @@ describe('createUVESubscription', () => {
         spy.mockReturnValue(mockWindow as Window & typeof globalThis);
 
         const callback = jest.fn();
-        createUVESubscription('changes', callback);
+        createUVESubscription(UVEEventType.CONTENT_CHANGES, callback);
 
         // Get the message event listener that was registered
         const messageCallback = ((mockWindow as Window).addEventListener as jest.Mock).mock
@@ -396,11 +396,11 @@ describe('createUVESubscription', () => {
         spy.mockReturnValue(mockWindow as Window & typeof globalThis);
 
         const callback = jest.fn();
-        const subscription = createUVESubscription('changes', callback);
+        const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, callback);
 
         const messageCallback = ((mockWindow as Window).addEventListener as jest.Mock).mock
             .calls[0][1]; // Get the second argument (1) of the first call (0)
-        subscription.unsubscribe();
+        subscription.unsubscribe?.();
         expect((mockWindow as Window).removeEventListener).toHaveBeenCalledWith(
             'message',
             messageCallback
