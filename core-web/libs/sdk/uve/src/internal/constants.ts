@@ -1,30 +1,37 @@
-import { UVECallback, UVEEvent } from '../lib/types/editor/public';
-import { __DOTCMS_UVE_EVENT__ } from '../lib/types/events/internal';
+import {
+    onContentChanges,
+    onContentletHovered,
+    onIframeScroll,
+    onPageReload,
+    onRequestBounds
+} from './events';
 
-// TODO: WE NEED TO LOOK FOR ALL THE NOTIFY_CLIENT EVENTS AND ADD THEM TO THE UVE_EVENTS CONSTANT WHEN WE MIGRATE THE EDITOR TO THE NEW UVE LIBRARY
+import { UVEEventHandler, UVEEventSubscriber, UVEEventType } from '../lib/types/editor/public';
 
 /**
  * Events that can be subscribed to in the UVE
  *
  * @internal
- * @type {Record<string, UVEEvent>}
+ * @type {Record<UVEEventType, UVEEventSubscriber>}
  */
-export const __UVE_EVENTS__: Record<string, UVEEvent> = {
-    changes: (callback: UVECallback) => {
-        const messageCallback = (event: MessageEvent) => {
-            if (event.data.name === __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA) {
-                callback(event.data.payload);
-            }
-        };
+export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
+    [UVEEventType.CONTENT_CHANGES]: (callback: UVEEventHandler) => {
+        return onContentChanges(callback);
+    },
+    [UVEEventType.PAGE_RELOAD]: (callback: UVEEventHandler) => {
+        return onPageReload(callback);
+    },
 
-        window.addEventListener('message', messageCallback);
+    [UVEEventType.REQUEST_BOUNDS]: (callback: UVEEventHandler) => {
+        return onRequestBounds(callback);
+    },
 
-        return {
-            unsubscribe: () => {
-                window.removeEventListener('message', messageCallback);
-            },
-            event: 'changes'
-        };
+    [UVEEventType.IFRAME_SCROLL]: (callback: UVEEventHandler) => {
+        return onIframeScroll(callback);
+    },
+
+    [UVEEventType.CONTENTLET_HOVERED]: (callback: UVEEventHandler) => {
+        return onContentletHovered(callback);
     }
 };
 

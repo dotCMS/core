@@ -66,6 +66,13 @@ const PAGE_RESPONSE = {
     }
 };
 
+// Gridstack has some issues with importing (esm/cjs), Jest need to process it to work using the transformIgnorePatterns, but that takes a lot of time
+// So we mock it to avoid that
+jest.mock('gridstack', () => ({
+    __esModule: true,
+    default: jest.fn()
+}));
+
 describe('EditEmaLayoutComponent', () => {
     let spectator: Spectator<EditEmaLayoutComponent>;
     let component: EditEmaLayoutComponent;

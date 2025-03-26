@@ -5,8 +5,11 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { delay } from 'rxjs/operators';
 
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import {
+    RelationshipFieldSearchResponse,
+    RelationshipFieldService
+} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
 
 import { ExistingContentStore } from './existing-content.store';
@@ -22,20 +25,23 @@ describe('ExistingContentStore', () => {
         { field: 'modDate', header: 'Mod Date' }
     ];
 
-    const mockData: DotCMSContentlet[] = [
-        createFakeContentlet({
-            id: '1',
-            inode: '1',
-            identifier: 'id-1',
-            languageId: mockLocales[0].id
-        }),
-        createFakeContentlet({
-            id: '2',
-            inode: '2',
-            identifier: 'id-2',
-            languageId: mockLocales[1].id
-        })
-    ];
+    const mockData = {
+        contentlets: [
+            createFakeContentlet({
+                id: '1',
+                inode: '1',
+                identifier: 'id-1',
+                languageId: mockLocales[0].id
+            }),
+            createFakeContentlet({
+                id: '2',
+                inode: '2',
+                identifier: 'id-2',
+                languageId: mockLocales[1].id
+            })
+        ],
+        totalResults: 2
+    };
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -68,7 +74,7 @@ describe('ExistingContentStore', () => {
 
             expect(store.status()).toBe(ComponentStatus.LOADED);
             expect(store.columns()).toEqual(mockColumns);
-            expect(store.data()).toEqual(mockData);
+            expect(store.data()).toEqual(mockData.contentlets);
             expect(service.getColumnsAndContent).toHaveBeenCalledWith('123');
         }));
 
@@ -97,7 +103,8 @@ describe('ExistingContentStore', () => {
             expect(store.pagination()).toEqual({
                 offset: 0,
                 currentPage: 1,
-                rowsPerPage: 50
+                rowsPerPage: 50,
+                totalResults: 0
             });
             expect(store.selectionMode()).toBe(null);
         });
@@ -110,7 +117,8 @@ describe('ExistingContentStore', () => {
             expect(store.pagination()).toEqual({
                 offset: 50,
                 currentPage: 2,
-                rowsPerPage: 50
+                rowsPerPage: 50,
+                totalResults: 0
             });
         });
 
@@ -121,7 +129,8 @@ describe('ExistingContentStore', () => {
             expect(store.pagination()).toEqual({
                 offset: 0,
                 currentPage: 1,
-                rowsPerPage: 50
+                rowsPerPage: 50,
+                totalResults: 0
             });
         });
 
@@ -131,7 +140,8 @@ describe('ExistingContentStore', () => {
             expect(store.pagination()).toEqual({
                 offset: 0,
                 currentPage: 1,
-                rowsPerPage: 50
+                rowsPerPage: 50,
+                totalResults: 0
             });
         });
     });
@@ -139,7 +149,7 @@ describe('ExistingContentStore', () => {
     describe('Computed Properties', () => {
         it('should compute loading state correctly', fakeAsync(() => {
             const mockObservable = of([mockColumns, mockData]).pipe(delay(100)) as Observable<
-                [Column[], DotCMSContentlet[]]
+                [Column[], RelationshipFieldSearchResponse]
             >;
 
             service.getColumnsAndContent.mockReturnValue(mockObservable);

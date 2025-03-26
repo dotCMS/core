@@ -46,13 +46,15 @@ public class MetricsSnapshot {
     }
 
     @JsonAnyGetter
-    public Map<String, String> getNotNumericStats() {
-        final Map<String, String> result = new HashMap<>();
-
+    public Map<String, Object> getNotNumericStats() {
+        final Map<String, Object> result = new HashMap<>();
         for (final MetricValue stat : notNumericStats) {
-            result.put(stat.getMetric().getName(), stat.getValue().toString());
+            Object value = stat.getValue();
+            if (stat.getValue() instanceof String) {
+                value = stat.getValue().toString();
+            }
+            result.put(stat.getMetric().getName(), value);
         }
-
         return result;
     }
 
