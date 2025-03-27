@@ -481,7 +481,28 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof EditEmaEditorComponent
      */
     addCustomStyles(rendered = ''): string {
-        const styles = ``;
+        const styles = `<style>
+
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="contentlet"].empty-contentlet {
+            min-height: 4rem;
+            width: 100%;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
+        }
+        </style>
+        `;
 
         const headExists = rendered.includes('</head>');
 
