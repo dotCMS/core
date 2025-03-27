@@ -42,6 +42,7 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
 import com.dotmarketing.db.commands.UpsertCommand;
 import com.dotmarketing.db.commands.UpsertCommandFactory;
@@ -75,6 +76,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -232,6 +234,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             "bool24", "bool25"};
 
     private static final int MAX_FIELDS_ALLOWED = 25;
+    private static final Lazy<Integer> OLD_CONTENT_BATCH_SIZE = Lazy.of(
+            () -> Config.getIntProperty("OLD_CONTENT_BATCH_SIZE", 8192));
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -710,20 +714,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
         final int before = Integer.parseInt(result.get(0).get("count"));
-        dc = new DotConnect();
-        final String query = new StringBuilder("SELECT DISTINCT inode FROM contentlet WHERE identifier <> 'SYSTEM_HOST' AND mod_date < ? AND ")
-                .append(" inode NOT IN (SELECT working_inode FROM contentlet_version_info WHERE working_inode = contentlet.inode)")
-                .append(" AND ")
-                .append(" inode NOT IN (SELECT live_inode FROM contentlet_version_info WHERE live_inode = contentlet.inode)")
-                .toString();
-        dc.setSQL(query);
-        dc.addParam(date);
-        result = dc.loadResults();
-        int oldInodesCount = result.size();
-        if (oldInodesCount > 0) {
-            final List<String> inodeList = result.stream().map(row -> row.get("inode")).collect(Collectors.toList());
-            deleteContentData(inodeList);
-        }
+
+        final int batchSize = OLD_CONTENT_BATCH_SIZE.get();
+        int oldInodesCount;
+        do {
+            oldInodesCount = deleteContentBatch(date, batchSize);
+        } while (oldInodesCount == batchSize);
+
         dc = new DotConnect();
         dc.setSQL(countSQL);
         result = dc.loadResults();
@@ -733,6 +730,35 @@ public class ESContentFactoryImpl extends ContentletFactory {
             deleteOrphanedBinaryFiles();
         }
         return deleted;
+    }
+
+    /**
+     * Deletes a batch of Contentlets that are older than the specified date. The batch size is
+     * determined by the {@code batchSize} parameter.
+     * @param date The date as of which all contents older than that will be deleted.
+     * @param batchSize The number of Contentlets to delete in each batch.
+     * @return The number of Contentlets deleted by this operation.
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @WrapInTransaction(externalize = true)
+    private int deleteContentBatch(final Date date, final int batchSize) throws DotDataException {
+        final String query = "SELECT c.inode FROM contentlet c"
+                + " WHERE c.identifier <> 'SYSTEM_HOST' AND c.mod_date < ?"
+                + " AND NOT EXISTS (SELECT 1 FROM contentlet_version_info vi"
+                + " WHERE vi.working_inode = c.inode OR vi.live_inode = c.inode)"
+                + " LIMIT ?";
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(query);
+        dc.addParam(date);
+        dc.addParam(batchSize);
+        final List<Map<String, String>> results = dc.loadResults();
+        final int resultCount = results.size();
+        if (resultCount > 0) {
+            final List<String> inodeList = results.stream().map(
+                    row -> row.get("inode")).collect(Collectors.toList());
+            deleteContentData(inodeList);
+        }
+        return resultCount;
     }
 
     /**
