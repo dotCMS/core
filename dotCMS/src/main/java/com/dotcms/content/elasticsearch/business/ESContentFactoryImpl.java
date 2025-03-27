@@ -714,7 +714,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
         final int before = Integer.parseInt(result.get(0).get("count"));
-
+        Logger.info(this, String.format("Amount of Contentlets %s.", before));
         final int batchSize = OLD_CONTENT_BATCH_SIZE.get();
         int oldInodesCount;
         do {
@@ -729,6 +729,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if (deleted > 0) {
             deleteOrphanedBinaryFiles();
         }
+        Logger.info(this, String.format("Deleted %d Contentlets older than %s.", deleted, date));
         return deleted;
     }
 
@@ -753,6 +754,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dc.addParam(batchSize);
         final List<Map<String, String>> results = dc.loadResults();
         final int resultCount = results.size();
+        Logger.info(this, String.format("Deleting %d Contentlets older than %s.", resultCount, date));
         if (resultCount > 0) {
             final List<String> inodeList = results.stream().map(
                     row -> row.get("inode")).collect(Collectors.toList());
