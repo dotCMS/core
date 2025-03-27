@@ -3,6 +3,8 @@ export * from './dotcms.model';
 
 import { Type } from '@angular/core';
 
+import { DotCMSPageRendererMode } from '@dotcms/uve/types';
+
 import { DotCMSPageAsset } from './dotcms.model';
 
 /**
@@ -31,11 +33,11 @@ export interface DotCMSPageContext {
     components: DotCMSPageComponent;
 
     /**
-     * Indicates whether the page is being viewed inside the editor.
-     * @type {boolean}
+     * Indicates the renderer mode.
+     * @type {DotCMSPageRendererMode}
      * @memberof DotCMSPageContext
      */
-    isInsideEditor: boolean;
+    mode: DotCMSPageRendererMode;
 }
 
 /**

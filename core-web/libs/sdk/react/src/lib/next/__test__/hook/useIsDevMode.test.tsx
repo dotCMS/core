@@ -1,6 +1,8 @@
 import { renderHook } from '@testing-library/react';
 
 import { getUVEState } from '@dotcms/uve';
+import { DEVELOPMENT_MODE } from '@dotcms/uve/internal';
+import { PRODUCTION_MODE } from '@dotcms/uve/internal';
 import { DotCMSPageRendererMode, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
@@ -29,7 +31,7 @@ describe('useIsDevMode', () => {
 
         test('should return false when mode is production', () => {
             const { result } = renderHook(() => useIsDevMode(), {
-                wrapper: ({ children }) => Wrapper({ children, mode: 'production' })
+                wrapper: ({ children }) => Wrapper({ children, mode: PRODUCTION_MODE })
             });
 
             expect(result.current).toBe(false);
@@ -37,7 +39,7 @@ describe('useIsDevMode', () => {
 
         test('should return true when mode is development', () => {
             const { result } = renderHook(() => useIsDevMode(), {
-                wrapper: ({ children }) => Wrapper({ children, mode: 'development' })
+                wrapper: ({ children }) => Wrapper({ children, mode: DEVELOPMENT_MODE })
             });
 
             expect(result.current).toBe(true);
@@ -52,7 +54,7 @@ describe('useIsDevMode', () => {
 
             test('should return true when mode is production', () => {
                 const { result } = renderHook(() => useIsDevMode(), {
-                    wrapper: ({ children }) => Wrapper({ children, mode: 'production' })
+                    wrapper: ({ children }) => Wrapper({ children, mode: PRODUCTION_MODE })
                 });
 
                 expect(result.current).toBe(true);
@@ -60,7 +62,7 @@ describe('useIsDevMode', () => {
 
             test('should return true when mode is development', () => {
                 const { result } = renderHook(() => useIsDevMode(), {
-                    wrapper: ({ children }) => Wrapper({ children, mode: 'development' })
+                    wrapper: ({ children }) => Wrapper({ children, mode: DEVELOPMENT_MODE })
                 });
 
                 expect(result.current).toBe(true);
@@ -74,7 +76,7 @@ describe('useIsDevMode', () => {
 
             test('should return false when mode is production', () => {
                 const { result } = renderHook(() => useIsDevMode(), {
-                    wrapper: ({ children }) => Wrapper({ children, mode: 'production' })
+                    wrapper: ({ children }) => Wrapper({ children, mode: PRODUCTION_MODE })
                 });
 
                 expect(result.current).toBe(false);
@@ -82,7 +84,7 @@ describe('useIsDevMode', () => {
 
             test('should return false even when mode is development', () => {
                 const { result } = renderHook(() => useIsDevMode(), {
-                    wrapper: ({ children }) => Wrapper({ children, mode: 'development' })
+                    wrapper: ({ children }) => Wrapper({ children, mode: DEVELOPMENT_MODE })
                 });
 
                 expect(result.current).toBe(false);
@@ -94,14 +96,14 @@ describe('useIsDevMode', () => {
         const { result, rerender } = renderHook(
             ({ mode }) => useIsDevMode(mode as DotCMSPageRendererMode),
             {
-                wrapper: ({ children }) => Wrapper({ children, mode: 'production' }),
-                initialProps: { mode: 'production' }
+                wrapper: ({ children }) => Wrapper({ children, mode: PRODUCTION_MODE }),
+                initialProps: { mode: PRODUCTION_MODE }
             }
         );
 
         expect(result.current).toBe(false);
 
-        rerender({ mode: 'development' });
+        rerender({ mode: DEVELOPMENT_MODE });
         expect(result.current).toBe(true);
     });
 });

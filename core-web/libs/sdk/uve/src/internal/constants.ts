@@ -49,3 +49,17 @@ export const __UVE_EVENT_ERROR_FALLBACK__ = (event: string) => {
         event
     };
 };
+
+/**
+ * Development mode
+ *
+ * @internal
+ */
+export const DEVELOPMENT_MODE = 'development';
+
+/**
+ * Production mode
+ *
+ * @internal
+ */
+export const PRODUCTION_MODE = 'production';

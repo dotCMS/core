@@ -1,5 +1,7 @@
 import { ContentTypeMainFields, DotCMSContainerBound } from './internal';
 
+import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '../../../internal';
+
 /**
  * Represents the state of the Universal Visual Editor (UVE)
  * @interface
@@ -23,7 +25,7 @@ export interface UVEState {
  * The mode of the page renderer component
  * @enum {string}
  */
-export type DotCMSPageRendererMode = 'production' | 'development';
+export type DotCMSPageRendererMode = typeof PRODUCTION_MODE | typeof DEVELOPMENT_MODE;
 
 /**
  * Possible modes of UVE (Universal Visual Editor)
