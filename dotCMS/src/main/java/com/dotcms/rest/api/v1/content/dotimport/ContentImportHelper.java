@@ -6,6 +6,8 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
+import com.dotcms.rest.api.v1.job.JobResponseUtil;
+import com.dotcms.rest.api.v1.job.JobStatusResponse;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -328,6 +330,19 @@ public class ContentImportHelper {
             Logger.error(this, "Error handling file upload", e);
             throw new DotDataException("Error processing file upload: " + e.getMessage());
         }
+    }
+
+    /**
+     * Builds a JobStatusResponse object with the job ID and status URL.
+     *
+     * @param jobId   The job ID
+     * @param request The HttpServletRequest to build the base URL
+     * @return A JobStatusResponse object
+     */
+    JobStatusResponse buildJobStatusResponse(String jobId, HttpServletRequest request) {
+        return JobResponseUtil.buildJobStatusResponse(
+                jobId, "/api/v1/content/_import/%s", request
+        );
     }
 
     /**

@@ -6,9 +6,12 @@ import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.repackage.javax.validation.ValidationException;
-import com.dotcms.rest.*;
-import com.dotcms.rest.api.v1.job.JobResponseUtil;
+import com.dotcms.rest.ResponseEntityJobPaginatedResultView;
 import com.dotcms.rest.ResponseEntityJobStatusView;
+import com.dotcms.rest.ResponseEntityJobView;
+import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -22,16 +25,23 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.glassfish.jersey.media.sse.EventOutput;
-import org.glassfish.jersey.media.sse.SseFeature;
-
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.SseFeature;
 
 
 /**
@@ -156,7 +166,7 @@ public class ContentImportResource {
             // Create the content import job
             final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
 
-            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            final var jobStatusResponse = importHelper.buildJobStatusResponse(jobId, request);
             return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException | ValidationException e) {
             // Handle validation exception and return appropriate error message
@@ -249,7 +259,7 @@ public class ContentImportResource {
             // Create the content import job in preview mode
             final String jobId = importHelper.createJob(CMD_PREVIEW, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
 
-            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            final var jobStatusResponse = importHelper.buildJobStatusResponse(jobId, request);
             return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException | ValidationException e) {
             // Handle validation exception and return appropriate error message
