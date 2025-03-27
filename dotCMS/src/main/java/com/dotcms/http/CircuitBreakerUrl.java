@@ -41,7 +41,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -93,7 +95,7 @@ public class CircuitBreakerUrl {
     public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
 
     public enum Method {
-        GET, POST, PUT, DELETE, PATCH
+        GET, POST, PUT, DELETE, PATCH, HEAD
     }
 
     public CircuitBreakerUrl(final String proxyUrl) {
@@ -311,6 +313,28 @@ public class CircuitBreakerUrl {
         } finally {
 
             circuitBreakerConnectionControl.end(Thread.currentThread().getId());
+        }
+    }
+
+    /**
+     * Does a ping (HEAD) over to the given URL to see if it is running
+     * @param urlString String
+     * @return boolean
+     */
+    public boolean ping() {
+        try {
+            return Failsafe.with(circuitBreaker).get(() -> {
+                final URL url = new URL(this.proxyUrl);
+                final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod(Method.HEAD.name());
+                connection.setConnectTimeout((int)this.timeoutMs);
+                connection.setReadTimeout((int)this.timeoutMs);
+
+                final int responseCode = connection.getResponseCode();
+                return (200 <= responseCode && responseCode < 400);
+            });
+        } catch (FailsafeException e) {
+            return false;
         }
     }
 
