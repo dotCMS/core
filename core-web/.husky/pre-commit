@@ -69,8 +69,7 @@ check_sdk_client_affected() {
         fi
     fi
 
-    file_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/package.json"
-    dir_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/libs"
+    file_to_remove="${root_dir}/dotCMS/src/main/webapp/ext/uve/package.json"
 
     # Check if the file exists, then delete it
     if [ -f "$file_to_remove" ]; then
@@ -80,16 +79,8 @@ check_sdk_client_affected() {
         printf "%s does not exist\n" "$file_to_remove"
     fi
 
-    # Check if the directory exists, then delete it
-    if [ -d "$dir_to_remove" ]; then
-        rm -r "$dir_to_remove"
-        printf "Removed directory %s\n" "$dir_to_remove"
-    else
-        printf "%s does not exist\n" "$dir_to_remove"
-    fi
-
-    if ! git add "${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js"; then
-        print_color "$RED" "Failed to stage computed sdk-client.js"
+    if ! git add "${root_dir}/dotCMS/src/main/webapp/ext/uve/sdk-editor.js"; then
+        print_color "$RED" "Failed to stage computed sdk-uve.js"
         exit 1
     fi
 }

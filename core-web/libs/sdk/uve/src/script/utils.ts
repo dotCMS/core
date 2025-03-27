@@ -2,9 +2,14 @@
 import { createUVESubscription } from '../lib/core/core.utils';
 import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
-import { sendMessageToEditor } from '../lib/editor/public';
+import { initInlineEditing, sendMessageToEditor } from '../lib/editor/public';
 import { DotCMSUVEAction, UVEEventType } from '../lib/types/editor/public';
 
+/**
+ * Sets up scroll event handlers for the window to notify the editor about scroll events.
+ * Adds listeners for both 'scroll' and 'scrollend' events, sending appropriate messages
+ * to the editor when these events occur.
+ */
 export function scrollHandler(): void {
     const scrollCallback = () => {
         sendMessageToEditor({
@@ -22,6 +27,15 @@ export function scrollHandler(): void {
     window.addEventListener('scrollend', scrollEndCallback);
 }
 
+/**
+ * Adds 'empty-contentlet' class to contentlet elements that have no height.
+ * This helps identify and style empty contentlets in the editor view.
+ *
+ * @remarks
+ * The function queries all elements with data-dot-object="contentlet" attribute
+ * and checks their clientHeight. If an element has no height (clientHeight = 0),
+ * it adds the 'empty-contentlet' class to that element.
+ */
 export function addClassToEmptyContentlets(): void {
     const contentlets = document.querySelectorAll('[data-dot-object="contentlet"]');
 
@@ -34,6 +48,20 @@ export function addClassToEmptyContentlets(): void {
     });
 }
 
+/**
+ * Registers event handlers for various UVE (Universal Visual Editor) events.
+ *
+ * This function sets up subscriptions for:
+ * - Page reload events that refresh the window
+ * - Bounds request events to update editor boundaries
+ * - Iframe scroll events to handle smooth scrolling within bounds
+ * - Contentlet hover events to notify the editor
+ *
+ * @remarks
+ * For scroll events, the function includes logic to prevent scrolling beyond
+ * the top or bottom boundaries of the iframe, which helps maintain proper
+ * scroll event handling.
+ */
 export function registerUVEEvents() {
     createUVESubscription(UVEEventType.PAGE_RELOAD, () => {
         window.location.reload();
@@ -65,8 +93,65 @@ export function registerUVEEvents() {
     });
 }
 
+/**
+ * Notifies the editor that the UVE client is ready to receive messages.
+ *
+ * This function sends a message to the editor indicating that the client-side
+ * initialization is complete and it's ready to handle editor interactions.
+ *
+ * @remarks
+ * This is typically called after all UVE event handlers and DOM listeners
+ * have been set up successfully.
+ */
 export function setClientIsReady(): void {
     sendMessageToEditor({
         action: DotCMSUVEAction.CLIENT_READY
     });
 }
+
+/**
+ * Listen for block editor inline event.
+ */
+export const listenBlockEditorInlineEvent = (): void => {
+    if (document.readyState === 'complete') {
+        // The page is fully loaded or interactive
+        listenBlockEditorClick();
+
+        return;
+    }
+
+    window.addEventListener('load', () => listenBlockEditorClick());
+};
+
+const listenBlockEditorClick = (): void => {
+    const editBlockEditorNodes: NodeListOf<HTMLElement> = document.querySelectorAll(
+        '[data-block-editor-content]'
+    );
+
+    if (!editBlockEditorNodes.length) {
+        return;
+    }
+
+    editBlockEditorNodes.forEach((node: HTMLElement) => {
+        const { inode, language = '1', contentType, fieldName, blockEditorContent } = node.dataset;
+        const content = JSON.parse(blockEditorContent || '');
+
+        if (!inode || !language || !contentType || !fieldName) {
+            console.error('Missing data attributes for block editor inline editing.');
+            console.warn('inode, language, contentType and fieldName are required.');
+
+            return;
+        }
+
+        node.classList.add('dotcms__inline-edit-field');
+        node.addEventListener('click', () => {
+            initInlineEditing('BLOCK_EDITOR', {
+                inode,
+                content,
+                language: parseInt(language),
+                fieldName,
+                contentType
+            });
+        });
+    });
+};
