@@ -1,11 +1,10 @@
 {
 	"info": {
-		"_postman_id": "4f984248-dbda-446b-917e-e86e8113ddd1",
+		"_postman_id": "b2684674-cd95-49ed-8a7c-ff6ba933f911",
 		"name": "ContentImportResource",
 		"description": "Postman collection for testing the ContentImportResource API endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/import-content~2dd48704-5109-413d-87bc-3b3fe40bbb0e/collection/10041132-4f984248-dbda-446b-917e-e86e8113ddd1?action=share&source=collection_link&creator=10041132"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -96,7 +95,7 @@
 									"    serverUrl = serverUrl.replace(/(:80|:443)\\/?$/, \"\");",
 									"",
 									"    // Build the expected statusUrl",
-									"    let expectedStatusUrl = serverUrl + \"/api/v1/jobs/\" + jobId + \"/status\";",
+									"    let expectedStatusUrl = serverUrl + \"/api/v1/content/_import/\" + jobId ;",
 									"",
 									"    // Check if the actual statusUrl matches the expected one",
 									"    pm.expect(responseBody.entity.statusUrl).to.equal(expectedStatusUrl);",
@@ -1077,7 +1076,7 @@
 									"    serverUrl = serverUrl.replace(/(:80|:443)\\/?$/, \"\");",
 									"",
 									"    // Build the expected statusUrl",
-									"    let expectedStatusUrl = serverUrl + \"/api/v1/jobs/\" + jobId + \"/status\";",
+									"    let expectedStatusUrl = serverUrl + \"/api/v1/content/_import/\" + jobId;",
 									"",
 									"    // Check if the actual statusUrl matches the expected one",
 									"    pm.expect(responseBody.entity.statusUrl).to.equal(expectedStatusUrl);",
@@ -2046,7 +2045,7 @@
 									"    serverUrl = serverUrl.replace(/(:80|:443)\\/?$/, \"\");",
 									"",
 									"    // Build the expected statusUrl",
-									"    let expectedStatusUrl = serverUrl + \"/api/v1/jobs/\" + jobId + \"/status\";",
+									"    let expectedStatusUrl = serverUrl + \"/api/v1/content/_import/\" + jobId;",
 									"",
 									"    // Check if the actual statusUrl matches the expected one",
 									"    pm.expect(responseBody.entity.statusUrl).to.equal(expectedStatusUrl);",
@@ -3104,7 +3103,7 @@
 									"    serverUrl = serverUrl.replace(/(:80|:443)\\/?$/, \"\");",
 									"",
 									"    // Build the expected statusUrl",
-									"    let expectedStatusUrl = serverUrl + \"/api/v1/jobs/\" + jobId + \"/status\";",
+									"    let expectedStatusUrl = serverUrl + \"/api/v1/content/_import/\" + jobId;",
 									"",
 									"    // Check if the actual statusUrl matches the expected one",
 									"    pm.expect(responseBody.entity.statusUrl).to.equal(expectedStatusUrl);",
