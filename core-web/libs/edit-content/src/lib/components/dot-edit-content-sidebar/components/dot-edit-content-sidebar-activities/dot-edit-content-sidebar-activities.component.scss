@@ -6,6 +6,10 @@
     flex-direction: column;
     height: 100%;
     position: relative;
+
+    &__item {
+        animation: fadeIn $basic-speed ease-out;
+    }
 }
 
 // Elements
@@ -123,5 +127,14 @@
             font-size: $font-size-xs;
             line-height: 1;
         }
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
