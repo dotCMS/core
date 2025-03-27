@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.rest.WebResource;
 import com.dotmarketing.filters.Constants;
 import java.io.IOException;
 import java.util.Optional;
@@ -36,6 +37,7 @@ import com.liferay.portal.model.User;
 public class SpeedyAssetServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
+    private WebResource webResource = new WebResource();
 
     public void init(ServletConfig config) throws ServletException {
       if (Config.CONTEXT == null) {
@@ -51,6 +53,16 @@ public class SpeedyAssetServlet extends HttpServlet {
     protected void service(HttpServletRequest request, HttpServletResponse response)
 	throws ServletException, IOException {
         Logger.debug(this, "======Starting SpeedyAssetServlet_service=====");
+
+        try {
+            final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+                    webResource, request, response);
+            Logger.debug(ShortyServlet.class, () -> "User: " + user);
+        } catch (SecurityException e) {
+            Logger.debug(SpeedyAssetServlet.class, e,  () -> "Error getting user and authenticating");
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
         /*
 		 * Getting host object form the session

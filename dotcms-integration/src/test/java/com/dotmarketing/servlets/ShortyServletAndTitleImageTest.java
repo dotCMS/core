@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import org.junit.runner.RunWith;
 
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -317,6 +318,22 @@ public class ShortyServletAndTitleImageTest {
     public void test_webp_file_name(){
         Uri uri = new Uri("/data/shared/assets/tmp_upload/temp_2e1056205c/webPageContent.vtl", 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
         assertEquals(uri.isImage, uri.expectedIsImage);
+    }
+
+    /**
+     * Method to test: {@link ShortyServlet#serve(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: A shorty URL is requested by an authenticated user
+     * ExpectedResult: The method should forward the request for an authenticated user
+     * For a non-authenticated user, the method should return a 401 status code
+     */
+    @Test
+    public void test_ShortyServlet_With_AuthenticatedUser() throws Exception {
+
+        final HttpServlet servlet = new ShortyServlet();
+        ServletTestUtils.testServletWithAuthenticatedUser(
+                servlet, assetId -> "/dA/"
+                        + APILocator.getShortyAPI().shortify(assetId) + "/image/test.jpg");
+
     }
     
 }

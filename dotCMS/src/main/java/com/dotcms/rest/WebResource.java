@@ -332,12 +332,16 @@ public  class WebResource {
      */
     public InitDataObject init(final InitBuilder builder) throws SecurityException {
 
-        checkForceSSL(builder.request);
+        if (!builder.authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_FORCE_SSL)) {
+            checkForceSSL(builder.request);
+        }
 
         final InitDataObject initData = new InitDataObject();
         Map<String,String> paramsMap = builder.paramsMap();
 
-        final User user = getCurrentUser(builder.request, builder.response, paramsMap, builder.anonAccess);
+        final User user = getCurrentUser(
+                builder.request, builder.response, paramsMap, builder.anonAccess,
+                builder.authCheckOptions.toArray(new AuthCheckOptions[0]));
 
         checkAdminPermissions(builder, user);
         checkAnonymousPermissions(builder, user);
@@ -357,6 +361,9 @@ public  class WebResource {
      */
     @VisibleForTesting
     void checkAnonymousPermissions(final InitBuilder builder, @NotNull User user) {
+        if (builder.authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS)) {
+            return;
+        }
         // if we are not an anonymous user
         if (user != null && !user.isAnonymousUser()) {
             return;
@@ -442,23 +449,20 @@ public  class WebResource {
      */
     public User getCurrentUser(final HttpServletRequest  request,
                                final HttpServletResponse response,
-                               final Map<String, String> paramsMap, final AnonymousAccess access) {
+                               final Map<String, String> paramsMap,
+                               final AnonymousAccess access,
+                               final AuthCheckOptions... authCheckOptions) throws SecurityException {
 
         User user = PortalUtil.getUser(request);
 
         if(user==null) {
-            user = authenticate(request, response, paramsMap, access);
+            user = authenticate(request, response, paramsMap, access,authCheckOptions);
         }
         return user;
     }
 
     /**
      * @deprecated
-     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess) 
-     *
-     * Return the current login user.<br>
-     * if exist a user login by login as then return this user not the principal user
-     *
      * @param request {@link HttpServletRequest}
      * @param paramsMap {@link Map}
      * @param rejectWhenNoUser boolean
@@ -475,14 +479,6 @@ public  class WebResource {
 
     /**
      * @deprecated
-     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess)
-     * Returns an authenticated {@link User}. There are five ways to get the User's credentials.
-     * They are executed in the specified order. When found, the remaining ways won't be executed.
-     * <br>1) Using username and password contained in <code>params</code>.
-     * <br>2) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
-     * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
-     * <br>4) From the session. It first tries to get the Backend logged in user.
-     * <br>5) If no user found, tries to get the Frontend logged in user.
      */
     @Deprecated
     public User authenticate(final HttpServletRequest request,
@@ -501,9 +497,12 @@ public  class WebResource {
      * <br>5) If no user found, tries to get the Frontend logged in user.
      */
     public User authenticate(HttpServletRequest request, final HttpServletResponse response,
-                             final Map<String, String> params, final AnonymousAccess access) throws SecurityException {
+                             final Map<String, String> params, final AnonymousAccess access,
+                             final AuthCheckOptions... authCheckOptions) throws SecurityException {
 
-        ServletPreconditions.checkSslIsEnabledIfRequired(request);
+        if (Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_FORCE_SSL::equals)) {
+            ServletPreconditions.checkSslIsEnabledIfRequired(request);
+        }
 
         User user = null;
 
@@ -545,7 +544,8 @@ public  class WebResource {
         }
 
 
-        if( UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
+        if(Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS::equals)
+                && UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
 
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } 
@@ -770,6 +770,14 @@ public  class WebResource {
         }
     }
 
+    /**
+     * This enum includes the different options to check for the user authentication
+     */
+    public enum AuthCheckOptions {
+        SKIP_CHECK_FORCE_SSL,
+        SKIP_CHECK_ANONYMOUS_PERMISSIONS,
+    }
+
    public static class InitBuilder {
 
         private final WebResource webResource;
@@ -783,6 +791,7 @@ public  class WebResource {
         private final Set<String> requiredRolesSet = new HashSet<>();
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
         private boolean requireLicense = false;
+       private final Set<AuthCheckOptions> authCheckOptions = new HashSet<>();
         public InitBuilder() {
           this(new WebResource());
 
@@ -890,6 +899,11 @@ public  class WebResource {
             return this;
         }
 
+       public InitBuilder authCheckOptions(final AuthCheckOptions... options){
+           this.authCheckOptions.addAll(Arrays.asList(options));
+           return this;
+       }
+
         public InitDataObject init() {
 
             response = (response == null ? new EmptyHttpResponse() : response);
@@ -907,7 +921,8 @@ public  class WebResource {
             }
 
 
-            if (anonAccess != AnonymousAccess.NONE) {
+            if (!authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS)
+                    && anonAccess != AnonymousAccess.NONE) {
 
                 if(UtilMethods.isSet(requiredPortlet) || UtilMethods.isSet(requiredRolesSet)){
                     Logger.debug(InitBuilder.class,

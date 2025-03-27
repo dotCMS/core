@@ -4,6 +4,7 @@ import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
+import com.dotcms.rest.WebResource;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
@@ -109,6 +110,7 @@ public class BinaryExporterServlet extends HttpServlet {
 	private final ContentletAPI contentAPI = APILocator.getContentletAPI();
 	private final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
 	private final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
+	private final WebResource webResource = new WebResource();
 
 	Map<String, BinaryContentExporter> exportersByPathMapping;
 
@@ -236,7 +238,6 @@ public class BinaryExporterServlet extends HttpServlet {
 				return;
 			}
 
-			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 			BinaryContentExporter.BinaryContentExporterData data = null;
 			File inputFile = null;
 			HttpSession session = req.getSession(false);
@@ -250,7 +251,8 @@ public class BinaryExporterServlet extends HttpServlet {
 			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
 
-			final User user = PortalUtil.getUser(req);
+			final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+					this.webResource, req, resp);
 
 			final PageMode mode = PageMode.get(req);
 
@@ -626,6 +628,11 @@ public class BinaryExporterServlet extends HttpServlet {
             if(!resp.isCommitted()){
               resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
+		} catch (SecurityException e) {
+			Logger.debug(BinaryExporterServlet.class, e,  () -> "Error getting user and authenticating");
+			if(!resp.isCommitted()) {
+				resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+			}
 		} catch (PortalException e) {
 			Logger.error(BinaryExporterServlet.class, "[PortalException] An error occurred when accessing '" + uri + "': " + e.getMessage());
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
