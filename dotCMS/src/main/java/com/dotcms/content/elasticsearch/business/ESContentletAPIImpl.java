@@ -7398,6 +7398,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void validateContentlet(final Contentlet contentlet, final List<Category> cats)
             throws DotContentletValidationException {
+        validateContentlet(contentlet, cats, false);
+    }
+
+    @CloseDBIfOpened
+    public void validateContentlet(final Contentlet contentlet, final List<Category> cats, final boolean preview)
+        throws DotContentletValidationException {
         if (null == contentlet) {
             throw new DotContentletValidationException("The contentlet must not be null.");
         }
@@ -7686,8 +7692,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         populateHost(contentlet);
                     }
 
-                    uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
-                            LegacyFieldTransformer.from(field));
+                    if (preview) {
+                        uniqueFieldValidationStrategyResolver.get().get().validateInPreview(contentlet,
+                                LegacyFieldTransformer.from(field));
+                    } else {
+                        uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
+                                LegacyFieldTransformer.from(field));
+                    }
                 } catch (final UniqueFieldValueDuplicatedException e) {
                     cve.addUniqueField(field);
                     hasError = true;
@@ -8038,11 +8049,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+
     @CloseDBIfOpened
     @Override
-    public void validateContentlet(Contentlet contentlet,
-            Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats)
-            throws DotContentletValidationException {
+    public void validateContentletNoRels(final Contentlet contentlet,
+            final List<Category> cats, final boolean preview) throws DotContentletValidationException {
+        if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
+            return;
+        }
+        final String contentTypeId = contentlet.getContentTypeId();
+        if (!InodeUtils.isSet(contentTypeId)) {
+            final String errorMsg =
+                    "Contentlet [" + contentlet.getIdentifier() + "] has an empty Content Type ID";
+            Logger.error(this, errorMsg);
+            throw new DotContentletValidationException(errorMsg);
+        }
+        try {
+            validateContentlet(contentlet, cats, preview);
+            if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType()
+                    .getType()) {
+                APILocator.getPersonaAPI().validatePersona(contentlet);
+            }
+            if (contentlet.isVanityUrl()) {
+                APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
+            }
+        } catch (final DotContentletValidationException ve) {
+            throw ve;
+        }
+    }
+
+    @Override
+    public void validateContentlet(Contentlet contentlet,Map<Relationship,
+            List<Contentlet>> contentRelationships,List<Category> cats) throws DotContentletValidationException {
+
         Structure st = CacheLocator.getContentTypeCache()
                 .getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
@@ -8058,39 +8097,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
         validateContentlet(contentlet, relationshipsData, cats);
     }
 
-    @CloseDBIfOpened
     @Override
-    public void validateContentletNoRels(final Contentlet contentlet,
-            final List<Category> cats) throws DotContentletValidationException {
-        if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
-            return;
-        }
-        final String contentTypeId = contentlet.getContentTypeId();
-        if (!InodeUtils.isSet(contentTypeId)) {
-            final String errorMsg =
-                    "Contentlet [" + contentlet.getIdentifier() + "] has an empty Content Type ID";
-            Logger.error(this, errorMsg);
-            throw new DotContentletValidationException(errorMsg);
-        }
-        try {
-            validateContentlet(contentlet, cats);
-            if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType()
-                    .getType()) {
-                APILocator.getPersonaAPI().validatePersona(contentlet);
-            }
-            if (contentlet.isVanityUrl()) {
-                APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
-            }
-        } catch (final DotContentletValidationException ve) {
-            throw ve;
-        }
+    public void validateContentletNoRels(Contentlet contentlet,
+                                  List<Category> cats) throws DotContentletValidationException {
+        validateContentletNoRels(contentlet, cats, false);
+    }
+
+    @Override
+    public void validateContentlet(final Contentlet contentlet,
+                                   final ContentletRelationships contentRelationships,
+                                   final List<Category> cats) throws DotContentletValidationException {
+        validateContentlet(contentlet,contentRelationships, cats, false );
     }
 
     @CloseDBIfOpened
     @Override
     public void validateContentlet(final Contentlet contentlet,
             final ContentletRelationships contentRelationships,
-            final List<Category> cats) throws DotContentletValidationException {
+            final List<Category> cats, final boolean preview) throws DotContentletValidationException {
         if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
             return;
         }
@@ -8102,7 +8126,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException(errorMsg);
         }
         try {
-            validateContentlet(contentlet, cats);
+            validateContentlet(contentlet, cats, preview);
             if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType()
                     .getType()) {
                 APILocator.getPersonaAPI().validatePersona(contentlet);

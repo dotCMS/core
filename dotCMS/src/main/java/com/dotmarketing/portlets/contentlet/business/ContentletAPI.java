@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -1993,11 +1994,40 @@ public interface ContentletAPI {
 	 * @throws DotContentletValidationException will be thrown if the contentlet is not valid.  
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
+	@WrapInTransaction
 	public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats) throws DotContentletValidationException;
 
 	@CloseDBIfOpened
+	@WrapInTransaction
 	void validateContentletNoRels(Contentlet contentlet,
 			List<Category> cats) throws DotContentletValidationException;
+
+	/**
+	 * Validate contentlet
+	 *
+	 * @param contentlet to be validated
+	 * @param contentRelationships Contentlet's relationships
+	 * @param cats Contentlet's catgories
+	 * @param preview if it true it means that it is running in preview mode
+	 * @throws DotContentletValidationException
+	 */
+	@WrapInTransaction
+	void validateContentlet(Contentlet contentlet,
+									 ContentletRelationships contentRelationships,List<Category> cats, boolean preview )
+			throws DotContentletValidationException;
+
+	/**
+	 * Validate contentlet
+	 *
+	 * @param contentlet to be validated
+	 * @param cats Contentlet's catgories
+	 * @param preview if it true it means that it is running in preview mode
+	 * @throws DotContentletValidationException
+	 */
+	@CloseDBIfOpened
+	@WrapInTransaction
+	void validateContentletNoRels(Contentlet contentlet,
+								  List<Category> cats, boolean preview) throws DotContentletValidationException;
 
 	/**
 	 * Use to validate your contentlet.
@@ -2008,7 +2038,9 @@ public interface ContentletAPI {
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
 	public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats) throws DotContentletValidationException;
-	
+
+
+
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field

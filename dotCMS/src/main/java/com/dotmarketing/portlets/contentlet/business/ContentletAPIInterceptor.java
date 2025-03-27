@@ -2315,6 +2315,40 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public void validateContentlet(Contentlet contentlet,
+			ContentletRelationships contentRelationships, List<Category> cats, boolean preview ) throws DotContentletValidationException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.validateContentletNoRels(contentlet, cats);
+			if(!preResult){
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		conAPI.validateContentlet(contentlet, contentRelationships, cats, preview);
+		for(ContentletAPIPostHook post : postHooks){
+			post.validateContentletNoRels(contentlet, cats);
+		}
+	}
+
+	@Override
+	public void validateContentletNoRels(Contentlet contentlet,
+										   List<Category> cats, boolean preview) throws DotContentletValidationException {
+			for(ContentletAPIPreHook pre : preHooks){
+				boolean preResult = pre.validateContentletNoRels(contentlet, cats);
+				if(!preResult){
+					String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+					Logger.error(this, errorMessage);
+					throw new DotRuntimeException(errorMessage);
+				}
+			}
+			conAPI.validateContentletNoRels(contentlet, cats, preview);
+			for(ContentletAPIPostHook post : postHooks){
+				post.validateContentletNoRels(contentlet, cats);
+			}
+	}
+
+	@Override
 	public void addPreHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
         addPreHook( o );

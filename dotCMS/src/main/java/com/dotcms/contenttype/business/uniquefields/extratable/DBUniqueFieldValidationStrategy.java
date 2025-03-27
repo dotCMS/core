@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
@@ -82,6 +83,34 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 .build();
 
         insertUniqueValue(uniqueFieldCriteria, contentlet.getIdentifier());
+    }
+
+    @Override
+    @WrapInTransaction
+    @CloseDBIfOpened
+    public void innerValidateInPreview(final Contentlet contentlet, final Field field, final Object fieldValue,
+                                        final ContentType contentType)
+            throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.systemUser();
+        final Host site = APILocator.getHostAPI().find(contentlet.getHost(), systemUser, DONT_RESPECT_FRONT_END_ROLES);
+        final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+        final UniqueFieldCriteria uniqueFieldCriteria = new UniqueFieldCriteria.Builder()
+                .setSite(site)
+                .setLanguage(language)
+                .setField(field)
+                .setContentType(contentType)
+                .setValue(fieldValue)
+                .setVariantName(contentlet.getVariantId())
+                .setLive(isLive(contentlet))
+                .build();
+
+        final Optional<UniqueFieldDataBaseUtil.UniqueFieldValue> uniqueFieldValueOptional =
+                uniqueFieldDataBaseUtil.get(uniqueFieldCriteria);
+
+        if (uniqueFieldValueOptional.isPresent()) {
+                throwsDuplicatedException(uniqueFieldCriteria);
+        }
     }
 
     /**
@@ -232,13 +261,7 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
         } catch (final DotDataException e) {
             if (isDuplicatedKeyError(e)) {
-                final String duplicatedValueMessage = String.format("The unique value '%s' for the field '%s'" +
-                                " in the Content Type '%s' already exists",
-                        uniqueFieldCriteria.value(), uniqueFieldCriteria.field().variable(),
-                        uniqueFieldCriteria.contentType().variable());
-
-                Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
-                throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
+                throwsDuplicatedException(uniqueFieldCriteria);
             } else {
                 final String errorMsg = String.format("Failed to insert unique value for Field '%s' in Contentlet " +
                         "'%s': %s", uniqueFieldCriteria.field().variable(), contentletId, ExceptionUtil.getErrorMessage(e));
@@ -246,6 +269,23 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                 throw new DotRuntimeException(errorMsg);
             }
         }
+    }
+
+    /**
+     * Throws a duplicated exception with the right message
+     *
+     * @param uniqueFieldCriteria
+     * @throws UniqueFieldValueDuplicatedException
+     */
+    private static void throwsDuplicatedException(final UniqueFieldCriteria uniqueFieldCriteria)
+            throws UniqueFieldValueDuplicatedException {
+        final String duplicatedValueMessage = String.format("The unique value '%s' for the field '%s'" +
+                        " in the Content Type '%s' already exists",
+                uniqueFieldCriteria.value(), uniqueFieldCriteria.field().variable(),
+                uniqueFieldCriteria.contentType().variable());
+
+        Logger.error(DBUniqueFieldValidationStrategy.class, duplicatedValueMessage);
+        throw new UniqueFieldValueDuplicatedException(duplicatedValueMessage);
     }
 
     @WrapInTransaction
