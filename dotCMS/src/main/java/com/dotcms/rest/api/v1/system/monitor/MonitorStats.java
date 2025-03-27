@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
+import com.dotcms.http.CircuitBreakerUrlBuilder;
+
 import java.util.Map;
 
 /**
@@ -15,17 +17,21 @@ public class MonitorStats {
     final boolean dBHealthy;
     final boolean esHealthy;
     final boolean localFSHealthy;
+    final String contentAnalytics;
 
     public MonitorStats(boolean assetFSHealthy,
             boolean cacheHealthy,
             boolean dBHealthy,
             boolean esHealthy,
-            boolean localFSHealthy) {
+            boolean localFSHealthy,
+            String contentAnalytics) {
+
         this.assetFSHealthy = assetFSHealthy;
         this.cacheHealthy = cacheHealthy;
         this.dBHealthy = dBHealthy;
         this.esHealthy = esHealthy;
         this.localFSHealthy = localFSHealthy;
+        this.contentAnalytics = contentAnalytics;
     }
 
     /**
@@ -50,6 +56,14 @@ public class MonitorStats {
     }
 
     /**
+     * Return the content analytics status: see {@link com.dotcms.experiments.business.ExperimentsAPI.Health}
+     * @return String
+     */
+    public String getContentAnalytics() {
+        return contentAnalytics;
+    }
+
+    /**
      * This method checks if the frontend is healthy. It does this by checking if the database,
      * elasticsearch, cache, local file system, and asset file system are healthy.
      *
@@ -71,7 +85,8 @@ public class MonitorStats {
                 "esHealthy", this.esHealthy,
                 "cacheHealthy", this.cacheHealthy,
                 "localFSHealthy", this.localFSHealthy,
-                "assetFSHealthy", this.assetFSHealthy);
+                "assetFSHealthy", this.assetFSHealthy,
+                "contentAnalytics", this.contentAnalytics);
 
         return Map.of(
                 "dotCMSHealthy", this.isDotCMSHealthy(),
@@ -90,6 +105,7 @@ public class MonitorStats {
         private boolean dBHealthy;
         private boolean esHealthy;
         private boolean localFSHealthy;
+        private String contentAnalytics;
 
         public Builder assetFSHealthy(boolean assetFSHealthy) {
             this.assetFSHealthy = assetFSHealthy;
@@ -116,13 +132,19 @@ public class MonitorStats {
             return this;
         }
 
+        public Builder contentAnalytics(String contentAnalytics) {
+            this.contentAnalytics = contentAnalytics;
+            return this;
+        }
+
         public MonitorStats build() {
             return new MonitorStats(
                     assetFSHealthy,
                     cacheHealthy,
                     dBHealthy,
                     esHealthy,
-                    localFSHealthy);
+                    localFSHealthy,
+                    contentAnalytics);
         }
 
     }

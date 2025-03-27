@@ -1,0 +1,23 @@
+@let totalItems = store.items().length;
+
+<div class="flex justify-content-between">
+    <div>
+        <p class="text-primary-500">
+            {{ 'dot.file.relationship.dialog.selected.items' | dm: [totalItems.toString()] }}
+        </p>
+    </div>
+    <div class="flex gap-2">
+        <p-button
+            [label]="'Cancel' | dm"
+            [outlined]="true"
+            (onClick)="closeDialog()"
+            [text]="true"
+            severity="primary"
+            data-testid="cancel-button" />
+        <p-button
+            [disabled]="totalItems === 0"
+            (onClick)="applyChanges()"
+            [label]="$applyLabel()"
+            data-testid="apply-button" />
+    </div>
+</div>
