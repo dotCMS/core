@@ -257,6 +257,36 @@ describe('withEditor', () => {
                     'http://localhost/first?language_id=1&variantName=DEFAULT&personaId=dot%3Apersona'
                 );
             });
+
+            it('should set the right iframe url when the clientHost is present', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS
+                    },
+                    pageParams: {
+                        ...emptyParams,
+                        url: 'test-url',
+                        clientHost: 'http://localhost:3000'
+                    }
+                });
+
+                expect(store.$iframeURL()).toBe('http://localhost:3000/test-url');
+            });
+
+            it('should set the right iframe url when the clientHost is present with a aditional path', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS
+                    },
+                    pageParams: {
+                        ...emptyParams,
+                        url: 'test-url',
+                        clientHost: 'http://localhost:3000/test'
+                    }
+                });
+
+                expect(store.$iframeURL()).toBe('http://localhost:3000/test/test-url');
+            });
         });
 
         describe('$editorProps', () => {
