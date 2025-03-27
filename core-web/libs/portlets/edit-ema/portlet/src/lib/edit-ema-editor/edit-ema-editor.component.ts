@@ -441,13 +441,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
         }
 
         this.#insertPageContent();
-        // this.#setSeoData();
+        this.#setSeoData();
 
-        // if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
-        //     this.inlineEditingService.initEditor();
-        // }
+        if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
+            this.inlineEditingService.initEditor();
+        }
 
-        // this.uveStore.setIsClientReady(true);
+        this.uveStore.setIsClientReady(true);
     }
 
     /**
