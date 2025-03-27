@@ -113,3 +113,4 @@ This maintenance release includes the following code fixes:
 107. https://github.com/dotCMS/core/issues/31207 : Improve performance to retrieve Analytics Data #31207
 108. https://github.com/dotCMS/core/issues/31563 : Creating a file in a secondary language won't return the file information #31563
 109. https://github.com/dotCMS/core/issues/29869 : Unable to authenticate a servlet request #29869
+110. https://github.com/dotCMS/core/issues/31509 : Content Import Functionality Disabled When "Content Search" Tool is Hidden for Specific Roles #31509
