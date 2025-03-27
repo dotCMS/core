@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -244,10 +245,18 @@ public class UniqueFieldDataBaseUtil {
 
     }
 
-    private static Map<String, Object> getSupportingValues(Map<String, Object> item) {
+    /**
+     * Return the supporting_values from a unique_field table register also turn the supporting_values from a
+     * {@link org.postgresql.util.PGobject} to a Map.
+     *
+     * @param uniqueFieldRegister
+     * @return
+     */
+    private static Map<String, Object> getSupportingValues(final Map<String, Object> uniqueFieldRegister) {
         try {
-            return com.dotcms.util.JsonUtil.getJsonFromString(item.get("supporting_values").toString());
+            return com.dotcms.util.JsonUtil.getJsonFromString(uniqueFieldRegister.get("supporting_values").toString());
         } catch (IOException e) {
+            Logger.error(UniqueFieldDataBaseUtil.class.getName(), "Error getting supporting values", e);
             throw new RuntimeException(e);
         }
     }

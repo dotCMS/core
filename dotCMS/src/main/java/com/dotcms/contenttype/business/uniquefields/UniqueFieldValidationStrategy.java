@@ -68,6 +68,18 @@ public interface  UniqueFieldValidationStrategy {
         innerValidate(contentlet, uniqueField, value, contentType);
     }
 
+    /**
+     * Validate Unique fiedla inside Preview mode, by default this method just called
+     * {@link UniqueFieldValidationStrategy#innerValidate(Contentlet, Field, Object, ContentType)} but this behavior
+     * can be overriding
+     *
+     * @param contentlet Contentlet to validate
+     * @param uniqueField Unique field to validate
+     *
+     * @throws UniqueFieldValueDuplicatedException throw if we have any duplicated value
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     default void validateInPreview(final Contentlet contentlet, final Field uniqueField)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
 
@@ -109,10 +121,23 @@ public interface  UniqueFieldValidationStrategy {
                                 final ContentType contentType)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException;
 
+    /**
+     * Method to be overriding if you want to override the default behavior of the preview validation
+     * by default the preview validation in the same that the normal validation.
+     *
+     * @param contentlet Contentlet to be validated
+     * @param field Field to be validated
+     * @param fieldValue Value to be validated
+     * @param contentType
+     *
+     * @throws UniqueFieldValueDuplicatedException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     default void innerValidateInPreview(final Contentlet contentlet, final Field field, final Object fieldValue,
                        final ContentType contentType)
             throws UniqueFieldValueDuplicatedException, DotDataException, DotSecurityException {
-
+        innerValidate(contentlet, field, fieldValue, contentType);
     }
 
     /**
