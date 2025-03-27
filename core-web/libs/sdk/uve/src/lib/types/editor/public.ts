@@ -20,6 +20,12 @@ export interface UVEState {
 }
 
 /**
+ * The mode of the page renderer component
+ * @enum {string}
+ */
+export type DotCMSPageRendererMode = 'production' | 'development';
+
+/**
  * Possible modes of UVE (Universal Visual Editor)
  * @enum {string}
  *

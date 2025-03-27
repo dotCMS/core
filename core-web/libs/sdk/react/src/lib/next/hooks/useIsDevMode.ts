@@ -1,9 +1,9 @@
 import { useContext, useEffect, useState } from 'react';
 
 import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { DotCMSPageRendererMode, UVE_MODE } from '@dotcms/uve/types';
 
-import { DotCMSPageRendererMode, DotCMSPageContext } from '../contexts/DotCMSPageContext';
+import { DotCMSPageContext } from '../contexts/DotCMSPageContext';
 
 /**
  * @internal
