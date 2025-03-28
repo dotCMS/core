@@ -3,8 +3,6 @@
 @let contentType = $contentType();
 @let showLabel = $showLabel();
 
-test: {{ contentlet | json }}
-
 <ng-template #labelTemplate>
     @if (showLabel) {
         <label
