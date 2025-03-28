@@ -45,7 +45,7 @@ const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
 describe('utils functions', () => {
     describe('SDK Editor Script Source', () => {
         it('should return the correct script source', () => {
-            expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/html/js/editor-js/sdk-editor.js');
+            expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/ext/uve/sdk-uve.js');
         });
     });
 
