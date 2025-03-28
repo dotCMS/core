@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
-import { DotCMSPageRendererMode } from '../../../contexts/DotCMSPageContext';
+import { DotCMSPageRendererMode } from '@dotcms/uve/types';
+
 import { useIsDevMode } from '../../../hooks/useIsDevMode';
 
 /**

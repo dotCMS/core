@@ -174,7 +174,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
 
             // Load user data when dialog is opened
             if (this.currentUser()) {
-                this.updateFormWithUserData(this.currentUser()!);
+                this.updateFormWithUserData(this.currentUser());
             }
         }
     }

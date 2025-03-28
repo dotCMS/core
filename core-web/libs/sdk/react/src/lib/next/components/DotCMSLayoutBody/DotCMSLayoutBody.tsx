@@ -1,6 +1,8 @@
+import { DotCMSPageRendererMode } from '@dotcms/uve/types';
+
 import { ErrorMessage } from './components/ErrorMessage';
 
-import { DotCMSPageContext, DotCMSPageRendererMode } from '../../contexts/DotCMSPageContext';
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { DotCMSContentlet, DotCMSPageAsset } from '../../types';
 import { Row } from '../Row/Row';
 
