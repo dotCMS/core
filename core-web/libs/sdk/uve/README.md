@@ -1,6 +1,6 @@
 # DotCMS UVE SDK
 
-A JavaScript SDK for interacting with DotCMS Universal Visual Editor (UVE).
+A JavaScript library to connect your dotCMS pages with the Universal Visual Editor (UVE) and enable content authors to edit pages in real time.  
 
 ## Installation
 
@@ -19,15 +19,13 @@ The library exposes three main entry points:
 
 - **`@dotcms/uve/types`**: Offers TypeScript types, interfaces, and other structures to help users organize their code properly.
 
-- **`@dotcms/uve/internal`**: Exposes internal functions used by other SDKs, allowing users to create their own SDK if needed.
-
 ---
 
 ## Functions
 
 ### `createUVESubscription`
 
-Creates a subscription to a UVE event.
+Subscribe to the pages changes. Receive a callback that will be called with the updated content of the page. 
 
 **Parameters:**
 - `eventType` - The type of event to subscribe to.
@@ -36,12 +34,16 @@ Creates a subscription to a UVE event.
 **Returns:**
 - An event subscription that can be used to unsubscribe.
 
-**Example:**
-```typescript
+**Example:**  
+***typescript
 // Subscribe to page changes
 const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, (changes) => {
-  console.log('Content changes:', changes);
+console.log('Content changes:', changes);
 });
+
+// Unsubscribe
+
+subscription.unsubscribe()
 ```
 
 ---
@@ -118,11 +120,30 @@ initInlineEditing();
 
 ---
 
-### `sendMessageToEditor`
+### `sendMessageToUVE`
 
-Sends a message to the dotCMS page editor.
+The `sendMessageToUVE` function allows you to send messages to the dotCMS page editor. This is useful for triggering specific actions or updating the editor's state.
+
+This function is primarily used within other libraries but can be helpful if you need to trigger specific behavior by sending a message to the UVE.
 
 **Example:**
 ```typescript
-sendMessageToEditor({ type: 'CUSTOM_MESSAGE', payload: { key: 'value' } });
+sendMessageToEditor({ type: 'CUSTOM_MESSAGE': DotCMSUVEAction, payload: { key: 'value' } });
 ```
+
+### Available Message Types (DotCMSUVEAction)
+
+| **Type**                           | **Description**                                                                                   |
+|--------------------------------------|---------------------------------------------------------------------------------------------------|
+| `set-url`                            | Notifies the dotCMS editor that the page has changed.                                             |
+| `set-bounds`                         | Sends the position of rows, columns, containers, and contentlets to the editor.                  |
+| `set-contentlet`                     | Sends information about the currently hovered contentlet.                                         |
+| `scroll`                             | Informs the editor that the page is being scrolled.                                               |
+| `scroll-end`                         | Notifies the editor that scrolling has stopped.                
+| `init-inline-editing`                | Initializes the inline editing mode in the editor.                                                |
+| `copy-contentlet-inline-editing`     | Opens the "Copy Contentlet" dialog to duplicate and edit a contentlet inline.                    |
+| `update-contentlet-inline-editing`   | Triggers the save action for inline-edited contentlets.                                           |
+| `reorder-menu`                       | Triggers the menu reorder action with a specified configuration.                                  |
+| `get-page-data`                      | Requests the current page information from the editor.                                            |
+| `client-ready`                       | Indicates that the client has sent a GraphQL query to the editor.                                 |
+| `edit-contentlet`                    | Opens the contentlet editing dialog in the editor.                                                |

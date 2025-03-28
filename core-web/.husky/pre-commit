@@ -79,8 +79,8 @@ check_sdk_client_affected() {
         printf "%s does not exist\n" "$file_to_remove"
     fi
 
-    if ! git add "${root_dir}/dotCMS/src/main/webapp/ext/uve/sdk-editor.js"; then
-        print_color "$RED" "Failed to stage computed sdk-uve.js"
+    if ! git add "${root_dir}/dotCMS/src/main/webapp/ext/uve/dot-uve.js"; then
+        print_color "$RED" "Failed to stage computed dot-uve.js"
         exit 1
     fi
 }

@@ -2,7 +2,7 @@
 import { createUVESubscription } from '../lib/core/core.utils';
 import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
-import { initInlineEditing, sendMessageToEditor } from '../lib/editor/public';
+import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
 import { DotCMSUVEAction, UVEEventType } from '../lib/types/editor/public';
 
 /**
@@ -12,13 +12,13 @@ import { DotCMSUVEAction, UVEEventType } from '../lib/types/editor/public';
  */
 export function scrollHandler(): void {
     const scrollCallback = () => {
-        sendMessageToEditor({
+        sendMessageToUVE({
             action: DotCMSUVEAction.IFRAME_SCROLL
         });
     };
 
     const scrollEndCallback = () => {
-        sendMessageToEditor({
+        sendMessageToUVE({
             action: DotCMSUVEAction.IFRAME_SCROLL_END
         });
     };
@@ -86,7 +86,7 @@ export function registerUVEEvents() {
     });
 
     createUVESubscription(UVEEventType.CONTENTLET_HOVERED, (contentletHovered) => {
-        sendMessageToEditor({
+        sendMessageToUVE({
             action: DotCMSUVEAction.SET_CONTENTLET,
             payload: contentletHovered
         });
@@ -104,7 +104,7 @@ export function registerUVEEvents() {
  * have been set up successfully.
  */
 export function setClientIsReady(): void {
-    sendMessageToEditor({
+    sendMessageToUVE({
         action: DotCMSUVEAction.CLIENT_READY
     });
 }

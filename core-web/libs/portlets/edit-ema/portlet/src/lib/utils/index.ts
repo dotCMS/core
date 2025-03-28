@@ -33,7 +33,7 @@ import {
 } from '../shared/models';
 import { Orientation } from '../store/models';
 
-export const SDK_EDITOR_SCRIPT_SOURCE = '/ext/uve/sdk-uve.js';
+export const SDK_EDITOR_SCRIPT_SOURCE = '/ext/uve/dot-uve.js';
 
 const REORDER_MENU_BASE_URL =
     'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';

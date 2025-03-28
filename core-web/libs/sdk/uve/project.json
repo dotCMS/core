@@ -45,7 +45,7 @@
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "../dotCMS/src/main/webapp/ext/uve",
-                "outputFileName": "sdk-uve",
+                "outputFileName": "dot-uve",
                 "format": ["esm"],
                 "tsConfig": "libs/sdk/uve/tsconfig.lib.json",
                 "project": "libs/sdk/uve/package.json",
