@@ -4,6 +4,10 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.jobs.business.job.JobView;
+import com.dotcms.jobs.business.job.JobViewPaginatedResult;
+import com.dotcms.rest.api.v1.job.JobResponseUtil;
+import com.dotcms.rest.api.v1.job.JobStatusResponse;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -15,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.portal.model.User;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -325,5 +330,41 @@ public class ContentImportHelper {
             Logger.error(this, "Error handling file upload", e);
             throw new DotDataException("Error processing file upload: " + e.getMessage());
         }
+    }
+
+    /**
+     * Builds a JobStatusResponse object with the job ID and status URL.
+     *
+     * @param jobId   The job ID
+     * @param request The HttpServletRequest to build the base URL
+     * @return A JobStatusResponse object
+     */
+    JobStatusResponse buildJobStatusResponse(String jobId, HttpServletRequest request) {
+        return JobResponseUtil.buildJobStatusResponse(
+                jobId, "/api/v1/content/_import/%s", request
+        );
+    }
+
+    /**
+     * Converts a Job object to a JobView object.
+     * @param job The Job object to convert.
+     * @return The JobView object.
+     */
+    JobView view(final Job job) {
+        return JobView.builder().from(job).build();
+    }
+
+    /**
+     * Converts a JobPaginatedResult object to a JobViewPaginatedResult object.
+     * @param result The JobPaginatedResult object to convert.
+     * @return The JobViewPaginatedResult object.
+     */
+    JobViewPaginatedResult view(final JobPaginatedResult result) {
+        return JobViewPaginatedResult.builder()
+                .page(result.page())
+                .pageSize(result.pageSize())
+                .total(result.total())
+                .jobs(result.jobs().stream().map(this::view).collect(Collectors.toList()))
+                .build();
     }
 }

@@ -3,10 +3,15 @@ package com.dotcms.rest.api.v1.content.dotimport;
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
+import com.dotcms.jobs.business.job.JobView;
+import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.repackage.javax.validation.ValidationException;
-import com.dotcms.rest.*;
-import com.dotcms.rest.api.v1.job.JobResponseUtil;
+import com.dotcms.rest.ResponseEntityJobPaginatedResultView;
 import com.dotcms.rest.ResponseEntityJobStatusView;
+import com.dotcms.rest.ResponseEntityJobView;
+import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -20,16 +25,23 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.glassfish.jersey.media.sse.EventOutput;
-import org.glassfish.jersey.media.sse.SseFeature;
-
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.SseFeature;
 
 
 /**
@@ -117,7 +129,7 @@ public class ContentImportResource {
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
-                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status\"\n" +
+                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/content/_import/e6d9bae8-657b-4e2f-8524-c0222db66355\"\n" +
                                             "  },\n" +
                                             "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
@@ -154,7 +166,7 @@ public class ContentImportResource {
             // Create the content import job
             final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
 
-            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            final var jobStatusResponse = importHelper.buildJobStatusResponse(jobId, request);
             return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException | ValidationException e) {
             // Handle validation exception and return appropriate error message
@@ -210,7 +222,7 @@ public class ContentImportResource {
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"jobId\": \"e6d9bae8-657b-4e2f-8524-c0222db66355\",\n" +
-                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/jobs/e6d9bae8-657b-4e2f-8524-c0222db66355/status\"\n" +
+                                            "    \"statusUrl\": \"http://localhost:8080/api/v1/_import/e6d9bae8-657b-4e2f-8524-c0222db66355\"\n" +
                                             "  },\n" +
                                             "  \"errors\": [],\n" +
                                             "  \"i18nMessagesMap\": {},\n" +
@@ -247,17 +259,12 @@ public class ContentImportResource {
             // Create the content import job in preview mode
             final String jobId = importHelper.createJob(CMD_PREVIEW, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
 
-            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            final var jobStatusResponse = importHelper.buildJobStatusResponse(jobId, request);
             return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException | ValidationException e) {
             // Handle validation exception and return appropriate error message
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
         }
-    }
-
-    private String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
-        return httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":"
-                + httpServletRequest.getServerPort();
     }
 
     /**
@@ -292,7 +299,7 @@ public class ContentImportResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public ResponseEntityView<Job> getJobStatus(
+    public ResponseEntityView<JobView> getJobStatus(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("jobId") @Parameter(
@@ -313,7 +320,7 @@ public class ContentImportResource {
         Logger.debug(this, ()->String.format(" user %s is retrieving status of job: %s", initDataObject.getUser().getUserId(), jobId));
 
         Job job = importHelper.getJob(jobId);
-        return new ResponseEntityView<>(job);
+        return new ResponseEntityView<>(importHelper.view(job));
     }
 
     /**
@@ -402,7 +409,7 @@ public class ContentImportResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public ResponseEntityView<JobPaginatedResult> listJobs(
+    public ResponseEntityView<JobViewPaginatedResult> listJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") final int page,
@@ -421,7 +428,7 @@ public class ContentImportResource {
 
         final JobPaginatedResult result = importHelper.getJobs(page, pageSize);
 
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
@@ -455,7 +462,7 @@ public class ContentImportResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public ResponseEntityView<JobPaginatedResult> activeJobs(
+    public ResponseEntityView<JobViewPaginatedResult> activeJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") final int page,
@@ -473,7 +480,7 @@ public class ContentImportResource {
                 initDataObject.getUser().getUserId()));
 
         final JobPaginatedResult result = importHelper.getActiveJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
@@ -507,7 +514,7 @@ public class ContentImportResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public ResponseEntityView<JobPaginatedResult> completedJobs(
+    public ResponseEntityView<JobViewPaginatedResult> completedJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") final int page,
@@ -525,7 +532,7 @@ public class ContentImportResource {
                 initDataObject.getUser().getUserId()));
 
         final JobPaginatedResult result = importHelper.getCompletedJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
@@ -559,7 +566,7 @@ public class ContentImportResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public ResponseEntityView<JobPaginatedResult> canceledJobs(
+    public ResponseEntityView<JobViewPaginatedResult> canceledJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") final int page,
@@ -577,7 +584,7 @@ public class ContentImportResource {
                 initDataObject.getUser().getUserId()));
 
         final JobPaginatedResult result = importHelper.getCanceledJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
@@ -611,7 +618,7 @@ public class ContentImportResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public ResponseEntityView<JobPaginatedResult> failedJobs(
+    public ResponseEntityView<JobViewPaginatedResult> failedJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") final int page,
@@ -629,7 +636,7 @@ public class ContentImportResource {
                 initDataObject.getUser().getUserId()));
 
         final JobPaginatedResult result = importHelper.getFailedJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
@@ -663,7 +670,7 @@ public class ContentImportResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public ResponseEntityView<JobPaginatedResult> abandonedJobs(
+    public ResponseEntityView<JobViewPaginatedResult> abandonedJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") final int page,
@@ -681,7 +688,7 @@ public class ContentImportResource {
                 initDataObject.getUser().getUserId()));
 
         final JobPaginatedResult result = importHelper.getAbandonedJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
@@ -715,7 +722,7 @@ public class ContentImportResource {
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
-    public ResponseEntityView<JobPaginatedResult> successfulJobs(
+    public ResponseEntityView<JobViewPaginatedResult> successfulJobs(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") final int page,
@@ -733,7 +740,7 @@ public class ContentImportResource {
                 initDataObject.getUser().getUserId()));
 
         final JobPaginatedResult result = importHelper.getSuccessfulJobs(page, pageSize);
-        return new ResponseEntityView<>(result);
+        return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**

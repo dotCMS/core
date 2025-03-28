@@ -392,4 +392,17 @@ public class JobQueueHelper {
                 state == JobState.CANCELED;
     }
 
+    /**
+     * Builds a JobStatusResponse object with the job ID and status URL.
+     *
+     * @param jobId   The job ID
+     * @param request The HttpServletRequest to build the base URL
+     * @return A JobStatusResponse object
+     */
+    JobStatusResponse buildJobStatusResponse(String jobId, HttpServletRequest request) {
+        return JobResponseUtil.buildJobStatusResponse(
+                jobId, "/api/v1/jobs/%s/status", request
+        );
+    }
+
 }

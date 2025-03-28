@@ -70,7 +70,7 @@ public class JobQueueResource {
         try {
             final String jobId = helper.createJob(
                     queueName, form, initDataObject.getUser(), request);
-            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            final var jobStatusResponse = helper.buildJobStatusResponse(jobId, request);
             return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException e) {
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
@@ -96,7 +96,7 @@ public class JobQueueResource {
         try {
             final String jobId = helper.createJob(
                     queueName, parameters, initDataObject.getUser(), request);
-            final var jobStatusResponse = JobResponseUtil.buildJobStatusResponse(jobId, request);
+            final var jobStatusResponse = helper.buildJobStatusResponse(jobId, request);
             return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
         } catch (JobValidationException e) {
             return ExceptionMapperUtil.createResponse(null, e.getMessage());
