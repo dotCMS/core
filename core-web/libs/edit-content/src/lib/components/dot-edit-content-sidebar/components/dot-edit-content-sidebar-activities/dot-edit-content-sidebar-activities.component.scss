@@ -1,5 +1,14 @@
 @use "variables" as *;
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 // Block
 .activities {
     display: flex;
@@ -55,6 +64,19 @@
     padding: $spacing-1;
 }
 
+.activities__control {
+    position: relative;
+    // TODO: Implement this in dot-field-validation-message
+    ::ng-deep dot-field-validation-message {
+        position: absolute;
+        bottom: calc($spacing-3 * -1);
+        left: 0;
+        small {
+            animation: fadeIn $basic-speed ease-out;
+        }
+    }
+}
+
 .activities__header {
     display: flex;
     align-items: center;
@@ -108,7 +130,7 @@
 .activities__form {
     display: flex;
     flex-direction: column;
-    gap: $spacing-2;
+    gap: $spacing-3;
 }
 
 .activities__input {
@@ -140,14 +162,5 @@
             font-size: $font-size-xs;
             line-height: 1;
         }
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
     }
 }
