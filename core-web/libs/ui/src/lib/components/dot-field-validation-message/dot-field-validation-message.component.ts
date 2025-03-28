@@ -1,6 +1,7 @@
 /*
 - TODO: maybe crawl the html to find the form parent and save one @Input
 */
+/* eslint-disable @typescript-eslint/padding-line-between-statements */
 
 import { Subject } from 'rxjs';
 
