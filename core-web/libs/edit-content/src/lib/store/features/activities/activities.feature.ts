@@ -60,7 +60,10 @@ export function withActivities() {
                                 tapResponse({
                                     next: (activities) => {
                                         patchState(store, {
-                                            activities,
+                                            // Sort activities by createdDate, the latest activity should be first. Endpoint returns them in descending order.
+                                            activities: activities.sort(
+                                                (a, b) => a.createdDate - b.createdDate
+                                            ),
                                             activitiesStatus: {
                                                 status: ComponentStatus.LOADED,
                                                 error: null
@@ -111,7 +114,7 @@ export function withActivities() {
                                             )
                                         });
                                         patchState(store, (state) => ({
-                                            activities: [activity, ...(state.activities || [])],
+                                            activities: [...(state.activities || []), activity],
                                             activitiesStatus: {
                                                 status: ComponentStatus.IDLE,
                                                 error: null

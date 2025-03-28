@@ -17,24 +17,26 @@
                         activity of activities;
                         track activity.taskId + '_' + activity.createdDate
                     ) {
-                        <div class="activities__item" data-testid="activity-item">
-                            <div class="activities__header">
-                                <p-avatar
-                                    dotGravatar
-                                    [email]="activity?.email"
-                                    styleClass="activities__avatar" />
-                                <span class="activities__user" data-testid="activity-user">
-                                    {{ activity.postedBy }}
-                                </span>
-                                <span class="activities__date" data-testid="activity-date">
-                                    {{ activity.createdDate | dotRelativeDate }}
+                        <div class="activities__item-wrapper">
+                            <div class="activities__item" data-testid="activity-item">
+                                <div class="activities__header">
+                                    <p-avatar
+                                        dotGravatar
+                                        [email]="activity?.email"
+                                        styleClass="activities__avatar" />
+                                    <span class="activities__user" data-testid="activity-user">
+                                        {{ activity.postedBy }}
+                                    </span>
+                                    <span class="activities__date" data-testid="activity-date">
+                                        {{ activity.createdDate | dotRelativeDate }}
+                                    </span>
+                                </div>
+                                <span
+                                    class="activities__description"
+                                    data-testid="activity-description">
+                                    {{ activity.commentDescription }}
                                 </span>
                             </div>
-                            <span
-                                class="activities__description"
-                                data-testid="activity-description">
-                                {{ activity.commentDescription }}
-                            </span>
                         </div>
                     }
                 </ng-template>
