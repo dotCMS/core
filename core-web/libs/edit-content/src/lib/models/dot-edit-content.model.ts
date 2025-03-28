@@ -22,6 +22,14 @@ export interface DotWorkflowActionParams {
  */
 export type DotContentletState = 'new' | 'existing' | 'reset' | 'copy';
 
+/**
+ * Type for the view state of the activity sidebar.
+ *
+ * @export
+ * @type {DotActivityViewState}
+ */
+export type DotActivityViewState = 'idle' | 'create';
+
 export interface DotWorkflowState extends DotCMSWorkflowStatus {
     contentState: DotContentletState;
     resetAction?: DotCMSWorkflowAction;
