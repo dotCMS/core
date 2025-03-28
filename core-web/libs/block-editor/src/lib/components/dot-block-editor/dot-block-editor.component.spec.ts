@@ -43,7 +43,7 @@ const BLOCK_EDITOR_FIELD = {
     standalone: true,
     template: `
         <form [formGroup]="form">
-            <dot-block-editor formControlName="block"></dot-block-editor>
+            <dot-block-editor formControlName="block" />
         </form>
     `
 })
@@ -66,24 +66,9 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
     it('should set form value when binary file changes', () => {
         const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-        blockEditorComponent.value = BLOCK_EDITOR_FIELD;
+        blockEditorComponent.writeValue(BLOCK_EDITOR_FIELD);
 
         const formValue = spectator.component.form.get('block').value;
-        const expected = {
-            type: 'doc',
-            content: [
-                {
-                    type: 'paragraph',
-                    attrs: { textAlign: 'left' },
-                    content: [
-                        {
-                            type: 'text',
-                            text: '{"attrs":{"charCount":9,"readingTime":1,"wordCount":2},"content":[{"attrs":{"level":1,"textAlign":"left"},"content":[{"text":"A title!!","type":"text"}],"type":"heading"}],"type":"doc"}'
-                        }
-                    ]
-                }
-            ]
-        };
-        expect(formValue).toEqual(JSON.stringify(expected));
+        expect(formValue).toEqual(JSON.stringify(BLOCK_EDITOR_FIELD));
     });
 });
