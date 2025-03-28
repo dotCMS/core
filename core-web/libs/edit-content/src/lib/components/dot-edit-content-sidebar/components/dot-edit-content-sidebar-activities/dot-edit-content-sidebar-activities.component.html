@@ -1,5 +1,5 @@
 <!-- Activities List -->
-<div class="activities">
+<section class="activities" role="log" aria-label="Content Activities">
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
@@ -86,4 +86,4 @@
             </div>
         }
     }
-</div>
+</section>
