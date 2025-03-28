@@ -55,8 +55,8 @@ export function withActivities() {
                                 }
                             });
                         }),
-                        switchMap(() =>
-                            dotEditContentService.getActivities(store.contentlet().identifier).pipe(
+                        switchMap((identifier) =>
+                            dotEditContentService.getActivities(identifier).pipe(
                                 tapResponse({
                                     next: (activities) => {
                                         patchState(store, {

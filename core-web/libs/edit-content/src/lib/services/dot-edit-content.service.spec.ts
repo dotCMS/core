@@ -68,6 +68,79 @@ describe('DotEditContentService', () => {
             spectator.service.getTags(NAME).subscribe();
             spectator.expectOne(`${TAGS_API_ENDPOINT}?name=${NAME}`, HttpMethod.GET);
         });
+
+        it('should get activities for a contentlet', () => {
+            const identifier = '123-456-789';
+            spectator.service.getActivities(identifier).subscribe();
+            spectator.expectOne(
+                `/api/v1/workflow/tasks/history/comments/${identifier}`,
+                HttpMethod.GET
+            );
+        });
+
+        it('should create an activity for a contentlet', () => {
+            const identifier = '123-456-789';
+            const comment = 'Test comment';
+            spectator.service.createActivity(identifier, comment).subscribe();
+
+            const req = spectator.expectOne(
+                `/api/v1/workflow/${identifier}/comments`,
+                HttpMethod.POST
+            );
+            expect(req.request.body).toEqual({ comment });
+        });
+
+        it('should return activities from response entity', (done) => {
+            const identifier = '123-456-789';
+            const mockActivities = [
+                {
+                    commentDescription: 'Test comment',
+                    createdDate: 1234567890,
+                    email: 'test@test.com',
+                    postedBy: 'Test User',
+                    roleId: '1',
+                    taskId: '1',
+                    type: 'comment'
+                }
+            ];
+
+            spectator.service.getActivities(identifier).subscribe((activities) => {
+                expect(activities).toEqual(mockActivities);
+                done();
+            });
+
+            const req = spectator.expectOne(
+                `/api/v1/workflow/tasks/history/comments/${identifier}`,
+                HttpMethod.GET
+            );
+            req.flush({ entity: mockActivities });
+        });
+
+        it('should return created activity from response entity', (done) => {
+            const identifier = '123-456-789';
+            const comment = 'Test comment';
+            const mockActivity = {
+                commentDescription: comment,
+                createdDate: 1234567890,
+                email: 'test@test.com',
+                postedBy: 'Test User',
+                roleId: '1',
+                taskId: '1',
+                type: 'comment'
+            };
+
+            spectator.service.createActivity(identifier, comment).subscribe((activity) => {
+                expect(activity).toEqual(mockActivity);
+                done();
+            });
+
+            const req = spectator.expectOne(
+                `/api/v1/workflow/${identifier}/comments`,
+                HttpMethod.POST
+            );
+            expect(req.request.body).toEqual({ comment });
+            req.flush({ entity: mockActivity });
+        });
     });
 
     describe('Facades', () => {

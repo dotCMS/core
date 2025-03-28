@@ -19,10 +19,11 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
-type DefaultsNGValidatorsTypes = 'maxlength' | 'required' | 'pattern';
+type DefaultsNGValidatorsTypes = 'maxlength' | 'minlength' | 'required' | 'pattern';
 
 const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string> = {
     maxlength: 'error.form.validator.maxlength',
+    minlength: 'error.form.validator.minlength',
     required: 'error.form.validator.required',
     pattern: 'error.form.validator.pattern'
 };
@@ -106,6 +107,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
                 const { requiredLength, requiredPattern } = value;
                 switch (key) {
                     case 'maxlength':
+                    case 'minlength':
                         errorTranslated = this.dotMessageService.get(
                             NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
                             requiredLength
@@ -116,6 +118,12 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
                         errorTranslated = this.dotMessageService.get(
                             this.patternErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[key],
                             requiredPattern
+                        );
+                        break;
+
+                    case 'required':
+                        errorTranslated = this.dotMessageService.get(
+                            NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
                         );
                         break;
 

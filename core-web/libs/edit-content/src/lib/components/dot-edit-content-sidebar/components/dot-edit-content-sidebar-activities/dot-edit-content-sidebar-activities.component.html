@@ -54,33 +54,37 @@
                     (ngSubmit)="onSubmit()"
                     class="activities__form"
                     data-testid="activities-form">
-                    <textarea
-                        aria-label="Add Comment"
-                        pInputTextarea
-                        [rows]="5"
-                        autoResize="false"
-                        formControlName="comment"
-                        data-testid="activities-input"
-                        class="activities__input"
-                        [ngClass]="{
-                            'ng-invalid ng-dirty':
-                                form.get('comment')?.touched && form.get('comment')?.invalid
-                        }"></textarea>
+                    <div class="activities__control">
+                        <textarea
+                            pInputTextarea
+                            [rows]="5"
+                            autoResize="false"
+                            formControlName="comment"
+                            data-testid="activities-input"
+                            class="activities__input"></textarea>
+
+                        <dot-field-validation-message
+                            [field]="form.get('comment')"></dot-field-validation-message>
+                    </div>
 
                     <div class="activities__actions">
-                        <p-button
+                        <button
+                            pButton
                             type="button"
                             [disabled]="!form.dirty || $isSaving()"
                             class="p-button-sm p-button-secondary activities__clear"
                             data-testid="activities-clear"
-                            [label]="'edit.content.sidebar.activities.clear' | dm"
-                            (click)="clearComment()"></p-button>
-                        <p-button
+                            (click)="clearComment()">
+                            {{ 'edit.content.sidebar.activities.clear' | dm }}
+                        </button>
+                        <button
+                            pButton
                             type="submit"
                             [loading]="$isSaving()"
                             class="p-button-sm p-button-primary activities__submit"
-                            data-testid="activities-submit"
-                            [label]="'edit.content.sidebar.activities.send' | dm" />
+                            data-testid="activities-submit">
+                            {{ 'edit.content.sidebar.activities.send' | dm }}
+                        </button>
                     </div>
                 </form>
             </div>

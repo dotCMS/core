@@ -15,10 +15,18 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotFieldValidationMessageComponent,
+    DotGravatarDirective,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
 import { Activity, DotContentletState } from '../../../../models/dot-edit-content.model';
 import { DotEditContentSidebarActivitiesSkeletonComponent } from '../dot-edit-content-sidebar-activities-skeleton/dot-edit-content-sidebar-activities-skeleton.component';
+
+const COMMENT_MIN_LENGTH = 3;
+const COMMENT_MAX_LENGTH = 500;
 
 /**
  * Component that displays and manages activities in the content sidebar.
@@ -38,19 +46,33 @@ import { DotEditContentSidebarActivitiesSkeletonComponent } from '../dot-edit-co
         SkeletonModule,
         DotGravatarDirective,
         DotRelativeDatePipe,
-        DotEditContentSidebarActivitiesSkeletonComponent
+        DotEditContentSidebarActivitiesSkeletonComponent,
+        DotFieldValidationMessageComponent
     ],
     templateUrl: './dot-edit-content-sidebar-activities.component.html',
     styleUrls: ['./dot-edit-content-sidebar-activities.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarActivitiesComponent {
-    private readonly fb = inject(FormBuilder);
+    /**
+     * Form builder for the comment field
+     */
+    #fb = inject(FormBuilder);
 
+    /**
+     * Form group for the comment field
+     */
     readonly form: FormGroup<{
         comment: FormControl<string>;
-    }> = this.fb.group({
-        comment: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(500)]]
+    }> = this.#fb.group({
+        comment: [
+            '',
+            [
+                Validators.required,
+                Validators.minLength(COMMENT_MIN_LENGTH),
+                Validators.maxLength(COMMENT_MAX_LENGTH)
+            ]
+        ]
     });
 
     /**
@@ -96,14 +118,6 @@ export class DotEditContentSidebarActivitiesComponent {
     protected readonly $hideForm = computed(() => this.$initialContentletState() === 'new');
 
     /**
-     * Whether the form is valid and dirty
-     */
-    protected readonly canSubmit = computed(() => {
-        const commentValue = this.commentControl.value;
-        return this.form.valid && this.form.dirty && commentValue?.trim().length > 0;
-    });
-
-    /**
      * Resets the comment form to its initial state
      */
     clearComment(): void {
@@ -117,7 +131,11 @@ export class DotEditContentSidebarActivitiesComponent {
      * Validates the form and emits the comment if valid
      */
     onSubmit(): void {
-        if (!this.canSubmit()) {
+        if (this.form.invalid) {
+            this.commentControl.markAsDirty();
+            this.commentControl.markAsTouched();
+            this.commentControl.updateValueAndValidity({ onlySelf: true });
+
             return;
         }
 
