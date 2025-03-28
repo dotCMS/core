@@ -21,7 +21,8 @@ import { Activity, DotContentletState } from '../../../../models/dot-edit-conten
 import { DotEditContentSidebarActivitiesSkeletonComponent } from '../dot-edit-content-sidebar-activities-skeleton/dot-edit-content-sidebar-activities-skeleton.component';
 
 /**
- * Component that displays a list of activities in the content sidebar
+ * Component that displays and manages activities in the content sidebar.
+ * Allows users to view activity history and add new comments.
  */
 @Component({
     selector: 'dot-edit-content-sidebar-activities',
@@ -53,19 +54,26 @@ export class DotEditContentSidebarActivitiesComponent {
     });
 
     /**
-     * The activities to display
+     * List of activities to display in the timeline
+     * @readonly
      */
     $activities = input<Activity[]>([], { alias: 'activities' });
 
     /**
-     * The status of the activities
+     * Current status of the activities component
+     * Used to control loading and saving states
+     * @readonly
      */
     $status = input<ComponentStatus>(ComponentStatus.LOADING, { alias: 'status' });
 
     /**
-     * The initial contentlet state
+     * Initial state of the contentlet
+     * Used to determine if the comment form should be displayed
+     * @readonly
      */
-    $initialContentletState = input<DotContentletState>('new', { alias: 'initialContentletState' });
+    $initialContentletState = input<DotContentletState>('new', {
+        alias: 'initialContentletState'
+    });
 
     /**
      * Event emitted when a new comment is submitted
@@ -73,55 +81,60 @@ export class DotEditContentSidebarActivitiesComponent {
     commentSubmitted = output<string>();
 
     /**
-     * Whether the activities are saving
+     * Determines if the activities are in a loading state
      */
-    $isSaving = computed(() => this.$status() === ComponentStatus.SAVING);
+    protected readonly $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
 
     /**
-     * Whether the activities are loading
+     * Determines if the activities are in a saving state
      */
-    $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
+    protected readonly $isSaving = computed(() => this.$status() === ComponentStatus.SAVING);
 
     /**
-     * Whether the form should be hidden
+     * Determines if the comment form should be hidden
      */
-    $hideForm = computed(() => {
-        const initialContentletState = this.$initialContentletState();
-
-        return initialContentletState === 'new';
-    });
+    protected readonly $hideForm = computed(() => this.$initialContentletState() === 'new');
 
     /**
      * Whether the form is valid and dirty
      */
     protected readonly canSubmit = computed(() => {
-        const commentValue = this.form.get('comment')?.value;
-
-        return (
-            this.form.valid &&
-            this.form.dirty &&
-            typeof commentValue === 'string' &&
-            commentValue.trim().length > 0
-        );
+        const commentValue = this.commentControl.value;
+        return this.form.valid && this.form.dirty && commentValue?.trim().length > 0;
     });
 
     /**
-     * Clear the comment form
+     * Resets the comment form to its initial state
      */
     clearComment(): void {
         this.form.reset();
+        this.form.markAsPristine();
+        this.commentControl.markAsUntouched();
     }
 
     /**
-     * Submit the comment form
+     * Handles the submission of a new comment
+     * Validates the form and emits the comment if valid
      */
     onSubmit(): void {
-        if (this.canSubmit()) {
-            const comment = this.form.get('comment')?.value?.trim();
-            if (comment) {
-                this.commentSubmitted.emit(comment);
-                this.form.reset();
-            }
+        if (!this.canSubmit()) {
+            return;
         }
+
+        const comment = this.commentControl.value?.trim();
+        if (!comment) {
+            return;
+        }
+
+        this.commentSubmitted.emit(comment);
+        this.form.reset();
+        this.form.markAsPristine();
+    }
+
+    /**
+     * Get the comment control
+     */
+    protected get commentControl(): FormControl<string> {
+        return this.form.get('comment') as FormControl<string>;
     }
 }
