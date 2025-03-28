@@ -221,32 +221,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param e - The MouseEvent object representing the click event.
      */
     handleInternalNav(e: MouseEvent) {
-        const href =
-            (e.target as HTMLAnchorElement)?.href ||
-            (e.target as HTMLElement)?.closest('a')?.getAttribute('href');
+        const target = e.target as HTMLAnchorElement;
+        const href = target.href || target.closest('a')?.getAttribute('href');
+        const isInlineEditing = this.uveStore.state() === EDITOR_STATE.INLINE_EDITING;
 
-        e.preventDefault();
-
-        if (href) {
-            const dataset = (e.target as HTMLElement).dataset;
-
-            if (dataset['mode'] && dataset['fieldName'] && dataset['inode']) {
-                // We clicked on the inline editing element, we need to prevent navigation
-                return;
-            }
-
-            const url = new URL(href, window.location.origin);
-
-            if (url.hostname !== window.location.hostname) {
-                this.window.open(href, '_blank');
-
-                return;
-            }
-
-            this.uveStore.loadPageAsset({
-                url: url.pathname
-            });
+        // If the link is not valid or we are in inline editing mode, we do nothing
+        if (!href || isInlineEditing) {
+            return;
         }
+
+        const url = new URL(href, location.origin);
+
+        if (url.hostname !== location.hostname) {
+            this.window.open(href, '_blank');
+
+            return;
+        }
+
+        this.uveStore.loadPageAsset({ url: url.pathname });
+        e.preventDefault();
     }
 
     /**
