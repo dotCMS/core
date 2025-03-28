@@ -217,7 +217,7 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
         const currentDisplayedEditor = this.$displayedEditor();
         const content = this.$fieldContent();
 
-        if (content.length > 0 && this.$displayedEditor() !== AvailableEditor.TinyMCE) {
+        if (content?.length > 0 && this.$displayedEditor() !== AvailableEditor.TinyMCE) {
             this.#confirmationService.confirm({
                 header: this.#dotMessageService.get(
                     'edit.content.wysiwyg.confirm.switch-editor.header'
