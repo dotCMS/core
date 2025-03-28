@@ -743,6 +743,19 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     @WrapInTransaction(externalize = true)
     private int deleteContentBatch(final Date date, final int batchSize) throws DotDataException {
+        HibernateUtil.addSyncCommitListener(() -> {
+            try {
+                final DotConnect dc = new DotConnect();
+                final String countSQL = "select count(*) as count from contentlet";
+                dc.setSQL(countSQL);
+                final List<Map<String, String>> result = dc.loadResults();
+                final int contentCount = Integer.parseInt(result.get(0).get("count"));
+                Logger.debug(this, () -> String.format("Current contentlet count: %d contentlets", contentCount));
+            } catch (final Exception e) {
+                Logger.error(this, "Error getting contentlet count", e);
+            }
+        });
+        Logger.debug(this, () -> "Deleting batch of old contentlets older than " + date);
         final String query = "SELECT c.inode FROM contentlet c"
                 + " WHERE c.identifier <> 'SYSTEM_HOST' AND c.mod_date < ?"
                 + " AND NOT EXISTS (SELECT 1 FROM contentlet_version_info vi"
@@ -760,6 +773,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     row -> row.get("inode")).collect(Collectors.toList());
             deleteContentData(inodeList);
         }
+        Logger.debug(this, () -> String.format("Deleted %d contentlets.", resultCount));
         return resultCount;
     }
 
