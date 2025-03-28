@@ -230,7 +230,7 @@ class MonitorHelper {
 
         return CircuitBreakerUrl.builder()
                 .setUrl(telemetryEndPointUrl.get())
-                .setHeaders(Map.of("Content-Type", "application/json"))
+                .doPing()
                 .build().ping();
     }
 
