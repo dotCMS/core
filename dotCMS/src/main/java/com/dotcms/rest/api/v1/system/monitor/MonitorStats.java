@@ -18,13 +18,15 @@ public class MonitorStats {
     final boolean esHealthy;
     final boolean localFSHealthy;
     final String contentAnalytics;
+    final boolean telemetry;
 
     public MonitorStats(boolean assetFSHealthy,
             boolean cacheHealthy,
             boolean dBHealthy,
             boolean esHealthy,
             boolean localFSHealthy,
-            String contentAnalytics) {
+            String contentAnalytics,
+            boolean telemetry) {
 
         this.assetFSHealthy = assetFSHealthy;
         this.cacheHealthy = cacheHealthy;
@@ -32,6 +34,7 @@ public class MonitorStats {
         this.esHealthy = esHealthy;
         this.localFSHealthy = localFSHealthy;
         this.contentAnalytics = contentAnalytics;
+        this.telemetry = telemetry;
     }
 
     /**
@@ -86,7 +89,8 @@ public class MonitorStats {
                 "cacheHealthy", this.cacheHealthy,
                 "localFSHealthy", this.localFSHealthy,
                 "assetFSHealthy", this.assetFSHealthy,
-                "contentAnalytics", this.contentAnalytics);
+                "contentAnalytics", this.contentAnalytics,
+                "telemetry", this.telemetry);
 
         return Map.of(
                 "dotCMSHealthy", this.isDotCMSHealthy(),
@@ -106,6 +110,7 @@ public class MonitorStats {
         private boolean esHealthy;
         private boolean localFSHealthy;
         private String contentAnalytics;
+        private boolean telemetry;
 
         public Builder assetFSHealthy(boolean assetFSHealthy) {
             this.assetFSHealthy = assetFSHealthy;
@@ -137,6 +142,11 @@ public class MonitorStats {
             return this;
         }
 
+        public Builder telemetry(boolean telemetry) {
+            this.telemetry = telemetry;
+            return this;
+        }
+
         public MonitorStats build() {
             return new MonitorStats(
                     assetFSHealthy,
@@ -144,8 +154,10 @@ public class MonitorStats {
                     dBHealthy,
                     esHealthy,
                     localFSHealthy,
-                    contentAnalytics);
+                    contentAnalytics,
+                    telemetry);
         }
+
 
     }
 

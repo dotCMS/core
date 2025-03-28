@@ -21,6 +21,7 @@
 							"    ",
 							"  var json = pm.response.json();",
 							"  pm.expect(json.subsystems).to.have.property(\"contentAnalytics\");",
+							"  pm.expect(json.subsystems).to.have.property(\"telemetry\");",
 							"});",
 							"",
 							"",

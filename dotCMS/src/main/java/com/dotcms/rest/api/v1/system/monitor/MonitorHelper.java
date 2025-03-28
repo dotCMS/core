@@ -7,7 +7,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.jitsu.EventLogRunnable;
-import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.telemetry.util.JsonUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
@@ -21,6 +21,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -63,6 +64,11 @@ class MonitorHelper {
 
     private static final String[] ACLS_IPS = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL,
             DEFAULT_IP_ACL_VALUE);
+
+
+    private final Lazy<String> telemetryEndPointUrl = Lazy.of(() -> Config.getStringProperty(
+            "TELEMETRY_PERSISTENCE_ENDPOINT", null));
+
 
     static final AtomicReference<Tuple2<Long, MonitorStats>> cachedStats = new AtomicReference<>();
 
@@ -144,6 +150,7 @@ class MonitorHelper {
                 .localFSHealthy(isLocalFileSystemHealthy())
                 .dBHealthy(isDBHealthy())
                 .esHealthy(canConnectToES())
+                .telemetry(canConnectToTelemetry())
                 .contentAnalytics(isContentAnalytics(request))
                 .build();
         // cache a healthy response
@@ -153,6 +160,8 @@ class MonitorHelper {
         }
         return monitorStats;
     }
+
+
 
     /**
      * Determines if the content analytics is healthy by sending a test event to the analytics
@@ -212,6 +221,19 @@ class MonitorHelper {
             return false;
         }
     }
+
+    /**
+     * Returns true if dotCMS can connect to telemetry server
+     * @return
+     */
+    boolean canConnectToTelemetry() {
+
+        return CircuitBreakerUrl.builder()
+                .setUrl(telemetryEndPointUrl.get())
+                .doPing()
+                .build().ping();
+    }
+
 
     /**
      * Determines if the cache is healthy by checking if the SYSTEM_HOST identifier is available.
