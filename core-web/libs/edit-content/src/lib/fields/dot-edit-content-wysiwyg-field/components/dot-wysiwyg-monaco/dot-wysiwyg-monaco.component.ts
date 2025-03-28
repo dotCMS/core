@@ -18,7 +18,7 @@ import {
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { PaginatorModule } from 'primeng/paginator';
 
@@ -71,6 +71,12 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
     #monacoLoaderService: MonacoEditorLoaderService = inject(MonacoEditorLoaderService);
     #ngZone: NgZone = inject(NgZone);
     #destroyRef = inject(DestroyRef);
+    #controlContainer: ControlContainer = inject(ControlContainer);
+
+    /**
+     * Form control reference
+     */
+    #formControl: FormControl;
 
     /**
      * Holds a reference to the MonacoEditorComponent.
@@ -136,6 +142,13 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
             .subscribe((isLoaded) => {
                 if (isLoaded) {
                     this.registerVelocityLanguage();
+
+                    // Get reference to the parent form control
+                    const fieldName = this.$field().variable;
+                    const control = this.#controlContainer.control.get(fieldName);
+                    if (control instanceof FormControl) {
+                        this.#formControl = control;
+                    }
                 }
             });
     }
@@ -199,6 +212,9 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
             const processedContent = this.removeWysiwygComment(currentContent);
             if (currentContent !== processedContent) {
                 this.#editor.setValue(processedContent);
+
+                // Update the form control value, needed when switching between editor types
+                this.#formControl.setValue(processedContent, { emitEvent: true });
             }
 
             this.detectLanguage();

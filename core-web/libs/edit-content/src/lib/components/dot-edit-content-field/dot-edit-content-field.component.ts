@@ -1,4 +1,4 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { JsonPipe, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -70,7 +70,8 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
         DotEditContentFileFieldComponent,
         DotEditContentRelationshipFieldComponent,
         DividerModule,
-        NgTemplateOutlet
+        NgTemplateOutlet,
+        JsonPipe
     ]
 })
 export class DotEditContentFieldComponent {
