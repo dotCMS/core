@@ -14,15 +14,23 @@
                     <label>
                         {{ 'experiments.configure.traffic.split.name' | dm }}
                     </label>
-                    <p-radioButton
-                        (click)="splitVariantsEvenly()"
-                        [label]="'experiments.configure.traffic.split.evenly' | dm"
-                        [value]="splitEvenly"
-                        formControlName="type"></p-radioButton>
-                    <p-radioButton
-                        [label]="'experiments.configure.traffic.split.custom' | dm"
-                        [value]="customPercentages"
-                        formControlName="type"></p-radioButton>
+                    <div class="flex items-center">
+                        <p-radioButton
+                            (click)="splitVariantsEvenly()"
+                            [value]="splitEvenly"
+                            formControlName="type"
+                            inputId="splitEvenly">
+                        </p-radioButton>
+                        <label for="splitEvenly" class="ml-2">{{ 'experiments.configure.traffic.split.evenly' | dm }}</label>
+                    </div>
+                    <div class="flex items-center">
+                        <p-radioButton
+                            [value]="customPercentages"
+                            formControlName="type"
+                            inputId="customPercentages">
+                        </p-radioButton>
+                        <label for="customPercentages" class="ml-2">{{ 'experiments.configure.traffic.split.custom' | dm }}</label>
+                    </div>
                 </div>
 
                 <div class="experiment-traffic-split__variants">
