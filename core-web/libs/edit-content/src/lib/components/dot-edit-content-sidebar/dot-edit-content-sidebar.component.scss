@@ -66,6 +66,23 @@
             .p-tabview-panels {
                 height: calc(100% - 54px);
                 overflow: auto;
+                transition: opacity 150ms ease-in-out;
+
+                &.p-tabview-panels-enter {
+                    opacity: 0;
+                }
+
+                &.p-tabview-panels-enter-active {
+                    opacity: 1;
+                }
+
+                &.p-tabview-panels-exit {
+                    opacity: 1;
+                }
+
+                &.p-tabview-panels-exit-active {
+                    opacity: 0;
+                }
 
                 .p-tabview-panel {
                     height: 100%;

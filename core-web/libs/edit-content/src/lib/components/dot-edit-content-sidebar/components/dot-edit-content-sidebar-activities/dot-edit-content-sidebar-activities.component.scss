@@ -6,6 +6,7 @@
     flex-direction: column;
     height: 100%;
     position: relative;
+    padding: $spacing-3 $spacing-3 0 $spacing-3;
 
     &__item {
         animation: fadeIn $basic-speed ease-out;
@@ -17,12 +18,16 @@
     flex: 1;
 
     ::ng-deep .p-dataview {
-        background: transparent;
+        background: none;
         border: none;
 
         .p-dataview-content {
             padding: 0;
             border: none;
+            display: flex;
+            flex-direction: column;
+            background: none;
+            gap: $spacing-4;
         }
 
         .p-dataview-emptymessage {
@@ -32,21 +37,29 @@
     }
 }
 
+.activities__item-wrapper {
+    position: relative;
+    &:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        bottom: calc(($spacing-4 / 2) * -1);
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background-color: $color-palette-gray-300;
+    }
+}
+
 .activities__item {
     background: $color-palette-gray-100;
-    border-radius: $border-radius-md;
-    padding: $spacing-3 0;
-
-    &:not(:last-child) {
-        border-bottom: 1px solid $color-palette-gray-200;
-    }
+    padding: $spacing-1;
 }
 
 .activities__header {
     display: flex;
     align-items: center;
-    margin-bottom: $spacing-2;
-    gap: $spacing-2;
+    margin-bottom: $spacing-1;
+    gap: $spacing-1;
 }
 
 .activities__avatar {
@@ -58,19 +71,19 @@
 .activities__user {
     font-size: $font-size-md;
     font-weight: $font-weight-semi-bold;
-    color: $color-palette-gray-900;
+    color: $black;
     margin-right: $spacing-2;
 }
 
 .activities__date {
     font-size: $font-size-sm;
-    color: $color-palette-gray-600;
+    color: $black;
     margin-left: auto;
 }
 
 .activities__description {
     display: block;
-    color: $color-palette-gray-700;
+    color: $color-palette-gray-800;
     font-size: $font-size-md;
     line-height: 1.4;
 }
