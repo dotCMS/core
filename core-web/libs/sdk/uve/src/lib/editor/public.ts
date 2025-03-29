@@ -9,7 +9,7 @@ import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from '../types/ev
  * @template T
  * @param {DotCMSUVEMessage<T>} message
  */
-export function sendMessageToEditor<T = unknown>(message: DotCMSUVEMessage<T>) {
+export function sendMessageToUVE<T = unknown>(message: DotCMSUVEMessage<T>) {
     window.parent.postMessage(message, '*');
 }
 
@@ -23,7 +23,7 @@ export function sendMessageToEditor<T = unknown>(message: DotCMSUVEMessage<T>) {
  * @param {Contentlet<T>} contentlet - The contentlet to edit.
  */
 export function editContentlet<T>(contentlet: Contentlet<T>) {
-    sendMessageToEditor({
+    sendMessageToUVE({
         action: DotCMSUVEAction.EDIT_CONTENTLET,
         payload: contentlet
     });
@@ -41,7 +41,7 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
  */
 export function reorderMenu(config?: DotCMSReorderMenuConfig): void {
     const { startLevel = 1, depth = 2 } = config || {};
-    sendMessageToEditor({
+    sendMessageToUVE({
         action: DotCMSUVEAction.REORDER_MENU,
         payload: { startLevel, depth }
     });
@@ -66,7 +66,7 @@ export function initInlineEditing(
     type: DotCMSInlineEditingType,
     data?: DotCMSInlineEditingPayload
 ): void {
-    sendMessageToEditor({
+    sendMessageToUVE({
         action: DotCMSUVEAction.INIT_INLINE_EDITING,
         payload: {
             type,

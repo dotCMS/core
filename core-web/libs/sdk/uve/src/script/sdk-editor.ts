@@ -1,5 +1,6 @@
 import {
     addClassToEmptyContentlets,
+    listenBlockEditorInlineEvent,
     registerUVEEvents,
     scrollHandler,
     setClientIsReady
@@ -28,4 +29,5 @@ if (uveState?.mode === UVE_MODE.EDIT) {
     scrollHandler();
     addClassToEmptyContentlets();
     setClientIsReady();
+    listenBlockEditorInlineEvent();
 }

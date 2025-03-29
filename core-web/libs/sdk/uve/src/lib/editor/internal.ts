@@ -1,7 +1,7 @@
 import { DotCMSContainerBound } from '@dotcms/uve/internal';
 import { DotCMSUVEAction } from '@dotcms/uve/types';
 
-import { sendMessageToEditor } from './public';
+import { sendMessageToUVE } from './public';
 
 /**
  * Sets the bounds of the containers in the editor.
@@ -10,7 +10,7 @@ import { sendMessageToEditor } from './public';
  * @memberof DotCMSPageEditor
  */
 export function setBounds(bounds: DotCMSContainerBound[]): void {
-    sendMessageToEditor({
+    sendMessageToUVE({
         action: DotCMSUVEAction.SET_BOUNDS,
         payload: bounds
     });
