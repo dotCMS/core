@@ -492,7 +492,7 @@ public class DependencyManager {
 				if(!publisherFilter.doesExcludeDependencyClassesContainsType(PusheableAsset.CONTENTLET.getType())) {
 					//To simulate the same behavior as the push publish, we need to pull the contentlets that were modified after the last dataset used in phase 1
 					//In this case, we are going to use from 1 year ago from today (Feb 3rd, 2025), so it would be from Feb 3rd, 2024
-					final String luceneQuery = "+modDate:[2024-02-03 TO now] +conHost:(SYSTEM_HOST " + host.getIdentifier() + ")";
+					final String luceneQuery = "+modDate:[2024-06-01 TO now] +conHost:(SYSTEM_HOST " + host.getIdentifier() + ")";
 					//But since when you unpublish a contentlet there isn't a new version created, we need to pull the contentlets that are unpublished
 					//Query: +working:true +live:false
 					final String luceneQueryUnpublished = "+working:true +live:false +conHost:(SYSTEM_HOST " + host.getIdentifier() + ")";
