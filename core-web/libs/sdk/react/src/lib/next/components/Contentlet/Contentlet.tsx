@@ -1,10 +1,11 @@
 import { useContext, useRef, useMemo } from 'react';
 
+import { getDotContentletAttributes } from '@dotcms/uve/internal';
+import { DotCMSContentlet } from '@dotcms/uve/types';
+
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 import { useIsDevMode } from '../../hooks/useIsDevMode';
-import { DotCMSContentlet } from '../../types';
-import { getDotContentletAttributes } from '../../utils';
 import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
 
 /**
