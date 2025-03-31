@@ -27,6 +27,7 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireActionByNameForm;
 import com.dotcms.workflow.form.FireActionForm;
@@ -2970,6 +2971,10 @@ public class WorkflowResource {
                                               description = "Language version of target content.",
                                               schema = @Schema(type = "string")
                                       ) final String language,
+                                      @DefaultValue("DEFAULT") @QueryParam("variantName") @Parameter(
+                                              description = "Variant name",
+                                              schema = @Schema(type = "string")
+                                      ) final String variantName,
                                       @PathParam("systemAction") @Parameter(
                                               required = true,
                                               schema = @Schema(
@@ -4558,6 +4563,17 @@ public class WorkflowResource {
                                      final InitDataObject initDataObject,
                                      final PageMode pageMode) throws DotDataException, DotSecurityException {
 
+        return getContentlet(inode, identifier, language, sessionLanguage, fireActionForm, initDataObject, pageMode, VariantAPI.DEFAULT_VARIANT.name());
+    }
+    private Contentlet getContentlet(final String inode,
+                                     final String identifier,
+                                     final long language,
+                                     final Supplier<Long> sessionLanguage,
+                                     final FireActionForm fireActionForm,
+                                     final InitDataObject initDataObject,
+                                     final PageMode pageMode,
+                                     final String variantName) throws DotDataException, DotSecurityException {
+
         Contentlet contentlet = null;
         PageMode mode = pageMode;
         final String finalInode      = UtilMethods.isSet(inode)? inode:
@@ -4582,9 +4598,11 @@ public class WorkflowResource {
 
             mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
             final Optional<Contentlet> currentContentlet =  language <= 0?
-                    this.workflowHelper.getContentletByIdentifier(finalIdentifier, mode, initDataObject.getUser(), sessionLanguage):
+                    this.workflowHelper.getContentletByIdentifier(finalIdentifier, mode, initDataObject.getUser(), variantName, sessionLanguage):
                     this.contentletAPI.findContentletByIdentifierOrFallback
-                            (finalIdentifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
+                            (finalIdentifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms, variantName);
+
+
 
             DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
