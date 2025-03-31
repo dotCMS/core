@@ -10,9 +10,11 @@ import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
 
 import { PageError } from '../pages.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
+import { Block } from '../../../../../../core-web/dist/libs/sdk/angular/next/components/dotcms-block-editor-renderer/models/block-editor-renderer.models';
+import { Contentlet } from '@dotcms/uve/types';
 
 export interface PageResponse {
-    page: DotCMSPageAsset | null;
+    page: DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> } | null;
     error?: PageError;
 }
 
@@ -71,6 +73,7 @@ export class PageService {
     private fetchPage(route: ActivatedRoute, config: any): Observable<PageAndNavResponse> {
         const params = route.snapshot.queryParams;
         const url = route.snapshot.url.map((segment) => segment.path).join('/');
+        console.log('url => ', url);
         const path = url || '/';
 
         const pageParams = getPageRequestParams({

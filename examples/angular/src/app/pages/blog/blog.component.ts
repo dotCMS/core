@@ -1,22 +1,26 @@
-import { Component, DestroyRef, OnInit, TemplateRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { NavigationEnd } from '@angular/router';
-import { filter, startWith, tap } from 'rxjs/operators';
-
-import { DotcmsLayoutComponent, DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
-import { switchMap } from 'rxjs/operators';
-
-import { ErrorComponent } from './components/error/error.component';
-import { LoadingComponent } from './components/loading/loading.component';
-import { HeaderComponent } from './components/header/header.component';
-import { NavigationComponent } from './components/navigation/navigation.component';
-import { FooterComponent } from './components/footer/footer.component';
-import { PageService } from './services/page.service';
-import { CLIENT_ACTIONS, postMessageToEditor } from '@dotcms/client';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { PageService } from '../services/page.service';
+import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
+import { startWith, switchMap } from 'rxjs/operators';
+import { filter } from 'rxjs/operators';
+import { DYNAMIC_COMPONENTS } from '../components';
+import { tap } from 'rxjs/operators';
 import { getUVEState } from '@dotcms/uve';
-import { DYNAMIC_COMPONENTS } from './components';
-import { DOTCMS_CLIENT_TOKEN } from '../app.config';
+import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { postMessageToEditor } from '@dotcms/client';
+import { CLIENT_ACTIONS } from '@dotcms/client';
+import { HeaderComponent } from "../components/header/header.component";
+import { NavigationComponent } from "../components/navigation/navigation.component";
+import { LoadingComponent } from "../components/loading/loading.component";
+import { ErrorComponent } from "../components/error/error.component";
+import { FooterComponent } from "../components/footer/footer.component";
+import { BlogPostComponent } from './post/blog-post/blog-post.component';
+import { Contentlet } from '../../../../../../core-web/dist/libs/sdk/client/src/lib/client/content/shared/types';
+import { Block } from '@angular/compiler';
+
 
 export type PageError = {
     message: string;
@@ -24,28 +28,21 @@ export type PageError = {
 };
 
 type PageRender = {
-    page: DotCMSPageAsset | null;
+    // TODO: Centralize the type of the page asset
+    page: DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> } | null;
     nav: DotcmsNavigationItem | null;
     error: PageError | null;
     status: 'idle' | 'success' | 'error' | 'loading';
 };
 
 @Component({
-    selector: 'app-dotcms-page',
+    selector: 'app-blog',
     standalone: true,
-    imports: [
-        DotcmsLayoutComponent,
-        HeaderComponent,
-        NavigationComponent,
-        FooterComponent,
-        ErrorComponent,
-        LoadingComponent
-    ],
-
-    templateUrl: './pages.component.html',
-    styleUrl: './pages.component.css'
+    imports: [HeaderComponent, NavigationComponent, LoadingComponent, ErrorComponent, FooterComponent, BlogPostComponent],
+    templateUrl: './blog.component.html',
+    styleUrl: './blog.component.css'
 })
-export class DotCMSPagesComponent implements OnInit {
+export class BlogComponent {
     readonly #route = inject(ActivatedRoute);
     readonly #destroyRef = inject(DestroyRef);
     readonly #router = inject(Router);
@@ -64,6 +61,7 @@ export class DotCMSPagesComponent implements OnInit {
     protected readonly editorConfig: any = { params: { depth: 2 } };
 
     ngOnInit() {
+        console.log('ngOnInit BlogComponent');
         if (getUVEState()) {
             this.#listenToEditorChanges();
         }
@@ -74,6 +72,7 @@ export class DotCMSPagesComponent implements OnInit {
                 startWith(null), // Trigger initial load
                 tap(() => this.#setLoading()),
                 switchMap(() =>
+
                     this.#pageService.getPageAndNavigation(this.#route, this.editorConfig)
                 ),
                 takeUntilDestroyed(this.#destroyRef)
@@ -89,7 +88,9 @@ export class DotCMSPagesComponent implements OnInit {
                 if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
                     this.#router.navigate([vanityUrl.forwardTo]);
                     return;
-                }
+                }   
+
+                console.log('page', page?.urlContentMap);
 
                 this.#setPageContent(page as DotCMSPageAsset, nav);
             });
@@ -98,7 +99,7 @@ export class DotCMSPagesComponent implements OnInit {
     #setPageContent(page: DotCMSPageAsset, nav: DotcmsNavigationItem | null) {
         this.$context.set({
             status: 'success',
-            page,
+            page: page as DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> },
             nav,
             error: null
         });
@@ -134,7 +135,7 @@ export class DotCMSPagesComponent implements OnInit {
             }
             this.$context.update((state) => ({
                 ...state,
-                page: page as DotCMSPageAsset,
+                page: page as DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> },
                 status: 'success',
                 error: null
             }));

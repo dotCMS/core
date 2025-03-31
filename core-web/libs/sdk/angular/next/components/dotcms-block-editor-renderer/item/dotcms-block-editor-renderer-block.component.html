@@ -1,0 +1,38 @@
+@for (node of content; track node.type) {
+
+    @if (customRenderers?.[node.type]) {
+        <ng-container *ngTemplateOutlet="customRender; context: { customRender: customRenderers?.[node.type], node: node}"></ng-container>
+    }
+
+    <!-- {{node.type}} -->
+
+
+    @switch (node.type) {
+        @case (BLOCKS.PARAGRAPH) {
+            <dotcms-block-editor-renderer-paragraph [style]="node.attrs">
+                <dotcms-block-editor-renderer-block [content]="node.content" [customRenderers]="customRenderers" />
+            </dotcms-block-editor-renderer-paragraph>
+        }
+
+        @case (BLOCKS.TEXT) {
+            {{node.text}}
+            <dotcms-block-editor-renderer-text [marks]="node.marks" [text]="node.text || ''" />
+                <!-- <dotcms-block-editor-renderer-block [content]="node.content" [customRenderers]="customRenderers" /> -->
+        }
+
+        @case (BLOCKS.HEADING) {
+            <dotcms-block-editor-renderer-heading [style]="node.attrs || {}" [level]="node.attrs?.['level'] || '1'">
+                <dotcms-block-editor-renderer-block [content]="node.content" [customRenderers]="customRenderers" />
+            </dotcms-block-editor-renderer-heading>
+        }
+    }
+}
+
+
+
+<ng-template #customRender let-customRender="customRender" let-node="node">
+    <!-- HEY
+    {{ node.type }} -->
+
+    <ng-container *ngComponentOutlet="customRender | async"></ng-container>
+</ng-template>
