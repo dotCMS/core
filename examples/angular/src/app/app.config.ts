@@ -6,6 +6,8 @@ import { provideDotCMSImageLoader } from '@dotcms/angular';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
+import { IMAGE_LOADER } from '@angular/common';
+import { ImageLoaderConfig } from '@angular/common';
 
 export const DOTCMS_CLIENT_TOKEN = new InjectionToken<DotCmsClient>('DOTCMS_CLIENT');
 
@@ -39,6 +41,24 @@ export const appConfig: ApplicationConfig = {
      * <img [ngSrc]="https://my-url.com/some.jpg" [loaderParams]="{isOutsideSRC: true}" />
      * For further customization, you can provide your own image loader implementation.
      */
-    provideDotCMSImageLoader(environment.dotcmsUrl),
+    {
+      provide: IMAGE_LOADER,
+      useValue: (config: ImageLoaderConfig) => {
+        const { loaderParams, src, width } = config;
+        const isOutsideSRC = loaderParams?.['isOutsideSRC'];
+        if (isOutsideSRC) return src;
+
+        const languageId = loaderParams?.['languageId'];
+
+        const dotcmsHost = new URL(environment.dotcmsUrl).origin;
+
+        const imageSRC = src.includes('/dA/') ? src : `/dA/${src}`;
+
+        return `${dotcmsHost}${imageSRC}/${width}?language_id=${
+          languageId || '1'
+        }`;
+      },
+    },
+    // provideDotCMSImageLoader(environment.dotcmsUrl),
   ],
 };
