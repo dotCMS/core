@@ -6,7 +6,7 @@ import { EMPTY_CONTAINER_STYLE } from '@dotcms/uve/internal';
 import { DotCMSContextService } from '../../../../../../services/dotcms-context/dotcms-context.service';
 
 @Component({
-    selector: 'dot-container-not-found',
+    selector: 'dotcms-container-not-found',
     standalone: true,
     imports: [NgStyle],
     template: `

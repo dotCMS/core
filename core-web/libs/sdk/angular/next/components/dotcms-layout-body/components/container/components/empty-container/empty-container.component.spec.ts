@@ -27,8 +27,10 @@ describe('EmptyContainerComponent', () => {
         ) as jest.Mocked<DotCMSContextService>;
         spectator.component.dotAttributes = {
             'data-dot-object': 'container',
-            'data-dot-inode': '123',
-            'data-dot-identifier': 'test-container'
+            'data-dot-identifier': 'test-container',
+            'data-dot-accept-types': 'type1,type2',
+            'data-max-contentlets': '5',
+            'data-dot-uuid': '123'
         };
     });
 
