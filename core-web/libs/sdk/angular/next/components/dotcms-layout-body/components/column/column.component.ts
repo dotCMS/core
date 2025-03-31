@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Input, signal } from '@angular/core';
 
-import { DotPageAssetLayoutColumn } from '../../../../models';
+import { combineClasses, getColumnPositionClasses } from '@dotcms/uve/internal';
+import { DotPageAssetLayoutColumn } from '@dotcms/uve/types';
+
 import { ContainerComponent } from '../container/container.component';
-
 /**
  * This component renders a column with all its content using the layout provided by dotCMS Page API.
  *
@@ -15,7 +16,7 @@ import { ContainerComponent } from '../container/container.component';
     standalone: true,
     imports: [ContainerComponent],
     template: `
-        <div [class]="customColumnClass" [style.width.%]="column.widthPercent">
+        <div [class]="customColumnClass">
             @for (container of column.containers; track $index) {
                 <dotcms-container [container]="container" />
             }
@@ -29,6 +30,12 @@ export class ColumnComponent {
      * The column data to be rendered
      */
     @Input({ required: true }) column!: DotPageAssetLayoutColumn;
+
+    positionClasses = signal(getColumnPositionClasses(this.column));
+
+    combinedClasses = computed(() =>
+        combineClasses([this.positionClasses().startClass, this.positionClasses().endClass])
+    );
 
     /**
      * The custom column class that combines the styleClass from the column data with the base column class

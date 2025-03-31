@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { DotPageAssetLayoutRow } from '../../../../models';
+import { DotPageAssetLayoutRow } from '@dotcms/uve/types';
+
 import { ColumnComponent } from '../column/column.component';
 
 /**

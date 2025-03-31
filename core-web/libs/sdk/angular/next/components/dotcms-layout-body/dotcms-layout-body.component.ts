@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
 
-import { DotCMSPageRendererMode } from '@dotcms/uve/types';
+import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
 
 import { ErrorMessageComponent } from './components/error-message/error-message.component';
 
-import { DotCMSPageAsset, DotCMSPageComponent } from '../../models';
+import { DotCMSPageComponent } from '../../models';
 import { DotCMSContextService } from '../../services/dotcms-context/dotcms-context.service';
 /**
  *

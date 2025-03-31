@@ -1,11 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export * from './dotcms.model';
 
 import { Type } from '@angular/core';
 
-import { DotCMSPageRendererMode } from '@dotcms/uve/types';
-
-import { DotCMSPageAsset } from './dotcms.model';
+import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
 
 /**
  * Represents a dynamic component entity.
