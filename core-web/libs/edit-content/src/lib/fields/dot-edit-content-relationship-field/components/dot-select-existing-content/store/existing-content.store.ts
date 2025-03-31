@@ -22,17 +22,17 @@ export interface ExistingContentState {
     contentTypeId: string;
     data: DotCMSContentlet[];
     status: ComponentStatus;
+    searchData: DotCMSContentlet[];
     selectionMode: SelectionMode | null;
     errorMessage: string | null;
     columns: Column[];
-    currentItemsIds: string[];
     pagination: {
         offset: number;
         currentPage: number;
         rowsPerPage: number;
         totalResults: number;
     };
-    selectedItems: DotCMSContentlet[] | DotCMSContentlet | null;
+    selectedItemsIds: string[];
     showOnlySelected: boolean;
 }
 
@@ -46,13 +46,13 @@ const paginationInitialState: ExistingContentState['pagination'] = {
 const initialState: ExistingContentState = {
     contentTypeId: null,
     data: [],
+    searchData: [],
     columns: [],
     status: ComponentStatus.INIT,
     selectionMode: null,
     errorMessage: null,
     pagination: { ...paginationInitialState },
-    currentItemsIds: [],
-    selectedItems: null,
+    selectedItemsIds: [],
     showOnlySelected: false
 };
 
@@ -75,46 +75,27 @@ export const ExistingContentStore = signalStore(
          */
         totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
         /**
-         * Computes the selected items based on the current items IDs.
-         * @returns {DotCMSContentlet[]} The selected items.
-         */
-        initSelectedItems: computed(() => {
-            const data = state.data();
-            const currentItemsIds = state.currentItemsIds();
-
-            return data.filter((item) => currentItemsIds.includes(item.inode));
-        }),
-        /**
          * Computes the items based on the selected items.
          * @returns {DotCMSContentlet[]} The items.
          */
-        items: computed(() => {
-            const selectedItems = state.selectedItems();
+        currentItems: computed(() => {
+            const showOnlySelected = state.showOnlySelected();
+            const selectedItemsIds = state.selectedItemsIds();
+            const data = showOnlySelected ? state.searchData() : state.data();
 
-            if (selectedItems) {
-                const isArray = Array.isArray(selectedItems);
-                const items = isArray ? selectedItems : [selectedItems];
-
-                return items;
-            }
-
-            return [];
+            return data.filter((item) => selectedItemsIds.includes(item.inode));
         }),
         /**
          * Computes the filtered data based on the showOnlySelected state.
          * @returns {DotCMSContentlet[]} The filtered data.
          */
         filteredData: computed(() => {
-            const data = state.data();
             const showOnlySelected = state.showOnlySelected();
-            const selectedItems = state.selectedItems();
+            const selectedItemsIds = state.selectedItemsIds();
+            const data = showOnlySelected ? state.data() : state.searchData();
 
-            if (showOnlySelected && selectedItems) {
-                const isArray = Array.isArray(selectedItems);
-                const items = isArray ? selectedItems : [selectedItems];
-                const selectedInodes = items.map((item) => item.inode);
-
-                return data.filter((item) => selectedInodes.includes(item.inode));
+            if (showOnlySelected && selectedItemsIds.length > 0) {
+                return data.filter((item) => selectedItemsIds.includes(item.inode));
             }
 
             return data;
@@ -131,7 +112,7 @@ export const ExistingContentStore = signalStore(
             initLoad: rxMethod<{
                 contentTypeId: string;
                 selectionMode: SelectionMode;
-                currentItemsIds: string[];
+                selectedItemsIds: string[];
             }>(
                 pipe(
                     tap(({ selectionMode }) =>
@@ -150,7 +131,7 @@ export const ExistingContentStore = signalStore(
                         }
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
-                    switchMap(({ contentTypeId, currentItemsIds }) =>
+                    switchMap(({ contentTypeId, selectedItemsIds }) =>
                         relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
                                 next: ([columns, searchResponse]) => {
@@ -158,8 +139,9 @@ export const ExistingContentStore = signalStore(
                                         contentTypeId,
                                         columns,
                                         data: searchResponse.contentlets,
+                                        searchData: searchResponse.contentlets,
                                         status: ComponentStatus.LOADED,
-                                        currentItemsIds,
+                                        selectedItemsIds,
                                         pagination: {
                                             ...store.pagination(),
                                             totalResults: searchResponse.totalResults
@@ -211,8 +193,11 @@ export const ExistingContentStore = signalStore(
              * Sets the selected items in the state.
              * @param items The items to set as selected.
              */
-            setSelectedItems: (items: DotCMSContentlet[] | DotCMSContentlet | null) => {
-                patchState(store, { selectedItems: items });
+            setSelectedItems: (items: DotCMSContentlet[]) => {
+                const selectedInodes = items.map((item) => item.inode);
+                patchState(store, {
+                    selectedItemsIds: selectedInodes
+                });
             },
             /**
              * Toggles between showing all items or only selected items.
@@ -243,6 +228,7 @@ export const ExistingContentStore = signalStore(
             search: rxMethod<SearchParams>(
                 pipe(
                     tap(() =>
+
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             // Reset pagination when performing a new search
@@ -250,6 +236,7 @@ export const ExistingContentStore = signalStore(
                         })
                     ),
                     switchMap((searchParams) => {
+
                         // Map SearchParams to RelationshipFieldQueryParams
                         const queryParams: RelationshipFieldQueryParams = {
                             contentTypeId: store.contentTypeId()
@@ -271,8 +258,9 @@ export const ExistingContentStore = signalStore(
                         return relationshipFieldService.search(queryParams).pipe(
                             tapResponse({
                                 next: (data) => {
+
                                     patchState(store, {
-                                        data: data.contentlets,
+                                        searchData: data.contentlets,
                                         status: ComponentStatus.LOADED,
                                         pagination: {
                                             ...store.pagination(),

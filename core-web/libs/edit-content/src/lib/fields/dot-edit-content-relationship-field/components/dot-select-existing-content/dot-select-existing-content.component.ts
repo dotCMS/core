@@ -74,20 +74,16 @@ export class DotSelectExistingContentComponent implements OnInit {
      * A signal that holds the selected items.
      * It is used to store the selected content items.
      */
-    $selectedItems = model<DotCMSContentlet[] | DotCMSContentlet | null>(null);
+    $selectedItems = model<DotCMSContentlet[] | DotCMSContentlet | null>(this.store.currentItems());
 
     constructor() {
         effect(
             () => {
-                this.$selectedItems.set(this.store.initSelectedItems());
-            },
-            {
-                allowSignalWrites: true
-            }
-        );
-        effect(
-            () => {
-                this.store.setSelectedItems(this.$selectedItems());
+                const selectedItems = this.$selectedItems();
+                if (selectedItems) {
+                    const isArray = Array.isArray(selectedItems);
+                    this.store.setSelectedItems(isArray ? selectedItems : [selectedItems]);
+                }
             },
             {
                 allowSignalWrites: true
@@ -109,7 +105,7 @@ export class DotSelectExistingContentComponent implements OnInit {
         this.store.initLoad({
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
-            currentItemsIds: data.currentItemsIds
+            selectedItemsIds: data.currentItemsIds
         });
     }
 
@@ -119,7 +115,7 @@ export class DotSelectExistingContentComponent implements OnInit {
      * @returns True if the item is selected, false otherwise.
      */
     checkIfSelected(item: DotCMSContentlet) {
-        const items = this.store.items();
+        const items = this.store.currentItems();
 
         return items.some((selectedItem) => selectedItem.inode === item.inode);
     }

@@ -38,7 +38,7 @@ export class FooterComponent {
      * It is used to display the appropriate message based on the number of selected items.
      */
     $applyLabel = computed(() => {
-        const count = this.store.items().length;
+        const count = this.store.currentItems().length;
 
         const messageKey =
             count === 1
@@ -53,7 +53,7 @@ export class FooterComponent {
      * It sets the visibility signal to false, hiding the dialog.
      */
     applyChanges() {
-        this.#dialogRef.close(this.store.items());
+        this.#dialogRef.close(this.store.currentItems());
     }
 
     /**
