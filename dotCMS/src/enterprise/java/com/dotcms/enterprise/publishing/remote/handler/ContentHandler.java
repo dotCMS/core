@@ -1011,6 +1011,7 @@ public class ContentHandler implements IHandler {
 				final User systemUser = this.userAPI.getSystemUser();
 				final StringBuilder luceneQuery = new StringBuilder();
 				luceneQuery.append("+structureInode:").append(content.getContentTypeId());
+				luceneQuery.append(" +(conhost:").append(content.getHost()).append(")");
 				luceneQuery.append(" +languageId:").append(remoteLocalLanguages.getRight());
 				luceneQuery.append(" +(");
 				for (final Field uniqueField : uniqueFields) {
