@@ -198,3 +198,44 @@ export type UVEEventPayloadMap = {
     // TODO: Add type here
     [UVEEventType.CONTENTLET_HOVERED]: unknown;
 };
+
+/**
+ *
+ * Interface representing the data needed for container editing
+ * @interface EditableContainerData
+ */
+export interface EditableContainerData {
+    uuid: string;
+    identifier: string;
+    acceptTypes: string;
+    maxContentlets: number;
+    variantId?: string;
+}
+
+/**
+ *
+ * Interface representing the data attributes of a DotCMS container.
+ * @interface DotContainerAttributes
+ */
+export interface DotContainerAttributes {
+    'data-dot-object': string;
+    'data-dot-accept-types': string;
+    'data-dot-identifier': string;
+    'data-max-contentlets': string;
+    'data-dot-uuid': string;
+}
+
+/**
+ *
+ * Interface representing the data attributes of a DotCMS contentlet.
+ * @interface DotContentletAttributes
+ */
+export interface DotContentletAttributes {
+    'data-dot-identifier': string;
+    'data-dot-basetype': string;
+    'data-dot-title': string;
+    'data-dot-inode': string;
+    'data-dot-type': string;
+    'data-dot-container': string;
+    'data-dot-on-number-of-pages': string;
+}

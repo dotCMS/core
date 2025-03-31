@@ -1,14 +1,15 @@
 import { useContext, useMemo } from 'react';
 
+import {
+    getContainersData,
+    getDotContainerAttributes,
+    getContentletsInContainer
+} from '@dotcms/uve/internal';
+import { DotCMSColumnContainer, DotCMSContentlet } from '@dotcms/uve/types';
+
 import { ContainerNoFound, EmptyContainer } from './ContainerFallbacks';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
-import { DotCMSColumnContainer, DotCMSContentlet } from '../../types';
-import {
-    getContainersData,
-    getContentletsInContainer,
-    getDotContainerAttributes
-} from '../../utils';
 import { Contentlet } from '../Contentlet/Contentlet';
 
 /**

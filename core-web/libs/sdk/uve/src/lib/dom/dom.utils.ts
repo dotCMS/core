@@ -1,4 +1,16 @@
+import { END_CLASS_MAP, START_CLASS_MAP } from '../../internal/constants';
 import { DotCMSContainerBound, DotCMSContentletBound } from '../types/editor/internal';
+import {
+    DotContainerAttributes,
+    DotContentletAttributes,
+    EditableContainerData
+} from '../types/editor/public';
+import {
+    DotCMSColumnContainer,
+    DotCMSContentlet,
+    DotCMSPageAsset,
+    DotPageAssetLayoutColumn
+} from '../types/page/public';
 
 /**
  * Calculates the bounding information for each page element within the given containers.
@@ -198,4 +210,178 @@ export function computeScrollIsInBottom() {
     const scrollY = window.scrollY;
 
     return scrollY + viewportHeight >= documentHeight;
+}
+
+/**
+ *
+ *
+ * Combine classes into a single string.
+ *
+ * @param {string[]} classes
+ * @returns {string} Combined classes
+ */
+export const combineClasses = (classes: string[]) => classes.filter(Boolean).join(' ');
+
+/**
+ *
+ *
+ * Calculates and returns the CSS Grid positioning classes for a column based on its configuration.
+ * Uses a 12-column grid system where columns are positioned using grid-column-start and grid-column-end.
+ *
+ * @example
+ * ```typescript
+ * const classes = getColumnPositionClasses({
+ *   leftOffset: 1, // Starts at the first column
+ *   width: 6      // Spans 6 columns
+ * });
+ * // Returns: { startClass: 'col-start-1', endClass: 'col-end-7' }
+ * ```
+ *
+ * @param {DotPageAssetLayoutColumn} column - Column configuration object
+ * @param {number} column.leftOffset - Starting position (0-based) in the grid
+ * @param {number} column.width - Number of columns to span
+ * @returns {{ startClass: string, endClass: string }} Object containing CSS class names for grid positioning
+ */
+export const getColumnPositionClasses = (column: DotPageAssetLayoutColumn) => {
+    const { leftOffset, width } = column;
+    const startClass = START_CLASS_MAP[leftOffset];
+    const endClass = END_CLASS_MAP[leftOffset + width];
+
+    return {
+        startClass,
+        endClass
+    };
+};
+
+/**
+ *
+ *
+ * Helper function that returns an object containing the dotCMS data attributes.
+ * @param {DotCMSContentlet} contentlet - The contentlet to get the attributes for
+ * @param {string} container - The container to get the attributes for
+ * @returns {DotContentletAttributes} The dotCMS data attributes
+ */
+export function getDotContentletAttributes(
+    contentlet: DotCMSContentlet,
+    container: string
+): DotContentletAttributes {
+    return {
+        'data-dot-identifier': contentlet?.identifier,
+        'data-dot-basetype': contentlet?.baseType,
+        'data-dot-title': contentlet?.['widgetTitle'] || contentlet?.title,
+        'data-dot-inode': contentlet?.inode,
+        'data-dot-type': contentlet?.contentType,
+        'data-dot-container': container,
+        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages']
+    };
+}
+
+/**
+ *
+ *
+ * Retrieves container data from a DotCMS page asset using the container reference.
+ * This function processes the container information and returns a standardized format
+ * for container editing.
+ *
+ * @param {DotCMSPageAsset} dotCMSPageAsset - The page asset containing all containers data
+ * @param {DotCMSColumnContainer} columContainer - The container reference from the layout
+ * @throws {Error} When page asset is invalid or container is not found
+ * @returns {EditableContainerData} Formatted container data for editing
+ *
+ * @example
+ * const containerData = getContainersData(pageAsset, containerRef);
+ * // Returns: { uuid: '123', identifier: 'cont1', acceptTypes: 'type1,type2', maxContentlets: 5 }
+ */
+export const getContainersData = (
+    dotCMSPageAsset: DotCMSPageAsset,
+    columContainer: DotCMSColumnContainer
+): EditableContainerData | null => {
+    const { identifier, uuid } = columContainer;
+    const dotContainer = dotCMSPageAsset.containers[identifier];
+
+    if (!dotContainer) {
+        return null;
+    }
+
+    const { containerStructures, container } = dotContainer;
+
+    const acceptTypes =
+        containerStructures?.map((structure) => structure.contentTypeVar).join(',') ?? '';
+
+    const variantId = container?.parentPermissionable?.variantId;
+    const maxContentlets = container?.maxContentlets ?? 0;
+    const path = container?.path;
+
+    return {
+        uuid,
+        variantId,
+        acceptTypes,
+        maxContentlets,
+        identifier: path ?? identifier
+    };
+};
+
+/**
+ *
+ *
+ * Retrieves the contentlets (content items) associated with a specific container.
+ * Handles different UUID formats and provides warning for missing contentlets.
+ *
+ * @param {DotCMSPageAsset} dotCMSPageAsset - The page asset containing all containers data
+ * @param {DotCMSColumnContainer} columContainer - The container reference from the layout
+ * @returns {DotCMSContentlet[]} Array of contentlets in the container
+ *
+ * @example
+ * const contentlets = getContentletsInContainer(pageAsset, containerRef);
+ * // Returns: [{ identifier: 'cont1', ... }, { identifier: 'cont2', ... }]
+ */
+export const getContentletsInContainer = (
+    dotCMSPageAsset: DotCMSPageAsset,
+    columContainer: DotCMSColumnContainer
+) => {
+    const { identifier, uuid } = columContainer;
+    const { contentlets } = dotCMSPageAsset.containers[identifier];
+    const contentletsInContainer =
+        contentlets[`uuid-${uuid}`] || contentlets[`uuid-dotParser_${uuid}`] || [];
+
+    if (!contentletsInContainer) {
+        console.warn(
+            `We couldn't find the contentlets for the container with the identifier ${identifier} and the uuid ${uuid} becareful by adding content to this container.\nWe recommend to change the container in the layout and add the content again.`
+        );
+    }
+
+    return contentletsInContainer;
+};
+
+/**
+ *
+ *
+ * Generates the required DotCMS data attributes for a container element.
+ * These attributes are used by DotCMS for container identification and functionality.
+ *
+ * @param {EditableContainerData} params - Container data including uuid, identifier, acceptTypes, and maxContentlets
+ * @returns {DotContainerAttributes} Object containing all necessary data attributes
+ *
+ * @example
+ * const attributes = getDotContainerAttributes({
+ *   uuid: '123',
+ *   identifier: 'cont1',
+ *   acceptTypes: 'type1,type2',
+ *   maxContentlets: 5
+ * });
+ * // Returns: { 'data-dot-object': 'container', 'data-dot-identifier': 'cont1', ... }
+ */
+export function getDotContainerAttributes({
+    uuid,
+    identifier,
+    acceptTypes,
+    maxContentlets
+}: EditableContainerData): DotContainerAttributes {
+    return {
+        'data-dot-object': 'container',
+        'data-dot-accept-types': acceptTypes,
+        'data-dot-identifier': identifier,
+        'data-max-contentlets': maxContentlets.toString(),
+        'data-dot-uuid': uuid
+    };
 }

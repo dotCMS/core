@@ -2,10 +2,11 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
+import { getDotContentletAttributes } from '@dotcms/uve/internal';
+
 import { Contentlet } from '../../components/Contentlet/Contentlet';
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
-import { getDotContentletAttributes } from '../../utils';
 
 jest.mock('../../components/FallbackComponent/FallbackComponent', () => ({
     FallbackComponent: ({ contentlet }: any) => (

@@ -1,6 +1,7 @@
+import { DotPageAssetLayoutRow } from '@dotcms/uve/types';
+
 import styles from './Row.module.css';
 
-import { DotPageAssetLayoutRow } from '../../types';
 import { Column } from '../Column/Column';
 
 /**

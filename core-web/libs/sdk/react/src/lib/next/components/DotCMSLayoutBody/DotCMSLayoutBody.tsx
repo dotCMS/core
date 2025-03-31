@@ -1,9 +1,8 @@
-import { DotCMSPageRendererMode } from '@dotcms/uve/types';
+import { DotCMSContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
 
 import { ErrorMessage } from './components/ErrorMessage';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
-import { DotCMSContentlet, DotCMSPageAsset } from '../../types';
 import { Row } from '../Row/Row';
 
 interface DotCMSLayoutBodyProps {

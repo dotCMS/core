@@ -15,7 +15,7 @@ jest.mock('../../components/Row/Row', () => ({
 describe('DotCMSLayoutBody', () => {
     describe('With valid layout.body', () => {
         test('should render all rows when the page has a valid layout.body', () => {
-            render(<DotCMSLayoutBody page={MOCK_PAGE_ASSET} mode="production" />);
+            render(<DotCMSLayoutBody page={MOCK_PAGE_ASSET} components={{}} mode="production" />);
 
             const rows = screen.getAllByTestId('row');
             expect(rows).toHaveLength(2);
@@ -37,12 +37,14 @@ describe('DotCMSLayoutBody', () => {
         afterEach(() => jest.restoreAllMocks());
 
         test('should log a warning if the page is missing layout.body', () => {
-            render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} mode="production" />);
+            render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} components={{}} mode="production" />);
             expect(consoleSpy).toHaveBeenCalledWith(MESSAGE_WARNING);
         });
 
         test('should displays an error message in development mode', () => {
-            render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} mode="development" />);
+            render(
+                <DotCMSLayoutBody page={MOCK_INVALID_PAGE} components={{}} mode="development" />
+            );
             const errorMessage = screen.getByTestId('error-message');
             expect(errorMessage).toBeInTheDocument();
         });
@@ -50,14 +52,14 @@ describe('DotCMSLayoutBody', () => {
         test('should display an error message in production mode if the page is inside the editor', () => {
             getUVEStateSpy.mockReturnValue({ mode: UVE_MODE.EDIT });
 
-            render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} mode="production" />);
+            render(<DotCMSLayoutBody page={MOCK_INVALID_PAGE} components={{}} mode="production" />);
             const errorMessage = screen.getByTestId('error-message');
             expect(errorMessage).toBeInTheDocument();
         });
 
         test('should not display an error message in production mode', () => {
             const { container } = render(
-                <DotCMSLayoutBody page={MOCK_INVALID_PAGE} mode="production" />
+                <DotCMSLayoutBody page={MOCK_INVALID_PAGE} components={{}} mode="production" />
             );
             expect(container.innerHTML).toBe('');
         });

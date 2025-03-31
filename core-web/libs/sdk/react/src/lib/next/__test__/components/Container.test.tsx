@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 
+import * as utils from '@dotcms/uve/internal';
+
 import { Container } from '../../components/Container/Container';
 import { DotCMSPageContext, DotCMSPageContextProps } from '../../contexts/DotCMSPageContext';
-import * as utils from '../../utils';
 import { EMPTY_PAGE_ASSET, MOCK_CONTAINER, MOCK_PAGE_ASSET, MOCK_CONTAINER_DATA } from '../mock';
 
 jest.mock('../../components/Contentlet/Contentlet', () => ({
@@ -44,8 +45,7 @@ describe('Container', () => {
             'data-dot-identifier': 'test-container-id',
             'data-dot-accept-types': 'test-accept-types',
             'data-max-contentlets': '10',
-            'data-dot-uuid': 'test-uuid',
-            'data-testid': 'dot-container'
+            'data-dot-uuid': 'test-uuid'
         });
         getContainersDataMock.mockReturnValue(MOCK_CONTAINER_DATA);
     });
