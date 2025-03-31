@@ -33,6 +33,7 @@ export interface ExistingContentState {
         totalResults: number;
     };
     selectedItems: DotCMSContentlet[] | DotCMSContentlet | null;
+    showOnlySelected: boolean;
 }
 
 const paginationInitialState: ExistingContentState['pagination'] = {
@@ -51,7 +52,8 @@ const initialState: ExistingContentState = {
     errorMessage: null,
     pagination: { ...paginationInitialState },
     currentItemsIds: [],
-    selectedItems: null
+    selectedItems: null,
+    showOnlySelected: false
 };
 
 /**
@@ -97,6 +99,25 @@ export const ExistingContentStore = signalStore(
             }
 
             return [];
+        }),
+        /**
+         * Computes the filtered data based on the showOnlySelected state.
+         * @returns {DotCMSContentlet[]} The filtered data.
+         */
+        filteredData: computed(() => {
+            const data = state.data();
+            const showOnlySelected = state.showOnlySelected();
+            const selectedItems = state.selectedItems();
+
+            if (showOnlySelected && selectedItems) {
+                const isArray = Array.isArray(selectedItems);
+                const items = isArray ? selectedItems : [selectedItems];
+                const selectedInodes = items.map((item) => item.inode);
+
+                return data.filter((item) => selectedInodes.includes(item.inode));
+            }
+
+            return data;
         })
     })),
     withMethods((store) => {
@@ -192,6 +213,14 @@ export const ExistingContentStore = signalStore(
              */
             setSelectedItems: (items: DotCMSContentlet[] | DotCMSContentlet | null) => {
                 patchState(store, { selectedItems: items });
+            },
+            /**
+             * Toggles between showing all items or only selected items.
+             */
+            toggleShowOnlySelected: () => {
+                patchState(store, {
+                    showOnlySelected: !store.showOnlySelected()
+                });
             },
             /**
              * Sets the offset and current page in the state.

@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, model, OnInit, effect } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -8,6 +9,7 @@ import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputIconModule } from 'primeng/inputicon';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -22,7 +24,6 @@ import { SearchComponent } from './components/search/search.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { SelectionMode } from '../../models/relationship.models';
-import { PaginationComponent } from '../pagination/pagination.component';
 
 type DialogData = {
     contentTypeId: string;
@@ -42,14 +43,15 @@ type DialogData = {
         IconFieldModule,
         InputIconModule,
         InputTextModule,
-        PaginationComponent,
         InputGroupModule,
         OverlayPanelModule,
         SearchComponent,
         ContentletStatusPipe,
         LanguagePipe,
         DatePipe,
-        ChipModule
+        ChipModule,
+        InputSwitchModule,
+        FormsModule
     ],
     templateUrl: './dot-select-existing-content.component.html',
     styleUrls: ['./dot-select-existing-content.component.scss'],

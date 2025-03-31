@@ -1,8 +1,10 @@
+import { createFakeEvent } from '@ngneat/spectator';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { InputSwitch } from 'primeng/inputswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
@@ -52,7 +54,8 @@ describe('DotSelectExistingContentComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'dot.file.relationship.dialog.apply.one.entry': 'Apply 1 entry',
-        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries'
+        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries',
+        'dot.file.relationship.dialog.show.selected.items': 'Show Selected Items'
     });
 
     const mockDialogConfig = {
@@ -147,6 +150,25 @@ describe('DotSelectExistingContentComponent', () => {
 
             expect(result).toBe(false);
         });
+    });
+
+    it('should toggle show only selected items when toggle button is clicked', () => {
+        // Spy on the toggleShowOnlySelected method
+        const toggleSpy = jest.spyOn(store, 'toggleShowOnlySelected');
+
+        spectator.detectChanges();
+
+        // Find the inputSwitch
+        const toggleSwitch = spectator.query(InputSwitch);
+        expect(toggleSwitch).toBeTruthy();
+
+        // Click the toggle switch
+        spectator.triggerEventHandler(InputSwitch, 'onChange', {
+            originalEvent: createFakeEvent('change'),
+            checked: true
+        });
+
+        expect(toggleSpy).toHaveBeenCalled();
     });
 });
 

@@ -170,4 +170,50 @@ describe('ExistingContentStore', () => {
             expect(store.totalPages()).toBe(1);
         }));
     });
+
+    describe('Show Selected Items Toggle', () => {
+        beforeEach(fakeAsync(() => {
+            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'multiple',
+                currentItemsIds: []
+            });
+            tick();
+        }));
+
+        it('should initialize with showOnlySelected set to false', () => {
+            expect(store.showOnlySelected()).toBe(false);
+        });
+
+        it('should toggle showOnlySelected state', () => {
+            store.toggleShowOnlySelected();
+            expect(store.showOnlySelected()).toBe(true);
+
+            store.toggleShowOnlySelected();
+            expect(store.showOnlySelected()).toBe(false);
+        });
+
+        it('should return all data when showOnlySelected is false', () => {
+            expect(store.filteredData()).toEqual(mockData.contentlets);
+        });
+
+        it('should return only selected items when showOnlySelected is true', () => {
+            // Select one of the items
+            const selectedItem = mockData.contentlets[0];
+            store.setSelectedItems([selectedItem]);
+
+            // Toggle to show only selected items
+            store.toggleShowOnlySelected();
+
+            // Should filter to show only the selected item
+            expect(store.filteredData()).toEqual([selectedItem]);
+        });
+
+        it('should return all data when showOnlySelected is true but no items are selected', () => {
+            store.setSelectedItems([]);
+            store.toggleShowOnlySelected();
+            expect(store.filteredData()).toEqual(mockData.contentlets);
+        });
+    });
 });
