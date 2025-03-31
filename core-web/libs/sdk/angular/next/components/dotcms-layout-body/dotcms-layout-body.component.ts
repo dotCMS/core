@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core
 import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
 
 import { ErrorMessageComponent } from './components/error-message/error-message.component';
+import { RowComponent } from './components/row/row.component';
 
 import { DotCMSPageComponent } from '../../models';
 import { DotCMSContextService } from '../../services/dotcms-context/dotcms-context.service';
@@ -16,7 +17,7 @@ import { DotCMSContextService } from '../../services/dotcms-context/dotcms-conte
 @Component({
     selector: 'dotcms-layout-body',
     standalone: true,
-    imports: [ErrorMessageComponent],
+    imports: [ErrorMessageComponent, RowComponent],
     providers: [DotCMSContextService],
     template: `
         @if (!pageAsset) {
@@ -24,7 +25,9 @@ import { DotCMSContextService } from '../../services/dotcms-context/dotcms-conte
                 <error-message [mode]="mode"></error-message>
             </div>
         } @else {
-            <div>ROW</div>
+            @for (row of pageAsset.layout.body.rows; track row.identifier) {
+                <dotcms-row [row]="row" />
+            }
         }
     `,
     styleUrl: './dotcms-layout-body.component.css',

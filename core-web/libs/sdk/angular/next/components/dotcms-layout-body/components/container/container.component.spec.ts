@@ -1,9 +1,10 @@
 import { expect } from '@jest/globals';
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { DotCMSColumnContainer } from '@dotcms/uve/types';
+
 import { ContainerComponent } from './container.component';
 
-import { DotCMSSiteParentPermissionable } from '../../../../models';
 import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms-context.service';
 
 describe('ContainerComponent', () => {
@@ -25,50 +26,8 @@ describe('ContainerComponent', () => {
         spectator = createComponent({
             props: {
                 container: {
-                    identifier: 'test-container',
-                    uuid: 'test-uuid',
-                    iDate: 1234567890,
-                    type: 'test-type',
-                    inode: 'test-inode',
-                    source: 'test-source',
-                    title: 'Test Container',
-                    friendlyName: 'Test Container',
-                    modDate: 1234567890,
-                    modUser: 'test-user',
-                    sortOrder: 1,
-                    showOnMenu: true,
-                    maxContentlets: 10,
-                    useDiv: true,
-                    preLoop: '',
-                    postLoop: '',
-                    staticify: false,
-                    notes: '',
-                    live: true,
-                    locked: false,
-                    working: true,
-                    deleted: false,
-                    name: 'Test Container',
-                    archived: false,
-                    permissionId: 'test-permission',
-                    versionId: 'test-version',
-                    versionType: 'test-version-type',
-                    permissionType: 'test-permission-type',
-                    categoryId: 'test-category',
-                    idate: 1234567890,
-                    new: false,
-                    acceptTypes: 'test-accept-types',
-                    contentlets: [],
-                    parentPermissionable: {
-                        Inode: 'test-inode',
-                        Identifier: 'test-identifier',
-                        permissionByIdentifier: true,
-                        type: 'test-type',
-                        identifier: 'test-identifier',
-                        permissionId: 'test-permission',
-                        permissionType: 'test-permission-type',
-                        inode: 'test-inode'
-                    } as DotCMSSiteParentPermissionable
-                }
+                    identifier: 'test-container'
+                } as DotCMSColumnContainer
             }
         });
     });
