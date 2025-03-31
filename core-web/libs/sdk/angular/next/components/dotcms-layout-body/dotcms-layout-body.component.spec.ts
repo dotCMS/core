@@ -3,9 +3,9 @@ import { Spectator, createRoutingFactory } from '@ngneat/spectator/jest';
 
 import { Component, Input } from '@angular/core';
 
-import { DotcmsLayoutBodyComponent } from './dotcms-layout-body.component';
+import { DotCMSContentlet } from '@dotcms/uve/types';
 
-import { DotCMSContentlet } from '../../models';
+import { DotcmsLayoutBodyComponent } from './dotcms-layout-body.component';
 
 @Component({
     selector: 'dotcms-mock-component',
