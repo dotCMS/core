@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, signal } from '@angular/core';
 
+import { combineClasses } from '@dotcms/uve/internal';
 import { DotPageAssetLayoutRow } from '@dotcms/uve/types';
 
 import { ColumnComponent } from '../column/column.component';
@@ -17,7 +18,7 @@ import { ColumnComponent } from '../column/column.component';
     imports: [ColumnComponent],
     template: `
         <div class="dot-row-container">
-            <div [class]="customRowClass" data-dot-object="row">
+            <div [class]="customClasses()" data-dot-object="row">
                 @for (column of row.columns; track $index) {
                     <dotcms-column [column]="column" />
                 }
@@ -32,6 +33,12 @@ export class RowComponent {
      * The row data to be rendered
      */
     @Input({ required: true }) row!: DotPageAssetLayoutRow;
+
+    customClasses = signal('');
+
+    ngOnInit() {
+        this.customClasses.set(combineClasses([this.row.styleClass || '', 'row']));
+    }
 
     /**
      * The custom row class that combines the styleClass from the row data with the base row class
