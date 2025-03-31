@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
 
 import { combineClasses, getColumnPositionClasses } from '@dotcms/uve/internal';
 import { DotPageAssetLayoutColumn } from '@dotcms/uve/types';
@@ -16,12 +16,10 @@ import { ContainerComponent } from '../container/container.component';
     standalone: true,
     imports: [ContainerComponent],
     template: `
-        <div data-dot="column" [class]="customClasses()">
-            <div [class]="column.styleClass">
-                @for (container of column.containers; track $index) {
-                    <dotcms-container [container]="container" />
-                }
-            </div>
+        <div [class]="column.styleClass">
+            @for (container of column.containers; track $index) {
+                <dotcms-container [container]="container" />
+            }
         </div>
     `,
     styleUrl: './column.component.css',
@@ -33,20 +31,11 @@ export class ColumnComponent {
      */
     @Input({ required: true }) column!: DotPageAssetLayoutColumn;
 
-    customClasses = signal('');
+    @HostBinding('class') customClasses = '';
 
     ngOnInit() {
         const positionClasses = getColumnPositionClasses(this.column);
 
-        this.customClasses.set(
-            combineClasses([positionClasses.startClass, positionClasses.endClass])
-        );
-    }
-
-    /**
-     * The custom column class that combines the styleClass from the column data with the base column class
-     */
-    protected get customColumnClass(): string {
-        return `${this.column.styleClass || ''} column`;
+        this.customClasses = combineClasses([positionClasses.startClass, positionClasses.endClass]);
     }
 }

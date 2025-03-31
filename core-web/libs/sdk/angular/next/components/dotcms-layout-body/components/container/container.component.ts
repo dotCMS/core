@@ -46,7 +46,6 @@ import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms
             </div>
         }
     `,
-    styleUrl: './container.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContainerComponent {

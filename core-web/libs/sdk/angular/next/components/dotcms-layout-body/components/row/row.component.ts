@@ -37,13 +37,6 @@ export class RowComponent {
     customClasses = signal('');
 
     ngOnInit() {
-        this.customClasses.set(combineClasses([this.row.styleClass || '', 'row']));
-    }
-
-    /**
-     * The custom row class that combines the styleClass from the row data with the base row class
-     */
-    protected get customRowClass(): string {
-        return `${this.row.styleClass || ''} row`;
+        this.customClasses.set(combineClasses([this.row.styleClass || 'row']));
     }
 }
