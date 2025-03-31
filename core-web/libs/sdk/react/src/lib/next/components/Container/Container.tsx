@@ -7,7 +7,7 @@ import {
 } from '@dotcms/uve/internal';
 import { DotCMSColumnContainer, DotCMSContentlet } from '@dotcms/uve/types';
 
-import { ContainerNoFound, EmptyContainer } from './ContainerFallbacks';
+import { ContainerNotFound, EmptyContainer } from './ContainerFallbacks';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { Contentlet } from '../Contentlet/Contentlet';
@@ -55,7 +55,7 @@ export function Container({ container }: DotCMSContainerRendererProps) {
     );
 
     if (!containerData) {
-        return <ContainerNoFound identifier={container.identifier} />;
+        return <ContainerNotFound identifier={container.identifier} />;
     }
 
     const isEmpty = contentlets.length === 0;

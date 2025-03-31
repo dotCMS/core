@@ -77,3 +77,18 @@ export const END_CLASS = 'col-end-';
  * @internal
  */
 export const START_CLASS = 'col-start-';
+
+/**
+ * Empty container style
+ *
+ * @internal
+ */
+export const EMPTY_CONTAINER_STYLE = {
+    width: '100%',
+    backgroundColor: '#ECF0FD',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color: '#030E32',
+    height: '10rem'
+};
