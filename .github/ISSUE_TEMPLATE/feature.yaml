@@ -11,16 +11,6 @@ body:
         If you have any questions about how to use this form, check out [How dotCMS uses GitHub](https://docs.google.com/presentation/d/1C1oCESIL9Z84xXo1DPWQZh48c4BSGlVRAn1DYGEFMUw).
 
   - type: textarea
-    id: parent-issue
-    attributes:
-      label: "Parent Issue"
-      description: "If this work is part of another epic or story, please please include a GitHub issue link to the parent issue."
-      placeholder:
-      value: 
-    validations:
-      required: false
-
-  - type: textarea
     id: user-story
     attributes:
       label: "User Story"
