@@ -15,7 +15,6 @@
     flex-direction: column;
     height: 100%;
     position: relative;
-    padding: $spacing-3 $spacing-3 0 $spacing-3;
 
     &__item {
         animation: fadeIn $basic-speed ease-out;
@@ -25,6 +24,8 @@
 // Elements
 .activities__content {
     flex: 1;
+    overflow-y: auto;
+    padding: $spacing-3 $spacing-3 0 $spacing-3;
 
     ::ng-deep .p-dataview {
         background: none;
@@ -123,7 +124,7 @@
     z-index: 1;
     width: 100%;
     background-color: $color-palette-gray-100;
-    padding: $spacing-3 0;
+    padding: $spacing-3;
     border-top: 1px solid $color-palette-gray-200;
 }
 

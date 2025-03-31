@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    output
+} from '@angular/core';
 import {
     FormBuilder,
     FormControl,
@@ -87,6 +95,24 @@ export class DotEditContentSidebarActivitiesComponent {
      * @readonly
      */
     $status = input<ComponentStatus>(ComponentStatus.LOADING, { alias: 'status' });
+
+    /**
+     * Effect to scroll to bottom when activities change
+     */
+    #scrollEffect = effect(() => {
+        const activities = this.$activities();
+        if (activities.length) {
+            setTimeout(() => {
+                const lastActivity = document.querySelector('.activities__item-wrapper:last-child');
+                if (lastActivity) {
+                    lastActivity.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'end'
+                    });
+                }
+            });
+        }
+    });
 
     /**
      * Initial state of the contentlet
