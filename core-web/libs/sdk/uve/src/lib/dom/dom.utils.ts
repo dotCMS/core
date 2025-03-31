@@ -1,4 +1,4 @@
-import { END_CLASS_MAP, START_CLASS_MAP } from '../../internal/constants';
+import { END_CLASS, START_CLASS } from '../../internal/constants';
 import { DotCMSContainerBound, DotCMSContentletBound } from '../types/editor/internal';
 import {
     DotContainerAttributes,
@@ -220,7 +220,7 @@ export function computeScrollIsInBottom() {
  * @param {string[]} classes
  * @returns {string} Combined classes
  */
-export const combineClasses = (classes: string[]) => classes.filter(Boolean).join(' ');
+export const combineClasses = (classes: string[]): string => classes.filter(Boolean).join(' ');
 
 /**
  *
@@ -244,8 +244,8 @@ export const combineClasses = (classes: string[]) => classes.filter(Boolean).joi
  */
 export const getColumnPositionClasses = (column: DotPageAssetLayoutColumn) => {
     const { leftOffset, width } = column;
-    const startClass = START_CLASS_MAP[leftOffset];
-    const endClass = END_CLASS_MAP[leftOffset + width];
+    const startClass = `${START_CLASS}${leftOffset}`;
+    const endClass = `${END_CLASS}${leftOffset + width}`;
 
     return {
         startClass,
