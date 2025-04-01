@@ -107,7 +107,7 @@ export class ContentletComponent implements OnChanges {
     private checkContent() {
         const element = this.contentletRef?.nativeElement;
         if (element) {
-            const hasContent = element.children.length > 0;
+            const hasContent = element.getBoundingClientRect().height > 0;
             this.haveContent.set(hasContent);
         }
     }
