@@ -1,6 +1,6 @@
 import { useContext, useRef, useMemo } from 'react';
 
-import { getDotContentletAttributes } from '@dotcms/uve/internal';
+import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
 import { DotCMSContentlet } from '@dotcms/uve/types';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
@@ -86,7 +86,7 @@ function CustomComponent({ contentlet }: CustomComponentProps) {
         return <UserComponent {...contentlet} />;
     }
 
-    const UserNoComponent = userComponents['CustomNoComponent'];
+    const UserNoComponent = userComponents[CUSTOM_NO_COMPONENT];
 
     return <FallbackComponent UserNoComponent={UserNoComponent} contentlet={contentlet} />;
 }

@@ -92,3 +92,10 @@ export const EMPTY_CONTAINER_STYLE = {
     color: '#030E32',
     height: '10rem'
 };
+
+/**
+ * Custom no component
+ *
+ * @internal
+ */
+export const CUSTOM_NO_COMPONENT = 'CustomNoComponent';
