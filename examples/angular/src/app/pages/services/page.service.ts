@@ -75,7 +75,6 @@ export class PageService {
     private fetchPage(route: ActivatedRoute, config: any): Observable<PageAndNavResponse> {
         const params = route.snapshot.queryParams;
         const url = route.snapshot.url.map((segment) => segment.path).join('/');
-        console.log('url => ', url);
         const path = url || '/';
 
         const pageParams = getPageRequestParams({

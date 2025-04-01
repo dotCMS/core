@@ -62,7 +62,6 @@ export class BlogComponent {
     protected readonly editorConfig: any = { params: { depth: 2 } };
 
     ngOnInit() {
-        console.log('ngOnInit BlogComponent');
         if (getUVEState()) {
             this.#listenToEditorChanges();
         }
@@ -90,8 +89,6 @@ export class BlogComponent {
                     this.#router.navigate([vanityUrl.forwardTo]);
                     return;
                 }   
-
-                console.log('page', page?.urlContentMap);
 
                 this.#setPageContent(page as DotCMSPageAsset, nav);
             });
