@@ -70,9 +70,7 @@ export class DotEditContentSidebarActivitiesComponent {
     /**
      * Form group for the comment field
      */
-    readonly form: FormGroup<{
-        comment: FormControl<string>;
-    }> = this.#fb.group({
+    readonly form: FormGroup = this.#fb.group({
         comment: [
             '',
             [

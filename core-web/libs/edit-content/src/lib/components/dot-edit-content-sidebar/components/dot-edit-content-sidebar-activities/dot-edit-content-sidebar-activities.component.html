@@ -10,7 +10,6 @@
                 [rows]="10"
                 [layout]="'list'"
                 [paginator]="false"
-                [emptyMessage]="'edit.content.sidebar.activities.empty' | dm"
                 data-testid="activities-list">
                 <ng-template pTemplate="list" let-activities>
                     @for (
@@ -63,8 +62,7 @@
                             data-testid="activities-input"
                             class="activities__input"></textarea>
 
-                        <dot-field-validation-message
-                            [field]="form.get('comment')"></dot-field-validation-message>
+                        <dot-field-validation-message [field]="form.get('comment')" />
                     </div>
 
                     <div class="activities__actions">

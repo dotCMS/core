@@ -130,6 +130,10 @@ export class DotEditContentSidebarComponent {
         this.$store.setActiveSidebarTab(index);
     }
 
+    /**
+     * Handles the comment submitted event from the sidebar.
+     * @param $event - The event object containing the comment.
+     */
     onCommentSubmitted($event: string) {
         const identifier = this.$identifier();
         this.$store.addComment({
