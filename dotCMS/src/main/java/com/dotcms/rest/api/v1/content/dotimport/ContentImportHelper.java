@@ -463,6 +463,8 @@ public class ContentImportHelper {
         final Map<String, Object> jobParameters = createJobParametersOnError(
                 command, params, user, request
         );
+        // Clean up null job parameters
+        jobParameters.entrySet().removeIf(entry -> entry.getValue() == null);
 
         final var contentType = jobParameters.getOrDefault("contentType", "");
         final String workflowActionId = (String) jobParameters.getOrDefault(
