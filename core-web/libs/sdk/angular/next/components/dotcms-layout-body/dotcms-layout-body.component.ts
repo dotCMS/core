@@ -16,10 +16,10 @@ import { DotCMSPageComponent } from '../../models';
 import { DotCMSContextService } from '../../services/dotcms-context/dotcms-context.service';
 /**
  *
- * `DotcmsLayoutBodyComponent` is a class that represents the layout for a DotCMS page.
+ * `DotCMSLayoutBodyComponent` is a class that represents the layout for a DotCMS page.
  *
  * @export
- * @class DotcmsLayoutBodyComponent
+ * @class DotCMSLayoutBodyComponent
  */
 @Component({
     selector: 'dotcms-layout-body',
@@ -38,10 +38,10 @@ import { DotCMSContextService } from '../../services/dotcms-context/dotcms-conte
     styleUrl: './dotcms-layout-body.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotcmsLayoutBodyComponent implements OnChanges {
+export class DotCMSLayoutBodyComponent implements OnChanges {
     @Input({ required: true }) pageAsset!: DotCMSPageAsset;
     @Input({ required: true }) components: DotCMSPageComponent = {};
-    @Input({ required: true }) mode: DotCMSPageRendererMode = 'production';
+    @Input() mode: DotCMSPageRendererMode = 'production';
 
     private dotCMSContextService = inject(DotCMSContextService);
 
