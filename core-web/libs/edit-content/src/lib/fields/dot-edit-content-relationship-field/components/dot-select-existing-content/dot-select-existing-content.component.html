@@ -14,7 +14,7 @@
             [columns]="columns"
             [value]="data"
             [selectionMode]="selectionMode"
-            [(selection)]="$selectedItems"
+            [(selection)]="$selectionItems"
             [loading]="store.isLoading()"
             [paginator]="data.length > pagination.rowsPerPage"
             [first]="pagination.offset"
