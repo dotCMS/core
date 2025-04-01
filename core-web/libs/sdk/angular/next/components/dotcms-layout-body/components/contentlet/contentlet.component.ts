@@ -1,3 +1,4 @@
+import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -28,7 +29,7 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
 @Component({
     selector: 'dotcms-contentlet',
     standalone: true,
-    imports: [FallbackComponent],
+    imports: [FallbackComponent, AsyncPipe],
     template: `
         @if (UserComponent) {
             <ng-container
