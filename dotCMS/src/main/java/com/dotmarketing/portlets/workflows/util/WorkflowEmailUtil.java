@@ -12,13 +12,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.Mailer;
-import com.dotmarketing.util.PortletID;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -61,7 +55,7 @@ public class WorkflowEmailUtil {
 	 */
 
     public static void sendWorkflowEmail(WorkflowProcessor processor, String[] email, String subject, String emailText,
-            Boolean isHTML) {
+            Boolean isHTML, String customHeaders) {
 
 
         try {
@@ -149,6 +143,8 @@ public class WorkflowEmailUtil {
                 } else {
                     mail.setTextBody(emailText);
                 }
+                // Process custom headers if provided
+                EmailUtils.processCustomHeaders(mail, ctx, customHeaders);
                 mail.sendMessage();
             }
         } catch (Exception e) {
@@ -239,7 +235,7 @@ public class WorkflowEmailUtil {
 	 * @param emailText
 	 * @param isHTML
 	 */
-	public static void sendWorkflowMessageToNextAssign(WorkflowProcessor processor, String subject, String emailText, Boolean isHTML) {
+	public static void sendWorkflowMessageToNextAssign(WorkflowProcessor processor, String subject, String emailText, Boolean isHTML, String customHeaders) {
 
 		try {
 
@@ -272,7 +268,7 @@ public class WorkflowEmailUtil {
 			String[] to = (String[]) recipients.toArray(new String[recipients.size()]);
 			// send'em workflows
 
-			sendWorkflowEmail(processor, to, subject, emailText, true);
+			sendWorkflowEmail(processor, to, subject, emailText, true, customHeaders);
 
 
 		} catch (Exception e) {
