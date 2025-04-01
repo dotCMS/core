@@ -10,8 +10,10 @@ import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
 
 import { PageError } from '../pages.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
-import { Block } from '../../../../../../core-web/dist/libs/sdk/angular/next/components/dotcms-block-editor-renderer/models/block-editor-renderer.models';
+
+import { Block } from '@dotcms/uve/internal';
 import { Contentlet } from '@dotcms/uve/types';
+
 
 export interface PageResponse {
     page: DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> } | null;

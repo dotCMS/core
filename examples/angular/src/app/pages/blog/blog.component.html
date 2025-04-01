@@ -15,7 +15,6 @@
             <app-error [$error]="vm.error" />
             } @else if (vm.status === 'success' && vm.page) {
                 <app-blog-post [post]="$any(vm.page.urlContentMap!)" />
-                <!-- <dotcms-block-editor-renderer [blocks]="vm.page.urlContentMap" [components]="components()" [editor]="editorConfig" /> -->
             } @else {
             <!-- Add a fallback for unexpected states -->
             <p>Unexpected state encountered.</p>

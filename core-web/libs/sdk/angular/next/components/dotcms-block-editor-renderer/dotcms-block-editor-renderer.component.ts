@@ -1,9 +1,12 @@
-import { Component, Input } from "@angular/core";
+import { Component, Input, signal } from '@angular/core';
 
-import { DotCMSBlockEditorRendererBlockComponent } from "./item/dotcms-block-editor-renderer-block.component";
-import { Block } from "./models/block-editor-renderer.models";
+import { getUVEState } from '@dotcms/uve';
+import { Block, BlockEditorState, isValidBlocks } from '@dotcms/uve/internal';
+import { UVE_MODE } from '@dotcms/uve/types';
 
-import { DynamicComponentEntity } from "../../models";
+import { DotCMSBlockEditorRendererBlockComponent } from './item/dotcms-block-editor-renderer-block.component';
+
+import { DynamicComponentEntity } from '../../models';
 
 /**
  * Represents a Custom Renderer used by the Block Editor Component
@@ -20,7 +23,14 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
     styleUrl: './dotcms-block-editor-renderer.component.scss',
     imports: [DotCMSBlockEditorRendererBlockComponent]
 })
-export class DotCMSBlockEditorRendererComponent  {
+export class DotCMSBlockEditorRendererComponent {
     @Input() blocks!: Block;
-    @Input() customRenderers!: CustomRenderer;
+    @Input() customRenderers: CustomRenderer | undefined;
+
+    blockEditorState = signal<BlockEditorState>({ error: null });
+    isInEditMode = signal(getUVEState()?.mode === UVE_MODE.EDIT);
+
+    ngOnInit() {
+        this.blockEditorState.set(isValidBlocks(this.blocks));
+    }
 }

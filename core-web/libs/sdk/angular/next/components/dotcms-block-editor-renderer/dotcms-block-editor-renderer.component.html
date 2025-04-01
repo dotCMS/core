@@ -1,4 +1,9 @@
-<dotcms-block-editor-renderer-block
-    [content]="blocks.content"
-    [customRenderers]="customRenderers"
-/>
+@if (blockEditorState().error && isInEditMode()) {
+    <div data-testid="invalid-blocks-message">
+        {{ blockEditorState().error }}
+    </div>
+} @else if (!blockEditorState().error) {
+    <dotcms-block-editor-renderer-block
+        [content]="blocks.content"
+        [customRenderers]="customRenderers" />
+}

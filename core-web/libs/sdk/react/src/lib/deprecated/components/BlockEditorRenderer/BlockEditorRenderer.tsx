@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { initInlineEditing, isInsideEditor } from '@dotcms/client';
+import { Block, BlockEditorState, isValidBlocks } from '@dotcms/uve/internal';
 
 import { BlockEditorBlock } from './item/BlockEditorBlock';
 
 import { DotCMSContentlet } from '../../models';
-import { Block, BlockEditorState } from '../../models/blocks.interface';
 import { CustomRenderer } from '../../models/content-node.interface';
-import { isValidBlocks } from '../../utils/utils';
 
 interface BaseProps {
     blocks: Block;

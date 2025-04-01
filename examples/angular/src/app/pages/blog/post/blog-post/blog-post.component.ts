@@ -3,7 +3,8 @@ import { Contentlet } from '@dotcms/uve/types';
 
 
 import { DotCMSBlockEditorRendererComponent } from '@dotcms/angular/next';
-import { Block } from '../../../../../../../../core-web/dist/libs/sdk/angular/next/components/dotcms-block-editor-renderer/models/block-editor-renderer.models';
+import { Block } from '@dotcms/uve/internal';
+
 
 @Component({
   selector: 'app-blog-post',
@@ -15,7 +16,8 @@ import { Block } from '../../../../../../../../core-web/dist/libs/sdk/angular/ne
 export class BlogPostComponent {
   @Input() post!: Contentlet<{ blogContent: Block }>
 
-  customRenderers = 
-    {'paragraph': import('../../customRenderers/paragraph/paragraph.component').then(c => c.ParagraphComponent) }
-  
+  customRenderers = {
+    // 'paragraph': import('../../customRenderers/paragraph/paragraph.component').then(c => c.ParagraphComponent),
+    'Activity': import('../../customRenderers/activity/activity.component').then(c => c.ActivityComponent) 
+  }
 }

@@ -1,101 +1,6 @@
-import { NgComponentOutlet } from "@angular/common";
-import { Component, Input } from "@angular/core";
+import { Component, computed, Input } from '@angular/core';
 
-@Component({
-    selector: 'dotcms-block-editor-renderer-bold',
-    standalone: true,
-    template: `
-        <strong>
-            {{text}}
-        </strong>
-    `
-})
-export class DotCMSBlockEditorRendererBoldComponent {
-    @Input() text!: string;
- }
-
-@Component({
-    selector: 'dotcms-block-editor-renderer-italic',
-    standalone: true,
-    template: `
-        <em>
-            {{text}}
-        </em>
-    `
-})
-export class DotCMSBlockEditorRendererItalicComponent { 
-    @Input() text!: string;
-}
-
-@Component({
-    selector: 'dotcms-block-editor-renderer-strike',
-    standalone: true,
-    template: `
-        <s>
-            {{text}}
-        </s>
-    `
-})
-export class DotCMSBlockEditorRendererStrikeComponent { 
-    @Input() text!: string;
-}
-
-@Component({
-    selector: 'dotcms-block-editor-renderer-underline',
-    standalone: true,
-    template: `
-        <u>
-            {{text}}
-        </u>
-    `
-})
-export class DotCMSBlockEditorRendererUnderlineComponent { 
-    @Input() text!: string;
-}
-
-@Component({
-    selector: 'dotcms-block-editor-renderer-link',
-    standalone: true,
-    template: `
-        <a [attr.href]="attrs['href']" [attr.target]="attrs['target']" [attr.rel]="attrs['rel']">
-            {{text}}
-        </a>
-    `
-})
-export class DotCMSBlockEditorRendererLinkComponent {
-    @Input() attrs!: Record<string, string>;
-    @Input() text!: string;
-}
-
-
-
-@Component({
-    selector: 'dotcms-block-editor-renderer-superscript',
-    standalone: true,
-    template: `
-        <sup>
-            {{text}}
-        </sup>
-    `
-})
-export class DotCMSBlockEditorRendererSuperscriptComponent {
-    @Input() text!: string;
-}
-
-@Component({
-    selector: 'dotcms-block-editor-renderer-subscript',
-    standalone: true,
-    template: `
-        <sub>
-            {{text}}
-        </sub>
-    `
-})
-export class DotCMSBlockEditorRendererSubscriptComponent {
-    @Input() text!: string;
-}
-
-// Paragraph
+import { Mark } from '@dotcms/uve/internal';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-paragraph',
@@ -106,41 +11,39 @@ export class DotCMSBlockEditorRendererSubscriptComponent {
         </p>
     `
 })
-export class DotCMSBlockEditorRendererParagraphComponent { }
-
-// Heading
+export class DotCMSBlockEditorRendererParagraphComponent {}
 
 @Component({
     selector: 'dotcms-block-editor-renderer-heading',
     standalone: true,
     template: `
         @switch (level) {
-            @case('1') {
+            @case ('1') {
                 <h1>
                     <ng-content />
                 </h1>
             }
-            @case('2') {
+            @case ('2') {
                 <h2>
                     <ng-content />
                 </h2>
             }
-            @case('3') {
+            @case ('3') {
                 <h3>
                     <ng-content />
                 </h3>
             }
-            @case('4') {
+            @case ('4') {
                 <h4>
                     <ng-content />
                 </h4>
             }
-            @case('5') {
+            @case ('5') {
                 <h5>
                     <ng-content />
                 </h5>
             }
-            @case('6') {
+            @case ('6') {
                 <h6>
                     <ng-content />
                 </h6>
@@ -151,44 +54,62 @@ export class DotCMSBlockEditorRendererParagraphComponent { }
                 </h1>
             }
         }
-    `,
-    imports: []
+    `
 })
 export class DotCMSBlockEditorRendererHeadingComponent {
     @Input() level!: string;
-
-    ngOnInit(){
-        console.log(this.level);
-    }
-}
-
-
-
-
-const NodeMarks = {
-    link: DotCMSBlockEditorRendererLinkComponent,
-    bold: DotCMSBlockEditorRendererBoldComponent,
-    underline: DotCMSBlockEditorRendererUnderlineComponent,
-    italic: DotCMSBlockEditorRendererItalicComponent,
-    strike: DotCMSBlockEditorRendererStrikeComponent,
-    superscript: DotCMSBlockEditorRendererSuperscriptComponent,
-    subscript: DotCMSBlockEditorRendererSubscriptComponent,
 }
 
 interface TextBlockProps {
-    marks?: Array<{type: string; attrs: Record<string, unknown>}>;
+    marks?: Mark[];
     text?: string;
 }
 
 @Component({
     selector: 'dotcms-block-editor-renderer-text',
     standalone: true,
-    imports: [NgComponentOutlet],
     template: `
-        @if (component) {
-            <ng-container *ngComponentOutlet="component; inputs: componentInputs" />
-        } @else {
-            {{text}}
+        @switch (marks?.[0]?.type) {
+            @case ('link') {
+                <a
+                    [attr.href]="currentAttrs()['href'] || ''"
+                    [attr.target]="currentAttrs()['target'] || ''">
+                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                </a>
+            }
+            @case ('bold') {
+                <strong>
+                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                </strong>
+            }
+            @case ('underline') {
+                <u>
+                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                </u>
+            }
+            @case ('italic') {
+                <em>
+                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                </em>
+            }
+            @case ('strike') {
+                <s>
+                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                </s>
+            }
+            @case ('superscript') {
+                <sup>
+                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                </sup>
+            }
+            @case ('subscript') {
+                <sub>
+                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                </sub>
+            }
+            @default {
+                {{ text }}
+            }
         }
     `
 })
@@ -196,29 +117,16 @@ export class DotCMSBlockEditorRendererTextComponent {
     @Input() marks: TextBlockProps['marks'] = [];
     @Input() text = '';
 
-    protected get component() {
-        const mark = this.marks?.[0] || { type: '', attrs: {} };
+    protected readonly remainingMarks = computed(() => this.marks?.slice(1));
 
-        return NodeMarks[mark.type as keyof typeof NodeMarks];
-    }
+    protected readonly currentAttrs = computed(() => {
+        const attrs = { ...(this.marks?.[0]?.attrs || {}) };
 
-    protected get componentInputs() {
-        const mark = this.marks?.[0] || { type: '', attrs: {} };
-
-        if (['link'].includes(mark.type)) {
-            const attrs = {...mark.attrs};
-            if (attrs['class']) {
-                attrs['className'] = attrs['class'];
-                delete attrs['class'];
-            }
-
-            return { text: this.text, attrs };
+        if (attrs['class']) {
+            attrs['className'] = attrs['class'];
+            delete attrs['class'];
         }
 
-        return { text: this.text };
-    }
-
-    protected get remainingMarks() {
-        return this.marks?.slice(1);
-    }
+        return attrs;
+    });
 }
