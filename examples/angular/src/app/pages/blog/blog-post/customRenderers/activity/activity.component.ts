@@ -13,7 +13,4 @@ import { Component, Input } from "@angular/core";
 export class ActivityComponent {
     @Input() contentlet!: any;
 
-    ngOnInit() {
-        console.log('contentlet', this.contentlet);
-    }
 }

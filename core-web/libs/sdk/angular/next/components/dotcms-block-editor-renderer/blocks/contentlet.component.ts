@@ -26,7 +26,7 @@ export class DefaultContentComponent {
     standalone: true,
     imports: [NgComponentOutlet, AsyncPipe],
     template:
-        '<ng-container *ngComponentOutlet="contentComponent | async; inputs: { contentlet: data() }"></ng-container>'
+        '<ng-container *ngComponentOutlet="contentComponent | async; inputs: { contentlet: $data() }"></ng-container>'
 })
 export class DotCMSBlockEditorRendererContentlet {
     @Input() customRenderers: CustomRenderer | undefined;
@@ -34,15 +34,15 @@ export class DotCMSBlockEditorRendererContentlet {
 
     contentComponent: DynamicComponentEntity | undefined;
 
-    protected readonly data = computed(() => this.attrs?.['data'] as Contentlet<unknown>);
+    protected readonly $data = computed(() => this.attrs?.['data'] as Contentlet<unknown>);
 
     ngOnInit() {
-        if (!this.data()) {
+        if (!this.$data()) {
             console.error('DotCMSBlockEditorRendererContentlet: No data provided');
         }
 
         this.contentComponent =
-            this.customRenderers?.[this.data()?.contentType] ??
+            this.customRenderers?.[this.$data()?.contentType] ??
             import('./contentlet.component').then((m) => m.DefaultContentComponent);
     }
 }

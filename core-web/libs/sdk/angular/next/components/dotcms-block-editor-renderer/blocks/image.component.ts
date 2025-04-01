@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, computed, Input } from '@angular/core';
 
 import { DotCmsClient } from '@dotcms/client';
 import { ContentNode } from '@dotcms/uve/internal';
@@ -7,7 +7,7 @@ import { ContentNode } from '@dotcms/uve/internal';
     selector: 'dotcms-block-editor-renderer-image',
     standalone: true,
     template: `
-        <img [alt]="attrs?.['alt']" [src]="srcUrl" />
+        <img [alt]="attrs?.['alt']" [src]="$srcURL()" />
     `
 })
 export class DotCMSBlockEditorRendererImageComponent {
@@ -15,9 +15,9 @@ export class DotCMSBlockEditorRendererImageComponent {
 
     private client = DotCmsClient.instance;
 
-    get srcUrl(): string {
+    protected readonly $srcURL = computed(() => {
         return this.attrs?.['data']?.['identifier']
             ? `${this.client.dotcmsUrl}${this.attrs['src']}`
             : this.attrs?.['src'];
-    }
+    });
 }

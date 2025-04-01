@@ -27,7 +27,7 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
     selector: 'dotcms-block-editor-renderer-block',
     standalone: true,
     templateUrl: './dotcms-block-editor-renderer-block.component.html',
-    styleUrl: './dotcms-block-editor-renderer-block.component.scss',
+    styleUrls: ['./dotcms-block-editor-renderer-block.component.scss'],
     imports: [
         NgTemplateOutlet,
         NgComponentOutlet,

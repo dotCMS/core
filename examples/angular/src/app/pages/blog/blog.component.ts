@@ -17,9 +17,10 @@ import { NavigationComponent } from "../components/navigation/navigation.compone
 import { LoadingComponent } from "../components/loading/loading.component";
 import { ErrorComponent } from "../components/error/error.component";
 import { FooterComponent } from "../components/footer/footer.component";
-import { BlogPostComponent } from './post/blog-post/blog-post.component';
+
 import { Contentlet } from '../../../../../../core-web/dist/libs/sdk/client/src/lib/client/content/shared/types';
 import { Block } from '@angular/compiler';
+import { BlogPostComponent } from './blog-post/blog-post.component';
 
 
 export type PageError = {

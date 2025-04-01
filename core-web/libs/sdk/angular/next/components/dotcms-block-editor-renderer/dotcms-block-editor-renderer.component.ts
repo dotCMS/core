@@ -20,17 +20,17 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
     selector: 'dotcms-block-editor-renderer',
     standalone: true,
     templateUrl: './dotcms-block-editor-renderer.component.html',
-    styleUrl: './dotcms-block-editor-renderer.component.scss',
+    styleUrls: ['./dotcms-block-editor-renderer.component.scss'],
     imports: [DotCMSBlockEditorRendererBlockComponent]
 })
 export class DotCMSBlockEditorRendererComponent {
     @Input() blocks!: Block;
     @Input() customRenderers: CustomRenderer | undefined;
 
-    blockEditorState = signal<BlockEditorState>({ error: null });
-    isInEditMode = signal(getUVEState()?.mode === UVE_MODE.EDIT);
+    $blockEditorState = signal<BlockEditorState>({ error: null });
+    $isInEditMode = signal(getUVEState()?.mode === UVE_MODE.EDIT);
 
     ngOnInit() {
-        this.blockEditorState.set(isValidBlocks(this.blocks));
+        this.$blockEditorState.set(isValidBlocks(this.blocks));
     }
 }

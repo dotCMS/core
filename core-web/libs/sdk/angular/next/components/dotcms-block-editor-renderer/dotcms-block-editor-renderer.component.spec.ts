@@ -69,17 +69,17 @@ describe('DotCMSBlockEditorRendererComponent', () => {
 
             spectator.detectChanges();
 
-            expect(spectator.component.blockEditorState()).toEqual({ error: null });
+            expect(spectator.component.$blockEditorState()).toEqual({ error: null });
         });
 
         it('should set isInEditMode based on UVE state', () => {
-            expect(component.isInEditMode()).toBe(true);
+            expect(component.$isInEditMode()).toBe(true);
         });
 
         it('should set isInEditMode to false when not in edit mode', () => {
             getUVEStateMock.mockReturnValue({ ...MOCK_UVE_STATE, mode: UVE_MODE.PREVIEW });
             spectator = createComponent();
-            expect(spectator.component.isInEditMode()).toBe(false);
+            expect(spectator.component.$isInEditMode()).toBe(false);
         });
     });
 
@@ -99,7 +99,7 @@ describe('DotCMSBlockEditorRendererComponent', () => {
             };
 
             spectator.setInput('blocks', mockInvalidBlock);
-            component.blockEditorState.set(errorState);
+            component.$blockEditorState.set(errorState);
             spectator.detectChanges();
 
             const errorMessage = spectator.query('[data-testid="invalid-blocks-message"]');
@@ -116,7 +116,7 @@ describe('DotCMSBlockEditorRendererComponent', () => {
             };
 
             spectator.setInput('blocks', mockInvalidBlock);
-            spectator.component.blockEditorState.set(errorState);
+            spectator.component.$blockEditorState.set(errorState);
             spectator.detectChanges();
 
             const errorMessage = spectator.query('[data-testid="invalid-blocks-message"]');

@@ -72,39 +72,39 @@ interface TextBlockProps {
         @switch (marks?.[0]?.type) {
             @case ('link') {
                 <a
-                    [attr.href]="currentAttrs()['href'] || ''"
-                    [attr.target]="currentAttrs()['target'] || ''">
-                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                    [attr.href]="$currentAttrs()['href'] || ''"
+                    [attr.target]="$currentAttrs()['target'] || ''">
+                    <dotcms-block-editor-renderer-text [marks]="$remainingMarks()" [text]="text" />
                 </a>
             }
             @case ('bold') {
                 <strong>
-                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                    <dotcms-block-editor-renderer-text [marks]="$remainingMarks()" [text]="text" />
                 </strong>
             }
             @case ('underline') {
                 <u>
-                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                    <dotcms-block-editor-renderer-text [marks]="$remainingMarks()" [text]="text" />
                 </u>
             }
             @case ('italic') {
                 <em>
-                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                    <dotcms-block-editor-renderer-text [marks]="$remainingMarks()" [text]="text" />
                 </em>
             }
             @case ('strike') {
                 <s>
-                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                    <dotcms-block-editor-renderer-text [marks]="$remainingMarks()" [text]="text" />
                 </s>
             }
             @case ('superscript') {
                 <sup>
-                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                    <dotcms-block-editor-renderer-text [marks]="$remainingMarks()" [text]="text" />
                 </sup>
             }
             @case ('subscript') {
                 <sub>
-                    <dotcms-block-editor-renderer-text [marks]="remainingMarks()" [text]="text" />
+                    <dotcms-block-editor-renderer-text [marks]="$remainingMarks()" [text]="text" />
                 </sub>
             }
             @default {
@@ -117,9 +117,9 @@ export class DotCMSBlockEditorRendererTextComponent {
     @Input() marks: TextBlockProps['marks'] = [];
     @Input() text = '';
 
-    protected readonly remainingMarks = computed(() => this.marks?.slice(1));
+    protected readonly $remainingMarks = computed(() => this.marks?.slice(1));
 
-    protected readonly currentAttrs = computed(() => {
+    protected readonly $currentAttrs = computed(() => {
         const attrs = { ...(this.marks?.[0]?.attrs || {}) };
 
         if (attrs['class']) {

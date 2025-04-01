@@ -1,8 +1,8 @@
-@if (blockEditorState().error && isInEditMode()) {
+@if ($blockEditorState().error && $isInEditMode()) {
     <div data-testid="invalid-blocks-message">
-        {{ blockEditorState().error }}
+        {{ $blockEditorState().error }}
     </div>
-} @else if (!blockEditorState().error) {
+} @else if (!$blockEditorState().error) {
     <dotcms-block-editor-renderer-block
         [content]="blocks.content"
         [customRenderers]="customRenderers" />
