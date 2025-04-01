@@ -97,7 +97,7 @@ describe('FooterComponent', () => {
         });
 
         it('should show apply button as enabled when items are selected', () => {
-            store.setSelectedItems([createFakeContentlet()]);
+            store.setSelectionItems([createFakeContentlet()]);
             spectator.detectChanges();
 
             const applyButton = spectator.query(byTestId('apply-button')).querySelector('button');
@@ -105,7 +105,7 @@ describe('FooterComponent', () => {
         });
 
         it('should show "Apply 1 Entry" label when 1 item is selected', () => {
-            store.setSelectedItems([createFakeContentlet()]);
+            store.setSelectionItems([createFakeContentlet()]);
             spectator.detectChanges();
 
             spectator.component.$applyLabel();
@@ -114,7 +114,7 @@ describe('FooterComponent', () => {
         });
 
         it('should show "Apply X Entries" label when multiple items are selected', () => {
-            store.setSelectedItems([createFakeContentlet(), createFakeContentlet()]);
+            store.setSelectionItems([createFakeContentlet(), createFakeContentlet()]);
             spectator.detectChanges();
 
             spectator.component.$applyLabel();
@@ -132,7 +132,7 @@ describe('FooterComponent', () => {
 
         it('should close dialog with selected items when apply button is clicked', () => {
             const mockItems = [createFakeContentlet(), createFakeContentlet()];
-            store.setSelectedItems(mockItems);
+            store.setSelectionItems(mockItems);
             spectator.detectChanges();
 
             const applyButton = spectator.query(byTestId('apply-button'));
@@ -141,7 +141,7 @@ describe('FooterComponent', () => {
         });
 
         it('should close dialog with empty array when apply button is clicked with no items', () => {
-            store.setSelectedItems([]);
+            store.setSelectionItems([]);
             spectator.detectChanges();
 
             spectator.component.applyChanges();
@@ -153,7 +153,7 @@ describe('FooterComponent', () => {
     describe('Apply Button Label', () => {
         it('should show singular label when one item is selected', () => {
             const mockContent = [createFakeContentlet({ inode: '1' })];
-            store.setSelectedItems(mockContent);
+            store.setSelectionItems(mockContent);
 
             const label = spectator.component.$applyLabel();
             expect(label).toBe('Apply 1 entry');
@@ -164,14 +164,14 @@ describe('FooterComponent', () => {
                 createFakeContentlet({ inode: '1' }),
                 createFakeContentlet({ inode: '2' })
             ];
-            store.setSelectedItems(mockContent);
+            store.setSelectionItems(mockContent);
 
             const label = spectator.component.$applyLabel();
             expect(label).toBe('Apply 2 entries');
         });
 
         it('should handle empty selection', () => {
-            store.setSelectedItems([]);
+            store.setSelectionItems([]);
             const label = spectator.component.$applyLabel();
             expect(label).toBe('Apply 0 entries');
         });
