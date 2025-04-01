@@ -73,7 +73,7 @@ export class ContainerComponent implements OnChanges {
     dotAttributes = computed<DotContainerAttributes>(() => {
         const containerData = this.containerData();
 
-        if (!containerData) {
+        if (!containerData || !this.#dotcmsContextService.isDevMode()) {
             return {} as DotContainerAttributes;
         }
 

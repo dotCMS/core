@@ -1,4 +1,4 @@
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/uve/types';
@@ -11,7 +11,7 @@ import { DynamicComponentEntity } from '../../../../models';
 @Component({
     selector: 'dotcms-fallback-component',
     standalone: true,
-    imports: [AsyncPipe],
+    imports: [AsyncPipe, NgComponentOutlet],
     template: `
         @if (UserNoComponent) {
             <ng-container *ngComponentOutlet="UserNoComponent | async; inputs: { contentlet }" />

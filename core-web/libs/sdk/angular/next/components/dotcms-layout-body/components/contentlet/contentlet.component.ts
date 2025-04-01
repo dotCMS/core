@@ -1,4 +1,4 @@
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, NgComponentOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -29,7 +29,7 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
 @Component({
     selector: 'dotcms-contentlet',
     standalone: true,
-    imports: [FallbackComponent, AsyncPipe],
+    imports: [FallbackComponent, AsyncPipe, NgComponentOutlet],
     template: `
         @if (UserComponent) {
             <ng-container
@@ -61,7 +61,7 @@ export class ContentletComponent implements OnChanges {
     style = computed(() => (this.isDevMode() && this.haveContent() ? { minHeight: '4rem' } : {}));
     dotAttributes = computed<DotContentletAttributes>(() => {
         const contentlet = this.contentletSignal();
-        if (!contentlet) return {} as DotContentletAttributes;
+        if (!contentlet || !this.isDevMode()) return {} as DotContentletAttributes;
 
         return getDotContentletAttributes(contentlet, this.container);
     });
