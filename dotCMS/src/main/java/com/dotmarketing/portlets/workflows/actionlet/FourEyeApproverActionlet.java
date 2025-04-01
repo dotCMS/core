@@ -54,6 +54,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
     private static final String PARAM_EMAIL_SUBJECT = "emailSubject";
     private static final String PARAM_EMAIL_BODY = "emailBody";
     private static final String PARAM_IS_HTML = "isHtml";
+    private static final String CUSTOM_HEADERS = "customHeaders";
 
     private static final int DEFAULT_MINIMUM_CONTENT_APPROVERS = 2;
 
@@ -81,6 +82,9 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
                     .add(new WorkflowActionletParameter(PARAM_EMAIL_BODY, "Email Message",
                             null,
                             false));
+            ACTIONLET_PARAMETERS
+                    .add(new WorkflowActionletParameter(CUSTOM_HEADERS,
+                    "Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
         }
         return ACTIONLET_PARAMETERS;
     }
@@ -124,6 +128,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
         final String emailSubject = getParameterValue(params.get(PARAM_EMAIL_SUBJECT));
         final String emailBody    = getParameterValue(params.get(PARAM_EMAIL_BODY));
         final boolean isHtml      = getParameterValue(params.get(PARAM_IS_HTML), true);
+        final String customHeaders = getParameterValue(params.get(CUSTOM_HEADERS));
         final Tuple2<Set<User>, Set<Role>> usersAndRoles = getUsersFromIds(userIds, ID_DELIMITER);
         final Set<Role> approverRoles            = usersAndRoles._2();
         final Set<User> requiredContentApprovers = usersAndRoles._1();
@@ -174,7 +179,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
             final String[] emailsToSend = emails.toArray(new String[emails.size()]);
             processor.setWorkflowMessage(emailSubject);
             // Sending notification message
-            WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
+            WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml, customHeaders);
         }
 
         processor.getContextMap().put("type", WorkflowHistoryType.APPROVAL);
