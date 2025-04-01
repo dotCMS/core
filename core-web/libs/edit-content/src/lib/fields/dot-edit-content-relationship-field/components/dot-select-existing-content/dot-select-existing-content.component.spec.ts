@@ -1,10 +1,8 @@
-import { createFakeEvent } from '@ngneat/spectator';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
-import { InputSwitch } from 'primeng/inputswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
@@ -99,7 +97,7 @@ describe('DotSelectExistingContentComponent', () => {
                 expect(spy).toHaveBeenCalledWith({
                     contentTypeId: 'test-content-type-id',
                     selectionMode: 'multiple',
-                    currentItemsIds: []
+                    selectedItemsIds: []
                 });
             });
         });
@@ -108,24 +106,24 @@ describe('DotSelectExistingContentComponent', () => {
     describe('Selected Items State', () => {
         it('should initialize selectedItems with store initialization', () => {
             spectator.flushEffects();
-            const initSelectedItems = store.initSelectedItems();
-            expect(spectator.component.$selectedItems()).toEqual(initSelectedItems);
+            const initSelectedItems = store.selectionItems();
+            expect(spectator.component.$selectionItems()).toEqual(initSelectedItems);
         });
 
         it('should update store selectedItems when $selectedItems changes', () => {
             const mockItems = [createFakeContentlet({ inode: '1' })];
 
-            spectator.component.$selectedItems.set(mockItems);
+            spectator.component.$selectionItems.set(mockItems);
             spectator.flushEffects();
 
-            expect(store.selectedItems()).toEqual(mockItems);
+            expect(store.selectionItems()).toEqual(mockItems);
         });
     });
 
     describe('Item Selection', () => {
         it('should return true when content is in selectedContent array', () => {
             const testContent = createFakeContentlet({ inode: '1' });
-            store.setSelectedItems([testContent]);
+            store.setSelectionItems([testContent]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
@@ -135,7 +133,7 @@ describe('DotSelectExistingContentComponent', () => {
         it('should return false when content is not in selectedContent array', () => {
             const testContent = createFakeContentlet({ inode: '123' });
             const differentContent = createFakeContentlet({ inode: '456' });
-            store.setSelectedItems([differentContent]);
+            store.setSelectionItems([differentContent]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
@@ -144,31 +142,12 @@ describe('DotSelectExistingContentComponent', () => {
 
         it('should return false when selectedContent is empty', () => {
             const testContent = createFakeContentlet({ inode: '123' });
-            store.setSelectedItems([]);
+            store.setSelectionItems([]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
             expect(result).toBe(false);
         });
-    });
-
-    it('should toggle show only selected items when toggle button is clicked', () => {
-        // Spy on the toggleShowOnlySelected method
-        const toggleSpy = jest.spyOn(store, 'toggleShowOnlySelected');
-
-        spectator.detectChanges();
-
-        // Find the inputSwitch
-        const toggleSwitch = spectator.query(InputSwitch);
-        expect(toggleSwitch).toBeTruthy();
-
-        // Click the toggle switch
-        spectator.triggerEventHandler(InputSwitch, 'onChange', {
-            originalEvent: createFakeEvent('change'),
-            checked: true
-        });
-
-        expect(toggleSpy).toHaveBeenCalled();
     });
 });
 

@@ -128,6 +128,7 @@ export const ExistingContentStore = signalStore(
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             selectionMode,
+                            showOnlySelected: false,
                             pagination: { ...paginationInitialState }
                         })
                     ),
