@@ -4,6 +4,8 @@ package com.dotmarketing.util;
  *  Sends an email and writes the email to a file
  */
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
@@ -41,6 +43,8 @@ public class Mailer {
 	String toName;
 	String recipientId;
 	String encoding = "UTF-8";
+	private Map<String, String> customHeaders = new HashMap<>();
+
 	public Mailer() {
 		result = null;
 		sendingAttachments = new MimeMultipart();
@@ -293,6 +297,16 @@ public class Mailer {
 			}
 		}
 	}
+	public void setHeader(String name, String value) {
+		if (UtilMethods.isSet(name) && UtilMethods.isSet(value)) {
+			customHeaders.put(name, value);
+		}
+	}
+	public void addHeader(String headerName, String headerValue) {
+		if (UtilMethods.isSet(headerName) && UtilMethods.isSet(headerValue)) {
+			customHeaders.put(headerName, headerValue);
+		}
+	}
 	/**
 	 * 
 	 * Description of the Method
@@ -326,6 +340,9 @@ public class Mailer {
 			Logger.debug(this, "Delivering mail using: " + session.getProperty("mail.smtp.host") + " as server.");
 			MimeMessage message = new MimeMessage(session);
 			message.addHeader("X-RecipientId", String.valueOf(getRecipientId()));
+			for (Map.Entry<String, String> entry : customHeaders.entrySet()) {
+				message.addHeader(entry.getKey(), entry.getValue());
+			}
 			if ((fromEmail != null) && (fromName != null) && (0 < fromEmail.trim().length())) {
 				message.setFrom(new InternetAddress(fromEmail, fromName));
 			} else if ((fromEmail != null) && (0 < fromEmail.trim().length())) {
