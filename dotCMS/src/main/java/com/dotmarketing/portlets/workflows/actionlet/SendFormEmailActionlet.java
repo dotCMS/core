@@ -13,6 +13,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.util.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.context.Context;
 
@@ -31,10 +32,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.Mailer;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.Company;
 
@@ -55,7 +52,7 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
   private static final  String EMAIL_SUBJECT="emailSubject";
   private static final  String CONDITION="condition";
   private static final  String EMAIL_TEMPLATE="emailTemplate";
-  
+  private static final  String CUSTOM_HEADERS="customHeaders";
   @Override
   public List<WorkflowActionletParameter> getParameters() {
     
@@ -71,7 +68,8 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     
     params.add(new WorkflowActionletParameter(CONDITION, "Condition - email will send unless<br>velocity prints 'false'", "", false));
     params.add(new WorkflowActionletParameter(BCC, "Bcc Email", "", false));
-
+    params.add(new WorkflowActionletParameter(CUSTOM_HEADERS,
+                "Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
     return params;
   }
 
@@ -124,7 +122,7 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     final String emailSubject = velocity.eval(params.get(EMAIL_SUBJECT).getValue());
     final String emailTemplate = velocity.eval(params.get(EMAIL_TEMPLATE).getValue());
     final String bcc = velocity.eval(params.get(BCC).getValue());
-
+    final String customHeaders = params.get(CUSTOM_HEADERS).getValue();
 
     // if we are in debug, just write the file out
     if (UtilMethods.isSet(condition) && condition.trim().indexOf("debug") ==0) {
@@ -150,7 +148,9 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     if (UtilMethods.isSet(bcc)) {
       mail.setBcc(bcc);
     }
-    
+    // Process custom headers if provided
+    EmailUtils.processCustomHeaders(mail, context, customHeaders);
+
     //send the binaries as attachments
     contentType.fields()
       .stream()
