@@ -16,7 +16,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.importer.model.AbstractImportResult.OperationType;
 import com.dotmarketing.util.importer.model.HeaderInfo;
 import com.dotmarketing.util.importer.model.ImportResult;
-import com.dotmarketing.util.importer.model.ResultData;
 import com.dotmarketing.util.importer.model.SpecialHeaderInfo;
 import com.dotmarketing.util.importer.model.ValidationMessage;
 import com.liferay.portal.language.LanguageException;
@@ -94,8 +93,14 @@ public class ImportResultConverter {
                 legacyResults.get(KEY_ERRORS).add(formattedMessage);
             }
 
+            final var fileInfo = result.fileInfo().orElseThrow(() ->
+                    new IllegalArgumentException("File info cannot be null"));
+
+            final var data = result.data().orElseThrow(() ->
+                    new IllegalArgumentException("Result data cannot be null"));
+
             // Process header info
-            final HeaderInfo headerInfo = result.fileInfo().headerInfo();
+            final HeaderInfo headerInfo = fileInfo.headerInfo();
             if (headerInfo != null) {
                 // Add special headers (Identifier, Workflow Action)
                 for (SpecialHeaderInfo specialHeader : headerInfo.specialHeaders()) {
@@ -111,7 +116,6 @@ public class ImportResultConverter {
             }
 
             // Add import statistics
-            final ResultData data = result.data();
             if (!preview) {
                 List<String> counters = legacyResults.get(KEY_COUNTERS);
                 counters.add("linesread=" + data.processed().parsedRows());
@@ -142,8 +146,8 @@ public class ImportResultConverter {
             // Add the count summaries
             List<String> messages = legacyResults.get(KEY_MESSAGES);
 
-            if (!result.fileInfo().headerInfo().specialHeaders().isEmpty()) {
-                for (SpecialHeaderInfo specialHeader : result.fileInfo().headerInfo()
+            if (!fileInfo.headerInfo().specialHeaders().isEmpty()) {
+                for (SpecialHeaderInfo specialHeader : fileInfo.headerInfo()
                         .specialHeaders()) {
                     if (specialHeader.header().equalsIgnoreCase(ImportUtil.identifierHeader)) {
                         messages.add(LanguageUtil.get(user,
@@ -152,9 +156,9 @@ public class ImportResultConverter {
                 }
             }
 
-            if (result.fileInfo().headerInfo().context().containsKey("importableFields")) {
-                final int headersSize = result.fileInfo().headerInfo().validHeaders().length;
-                final int importableFields = (int) result.fileInfo().headerInfo().context()
+            if (fileInfo.headerInfo().context().containsKey("importableFields")) {
+                final int headersSize = fileInfo.headerInfo().validHeaders().length;
+                final int importableFields = (int) fileInfo.headerInfo().context()
                         .get("importableFields");
                 if (importableFields == headersSize) {
                     messages.add(

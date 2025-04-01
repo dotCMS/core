@@ -1,11 +1,12 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
-import com.dotcms.jobs.business.error.JobValidationException;
+import static com.dotcms.rest.api.v1.content.dotimport.ContentImportHelper.CMD_PREVIEW;
+import static com.dotcms.rest.api.v1.content.dotimport.ContentImportHelper.CMD_PUBLISH;
+
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
-import com.dotcms.repackage.javax.validation.ValidationException;
 import com.dotcms.rest.ResponseEntityJobPaginatedResultView;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityJobView;
@@ -13,9 +14,7 @@ import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import java.io.IOException;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,7 +43,6 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.SseFeature;
 
-
 /**
  * REST resource for handling content import operations, including creating and enqueuing content import jobs.
  * This class provides endpoints for importing content from CSV files and processing them based on the provided parameters.
@@ -54,12 +53,6 @@ public class ContentImportResource {
     private final WebResource webResource;
     private final ContentImportHelper importHelper;
     private final SSEMonitorUtil sseMonitorUtil;
-    private static final String IMPORT_QUEUE_NAME = "importContentlets";
-    
-    // Constants for commands
-    private static final String CMD_PUBLISH = Constants.PUBLISH;
-    private static final String CMD_PREVIEW = Constants.PREVIEW;
-
 
     /**
      * Constructor for ContentImportResource.
@@ -150,7 +143,7 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @BeanParam final ContentImportParams params)
-            throws DotDataException, JsonProcessingException {
+            throws DotDataException, IOException {
 
         // Initialize the WebResource and set required user information
         final var initDataObject = new WebResource.InitBuilder(webResource)
@@ -160,18 +153,9 @@ public class ContentImportResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        Logger.debug(this, ()->String.format(" user %s is importing content: %s", initDataObject.getUser().getUserId(), params));
-
-        try {
-            // Create the content import job
-            final String jobId = importHelper.createJob(CMD_PUBLISH, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
-
-            final var jobStatusResponse = importHelper.buildJobStatusResponse(jobId, request);
-            return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
-        } catch (JobValidationException | ValidationException e) {
-            // Handle validation exception and return appropriate error message
-            return ExceptionMapperUtil.createResponse(null, e.getMessage());
-        }
+        return importHelper.handleJobCreation(
+                CMD_PUBLISH, params, initDataObject, request
+        );
     }
 
     /**
@@ -243,7 +227,7 @@ public class ContentImportResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @BeanParam final ContentImportParams params)
-            throws DotDataException, JsonProcessingException {
+            throws DotDataException, IOException {
 
         // Initialize the WebResource and set required user information
         final var initDataObject = new WebResource.InitBuilder(webResource)
@@ -253,18 +237,9 @@ public class ContentImportResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        Logger.debug(this, ()->String.format(" user %s is importing content in preview mode: %s", initDataObject.getUser().getUserId(), params));
-
-        try {
-            // Create the content import job in preview mode
-            final String jobId = importHelper.createJob(CMD_PREVIEW, IMPORT_QUEUE_NAME, params, initDataObject.getUser(), request);
-
-            final var jobStatusResponse = importHelper.buildJobStatusResponse(jobId, request);
-            return Response.ok(new ResponseEntityJobStatusView(jobStatusResponse)).build();
-        } catch (JobValidationException | ValidationException e) {
-            // Handle validation exception and return appropriate error message
-            return ExceptionMapperUtil.createResponse(null, e.getMessage());
-        }
+        return importHelper.handleJobCreation(
+                CMD_PREVIEW, params, initDataObject, request
+        );
     }
 
     /**
@@ -427,7 +402,6 @@ public class ContentImportResource {
                 initDataObject.getUser().getUserId()));
 
         final JobPaginatedResult result = importHelper.getJobs(page, pageSize);
-
         return new ResponseEntityView<>(importHelper.view(result));
     }
 
