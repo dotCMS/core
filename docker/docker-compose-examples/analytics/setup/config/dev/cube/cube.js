@@ -22,6 +22,10 @@ module.exports = {
     preAggregationsSchema: ({ securityContext }) =>
         `pre_aggregations_${securityContext.customerId}`,*/
 
+    orchestratorOptions: {
+        continueWaitTimeout: 30
+    },
+
     queryRewrite: (query, { securityContext }) => {
         const tokenData = resolveToken(securityContext);
         console.log(`tokenData: ${JSON.stringify(tokenData, null, 2)}`);
