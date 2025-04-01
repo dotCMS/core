@@ -1,0 +1,29 @@
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+
+import { DotCMSContentlet } from '@dotcms/uve/types';
+
+import { DynamicComponentEntity } from '../../../../models';
+
+/**
+ * Fallback component that renders when no custom component is found for a contentlet
+ */
+@Component({
+    selector: 'dotcms-fallback-component',
+    standalone: true,
+    imports: [AsyncPipe],
+    template: `
+        @if (UserNoComponent) {
+            <ng-container *ngComponentOutlet="UserNoComponent | async; inputs: { contentlet }" />
+        } @else {
+            <div class="dotcms-fallback-component">
+                <p>No component found for content type: {{ contentlet.contentType }}</p>
+            </div>
+        }
+    `,
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class FallbackComponent {
+    @Input() UserNoComponent: DynamicComponentEntity | null = null;
+    @Input() contentlet!: DotCMSContentlet;
+}

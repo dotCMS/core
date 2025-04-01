@@ -49,7 +49,9 @@ import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms
                 [attr.data-max-contentlets]="dotAttributes()['data-max-contentlets']"
                 [attr.data-dot-uuid]="dotAttributes()['data-dot-uuid']">
                 @for (contentlet of contentlets(); track contentlet.identifier) {
-                    <div>Yahoo</div>
+                    <dotcms-contentlet
+                        [contentlet]="contentlet"
+                        [container]="container.identifier" />
                 }
             </div>
         }
