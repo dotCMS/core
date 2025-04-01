@@ -4,9 +4,11 @@ import {
     Component,
     computed,
     effect,
+    ElementRef,
     inject,
     input,
-    output
+    output,
+    viewChildren
 } from '@angular/core';
 import {
     FormBuilder,
@@ -95,20 +97,18 @@ export class DotEditContentSidebarActivitiesComponent {
     $status = input<ComponentStatus>(ComponentStatus.LOADING, { alias: 'status' });
 
     /**
+     * View children for the activity items
+     */
+    activityItems = viewChildren<ElementRef>('activityItem');
+
+    /**
      * Effect to scroll to bottom when activities change
      */
     #scrollEffect = effect(() => {
-        const activities = this.$activities();
-        if (activities.length) {
-            setTimeout(() => {
-                const lastActivity = document.querySelector('.activities__item-wrapper:last-child');
-                if (lastActivity) {
-                    lastActivity.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'end'
-                    });
-                }
-            });
+        const items = this.activityItems();
+        if (items.length > 0) {
+            const lastItem = items[items.length - 1];
+            lastItem.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     });
 
