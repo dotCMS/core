@@ -1,8 +1,14 @@
 import { Component, Input } from "@angular/core";
 
+// You can define the type of the contentlet in the component
+interface Activity {
+    title: string;
+    description: string;
+}
+
 @Component({
     selector: 'app-activity',
-    template: '<div>{{contentlet.title}}</div>',
+    template: '<div>{{ contentlet.title }}</div>',
     standalone: true,
     styles: `
         :host {
@@ -11,6 +17,5 @@ import { Component, Input } from "@angular/core";
     `
 })
 export class ActivityComponent {
-    @Input() contentlet!: any;
-
+    @Input() contentlet!: Activity;
 }
