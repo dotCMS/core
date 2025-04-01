@@ -23,10 +23,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.util.DNSUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.Mailer;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import org.apache.velocity.context.Context;
 
 public class EmailActionlet extends WorkFlowActionlet {
@@ -57,6 +54,8 @@ public class EmailActionlet extends WorkFlowActionlet {
                 "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
         params.add(new WorkflowActionletParameter("attachment5",
                 "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
+        params.add(new WorkflowActionletParameter("customHeaders", 
+                "Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
 
 
 
@@ -96,7 +95,7 @@ public class EmailActionlet extends WorkFlowActionlet {
         String condition = params.get("condition").getValue();
         String cc = params.get("cc").getValue();
         String bcc = params.get("bcc").getValue();
-
+        String customHeaders = params.get("customHeaders").getValue();
 
         try {
             // get the host of the content
@@ -184,6 +183,9 @@ public class EmailActionlet extends WorkFlowActionlet {
                 bcc = VelocityUtil.eval(bcc, ctx);
                 mail.setBcc(bcc);
             }
+
+            // Process custom headers if provided
+            EmailUtils.processCustomHeaders(mail, ctx, customHeaders);
 
             for(int x =1;x<6;x++){
                 String attachment = params.get("attachment" + x).getValue();
