@@ -36,7 +36,7 @@ import { SiteFieldComponent } from './components/site-field/site-field.component
         LanguageFieldComponent,
         SiteFieldComponent
     ],
-    templateUrl: './search.compoment.html'
+    templateUrl: './search.component.html'
 })
 export class SearchComponent {
     /**
@@ -69,8 +69,10 @@ export class SearchComponent {
      */
     readonly form = this.#formBuilder.nonNullable.group({
         query: [''],
-        languageId: [-1],
-        siteId: ['']
+        systemSearchableFields: this.#formBuilder.nonNullable.group({
+            languageId: [-1],
+            siteId: ['']
+        })
     });
 
     /**
@@ -81,6 +83,7 @@ export class SearchComponent {
     clearForm() {
         this.form.reset();
         this.$overlayPanel().hide();
+        this.onSearch.emit({});
     }
 
     /**
@@ -89,6 +92,25 @@ export class SearchComponent {
      */
     doSearch() {
         this.$overlayPanel().hide();
-        this.onSearch.emit(this.form.getRawValue());
+        const values = this.form.getRawValue();
+        // Filter out values that are -1 or empty strings
+        const filteredValues = Object.entries(values.systemSearchableFields).reduce(
+            (acc, [key, val]) => {
+                // Skip values that are -1 or empty strings
+                if (val !== -1 && val !== '') {
+                    acc[key] = val;
+                }
+
+                return acc;
+            },
+            {}
+        );
+
+        // Prepare the search parameters
+        const searchParams: SearchParams = {
+            query: values.query,
+            systemSearchableFields: filteredValues
+        };
+        this.onSearch.emit(searchParams);
     }
 }

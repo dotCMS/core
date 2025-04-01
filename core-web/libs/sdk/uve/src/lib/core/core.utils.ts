@@ -1,5 +1,12 @@
 import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../../internal/constants';
-import { UVE_MODE, UVECallback, UVEState, UVESubscription } from '../types/editor/public';
+import {
+    UVE_MODE,
+    UVEEventHandler,
+    UVEState,
+    UVEEventSubscription,
+    UVEEventType,
+    UVEEventPayloadMap
+} from '../types/editor/public';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
@@ -62,31 +69,40 @@ export function getUVEState(): UVEState | undefined {
 /**
  * Creates a subscription to a UVE event.
  *
- * @param {string} event - The event to subscribe to.
- * @param {UVECallback} callback - The callback to call when the event is triggered.
- * @return {UnsubscribeUVE | undefined} The unsubscribe function if the event is valid, undefined otherwise.
+ * @param eventType - The type of event to subscribe to
+ * @param callback - The callback function that will be called when the event occurs
+ * @returns An event subscription that can be used to unsubscribe
  *
  * @example
  * ```ts
- * const unsubscribeChanges = createUVESubscription('changes', (payload) => {
- *   console.log(payload);
+ * // Subscribe to page changes
+ * const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES, (changes) => {
+ *   console.log('Content changes:', changes);
  * });
+ *
+ * // Later, unsubscribe when no longer needed
+ * subscription.unsubscribe();
  * ```
  */
-export function createUVESubscription(event: string, callback: UVECallback): UVESubscription {
+export function createUVESubscription<T extends UVEEventType>(
+    eventType: T,
+    callback: (
+        payload: UVEEventPayloadMap[T] extends undefined ? void : UVEEventPayloadMap[T]
+    ) => void
+): UVEEventSubscription {
     if (!getUVEState()) {
         console.warn('UVE Subscription: Not running inside UVE');
 
-        return __UVE_EVENT_ERROR_FALLBACK__(event);
+        return __UVE_EVENT_ERROR_FALLBACK__(eventType);
     }
 
-    const eventCallback = __UVE_EVENTS__[event];
+    const eventCallback = __UVE_EVENTS__[eventType];
 
     if (!eventCallback) {
-        console.error(`UVE Subscription: Event ${event} not found`);
+        console.error(`UVE Subscription: Event ${eventType} not found`);
 
-        return __UVE_EVENT_ERROR_FALLBACK__(event);
+        return __UVE_EVENT_ERROR_FALLBACK__(eventType);
     }
 
-    return eventCallback(callback);
+    return eventCallback(callback as UVEEventHandler);
 }

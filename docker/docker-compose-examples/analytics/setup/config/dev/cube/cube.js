@@ -23,9 +23,7 @@ module.exports = {
         `pre_aggregations_${securityContext.customerId}`,*/
 
     orchestratorOptions: {
-        queryCacheOptions: {
-            refreshKeyRenewalThreshold: 5 * 60 * 1000,
-        },
+        continueWaitTimeout: 30
     },
 
     queryRewrite: (query, { securityContext }) => {

@@ -5,15 +5,21 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
+import { TablePageEvent } from 'primeng/table';
+
 import { tap, switchMap, filter } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
 import { SelectionMode } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
 import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
-import { RelationshipFieldService } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+import {
+    RelationshipFieldService,
+    RelationshipFieldQueryParams
+} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 
 export interface ExistingContentState {
+    contentTypeId: string;
     data: DotCMSContentlet[];
     status: ComponentStatus;
     selectionMode: SelectionMode | null;
@@ -24,21 +30,28 @@ export interface ExistingContentState {
         offset: number;
         currentPage: number;
         rowsPerPage: number;
+        totalResults: number;
     };
+    selectedItems: DotCMSContentlet[] | DotCMSContentlet | null;
 }
 
+const paginationInitialState: ExistingContentState['pagination'] = {
+    offset: 0,
+    currentPage: 1,
+    rowsPerPage: 50,
+    totalResults: 0
+};
+
 const initialState: ExistingContentState = {
+    contentTypeId: null,
     data: [],
     columns: [],
     status: ComponentStatus.INIT,
     selectionMode: null,
     errorMessage: null,
-    pagination: {
-        offset: 0,
-        currentPage: 1,
-        rowsPerPage: 50
-    },
-    currentItemsIds: []
+    pagination: { ...paginationInitialState },
+    currentItemsIds: [],
+    selectedItems: null
 };
 
 /**
@@ -46,6 +59,7 @@ const initialState: ExistingContentState = {
  * This store manages the state and actions related to the existing content.
  */
 export const ExistingContentStore = signalStore(
+    { providedIn: 'root' },
     withState(initialState),
     withComputed((state) => ({
         /**
@@ -62,11 +76,27 @@ export const ExistingContentStore = signalStore(
          * Computes the selected items based on the current items IDs.
          * @returns {DotCMSContentlet[]} The selected items.
          */
-        selectedItems: computed(() => {
+        initSelectedItems: computed(() => {
             const data = state.data();
             const currentItemsIds = state.currentItemsIds();
 
             return data.filter((item) => currentItemsIds.includes(item.inode));
+        }),
+        /**
+         * Computes the items based on the selected items.
+         * @returns {DotCMSContentlet[]} The items.
+         */
+        items: computed(() => {
+            const selectedItems = state.selectedItems();
+
+            if (selectedItems) {
+                const isArray = Array.isArray(selectedItems);
+                const items = isArray ? selectedItems : [selectedItems];
+
+                return items;
+            }
+
+            return [];
         })
     })),
     withMethods((store) => {
@@ -84,7 +114,11 @@ export const ExistingContentStore = signalStore(
             }>(
                 pipe(
                     tap(({ selectionMode }) =>
-                        patchState(store, { status: ComponentStatus.LOADING, selectionMode })
+                        patchState(store, {
+                            status: ComponentStatus.LOADING,
+                            selectionMode,
+                            pagination: { ...paginationInitialState }
+                        })
                     ),
                     tap(({ contentTypeId }) => {
                         if (!contentTypeId) {
@@ -98,12 +132,17 @@ export const ExistingContentStore = signalStore(
                     switchMap(({ contentTypeId, currentItemsIds }) =>
                         relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
-                                next: ([columns, data]) => {
+                                next: ([columns, searchResponse]) => {
                                     patchState(store, {
+                                        contentTypeId,
                                         columns,
-                                        data,
+                                        data: searchResponse.contentlets,
                                         status: ComponentStatus.LOADED,
-                                        currentItemsIds
+                                        currentItemsIds,
+                                        pagination: {
+                                            ...store.pagination(),
+                                            totalResults: searchResponse.totalResults
+                                        }
                                     });
                                 },
                                 error: () =>
@@ -133,7 +172,7 @@ export const ExistingContentStore = signalStore(
              * Moves the pagination to the previous page and updates the state accordingly.
              */
             previousPage: () => {
-                const { currentPage, offset, rowsPerPage } = store.pagination();
+                const { currentPage } = store.pagination();
 
                 if (currentPage === 1) {
                     return;
@@ -142,14 +181,87 @@ export const ExistingContentStore = signalStore(
                 patchState(store, {
                     pagination: {
                         ...store.pagination(),
-                        offset: offset - rowsPerPage,
+                        offset: store.pagination().offset - store.pagination().rowsPerPage,
                         currentPage: currentPage - 1
                     }
                 });
             },
-            search: (_search: SearchParams) => {
-                // TODO: Implement search
-            }
+            /**
+             * Sets the selected items in the state.
+             * @param items The items to set as selected.
+             */
+            setSelectedItems: (items: DotCMSContentlet[] | DotCMSContentlet | null) => {
+                patchState(store, { selectedItems: items });
+            },
+            /**
+             * Sets the offset and current page in the state.
+             * @param event The event containing the first and rows properties.
+             */
+            setOffset: ({ first }: TablePageEvent) => {
+                patchState(store, {
+                    pagination: {
+                        ...store.pagination(),
+                        offset: first,
+                        currentPage: Math.floor(first / store.pagination().rowsPerPage) + 1
+                    }
+                });
+            },
+            /**
+             * Searches for content based on the provided search parameters.
+             * @param searchParams The search parameters to use for filtering content.
+             * @returns An observable that completes when the search has been performed.
+             */
+            search: rxMethod<SearchParams>(
+                pipe(
+                    tap(() =>
+                        patchState(store, {
+                            status: ComponentStatus.LOADING,
+                            // Reset pagination when performing a new search
+                            pagination: { ...paginationInitialState }
+                        })
+                    ),
+                    switchMap((searchParams) => {
+                        // Map SearchParams to RelationshipFieldQueryParams
+                        const queryParams: RelationshipFieldQueryParams = {
+                            contentTypeId: store.contentTypeId()
+                        };
+
+                        if (searchParams.query) {
+                            queryParams.globalSearch = searchParams.query;
+                        }
+
+                        if (
+                            searchParams.systemSearchableFields &&
+                            Object.keys(searchParams.systemSearchableFields).length > 0
+                        ) {
+                            queryParams.systemSearchableFields = {
+                                ...searchParams.systemSearchableFields
+                            };
+                        }
+
+                        return relationshipFieldService.search(queryParams).pipe(
+                            tapResponse({
+                                next: (data) => {
+                                    patchState(store, {
+                                        data: data.contentlets,
+                                        status: ComponentStatus.LOADED,
+                                        pagination: {
+                                            ...store.pagination(),
+                                            totalResults: data.totalResults
+                                        }
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        status: ComponentStatus.ERROR,
+                                        errorMessage: 'dot.file.relationship.dialog.search.failed'
+                                    });
+                                }
+                            })
+                        );
+                    })
+                )
+            )
         };
     })
 );

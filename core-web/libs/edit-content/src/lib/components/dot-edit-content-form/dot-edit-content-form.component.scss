@@ -107,6 +107,7 @@ $tab-min-height: 52px;
             width: 100%;
             gap: $spacing-3;
             overflow: visible;
+            flex-wrap: wrap;
         }
 
         &.dot-edit-content-tabview--single-tab {
