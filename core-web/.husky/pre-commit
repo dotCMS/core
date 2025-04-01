@@ -44,11 +44,12 @@ setup_nvm() {
 
     # Source nvm
     export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/nvm.sh" ]  && \. "$NVM_DIR/nvm.sh"
 
     # Ensure the correct Node.js version is used
     if [ -f "$root_dir/.nvmrc" ]; then
         print_color "$BLUE" "Using Node.js version specified in .nvmrc"
+
         nvm install
     else
         print_color "$YELLOW" "No .nvmrc found. Using default Node.js version."
@@ -61,16 +62,15 @@ check_sdk_client_affected() {
     printf "Affected projects: %s\n" "$affected_projects"
 
     # Build sdk-client if affected
-    if echo "$affected_projects" | grep -q "sdk-client"; then
+    if echo "$affected_projects" | grep -q "sdk-uve"; then
         printf "Building sdk-client\n"
-        if ! yarn nx run sdk-client:build:js; then
+        if ! yarn nx run sdk-uve:build:js; then
             print_color "$RED" "Failed to build sdk-client"
             has_errors=true
         fi
     fi
 
-    file_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/package.json"
-    dir_to_remove="${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/libs"
+    file_to_remove="${root_dir}/dotCMS/src/main/webapp/ext/uve/package.json"
 
     # Check if the file exists, then delete it
     if [ -f "$file_to_remove" ]; then
@@ -80,16 +80,8 @@ check_sdk_client_affected() {
         printf "%s does not exist\n" "$file_to_remove"
     fi
 
-    # Check if the directory exists, then delete it
-    if [ -d "$dir_to_remove" ]; then
-        rm -r "$dir_to_remove"
-        printf "Removed directory %s\n" "$dir_to_remove"
-    else
-        printf "%s does not exist\n" "$dir_to_remove"
-    fi
-
-    if ! git add "${root_dir}/dotCMS/src/main/webapp/html/js/editor-js/sdk-editor.js"; then
-        print_color "$RED" "Failed to stage computed sdk-client.js"
+    if ! git add "${root_dir}/dotCMS/src/main/webapp/ext/uve/dot-uve.js"; then
+        print_color "$RED" "Failed to stage computed dot-uve.js"
         exit 1
     fi
 }
