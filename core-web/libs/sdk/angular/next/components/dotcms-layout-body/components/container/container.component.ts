@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    HostBinding,
     inject,
     Input,
     OnChanges,
@@ -43,18 +44,9 @@ import { ContentletComponent } from '../../components/contentlet/contentlet.comp
         } @else if (isEmpty()) {
             <dotcms-empty-container [dotAttributes]="dotAttributes()" />
         } @else {
-            <div
-                [attr.data-dot-object]="dotAttributes()['data-dot-object']"
-                [attr.data-dot-accept-types]="dotAttributes()['data-dot-accept-types']"
-                [attr.data-dot-identifier]="dotAttributes()['data-dot-identifier']"
-                [attr.data-max-contentlets]="dotAttributes()['data-max-contentlets']"
-                [attr.data-dot-uuid]="dotAttributes()['data-dot-uuid']">
-                @for (contentlet of contentlets(); track contentlet.identifier) {
-                    <dotcms-contentlet
-                        [contentlet]="contentlet"
-                        [container]="container.identifier" />
-                }
-            </div>
+            @for (contentlet of contentlets(); track contentlet.identifier) {
+                <dotcms-contentlet [contentlet]="contentlet" [container]="container.identifier" />
+            }
         }
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -80,6 +72,12 @@ export class ContainerComponent implements OnChanges {
         return getDotContainerAttributes(containerData);
     });
 
+    @HostBinding('attr.data-dot-object') dotObject = 'container';
+    @HostBinding('attr.data-dot-accept-types') acceptTypes: string | null = null;
+    @HostBinding('attr.data-dot-identifier') identifier: string | null = null;
+    @HostBinding('attr.data-max-contentlets') maxContentlets: string | null = null;
+    @HostBinding('attr.data-dot-uuid') uuid: string | null = null;
+
     ngOnChanges() {
         const { pageAsset } = this.#dotcmsContextService.context ?? {};
 
@@ -89,5 +87,10 @@ export class ContainerComponent implements OnChanges {
 
         this.containerData.set(getContainersData(pageAsset, this.container));
         this.contentlets.set(getContentletsInContainer(pageAsset, this.container));
+
+        this.acceptTypes = this.dotAttributes()['data-dot-accept-types'];
+        this.identifier = this.dotAttributes()['data-dot-identifier'];
+        this.maxContentlets = this.dotAttributes()['data-max-contentlets'];
+        this.uuid = this.dotAttributes()['data-dot-uuid'];
     }
 }

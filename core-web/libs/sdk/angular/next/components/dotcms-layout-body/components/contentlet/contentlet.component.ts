@@ -66,22 +66,28 @@ export class ContentletComponent implements OnChanges {
         return getDotContentletAttributes(contentlet, this.container);
     });
 
-    @HostBinding('attr.data-dot-identifier') identifier =
-        this.dotAttributes()['data-dot-identifier'];
-    @HostBinding('attr.data-dot-basetype') basetype = this.dotAttributes()['data-dot-basetype'];
-    @HostBinding('attr.data-dot-title') title = this.dotAttributes()['data-dot-title'];
-    @HostBinding('attr.data-dot-inode') inode = this.dotAttributes()['data-dot-inode'];
-    @HostBinding('attr.data-dot-type') type = this.dotAttributes()['data-dot-type'];
-    @HostBinding('attr.data-dot-container') containerAttribute =
-        this.dotAttributes()['data-dot-container'];
-    @HostBinding('attr.data-dot-on-number-of-pages') onNumberOfPages =
-        this.dotAttributes()['data-dot-on-number-of-pages'];
-    @HostBinding('style') styleAttribute = this.style();
+    @HostBinding('attr.data-dot-identifier') identifier: string | null = null;
+    @HostBinding('attr.data-dot-basetype') basetype: string | null = null;
+    @HostBinding('attr.data-dot-title') title: string | null = null;
+    @HostBinding('attr.data-dot-inode') inode: string | null = null;
+    @HostBinding('attr.data-dot-type') type: string | null = null;
+    @HostBinding('attr.data-dot-container') containerAttribute: string | null = null;
+    @HostBinding('attr.data-dot-on-number-of-pages') onNumberOfPages: string | null = null;
+    @HostBinding('style') styleAttribute: { [key: string]: unknown } | null = null;
 
     ngOnChanges() {
         this.contentletSignal.set(this.contentlet);
         this.isDevMode.set(this.#dotcmsContextService.isDevMode());
         this.setupComponents();
+
+        this.identifier = this.dotAttributes()['data-dot-identifier'];
+        this.basetype = this.dotAttributes()['data-dot-basetype'];
+        this.title = this.dotAttributes()['data-dot-title'];
+        this.inode = this.dotAttributes()['data-dot-inode'];
+        this.type = this.dotAttributes()['data-dot-type'];
+        this.containerAttribute = this.dotAttributes()['data-dot-container'];
+        this.onNumberOfPages = this.dotAttributes()['data-dot-on-number-of-pages'];
+        this.styleAttribute = this.style();
     }
 
     ngAfterViewInit() {
