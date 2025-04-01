@@ -3070,7 +3070,7 @@ public class WorkflowResource {
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                            fireActionForm, initDataObject, mode);
+                            fireActionForm, initDataObject, mode, variantName);
 
             if (UtilMethods.isSet(indexPolicy)) {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));

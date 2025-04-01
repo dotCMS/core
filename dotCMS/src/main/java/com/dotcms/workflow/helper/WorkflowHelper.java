@@ -67,6 +67,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.web.VelocityWebUtil;
@@ -2112,11 +2113,21 @@ public class WorkflowHelper {
      */
     public Map<String, Object> contentletToMap(final Contentlet contentlet) {
         //In case the contentlet is null because it was destroyed/deleted.
-        if(null == contentlet){
+        if(null == contentlet) {
+
            return Collections.emptyMap();
         }
+
+        final ContentType type = contentlet.getContentType();
+        final Map<String, Object> contentMap = new HashMap<>();
         final DotContentletTransformer transformer = new DotTransformerBuilder().defaultOptions().content(contentlet).build();
-        return transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap());
+        contentMap.putAll(transformer.toMaps().stream().findFirst().orElse(Collections.emptyMap()));
+
+        contentMap.put("__icon__", Try.of(()->UtilHTML.getIconClass(contentlet)).getOrElse("uknIcon"));
+        contentMap.put("contentTypeIcon", type.icon());
+        contentMap.put("variant", contentlet.getVariantId());
+
+        return contentMap;
     }
 
     /**
