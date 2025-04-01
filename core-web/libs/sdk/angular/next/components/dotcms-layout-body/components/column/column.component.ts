@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, Input, OnChanges } from '@angular/core';
 
 import { combineClasses, getColumnPositionClasses } from '@dotcms/uve/internal';
 import { DotPageAssetLayoutColumn } from '@dotcms/uve/types';
@@ -25,7 +25,7 @@ import { ContainerComponent } from '../container/container.component';
     styleUrl: './column.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ColumnComponent {
+export class ColumnComponent implements OnChanges {
     /**
      * The column data to be rendered
      */
@@ -33,7 +33,7 @@ export class ColumnComponent {
 
     @HostBinding('class') customClasses = '';
 
-    ngOnInit() {
+    ngOnChanges() {
         const positionClasses = getColumnPositionClasses(this.column);
 
         this.customClasses = combineClasses([positionClasses.startClass, positionClasses.endClass]);

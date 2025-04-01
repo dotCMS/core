@@ -1,17 +1,25 @@
-import { ChangeDetectionStrategy, Component, inject, Input, OnInit, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    inject,
+    Input,
+    OnChanges,
+    signal
+} from '@angular/core';
 
-import { DotCMSPageRendererMode, UVE_MODE } from '@dotcms/uve/types';
-import { DotCMSContextService } from 'libs/sdk/angular/next/services/dotcms-context/dotcms-context.service';
+import { DotCMSPageRendererMode } from '@dotcms/uve/types';
+
+import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms-context.service';
 
 /**
  *
- * `ErrorMessageComponent` is a class that represents the error message for a DotCMS page.
+ * `PageErrorMessageComponent` is a class that represents the error message for a DotCMS page.
  *
  * @internal
- * @class ErrorMessageComponent
+ * @class PageErrorMessageComponent
  */
 @Component({
-    selector: 'error-message',
+    selector: 'dotcms-page-error-message',
     standalone: true,
     imports: [],
     template: `
@@ -34,14 +42,14 @@ import { DotCMSContextService } from 'libs/sdk/angular/next/services/dotcms-cont
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ErrorMessageComponent implements OnInit {
+export class PageErrorMessageComponent implements OnChanges {
     @Input() mode: DotCMSPageRendererMode = 'production';
 
     private dotCMSContextService = inject(DotCMSContextService);
 
     isDevMode = signal(false);
 
-    ngOnInit(): void {
+    ngOnChanges() {
         console.warn('Missing required layout.body property in page');
 
         const isDevMode = this.dotCMSContextService.isDevMode(this.mode);

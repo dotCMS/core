@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, signal } from '@angular/core';
 
 import { combineClasses } from '@dotcms/uve/internal';
 import { DotPageAssetLayoutRow } from '@dotcms/uve/types';
@@ -28,7 +28,7 @@ import { ColumnComponent } from '../column/column.component';
     styleUrl: './row.component.css',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RowComponent {
+export class RowComponent implements OnChanges {
     /**
      * The row data to be rendered
      */
@@ -36,7 +36,7 @@ export class RowComponent {
 
     customClasses = signal('');
 
-    ngOnInit() {
+    ngOnChanges() {
         this.customClasses.set(combineClasses([this.row.styleClass || 'row']));
     }
 }

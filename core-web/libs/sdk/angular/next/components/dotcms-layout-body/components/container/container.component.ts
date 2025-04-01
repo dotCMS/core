@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, Input, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    Input,
+    OnChanges,
+    signal
+} from '@angular/core';
 
 import {
     getContainersData,
@@ -48,7 +56,7 @@ import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ContainerComponent {
+export class ContainerComponent implements OnChanges {
     /**
      * The container data to be rendered
      */
@@ -69,7 +77,7 @@ export class ContainerComponent {
         return getDotContainerAttributes(containerData);
     });
 
-    ngOnInit() {
+    ngOnChanges() {
         const { pageAsset } = this.#dotcmsContextService.context ?? {};
 
         if (!pageAsset) {

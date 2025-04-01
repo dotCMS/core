@@ -1,20 +1,7 @@
 import { expect } from '@jest/globals';
 import { Spectator, createRoutingFactory } from '@ngneat/spectator/jest';
 
-import { Component, Input } from '@angular/core';
-
-import { DotCMSContentlet } from '@dotcms/uve/types';
-
 import { DotcmsLayoutBodyComponent } from './dotcms-layout-body.component';
-
-@Component({
-    selector: 'dotcms-mock-component',
-    standalone: true,
-    template: 'Hello world'
-})
-class DotcmsSDKMockComponent {
-    @Input() contentlet!: DotCMSContentlet;
-}
 
 jest.mock('@dotcms/client', () => ({
     ...jest.requireActual('@dotcms/client'),
