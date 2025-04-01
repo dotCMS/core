@@ -2,7 +2,8 @@ import { EditorState, NodeSelection, Plugin, PluginKey } from 'prosemirror-state
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance } from 'tippy.js';
 
-import { ComponentRef } from '@angular/core';
+import { ComponentRef, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -33,6 +34,8 @@ import {
     popperModifiers,
     setBubbleMenuCoords
 } from '../utils';
+import { DotContentTypeService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -84,6 +87,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     changeTo: ComponentRef<SuggestionsComponent>;
     changeToElement: HTMLElement;
     tippyChangeTo: Instance | undefined;
+    dotContentTypeService: DotContentTypeService;
+    router: Router;
 
     private shouldShowProp = false;
 
@@ -102,6 +107,10 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.component = component;
         this.changeTo = changeToComponent;
         this.changeToElement = this.changeTo.location.nativeElement;
+
+        //Services
+        this.router = props.router;
+        this.dotContentTypeService = props.dotContentTypeService;
 
         // Subscriptions
         this.component.instance.command.subscribe(this.exeCommand.bind(this));
@@ -272,7 +281,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const parentNode = findParentNode(this.editor.state.selection.$from);
         const type = parentNode.type.name === 'table' ? 'table' : node?.type.name;
 
-        this.selectionNode = node;
+        this.selectionNode = node || null;
         this.component.instance.items = getBubbleMenuItem(type);
         this.component.changeDetectorRef.detectChanges();
     }
@@ -398,7 +407,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
             case 'deleteNode':
                 this.selectionNodesCount > 1
                     ? deleteByRange(this.editor, this.selectionRange)
-                    : deleteByNode({
+                    : this.selectionNode &&
+                      deleteByNode({
                           editor: this.editor,
                           nodeType: this.selectionNode.type.name,
                           selectionRange: this.selectionRange
@@ -419,25 +429,59 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'goToContentlet':
-                this.goToContentlet(inode, currentInode, languageId);
+                this.goToContentlet(inode, languageId);
 
                 break;
         }
     }
 
     /**
-     * Navigates to a contentlet by calling a legacy JSP function.
+     * Navigates to edit a contentlet using DotContentTypeService to determine the correct editor.
+     * Direct approach without using custom events.
      *
-     * @param {string} newInode - The new contentlet inode to navigate to.
-     * @param {string} siblingInode - The sibling contentlet inode.
-     * @param {number} languageId - The language ID of the contentlet.
+     * @param {string} contentletInode - The contentlet inode to edit
+     * @param {number} languageId - The language ID of the contentlet
      */
-    goToContentlet(newInode: string, siblingInode: string, languageId: number) {
-        // TODO: Remove JSPRedirectFn when Edit Content JSP is removed.
-        const JSPRedirectFn = (window as any).rel_BlogblogComment_PeditRelatedContent;
-        if (JSPRedirectFn) {
-            JSPRedirectFn(newInode, '', languageId);
+    goToContentlet(contentletInode: string, languageId: number) {
+        // Check if selectionNode exists
+        if (!this.selectionNode) {
+            console.warn('Selection node is undefined, cannot navigate to contentlet');
+            return;
         }
+
+        // Get data from selected node
+        const { data = {} } = this.selectionNode.attrs;
+        const { contentType } = data;
+
+        // Show confirmation dialog
+        if (
+            !confirm(
+                'Are you sure you want to edit this content? Any unsaved changes will be lost.'
+            )
+        ) {
+            return;
+        }
+
+        // Use the service to determine which editor to use
+        this.dotContentTypeService
+            .getContentType(contentType)
+            .pipe(take(1))
+            .subscribe((contentTypeInfo) => {
+                // Check if we should use the new or old editor
+                const shouldUseOldEditor =
+                    !contentTypeInfo?.metadata?.[
+                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+                    ];
+                console.log('shouldUseOldEditor', contentTypeInfo);
+
+                if (shouldUseOldEditor) {
+                    // Use legacy approach - navigate to old editor
+                    window.location.href = `/dotAdmin/#/c/content/${contentletInode}`;
+                } else {
+                    // Use new editor (Angular)
+                    this.router.navigate([`content/${contentletInode}`]);
+                }
+            });
     }
 
     toggleTextAlign(alignment, active) {
