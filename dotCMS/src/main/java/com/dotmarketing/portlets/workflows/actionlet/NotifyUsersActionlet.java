@@ -45,6 +45,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 		String emailSubject =null;
 		String emailBody =null;
 		boolean isHtml = false;
+		String customHeaders =null;
 
 		if(params.get("emailSubject") != null ){
 			emailSubject = params.get("emailSubject").getValue();
@@ -61,7 +62,10 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 				
 			}
 		}
-		
+		if(params.get(("customHeaders")) != null && params.get("customHeaders").getValue()!=null){
+			customHeaders = params.get("customHeaders").getValue();
+		}
+
 		String emails = (params.get("emails")== null) ? "" : params.get("emails").getValue();
 		List<String> recipients = new ArrayList<>();
 		StringTokenizer st = new StringTokenizer(emails, ", ");
@@ -111,7 +115,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 		
 		String[] emailsToSend = (String[]) recipients.toArray(new String[recipients.size()]);
 		
-		WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
+		WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml, customHeaders);
 	}
 
 	public WorkflowStep getNextStep() {
@@ -132,7 +136,8 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
 					
 					paramList.add(new WorkflowActionletParameter("isHtml", "Is Html?", null, false));
-				
+					paramList.add(new WorkflowActionletParameter("customHeaders",
+							"Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
 				}
 			}
 		}
