@@ -50,6 +50,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 		String emailSubject  = null;
 		String emailBody     = null;
 		boolean isHtml       = false;
+		String customHeaders =null;
 
 		if (params.get("emailSubject") != null) {
 			emailSubject = params.get("emailSubject").getValue();
@@ -64,6 +65,9 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 			} catch (Exception e) {
 
 			}
+		}
+		if(params.get(("customHeaders")) != null && params.get("customHeaders").getValue()!=null){
+			customHeaders = params.get("customHeaders").getValue();
 		}
 
 		final Set<User> requiredApprovers = new HashSet<>();
@@ -150,7 +154,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 
 			final String[] emailsToSend = emails.toArray(new String[emails.size()]);
 			processor.setWorkflowMessage(emailSubject);
-			WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
+			WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml, customHeaders);
 		}
 
 		processor.getContextMap().put("type", WorkflowHistoryType.APPROVAL);
@@ -172,7 +176,8 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 					paramList.add(new MultiEmailParameter("approvers", "User IDs or Emails", null, true));
 					paramList.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "Multiple Approval Required", false));
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
-
+					paramList.add(new WorkflowActionletParameter("customHeaders",
+							"Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
 				}
 			}
 		}
