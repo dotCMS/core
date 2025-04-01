@@ -81,6 +81,11 @@ public class ContentImportParams extends Validated {
     @Override
     public void checkValid() {
         super.checkValid();
+
+        if (jsonForm == null || jsonForm.isEmpty()) {
+            throw new ValidationException("The form data is required.");
+        }
+
         if (contentDisposition == null || contentDisposition.getFileName() == null) {
             throw new ValidationException("The file must have a valid file name.");
         }

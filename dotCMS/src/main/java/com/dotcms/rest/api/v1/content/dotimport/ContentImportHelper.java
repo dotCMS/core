@@ -311,7 +311,12 @@ public class ContentImportHelper {
 
         final var jsonForm = params.getJsonForm();
 
-        final Map<String, Object> jobParameters = JsonUtil.getJsonFromString(jsonForm);
+        final Map<String, Object> jobParameters;
+        if (null != jsonForm) {
+            jobParameters = JsonUtil.getJsonFromString(jsonForm);
+        } else {
+            jobParameters = new HashMap<>();
+        }
 
         jobParameters.put("cmd", command);
         jobParameters.put("userId", user.getUserId());

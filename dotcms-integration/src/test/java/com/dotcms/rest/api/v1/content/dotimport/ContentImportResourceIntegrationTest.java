@@ -454,13 +454,13 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws ValidationException when attempting to import content without setting the file
      */
     @Test
-    public void test_import_content_missing_file() throws JsonProcessingException {
+    public void test_import_content_missing_file() throws IOException, DotDataException {
         ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, null);
 
         ContentImportParams params = new ContentImportParams();
         params.setJsonForm(mapper.writeValueAsString(form));
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
+        assertBadRequestResponse(importResource.importContent(request, response, params));
     }
 
 
@@ -474,13 +474,13 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws ValidationException when attempting to import content without setting the file
      */
     @Test
-    public void test_import_content_validate_missing_file() throws JsonProcessingException {
+    public void test_import_content_validate_missing_file() throws IOException, DotDataException {
         ContentImportForm form = createContentImportForm(contentType.name(), String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, null);
 
         ContentImportParams params = new ContentImportParams();
         params.setJsonForm(mapper.writeValueAsString(form));
 
-        assertThrows(ValidationException.class, () -> importResource.validateContentImport(request, response, params));
+        assertBadRequestResponse(importResource.validateContentImport(request, response, params));
     }
 
 
@@ -521,12 +521,12 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws ValidationException when attempting to import content without setting form data
      */
     @Test
-    public void test_import_content_missing_form() throws IOException {
+    public void test_import_content_missing_form() throws IOException, DotDataException {
         ContentImportParams params = new ContentImportParams();
         params.setFileInputStream(new FileInputStream(csvFile));
         params.setContentDisposition(createContentDisposition(csvFile.getName()));
 
-        assertThrows(ValidationException.class, () -> importResource.importContent(request, response, params));
+        assertBadRequestResponse(importResource.importContent(request, response, params));
     }
 
 
@@ -540,12 +540,12 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      * @throws ValidationException when attempting to import content without setting form data
      */
     @Test
-    public void test_import_content_validate_missing_form() throws IOException {
+    public void test_import_content_validate_missing_form() throws IOException, DotDataException {
         ContentImportParams params = new ContentImportParams();
         params.setFileInputStream(new FileInputStream(csvFile));
         params.setContentDisposition(createContentDisposition(csvFile.getName()));
 
-        assertThrows(ValidationException.class, () -> importResource.validateContentImport(request, response, params));
+        assertBadRequestResponse(importResource.validateContentImport(request, response, params));
     }
 
     private void validateJobPaginatedResult(ResponseEntityView<JobViewPaginatedResult> result, long expectedTotalJobs) {
