@@ -24,6 +24,7 @@ import { ContainerNotFoundComponent } from './components/container-not-found/con
 import { EmptyContainerComponent } from './components/empty-container/empty-container.component';
 
 import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms-context.service';
+import { ContentletComponent } from '../../components/contentlet/contentlet.component';
 
 /**
  * This component renders a container with all its content using the layout provided by dotCMS Page API.
@@ -35,7 +36,7 @@ import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms
 @Component({
     selector: 'dotcms-container',
     standalone: true,
-    imports: [ContainerNotFoundComponent, EmptyContainerComponent],
+    imports: [ContainerNotFoundComponent, EmptyContainerComponent, ContentletComponent],
     template: `
         @if (!containerData()) {
             <dotcms-container-not-found [identifier]="container.identifier" />
