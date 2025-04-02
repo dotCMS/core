@@ -119,7 +119,7 @@ export class DotUveToolbarComponent {
 
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
-        const date = untracked(() =>this.$pageParams().publishDate)
+        const date = untracked(() => this.$pageParams().publishDate)
             ? new Date(untracked(() => this.$pageParams().publishDate))
             : new Date();
 
@@ -143,8 +143,6 @@ export class DotUveToolbarComponent {
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
         const publishDateUTC = this.convertirAUTC(publishDate);
-
-        console.log('publishDateUTC', publishDateUTC);
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
@@ -261,16 +259,16 @@ export class DotUveToolbarComponent {
             rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
                 this.#personalizeService
-                .despersonalized(persona.pageId, persona.keyTag)
-                .subscribe(() => {
-                    this.$personaSelector().fetchPersonas();
+                    .despersonalized(persona.pageId, persona.keyTag)
+                    .subscribe(() => {
+                        this.$personaSelector().fetchPersonas();
 
-                    if (persona.selected) {
-                        this.#store.loadPageAsset({
-                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                        });
-                    }
-                }); // This does a take 1 under the hood
+                        if (persona.selected) {
+                            this.#store.loadPageAsset({
+                                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                            });
+                        }
+                    }); // This does a take 1 under the hood
             }
         });
     }
@@ -340,26 +338,26 @@ export class DotUveToolbarComponent {
         });
 
         this.#dotContentletLockerService
-        .unlock(inode)
-        .pipe(
-            tapResponse({
-                next: () => {
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-                        detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
-                    });
-                },
-                error: () => {
-                    this.#messageService.add({
-                        severity: 'error',
-                        summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-                        detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
-                    });
-                }
-            })
-        )
-        .subscribe(() => this.#store.reloadCurrentPage());
+            .unlock(inode)
+            .pipe(
+                tapResponse({
+                    next: () => {
+                        this.#messageService.add({
+                            severity: 'success',
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
+                        });
+                    },
+                    error: () => {
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                            detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
+                        });
+                    }
+                })
+            )
+            .subscribe(() => this.#store.reloadCurrentPage());
     }
 
     /**
@@ -382,15 +380,17 @@ export class DotUveToolbarComponent {
         const milisegundos = fecha.getMilliseconds();
 
         // Crear nueva fecha UTC con la misma fecha y hora local
-        const fechaUTC = new Date(Date.UTC(
-            fecha.getFullYear(),
-            fecha.getMonth(),
-            fecha.getDate(),
-            horas,
-            minutos,
-            segundos,
-            incluirMilisegundos ? milisegundos : 0
-        ));
+        const fechaUTC = new Date(
+            Date.UTC(
+                fecha.getFullYear(),
+                fecha.getMonth(),
+                fecha.getDate(),
+                horas,
+                minutos,
+                segundos,
+                incluirMilisegundos ? milisegundos : 0
+            )
+        );
 
         // Devolver en formato ISO 8601
         const isoString = fechaUTC.toISOString();
@@ -398,5 +398,4 @@ export class DotUveToolbarComponent {
         // Opcionalmente eliminar milisegundos
         return incluirMilisegundos ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
     }
-
 }

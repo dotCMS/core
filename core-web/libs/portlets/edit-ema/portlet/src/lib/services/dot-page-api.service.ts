@@ -1,13 +1,12 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-
 import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
+
 import { graphqlToPageEntity } from '@dotcms/client';
 import { Site } from '@dotcms/dotcms-js';
-
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
@@ -112,10 +111,10 @@ export class DotPageApiService {
 
         // Pasar los headers como parte de las opciones
         return this.http
-        .get<{
-            entity: DotPageApiResponse;
-        }>(`/api/v1/page/${pageType}/${pageURL}`, { headers })
-        .pipe(pluck('entity'));
+            .get<{
+                entity: DotPageApiResponse;
+            }>(`/api/v1/page/${pageType}/${pageURL}`, { headers })
+            .pipe(pluck('entity'));
     }
 
     /**
