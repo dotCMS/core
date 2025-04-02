@@ -86,6 +86,9 @@ public class ContentImportParams extends Validated {
             throw new ValidationException("The form data is required.");
         }
 
+        if (fileInputStream == null) {
+            throw new ValidationException("The file is required.");
+        }
         if (contentDisposition == null || contentDisposition.getFileName() == null) {
             throw new ValidationException("The file must have a valid file name.");
         }
