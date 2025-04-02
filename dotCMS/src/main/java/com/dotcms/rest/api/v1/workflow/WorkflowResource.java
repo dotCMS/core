@@ -2867,6 +2867,10 @@ public class WorkflowResource {
         final Contentlet hydratedContentlet = Objects.nonNull(basicContentlet)?
                 new DotTransformerBuilder().contentResourceOptions(false)
                     .content(basicContentlet).build().hydrate().get(0): basicContentlet;
+
+        if (Objects.nonNull(basicContentlet.getVariantId())) {
+            hydratedContentlet.setVariantId(basicContentlet.getVariantId());
+        }
         return Response.ok(
                 new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
         ).build(); // 200
@@ -4626,6 +4630,9 @@ public class WorkflowResource {
 
         Contentlet contentlet = new Contentlet();
         contentlet.getMap().putAll(currentContentlet.getMap());
+        if (Objects.nonNull(currentContentlet.getVariantId())) {
+            contentlet.setVariantId(currentContentlet.getVariantId());
+        }
 
         if (null != fireActionForm && null != fireActionForm.getContentletFormData() && null != contentlet) {
 

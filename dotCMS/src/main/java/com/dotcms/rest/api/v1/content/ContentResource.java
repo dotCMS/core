@@ -322,7 +322,9 @@ public class ContentResource {
             ContentUtils.addRelationships(contentlet, user, mode,
                     languageId, depth, request, response);
         }
+        final String variant = contentlet.getVariantId();
         contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
+        contentlet.setVariantId(variant);
         return Response.ok(new ResponseEntityView<>(
                 WorkflowHelper.getInstance().contentletToMap(contentlet))).build();
     }

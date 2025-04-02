@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "4e56a84e-ecc4-4072-8e09-e0acb5691fb5",
+		"_postman_id": "56d008e8-8347-4256-9ea4-57c8a87b2c8a",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -19143,6 +19143,372 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "FireWorkflowWithVariant",
+			"item": [
+				{
+					"name": "CreateVariant",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"uuid\", guid());",
+									"",
+									"function guid() {",
+									"  function s4() {",
+									"    return Math.floor((1 + Math.random()) * 0x10000)",
+									"      .toString(16)",
+									"      .substring(1);",
+									"  }",
+									"  return 'variant-' + s4() + '-' + s4() + '-' + s4() + '-' +",
+									"    s4() + '-' + s4() + s4() + s4();",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"",
+									"pm.collectionVariables.set(\"variantName\", jsonData.entity.name);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\":\"{{uuid}}\",\n    \"description\":\"Generated Variant for testing\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/variants",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"variants"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateContentWithVariantDefault",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"",
+									"pm.collectionVariables.set(\"identifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestVariant\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "EditContentWithNewVariant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let variantName = pm.collectionVariables.get(\"variantName\");",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check variant\", function () {",
+									"    pm.expect(jsonData.entity.variant).to.be.eql(variantName);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestVariant2\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\",\n        \"variantId\":\"{{variantName}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/EDIT?indexPolicy=WAIT_FOR&identifier={{identifier}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"EDIT"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								},
+								{
+									"key": "identifier",
+									"value": "{{identifier}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "EditContentWithExistingVariant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let variantName = pm.collectionVariables.get(\"variantName\");",
+									"let identifier = pm.collectionVariables.get(\"identifier\");",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check variant\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.identifier).to.be.eql(identifier);",
+									"    pm.expect(jsonData.entity.title).to.be.eql(\"TestVariant3\");",
+									"    pm.expect(jsonData.entity.variant).to.be.eql(variantName);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"TestVariant3\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/EDIT?indexPolicy=WAIT_FOR&identifier={{identifier}}&variantName={{variantName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"EDIT"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								},
+								{
+									"key": "identifier",
+									"value": "{{identifier}}"
+								},
+								{
+									"key": "variantName",
+									"value": "{{variantName}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CheckByContentAPI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"let variantName = pm.collectionVariables.get(\"variantName\");",
+									"let identifier = pm.collectionVariables.get(\"identifier\");",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Check variant\", function () {",
+									"",
+									"    pm.expect(jsonData.entity.identifier).to.be.eql(identifier);",
+									"    pm.expect(jsonData.entity.title).to.be.eql(\"TestVariant3\");",
+									"    pm.expect(jsonData.entity.variant).to.be.eql(variantName);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/{{identifier}}?variantName={{variantName}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"{{identifier}}"
+							],
+							"query": [
+								{
+									"key": "variantName",
+									"value": "{{variantName}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -19264,6 +19630,10 @@
 		},
 		{
 			"key": "actionIdShorty",
+			"value": ""
+		},
+		{
+			"key": "variantName",
 			"value": ""
 		}
 	]
