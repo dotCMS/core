@@ -53,6 +53,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { convertLocalTimeToUTC } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -142,7 +143,7 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
-        const publishDateUTC = this.convertToUTC(publishDate);
+        const publishDateUTC = convertLocalTimeToUTC(publishDate);
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
@@ -358,44 +359,5 @@ export class DotUveToolbarComponent {
                 })
             )
             .subscribe(() => this.#store.reloadCurrentPage());
-    }
-
-    /**
-     * Converts a Date object to an ISO 8601 string in UTC, preserving the local time
-     * but expressing it in UTC timezone.
-     * @param {Date} date - Reference Date object
-     * @param {boolean} [includeMilliseconds=false] - If true, includes milliseconds
-     * @returns {string} String in ISO 8601 format with the date in UTC
-     */
-    convertToUTC(date: Date, includeMilliseconds = false) {
-        // Validate parameters
-        if (!(date instanceof Date)) {
-            throw new Error('Parameter must be a Date object');
-        }
-
-        // Extract local time from the date
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
-        const seconds = date.getSeconds();
-        const milliseconds = date.getMilliseconds();
-
-        // Create new UTC date with the same local date and time
-        const utcDate = new Date(
-            Date.UTC(
-                date.getFullYear(),
-                date.getMonth(),
-                date.getDate(),
-                hours,
-                minutes,
-                seconds,
-                includeMilliseconds ? milliseconds : 0
-            )
-        );
-
-        // Return in ISO 8601 format
-        const isoString = utcDate.toISOString();
-
-        // Optionally remove milliseconds
-        return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
     }
 }
