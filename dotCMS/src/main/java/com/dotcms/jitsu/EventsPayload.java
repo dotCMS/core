@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.dotcms.analytics.track.collectors.Collector.SESSION_NEW;
+
 /**
  * Payload for a JITSU Event
  *
@@ -43,6 +45,8 @@ public class EventsPayload {
             experimentJsonPayload.put("lookBackWindow", shortExperiment.lookBackWindow);
             experimentJsonPayload.put("isExperimentPage", shortExperiment.isExperimentPage);
             experimentJsonPayload.put("isTargetPage", shortExperiment.isTargetPage);
+
+            experimentJsonPayload.put(SESSION_NEW, false);
 
             eventPayloads.add(new EventPayload(experimentJsonPayload));
         }
