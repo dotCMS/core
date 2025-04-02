@@ -320,7 +320,6 @@ public class PageResource {
                         .init();
         final User user = initData.getUser();
 
-
         final Builder builder = ImmutablePageRenderParams.builder();
         builder.originalRequest(originalRequest)
                 .request(request)
@@ -354,10 +353,14 @@ public class PageResource {
         if (null != deviceInode){
             builder.deviceInode(deviceInode);
         }
-        TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601).ifPresentOrElse(
-                builder::timeMachineDate,
+        TimeMachineUtil.parseTimeMachineDate(timeMachineDateAsISO8601).ifPresentOrElse(instant -> {
+                    builder.timeMachineDate(instant);
+                    Logger.info(this, () -> String.format(
+                            "Parsed date in %s .",
+                            instant));
+                },
                 () -> Logger.debug(this, () -> String.format(
-                        "Date %s is not older than the grace window. Skipping Time Machine setup.",
+                        "Date %s is NOT older than the grace window. Skipping Time Machine setup.",
                         timeMachineDateAsISO8601))
         );
         return builder.build();

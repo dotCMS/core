@@ -11,7 +11,8 @@ import {
     Output,
     viewChild,
     Signal,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -118,9 +119,11 @@ export class DotUveToolbarComponent {
 
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
-        return this.$pageParams().publishDate
-            ? new Date(this.$pageParams().publishDate)
+        const date = untracked(() =>this.$pageParams().publishDate)
+            ? new Date(untracked(() => this.$pageParams().publishDate))
             : new Date();
+
+        return date;
     });
 
     readonly $pageInode = computed(() => {
@@ -139,11 +142,15 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
-        this.#store.trackUVECalendarChange({ selectedDate: publishDate.toISOString() });
+        const publishDateUTC = this.convertirAUTC(publishDate);
+
+        console.log('publishDateUTC', publishDateUTC);
+
+        this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
         this.#store.loadPageAsset({
             mode: UVE_MODE.LIVE,
-            publishDate: publishDate?.toISOString()
+            publishDate: publishDateUTC
         });
     }
 
@@ -254,16 +261,16 @@ export class DotUveToolbarComponent {
             rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
                 this.#personalizeService
-                    .despersonalized(persona.pageId, persona.keyTag)
-                    .subscribe(() => {
-                        this.$personaSelector().fetchPersonas();
+                .despersonalized(persona.pageId, persona.keyTag)
+                .subscribe(() => {
+                    this.$personaSelector().fetchPersonas();
 
-                        if (persona.selected) {
-                            this.#store.loadPageAsset({
-                                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                            });
-                        }
-                    }); // This does a take 1 under the hood
+                    if (persona.selected) {
+                        this.#store.loadPageAsset({
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                        });
+                    }
+                }); // This does a take 1 under the hood
             }
         });
     }
@@ -333,25 +340,63 @@ export class DotUveToolbarComponent {
         });
 
         this.#dotContentletLockerService
-            .unlock(inode)
-            .pipe(
-                tapResponse({
-                    next: () => {
-                        this.#messageService.add({
-                            severity: 'success',
-                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-                            detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
-                        });
-                    },
-                    error: () => {
-                        this.#messageService.add({
-                            severity: 'error',
-                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-                            detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
-                        });
-                    }
-                })
-            )
-            .subscribe(() => this.#store.reloadCurrentPage());
+        .unlock(inode)
+        .pipe(
+            tapResponse({
+                next: () => {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                        detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
+                    });
+                },
+                error: () => {
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('edit.ema.page.unlock'),
+                        detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
+                    });
+                }
+            })
+        )
+        .subscribe(() => this.#store.reloadCurrentPage());
     }
+
+    /**
+     * Convierte un objeto Date a un string ISO 8601 en UTC, preservando la hora local
+     * pero expresándola en zona horaria UTC.
+     * @param {Date} fecha - Objeto Date de referencia
+     * @param {boolean} [incluirMilisegundos=false] - Si es true, incluye milisegundos
+     * @returns {string} String en formato ISO 8601 con la fecha en UTC
+     */
+    convertirAUTC(fecha: Date, incluirMilisegundos = false) {
+        // Validar parámetros
+        if (!(fecha instanceof Date)) {
+            throw new Error('El parámetro debe ser un objeto Date');
+        }
+
+        // Extraer la hora local de la fecha
+        const horas = fecha.getHours();
+        const minutos = fecha.getMinutes();
+        const segundos = fecha.getSeconds();
+        const milisegundos = fecha.getMilliseconds();
+
+        // Crear nueva fecha UTC con la misma fecha y hora local
+        const fechaUTC = new Date(Date.UTC(
+            fecha.getFullYear(),
+            fecha.getMonth(),
+            fecha.getDate(),
+            horas,
+            minutos,
+            segundos,
+            incluirMilisegundos ? milisegundos : 0
+        ));
+
+        // Devolver en formato ISO 8601
+        const isoString = fechaUTC.toISOString();
+
+        // Opcionalmente eliminar milisegundos
+        return incluirMilisegundos ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
+    }
+
 }

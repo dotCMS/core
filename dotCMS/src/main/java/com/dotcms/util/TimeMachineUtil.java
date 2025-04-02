@@ -4,13 +4,18 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TimeZone;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -80,13 +85,23 @@ public final class TimeMachineUtil {
         if (Objects.isNull(dateAsISO8601)) {
             return Optional.empty();
         }
-        Instant instant = Try.of(() -> DateUtil.convertDate(dateAsISO8601))
-                .map(Date::toInstant)
-                .getOrElseThrow(e ->
-                        new IllegalArgumentException(
-                                String.format("Error Parsing date: %s", dateAsISO8601), e)
-                );
-        return isOlderThanGraceWindow(instant) ? Optional.of(instant) : Optional.empty();
+
+        try {
+             return Optional.of(Instant.parse(dateAsISO8601));
+        } catch (DateTimeParseException e) {
+            //Quietly ignore the exception and return an empty Optional
+            Logger.debug(TimeMachineUtil.class, "Failed to parse date: " + dateAsISO8601, e);
+        }
+
+        final Date date = Try.of(() -> DateUtil.convertDate(dateAsISO8601)).getOrNull();
+        if (Objects.isNull(date)) {
+            return Optional.empty();
+        }
+        Logger.info(TimeMachineUtil.class, "Parsed date: " + date);
+        Instant instant = date.toInstant();
+
+        return Optional.of(instant);
+                //isOlderThanGraceWindow(instant) ? Optional.of(instant) : Optional.empty();
     }
 
 
@@ -101,6 +116,8 @@ public final class TimeMachineUtil {
      */
     public static boolean isOlderThanGraceWindow(final Instant timeMachineDate) {
         final Instant graceWindowTime = Instant.now().plus(Duration.ofMinutes(FTM_GRACE_WINDOW_LIMIT.get()));
-        return timeMachineDate.isAfter(graceWindowTime);
+        final boolean after = timeMachineDate.isAfter(graceWindowTime);
+        Logger.info(TimeMachineUtil.class, "Time Machine Date is older than grace window: " + after);
+        return after;
     }
 }
