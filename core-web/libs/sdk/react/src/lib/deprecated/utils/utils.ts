@@ -1,6 +1,5 @@
-import { Block, BlockEditorState } from '@dotcms/uve/internal';
-
 import { ContainerData, DotCMSPageContext } from '../models';
+import { Block, BlockEditorState } from '../models/blocks.interface';
 
 const endClassMap: Record<number, string> = {
     1: 'col-end-1',

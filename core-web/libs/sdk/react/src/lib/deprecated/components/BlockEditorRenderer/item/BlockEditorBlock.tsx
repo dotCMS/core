@@ -1,6 +1,5 @@
-import { Blocks, ContentNode } from '@dotcms/uve/internal';
-
-import { CustomRenderer } from '../../../models/content-node.interface';
+import { Blocks } from '../../../models/blocks.interface';
+import { ContentNode, CustomRenderer } from '../../../models/content-node.interface';
 import { BlockQuote, CodeBlock } from '../blocks/Code';
 import { DotContent } from '../blocks/Contentlet';
 import { DotCMSImage } from '../blocks/Image';
