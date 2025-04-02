@@ -22,17 +22,18 @@ export interface ExistingContentState {
     contentTypeId: string;
     data: DotCMSContentlet[];
     status: ComponentStatus;
+    searchData: DotCMSContentlet[];
     selectionMode: SelectionMode | null;
     errorMessage: string | null;
     columns: Column[];
-    currentItemsIds: string[];
     pagination: {
         offset: number;
         currentPage: number;
         rowsPerPage: number;
         totalResults: number;
     };
-    selectedItems: DotCMSContentlet[] | DotCMSContentlet | null;
+    selectionItems: DotCMSContentlet[] | DotCMSContentlet | null;
+    showOnlySelected: boolean;
 }
 
 const paginationInitialState: ExistingContentState['pagination'] = {
@@ -45,13 +46,14 @@ const paginationInitialState: ExistingContentState['pagination'] = {
 const initialState: ExistingContentState = {
     contentTypeId: null,
     data: [],
+    searchData: [],
     columns: [],
     status: ComponentStatus.INIT,
     selectionMode: null,
     errorMessage: null,
     pagination: { ...paginationInitialState },
-    currentItemsIds: [],
-    selectedItems: null
+    selectionItems: null,
+    showOnlySelected: false
 };
 
 /**
@@ -73,30 +75,39 @@ export const ExistingContentStore = signalStore(
          */
         totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
         /**
-         * Computes the selected items based on the current items IDs.
-         * @returns {DotCMSContentlet[]} The selected items.
-         */
-        initSelectedItems: computed(() => {
-            const data = state.data();
-            const currentItemsIds = state.currentItemsIds();
-
-            return data.filter((item) => currentItemsIds.includes(item.inode));
-        }),
-        /**
          * Computes the items based on the selected items.
          * @returns {DotCMSContentlet[]} The items.
          */
-        items: computed(() => {
-            const selectedItems = state.selectedItems();
+        currentItems: computed(() => {
+            const selectionItems = state.selectionItems();
 
-            if (selectedItems) {
-                const isArray = Array.isArray(selectedItems);
-                const items = isArray ? selectedItems : [selectedItems];
-
-                return items;
+            if (!selectionItems) {
+                return [];
             }
 
-            return [];
+            const isArray = Array.isArray(selectionItems);
+
+            return isArray ? selectionItems : [selectionItems];
+        }),
+        /**
+         * Computes the filtered data based on the showOnlySelected state.
+         * @returns {DotCMSContentlet[]} The filtered data.
+         */
+        filteredData: computed(() => {
+            const showOnlySelected = state.showOnlySelected();
+            const data = showOnlySelected ? state.data() : state.searchData();
+
+            if (showOnlySelected) {
+                const selectionItems = state.selectionItems();
+                const isArray = Array.isArray(selectionItems);
+                const currentItemsIds = isArray
+                    ? selectionItems.map((item) => item.inode)
+                    : [selectionItems.inode];
+
+                return data.filter((item) => currentItemsIds.includes(item.inode));
+            }
+
+            return data;
         })
     })),
     withMethods((store) => {
@@ -110,13 +121,14 @@ export const ExistingContentStore = signalStore(
             initLoad: rxMethod<{
                 contentTypeId: string;
                 selectionMode: SelectionMode;
-                currentItemsIds: string[];
+                selectedItemsIds: string[];
             }>(
                 pipe(
                     tap(({ selectionMode }) =>
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             selectionMode,
+                            showOnlySelected: false,
                             pagination: { ...paginationInitialState }
                         })
                     ),
@@ -129,16 +141,25 @@ export const ExistingContentStore = signalStore(
                         }
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
-                    switchMap(({ contentTypeId, currentItemsIds }) =>
+                    switchMap(({ contentTypeId, selectedItemsIds }) =>
                         relationshipFieldService.getColumnsAndContent(contentTypeId).pipe(
                             tapResponse({
                                 next: ([columns, searchResponse]) => {
+                                    const data = searchResponse.contentlets;
+                                    const selectionItems =
+                                        selectedItemsIds.length > 0
+                                            ? data.filter((item) =>
+                                                  selectedItemsIds.includes(item.inode)
+                                              )
+                                            : [];
+
                                     patchState(store, {
                                         contentTypeId,
                                         columns,
-                                        data: searchResponse.contentlets,
+                                        data,
+                                        searchData: data,
                                         status: ComponentStatus.LOADED,
-                                        currentItemsIds,
+                                        selectionItems,
                                         pagination: {
                                             ...store.pagination(),
                                             totalResults: searchResponse.totalResults
@@ -190,8 +211,18 @@ export const ExistingContentStore = signalStore(
              * Sets the selected items in the state.
              * @param items The items to set as selected.
              */
-            setSelectedItems: (items: DotCMSContentlet[] | DotCMSContentlet | null) => {
-                patchState(store, { selectedItems: items });
+            setSelectionItems: (items: DotCMSContentlet[] | DotCMSContentlet) => {
+                patchState(store, {
+                    selectionItems: items
+                });
+            },
+            /**
+             * Toggles between showing all items or only selected items.
+             */
+            toggleShowOnlySelected: () => {
+                patchState(store, {
+                    showOnlySelected: !store.showOnlySelected()
+                });
             },
             /**
              * Sets the offset and current page in the state.
@@ -243,7 +274,7 @@ export const ExistingContentStore = signalStore(
                             tapResponse({
                                 next: (data) => {
                                     patchState(store, {
-                                        data: data.contentlets,
+                                        searchData: data.contentlets,
                                         status: ComponentStatus.LOADED,
                                         pagination: {
                                             ...store.pagination(),

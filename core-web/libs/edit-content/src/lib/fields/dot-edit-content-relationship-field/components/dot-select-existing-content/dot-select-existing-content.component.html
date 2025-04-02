@@ -1,4 +1,4 @@
-@let data = store.data();
+@let data = store.filteredData();
 @let columns = store.columns();
 @let pagination = store.pagination();
 @let selectionMode = store.selectionMode();
@@ -14,7 +14,7 @@
             [columns]="columns"
             [value]="data"
             [selectionMode]="selectionMode"
-            [(selection)]="$selectedItems"
+            [(selection)]="$selectionItems"
             [loading]="store.isLoading()"
             [paginator]="data.length > pagination.rowsPerPage"
             [first]="pagination.offset"
@@ -30,6 +30,7 @@
                                 (onSearch)="store.search($event)"
                                 [isLoading]="store.isLoading()" />
                         </div>
+
                         <div class="flex-grow-1">
                             <p class="text-primary-500">
                                 {{
@@ -39,14 +40,17 @@
                             </p>
                         </div>
                     </div>
-                    @if (data.length > pagination.rowsPerPage) {
-                        <dot-pagination
-                            [currentPageReportLayout]="'left'"
-                            (nextPage)="store.nextPage()"
-                            (previousPage)="store.previousPage()"
-                            [totalPages]="store.totalPages()"
-                            [currentPage]="pagination.currentPage" />
-                    }
+                    <div class="flex align-items-center gap-2">
+                        <p-inputSwitch
+                            [ngModel]="store.showOnlySelected()"
+                            (onChange)="store.toggleShowOnlySelected()"
+                            data-testid="show-selected-switch" />
+                        <label
+                            class="text-primary-500 cursor-pointer"
+                            (click)="store.toggleShowOnlySelected()">
+                            {{ 'dot.file.relationship.dialog.show.selected.items' | dm }}
+                        </label>
+                    </div>
                 </div>
             </ng-template>
             <ng-template pTemplate="header" styleClass="relative" let-columns>

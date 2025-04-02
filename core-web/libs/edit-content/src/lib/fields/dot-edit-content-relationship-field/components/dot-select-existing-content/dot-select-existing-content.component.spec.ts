@@ -52,7 +52,8 @@ describe('DotSelectExistingContentComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'dot.file.relationship.dialog.apply.one.entry': 'Apply 1 entry',
-        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries'
+        'dot.file.relationship.dialog.apply.entries': 'Apply {0} entries',
+        'dot.file.relationship.dialog.show.selected.items': 'Show Selected Items'
     });
 
     const mockDialogConfig = {
@@ -96,7 +97,7 @@ describe('DotSelectExistingContentComponent', () => {
                 expect(spy).toHaveBeenCalledWith({
                     contentTypeId: 'test-content-type-id',
                     selectionMode: 'multiple',
-                    currentItemsIds: []
+                    selectedItemsIds: []
                 });
             });
         });
@@ -105,24 +106,24 @@ describe('DotSelectExistingContentComponent', () => {
     describe('Selected Items State', () => {
         it('should initialize selectedItems with store initialization', () => {
             spectator.flushEffects();
-            const initSelectedItems = store.initSelectedItems();
-            expect(spectator.component.$selectedItems()).toEqual(initSelectedItems);
+            const initSelectedItems = store.selectionItems();
+            expect(spectator.component.$selectionItems()).toEqual(initSelectedItems);
         });
 
         it('should update store selectedItems when $selectedItems changes', () => {
             const mockItems = [createFakeContentlet({ inode: '1' })];
 
-            spectator.component.$selectedItems.set(mockItems);
+            spectator.component.$selectionItems.set(mockItems);
             spectator.flushEffects();
 
-            expect(store.selectedItems()).toEqual(mockItems);
+            expect(store.selectionItems()).toEqual(mockItems);
         });
     });
 
     describe('Item Selection', () => {
         it('should return true when content is in selectedContent array', () => {
             const testContent = createFakeContentlet({ inode: '1' });
-            store.setSelectedItems([testContent]);
+            store.setSelectionItems([testContent]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
@@ -132,7 +133,7 @@ describe('DotSelectExistingContentComponent', () => {
         it('should return false when content is not in selectedContent array', () => {
             const testContent = createFakeContentlet({ inode: '123' });
             const differentContent = createFakeContentlet({ inode: '456' });
-            store.setSelectedItems([differentContent]);
+            store.setSelectionItems([differentContent]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
@@ -141,7 +142,7 @@ describe('DotSelectExistingContentComponent', () => {
 
         it('should return false when selectedContent is empty', () => {
             const testContent = createFakeContentlet({ inode: '123' });
-            store.setSelectedItems([]);
+            store.setSelectionItems([]);
 
             const result = spectator.component.checkIfSelected(testContent);
 
