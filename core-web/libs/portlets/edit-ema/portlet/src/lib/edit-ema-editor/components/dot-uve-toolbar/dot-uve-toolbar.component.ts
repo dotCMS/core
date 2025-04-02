@@ -142,7 +142,7 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
-        const publishDateUTC = this.convertirAUTC(publishDate);
+        const publishDateUTC = this.convertToUTC(publishDate);
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
@@ -361,41 +361,41 @@ export class DotUveToolbarComponent {
     }
 
     /**
-     * Convierte un objeto Date a un string ISO 8601 en UTC, preservando la hora local
-     * pero expresándola en zona horaria UTC.
-     * @param {Date} fecha - Objeto Date de referencia
-     * @param {boolean} [incluirMilisegundos=false] - Si es true, incluye milisegundos
-     * @returns {string} String en formato ISO 8601 con la fecha en UTC
+     * Converts a Date object to an ISO 8601 string in UTC, preserving the local time
+     * but expressing it in UTC timezone.
+     * @param {Date} date - Reference Date object
+     * @param {boolean} [includeMilliseconds=false] - If true, includes milliseconds
+     * @returns {string} String in ISO 8601 format with the date in UTC
      */
-    convertirAUTC(fecha: Date, incluirMilisegundos = false) {
-        // Validar parámetros
-        if (!(fecha instanceof Date)) {
-            throw new Error('El parámetro debe ser un objeto Date');
+    convertToUTC(date: Date, includeMilliseconds = false) {
+        // Validate parameters
+        if (!(date instanceof Date)) {
+            throw new Error('Parameter must be a Date object');
         }
 
-        // Extraer la hora local de la fecha
-        const horas = fecha.getHours();
-        const minutos = fecha.getMinutes();
-        const segundos = fecha.getSeconds();
-        const milisegundos = fecha.getMilliseconds();
+        // Extract local time from the date
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const seconds = date.getSeconds();
+        const milliseconds = date.getMilliseconds();
 
-        // Crear nueva fecha UTC con la misma fecha y hora local
-        const fechaUTC = new Date(
+        // Create new UTC date with the same local date and time
+        const utcDate = new Date(
             Date.UTC(
-                fecha.getFullYear(),
-                fecha.getMonth(),
-                fecha.getDate(),
-                horas,
-                minutos,
-                segundos,
-                incluirMilisegundos ? milisegundos : 0
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate(),
+                hours,
+                minutes,
+                seconds,
+                includeMilliseconds ? milliseconds : 0
             )
         );
 
-        // Devolver en formato ISO 8601
-        const isoString = fechaUTC.toISOString();
+        // Return in ISO 8601 format
+        const isoString = utcDate.toISOString();
 
-        // Opcionalmente eliminar milisegundos
-        return incluirMilisegundos ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
+        // Optionally remove milliseconds
+        return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
     }
 }

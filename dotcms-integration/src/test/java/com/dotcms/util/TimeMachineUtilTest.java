@@ -199,7 +199,7 @@ public class TimeMachineUtilTest {
     }
 
     /**
-     * Method to Test: {@link TimeMachineUtil#parseTimeMachineDate(String, boolean)}
+     * Method to Test: {@link TimeMachineUtil#parseTimeMachineDate(String)}
      * When: Test parsing a valid ISO date string without milliseconds
      * Should: Return a present {@link Optional} with the parsed date
      * @throws ParseException
@@ -207,7 +207,7 @@ public class TimeMachineUtilTest {
     @Test
     public void testParseTimeMachineDateWithoutMillis() throws ParseException {
         // Given: An ISO 8601 date string without milliseconds
-        String dateAsISO8601 = "2025-03-21T13:18:00Z";
+        String dateAsISO8601 = "2085-03-21T13:18:00Z";
 
         // When: Converting using DateUtil
         final Date date = DateUtil.convertDate(dateAsISO8601);
@@ -225,7 +225,7 @@ public class TimeMachineUtilTest {
         Instant instant = result.get();
         ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
 
-        assertDateTime(zdt, 2025, 3, 21, 13, 18, 0, 0);
+        assertDateTime(zdt, 2085, 3, 21, 13, 18, 0, 0);
 
         // And: The string representation should match the input
         assertEquals("String representation should match input",
@@ -233,7 +233,7 @@ public class TimeMachineUtilTest {
     }
 
     /**
-     * Method to Test: {@link TimeMachineUtil#parseTimeMachineDate(String, boolean)}
+     * Method to Test: {@link TimeMachineUtil#parseTimeMachineDate(String)}
      * When: Test parsing a valid ISO date string with milliseconds
      * Should: Return a present {@link Optional} with the parsed date
      * @throws ParseException
@@ -241,7 +241,7 @@ public class TimeMachineUtilTest {
     @Test
     public void testParseTimeMachineDateWithMillis() throws ParseException {
         // Given: An ISO 8601 date string with milliseconds
-        String dateAsISO8601 = "2025-03-21T19:45:57.746Z";
+        String dateAsISO8601 = "2085-03-21T19:45:57.746Z";
 
         // When: Converting using DateUtil
         final Date date = DateUtil.convertDate(dateAsISO8601);
@@ -259,7 +259,7 @@ public class TimeMachineUtilTest {
         Instant instant = result.get();
         ZonedDateTime zdt = instant.atZone(ZoneOffset.UTC);
 
-        assertDateTime(zdt, 2025, 3, 21, 19, 45, 57, 746);
+        assertDateTime(zdt, 2085, 3, 21, 19, 45, 57, 746);
 
         // And: The string representation should match the input
         assertEquals("String representation should match input",

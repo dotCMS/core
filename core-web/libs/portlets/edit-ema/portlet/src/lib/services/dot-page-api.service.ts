@@ -1,6 +1,6 @@
 import { EMPTY, Observable } from 'rxjs';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
@@ -99,21 +99,10 @@ export class DotPageApiService {
         const pageType = clientHost ? 'json' : 'render';
         const pageURL = getFullPageURL({ url: params.url, params });
 
-        // Obtener la zona horaria del cliente
-        const clientTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const timeZoneOffset = new Date().getTimezoneOffset();
-
-        // Crear los headers con la información de zona horaria
-        const headers = new HttpHeaders({
-            'X-Client-TimeZone': clientTimeZone, // Por ejemplo: "America/New_York"
-            'X-Client-TimeZone-Offset': timeZoneOffset.toString() // Offset en minutos
-        });
-
-        // Pasar los headers como parte de las opciones
         return this.http
             .get<{
                 entity: DotPageApiResponse;
-            }>(`/api/v1/page/${pageType}/${pageURL}`, { headers })
+            }>(`/api/v1/page/${pageType}/${pageURL}`)
             .pipe(pluck('entity'));
     }
 
