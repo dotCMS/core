@@ -733,10 +733,7 @@ describe('DotUveToolbarComponent', () => {
 
                 const date = new Date();
 
-                // Convert the date to ensure it's a proper Date instance
-                const receivedDate = new Date(date);
-
-                spectator.triggerEventHandler(calendar, 'ngModelChange', receivedDate);
+                spectator.triggerEventHandler(calendar, 'ngModelChange', date);
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
                     mode: UVE_MODE.LIVE,
