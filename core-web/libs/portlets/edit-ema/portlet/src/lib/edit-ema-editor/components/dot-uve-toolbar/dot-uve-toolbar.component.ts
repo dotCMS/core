@@ -120,11 +120,11 @@ export class DotUveToolbarComponent {
 
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
-        const date = untracked(() => this.$pageParams().publishDate)
-            ? new Date(untracked(() => this.$pageParams().publishDate))
-            : new Date();
+        const publishDate = untracked(() => this.$pageParams().publishDate);
 
-        return date;
+        const previewDate = publishDate ? new Date(publishDate) : new Date();
+
+        return previewDate;
     });
 
     readonly $pageInode = computed(() => {
