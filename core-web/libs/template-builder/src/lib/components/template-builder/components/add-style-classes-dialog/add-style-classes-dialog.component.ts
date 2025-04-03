@@ -13,20 +13,14 @@ import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocompl
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { JsonClassesService } from './services/json-classes.service';
 
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [
-        AutoCompleteModule,
-        FormsModule,
-        ButtonModule,
-        DotMessagePipe,
-        DotSelectItemDirective
-    ],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     providers: [JsonClassesService],
