@@ -88,7 +88,6 @@ The @dotcms/react package is compatible with the following browsers:
 | Chrome  | Latest 2 versions | TLS 1.2+ |
 | Edge    | Latest 2 versions | TLS 1.2+ |
 | Firefox | Latest 2 versions | TLS 1.2+ |
-| Safari  | Latest 2 versions | TLS 1.2+ |
 
 ## Components
 
@@ -196,7 +195,7 @@ A custom hook that handles the communication with the Universal View Editor (UVE
 
 #### Implementation
 
-```javascript
+```typescript
 import { useEffect, useState } from 'react';
 
 import { getUVEState, sendMessageToEditor, createUVESubscription} from '@dotcms/uve';
@@ -209,8 +208,9 @@ export const usePageAsset = (currentPageAsset) => {
             return;
         }
 
-        sendMessageToEditor({ action: DotCMSUVEAction.CLIENT_READY });
-        const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES,(pageAsset) => setPageAsset(pageAsset));
+        // Note: If using plain JavaScript instead of TypeScript, you can use the string literals directly
+        sendMessageToEditor({ action: DotCMSUVEAction.CLIENT_READY || "client-ready" }); 
+        const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES || "changes", (pageAsset) => setPageAsset(pageAsset));
 
         return () => {
             subscription.unsubscribe();
@@ -223,7 +223,7 @@ export const usePageAsset = (currentPageAsset) => {
 
 #### Usage
 
-```javascript
+```typescript
 // Import the hook from where you saved it in your project
 import { usePageAsset } from './hooks/usePageAsset';
 

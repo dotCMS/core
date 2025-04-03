@@ -85,7 +85,6 @@ The @dotcms/client package is compatible with the following browsers:
 | Chrome  | Latest 2 versions | TLS 1.2+ |
 | Edge    | Latest 2 versions | TLS 1.2+ |
 | Firefox | Latest 2 versions | TLS 1.2+ |
-| Safari  | Latest 2 versions | TLS 1.2+ |
 
 ## Usage
 
