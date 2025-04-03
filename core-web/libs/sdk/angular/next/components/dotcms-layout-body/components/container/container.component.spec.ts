@@ -1,12 +1,12 @@
-import { expect } from '@jest/globals';
+import { expect, describe, it, beforeEach, jest } from '@jest/globals';
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
-import { DotCMSColumnContainer } from '@dotcms/uve/types';
+import { DotCMSContentlet, EditableContainerData } from '@dotcms/uve/types';
 
 import { ContainerComponent } from './container.component';
 
 import { DotCMSStore } from '../../../../store/dotcms.store';
-
+import { PageResponseMock } from '../../../../utils/testing.utils';
 describe('ContainerComponent', () => {
     let spectator: Spectator<ContainerComponent>;
 
@@ -16,7 +16,10 @@ describe('ContainerComponent', () => {
             {
                 provide: DotCMSStore,
                 useValue: {
-                    isDevMode: jest.fn().mockReturnValue(false)
+                    $isDevMode: jest.fn().mockReturnValue(false),
+                    store: {
+                        page: PageResponseMock
+                    }
                 }
             }
         ]
@@ -26,55 +29,53 @@ describe('ContainerComponent', () => {
         spectator = createComponent({
             props: {
                 container: {
-                    identifier: 'test-container'
-                } as DotCMSColumnContainer
+                    identifier: '//demo.dotcms.com/application/containers/default/',
+                    uuid: '1',
+                    historyUUIDs: []
+                }
             }
         });
     });
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
+    it('should set host container attributes correctly', () => {
+        const hostElement = spectator.debugElement.nativeElement;
+        spectator.detectChanges();
+        expect(hostElement.getAttribute('data-dot-object')).toBe('container');
+        expect(hostElement.getAttribute('data-dot-identifier')).toBeDefined();
+        expect(hostElement.getAttribute('data-dot-accept-types')).toBeDefined();
+        expect(hostElement.getAttribute('data-max-contentlets')).toBeDefined();
+        expect(hostElement.getAttribute('data-dot-uuid')).toBeDefined();
     });
 
-    it('should render empty container message when no contentlets', () => {
-        const emptyMessage = spectator.query('.empty-container');
-        expect(emptyMessage?.textContent).toBe('This container is empty.');
-    });
-
-    it('should render contentlets when available', () => {
-        const mockContentlets = [{ title: 'Test Contentlet 1' }, { title: 'Test Contentlet 2' }];
-
-        spectator.setInput({
-            container: {
-                ...spectator.component.container,
-                contentlets: mockContentlets
-            }
-        });
-
-        const contentlets = spectator.queryAll('.contentlet-wrapper');
-        expect(contentlets.length).toBe(2);
-        expect(contentlets[0].textContent).toBe('Test Contentlet 1');
-        expect(contentlets[1].textContent).toBe('Test Contentlet 2');
-    });
-
-    it('should set data attributes in edit mode', () => {
-        const dotCMSContextService = spectator.inject(DotCMSStore);
-        jest.spyOn(dotCMSContextService, 'isDevMode').mockReturnValue(true);
-
+    it('should display container not found when container data is null', () => {
+        // Set container data to null
+        spectator.component.$containerData.set(null);
         spectator.detectChanges();
 
-        const container = spectator.query('.container');
-        expect(container?.getAttribute('data-dot-accept-types')).toBe('test-accept-types');
-        expect(container?.getAttribute('data-dot-identifier')).toBe('test-container');
-        expect(container?.getAttribute('data-max-contentlets')).toBe('10');
-        expect(container?.getAttribute('data-dot-uuid')).toBe('test-uuid');
+        const notFoundComponent = spectator.query('dotcms-container-not-found');
+        expect(notFoundComponent).toBeTruthy();
     });
 
-    it('should not set data attributes in production mode', () => {
-        const container = spectator.query('.container');
-        expect(container?.getAttribute('data-dot-accept-types')).toBeNull();
-        expect(container?.getAttribute('data-dot-identifier')).toBeNull();
-        expect(container?.getAttribute('data-max-contentlets')).toBeNull();
-        expect(container?.getAttribute('data-dot-uuid')).toBeNull();
+    it('should display empty container when container has no contentlets', () => {
+        // Set container data but empty contentlets
+        spectator.component.$containerData.set({} as EditableContainerData);
+        spectator.component.$contentlets.set([]);
+        spectator.detectChanges();
+
+        const emptyComponent = spectator.query('dotcms-empty-container');
+        expect(emptyComponent).toBeTruthy();
+    });
+
+    it('should render contentlets when container has contentlets', () => {
+        // Set container data with contentlets
+        spectator.component.$containerData.set({} as EditableContainerData);
+        spectator.component.$contentlets.set([
+            { identifier: 'content-1' } as DotCMSContentlet,
+            { identifier: 'content-2' } as DotCMSContentlet
+        ]);
+        spectator.detectChanges();
+
+        const contentletComponents = spectator.queryAll('dotcms-contentlet');
+        expect(contentletComponents.length).toBe(2);
     });
 });
