@@ -74,7 +74,7 @@ Or using Yarn:
 
 ```bash
 yarn add @dotcms/client
-```
+
 
 ## Browser Compatibility
 
@@ -136,7 +136,6 @@ const { page, content } = await client.page.get('/about-us', {
     mode: 'PREVIEW_MODE',            // ADMIN_MODE, PREVIEW_MODE, or LIVE_MODE (optional)
     personaId: '123',                // Persona ID for personalization (optional)
     device: 'smartphone',            // Device for responsive rendering (optional)
-    viewAs: 'ARCHIVE',               // How to view the page: DEFAULT, LIVE, ARCHIVE (optional)
     graphql: {                       // Extend page and/or content response (optional)
         page: `
             containers {
@@ -149,16 +148,25 @@ const { page, content } = await client.page.get('/about-us', {
             }
         `,
         content: {
-            nav: `
-                query {
-                    nav {
-                        identifier
-                        path
-                        label
-                    }
+            blogPosts: `
+                search(query: "+contentType:Blog", limit: 3) {
+                    title
+                    identifier
+                    ...blogFragment
                 }
             `,
-        }
+          },
+        fragments: [
+            `
+                fragment blogFragment on Blog {
+                    urlTitle
+                    blogContent {
+                        json
+                    }
+                }
+
+            `
+        ]
     }
 });
 
@@ -166,7 +174,7 @@ const { page, content } = await client.page.get('/about-us', {
 console.log(page.containers);
 
 // Access content data
-console.log(content.nav);
+console.log(content.blogPosts);
 ```
 
 ### Fetching Navigation
