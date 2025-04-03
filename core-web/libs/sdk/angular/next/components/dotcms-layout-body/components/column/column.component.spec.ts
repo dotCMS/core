@@ -1,13 +1,17 @@
 import { expect } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 
 import { ColumnComponent } from './column.component';
+
+import { ContainerComponent } from '../container/container.component';
 
 describe('ColumnComponent', () => {
     let spectator: Spectator<ColumnComponent>;
 
     const createComponent = createComponentFactory({
-        component: ColumnComponent
+        component: ColumnComponent,
+        imports: [MockComponent(ContainerComponent)]
     });
 
     beforeEach(() => {
@@ -48,6 +52,8 @@ describe('ColumnComponent', () => {
                 styleClass: ''
             }
         });
+
+        spectator.detectChanges();
 
         const containers = spectator.queryAll('dotcms-container');
         expect(containers.length).toBe(2);

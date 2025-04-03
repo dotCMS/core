@@ -1,10 +1,16 @@
 import { computed, Injectable, signal } from '@angular/core';
 
 import { getUVEState } from '@dotcms/uve';
-import { DEVELOPMENT_MODE } from '@dotcms/uve/internal';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '@dotcms/uve/internal';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSPageStore } from '../models';
+
+export const EMPTY_DOTCMS_PAGE_STORE: DotCMSPageStore = {
+    page: {} as DotCMSPageAsset,
+    components: {},
+    mode: PRODUCTION_MODE
+};
 
 /**
  *
@@ -18,7 +24,7 @@ import { DotCMSPageStore } from '../models';
     providedIn: 'root'
 })
 export class DotCMSStore {
-    private $store = signal<DotCMSPageStore | null>(null);
+    private $store = signal<DotCMSPageStore>(EMPTY_DOTCMS_PAGE_STORE);
 
     /**
      * @description Get the store
@@ -26,7 +32,7 @@ export class DotCMSStore {
      * @type {DotCMSPageStore}
      * @memberof DotCMSStore
      */
-    get store(): DotCMSPageStore | null {
+    get store(): DotCMSPageStore {
         return this.$store();
     }
 

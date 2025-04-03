@@ -1,7 +1,5 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { DotCMSPageRendererMode } from '@dotcms/uve/types';
-
 import { PageErrorMessageComponent } from './page-error-message.component';
 
 import { DotCMSStore } from '../../../../store/dotcms.store';
@@ -23,9 +21,6 @@ describe('PageErrorMessageComponent', () => {
         } as unknown as jest.Mocked<DotCMSStore>;
 
         spectator = createComponent({
-            props: {
-                mode: 'production' as DotCMSPageRendererMode
-            },
             providers: [
                 {
                     provide: DotCMSStore,
