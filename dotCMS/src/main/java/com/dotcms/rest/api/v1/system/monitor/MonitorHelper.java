@@ -150,7 +150,7 @@ class MonitorHelper {
                 .localFSHealthy(isLocalFileSystemHealthy())
                 .dBHealthy(isDBHealthy())
                 .esHealthy(canConnectToES())
-                .telemetry(canConnectToTelemetry())
+                .telemetry(Try.of(()->canConnectToTelemetry()).getOrElse(false))
                 .contentAnalytics(isContentAnalytics(request))
                 .build();
         // cache a healthy response
@@ -228,6 +228,9 @@ class MonitorHelper {
      */
     boolean canConnectToTelemetry() {
 
+        if (!UtilMethods.isSet(telemetryEndPointUrl.get())) {
+            return false;
+        }
         return CircuitBreakerUrl.builder()
                 .setUrl(telemetryEndPointUrl.get())
                 .doPing()
