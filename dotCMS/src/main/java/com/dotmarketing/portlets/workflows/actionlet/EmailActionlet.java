@@ -57,8 +57,6 @@ public class EmailActionlet extends WorkFlowActionlet {
                 "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
         params.add(new WorkflowActionletParameter("attachment5",
                 "Path or field for attachment <br>(e.g./images/logo.png or 'fileAsset')", "", false));
-        params.add(new WorkflowActionletParameter("customHeaders", 
-                "Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
         params.add(WorkflowParameter.CUSTOM_HEADERS.toWorkflowActionletParameter());
 
 
