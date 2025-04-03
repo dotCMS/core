@@ -20,7 +20,7 @@ export interface DotCMSPageContext {
      * @type {DotCMSPageAsset}
      * @memberof DotCMSPageContext
      */
-    pageAsset: DotCMSPageAsset;
+    page: DotCMSPageAsset;
 
     /**
      * Represents the dynamic components of the page for each Content Type.

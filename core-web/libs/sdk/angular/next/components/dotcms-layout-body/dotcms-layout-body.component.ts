@@ -27,7 +27,7 @@ import { DotCMSContextService } from '../../services/dotcms-context/dotcms-conte
     imports: [PageErrorMessageComponent, RowComponent],
     providers: [DotCMSContextService],
     template: `
-        @if (!pageAsset) {
+        @if (!page) {
             <dotcms-page-error-message [mode]="mode"></dotcms-page-error-message>
         } @else {
             @for (row of $rows(); track row.identifier) {
@@ -39,17 +39,17 @@ import { DotCMSContextService } from '../../services/dotcms-context/dotcms-conte
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCMSLayoutBodyComponent implements OnChanges {
-    @Input({ required: true }) pageAsset!: DotCMSPageAsset;
+    @Input({ required: true }) page!: DotCMSPageAsset;
     @Input({ required: true }) components: DotCMSPageComponent = {};
     @Input() mode: DotCMSPageRendererMode = 'production';
 
     #dotCMSContextService = inject(DotCMSContextService);
 
-    $rows = computed(() => this.pageAsset?.layout.body?.rows ?? []);
+    $rows = computed(() => this.page?.layout?.body?.rows ?? []);
 
     ngOnChanges() {
         this.#dotCMSContextService.setContext({
-            pageAsset: this.pageAsset,
+            page: this.page,
             components: this.components,
             mode: this.mode
         });

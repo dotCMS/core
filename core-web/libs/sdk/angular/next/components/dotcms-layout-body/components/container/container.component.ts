@@ -79,14 +79,14 @@ export class ContainerComponent implements OnChanges {
     @HostBinding('attr.data-dot-uuid') uuid: string | null = null;
 
     ngOnChanges() {
-        const { pageAsset } = this.#dotcmsContextService.context ?? {};
+        const { page } = this.#dotcmsContextService.context ?? {};
 
-        if (!pageAsset) {
+        if (!page) {
             return;
         }
 
-        this.$containerData.set(getContainersData(pageAsset, this.container));
-        this.$contentlets.set(getContentletsInContainer(pageAsset, this.container));
+        this.$containerData.set(getContainersData(page, this.container));
+        this.$contentlets.set(getContentletsInContainer(page, this.container));
 
         this.acceptTypes = this.dotAttributes()['data-dot-accept-types'];
         this.identifier = this.dotAttributes()['data-dot-identifier'];
