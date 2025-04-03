@@ -11,7 +11,7 @@ import { getUVEState } from '@dotcms/uve';
 import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '@dotcms/uve/internal';
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/uve/types';
 
-import { DotCMSStore } from './dotcms.store';
+import { DotCMSStore, EMPTY_DOTCMS_PAGE_STORE } from './dotcms.store';
 
 import { DotCMSPageStore } from '../models';
 import { PageResponseMock } from '../utils/testing.utils';
@@ -26,6 +26,10 @@ describe('DotCMSStore', () => {
         spectator = createService();
         service = spectator.service;
         jest.clearAllMocks();
+    });
+
+    it('should return the empty store', () => {
+        expect(service.store).toEqual(EMPTY_DOTCMS_PAGE_STORE);
     });
 
     it('should set and get store', () => {
