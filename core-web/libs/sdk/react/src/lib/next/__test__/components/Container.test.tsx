@@ -12,10 +12,21 @@ jest.mock('../../components/Contentlet/Contentlet', () => ({
     )
 }));
 
-jest.mock('../../utils', () => ({
+jest.mock('@dotcms/uve/internal', () => ({
     getContainersData: jest.fn(),
     getDotContainerAttributes: jest.fn(),
-    getContentletsInContainer: jest.fn()
+    getContentletsInContainer: jest.fn(),
+    EMPTY_CONTAINER_STYLE_REACT: {
+        width: '100%',
+        backgroundColor: '#ECF0FD',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: '#030E32',
+        height: '10rem'
+    },
+    DEVELOPMENT_MODE: 'development',
+    PRODUCTION_MODE: 'production'
 }));
 
 const DEFAULT_CONTEXT_VALUE: DotCMSPageContextProps = {

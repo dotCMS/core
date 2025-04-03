@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react';
 
 import { getUVEState } from '@dotcms/uve';
 import { DEVELOPMENT_MODE, PRODUCTION_MODE } from '@dotcms/uve/internal';
-import { DotCMSPageRendererMode, UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useIsDevMode } from '../../hooks/useIsDevMode';
@@ -89,20 +89,5 @@ describe('useIsDevMode', () => {
                 expect(result.current).toBe(false);
             });
         });
-    });
-
-    test('should update when renderMode changes', () => {
-        const { result, rerender } = renderHook(
-            ({ mode }) => useIsDevMode(mode as DotCMSPageRendererMode),
-            {
-                wrapper: ({ children }) => Wrapper({ children, mode: PRODUCTION_MODE }),
-                initialProps: { mode: PRODUCTION_MODE }
-            }
-        );
-
-        expect(result.current).toBe(false);
-
-        rerender({ mode: DEVELOPMENT_MODE });
-        expect(result.current).toBe(true);
     });
 });

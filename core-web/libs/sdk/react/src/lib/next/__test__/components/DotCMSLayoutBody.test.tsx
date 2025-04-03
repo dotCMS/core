@@ -12,6 +12,12 @@ jest.mock('../../components/Row/Row', () => ({
     Row: ({ row }: { row: any }) => <div data-testid="row">Mocked Row - {row.content}</div>
 }));
 
+jest.mock('@dotcms/uve/internal', () => ({
+    ...jest.requireActual('@dotcms/uve/internal'),
+    DEVELOPMENT_MODE: 'development',
+    PRODUCTION_MODE: 'production'
+}));
+
 describe('DotCMSLayoutBody', () => {
     describe('With valid layout.body', () => {
         test('should render all rows when the page has a valid layout.body', () => {
@@ -45,6 +51,7 @@ describe('DotCMSLayoutBody', () => {
             render(
                 <DotCMSLayoutBody page={MOCK_INVALID_PAGE} components={{}} mode="development" />
             );
+
             const errorMessage = screen.getByTestId('error-message');
             expect(errorMessage).toBeInTheDocument();
         });

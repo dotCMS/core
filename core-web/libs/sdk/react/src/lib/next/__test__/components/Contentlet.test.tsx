@@ -19,8 +19,10 @@ jest.mock('../../hooks/useCheckVisibleContent', () => ({
     useCheckVisibleContent: jest.fn(() => false)
 }));
 
-jest.mock('../../utils', () => ({
-    getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' }))
+jest.mock('@dotcms/uve/internal', () => ({
+    getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' })),
+    DEVELOPMENT_MODE: 'development',
+    PRODUCTION_MODE: 'production'
 }));
 
 describe('Contentlet', () => {
