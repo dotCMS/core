@@ -2868,7 +2868,7 @@ public class WorkflowResource {
                 new DotTransformerBuilder().contentResourceOptions(false)
                     .content(basicContentlet).build().hydrate().get(0): basicContentlet;
 
-        if (Objects.nonNull(basicContentlet.getVariantId())) {
+        if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
         }
         return Response.ok(

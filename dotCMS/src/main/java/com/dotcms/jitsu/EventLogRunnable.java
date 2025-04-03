@@ -94,7 +94,12 @@ public class EventLogRunnable implements Runnable {
 
         for (EventPayload payload : eventPayload.get().payloads()) {
 
+            Logger.debug(EventLogRunnable.class, "Jitsu Event Payload to be sent: " + payload);
+
             sendEvent(builder, payload).ifPresent(response -> {
+                Logger.debug(EventLogRunnable.class, "Jitsu Event Response: " + response.getStatusCode() +
+                 ", message: " + response.getResponse());
+
                 if (response.getStatusCode() != HttpStatus.SC_OK) {
                     Logger.warn(
                             this.getClass(),
