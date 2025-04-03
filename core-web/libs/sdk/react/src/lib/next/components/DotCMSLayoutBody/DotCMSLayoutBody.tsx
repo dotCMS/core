@@ -34,10 +34,6 @@ export const DotCMSLayoutBody = ({
 }: DotCMSLayoutBodyProps) => {
     const dotCMSPageBody = page?.layout?.body;
 
-    if (!dotCMSPageBody) {
-        return <ErrorMessage mode={mode} />;
-    }
-
     const contextValue = {
         pageAsset: page,
         userComponents: components,
@@ -46,9 +42,11 @@ export const DotCMSLayoutBody = ({
 
     return (
         <DotCMSPageContext.Provider value={contextValue}>
-            {dotCMSPageBody.rows.map((row, index) => (
-                <Row key={index} row={row} />
-            ))}
+            {dotCMSPageBody ? (
+                dotCMSPageBody.rows.map((row, index) => <Row key={index} row={row} />)
+            ) : (
+                <ErrorMessage />
+            )}
         </DotCMSPageContext.Provider>
     );
 };

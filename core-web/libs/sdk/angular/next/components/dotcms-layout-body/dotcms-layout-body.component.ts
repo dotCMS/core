@@ -28,7 +28,7 @@ import { DotCMSStore } from '../../store/dotcms.store';
     providers: [DotCMSStore],
     template: `
         @if (!page) {
-            <dotcms-page-error-message [mode]="mode"></dotcms-page-error-message>
+            <dotcms-page-error-message />
         } @else {
             @for (row of $rows(); track row.identifier) {
                 <dotcms-row [row]="row" />

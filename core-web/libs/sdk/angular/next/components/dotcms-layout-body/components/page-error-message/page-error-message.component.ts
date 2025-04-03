@@ -1,13 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    inject,
-    Input,
-    OnChanges,
-    signal
-} from '@angular/core';
-
-import { DotCMSPageRendererMode } from '@dotcms/uve/types';
+import { ChangeDetectionStrategy, Component, inject, OnChanges } from '@angular/core';
 
 import { DotCMSStore } from '../../../../store/dotcms.store';
 
@@ -43,17 +34,11 @@ import { DotCMSStore } from '../../../../store/dotcms.store';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PageErrorMessageComponent implements OnChanges {
-    @Input() mode: DotCMSPageRendererMode = 'production';
-
     #dotCMSStore = inject(DotCMSStore);
 
-    $isDevMode = signal(false);
+    $isDevMode = this.#dotCMSStore.$isDevMode;
 
     ngOnChanges() {
         console.warn('Missing required layout.body property in page');
-
-        const isDevMode = this.#dotCMSStore.isDevMode(this.mode);
-
-        this.$isDevMode.set(isDevMode);
     }
 }

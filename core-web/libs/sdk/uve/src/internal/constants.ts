@@ -83,12 +83,27 @@ export const START_CLASS = 'col-start-';
  *
  * @internal
  */
-export const EMPTY_CONTAINER_STYLE = {
+export const EMPTY_CONTAINER_STYLE_REACT = {
     width: '100%',
     backgroundColor: '#ECF0FD',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+    color: '#030E32',
+    height: '10rem'
+};
+
+/**
+ * Empty container style
+ *
+ * @internal
+ */
+export const EMPTY_CONTAINER_STYLE_ANGULAR = {
+    width: '100%',
+    'background-color': '#ECF0FD',
+    display: 'flex',
+    'justify-content': 'center',
+    'align-items': 'center',
     color: '#030E32',
     height: '10rem'
 };

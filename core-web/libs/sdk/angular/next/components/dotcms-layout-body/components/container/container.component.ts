@@ -65,7 +65,7 @@ export class ContainerComponent implements OnChanges {
     $dotAttributes = computed<DotContainerAttributes>(() => {
         const containerData = this.$containerData();
 
-        if (!containerData || !this.#dotCMSStore.isDevMode()) {
+        if (!containerData || !this.#dotCMSStore.$isDevMode()) {
             return {} as DotContainerAttributes;
         }
 

@@ -1,7 +1,7 @@
 import { NgStyle } from '@angular/common';
-import { Component, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, inject, Input, OnInit } from '@angular/core';
 
-import { EMPTY_CONTAINER_STYLE } from '@dotcms/uve/internal';
+import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
 
 import { DotCMSStore } from '../../../../../../store/dotcms.store';
 
@@ -22,12 +22,10 @@ export class ContainerNotFoundComponent implements OnInit {
 
     #dotcmsContextService = inject(DotCMSStore);
 
-    $isDevMode = signal(false);
-    emptyContainerStyle = EMPTY_CONTAINER_STYLE;
+    $isDevMode = this.#dotcmsContextService.$isDevMode;
+    emptyContainerStyle = EMPTY_CONTAINER_STYLE_ANGULAR;
 
     ngOnInit() {
-        this.$isDevMode.set(this.#dotcmsContextService.isDevMode());
-
         if (this.$isDevMode()) {
             console.error(`Container with identifier ${this.identifier} not found`);
         }

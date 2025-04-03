@@ -56,7 +56,7 @@ export class ContentletComponent implements OnChanges {
     $contentlet = signal<DotCMSContentlet | null>(null);
     $UserComponent = signal<DynamicComponentEntity | null>(null);
     $UserNoComponent = signal<DynamicComponentEntity | null>(null);
-    $isDevMode = signal(false);
+    $isDevMode = this.#dotCMSStore.$isDevMode;
     $haveContent = signal(false);
     $style = computed(() =>
         this.$isDevMode() && this.$haveContent() ? { minHeight: '4rem' } : {}
@@ -79,7 +79,6 @@ export class ContentletComponent implements OnChanges {
 
     ngOnChanges() {
         this.$contentlet.set(this.contentlet);
-        this.$isDevMode.set(this.#dotCMSStore.isDevMode());
         this.setupComponents();
 
         this.identifier = this.$dotAttributes()['data-dot-identifier'];

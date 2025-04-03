@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { EMPTY_CONTAINER_STYLE } from '@dotcms/uve/internal';
+import { EMPTY_CONTAINER_STYLE_REACT } from '@dotcms/uve/internal';
 import { DotContainerAttributes } from '@dotcms/uve/types';
 
 import { useIsDevMode } from '../../hooks/useIsDevMode';
@@ -32,7 +32,7 @@ export const ContainerNotFound = ({ identifier }: { identifier: string }) => {
     }
 
     return (
-        <div data-testid="container-not-found" style={EMPTY_CONTAINER_STYLE}>
+        <div data-testid="container-not-found" style={EMPTY_CONTAINER_STYLE_REACT}>
             This container with identifier {identifier} was not found.
         </div>
     );
@@ -54,7 +54,7 @@ export const EmptyContainer = (dotAttributes: DotContainerAttributes) => {
     }
 
     return (
-        <div {...dotAttributes} style={EMPTY_CONTAINER_STYLE}>
+        <div {...dotAttributes} style={EMPTY_CONTAINER_STYLE_REACT}>
             <span data-testid="empty-container-message">This container is empty.</span>
         </div>
     );

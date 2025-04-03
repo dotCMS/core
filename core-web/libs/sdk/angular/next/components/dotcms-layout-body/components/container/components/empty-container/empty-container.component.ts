@@ -1,7 +1,7 @@
 import { NgStyle } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
-import { EMPTY_CONTAINER_STYLE } from '@dotcms/uve/internal';
+import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
 
 import { DotCMSStore } from '../../../../../../store/dotcms.store';
 
@@ -11,20 +11,16 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
     imports: [NgStyle],
     template: `
         @if ($isDevMode()) {
-            <div [ngStyle]="emptyContainerStyle">
+            <div [ngStyle]="emptyContainerStyle" data-testid="empty-container">
                 <span data-testid="empty-container-message">This container is empty.</span>
             </div>
         }
     `
 })
 export class EmptyContainerComponent {
-    emptyContainerStyle = EMPTY_CONTAINER_STYLE;
+    emptyContainerStyle = EMPTY_CONTAINER_STYLE_ANGULAR;
 
     #dotCMSStore = inject(DotCMSStore);
 
-    $isDevMode = signal(false);
-
-    ngOnInit() {
-        this.$isDevMode.set(this.#dotCMSStore.isDevMode());
-    }
+    $isDevMode = this.#dotCMSStore.$isDevMode;
 }

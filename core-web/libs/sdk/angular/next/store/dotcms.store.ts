@@ -1,8 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 
 import { getUVEState } from '@dotcms/uve';
 import { DEVELOPMENT_MODE } from '@dotcms/uve/internal';
-import { DotCMSPageRendererMode, UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSPageStore } from '../models';
 
@@ -40,22 +40,13 @@ export class DotCMSStore {
         this.$store.set(store);
     }
 
-    /**
-     *
-     * @description Check if the current mode is development
-     * @param {DotCMSPageRendererMode} mode
-     * @returns {boolean}
-     * @memberof DotCMSStore
-     */
-    isDevMode(mode?: DotCMSPageRendererMode): boolean {
+    $isDevMode = computed(() => {
         const uveState = getUVEState();
 
         if (uveState?.mode) {
             return uveState?.mode === UVE_MODE.EDIT;
         }
 
-        const effectiveMode = mode ?? this.store?.mode;
-
-        return effectiveMode === DEVELOPMENT_MODE;
-    }
+        return this.$store()?.mode === DEVELOPMENT_MODE;
+    });
 }
