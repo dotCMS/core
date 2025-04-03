@@ -16,7 +16,7 @@ import { DynamicComponentEntity } from '../../../../models';
         @if (UserNoComponent) {
             <ng-container *ngComponentOutlet="UserNoComponent | async; inputs: { contentlet }" />
         } @else {
-            <div class="dotcms-fallback-component">
+            <div data-testid="dotcms-fallback-component">
                 <p>No component found for content type: {{ contentlet.contentType }}</p>
             </div>
         }

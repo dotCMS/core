@@ -59,7 +59,7 @@ export class ContentletComponent implements OnChanges {
     $isDevMode = this.#dotCMSStore.$isDevMode;
     $haveContent = signal(false);
     $style = computed(() =>
-        this.$isDevMode() && this.$haveContent() ? { minHeight: '4rem' } : {}
+        this.$isDevMode() && !this.$haveContent() ? { minHeight: '4rem' } : {}
     );
     $dotAttributes = computed<DotContentletAttributes>(() => {
         const contentlet = this.$contentlet();
