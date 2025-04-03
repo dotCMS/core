@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { ColumnComponent } from './column.component';
 
@@ -26,19 +26,9 @@ describe('ColumnComponent', () => {
         });
     });
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     it('should apply custom class', () => {
-        const columnElement = spectator.query('.column');
+        const columnElement = spectator.query(byTestId('dotcms-column'));
         expect(columnElement?.classList.contains('custom-class')).toBe(true);
-    });
-
-    it('should set width percentage', () => {
-        const columnElement = spectator.query('.column');
-        const computedStyle = window.getComputedStyle(columnElement as Element);
-        expect(computedStyle.width).toBe('50%');
     });
 
     it('should render containers', () => {

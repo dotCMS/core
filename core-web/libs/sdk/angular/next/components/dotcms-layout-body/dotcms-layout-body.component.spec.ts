@@ -1,45 +1,91 @@
 import { expect } from '@jest/globals';
-import { Spectator, createRoutingFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jest';
 
-import { DotcmsLayoutBodyComponent } from './dotcms-layout-body.component';
+import * as uve from '@dotcms/uve';
+import { UVE_MODE } from '@dotcms/uve/types';
 
-jest.mock('@dotcms/client', () => ({
-    ...jest.requireActual('@dotcms/client'),
-    isInsideEditor: jest.fn().mockReturnValue(true),
-    initEditor: jest.fn(),
-    updateNavigation: jest.fn(),
-    postMessageToEditor: jest.fn()
-}));
+import { PageErrorMessageComponent } from './components/page-error-message/page-error-message.component';
+import { RowComponent } from './components/row/row.component';
+import { DotCMSLayoutBodyComponent } from './dotcms-layout-body.component';
+
+import { DotCMSPageComponent } from '../../models';
+import { DotCMSStore } from '../../store/dotcms.store';
+import { PageResponseMock } from '../../utils/testing.utils';
 
 jest.mock('@dotcms/uve', () => ({
-    ...jest.requireActual('@dotcms/uve'),
-    createUVESubscription: jest.fn(),
-    getUVEState: jest.fn().mockReturnValue({
-        mode: 'preview',
-        languageId: 'en',
-        persona: 'admin',
-        variantName: 'default',
-        experimentId: '123'
-    })
+    getUVEState: jest.fn()
 }));
 
-describe('DotcmsLayoutBodyComponent', () => {
-    let spectator: Spectator<DotcmsLayoutBodyComponent>;
+const components: DotCMSPageComponent = {
+    'dotcms-row': RowComponent as unknown as Promise<typeof RowComponent>
+};
 
+describe('DotCMSLayoutBodyComponent', () => {
+    let spectator: Spectator<DotCMSLayoutBodyComponent>;
+    let dotCMSStore: jest.Mocked<DotCMSStore>;
+    const getUVEStateMock = uve.getUVEState as jest.Mock;
     const createComponent = createRoutingFactory({
-        component: DotcmsLayoutBodyComponent
+        component: DotCMSLayoutBodyComponent,
+        providers: [DotCMSStore]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
-    });
+        spectator = createComponent({
+            props: {
+                page: PageResponseMock,
+                components,
+                mode: 'development'
+            }
+        });
 
-    afterEach(() => {
-        jest.clearAllMocks();
+        dotCMSStore = spectator.inject(DotCMSStore, true);
     });
 
     it('should render rows', () => {
         spectator.detectChanges();
-        expect(spectator.queryAll('.row').length).toBe(3);
+
+        expect(spectator.queryAll('.dot-row-container').length).toBe(3);
+    });
+
+    it('should call setStore on changes', () => {
+        const setStoreSpy = jest.spyOn(dotCMSStore, 'setStore');
+
+        spectator.component.ngOnChanges();
+
+        expect(setStoreSpy).toHaveBeenCalledWith({
+            page: PageResponseMock,
+            components,
+            mode: 'development'
+        });
+    });
+
+    it('should show page error message if page is not found and is on development mode', () => {
+        spectator.setInput({ page: null, mode: 'development' });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('error-message'))).toBeTruthy();
+    });
+
+    it('should not show page error message if page is not found and is on production mode', () => {
+        spectator.setInput({ page: null, mode: 'production' });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('error-message'))).toBeFalsy();
+    });
+
+    it('should show page error inside UVE on EDIT_MODE', () => {
+        getUVEStateMock.mockReturnValue({
+            mode: UVE_MODE.EDIT,
+            languageId: 'en',
+            persona: 'admin',
+            variantName: 'default',
+            experimentId: '123',
+            publishDate: new Date().toISOString()
+        });
+
+        spectator.setInput({ page: null });
+        spectator.detectChanges();
+
+        expect(spectator.query(PageErrorMessageComponent)).toBeTruthy();
     });
 });

@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { RowComponent } from './row.component';
 
@@ -22,12 +22,10 @@ describe('RowComponent', () => {
         });
     });
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     it('should apply custom class', () => {
-        const rowElement = spectator.query('.row');
+        spectator.detectChanges();
+        const rowElement = spectator.query(byTestId('dotcms-row'));
+
         expect(rowElement?.classList.contains('custom-class')).toBe(true);
     });
 

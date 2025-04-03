@@ -1,13 +1,13 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
     inject,
     Input,
-    OnChanges
+    OnChanges,
+    signal
 } from '@angular/core';
 
-import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
+import { DotCMSPageAsset, DotCMSPageRendererMode, DotPageAssetLayoutRow } from '@dotcms/uve/types';
 
 import { PageErrorMessageComponent } from './components/page-error-message/page-error-message.component';
 import { RowComponent } from './components/row/row.component';
@@ -45,7 +45,7 @@ export class DotCMSLayoutBodyComponent implements OnChanges {
 
     #dotCMSStore = inject(DotCMSStore);
 
-    $rows = computed(() => this.page?.layout?.body?.rows ?? []);
+    $rows = signal<DotPageAssetLayoutRow[]>([]);
 
     ngOnChanges() {
         this.#dotCMSStore.setStore({
@@ -53,5 +53,7 @@ export class DotCMSLayoutBodyComponent implements OnChanges {
             components: this.components,
             mode: this.mode
         });
+
+        this.$rows.set(this.page?.layout?.body?.rows ?? []);
     }
 }

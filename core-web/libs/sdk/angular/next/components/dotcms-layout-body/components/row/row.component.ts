@@ -18,7 +18,7 @@ import { ColumnComponent } from '../column/column.component';
     imports: [ColumnComponent],
     template: `
         <div class="dot-row-container">
-            <div [class]="customClasses()" data-dot-object="row">
+            <div [class]="customClasses()" data-dot-object="row" data-testid="dotcms-row">
                 @for (column of row.columns; track $index) {
                     <dotcms-column [column]="column" />
                 }

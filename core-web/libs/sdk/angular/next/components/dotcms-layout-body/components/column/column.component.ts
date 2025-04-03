@@ -16,7 +16,7 @@ import { ContainerComponent } from '../container/container.component';
     standalone: true,
     imports: [ContainerComponent],
     template: `
-        <div [class]="column.styleClass">
+        <div [class]="column.styleClass" data-testid="dotcms-column">
             @for (container of column.containers; track $index) {
                 <dotcms-container [container]="container" />
             }
