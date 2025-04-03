@@ -1,9 +1,10 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
+
+import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
 
 import { EmptyContainerComponent } from './empty-container.component';
 
 import { DotCMSStore } from '../../../../../../store/dotcms.store';
-
 describe('EmptyContainerComponent', () => {
     let spectator: Spectator<EmptyContainerComponent>;
     let dotcmsContextService: jest.Mocked<DotCMSStore>;
@@ -14,7 +15,7 @@ describe('EmptyContainerComponent', () => {
             {
                 provide: DotCMSStore,
                 useValue: {
-                    isDevMode: true
+                    $isDevMode: jest.fn().mockReturnValue(true)
                 }
             }
         ]
@@ -23,13 +24,6 @@ describe('EmptyContainerComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         dotcmsContextService = spectator.inject(DotCMSStore) as jest.Mocked<DotCMSStore>;
-        spectator.component.dotAttributes = {
-            'data-dot-object': 'container',
-            'data-dot-identifier': 'test-container',
-            'data-dot-accept-types': 'type1,type2',
-            'data-max-contentlets': '5',
-            'data-dot-uuid': '123'
-        };
     });
 
     it('should create', () => {
@@ -38,34 +32,23 @@ describe('EmptyContainerComponent', () => {
 
     it('should display empty container message in dev mode', () => {
         spectator.detectChanges();
-        const element = spectator.query('[data-testid="empty-container-message"]');
+        const element = spectator.query(byTestId('empty-container-message'));
         expect(element).toBeTruthy();
         expect(element?.textContent).toBe('This container is empty.');
     });
 
-    it('should apply dot attributes to container div', () => {
-        spectator.detectChanges();
-        const containerDiv = spectator.query('div');
-        expect(containerDiv?.getAttribute('data-dot-object')).toBe('container');
-        expect(containerDiv?.getAttribute('data-dot-inode')).toBe('123');
-        expect(containerDiv?.getAttribute('data-dot-identifier')).toBe('test-container');
-    });
-
     it('should not display anything in production mode', () => {
-        jest.spyOn(dotcmsContextService, 'isDevMode').mockReturnValue(false);
+        jest.spyOn(dotcmsContextService, '$isDevMode').mockReturnValue(false);
         spectator.detectChanges();
-        const element = spectator.query('div');
+        const element = spectator.query(byTestId('empty-container'));
         expect(element).toBeFalsy();
     });
 
     it('should apply empty container styles', () => {
+        jest.spyOn(dotcmsContextService, '$isDevMode').mockReturnValue(true);
+
         spectator.detectChanges();
-        const containerDiv = spectator.query('div');
-        expect(containerDiv).toHaveStyle({
-            border: '1px dashed #ccc',
-            padding: '1rem',
-            margin: '1rem 0',
-            backgroundColor: '#f5f5f5'
-        });
+        const containerDiv = spectator.query(byTestId('empty-container'));
+        expect(containerDiv).toHaveStyle(EMPTY_CONTAINER_STYLE_ANGULAR);
     });
 });

@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ContainerNotFoundComponent } from './container-not-found.component';
 
@@ -7,6 +7,7 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
 describe('ContainerNotFoundComponent', () => {
     let spectator: Spectator<ContainerNotFoundComponent>;
     let dotcmsContextService: jest.Mocked<DotCMSStore>;
+    let consoleSpy: jest.SpyInstance;
 
     const createComponent = createComponentFactory({
         component: ContainerNotFoundComponent,
@@ -14,7 +15,7 @@ describe('ContainerNotFoundComponent', () => {
             {
                 provide: DotCMSStore,
                 useValue: {
-                    isDevMode: true
+                    $isDevMode: jest.fn().mockReturnValue(true)
                 }
             }
         ]
@@ -24,36 +25,34 @@ describe('ContainerNotFoundComponent', () => {
         spectator = createComponent();
         dotcmsContextService = spectator.inject(DotCMSStore) as jest.Mocked<DotCMSStore>;
         spectator.component.identifier = 'test-123';
-    });
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
+        jest.clearAllMocks();
     });
 
     it('should display error message in dev mode', () => {
         spectator.detectChanges();
-        const element = spectator.query('[data-testid="container-not-found"]');
+        const element = spectator.query(byTestId('container-not-found'));
         expect(element).toBeTruthy();
         expect(element?.textContent).toContain('test-123');
     });
 
     it('should log error to console in dev mode', () => {
-        const consoleSpy = jest.spyOn(console, 'error');
-        spectator.detectChanges();
+        consoleSpy = jest.spyOn(console, 'error');
+        spectator.component.ngOnInit();
         expect(consoleSpy).toHaveBeenCalledWith('Container with identifier test-123 not found');
     });
 
     it('should not display anything in production mode', () => {
-        jest.spyOn(dotcmsContextService, 'isDevMode').mockReturnValue(false);
+        jest.spyOn(dotcmsContextService, '$isDevMode').mockReturnValue(false);
         spectator.detectChanges();
-        const element = spectator.query('[data-testid="container-not-found"]');
+        const element = spectator.query(byTestId('container-not-found'));
         expect(element).toBeFalsy();
     });
 
     it('should not log error in production mode', () => {
-        jest.spyOn(dotcmsContextService, 'isDevMode').mockReturnValue(false);
+        jest.spyOn(dotcmsContextService, '$isDevMode').mockReturnValue(false);
         const consoleSpy = jest.spyOn(console, 'error');
-        spectator.detectChanges();
+        spectator.component.ngOnInit();
         expect(consoleSpy).not.toHaveBeenCalled();
     });
 });
