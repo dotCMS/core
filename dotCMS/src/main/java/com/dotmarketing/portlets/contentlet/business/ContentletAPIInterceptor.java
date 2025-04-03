@@ -3278,6 +3278,26 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
 	@Override
+	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+																	 boolean respectFrontendRoles, String variantName) {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+		Optional<Contentlet> savedContentlet =
+				conAPI.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+		for (ContentletAPIPostHook post : postHooks) {
+			post.findContentletByIdentifierOrFallback(identifier, live, incomingLangId, user, respectFrontendRoles, variantName);
+		}
+
+		return savedContentlet;
+	}
+
+	@Override
 	public Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, long incomingLangId,
 			String variantId, Date timeMachine, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for (ContentletAPIPreHook pre : preHooks) {

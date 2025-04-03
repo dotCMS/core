@@ -1814,4 +1814,6 @@ public interface ContentletAPIPostHook {
     default void saveContentOnVariant(Contentlet contentlet, String variantName, User user){
 
 	}
+
+	default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles, String variantName) {}
 }

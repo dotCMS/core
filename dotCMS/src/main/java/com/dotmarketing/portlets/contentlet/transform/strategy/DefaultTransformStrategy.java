@@ -58,6 +58,7 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_NOT_FOUND;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.LanguageViewStrategy.mapLanguage;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
