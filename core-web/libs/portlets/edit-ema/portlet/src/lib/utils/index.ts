@@ -745,3 +745,42 @@ export const cleanPageURL = (url: string) => {
         .replace(/^\/*(.*?)(\/+)?$/, '$1$2') // Capture content and optional trailing slash
         .replace(/\/+/g, '/'); // Clean up any remaining multiple slashes
 };
+
+/**
+ * Converts a Date object to an ISO 8601 string in UTC, preserving the local time
+ * but expressing it in UTC timezone.
+ * @param {Date} date - Reference Date object
+ * @param {boolean} [includeMilliseconds=false] - If true, includes milliseconds
+ * @returns {string} String in ISO 8601 format with the date in UTC
+ */
+export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) => {
+    // Validate parameters
+    if (!(date instanceof Date)) {
+        throw new Error('Parameter must be a Date object');
+    }
+
+    // Extract local time from the date
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    const milliseconds = date.getMilliseconds();
+
+    // Create new UTC date with the same local date and time
+    const utcDate = new Date(
+        Date.UTC(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            hours,
+            minutes,
+            seconds,
+            includeMilliseconds ? milliseconds : 0
+        )
+    );
+
+    // Return in ISO 8601 format
+    const isoString = utcDate.toISOString();
+
+    // Optionally remove milliseconds
+    return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
+};

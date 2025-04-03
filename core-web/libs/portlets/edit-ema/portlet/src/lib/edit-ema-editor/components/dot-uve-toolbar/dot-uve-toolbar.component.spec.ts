@@ -46,7 +46,13 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { getFullPageURL, createFavoritePagesURL, createFullURL, sanitizeURL } from '../../../utils';
+import {
+    getFullPageURL,
+    createFavoritePagesURL,
+    createFullURL,
+    sanitizeURL,
+    convertLocalTimeToUTC
+} from '../../../utils';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -645,6 +651,35 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('calendar', () => {
+            const originalHasInstance = Object.getOwnPropertyDescriptor(Date, Symbol.hasInstance);
+            const originalUTC = Object.getOwnPropertyDescriptor(Date, 'UTC');
+
+            // We need to mock Date instanceof check and Date.UTC to avoid jest errors when running the tests
+            // More info here: https://github.com/jestjs/jest/issues/11808
+            Object.defineProperty(Date, Symbol.hasInstance, {
+                value: function () {
+                    return true;
+                }
+            });
+
+            Object.defineProperty(Date, 'UTC', {
+                value: function (_args) {
+                    return new Date();
+                }
+            });
+
+            afterAll(() => {
+                // Restore original instanceof behavior
+                if (originalHasInstance) {
+                    Object.defineProperty(Date, Symbol.hasInstance, originalHasInstance);
+                }
+
+                // Restore original UTC behavior
+                if (originalUTC) {
+                    Object.defineProperty(Date, 'UTC', originalUTC);
+                }
+            });
+
             it('should show calendar when in live mode', () => {
                 expect(spectator.query('p-calendar')).toBeTruthy();
             });
@@ -702,7 +737,7 @@ describe('DotUveToolbarComponent', () => {
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
                     mode: UVE_MODE.LIVE,
-                    publishDate: date.toISOString()
+                    publishDate: convertLocalTimeToUTC(date)
                 });
             });
 
@@ -721,7 +756,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.triggerEventHandler(calendar, 'ngModelChange', date);
 
                 expect(spyTrackUVECalendarChange).toHaveBeenCalledWith({
-                    selectedDate: date.toISOString()
+                    selectedDate: convertLocalTimeToUTC(date)
                 });
             });
 
