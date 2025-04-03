@@ -61,6 +61,7 @@ export class DotEditContentSidebarComponent {
 
     // Activities
     readonly $activities = this.$store.activities;
+    readonly $initialContentletState = this.$store.initialContentletState;
     readonly $activitiesStatus = computed(() => this.$store.activitiesStatus().status);
 
     /**
@@ -127,5 +128,17 @@ export class DotEditContentSidebarComponent {
     onActiveIndexChange($event: TabViewChangeEvent) {
         const { index } = $event;
         this.$store.setActiveSidebarTab(index);
+    }
+
+    /**
+     * Handles the comment submitted event from the sidebar.
+     * @param $event - The event object containing the comment.
+     */
+    onCommentSubmitted($event: string) {
+        const identifier = this.$identifier();
+        this.$store.addComment({
+            comment: $event,
+            identifier
+        });
     }
 }
