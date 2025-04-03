@@ -55,8 +55,10 @@ const buildIframeURL = ({ url, params, isTraditionalPage }) => {
         return new String('');
     }
 
+    // Remove trailing slash from host
+    const host = (params.clientHost || window.location.origin).replace(/\/$/, '');
     const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
-    const iframeURL = new URL(pageURL, params.clientHost || window.location.origin); // Add Host to iframeURL
+    const iframeURL = new URL(`${host}/${pageURL}`);
 
     return iframeURL.toString();
 };
