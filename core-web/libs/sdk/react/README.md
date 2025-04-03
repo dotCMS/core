@@ -6,6 +6,8 @@
 > 
 > For comprehensive documentation, visit our [developer portal](https://dev.dotcms.com/docs/javascript-sdk-react-library).
 
+> **⚠️ IMPORTANT:** Versions published under the `next` tag (`npm install @dotcms/react@next`) are experimental, in beta, and not code complete. For the current stable and functional version, please use `latest` (`npm install @dotcms/react@latest`). Once we release the stable version, we will provide a migration guide from the alpha to stable version. The current alpha version (under `latest`) will continue to work, allowing you to migrate progressively at your own pace.
+
 ## Table of Contents
 
 - [What's New](#whats-new)
