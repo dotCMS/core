@@ -181,4 +181,7 @@ dotCMS/dependencies.gradle
 .nx/
 .cursorrules
 .cursorignore
-**/vite.config.mts.timestamp-*
+
+# Vite config timestamp files
+**/*vite.config*.timestamp-*.mjs
+**/*vite.config*.timestamp-*.ts
