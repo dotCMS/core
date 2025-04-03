@@ -53,7 +53,29 @@ public class WorkflowEmailUtil {
 	 * @param emailText
 	 * @param isHTML
 	 */
+    public static void sendWorkflowEmail(WorkflowProcessor processor, String[] email, String subject, String emailText,
+                                         Boolean isHTML) {
+        sendWorkflowEmail(processor, email, subject, emailText, isHTML, null);
+    }
 
+    /**
+     * Sends a workflow email to the specified recipients using the given {@link WorkflowProcessor}.
+     * If the subject is null, it is inferred based on the contentlet title and next step.
+     * If the email text is null, a default email template ("static/workflow/workflow_email_template.vtl")
+     * will be used and processed with Velocity.
+     * <p>
+     * The email body and subject will be evaluated using Velocity, with a context containing
+     * workflow-related variables such as {@code $workflow}, {@code $user}, {@code $host}, and more.
+     * <p>
+     * If custom headers are provided, they will be processed and added to the email.
+     *
+     * @param processor     The {@link WorkflowProcessor} containing workflow-related data.
+     * @param email         Array of recipient email addresses.
+     * @param subject       The email subject (can be null, in which case it will be inferred).
+     * @param emailText     The email body (can be null, in which case a default template is used).
+     * @param isHTML        Boolean flag indicating if the email should be sent as HTML (default is false).
+     * @param customHeaders Optional custom headers to be added to the email.
+     */
     public static void sendWorkflowEmail(WorkflowProcessor processor, String[] email, String subject, String emailText,
             Boolean isHTML, String customHeaders) {
 
