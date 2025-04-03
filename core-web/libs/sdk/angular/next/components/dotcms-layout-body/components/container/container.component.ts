@@ -24,7 +24,7 @@ import {
 import { ContainerNotFoundComponent } from './components/container-not-found/container-not-found.component';
 import { EmptyContainerComponent } from './components/empty-container/empty-container.component';
 
-import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms-context.service';
+import { DotCMSStore } from '../../../../store/dotcms.store';
 import { ContentletComponent } from '../../components/contentlet/contentlet.component';
 
 /**
@@ -42,7 +42,7 @@ import { ContentletComponent } from '../../components/contentlet/contentlet.comp
         @if (!$containerData()) {
             <dotcms-container-not-found [identifier]="container.identifier" />
         } @else if ($isEmpty()) {
-            <dotcms-empty-container [dotAttributes]="dotAttributes()" />
+            <dotcms-empty-container />
         } @else {
             @for (contentlet of $contentlets(); track contentlet.identifier) {
                 <dotcms-contentlet [contentlet]="contentlet" [container]="container.identifier" />
@@ -57,15 +57,15 @@ export class ContainerComponent implements OnChanges {
      */
     @Input({ required: true }) container!: DotCMSColumnContainer;
 
-    #dotcmsContextService = inject(DotCMSContextService);
+    #dotCMSStore = inject(DotCMSStore);
 
     $containerData = signal<EditableContainerData | null>(null);
     $contentlets = signal<DotCMSContentlet[]>([]);
     $isEmpty = computed(() => this.$contentlets().length === 0);
-    dotAttributes = computed<DotContainerAttributes>(() => {
+    $dotAttributes = computed<DotContainerAttributes>(() => {
         const containerData = this.$containerData();
 
-        if (!containerData || !this.#dotcmsContextService.isDevMode()) {
+        if (!containerData || !this.#dotCMSStore.isDevMode()) {
             return {} as DotContainerAttributes;
         }
 
@@ -79,7 +79,7 @@ export class ContainerComponent implements OnChanges {
     @HostBinding('attr.data-dot-uuid') uuid: string | null = null;
 
     ngOnChanges() {
-        const { page } = this.#dotcmsContextService.context ?? {};
+        const { page } = this.#dotCMSStore.store ?? {};
 
         if (!page) {
             return;
@@ -88,9 +88,9 @@ export class ContainerComponent implements OnChanges {
         this.$containerData.set(getContainersData(page, this.container));
         this.$contentlets.set(getContentletsInContainer(page, this.container));
 
-        this.acceptTypes = this.dotAttributes()['data-dot-accept-types'];
-        this.identifier = this.dotAttributes()['data-dot-identifier'];
-        this.maxContentlets = this.dotAttributes()['data-max-contentlets'];
-        this.uuid = this.dotAttributes()['data-dot-uuid'];
+        this.acceptTypes = this.$dotAttributes()['data-dot-accept-types'];
+        this.identifier = this.$dotAttributes()['data-dot-identifier'];
+        this.maxContentlets = this.$dotAttributes()['data-max-contentlets'];
+        this.uuid = this.$dotAttributes()['data-dot-uuid'];
     }
 }

@@ -2,17 +2,17 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ContainerNotFoundComponent } from './container-not-found.component';
 
-import { DotCMSContextService } from '../../../../../../services/dotcms-context/dotcms-context.service';
+import { DotCMSStore } from '../../../../../../store/dotcms.store';
 
 describe('ContainerNotFoundComponent', () => {
     let spectator: Spectator<ContainerNotFoundComponent>;
-    let dotcmsContextService: jest.Mocked<DotCMSContextService>;
+    let dotcmsContextService: jest.Mocked<DotCMSStore>;
 
     const createComponent = createComponentFactory({
         component: ContainerNotFoundComponent,
         providers: [
             {
-                provide: DotCMSContextService,
+                provide: DotCMSStore,
                 useValue: {
                     isDevMode: true
                 }
@@ -22,9 +22,7 @@ describe('ContainerNotFoundComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        dotcmsContextService = spectator.inject(
-            DotCMSContextService
-        ) as jest.Mocked<DotCMSContextService>;
+        dotcmsContextService = spectator.inject(DotCMSStore) as jest.Mocked<DotCMSStore>;
         spectator.component.identifier = 'test-123';
     });
 

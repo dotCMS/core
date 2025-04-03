@@ -13,7 +13,7 @@ import { PageErrorMessageComponent } from './components/page-error-message/page-
 import { RowComponent } from './components/row/row.component';
 
 import { DotCMSPageComponent } from '../../models';
-import { DotCMSContextService } from '../../services/dotcms-context/dotcms-context.service';
+import { DotCMSStore } from '../../store/dotcms.store';
 /**
  *
  * `DotCMSLayoutBodyComponent` is a class that represents the layout for a DotCMS page.
@@ -25,7 +25,7 @@ import { DotCMSContextService } from '../../services/dotcms-context/dotcms-conte
     selector: 'dotcms-layout-body',
     standalone: true,
     imports: [PageErrorMessageComponent, RowComponent],
-    providers: [DotCMSContextService],
+    providers: [DotCMSStore],
     template: `
         @if (!page) {
             <dotcms-page-error-message [mode]="mode"></dotcms-page-error-message>
@@ -43,12 +43,12 @@ export class DotCMSLayoutBodyComponent implements OnChanges {
     @Input({ required: true }) components: DotCMSPageComponent = {};
     @Input() mode: DotCMSPageRendererMode = 'production';
 
-    #dotCMSContextService = inject(DotCMSContextService);
+    #dotCMSStore = inject(DotCMSStore);
 
     $rows = computed(() => this.page?.layout?.body?.rows ?? []);
 
     ngOnChanges() {
-        this.#dotCMSContextService.setContext({
+        this.#dotCMSStore.setStore({
             page: this.page,
             components: this.components,
             mode: this.mode

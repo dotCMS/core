@@ -5,7 +5,7 @@ import { DotCMSColumnContainer } from '@dotcms/uve/types';
 
 import { ContainerComponent } from './container.component';
 
-import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms-context.service';
+import { DotCMSStore } from '../../../../store/dotcms.store';
 
 describe('ContainerComponent', () => {
     let spectator: Spectator<ContainerComponent>;
@@ -14,7 +14,7 @@ describe('ContainerComponent', () => {
         component: ContainerComponent,
         providers: [
             {
-                provide: DotCMSContextService,
+                provide: DotCMSStore,
                 useValue: {
                     isDevMode: jest.fn().mockReturnValue(false)
                 }
@@ -58,7 +58,7 @@ describe('ContainerComponent', () => {
     });
 
     it('should set data attributes in edit mode', () => {
-        const dotCMSContextService = spectator.inject(DotCMSContextService);
+        const dotCMSContextService = spectator.inject(DotCMSStore);
         jest.spyOn(dotCMSContextService, 'isDevMode').mockReturnValue(true);
 
         spectator.detectChanges();

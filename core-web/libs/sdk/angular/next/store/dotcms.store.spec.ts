@@ -2,7 +2,7 @@ import { SpectatorService, createServiceFactory } from '@ngneat/spectator';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotCMSContextService } from './dotcms-context.service';
+import { DotCMSStore } from './dotcms.store';
 
 // import { DotCMSPageAsset, DotCMSPageComponent } from '../../models';
 // import { PageResponseMock } from '../../utils/testing.utils';
@@ -10,11 +10,11 @@ import { DotCMSContextService } from './dotcms-context.service';
 // const initialPageAssetMock = {} as DotCMSPageAsset;
 // const initialComponentsMock = {} as DotCMSPageComponent;
 
-describe('PageContextService', () => {
-    let spectator: SpectatorService<DotCMSContextService>;
-    let service: DotCMSContextService;
+describe('DotCMSStore', () => {
+    let spectator: SpectatorService<DotCMSStore>;
+    let service: DotCMSStore;
 
-    const createService = createServiceFactory(DotCMSContextService);
+    const createService = createServiceFactory(DotCMSStore);
 
     beforeEach(() => {
         TestBed.configureTestingModule({});

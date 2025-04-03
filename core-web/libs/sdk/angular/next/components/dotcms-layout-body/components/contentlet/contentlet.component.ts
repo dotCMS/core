@@ -16,7 +16,7 @@ import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/int
 import { DotCMSContentlet, DotContentletAttributes } from '@dotcms/uve/types';
 
 import { DynamicComponentEntity } from '../../../../models';
-import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms-context.service';
+import { DotCMSStore } from '../../../../store/dotcms.store';
 import { FallbackComponent } from '../fallback-component/fallback-component.component';
 
 /**
@@ -51,7 +51,7 @@ export class ContentletComponent implements OnChanges {
     @ViewChild('contentletRef') contentletRef!: ElementRef;
     @HostBinding('attr.data-dot-object') dotObject = 'contentlet';
 
-    #dotcmsContextService = inject(DotCMSContextService);
+    #dotCMSStore = inject(DotCMSStore);
 
     $contentlet = signal<DotCMSContentlet | null>(null);
     $UserComponent = signal<DynamicComponentEntity | null>(null);
@@ -79,7 +79,7 @@ export class ContentletComponent implements OnChanges {
 
     ngOnChanges() {
         this.$contentlet.set(this.contentlet);
-        this.$isDevMode.set(this.#dotcmsContextService.isDevMode());
+        this.$isDevMode.set(this.#dotCMSStore.isDevMode());
         this.setupComponents();
 
         this.identifier = this.$dotAttributes()['data-dot-identifier'];
@@ -97,13 +97,13 @@ export class ContentletComponent implements OnChanges {
     }
 
     private setupComponents() {
-        const context = this.#dotcmsContextService.context;
-        if (!context) return;
+        const store = this.#dotCMSStore.store;
+        if (!store) return;
 
-        if (!context?.components) return;
+        if (!store?.components) return;
 
-        this.$UserComponent.set(context.components[this.contentlet?.contentType]);
-        this.$UserNoComponent.set(context.components[CUSTOM_NO_COMPONENT]);
+        this.$UserComponent.set(store.components[this.contentlet?.contentType]);
+        this.$UserNoComponent.set(store.components[CUSTOM_NO_COMPONENT]);
     }
 
     private checkContent() {

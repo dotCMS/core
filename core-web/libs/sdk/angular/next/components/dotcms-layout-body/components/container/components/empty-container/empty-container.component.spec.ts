@@ -2,17 +2,17 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { EmptyContainerComponent } from './empty-container.component';
 
-import { DotCMSContextService } from '../../../../../../services/dotcms-context/dotcms-context.service';
+import { DotCMSStore } from '../../../../../../store/dotcms.store';
 
 describe('EmptyContainerComponent', () => {
     let spectator: Spectator<EmptyContainerComponent>;
-    let dotcmsContextService: jest.Mocked<DotCMSContextService>;
+    let dotcmsContextService: jest.Mocked<DotCMSStore>;
 
     const createComponent = createComponentFactory({
         component: EmptyContainerComponent,
         providers: [
             {
-                provide: DotCMSContextService,
+                provide: DotCMSStore,
                 useValue: {
                     isDevMode: true
                 }
@@ -22,9 +22,7 @@ describe('EmptyContainerComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        dotcmsContextService = spectator.inject(
-            DotCMSContextService
-        ) as jest.Mocked<DotCMSContextService>;
+        dotcmsContextService = spectator.inject(DotCMSStore) as jest.Mocked<DotCMSStore>;
         spectator.component.dotAttributes = {
             'data-dot-object': 'container',
             'data-dot-identifier': 'test-container',

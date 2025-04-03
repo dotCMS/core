@@ -9,7 +9,7 @@ import {
 
 import { DotCMSPageRendererMode } from '@dotcms/uve/types';
 
-import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms-context.service';
+import { DotCMSStore } from '../../../../store/dotcms.store';
 
 /**
  *
@@ -45,14 +45,14 @@ import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms
 export class PageErrorMessageComponent implements OnChanges {
     @Input() mode: DotCMSPageRendererMode = 'production';
 
-    #dotCMSContextService = inject(DotCMSContextService);
+    #dotCMSStore = inject(DotCMSStore);
 
     $isDevMode = signal(false);
 
     ngOnChanges() {
         console.warn('Missing required layout.body property in page');
 
-        const isDevMode = this.#dotCMSContextService.isDevMode(this.mode);
+        const isDevMode = this.#dotCMSStore.isDevMode(this.mode);
 
         this.$isDevMode.set(isDevMode);
     }

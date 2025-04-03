@@ -4,16 +4,16 @@ import { DotCMSContentlet } from '@dotcms/uve/types';
 
 import { ContentletComponent } from './contentlet.component';
 
-import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms-context.service';
+import { DotCMSStore } from '../../../../store/dotcms.store';
 
 describe('ContentletComponent', () => {
     let spectator: Spectator<ContentletComponent>;
     let component: ContentletComponent;
-    let dotcmsContextService: jest.Mocked<DotCMSContextService>;
+    let dotcmsContextService: jest.Mocked<DotCMSStore>;
 
     const createComponent = createComponentFactory({
         component: ContentletComponent,
-        mocks: [DotCMSContextService],
+        mocks: [DotCMSStore],
         detectChanges: false
     });
 
@@ -21,7 +21,7 @@ describe('ContentletComponent', () => {
         dotcmsContextService = {
             context: null,
             isDevMode: jest.fn()
-        } as unknown as jest.Mocked<DotCMSContextService>;
+        } as unknown as jest.Mocked<DotCMSStore>;
 
         spectator = createComponent({
             props: {
@@ -30,7 +30,7 @@ describe('ContentletComponent', () => {
             },
             providers: [
                 {
-                    provide: DotCMSContextService,
+                    provide: DotCMSStore,
                     useValue: dotcmsContextService
                 }
             ]

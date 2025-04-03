@@ -14,25 +14,25 @@ export type DynamicComponentEntity = Promise<Type<any>>;
 /**
  * Represents the context of a DotCMS page.
  */
-export interface DotCMSPageContext {
+export interface DotCMSPageStore {
     /**
      * Represents the DotCMS page asset.
      * @type {DotCMSPageAsset}
-     * @memberof DotCMSPageContext
+     * @memberof DotCMSPageStore
      */
     page: DotCMSPageAsset;
 
     /**
      * Represents the dynamic components of the page for each Content Type.
      * @type {DotCMSPageComponent}
-     * @memberof DotCMSPageContext
+     * @memberof DotCMSPageStore
      */
     components: DotCMSPageComponent;
 
     /**
      * Indicates the renderer mode.
      * @type {DotCMSPageRendererMode}
-     * @memberof DotCMSPageContext
+     * @memberof DotCMSPageStore
      */
     mode: DotCMSPageRendererMode;
 }
