@@ -58,7 +58,7 @@ describe('ExistingContentStore', () => {
 
     describe('State Management', () => {
         it('should handle empty contentTypeId', fakeAsync(() => {
-            store.initLoad({ contentTypeId: null, selectionMode: 'single', currentItemsIds: [] });
+            store.initLoad({ contentTypeId: null, selectionMode: 'single', selectedItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.ERROR);
@@ -69,7 +69,7 @@ describe('ExistingContentStore', () => {
         it('should load content successfully', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', selectedItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.LOADED);
@@ -83,7 +83,7 @@ describe('ExistingContentStore', () => {
                 throwError(() => new Error('Server Error'))
             );
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', selectedItemsIds: [] });
             tick();
 
             expect(store.status()).toBe(ComponentStatus.ERROR);
@@ -154,7 +154,7 @@ describe('ExistingContentStore', () => {
 
             service.getColumnsAndContent.mockReturnValue(mockObservable);
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', selectedItemsIds: [] });
             expect(store.isLoading()).toBe(true);
 
             tick(100);
@@ -164,10 +164,70 @@ describe('ExistingContentStore', () => {
         it('should compute total pages correctly', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 
-            store.initLoad({ contentTypeId: '123', selectionMode: 'single', currentItemsIds: [] });
+            store.initLoad({ contentTypeId: '123', selectionMode: 'single', selectedItemsIds: [] });
             tick();
 
             expect(store.totalPages()).toBe(1);
         }));
+    });
+
+    describe('Show Selected Items Toggle', () => {
+        beforeEach(fakeAsync(() => {
+            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'multiple',
+                selectedItemsIds: []
+            });
+            tick();
+        }));
+
+        it('should initialize with showOnlySelected set to false', () => {
+            expect(store.showOnlySelected()).toBe(false);
+        });
+
+        it('should toggle showOnlySelected state', () => {
+            store.toggleShowOnlySelected();
+            expect(store.showOnlySelected()).toBe(true);
+
+            store.toggleShowOnlySelected();
+            expect(store.showOnlySelected()).toBe(false);
+        });
+
+        it('should return all data when showOnlySelected is false', () => {
+            expect(store.filteredData()).toEqual(mockData.contentlets);
+        });
+
+        it('should return only selected items when showOnlySelected is true', () => {
+            // Select one of the items
+            const selectedItem = mockData.contentlets[0];
+            store.setSelectionItems([selectedItem]);
+
+            // Toggle to show only selected items
+            store.toggleShowOnlySelected();
+
+            // Should filter to show only the selected item
+            expect(store.filteredData()).toEqual([selectedItem]);
+        });
+
+        it('should return empty data when showOnlySelected is true but no items are selected', () => {
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'multiple',
+                selectedItemsIds: []
+            });
+            store.toggleShowOnlySelected();
+            expect(store.filteredData()).toEqual([]);
+        });
+
+        it('should return only the selected item when showOnlySelected is true', () => {
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'multiple',
+                selectedItemsIds: [mockData.contentlets[0].inode]
+            });
+            store.toggleShowOnlySelected();
+            expect(store.filteredData()).toEqual([mockData.contentlets[0]]);
+        });
     });
 });
