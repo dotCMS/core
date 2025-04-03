@@ -31,16 +31,16 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
     standalone: true,
     imports: [FallbackComponent, AsyncPipe, NgComponentOutlet],
     template: `
-        @if (UserComponent) {
+        @if ($UserComponent()) {
             <ng-container
                 *ngComponentOutlet="
-                    UserComponent | async;
-                    inputs: { contentlet: contentletSignal() ?? contentlet }
+                    $UserComponent() | async;
+                    inputs: { contentlet: $contentlet() ?? contentlet }
                 " />
-        } @else if (UserNoComponent && isDevMode()) {
+        } @else if ($UserNoComponent() && $isDevMode()) {
             <dotcms-fallback-component
-                [UserNoComponent]="UserNoComponent"
-                [contentlet]="contentletSignal() ?? contentlet" />
+                [UserNoComponent]="$UserNoComponent()"
+                [contentlet]="$contentlet() ?? contentlet" />
         }
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -53,15 +53,17 @@ export class ContentletComponent implements OnChanges {
 
     #dotcmsContextService = inject(DotCMSContextService);
 
-    contentletSignal = signal<DotCMSContentlet | null>(null);
-    UserComponent: DynamicComponentEntity | null = null;
-    UserNoComponent: DynamicComponentEntity | null = null;
-    isDevMode = signal(false);
-    haveContent = signal(false);
-    style = computed(() => (this.isDevMode() && this.haveContent() ? { minHeight: '4rem' } : {}));
-    dotAttributes = computed<DotContentletAttributes>(() => {
-        const contentlet = this.contentletSignal();
-        if (!contentlet || !this.isDevMode()) return {} as DotContentletAttributes;
+    $contentlet = signal<DotCMSContentlet | null>(null);
+    $UserComponent = signal<DynamicComponentEntity | null>(null);
+    $UserNoComponent = signal<DynamicComponentEntity | null>(null);
+    $isDevMode = signal(false);
+    $haveContent = signal(false);
+    $style = computed(() =>
+        this.$isDevMode() && this.$haveContent() ? { minHeight: '4rem' } : {}
+    );
+    $dotAttributes = computed<DotContentletAttributes>(() => {
+        const contentlet = this.$contentlet();
+        if (!contentlet || !this.$isDevMode()) return {} as DotContentletAttributes;
 
         return getDotContentletAttributes(contentlet, this.container);
     });
@@ -76,18 +78,18 @@ export class ContentletComponent implements OnChanges {
     @HostBinding('style') styleAttribute: { [key: string]: unknown } | null = null;
 
     ngOnChanges() {
-        this.contentletSignal.set(this.contentlet);
-        this.isDevMode.set(this.#dotcmsContextService.isDevMode());
+        this.$contentlet.set(this.contentlet);
+        this.$isDevMode.set(this.#dotcmsContextService.isDevMode());
         this.setupComponents();
 
-        this.identifier = this.dotAttributes()['data-dot-identifier'];
-        this.basetype = this.dotAttributes()['data-dot-basetype'];
-        this.title = this.dotAttributes()['data-dot-title'];
-        this.inode = this.dotAttributes()['data-dot-inode'];
-        this.type = this.dotAttributes()['data-dot-type'];
-        this.containerAttribute = this.dotAttributes()['data-dot-container'];
-        this.onNumberOfPages = this.dotAttributes()['data-dot-on-number-of-pages'];
-        this.styleAttribute = this.style();
+        this.identifier = this.$dotAttributes()['data-dot-identifier'];
+        this.basetype = this.$dotAttributes()['data-dot-basetype'];
+        this.title = this.$dotAttributes()['data-dot-title'];
+        this.inode = this.$dotAttributes()['data-dot-inode'];
+        this.type = this.$dotAttributes()['data-dot-type'];
+        this.containerAttribute = this.$dotAttributes()['data-dot-container'];
+        this.onNumberOfPages = this.$dotAttributes()['data-dot-on-number-of-pages'];
+        this.styleAttribute = this.$style();
     }
 
     ngAfterViewInit() {
@@ -100,15 +102,15 @@ export class ContentletComponent implements OnChanges {
 
         if (!context?.components) return;
 
-        this.UserComponent = context.components[this.contentlet?.contentType];
-        this.UserNoComponent = context.components[CUSTOM_NO_COMPONENT];
+        this.$UserComponent.set(context.components[this.contentlet?.contentType]);
+        this.$UserNoComponent.set(context.components[CUSTOM_NO_COMPONENT]);
     }
 
     private checkContent() {
         const element = this.contentletRef?.nativeElement;
         if (element) {
             const hasContent = element.getBoundingClientRect().height > 0;
-            this.haveContent.set(hasContent);
+            this.$haveContent.set(hasContent);
         }
     }
 }

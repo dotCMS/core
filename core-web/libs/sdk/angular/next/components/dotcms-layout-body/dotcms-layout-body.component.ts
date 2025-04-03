@@ -43,12 +43,12 @@ export class DotCMSLayoutBodyComponent implements OnChanges {
     @Input({ required: true }) components: DotCMSPageComponent = {};
     @Input() mode: DotCMSPageRendererMode = 'production';
 
-    private dotCMSContextService = inject(DotCMSContextService);
+    #dotCMSContextService = inject(DotCMSContextService);
 
     $rows = computed(() => this.pageAsset?.layout.body?.rows ?? []);
 
     ngOnChanges() {
-        this.dotCMSContextService.setContext({
+        this.#dotCMSContextService.setContext({
             pageAsset: this.pageAsset,
             components: this.components,
             mode: this.mode

@@ -39,12 +39,12 @@ import { ContentletComponent } from '../../components/contentlet/contentlet.comp
     standalone: true,
     imports: [ContainerNotFoundComponent, EmptyContainerComponent, ContentletComponent],
     template: `
-        @if (!containerData()) {
+        @if (!$containerData()) {
             <dotcms-container-not-found [identifier]="container.identifier" />
-        } @else if (isEmpty()) {
+        } @else if ($isEmpty()) {
             <dotcms-empty-container [dotAttributes]="dotAttributes()" />
         } @else {
-            @for (contentlet of contentlets(); track contentlet.identifier) {
+            @for (contentlet of $contentlets(); track contentlet.identifier) {
                 <dotcms-contentlet [contentlet]="contentlet" [container]="container.identifier" />
             }
         }
@@ -59,11 +59,11 @@ export class ContainerComponent implements OnChanges {
 
     #dotcmsContextService = inject(DotCMSContextService);
 
-    containerData = signal<EditableContainerData | null>(null);
-    contentlets = signal<DotCMSContentlet[]>([]);
-    isEmpty = computed(() => this.contentlets().length === 0);
+    $containerData = signal<EditableContainerData | null>(null);
+    $contentlets = signal<DotCMSContentlet[]>([]);
+    $isEmpty = computed(() => this.$contentlets().length === 0);
     dotAttributes = computed<DotContainerAttributes>(() => {
-        const containerData = this.containerData();
+        const containerData = this.$containerData();
 
         if (!containerData || !this.#dotcmsContextService.isDevMode()) {
             return {} as DotContainerAttributes;
@@ -85,8 +85,8 @@ export class ContainerComponent implements OnChanges {
             return;
         }
 
-        this.containerData.set(getContainersData(pageAsset, this.container));
-        this.contentlets.set(getContentletsInContainer(pageAsset, this.container));
+        this.$containerData.set(getContainersData(pageAsset, this.container));
+        this.$contentlets.set(getContentletsInContainer(pageAsset, this.container));
 
         this.acceptTypes = this.dotAttributes()['data-dot-accept-types'];
         this.identifier = this.dotAttributes()['data-dot-identifier'];

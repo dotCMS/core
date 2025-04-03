@@ -23,7 +23,7 @@ import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms
     standalone: true,
     imports: [],
     template: `
-        @if (isDevMode()) {
+        @if ($isDevMode()) {
             <div
                 data-testid="error-message"
                 style="padding: 1rem; border: 1px solid #e0e0e0; border-radius: 4px;">
@@ -45,15 +45,15 @@ import { DotCMSContextService } from '../../../../services/dotcms-context/dotcms
 export class PageErrorMessageComponent implements OnChanges {
     @Input() mode: DotCMSPageRendererMode = 'production';
 
-    private dotCMSContextService = inject(DotCMSContextService);
+    #dotCMSContextService = inject(DotCMSContextService);
 
-    isDevMode = signal(false);
+    $isDevMode = signal(false);
 
     ngOnChanges() {
         console.warn('Missing required layout.body property in page');
 
-        const isDevMode = this.dotCMSContextService.isDevMode(this.mode);
+        const isDevMode = this.#dotCMSContextService.isDevMode(this.mode);
 
-        this.isDevMode.set(isDevMode);
+        this.$isDevMode.set(isDevMode);
     }
 }

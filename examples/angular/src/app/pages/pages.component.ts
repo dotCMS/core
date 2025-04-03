@@ -18,10 +18,6 @@ import { getUVEState } from '@dotcms/uve';
 import { DYNAMIC_COMPONENTS } from './components';
 import { DOTCMS_CLIENT_TOKEN } from '../app.config';
 
-import { DotCMSLayoutBodyComponent } from '@dotcms/angular/next';
-
-import { UVE_MODE } from '@dotcms/uve/types';
-
 export type PageError = {
     message: string;
     status: number | string;
@@ -43,8 +39,7 @@ type PageRender = {
         NavigationComponent,
         FooterComponent,
         ErrorComponent,
-        LoadingComponent,
-        DotCMSLayoutBodyComponent
+        LoadingComponent
     ],
 
     templateUrl: './pages.component.html',
