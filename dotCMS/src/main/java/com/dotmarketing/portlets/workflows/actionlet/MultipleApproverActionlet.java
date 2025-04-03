@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.workflows.WorkflowParameter;
 import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
@@ -22,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getParameterValue;
 
 /**
  * Based on a list of email, userid or roles won't continue the pipeline until all necessary users approve the workflow
@@ -66,9 +69,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 
 			}
 		}
-		if(params.get(("customHeaders")) != null && params.get("customHeaders").getValue()!=null){
-			customHeaders = params.get("customHeaders").getValue();
-		}
+		customHeaders = getParameterValue(params.get(WorkflowParameter.CUSTOM_HEADERS.getKey()));
 
 		final Set<User> requiredApprovers = new HashSet<>();
 		final Set<User> hasApproved       = new HashSet<>();
@@ -176,8 +177,7 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 					paramList.add(new MultiEmailParameter("approvers", "User IDs or Emails", null, true));
 					paramList.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "Multiple Approval Required", false));
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
-					paramList.add(new WorkflowActionletParameter("customHeaders",
-							"Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
+					paramList.add(WorkflowParameter.CUSTOM_HEADERS.toWorkflowActionletParameter());
 				}
 			}
 		}

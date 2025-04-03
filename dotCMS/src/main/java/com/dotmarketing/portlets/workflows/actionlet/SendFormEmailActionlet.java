@@ -13,6 +13,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.portlets.workflows.WorkflowParameter;
 import com.dotmarketing.util.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.context.Context;
@@ -36,6 +37,9 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.Company;
 
 import io.vavr.control.Try;
+
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getParameterValue;
+
 /**
  * This class is intended to be used to automatically send emails for
  * new form entries.  If the content being passed in is not a Form, then this
@@ -52,7 +56,6 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
   private static final  String EMAIL_SUBJECT="emailSubject";
   private static final  String CONDITION="condition";
   private static final  String EMAIL_TEMPLATE="emailTemplate";
-  private static final  String CUSTOM_HEADERS="customHeaders";
   @Override
   public List<WorkflowActionletParameter> getParameters() {
     
@@ -68,8 +71,7 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     
     params.add(new WorkflowActionletParameter(CONDITION, "Condition - email will send unless<br>velocity prints 'false'", "", false));
     params.add(new WorkflowActionletParameter(BCC, "Bcc Email", "", false));
-    params.add(new WorkflowActionletParameter(CUSTOM_HEADERS,
-                "Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
+    params.add(WorkflowParameter.CUSTOM_HEADERS.toWorkflowActionletParameter());
     return params;
   }
 
@@ -122,7 +124,7 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     final String emailSubject = velocity.eval(params.get(EMAIL_SUBJECT).getValue());
     final String emailTemplate = velocity.eval(params.get(EMAIL_TEMPLATE).getValue());
     final String bcc = velocity.eval(params.get(BCC).getValue());
-    final String customHeaders = params.get(CUSTOM_HEADERS).getValue();
+    final String customHeaders = getParameterValue(params.get(WorkflowParameter.CUSTOM_HEADERS.getKey()));
 
     // if we are in debug, just write the file out
     if (UtilMethods.isSet(condition) && condition.trim().indexOf("debug") ==0) {

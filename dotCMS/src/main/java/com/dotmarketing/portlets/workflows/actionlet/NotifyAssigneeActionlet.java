@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotmarketing.portlets.workflows.WorkflowParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -12,6 +13,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getParameterValue;
 
 public class NotifyAssigneeActionlet extends WorkFlowActionlet {
 
@@ -56,9 +59,7 @@ public class NotifyAssigneeActionlet extends WorkFlowActionlet {
 				
 			}
 		}
-		if(params.get(("customHeaders")) != null && params.get("customHeaders").getValue()!=null){
-			customHeaders = params.get("customHeaders").getValue();
-		}
+		customHeaders = getParameterValue(params.get(WorkflowParameter.CUSTOM_HEADERS.getKey()));
 
 		WorkflowEmailUtil.sendWorkflowMessageToNextAssign(processor, emailSubject, emailBody, isHtml, customHeaders);
 		
@@ -82,8 +83,7 @@ public class NotifyAssigneeActionlet extends WorkFlowActionlet {
 					paramList.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "", false));
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
 					paramList.add(new WorkflowActionletParameter("isHtml", "Is Html?", "true", false));
-					paramList.add(new WorkflowActionletParameter("customHeaders",
-							"Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
+					paramList.add(WorkflowParameter.CUSTOM_HEADERS.toWorkflowActionletParameter());
 				}
 			}
 		}

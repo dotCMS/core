@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import com.dotmarketing.portlets.workflows.WorkflowParameter;
 import org.apache.velocity.context.Context;
 
 import com.dotmarketing.business.APILocator;
@@ -19,6 +20,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.Validator;
+
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getParameterValue;
 
 public class NotifyUsersActionlet extends WorkFlowActionlet {
 
@@ -62,9 +65,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 				
 			}
 		}
-		if(params.get(("customHeaders")) != null && params.get("customHeaders").getValue()!=null){
-			customHeaders = params.get("customHeaders").getValue();
-		}
+		customHeaders = getParameterValue(params.get(WorkflowParameter.CUSTOM_HEADERS.getKey()));
 
 		String emails = (params.get("emails")== null) ? "" : params.get("emails").getValue();
 		List<String> recipients = new ArrayList<>();
@@ -136,8 +137,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
 					
 					paramList.add(new WorkflowActionletParameter("isHtml", "Is Html?", null, false));
-					paramList.add(new WorkflowActionletParameter("customHeaders",
-							"Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
+					paramList.add(WorkflowParameter.CUSTOM_HEADERS.toWorkflowActionletParameter());
 				}
 			}
 		}

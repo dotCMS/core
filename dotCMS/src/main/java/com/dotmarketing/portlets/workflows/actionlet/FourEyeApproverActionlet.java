@@ -4,6 +4,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.workflows.WorkflowParameter;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
 import com.dotmarketing.util.Logger;
@@ -54,7 +55,6 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
     private static final String PARAM_EMAIL_SUBJECT = "emailSubject";
     private static final String PARAM_EMAIL_BODY = "emailBody";
     private static final String PARAM_IS_HTML = "isHtml";
-    private static final String CUSTOM_HEADERS = "customHeaders";
 
     private static final int DEFAULT_MINIMUM_CONTENT_APPROVERS = 2;
 
@@ -83,8 +83,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
                             null,
                             false));
             ACTIONLET_PARAMETERS
-                    .add(new WorkflowActionletParameter(CUSTOM_HEADERS,
-                    "Custom Headers <br>(one per line: Header-Name: Header-Value)", "", false));
+                    .add(WorkflowParameter.CUSTOM_HEADERS.toWorkflowActionletParameter());
         }
         return ACTIONLET_PARAMETERS;
     }
@@ -128,7 +127,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
         final String emailSubject = getParameterValue(params.get(PARAM_EMAIL_SUBJECT));
         final String emailBody    = getParameterValue(params.get(PARAM_EMAIL_BODY));
         final boolean isHtml      = getParameterValue(params.get(PARAM_IS_HTML), true);
-        final String customHeaders = getParameterValue(params.get(CUSTOM_HEADERS));
+        final String customHeaders = getParameterValue(params.get(WorkflowParameter.CUSTOM_HEADERS.getKey()));
         final Tuple2<Set<User>, Set<Role>> usersAndRoles = getUsersFromIds(userIds, ID_DELIMITER);
         final Set<Role> approverRoles            = usersAndRoles._2();
         final Set<User> requiredContentApprovers = usersAndRoles._1();
