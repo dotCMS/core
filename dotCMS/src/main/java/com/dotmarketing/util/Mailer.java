@@ -297,11 +297,6 @@ public class Mailer {
 			}
 		}
 	}
-	public void setHeader(String name, String value) {
-		if (UtilMethods.isSet(name) && UtilMethods.isSet(value)) {
-			customHeaders.put(name, value);
-		}
-	}
 	public void addHeader(String headerName, String headerValue) {
 		if (UtilMethods.isSet(headerName) && UtilMethods.isSet(headerValue)) {
 			customHeaders.put(headerName, headerValue);
