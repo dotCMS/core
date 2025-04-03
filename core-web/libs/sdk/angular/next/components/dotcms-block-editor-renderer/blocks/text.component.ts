@@ -1,21 +1,23 @@
-import { Component, computed, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
 import { Mark } from '@dotcms/uve/internal';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-paragraph',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <p>
             <ng-content />
         </p>
     `
 })
-export class DotCMSBlockEditorRendererParagraphComponent {}
+export class DotParagraphBlock {}
 
 @Component({
     selector: 'dotcms-block-editor-renderer-heading',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @switch (level) {
             @case ('1') {
@@ -56,7 +58,7 @@ export class DotCMSBlockEditorRendererParagraphComponent {}
         }
     `
 })
-export class DotCMSBlockEditorRendererHeadingComponent {
+export class DotHeadingBlock {
     @Input() level!: string;
 }
 
@@ -68,6 +70,7 @@ interface TextBlockProps {
 @Component({
     selector: 'dotcms-block-editor-renderer-text',
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @switch (marks?.[0]?.type) {
             @case ('link') {
@@ -113,7 +116,7 @@ interface TextBlockProps {
         }
     `
 })
-export class DotCMSBlockEditorRendererTextComponent {
+export class DotTextBlock {
     @Input() marks: TextBlockProps['marks'] = [];
     @Input() text = '';
 

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-code-block',
@@ -9,9 +9,10 @@ import { Component } from '@angular/core';
                 <ng-content />
             </code>
         </pre>
-    `
+    `,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCMSBlockEditorRendererCodeBlockComponent {}
+export class DotCodeBlock {}
 
 @Component({
     selector: 'dotcms-block-editor-renderer-block-quote',
@@ -20,6 +21,7 @@ export class DotCMSBlockEditorRendererCodeBlockComponent {}
         <blockquote>
             <ng-content />
         </blockquote>
-    `
+    `,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCMSBlockEditorRendererBlockQuoteComponent {}
+export class DotBlockQuote {}

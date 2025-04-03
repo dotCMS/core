@@ -6,17 +6,17 @@ import { catchError, map } from 'rxjs/operators';
 import { getPageRequestParams } from '@dotcms/client';
 import { getUVEState } from '@dotcms/uve';
 
-import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
+import { DotcmsNavigationItem } from '@dotcms/angular';
 
 import { PageError } from '../pages.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
 
 import { Block } from '@dotcms/uve/internal';
 import { Contentlet } from '@dotcms/uve/types';
-
+import { DotCMSPageAsset } from '@dotcms/client/types';
 
 export interface PageResponse {
-    page: DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> } | null;
+    page: DotCMSPageAsset<{urlContentMap?: Contentlet<{ blogContent: Block }>} > | null;
     error?: PageError;
 }
 

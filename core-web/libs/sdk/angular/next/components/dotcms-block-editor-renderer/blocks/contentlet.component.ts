@@ -1,5 +1,5 @@
 import { AsyncPipe, NgComponentOutlet } from '@angular/common';
-import { Component, computed, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
 import { ContentNode } from '@dotcms/uve/internal';
 import { Contentlet } from '@dotcms/uve/types';
@@ -12,9 +12,10 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
  */
 @Component({
     selector: 'dot-default-content',
-    template: '<div>Unknown Content Type: {{ contentlet?.contentType }}</div>'
+    template: '<div>Unknown Content Type: {{ contentlet?.contentType }}</div>',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DefaultContentComponent {
+export class DotDefaultContentBlock {
     @Input() contentlet: Contentlet<unknown> | undefined;
 }
 
@@ -25,10 +26,11 @@ export class DefaultContentComponent {
     selector: 'dotcms-block-editor-renderer-contentlet',
     standalone: true,
     imports: [NgComponentOutlet, AsyncPipe],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     template:
         '<ng-container *ngComponentOutlet="contentComponent | async; inputs: { contentlet: $data() }"></ng-container>'
 })
-export class DotCMSBlockEditorRendererContentlet {
+export class DotContentletBlock {
     @Input() customRenderers: CustomRenderer | undefined;
     @Input() attrs: ContentNode['attrs'];
 
@@ -43,6 +45,6 @@ export class DotCMSBlockEditorRendererContentlet {
 
         this.contentComponent =
             this.customRenderers?.[this.$data()?.contentType] ??
-            import('./contentlet.component').then((m) => m.DefaultContentComponent);
+            import('./contentlet.component').then((m) => m.DotDefaultContentBlock);
     }
 }

@@ -3,7 +3,7 @@ import { Component, Input } from '@angular/core';
 
 import { ContentNode } from '@dotcms/uve/internal';
 
-import { DotCMSBlockEditorRendererBlockComponent } from '../item/dotcms-block-editor-renderer-block.component';
+import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item.component';
 @Component({
     selector: 'dotcms-block-editor-renderer-table',
     standalone: true,
@@ -47,7 +47,7 @@ import { DotCMSBlockEditorRendererBlockComponent } from '../item/dotcms-block-ed
         </table>
     `
 })
-export class DotCMSBlockEditorRendererTableComponent {
+export class DotTableBlock {
     @Input() content!: ContentNode[];
-    blockEditorItem = DotCMSBlockEditorRendererBlockComponent;
+    blockEditorItem = DotCMSBlockEditorItemComponent;
 }

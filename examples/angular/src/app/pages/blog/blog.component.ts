@@ -1,26 +1,22 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
-import { ActivatedRoute } from '@angular/router';
+import { NavigationEnd, Router, ActivatedRoute } from '@angular/router';
 import { PageService } from '../services/page.service';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
-import { startWith, switchMap } from 'rxjs/operators';
-import { filter } from 'rxjs/operators';
+import { startWith, switchMap, filter, tap } from 'rxjs/operators';
 import { DYNAMIC_COMPONENTS } from '../components';
-import { tap } from 'rxjs/operators';
 import { getUVEState } from '@dotcms/uve';
-import { DotcmsNavigationItem, DotCMSPageAsset } from '@dotcms/angular';
+import { DotcmsNavigationItem } from '@dotcms/angular';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { postMessageToEditor } from '@dotcms/client';
-import { CLIENT_ACTIONS } from '@dotcms/client';
+import { postMessageToEditor, CLIENT_ACTIONS } from '@dotcms/client';
 import { HeaderComponent } from "../components/header/header.component";
 import { NavigationComponent } from "../components/navigation/navigation.component";
 import { LoadingComponent } from "../components/loading/loading.component";
 import { ErrorComponent } from "../components/error/error.component";
 import { FooterComponent } from "../components/footer/footer.component";
-
-import { Contentlet } from '../../../../../../core-web/dist/libs/sdk/client/src/lib/client/content/shared/types';
 import { Block } from '@angular/compiler';
 import { BlogPostComponent } from './blog-post/blog-post.component';
+import { Contentlet } from '@dotcms/uve/types';
+import { DotCMSPageAsset } from '@dotcms/client/types';
 
 
 export type PageError = {
@@ -29,8 +25,7 @@ export type PageError = {
 };
 
 type PageRender = {
-    // TODO: Centralize the type of the page asset
-    page: DotCMSPageAsset & { urlContentMap?: Contentlet<{ blogContent: Block }> } | null;
+    page: DotCMSPageAsset<{urlContentMap?: Contentlet<{ blogContent: Block }>} > | null;
     nav: DotcmsNavigationItem | null;
     error: PageError | null;
     status: 'idle' | 'success' | 'error' | 'loading';
@@ -88,7 +83,7 @@ export class BlogComponent {
                 if (vanityUrl?.permanentRedirect || vanityUrl?.temporaryRedirect) {
                     this.#router.navigate([vanityUrl.forwardTo]);
                     return;
-                }   
+                }
 
                 this.#setPageContent(page as DotCMSPageAsset, nav);
             });

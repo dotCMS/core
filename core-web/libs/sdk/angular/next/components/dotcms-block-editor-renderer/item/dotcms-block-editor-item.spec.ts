@@ -5,26 +5,15 @@ import { fakeAsync, tick } from '@angular/core/testing';
 
 import { Blocks, ContentNode } from '@dotcms/uve/internal';
 
-import { DotCMSBlockEditorRendererBlockComponent } from './dotcms-block-editor-renderer-block.component';
+import { DotCMSBlockEditorItemComponent } from './dotcms-block-editor-item.component';
 
-import {
-    DotCMSBlockEditorRendererBlockQuoteComponent,
-    DotCMSBlockEditorRendererCodeBlockComponent
-} from '../blocks/code.component';
-import { DotCMSBlockEditorRendererContentlet } from '../blocks/contentlet.component';
-import { DotCMSBlockEditorRendererImageComponent } from '../blocks/image.component';
-import {
-    DotCMSBlockEditorRendererBulletListComponent,
-    DotCMSBlockEditorRendererListItemComponent,
-    DotCMSBlockEditorRendererOrderedListComponent
-} from '../blocks/list.component';
-import { DotCMSBlockEditorRendererTableComponent } from '../blocks/table.component';
-import {
-    DotCMSBlockEditorRendererHeadingComponent,
-    DotCMSBlockEditorRendererParagraphComponent,
-    DotCMSBlockEditorRendererTextComponent
-} from '../blocks/text.component';
-import { DotCMSBlockEditorRendererVideoComponent } from '../blocks/video.components';
+import { DotBlockQuote, DotCodeBlock } from '../blocks/code.component';
+import { DotContentletBlock } from '../blocks/contentlet.component';
+import { DotImageBlock } from '../blocks/image.component';
+import { DotBulletList, DotListItem, DotOrdererList } from '../blocks/list.component';
+import { DotTableBlock } from '../blocks/table.component';
+import { DotHeadingBlock, DotParagraphBlock, DotTextBlock } from '../blocks/text.component';
+import { DotVideoBlock } from '../blocks/video.components';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-custom-component',
@@ -36,9 +25,9 @@ export class DotCMSBlockEditorRendererCustomComponent {
 }
 
 describe('DotCMSBlockEditorRendererBlockComponent', () => {
-    let spectator: Spectator<DotCMSBlockEditorRendererBlockComponent>;
+    let spectator: Spectator<DotCMSBlockEditorItemComponent>;
     const createComponent = createComponentFactory({
-        component: DotCMSBlockEditorRendererBlockComponent,
+        component: DotCMSBlockEditorItemComponent,
         shallow: true
     });
 
@@ -61,7 +50,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render paragraph component', () => {
-                expect(spectator.query(DotCMSBlockEditorRendererParagraphComponent)).toBeTruthy();
+                expect(spectator.query(DotParagraphBlock)).toBeTruthy();
             });
         });
 
@@ -80,11 +69,11 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render text component', () => {
-                expect(spectator.query(DotCMSBlockEditorRendererTextComponent)).toBeTruthy();
+                expect(spectator.query(DotTextBlock)).toBeTruthy();
             });
 
             it('should pass text and marks', () => {
-                const textComponent = spectator.query(DotCMSBlockEditorRendererTextComponent);
+                const textComponent = spectator.query(DotTextBlock);
                 expect(textComponent?.text).toBe('Sample text');
                 expect(textComponent?.marks).toBeTruthy();
             });
@@ -104,11 +93,11 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
             });
 
             it('should render heading component', () => {
-                expect(spectator.query(DotCMSBlockEditorRendererHeadingComponent)).toBeTruthy();
+                expect(spectator.query(DotHeadingBlock)).toBeTruthy();
             });
 
             it('should pass level attribute', () => {
-                const heading = spectator.query(DotCMSBlockEditorRendererHeadingComponent);
+                const heading = spectator.query(DotHeadingBlock);
                 expect(heading?.level).toBe('2');
             });
         });
@@ -124,7 +113,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererBulletListComponent)).toBeTruthy();
+                expect(spectator.query(DotBulletList)).toBeTruthy();
             });
 
             it('should render ordered list', () => {
@@ -137,7 +126,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererOrderedListComponent)).toBeTruthy();
+                expect(spectator.query(DotOrdererList)).toBeTruthy();
             });
 
             it('should render list item', () => {
@@ -150,7 +139,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererListItemComponent)).toBeTruthy();
+                expect(spectator.query(DotListItem)).toBeTruthy();
             });
         });
 
@@ -166,7 +155,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererImageComponent)).toBeTruthy();
+                expect(spectator.query(DotImageBlock)).toBeTruthy();
             });
 
             it('should render video component', () => {
@@ -180,7 +169,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererVideoComponent)).toBeTruthy();
+                expect(spectator.query(DotVideoBlock)).toBeTruthy();
             });
         });
 
@@ -195,7 +184,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererBlockQuoteComponent)).toBeTruthy();
+                expect(spectator.query(DotBlockQuote)).toBeTruthy();
             });
 
             it('should render code block', () => {
@@ -208,7 +197,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererCodeBlockComponent)).toBeTruthy();
+                expect(spectator.query(DotCodeBlock)).toBeTruthy();
             });
 
             it('should render table', () => {
@@ -221,7 +210,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererTableComponent)).toBeTruthy();
+                expect(spectator.query(DotTableBlock)).toBeTruthy();
             });
 
             it('should render contentlet', () => {
@@ -235,7 +224,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.setInput('content', content);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotCMSBlockEditorRendererContentlet)).toBeTruthy();
+                expect(spectator.query(DotContentletBlock)).toBeTruthy();
             });
         });
 

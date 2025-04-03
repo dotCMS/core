@@ -1,6 +1,5 @@
-import { Component, computed, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
-import { DotCmsClient } from '@dotcms/client';
 import { ContentNode } from '@dotcms/uve/internal';
 
 @Component({
@@ -8,16 +7,11 @@ import { ContentNode } from '@dotcms/uve/internal';
     standalone: true,
     template: `
         <img [alt]="attrs?.['alt']" [src]="$srcURL()" />
-    `
+    `,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCMSBlockEditorRendererImageComponent {
+export class DotImageBlock {
     @Input() attrs!: ContentNode['attrs'];
 
-    private client = DotCmsClient.instance;
-
-    protected readonly $srcURL = computed(() => {
-        return this.attrs?.['data']?.['identifier']
-            ? `${this.client.dotcmsUrl}${this.attrs['src']}`
-            : this.attrs?.['src'];
-    });
+    protected readonly $srcURL = computed(() => this.attrs?.['src']);
 }
