@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
+import io.vavr.control.Try;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -185,7 +186,14 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	}
 
 	public String getTagStorage() {
-		return (String) map.get(TAG_STORAGE);
+		Host host = Try.of(()->
+				APILocator.getHostAPI().find(map.get(TAG_STORAGE).toString(), APILocator.systemUser(), false)).getOrNull();
+
+		if(host!=null) {
+			return host.getIdentifier();
+		}
+
+		return Host.SYSTEM_HOST;
 	}
 
 	public void setTagStorage(String tagStorageId) {
