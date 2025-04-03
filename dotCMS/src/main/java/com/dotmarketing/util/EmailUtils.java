@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.sun.mail.pop3.POP3SSLStore;
 import io.vavr.Tuple2;
 import org.apache.velocity.context.Context;
@@ -478,9 +479,9 @@ public class EmailUtils {
 
 			for (String line : headerLines) {
 				line = line.trim();
-				if (line.contains(":")) {
+				if (line.contains(StringPool.COLON)) {
 					// Split only on the first colon
-					String[] parts = line.split(":", 2);
+					String[] parts = line.split(StringPool.COLON, 2);
 					String headerName = parts[0].trim();
 					String headerValue = parts[1].trim();
 
