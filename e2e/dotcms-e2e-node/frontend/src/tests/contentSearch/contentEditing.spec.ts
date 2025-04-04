@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { LoginPage, SideMenuPage } from "@pages";
-import { waitForVisibleAndCallback } from "@utils/utils";
 import { ContentPage } from "@pages";
 import {
   iFramesLocators,
@@ -34,9 +33,8 @@ test.beforeEach("Navigate to content portlet", async ({ page }) => {
 
   // Validate the portlet title
   const breadcrumbLocator = page.locator("p-breadcrumb");
-  await waitForVisibleAndCallback(breadcrumbLocator, () =>
-    expect(breadcrumbLocator).toContainText("Search All"),
-  );
+  await breadcrumbLocator.waitFor();
+  await expect(breadcrumbLocator).toContainText("Search All");
 });
 
 /**
@@ -57,9 +55,8 @@ test("Add a new Generic content", async ({ page }) => {
     action: contentProperties.publishWfAction,
   });
   await contentUtils.workflowExecutionValidationAndClose("Content saved");
-  await waitForVisibleAndCallback(
-    iframe.locator("#results_table tbody tr").first(),
-  );
+ 
+  await iframe.locator("#results_table tbody tr").first().waitFor();
   await contentUtils.validateContentExist(genericContent1.title).then(assert);
 });
 
@@ -76,16 +73,15 @@ test("Edit a generic content and discard changes", async ({ page }) => {
     newTitle: genericContent1.newTitle,
     newBody: "genericContent1",
   });
-  await waitForVisibleAndCallback(page.getByTestId("close-button"), () =>
-    page.getByTestId("close-button").click(),
-  );
-  await waitForVisibleAndCallback(
-    page.getByRole("button", { name: "Close" }),
-    () => page.getByRole("button", { name: "Close" }).click(),
-  );
-  await waitForVisibleAndCallback(
-    iframe.locator("#results_table tbody tr").first(),
-  );
+  const closeButton = page.getByTestId("close-button");
+  await closeButton.waitFor();
+  await closeButton.click();
+  
+  const closeButtonRole = page.getByRole("button", { name: "Close" });
+  await closeButtonRole.waitFor();
+  await closeButtonRole.click();
+  
+  await iframe.locator("#results_table tbody tr").first().waitFor();
   await contentUtils.validateContentExist(genericContent1.title).then(assert);
 });
 
@@ -103,9 +99,7 @@ test("Edit a generic content", async ({ page }) => {
     newBody: genericContent1.newBody,
     action: contentProperties.publishWfAction,
   });
-  await waitForVisibleAndCallback(
-    iframe.locator("#results_table tbody tr").first(),
-  );
+  await iframe.locator("#results_table tbody tr").first().waitFor();
   await contentUtils
     .validateContentExist(genericContent1.newTitle)
     .then(assert);
@@ -169,9 +163,11 @@ test("Validate adding file assets from URL", async ({ page }) => {
     fromURL: fileAssetContent.fromURL,
   });
   await contentUtils.workflowExecutionValidationAndClose("Content saved");
+  const fileAssetContentElement = await contentUtils.getContentElement(fileAssetContent.newFileName);
+  await fileAssetContentElement.waitFor();
   await expect(
-    contentUtils.validateContentExist("DotCMS-logo.svg"),
-  ).resolves.toBeTruthy();
+    fileAssetContentElement.getByRole("heading"),
+  ).toContainText(fileAsset.label);
 });
 
 /**
@@ -192,9 +188,9 @@ test("Validate you are able to add file assets creating a new file", async ({
     binaryFileText: fileAssetContent.newFileText,
   });
   await contentUtils.workflowExecutionValidationAndClose("Content saved");
-  await contentUtils
-    .validateContentExist(fileAssetContent.newFileName)
-    .then(assert);
+  const fileAssetContentElement = await contentUtils.getContentElement(fileAssetContent.newFileName);
+  await fileAssetContentElement.waitFor();
+  await expect(fileAssetContentElement.getByRole("heading")).toContainText(fileAsset.label);
 });
 
 /**
@@ -204,13 +200,12 @@ test("Validate you can edit text on binary fields", async ({ page }) => {
   const contentUtils = new ContentPage(page);
 
   await contentUtils.selectTypeOnFilter(fileAsset.locator);
-  const contentElement = await contentUtils.getContentElement(
+  const fileAssetContentElement = await contentUtils.getContentElement(
     fileAssetContent.newFileName,
   );
-  await contentElement.click();
-  await waitForVisibleAndCallback(page.getByRole("heading"), () =>
-    expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
-  );
+  await fileAssetContentElement.click();
+  await fileAssetContentElement.waitFor();
+  await expect.soft(fileAssetContentElement.getByRole("heading")).toContainText(fileAsset.label);
 
   await contentUtils.fillFileAssetForm({
     host: fileAssetContent.host,
@@ -223,9 +218,8 @@ test("Validate you can edit text on binary fields", async ({ page }) => {
   await contentUtils.workflowExecutionValidationAndClose("Content saved");
 
   await contentUtils.selectTypeOnFilter(fileAsset.locator);
-  await (
-    await contentUtils.getContentElement(fileAssetContent.newFileName)
-  ).click();
+  const fileAssetElement = await contentUtils.getContentElement(fileAssetContent.newFileName);
+  await fileAssetElement.click();
   const editIframe = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await expect(editIframe.getByRole("code")).toHaveText(
     fileAssetContent.newFileTextEdited,
@@ -242,20 +236,17 @@ test("Validate you are able to delete file on binary fields", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(fileAsset.locator);
-  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
-  const contentElement = await contentUtils.getContentElement(
+  await mainFrame.locator("#contentWrapper").waitFor();
+  const fileAssetContentElement = await contentUtils.getContentElement(
     fileAssetContent.newFileName,
   );
-  await contentElement.click();
-  await waitForVisibleAndCallback(page.getByRole("heading"), () =>
-    expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
-  );
+  await fileAssetContentElement.click();
+  await fileAssetContentElement.waitFor();
+  await expect.soft(fileAssetContentElement.getByRole("heading")).toContainText(fileAsset.label);
 
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await detailFrame.getByRole("button", { name: " Remove" }).click();
-  await waitForVisibleAndCallback(
-    detailFrame.getByTestId("ui-message-icon-container"),
-  );
+  await detailFrame.locator("#ui-message-icon-container").waitFor();
   await detailFrame.getByText("Publish", { exact: true }).click();
   await expect(detailFrame.getByText("The field File Asset is")).toBeVisible();
 });
@@ -270,17 +261,14 @@ test("Validate file assets show corresponding information", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(fileAsset.locator);
-  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
-  await (
-    await contentUtils.getContentElement(fileAssetContent.newFileName)
-  ).click();
-  await waitForVisibleAndCallback(page.getByRole("heading"), () =>
-    expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
-  );
+  await mainFrame.locator("#contentWrapper").waitFor();
+  const fileAssetContentElement = await contentUtils.getContentElement(fileAssetContent.newFileName);
+  await fileAssetContentElement.waitFor();
+  await expect.soft(fileAssetContentElement.getByRole("heading")).toContainText(fileAsset.label);
 
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   await detailFrame.getByTestId("info-btn").click();
-  await waitForVisibleAndCallback(detailFrame.getByText("Bytes"));
+  await detailFrame.getByText("Bytes").waitFor();
   await expect(detailFrame.getByText("Bytes")).toBeVisible();
   await expect(detailFrame.getByTestId("resource-link-FileLink")).toContainText(
     "http",
@@ -302,13 +290,10 @@ test("Validate the download of binary fields on file assets", async ({
   const mainFrame = page.frameLocator(iFramesLocators.main_iframe);
 
   await contentUtils.selectTypeOnFilter(fileAsset.locator);
-  await waitForVisibleAndCallback(mainFrame.locator("#contentWrapper"));
-  await (
-    await contentUtils.getContentElement(fileAssetContent.newFileName)
-  ).click();
-  await waitForVisibleAndCallback(page.getByRole("heading"), () =>
-    expect.soft(page.getByRole("heading")).toContainText(fileAsset.label),
-  );
+  await mainFrame.locator("#contentWrapper").waitFor();
+  const fileAssetContentElement = await contentUtils.getContentElement(fileAssetContent.newFileName);
+  await fileAssetContentElement.waitFor();
+  await expect.soft(fileAssetContentElement.getByRole("heading")).toContainText(fileAsset.label);
   const detailFrame = page.frameLocator(iFramesLocators.dot_edit_iframe);
   const downloadLink = detailFrame.getByTestId("download-btn");
   await contentUtils.validateDownload(downloadLink);
@@ -328,11 +313,12 @@ test("Validate the required on file asset fields", async ({ page }) => {
     title: fileAssetContent.title,
     action: contentProperties.publishWfAction,
   });
-  await waitForVisibleAndCallback(detailsFrame.getByText("Error x"));
+  const errorMsg = detailsFrame.getByText("Error x");
+  await errorMsg.waitFor();
+  
   const errorMessage = detailsFrame.getByText("The field File Asset is");
-  await waitForVisibleAndCallback(errorMessage, () =>
-    expect(errorMessage).toBeVisible(),
-  );
+  await errorMessage.waitFor();
+  await expect(errorMessage).toBeVisible();
 });
 
 /**
@@ -353,10 +339,9 @@ test("Validate the auto complete on FileName field accepting change", async ({
     binaryFileName: fileAssetContent.newFileName,
     binaryFileText: fileAssetContent.newFileText,
   });
-  const replaceText = detailsFrame.getByText("Do you want to replace the");
-  await waitForVisibleAndCallback(replaceText, () =>
-    expect(replaceText).toBeVisible(),
-  );
+  const replaceTextMsg = detailsFrame.getByText("Do you want to replace the");
+  await replaceTextMsg.waitFor();
+  await expect(replaceTextMsg).toBeVisible();
   await detailsFrame.getByLabel("Yes").click();
   await expect(detailsFrame.locator("#fileName")).toHaveValue(
     fileAssetContent.newFileName,
@@ -381,10 +366,9 @@ test("Validate the auto complete on FileName field rejecting change", async ({
     binaryFileName: fileAssetContent.newFileName,
     binaryFileText: fileAssetContent.newFileText,
   });
-  const replaceText = detailsFrame.getByText("Do you want to replace the");
-  await waitForVisibleAndCallback(replaceText, () =>
-    expect(replaceText).toBeVisible(),
-  );
+  const replaceTextMsg = detailsFrame.getByText("Do you want to replace the");
+  await replaceTextMsg.waitFor();
+  await expect(replaceTextMsg).toBeVisible();
   await detailsFrame.getByLabel("No").click();
   await expect(detailsFrame.locator("#fileName")).toHaveValue("test");
 });
@@ -430,7 +414,7 @@ test("Add a new page", async ({ page }) => {
     action: contentProperties.publishWfAction,
   });
   const dataFrame = page.frameLocator(iFramesLocators.dataTestId);
-  await waitForVisibleAndCallback(dataFrame.getByRole("banner"));
+  await dataFrame.getByRole("banner").waitFor();
   await expect(page.locator("ol")).toContainText(
     "Pages" + pageAssetContent.title,
   );
@@ -477,7 +461,7 @@ test("Validate required fields on page asset", async ({ page }) => {
     showOnMenu: pageAssetContent.showOnMenu,
     action: contentProperties.publishWfAction,
   });
-  await waitForVisibleAndCallback(detailFrame.getByText("Error x"));
+  await detailFrame.getByText("Error x").waitFor();
 
   await expect(
     detailFrame.getByText("The field Title is required."),
