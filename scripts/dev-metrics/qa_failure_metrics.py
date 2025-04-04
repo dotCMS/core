@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class QAFailureMetrics(GitHubMetricsBase):
     def __init__(self, token, owner, repo, team_label):
-        super().__init__(token=token, owner=owner, repo=repo, team_label=team_label)
+        super().__init__(token=token, owner=owner, repo=repo, team_labels=team_label)
 
     def count_qa_failures(self, issue_number, sprint_start, sprint_end):
         """Count how many times an issue received the QA Failed label during the sprint period"""
