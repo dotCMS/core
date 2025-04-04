@@ -1,6 +1,6 @@
 import { CommonModule } from "@angular/common";
 import { Component, Input, signal } from "@angular/core";
-import { ContentNode } from "@dotcms/uve/internal";
+import { ContentNode } from "@dotcms/uve/types";
 
 @Component({
     selector: 'app-paragraph',

@@ -11,7 +11,7 @@ import { DotcmsNavigationItem } from '@dotcms/angular';
 import { PageError } from '../pages.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../app.config';
 
-import { Block } from '@dotcms/uve/internal';
+import { Block } from '@dotcms/uve/types';
 import { Contentlet } from '@dotcms/uve/types';
 import { DotCMSPageAsset } from '@dotcms/client/types';
 
