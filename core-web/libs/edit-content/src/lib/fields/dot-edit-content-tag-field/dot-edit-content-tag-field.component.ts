@@ -15,18 +15,15 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
-import { catchError, debounceTime, switchMap } from 'rxjs/operators';
+import { catchError, skip, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
-const MIN_SEARCH_LENGTH = 1;
-const DEBOUNCE_TIME = 250;
-
 /**
  * Component that handles tag field input using PrimeNG's AutoComplete.
- * It provides tag suggestions as the user types with a minimum of 3 characters.
+ * It provides tag suggestions as the user types with a minimum of 2 characters.
  */
 @Component({
     selector: 'dot-edit-content-tag-field',
@@ -64,7 +61,7 @@ export class DotEditContentTagFieldComponent {
 
     /**
      * Subject that handles the search terms stream
-     * Used to debounce and process user input
+     * Used to process user input
      */
     #searchTerms$ = new BehaviorSubject<string>('');
 
@@ -78,33 +75,14 @@ export class DotEditContentTagFieldComponent {
     private setupSearchListener(): void {
         this.#searchTerms$
             .pipe(
-                debounceTime(DEBOUNCE_TIME),
-                switchMap((term) => this.handleSearch(term)),
+                skip(1),
+                switchMap((term) => this.searchTags(term)),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe({
                 next: (tags) => this.$suggestions.set(tags),
                 error: () => this.$suggestions.set([])
             });
-    }
-
-    /**
-     * Handles the search logic based on term length
-     * Returns either EMPTY for short terms or the search results
-     */
-    private handleSearch(term: string) {
-        return term.length < MIN_SEARCH_LENGTH ? this.handleShortTerm() : this.searchTags(term);
-    }
-
-    /**
-     * Handles the case when the search term is too short
-     * Clears suggestions and hides the overlay
-     */
-    private handleShortTerm() {
-        this.$suggestions.set([]);
-        this.hideAutocomplete();
-
-        return EMPTY;
     }
 
     /**
@@ -118,15 +96,6 @@ export class DotEditContentTagFieldComponent {
                 return EMPTY;
             })
         );
-    }
-
-    /**
-     * Safely hides the autocomplete overlay
-     */
-    private hideAutocomplete(): void {
-        if (this.autocomplete()) {
-            this.autocomplete().hide();
-        }
     }
 
     /**

@@ -96,4 +96,20 @@ export class AddStyleClassesDialogComponent implements OnInit {
     save() {
         this.#dialogRef.close(this.$selectedClasses());
     }
+
+    /**
+     * Add the current input value to selected classes when Enter is pressed
+     *
+     * @param {Event} event
+     * @memberof AddStyleClassesDialogComponent
+     */
+    onEnterKey(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const value = input.value.trim();
+
+        if (value) {
+            this.$selectedClasses.update((classes) => [...classes, value]);
+            input.value = '';
+        }
+    }
 }

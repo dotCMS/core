@@ -12,8 +12,8 @@
         class="p-fluid"
         data-testId="autocomplete"
         inputId="auto-complete-input"
-        appendTo="body"
-        dotSelectItem />
+        (keyup.enter)="onEnterKey($event)"
+        appendTo="body" />
     @if (hasClasses) {
         <ul data-testId="list">
             <li>
