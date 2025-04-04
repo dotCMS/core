@@ -1,7 +1,8 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import { Blocks, ContentNode } from '@dotcms/uve/internal';
+import { Blocks } from '@dotcms/uve/internal';
+import { ContentNode } from '@dotcms/uve/types';
 
 import { DotCodeBlock, DotBlockQuote } from '../blocks/code.component';
 import { DotContentletBlock } from '../blocks/contentlet.component';

@@ -1,7 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import { ContentNode } from '@dotcms/uve/internal';
+import { ContentNode } from '@dotcms/uve/types';
 
 import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item.component';
 @Component({
@@ -11,7 +11,7 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
     template: `
         <table>
             <thead>
-                @for (rowNode of content.slice(0, 1); track rowNode.type) {
+                @for (rowNode of content?.slice(0, 1); track rowNode.type) {
                     <tr>
                         @for (cellNode of rowNode.content; track cellNode.type) {
                             <th
@@ -28,7 +28,7 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
                 }
             </thead>
             <tbody>
-                @for (rowNode of content.slice(1); track rowNode.type) {
+                @for (rowNode of content?.slice(1); track rowNode.type) {
                     <tr>
                         @for (cellNode of rowNode.content; track cellNode.type) {
                             <td
@@ -48,6 +48,6 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
     `
 })
 export class DotTableBlock {
-    @Input() content!: ContentNode[];
+    @Input() content: ContentNode[] | undefined;
     blockEditorItem = DotCMSBlockEditorItemComponent;
 }

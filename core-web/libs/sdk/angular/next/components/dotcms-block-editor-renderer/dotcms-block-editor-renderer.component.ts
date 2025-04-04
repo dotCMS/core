@@ -1,8 +1,8 @@
 import { Component, Input, signal } from '@angular/core';
 
 import { getUVEState } from '@dotcms/uve';
-import { Block, BlockEditorState, isValidBlocks } from '@dotcms/uve/internal';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { BlockEditorState, isValidBlocks } from '@dotcms/uve/internal';
+import { UVE_MODE, Block } from '@dotcms/uve/types';
 
 import { DotCMSBlockEditorItemComponent } from './item/dotcms-block-editor-item.component';
 
@@ -16,6 +16,22 @@ import { DynamicComponentEntity } from '../../models';
  */
 export type CustomRenderer = Record<string, DynamicComponentEntity>;
 
+/**
+ * A component that renders content from DotCMS's Block Editor field.
+ *
+ * This component provides an easy way to render Block Editor content in your Angular applications.
+ * It handles the rendering of standard blocks and allows customization through custom renderers.
+ *
+ * For more information about Block Editor, see {@link https://dev.dotcms.com/docs/block-editor}
+ *
+ * @example
+ * ```html
+ * <dotcms-block-editor-renderer
+ *   [blocks]="myBlockEditorContent"
+ *   [customRenderers]="myCustomRenderers">
+ * </dotcms-block-editor-renderer>
+ * ```
+ */
 @Component({
     selector: 'dotcms-block-editor-renderer',
     standalone: true,

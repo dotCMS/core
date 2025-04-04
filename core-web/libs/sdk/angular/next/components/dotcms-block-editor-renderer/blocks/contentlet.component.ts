@@ -1,8 +1,7 @@
 import { AsyncPipe, NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
-import { ContentNode } from '@dotcms/uve/internal';
-import { Contentlet } from '@dotcms/uve/types';
+import { Contentlet, ContentNode } from '@dotcms/uve/types';
 
 import { DynamicComponentEntity } from '../../../models';
 import { CustomRenderer } from '../dotcms-block-editor-renderer.component';

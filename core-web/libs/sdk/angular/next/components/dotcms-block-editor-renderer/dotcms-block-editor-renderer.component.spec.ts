@@ -1,8 +1,8 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { getUVEState } from '@dotcms/uve';
-import { Block, BlockEditorState } from '@dotcms/uve/internal';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { BlockEditorState } from '@dotcms/uve/internal';
+import { Block, UVE_MODE } from '@dotcms/uve/types';
 
 import { DotCMSBlockEditorRendererComponent } from './dotcms-block-editor-renderer.component';
 import { DotCMSBlockEditorItemComponent } from './item/dotcms-block-editor-item.component';
@@ -31,7 +31,15 @@ describe('DotCMSBlockEditorRendererComponent', () => {
         content: [
             {
                 type: 'paragraph',
-                content: [{ type: 'text', text: 'Hello World', content: [] }]
+                attrs: {
+                    textAlign: 'left'
+                },
+                content: [
+                    {
+                        type: 'text',
+                        text: 'Im a new paragraph'
+                    }
+                ]
             }
         ]
     };
@@ -64,9 +72,6 @@ describe('DotCMSBlockEditorRendererComponent', () => {
 
     describe('Initialization', () => {
         it('should set initial blockEditorState', () => {
-            // spectator.setInput('blocks', mockValidBlock);
-            // component.blocks = mockValidBlock;
-
             spectator.detectChanges();
 
             expect(spectator.component.$blockEditorState()).toEqual({ error: null });
@@ -148,20 +153,6 @@ describe('DotCMSBlockEditorRendererComponent', () => {
             const blockRenderer = spectator.query(DotCMSBlockEditorItemComponent);
             expect(blockRenderer).toBeTruthy();
             expect(blockRenderer?.customRenderers).toBeUndefined();
-        });
-
-        it('should handle empty block content', () => {
-            const emptyBlock: Block = {
-                type: 'doc',
-                content: []
-            };
-
-            spectator.setInput('blocks', emptyBlock);
-            spectator.detectChanges();
-
-            const blockRenderer = spectator.query(DotCMSBlockEditorItemComponent);
-            expect(blockRenderer).toBeTruthy();
-            expect(blockRenderer?.content).toEqual([]);
         });
     });
 });

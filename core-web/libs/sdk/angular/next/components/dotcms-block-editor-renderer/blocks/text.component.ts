@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
-import { Mark } from '@dotcms/uve/internal';
+import { Mark } from '@dotcms/uve/types';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-paragraph',
