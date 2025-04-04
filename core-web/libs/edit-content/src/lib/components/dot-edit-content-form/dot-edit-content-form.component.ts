@@ -14,10 +14,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
+    FormsModule,
     ReactiveFormsModule,
     ValidatorFn,
-    Validators,
-    FormsModule
+    Validators
 } from '@angular/forms';
 import { Router } from '@angular/router';
 
