@@ -1,22 +1,14 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { ImageTabviewFormComponent } from './image-tabview-form.component';
+import { AssetFormComponent } from './asset-form.component';
 
-describe('ImageTabviewFormComponent', () => {
-    let component: ImageTabviewFormComponent;
-    let fixture: ComponentFixture<ImageTabviewFormComponent>;
+describe('AssetFormComponent', () => {
+    let spectator: Spectator<AssetFormComponent>;
+    const createComponent = createComponentFactory(AssetFormComponent);
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [ImageTabviewFormComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(ImageTabviewFormComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
-    });
+    beforeEach(() => (spectator = createComponent()));
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        expect(spectator.component).toBeTruthy();
     });
 });
