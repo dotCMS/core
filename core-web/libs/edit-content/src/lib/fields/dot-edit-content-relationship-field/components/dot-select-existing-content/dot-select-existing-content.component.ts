@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, model, OnInit, effect } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
@@ -8,6 +9,7 @@ import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputIconModule } from 'primeng/inputicon';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -22,7 +24,6 @@ import { SearchComponent } from './components/search/search.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { SelectionMode } from '../../models/relationship.models';
-import { PaginationComponent } from '../pagination/pagination.component';
 
 type DialogData = {
     contentTypeId: string;
@@ -42,14 +43,15 @@ type DialogData = {
         IconFieldModule,
         InputIconModule,
         InputTextModule,
-        PaginationComponent,
         InputGroupModule,
         OverlayPanelModule,
         SearchComponent,
         ContentletStatusPipe,
         LanguagePipe,
         DatePipe,
-        ChipModule
+        ChipModule,
+        InputSwitchModule,
+        FormsModule
     ],
     templateUrl: './dot-select-existing-content.component.html',
     styleUrls: ['./dot-select-existing-content.component.scss'],
@@ -72,20 +74,27 @@ export class DotSelectExistingContentComponent implements OnInit {
      * A signal that holds the selected items.
      * It is used to store the selected content items.
      */
-    $selectedItems = model<DotCMSContentlet[] | DotCMSContentlet | null>(null);
+    $selectionItems = model<DotCMSContentlet[] | DotCMSContentlet | null>(null);
 
     constructor() {
         effect(
             () => {
-                this.$selectedItems.set(this.store.initSelectedItems());
+                // Sync the selection items with the store
+                const selectionItems = this.$selectionItems();
+                if (selectionItems) {
+                    this.store.setSelectionItems(selectionItems);
+                }
             },
             {
                 allowSignalWrites: true
             }
         );
+
         effect(
             () => {
-                this.store.setSelectedItems(this.$selectedItems());
+                // Sync the selection items with the store
+                const selectionItems = this.store.selectionItems();
+                this.$selectionItems.set(selectionItems);
             },
             {
                 allowSignalWrites: true
@@ -107,7 +116,7 @@ export class DotSelectExistingContentComponent implements OnInit {
         this.store.initLoad({
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
-            currentItemsIds: data.currentItemsIds
+            selectedItemsIds: data.currentItemsIds
         });
     }
 
@@ -117,7 +126,7 @@ export class DotSelectExistingContentComponent implements OnInit {
      * @returns True if the item is selected, false otherwise.
      */
     checkIfSelected(item: DotCMSContentlet) {
-        const items = this.store.items();
+        const items = this.store.currentItems();
 
         return items.some((selectedItem) => selectedItem.inode === item.inode);
     }
