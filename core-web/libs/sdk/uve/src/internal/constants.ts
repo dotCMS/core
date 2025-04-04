@@ -79,7 +79,7 @@ export const END_CLASS = 'col-end-';
 export const START_CLASS = 'col-start-';
 
 /**
- * Empty container style
+ * Empty container style for React
  *
  * @internal
  */
@@ -94,7 +94,7 @@ export const EMPTY_CONTAINER_STYLE_REACT = {
 };
 
 /**
- * Empty container style
+ * Empty container style for Angular
  *
  * @internal
  */
