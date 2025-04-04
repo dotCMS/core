@@ -4,11 +4,11 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { DotCmsClient } from '@dotcms/client';
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
 import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 import { GenericContentlet } from '../..';
+import { Contentlet } from '@dotcms/uve/types';
 
 @Component({
   selector: 'app-blogs',
