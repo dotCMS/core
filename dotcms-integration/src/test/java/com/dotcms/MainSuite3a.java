@@ -13,6 +13,7 @@ import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllRunningExper
 import com.dotcms.telemetry.collectors.experiment.CountVariantsInAllScheduledExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.ExperimentFeatureFlagMetricTypeTest;
 import com.dotcms.telemetry.collectors.theme.TotalSizeOfFilesPerThemeMetricTypeTest;
+import com.dotcms.util.TimeMachineUtilTest;
 import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import org.junit.runner.RunWith;
@@ -33,7 +34,8 @@ import org.junit.runners.Suite;
         CountVariantsInAllRunningExperimentsMetricTypeTest.class,
         CountVariantsInAllScheduledExperimentsMetricTypeTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
-        TotalSizeOfFilesPerThemeMetricTypeTest.class
+        TotalSizeOfFilesPerThemeMetricTypeTest.class,
+        TimeMachineUtilTest.class
 })
 public class MainSuite3a {
 }
