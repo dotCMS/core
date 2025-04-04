@@ -30,9 +30,23 @@ describe('PageErrorMessageComponent', () => {
         });
 
         component = spectator.component;
+        jest.spyOn(console, 'warn').mockImplementation();
     });
 
     it('should create', () => {
         expect(component).toBeTruthy();
+    });
+
+    it('should display error message', () => {
+        spectator.detectChanges();
+        const errorMessage = spectator.query('[data-testid="error-message"]');
+        expect(errorMessage).toBeTruthy();
+        expect(errorMessage?.textContent).toContain('missing the required');
+        expect(errorMessage?.textContent).toContain('layout.body');
+    });
+
+    it('should log warning message on initialization', () => {
+        spectator.detectChanges();
+        expect(console.warn).toHaveBeenCalledWith('Missing required layout.body property in page');
     });
 });

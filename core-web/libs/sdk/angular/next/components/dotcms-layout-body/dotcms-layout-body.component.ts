@@ -33,7 +33,7 @@ import { DotCMSStore } from '../../store/dotcms.store';
     imports: [PageErrorMessageComponent, RowComponent],
     providers: [DotCMSStore],
     template: `
-        @if (!page) {
+        @if ($isEmpty() && $isDevMode()) {
             <dotcms-page-error-message />
         } @else {
             @for (row of $rows(); track row.identifier) {
@@ -51,7 +51,11 @@ export class DotCMSLayoutBodyComponent implements OnChanges {
 
     #dotCMSStore = inject(DotCMSStore);
 
+    $isDevMode = this.#dotCMSStore.$isDevMode;
+
     $rows = signal<DotPageAssetLayoutRow[]>([]);
+
+    $isEmpty = signal(false);
 
     ngOnChanges() {
         this.#dotCMSStore.setStore({
@@ -59,6 +63,8 @@ export class DotCMSLayoutBodyComponent implements OnChanges {
             components: this.components,
             mode: this.mode
         });
+
+        this.$isEmpty.set(!this.page?.layout?.body);
 
         this.$rows.set(this.page?.layout?.body?.rows ?? []);
     }

@@ -4,7 +4,6 @@ import { Spectator, byTestId, createRoutingFactory } from '@ngneat/spectator/jes
 import * as uve from '@dotcms/uve';
 import { UVE_MODE } from '@dotcms/uve/types';
 
-import { PageErrorMessageComponent } from './components/page-error-message/page-error-message.component';
 import { RowComponent } from './components/row/row.component';
 import { DotCMSLayoutBodyComponent } from './dotcms-layout-body.component';
 
@@ -60,6 +59,8 @@ describe('DotCMSLayoutBodyComponent', () => {
     });
 
     it('should show page error message if page is not found and is on development mode', () => {
+        getUVEStateMock.mockReturnValue(undefined);
+
         spectator.setInput({ page: null, mode: 'development' });
         spectator.detectChanges();
 
@@ -67,25 +68,40 @@ describe('DotCMSLayoutBodyComponent', () => {
     });
 
     it('should not show page error message if page is not found and is on production mode', () => {
+        getUVEStateMock.mockReturnValue({
+            mode: UVE_MODE.PREVIEW,
+            languageId: 'en'
+        });
+
         spectator.setInput({ page: null, mode: 'production' });
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('error-message'))).toBeFalsy();
     });
 
-    it('should show page error inside UVE on EDIT_MODE', () => {
+    it('should not show page error message when page exists even if in UVE EDIT mode', () => {
         getUVEStateMock.mockReturnValue({
             mode: UVE_MODE.EDIT,
-            languageId: 'en',
-            persona: 'admin',
-            variantName: 'default',
-            experimentId: '123',
-            publishDate: new Date().toISOString()
+            languageId: 'en'
         });
 
-        spectator.setInput({ page: null });
+        spectator.setInput({ page: PageResponseMock });
         spectator.detectChanges();
 
-        expect(spectator.query(PageErrorMessageComponent)).toBeTruthy();
+        expect(spectator.query(byTestId('error-message'))).toBeFalsy();
+    });
+
+    it('should show page error message when page is null and in UVE EDIT mode regardless of environment mode', () => {
+        getUVEStateMock.mockReturnValue({
+            mode: UVE_MODE.EDIT
+        });
+
+        spectator.setInput({
+            page: null,
+            mode: 'production'
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('error-message'))).toBeTruthy();
     });
 });
