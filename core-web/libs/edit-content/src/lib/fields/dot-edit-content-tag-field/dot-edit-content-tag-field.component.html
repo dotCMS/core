@@ -12,7 +12,7 @@
     [delay]="300"
     [id]="'tag-id-' + variable"
     [inputId]="variable"
-    [attr.data-testId]="variable"
+    [attr.data-testid]="'tag-field-container-' + variable"
     (completeMethod)="onSearch($event)"
     (keydown.enter)="$event.preventDefault()">
     <ng-template pTemplate="removetokenicon">

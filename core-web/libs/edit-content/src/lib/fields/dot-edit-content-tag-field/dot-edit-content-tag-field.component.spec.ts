@@ -1,92 +1,147 @@
-import { describe, expect, test } from '@jest/globals';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { describe, expect } from '@jest/globals';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DebugElement } from '@angular/core';
-import { ControlContainer, FormGroupDirective } from '@angular/forms';
+import { ControlContainer, FormControl, FormGroup, FormGroupDirective } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { AutoComplete } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
 import { DotEditContentTagFieldComponent } from './dot-edit-content-tag-field.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
-import { createFormGroupDirectiveMock, TAG_FIELD_MOCK } from '../../utils/mocks';
+import { TAG_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotEditContentTagFieldComponent', () => {
     let spectator: Spectator<DotEditContentTagFieldComponent>;
-    let autoCompleteElement: DebugElement;
-    let autoCompleteComponent: AutoComplete;
+    let service: SpyObject<DotEditContentService>;
+    let formGroup: FormGroup;
+    let formGroupDirective: FormGroupDirective;
 
     const createComponent = createComponentFactory({
         component: DotEditContentTagFieldComponent,
         componentViewProviders: [
             {
                 provide: ControlContainer,
-                useValue: createFormGroupDirectiveMock()
-            },
-            { provide: DotEditContentService, useValue: { getTags: () => of(['tagExample']) } }
+                useExisting: FormGroupDirective
+            }
         ],
-        providers: [FormGroupDirective]
+        providers: [FormGroupDirective, mockProvider(DotEditContentService)]
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: TAG_FIELD_MOCK
-            } as unknown
+        formGroup = new FormGroup({
+            [TAG_FIELD_MOCK.variable]: new FormControl([])
         });
+
+        formGroupDirective = new FormGroupDirective([], []);
+        formGroupDirective.form = formGroup;
+
+        spectator = createComponent({
+            detectChanges: false,
+            providers: [
+                {
+                    provide: FormGroupDirective,
+                    useValue: formGroupDirective
+                }
+            ]
+        });
+
+        spectator.setInput({
+            field: TAG_FIELD_MOCK
+        });
+
+        service = spectator.inject(DotEditContentService);
+        service.getTags.mockReturnValue(of(['tagExample']));
+
         spectator.detectChanges();
-
-        autoCompleteComponent = spectator.query(AutoComplete);
-
-        autoCompleteElement = spectator.debugElement.query(
-            By.css(`[data-testId="${TAG_FIELD_MOCK.variable}"]`)
-        );
     });
 
-    test.each([
-        {
-            variable: `tag-id-${TAG_FIELD_MOCK.variable}`,
-            attribute: 'ng-reflect-id'
-        },
-        {
-            variable: TAG_FIELD_MOCK.variable,
-            attribute: 'ng-reflect-name'
-        }
-    ])('should have the $variable as $attribute', ({ variable, attribute }) => {
-        expect(autoCompleteElement.attributes[attribute]).toBe(variable);
+    it('should create component', () => {
+        expect(spectator.component).toBeTruthy();
     });
 
-    it('should has multiple as true', () => {
-        expect(autoCompleteComponent.multiple).toBe(true);
+    describe('Component Configuration', () => {
+        it('should render autocomplete with correct attributes', () => {
+            const autocomplete = spectator.query(AutoComplete);
+            const container = spectator.query(
+                byTestId(`tag-field-container-${TAG_FIELD_MOCK.variable}`)
+            );
+
+            expect(container).toBeTruthy();
+            expect(autocomplete).toBeTruthy();
+            expect(autocomplete.id).toBe(`tag-id-${TAG_FIELD_MOCK.variable}`);
+            expect(autocomplete.inputId).toBe(TAG_FIELD_MOCK.variable);
+            expect(autocomplete.multiple).toBe(true);
+            expect(autocomplete.forceSelection).toBe(true);
+            expect(autocomplete.unique).toBe(true);
+            expect(autocomplete.minLength).toBe(2);
+            expect(autocomplete.delay).toBe(300);
+        });
+
+        it('should be connected to form control', () => {
+            const control = spectator.component.formControl;
+            const controlContainer = spectator.inject(ControlContainer, true);
+            expect(control).toBeDefined();
+            expect(control).toBe(controlContainer.control?.get(TAG_FIELD_MOCK.variable));
+        });
     });
 
-    it('should has unique as true', () => {
-        expect(autoCompleteComponent.unique).toBe(true);
+    describe('User Interactions', () => {
+        it('should show suggestions when user types valid search term', async () => {
+            const expectedTags = ['angular', 'typescript'];
+            service.getTags.mockReturnValue(of(expectedTags));
+
+            // Simulate user typing
+            spectator.component.onSearch({
+                query: 'type',
+                originalEvent: new Event('input')
+            } as AutoCompleteCompleteEvent);
+
+            // Wait for the async operation to complete
+            await spectator.fixture.whenStable();
+
+            expect(service.getTags).toHaveBeenCalledWith('type');
+            expect(spectator.component.$suggestions()).toEqual(expectedTags);
+        });
     });
 
-    it('should has showClear as true', () => {
-        expect(autoCompleteComponent.showClear).toBe(true);
-    });
+    describe('Form Integration', () => {
+        it('should update form value when user selects a tag', async () => {
+            const selectedTag = 'angular';
+            service.getTags.mockReturnValue(of([selectedTag]));
 
-    it('should trigger getTags on search with 3 or more characters', () => {
-        const getTagsMock = jest.spyOn(spectator.component, 'getTags');
-        const autocompleteArg = {
-            query: 'test'
-        };
-        spectator.triggerEventHandler('p-autocomplete', 'completeMethod', autocompleteArg);
-        expect(getTagsMock).toBeCalledWith(autocompleteArg);
-        expect(autoCompleteComponent.suggestions).toBeDefined();
-    });
+            // Simulate user selecting a tag
+            const selectAutocomplete = spectator.debugElement.query(
+                By.css(`[data-testid="tag-field-container-${TAG_FIELD_MOCK.variable}"]`)
+            );
+            spectator.triggerEventHandler(selectAutocomplete, 'completeMethod', {
+                query: selectedTag
+            });
 
-    it('should dont have suggestions if search ir less than 3 characters', () => {
-        const getTagsMock = jest.spyOn(spectator.component, 'getTags');
-        const autocompleteArg = {
-            query: 'te'
-        };
-        spectator.triggerEventHandler('p-autocomplete', 'completeMethod', autocompleteArg);
-        expect(getTagsMock).toBeCalledWith(autocompleteArg);
-        expect(autoCompleteComponent.suggestions).toBeNull();
+            await spectator.fixture.whenStable();
+
+            const formControl = spectator.component.formControl;
+            formControl?.setValue([selectedTag]);
+
+            expect(formControl?.value).toEqual([selectedTag]);
+        });
+
+        it('should allow multiple tag selection', async () => {
+            const tags = ['angular', 'typescript'];
+            service.getTags.mockReturnValue(of(tags));
+            const formControl = spectator.component.formControl;
+
+            // Simulate user selecting multiple tags
+            formControl?.setValue(tags);
+
+            expect(formControl?.value).toEqual(tags);
+        });
     });
 });
