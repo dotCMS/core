@@ -14,7 +14,7 @@ public abstract class Validated {
     private static final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     private boolean isValid(Set<ConstraintViolation<Validated>> violations) {
-        return violations.size() != 0;
+        return violations.isEmpty();
     }
 
     @JsonIgnore
@@ -24,7 +24,7 @@ public abstract class Validated {
 
     public void checkValid() {
         Set<ConstraintViolation<Validated>> violations = validator.validate(this);
-        if(violations.size() != 0) {
+        if(!violations.isEmpty()) {
             throw new ValidationException(this, violations);
         }
     }

@@ -2,7 +2,41 @@
 
 The `@dotcms/client` is a JavaScript/TypeScript library for interacting with a dotCMS instance. It allows you to easily fetch pages, content, and navigation information in JSON format, as well as to make complex queries on content collections.
 
+> **⚠️ IMPORTANT:** Versions published under the `next` tag (`npm install @dotcms/client@next`) are experimental, in beta, and not code complete. For the current stable and functional version, please use `latest` (`npm install @dotcms/client@latest`). Once we release the stable version, we will provide a migration guide from the alpha to stable version. The current alpha version (under `latest`) will continue to work, allowing you to migrate progressively at your own pace.
+
 This client library provides a streamlined, promise-based interface to fetch pages and navigation API.
+
+## Table of Contents
+
+- [Features](#features)
+- [What's New](#whats-new)
+- [What's Being Deprecated](#whats-being-deprecated)
+- [Installation](#installation)
+- [Browser Compatibility](#browser-compatibility)
+- [Usage](#usage)
+  - [ES Modules](#es-modules)
+  - [CommonJS](#commonjs)
+  - [Initialization](#initialization)
+  - [Fetching a Page](#fetching-a-page)
+    - [Example with all options](#example-with-all-options)
+  - [Fetching Navigation](#fetching-navigation)
+    - [Legacy Navigation Example](#legacy-navigation-example)
+  - [Fetching a Collection of Content](#fetching-a-collection-of-content)
+    - [Basic Usage](#basic-usage)
+    - [Sorting Content](#sorting-content)
+    - [Filtering by Language](#filtering-by-language)
+    - [Using Complex Queries](#using-complex-queries)
+    - [Fetching Draft Content](#fetching-draft-content)
+    - [Setting Depth for Relationships](#setting-depth-for-relationships)
+    - [Combining Multiple Methods](#combining-multiple-methods)
+  - [Error Handling Example](#error-handling-example)
+  - [Pagination](#pagination)
+- [API Reference](#api-reference)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
+- [Support](#support)
+- [Documentation](#documentation)
+- [Getting Help](#getting-help)
 
 ## Features
 
@@ -10,7 +44,25 @@ This client library provides a streamlined, promise-based interface to fetch pag
 -   Support for custom actions to communicate with the dotCMS page editor.
 -   Comprehensive TypeScript typings for better development experience.
 
-# dotCMS API Client
+## What's New
+
+- **Improved Collection Builder API:** Enhanced content fetching with a fluent builder pattern
+- **TypeScript Support:** Comprehensive type definitions for better developer experience
+- **Promise-based API:** Modern, async/await compatible interface for all API calls
+- **Performance Optimizations:** Faster response times and reduced memory footprint
+- **New Client Creation:** The `dotCMSCreateClient()` function replaces `DotCmsClient.init()` for better functional programming
+
+> **Note:** Some deprecated features are being phased out. See [API Reference](#api-reference) for details.
+
+## What's Being Deprecated
+
+- **Legacy Editor APIs:** The `postMessageToEditor`, `initEditor`, and related functions are being phased out
+- **Direct Content API:** The `content.get()` method is being replaced by the more powerful `content.getCollection()`
+- **Callback-based APIs:** All callback-based methods are being replaced with Promise-based alternatives
+- **DotCmsClient.init:** The static `DotCmsClient.init()` method is replaced by the `dotCMSCreateClient()` function
+- **client.editor:** The editor functionality has been completely moved to the `@dotcms/uve` package
+
+> **Note:** Deprecated items will continue to work for backward compatibility but will be removed in future major versions.
 
 ## Installation
 
@@ -24,7 +76,17 @@ Or using Yarn:
 
 ```bash
 yarn add @dotcms/client
-```
+
+
+## Browser Compatibility
+
+The @dotcms/client package is compatible with the following browsers:
+
+| Browser | Minimum Version | TLS Version |
+|---------|----------------|-------------|
+| Chrome  | Latest 2 versions | TLS 1.2+ |
+| Edge    | Latest 2 versions | TLS 1.2+ |
+| Firefox | Latest 2 versions | TLS 1.2+ |
 
 ## Usage
 
@@ -33,13 +95,13 @@ yarn add @dotcms/client
 ### ES Modules
 
 ```javascript
-import { DotCmsClient } from '@dotcms/client';
+import { dotCMSCreateClient } from '@dotcms/client';
 ```
 
 ### CommonJS
 
 ```javascript
-const { DotCmsClient } = require('@dotcms/client');
+const { dotCMSCreateClient } = require('@dotcms/client');
 ```
 
 ### Initialization
@@ -47,7 +109,7 @@ const { DotCmsClient } = require('@dotcms/client');
 First, initialize the client with your dotCMS instance details.
 
 ```javascript
-const client = DotCmsClient.init({
+const client = dotCMSCreateClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
     siteId: 'your-site-id'
@@ -59,18 +121,101 @@ const client = DotCmsClient.init({
 You can retrieve the elements of any page in your dotCMS system in JSON format using the `client.page.get()` method.
 
 ```javascript
-const pageData = await client.page.get({
-    path: '/your-page-path',
-    language_id: 1,
+const pageData = await client.page.get('/your-page-path', {
+    languageId: '1',
     personaId: 'optional-persona-id'
 });
 ```
 
-### Fetching Navigation
-
-Retrieve the dotCMS file and folder tree to get information about the navigation structure.
+#### Example with all options
 
 ```javascript
+// Fetching a page with all available options
+const { page, content } = await client.page.get('/about-us', {
+    languageId: '1',                 // Language ID (optional)
+    siteId: 'demo.dotcms.com',       // Site ID (optional, defaults to the one provided during initialization)
+    mode: 'PREVIEW_MODE',            // ADMIN_MODE, PREVIEW_MODE, or LIVE_MODE (optional)
+    personaId: '123',                // Persona ID for personalization (optional)
+    device: 'smartphone',            // Device for responsive rendering (optional)
+    graphql: {                       // Extend page and/or content response (optional)
+        page: `
+            containers {
+                containerContentlets {
+                    uuid
+                    contentlets {
+                        title
+                    }
+                }
+            }
+        `,
+        content: {
+            blogPosts: `
+                search(query: "+contentType:Blog", limit: 3) {
+                    title
+                    identifier
+                    ...blogFragment
+                }
+            `,
+          },
+        fragments: [
+            `
+                fragment blogFragment on Blog {
+                    urlTitle
+                    blogContent {
+                        json
+                    }
+                }
+
+            `
+        ]
+    }
+});
+
+// Access page data
+console.log(page.containers);
+
+// Access content data
+console.log(content.blogPosts);
+```
+
+### Fetching Navigation
+
+The new API allows you to fetch navigation data using GraphQL through the page.get method:
+
+```javascript
+// Fetch navigation using the page.get method with GraphQL
+const { content } = await client.page.get('/', {
+    languageId: '1',
+    graphql: {
+        content: {
+            nav: `
+                query {
+                    nav {
+                        identifier
+                        path
+                        label
+                        children {
+                            identifier
+                            path
+                            label
+                        }
+                    }
+                }
+            `
+        }
+    }
+});
+
+// Access navigation data
+console.log(content.nav);
+```
+
+> **Note:** The legacy `client.nav.get()` method is still available but deprecated.
+
+#### Legacy Navigation Example
+
+```javascript
+// Legacy approach - still works but is deprecated
 const navData = await client.nav.get({
     path: '/',
     depth: 2,
@@ -84,12 +229,12 @@ The `getCollection` method allows you to fetch a collection of content items (so
 
 #### Basic Usage
 
-Here’s a simple example to fetch content from a collection:
+Here's a simple example to fetch content from a collection:
 
 ```typescript
-import { DotCmsClient } from '@dotcms/client';
+import { dotCMSCreateClient } from '@dotcms/client';
 
-const client = DotCmsClient.init({
+const client = dotCMSCreateClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token'
 });
@@ -175,7 +320,7 @@ const combinedResponse = await client.content
 
 ## Error Handling Example
 
-To handle errors gracefully, you can use a `try-catch` block around your API calls. Here’s an example:
+To handle errors gracefully, you can use a `try-catch` block around your API calls. Here's an example:
 
 ```typescript
 try {
@@ -206,29 +351,12 @@ const paginatedResponse = await client.content
 
 Detailed documentation of the `@dotcms/client` methods, parameters, and types can be found below:
 
-### `DotCmsClient.init(config: ClientConfig): DotCmsClient`
-
-Initializes the dotCMS client with the specified configuration.
-
-### `DotCmsClient.page.get(options: PageApiOptions): Promise<unknown>`
-
-Retrieves the specified page's elements from your dotCMS system in JSON format.
-
-### `DotCmsClient.nav.get(options: NavApiOptions): Promise<unknown>`
-
-Retrieves information about the dotCMS file and folder tree.
-
-### `DotCmsClient.content.getCollection(contentType: string): CollectionBuilder<T>`
-
-Creates a builder to filter and fetches a collection of content items for a specific content type.
-
-#### Parameters
-
-`contentType` (string): The content type to retrieve.
-
-#### Returns
-
-`CollectionBuilder<T>`: A builder instance for chaining filters and executing the query.
+| Method | Description | Parameters | Returns |
+|--------|-------------|------------|---------|
+| `dotCMSCreateClient(config)` | Initializes the dotCMS client | `config: DotCMSClientConfig` | `DotCMSClient` |
+| `client.page.get(path, options)` | Retrieves page elements | `path: string, options: PageApiOptions` | `Promise<{page: any, content: any}>` |
+| `client.nav.get(options)` | Retrieves navigation structure | `options: NavApiOptions` | `Promise<unknown>` |
+| `client.content.getCollection(contentType)` | Builds a query for content | `contentType: string` | `CollectionBuilder<T>` |
 
 ## Contributing
 
