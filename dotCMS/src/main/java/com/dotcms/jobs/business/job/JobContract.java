@@ -11,8 +11,8 @@ import java.util.Optional;
 import org.immutables.value.Value.Default;
 
 /**
- * Abstract interface for an immutable Job class. This interface defines the structure for job
- * This interface defines the structure for job information in the job processing system and it is also implemented by the JsonView class.
+ * This interface defines the structure for job information in the job processing system and it is 
+ * also implemented by the JsonView class.
  */
 public interface JobContract {
 
