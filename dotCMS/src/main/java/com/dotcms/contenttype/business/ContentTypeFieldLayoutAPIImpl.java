@@ -15,10 +15,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import com.dotmarketing.util.Logger;
 
 /**
  * Create, delete, Update and Move Field making sure that the {@link ContentType} keep with a right layout after the operation
@@ -98,9 +100,37 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
             throws DotSecurityException, DotDataException {
         newFieldLayout.validate();
 
-        final FieldLayout fieldLayout = new FieldLayout(contentType);
-        this.deleteUnecessaryLayoutFields(fieldLayout, user);
-        final List<Field> fields = addSkipForRelationshipCreation(newFieldLayout.getFields());
+        // Get the current layout to find any relationship fields that need to be preserved
+        final FieldLayout currentLayout = new FieldLayout(contentType);
+        this.deleteUnecessaryLayoutFields(currentLayout, user);
+        
+        // Identify any existing relationship fields that aren't in the new layout
+        final List<Field> existingRelationshipFields = contentType.fields().stream()
+                .filter(field -> field instanceof RelationshipField)
+                .collect(Collectors.toList());
+                
+        final List<String> newLayoutFieldIds = newFieldLayout.getFields().stream()
+                .map(Field::id)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+                
+        final List<Field> relationshipFieldsToPreserve = existingRelationshipFields.stream()
+                .filter(field -> !newLayoutFieldIds.contains(field.id()))
+                .collect(Collectors.toList());
+                
+        if (!relationshipFieldsToPreserve.isEmpty()) {
+            Logger.info(this, "Preserving relationship fields that weren't included in layout update: " + 
+                relationshipFieldsToPreserve.stream()
+                    .map(field -> field.name() + " (ID: " + field.id() + ")")
+                    .collect(Collectors.joining(", ")));
+        }
+        
+        // Combine the new fields with any relationship fields that need to be preserved
+        List<Field> combinedFields = new ArrayList<>(newFieldLayout.getFields());
+        combinedFields.addAll(relationshipFieldsToPreserve);
+        
+        // Skip relationship creation for all relationship fields to avoid duplicates
+        final List<Field> fields = addSkipForRelationshipCreation(combinedFields);
         fieldAPI.saveFields(fields, user);
 
         final ContentType contentTypeFfromDB = APILocator.getContentTypeAPI(user).find(contentType.id());

@@ -10,6 +10,7 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
@@ -827,11 +828,27 @@ public class ContentTypeResource implements Serializable {
 				);
 
 		if (!diffResult.getToDelete().isEmpty()) {
-			APILocator.getContentTypeFieldAPI().deleteFields(
-					diffResult.getToDelete().values().stream().
-							map(Field::id).
-							collect(Collectors.toList()), user
-			);
+			// Filter out relationship fields unless explicitly marked for deletion
+			final List<Field> relationshipFieldsPreserved = diffResult.getToDelete().values().stream()
+					.filter(field -> field instanceof RelationshipField)
+					.collect(Collectors.toList());
+					
+			final List<String> fieldsToDelete = diffResult.getToDelete().values().stream()
+					.filter(field -> !(field instanceof RelationshipField))
+					.map(Field::id)
+					.collect(Collectors.toList());
+					
+			if (!relationshipFieldsPreserved.isEmpty()) {
+				Logger.info(this, "Preserving relationship fields during content type update: " + 
+					relationshipFieldsPreserved.stream()
+						.map(field -> field.name() + " (ID: " + field.id() + ")")
+						.collect(Collectors.joining(", ")));
+			}
+					
+			if (!fieldsToDelete.isEmpty()) {
+				Logger.info(this, "Deleting fields: " + fieldsToDelete);
+				APILocator.getContentTypeFieldAPI().deleteFields(fieldsToDelete, user);
+			}
 		}
 
 		if (!diffResult.getToAdd().isEmpty()) {
