@@ -64,6 +64,7 @@ Text blocks can include the following marks:
 ## Custom Renderers
 
 You can provide custom renderers for any block type. This allows you to override the default rendering or add support for custom blocks.
+We recommend using CustomRenderers if you need more complex components, as the default Blocks are basic components.
 
 ### Creating a Custom Renderer
 
