@@ -19,7 +19,7 @@ public class WorkflowEmailUtilTest {
 
     /**
      * Method to test {@link WorkflowEmailUtil#resolveSenderInfo(User, UserAPI, CompanyAPI)}
-     * Given Scenario: no matter what user are passed to the function
+     * Given Scenario: regardless of the user passed to the function
      * Expected Result: we expect the company's email address
      * @throws DotDataException
      */
