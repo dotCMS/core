@@ -1,0 +1,99 @@
+:host.col-start-1 {
+    grid-column-start: 1;
+}
+
+:host.col-start-2 {
+    grid-column-start: 2;
+}
+
+:host.col-start-3 {
+    grid-column-start: 3;
+}
+
+:host.col-start-4 {
+    grid-column-start: 4;
+}
+
+:host.col-start-5 {
+    grid-column-start: 5;
+}
+
+:host.col-start-6 {
+    grid-column-start: 6;
+}
+
+:host.col-start-7 {
+    grid-column-start: 7;
+}
+
+:host.col-start-8 {
+    grid-column-start: 8;
+}
+
+:host.col-start-9 {
+    grid-column-start: 9;
+}
+
+:host.col-start-10 {
+    grid-column-start: 10;
+}
+
+:host.col-start-11 {
+    grid-column-start: 11;
+}
+
+:host.col-start-12 {
+    grid-column-start: 12;
+}
+
+:host.col-end-1 {
+    grid-column-end: 1;
+}
+
+:host.col-end-2 {
+    grid-column-end: 2;
+}
+
+:host.col-end-3 {
+    grid-column-end: 3;
+}
+
+:host.col-end-4 {
+    grid-column-end: 4;
+}
+
+:host.col-end-5 {
+    grid-column-end: 5;
+}
+
+:host.col-end-6 {
+    grid-column-end: 6;
+}
+
+:host.col-end-7 {
+    grid-column-end: 7;
+}
+
+:host.col-end-8 {
+    grid-column-end: 8;
+}
+
+:host.col-end-9 {
+    grid-column-end: 9;
+}
+
+:host.col-end-10 {
+    grid-column-end: 10;
+}
+
+:host.col-end-11 {
+    grid-column-end: 11;
+}
+
+:host.col-end-12 {
+    grid-column-end: 12;
+}
+
+:host.col-end-13 {
+    grid-column-end: 13;
+}

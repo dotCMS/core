@@ -1,4 +1,8 @@
-import { DotCMSColumnContainer, DotCMSPageAsset, DotPageAssetLayoutColumn } from '../types';
+import {
+    DotCMSColumnContainer,
+    DotCMSPageAsset,
+    DotPageAssetLayoutColumn
+} from '@dotcms/uve/types';
 
 export const MOCK_COLUMN: DotPageAssetLayoutColumn = {
     left: 0,
