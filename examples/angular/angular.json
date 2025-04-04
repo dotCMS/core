@@ -54,6 +54,21 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ]
+            },
+            "dotcms": {
+              "optimization": true,
+              "extractLicenses": false,
+              "baseHref": "/application/angular-app/",
+              "outputPath": {
+                "base": "/Users/fmontes/Developer/@deleteme/dotcli-localhost/files/live/en-us/demo.dotcms.com/application/angular-app",
+                "browser": ""
+              },
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.development.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -69,6 +84,9 @@
             },
             "development": {
               "buildTarget": "angular:build:development"
+            },
+            "dotcms": {
+              "buildTarget": "angular:build:dotcms"
             }
           },
           "defaultConfiguration": "development"
