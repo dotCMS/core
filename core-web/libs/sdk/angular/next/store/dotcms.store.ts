@@ -13,10 +13,9 @@ export const EMPTY_DOTCMS_PAGE_STORE: DotCMSPageStore = {
 };
 
 /**
- *
+ * @description This service is responsible for managing the page context.
  * @internal
  * @author dotCMS
- * @description This service is responsible for managing the page context.
  * @export
  * @class DotCMSStore
  */
@@ -37,7 +36,6 @@ export class DotCMSStore {
     }
 
     /**
-     *
      * @description Set the store
      * @param {DotCMSPageStore} value
      * @memberof DotCMSStore
@@ -46,6 +44,12 @@ export class DotCMSStore {
         this.$store.set(store);
     }
 
+    /**
+     * @description Get if the current context is in development mode
+     * @readonly
+     * @type {boolean}
+     * @memberof DotCMSStore
+     */
     $isDevMode = computed(() => {
         const uveState = getUVEState();
 

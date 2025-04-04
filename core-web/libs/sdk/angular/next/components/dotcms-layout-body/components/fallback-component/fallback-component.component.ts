@@ -6,7 +6,10 @@ import { DotCMSContentlet } from '@dotcms/uve/types';
 import { DynamicComponentEntity } from '../../../../models';
 
 /**
- * Fallback component that renders when no custom component is found for a contentlet
+ * @description Fallback component that renders when no custom component is found for a contentlet
+ * @category Components
+ * @internal
+ * @class FallbackComponent
  */
 @Component({
     selector: 'dotcms-fallback-component',

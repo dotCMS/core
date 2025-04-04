@@ -5,6 +5,13 @@ import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
 
 import { DotCMSStore } from '../../../../../../store/dotcms.store';
 
+/**
+ * @description This component is used to display a message when a container is not found.
+ * @export
+ * @internal
+ * @class ContainerNotFoundComponent
+ * @implements {OnInit}
+ */
 @Component({
     selector: 'dotcms-container-not-found',
     standalone: true,

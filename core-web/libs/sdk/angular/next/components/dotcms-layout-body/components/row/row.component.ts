@@ -6,11 +6,12 @@ import { DotPageAssetLayoutRow } from '@dotcms/uve/types';
 import { ColumnComponent } from '../column/column.component';
 
 /**
- * This component renders a row with all its content using the layout provided by dotCMS Page API.
+ * @description This component renders a row with all its content using the layout provided by dotCMS Page API.
  *
  * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
  * @category Components
  * @internal
+ * @class RowComponent
  */
 @Component({
     selector: 'dotcms-row',

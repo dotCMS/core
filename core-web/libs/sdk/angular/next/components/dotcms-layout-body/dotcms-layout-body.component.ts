@@ -15,10 +15,16 @@ import { RowComponent } from './components/row/row.component';
 import { DotCMSPageComponent } from '../../models';
 import { DotCMSStore } from '../../store/dotcms.store';
 /**
+ * @description This component is used to render the layout for a DotCMS page.
+ * @param {DotCMSPageAsset} page - The page to render the layout for
+ * @param {DotCMSPageComponent} components - The components to render the layout for
+ * @param {DotCMSPageRendererMode} mode - The mode to render the layout for
  *
- * `DotCMSLayoutBodyComponent` is a class that represents the layout for a DotCMS page.
+ * @example
+ * <dotcms-layout-body [page]="page" [components]="components" [mode]="'development'" />
  *
  * @export
+ * @implements {OnChanges}
  * @class DotCMSLayoutBodyComponent
  */
 @Component({

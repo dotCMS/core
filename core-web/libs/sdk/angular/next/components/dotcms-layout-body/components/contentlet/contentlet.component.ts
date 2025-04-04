@@ -20,11 +20,12 @@ import { DotCMSStore } from '../../../../store/dotcms.store';
 import { FallbackComponent } from '../fallback-component/fallback-component.component';
 
 /**
- * Contentlet component that renders DotCMS content with development mode support
+ * @description Contentlet component that renders DotCMS content with development mode support
  *
  * @component
  * @param {DotCMSContentlet} contentlet - The contentlet to be rendered
  * @param {string} container - The container identifier
+ * @class ContentletComponent
  */
 @Component({
     selector: 'dotcms-contentlet',

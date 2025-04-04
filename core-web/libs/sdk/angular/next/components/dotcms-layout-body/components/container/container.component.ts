@@ -28,11 +28,12 @@ import { DotCMSStore } from '../../../../store/dotcms.store';
 import { ContentletComponent } from '../../components/contentlet/contentlet.component';
 
 /**
- * This component renders a container with all its content using the layout provided by dotCMS Page API.
+ * @description This component renders a container with all its content using the layout provided by dotCMS Page API.
  *
  * @see {@link https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas}
  * @category Components
  * @internal
+ * @class ContainerComponent
  */
 @Component({
     selector: 'dotcms-container',

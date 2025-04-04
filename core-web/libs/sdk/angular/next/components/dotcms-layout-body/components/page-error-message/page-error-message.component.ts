@@ -3,9 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, OnChanges } from '@angular/
 import { DotCMSStore } from '../../../../store/dotcms.store';
 
 /**
- *
- * `PageErrorMessageComponent` is a class that represents the error message for a DotCMS page.
- *
+ * @description This component is used to display a message when a page is missing the required `layout.body` property.
  * @internal
  * @class PageErrorMessageComponent
  */

@@ -5,6 +5,12 @@ import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
 
 import { DotCMSStore } from '../../../../../../store/dotcms.store';
 
+/**
+ * @description This component is used to display a message when a container is empty.
+ * @export
+ * @internal
+ * @class EmptyContainerComponent
+ */
 @Component({
     selector: 'dotcms-empty-container',
     standalone: true,
