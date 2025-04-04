@@ -181,8 +181,8 @@ public class WorkflowEmailUtil {
         if (null != workflowUser && !userAPI.getAnonymousUser().equals(workflowUser) && !userAPI
                 .getSystemUser().equals(workflowUser)) {
             Logger.debug(WorkflowEmailUtil.class, String.format(
-                    "User [%s] trigger email actionlet. Using company email [%s] as the from address.",
-                    workflowUser.getEmailAddress(), FALLBACK_FROM_ADDRESS));
+                    "User [%s] trigger email actionlet. Trying to use company email as the from address.",
+                    workflowUser.getEmailAddress()));
         }
         //If we reach this point. Then User is anonymous or system-user or null
         final Company defaultCompany = companyAPI.getDefaultCompany();
