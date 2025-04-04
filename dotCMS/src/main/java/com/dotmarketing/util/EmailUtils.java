@@ -448,7 +448,7 @@ public class EmailUtils {
 		mailer.setHTMLBody(body);
 
 		final Tuple2<String, String> mailAndSender = helper.parseMailAndSender(company.getEmailAddress());
-		mailer.setFromEmail(ConfigUtils.getGlobalFromAddressOrFallback(mailAndSender._1));
+		mailer.setFromEmail(mailAndSender._1);
 		mailer.setFromName(  UtilMethods.isSet(mailAndSender._2) ? mailAndSender._2 : company.getName() );
 		mailer.sendMessage();
 
