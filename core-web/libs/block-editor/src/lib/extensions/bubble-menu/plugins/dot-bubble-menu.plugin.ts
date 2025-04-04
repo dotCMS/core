@@ -474,9 +474,21 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                     ];
                 console.log('shouldUseOldEditor', contentTypeInfo);
 
+                const title = window.parent
+                    ? window.parent.document.title.split(' - ')[0]
+                    : document.title.split(' - ')[0] || 'Current Content';
+                const relationshipReturnValue = {
+                    title,
+                    blockEditorBackUrl: window.parent.location.href
+                };
+                localStorage.setItem(
+                    'dotcms.relationships.relationshipReturnValue',
+                    JSON.stringify(relationshipReturnValue)
+                );
+
                 if (shouldUseOldEditor) {
                     // Use legacy approach - navigate to old editor
-                    window.location.href = `/dotAdmin/#/c/content/${contentletInode}`;
+                    window.parent.location.href = `/dotAdmin/#/c/content/${contentletInode}`;
                 } else {
                     // Use new editor (Angular)
                     this.router.navigate([`content/${contentletInode}`]);
