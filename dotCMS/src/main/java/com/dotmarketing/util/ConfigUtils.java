@@ -215,15 +215,6 @@ public class ConfigUtils {
 	}
 
 	/**
-	 * Checks the configuration property "MAIL_FROM_ADDRESS".
-	 * @param fallbackAddress The default email address to use if no global configuration is set.
-	 * @return The global "from" email address if available; otherwise, the fallback address.
-	 */
-	public static String getGlobalFromAddressOrFallback(final String fallbackAddress) {
-		return Config.getStringProperty("MAIL_FROM_ADDRESS", fallbackAddress);
-	}
-
-	/**
 	 * Returns the current system-wide default email headers.
 	 * <p>
 	 * This method dynamically reads and parses the "DEFAULT_EMAIL_HEADERS" configuration property every time it is called.
@@ -247,6 +238,4 @@ public class ConfigUtils {
 		}
 		return headers;
 	}
-
-
 }
