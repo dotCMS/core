@@ -6,21 +6,32 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
+import com.dotcms.contenttype.model.field.layout.FieldLayoutValidationException;
 import com.dotcms.contenttype.model.field.layout.FieldUtil;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import com.dotmarketing.util.Logger;
 
 /**
  * Create, delete, Update and Move Field making sure that the {@link ContentType} keep with a right layout after the operation
@@ -109,7 +120,13 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
         final FieldLayout combinedLayout = preserveRelationshipFields(newFieldLayout, relationshipFields);
         
         // Validate the layout
-        combinedLayout.validate();
+        try {
+            combinedLayout.validate();
+        } catch (FieldLayoutValidationException e) {
+            Logger.warn(this, "Layout validation failed, attempting to fix: " + e.getMessage());
+            // If validation fails, try to fix the layout before continuing
+            return fixAndSaveLayout(combinedLayout, user);
+        }
 
         // Update each field in the layout with its new sort order
         for (int i = 0; i < combinedLayout.getFields().size(); i++) {
@@ -121,7 +138,29 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
     }
 
     /**
+     * Fix layout issues and save the fields with corrected sort orders
+     * 
+     * @param layout The layout to fix
+     * @param user The user performing the action
+     * @return A fixed layout with proper structure
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private FieldLayout fixAndSaveLayout(FieldLayout layout, User user) 
+            throws DotSecurityException, DotDataException {
+        // Use the field utility to fix sort orders
+        FieldUtil.SortOrderFix sortOrderFix = FieldUtil.fixSortOrder(layout.getFields());
+        
+        // Save the updated fields
+        fieldAPI.saveFields(sortOrderFix.getUpdatedFields(), user);
+        
+        // Create a new layout with the fixed fields
+        return new FieldLayout(layout.getContentType(), sortOrderFix.getNewFields());
+    }
+
+    /**
      * Preserves relationship fields in the new layout even if they weren't explicitly included.
+     * This method ensures proper sort order and layout structure is maintained.
      *
      * @param newFieldLayout The new field layout that might be missing relationship fields
      * @param relationshipFields The relationship fields to preserve
@@ -156,11 +195,76 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
             return newFieldLayout;
         }
         
-        // Combine the fields, adding relationship fields at the end
+        // Create a new list for our combined fields
         final List<Field> combinedFields = new ArrayList<>(newFieldLayout.getFields());
-        combinedFields.addAll(fieldsToAdd);
         
-        return new FieldLayout(newFieldLayout.getContentType(), combinedFields);
+        // Find the last column field's index to insert relationship fields in the proper structure
+        int lastColumnIndex = -1;
+        for (int i = combinedFields.size() - 1; i >= 0; i--) {
+            Field field = combinedFields.get(i);
+            if (field instanceof ColumnField) {
+                lastColumnIndex = i;
+                break;
+            }
+        }
+        
+        // If we found a column, add the relationships after that column's children
+        // If not, we'll simply add to the end but we need to create a proper structure
+        if (lastColumnIndex >= 0) {
+            // Find where to insert in the structure - after existing fields but within the column
+            int insertIndex = lastColumnIndex + 1;
+            while (insertIndex < combinedFields.size() && 
+                   !(combinedFields.get(insertIndex) instanceof RowField) && 
+                   !(combinedFields.get(insertIndex) instanceof ColumnField) &&
+                   !(combinedFields.get(insertIndex) instanceof TabDividerField)) {
+                insertIndex++;
+            }
+            
+            // Insert relationship fields at the appropriate position
+            for (Field field : fieldsToAdd) {
+                combinedFields.add(insertIndex, field);
+                insertIndex++;
+            }
+        } else {
+            // If no column structure exists, simply add to the end
+            // In this case, the layout validation might still fail, but we'll let the fixAndSaveLayout handle it
+            combinedFields.addAll(fieldsToAdd);
+        }
+        
+        // Fix sort orders for all fields
+        final List<Field> orderedFields = new ArrayList<>();
+        for (int i = 0; i < combinedFields.size(); i++) {
+            Field field = combinedFields.get(i);
+            // Create a new field instance with updated sortOrder if needed
+            if (field.sortOrder() != i) {
+                Field updatedField;
+                if (field instanceof RelationshipField) {
+                    // Create a new relationship field with updated sort order
+                    RelationshipField relField = (RelationshipField) field;
+                    updatedField = RelationshipFieldBuilder.builder(relField)
+                        .sortOrder(i)
+                        .build();
+                } else {
+                    // Use the field's builder to create a new instance with updated sort order
+                    try {
+                        // Create a JSON representation of the field and update its sort order
+                        JSONObject jsonObj = new JsonFieldTransformer(field).jsonObject();
+                        jsonObj.put("sortOrder", i);
+                        // Create a new field from the updated JSON
+                        updatedField = new JsonFieldTransformer(jsonObj.toString()).from();
+                    } catch (JSONException e) {
+                        Logger.warn(this, "Error updating sort order for field: " + field.name() + ", " + e.getMessage());
+                        // If we can't update the sort order, just use the original field
+                        updatedField = field;
+                    }
+                }
+                orderedFields.add(updatedField);
+            } else {
+                orderedFields.add(field);
+            }
+        }
+        
+        return new FieldLayout(newFieldLayout.getContentType(), orderedFields);
     }
 
     /**
