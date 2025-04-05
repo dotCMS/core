@@ -1023,7 +1023,9 @@ public class DBUniqueFieldValidationStrategyTest {
 
     /**
      * Method to test:  {@link DBUniqueFieldValidationStrategy#validateInPreview(Contentlet, Field)}
-     * When: Called the method with a 'unique_key_val' duplicated
+     * When: Creating a Contentlet with a unique field, and try to create a second one with the same
+     * unique field value. The second contentlet is in preview mode, which means it HAS NOT been
+     * created yet.
      * Should: Throw a {@link UniqueFieldValueDuplicatedException}
      */
     @Test
@@ -1034,12 +1036,20 @@ public class DBUniqueFieldValidationStrategyTest {
         final Language language = new LanguageDataGen().nextPersisted();
         final Host site = new SiteDataGen().nextPersisted();
 
-        final Contentlet contentlet = new ContentletDataGen(contentType)
+        // First contentlet with a valid unique field value
+        Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(uniqueField.variable(), value)
+                .host(site)
+                .languageId(language.getId())
+                .nextPersisted();
+        contentlet = ContentletDataGen.publish(contentlet);
+
+        // Second contentlet with the same unique field value. But NOT persisted to the DB
+        Contentlet invalidContentlet = new ContentletDataGen(contentType)
                 .setProperty(uniqueField.variable(), value)
                 .host(site)
                 .languageId(language.getId())
                 .next();
-
 
         final DBUniqueFieldValidationStrategy extraTableUniqueFieldValidationStrategy =
                 new DBUniqueFieldValidationStrategy(uniqueFieldDataBaseUtil);
@@ -1047,8 +1057,8 @@ public class DBUniqueFieldValidationStrategyTest {
 
         try {
 
-            extraTableUniqueFieldValidationStrategy.validateInPreview(contentlet, uniqueField);
-            throw new AssertionError("UniqueFieldValueDupliacatedException expected");
+            extraTableUniqueFieldValidationStrategy.validateInPreview(invalidContentlet, uniqueField);
+            throw new AssertionError("UniqueFieldValueDuplicatedException expected");
         } catch (UniqueFieldValueDuplicatedException e) {
             final int countAfter = Integer.parseInt(new DotConnect()
                     .setSQL("SELECT COUNT(*) as count " +
