@@ -287,16 +287,16 @@ export const getBubbleMenuItem = (nodeType = ''): Array<BubbleMenuItem> => {
         case 'dotContent':
             // TODO: Remove JSPRedirectFn when Edit Content JSP is removed.
 
-            if (JSPRedirectFn) {
-                return [
-                    ...dotContentOptions,
-                    {
-                        icon: 'edit',
-                        markAction: 'goToContentlet',
-                        active: false
-                    }
-                ];
-            }
+            // if (JSPRedirectFn) {
+            return [
+                ...dotContentOptions,
+                {
+                    icon: 'edit',
+                    markAction: 'goToContentlet',
+                    active: false
+                }
+            ];
+            //  }
 
             return dotContentOptions;
 

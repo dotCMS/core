@@ -1,17 +1,12 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
     DotCopyContentTypeDialogFormFields,
     StructureTypeView
 } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    mockDotContentlet
-} from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, mockDotContentlet } from '@dotcms/utils-testing';
 
 import { DotContentTypeService } from './dot-content-type.service';
 
@@ -50,10 +45,7 @@ describe('DotContentletService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotContentTypeService
-            ]
+            providers: [DotContentTypeService]
         });
         injector = getTestBed();
         dotContentTypeService = injector.get(DotContentTypeService);
@@ -81,7 +73,7 @@ describe('DotContentletService', () => {
             done();
         });
 
-        const req = httpMock.expectOne('v1/contenttype/basetypes');
+        const req = httpMock.expectOne('/api/v1/contenttype/basetypes');
         expect(req.request.method).toBe('GET');
         req.flush({ entity: [...mockDotContentlet] });
     });
@@ -122,7 +114,7 @@ describe('DotContentletService', () => {
             done();
         });
 
-        const req = httpMock.expectOne('v1/contenttype/basetypes');
+        const req = httpMock.expectOne('/api/v1/contenttype/basetypes');
         expect(req.request.method).toBe('GET');
         req.flush({ entity: [...mockDotContentlet] });
     });
@@ -147,7 +139,7 @@ describe('DotContentletService', () => {
             done();
         });
 
-        const req = httpMock.expectOne(`v1/contenttype/id/${id}`);
+        const req = httpMock.expectOne(`/api/v1/contenttype/id/${id}`);
         expect(req.request.method).toBe('GET');
         req.flush({ entity: contentTypeExpected });
     });

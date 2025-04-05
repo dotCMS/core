@@ -448,7 +448,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy, ControlValueA
             }),
             DragHandler(this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef, this.languageId),
-            DotBubbleMenuExtension(this.viewContainerRef),
+            DotBubbleMenuExtension(this.#injector, this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.#injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),

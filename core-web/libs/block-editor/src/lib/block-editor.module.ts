@@ -17,7 +17,8 @@ import {
     DotPropertiesService,
     DotUploadFileService,
     DotAiService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotContentTypeService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
@@ -46,6 +47,7 @@ import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
+import { Router } from '@angular/router';
 
 const initTranslations = (dotMessageService: DotMessageService) => {
     return () => dotMessageService.init();
@@ -93,6 +95,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotPropertiesService,
         DotContentSearchService,
         DotLanguagesService,
+        DotContentTypeService,
+        Router,
         DotWorkflowActionsFireService,
         {
             provide: APP_INITIALIZER,
