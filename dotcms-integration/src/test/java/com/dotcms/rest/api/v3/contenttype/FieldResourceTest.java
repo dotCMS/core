@@ -717,6 +717,8 @@ public class FieldResourceTest {
         final ContentType type = createContentType();
 
         final List<Field> fields = createLayoutWithMultiRow(type);
+        
+        // Create a clearly invalid layout with 5 columns (exceeds the maximum allowed)
         final List<Map<String, Object>> layout = list(
                 Map.of("divider", getMap(fields.get(0)), "columns", list(
                         Map.of("columnDivider", getMap(fields.get(1)), "fields", list()),
@@ -735,6 +737,7 @@ public class FieldResourceTest {
                 new MoveFieldsForm.Builder().layout(layout)
                         .build();
 
+        // This should throw a FieldLayoutValidationException
         final FieldResource fieldResource = new FieldResource();
         fieldResource.moveFields(type.id(), form, getHttpRequest());
     }

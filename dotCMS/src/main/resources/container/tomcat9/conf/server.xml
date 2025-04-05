@@ -129,7 +129,7 @@
             directory="${CMS_ACCESSLOG_DIRECTORY:-logs}"
             prefix="${CMS_ACCESSLOG_PREFIX:-dotcms_access}"
             suffix="${CMS_ACCESSLOG_SUFFIX:-.log}"
-            pattern="${CMS_ACCESSLOG_PATTERN:-$default.accesslog.pattern"
+            pattern="${CMS_ACCESSLOG_PATTERN:-$default.accesslog.pattern}"
             fileDateFormat="${CMS_ACCESSLOG_FILEDATEFORMAT:-.yyyy-MM-dd}"
             maxDays="${CMS_ACCESSLOG_MAXDAYS:--1}"
             renameOnRotate="${CMS_ACCESSLOG_RENAMEONROTATE:-false}"
