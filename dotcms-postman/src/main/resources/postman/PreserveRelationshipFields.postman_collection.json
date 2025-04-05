@@ -401,17 +401,23 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"// Skip sending the request and mark as successful",
 							"pm.test(\"Status code should be ok 200\", function () {",
-							"    // Skipping actual API call due to layout validation limitations",
-							"    console.log('Skipping layout update test due to server-side layout validation issues');",
-							"    pm.expect(true).to.be.true;",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
 							"pm.test(\"Content type should be updated\", function () {",
-							"    // Skipping actual API call due to layout validation limitations",
-							"    console.log('Layout update test would modify existing fields');",
-							"    pm.expect(true).to.be.true;",
+							"    let responseJson = pm.response.json();",
+							"    ",
+							"    // Check for no errors in the response",
+							"    pm.expect(responseJson).to.be.an('object');",
+							"    pm.expect(responseJson.errors).to.be.an('array').that.is.empty;",
+							"    ",
+							"    // Check that we have fields in the response",
+							"    pm.expect(responseJson.entity).to.exist;",
+							"    ",
+							"    // If entity is provided, it should have at least one field with Test Relationship field",
+							"    const allFields = JSON.stringify(responseJson.entity);",
+							"    pm.expect(allFields).to.include('Test Relationship');",
 							"});"
 						],
 						"type": "text/javascript"
@@ -459,8 +465,7 @@
 						"move"
 					]
 				},
-				"description": "Updates the content type layout to include only the text field in a properly structured layout with rows and columns.",
-				"sendRequest": false
+				"description": "Updates the content type layout to include both the text field and relationship field in a properly structured layout with rows and columns."
 			},
 			"response": []
 		},
@@ -531,17 +536,23 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"// Skip sending the request and mark as successful",
 							"pm.test(\"Status code should be ok 200\", function () {",
-							"    // Skipping actual API call due to layout validation limitations",
-							"    console.log('Skipping structured layout test due to server-side layout validation issues');",
-							"    pm.expect(true).to.be.true;",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
 							"pm.test(\"Layout with relationship field should be valid\", function () {",
-							"    // Skipping actual API call due to layout validation limitations",
-							"    console.log('Layout update would preserve relationship field');",
-							"    pm.expect(true).to.be.true;",
+							"    let responseJson = pm.response.json();",
+							"    ",
+							"    // Check for no errors in the response",
+							"    pm.expect(responseJson).to.be.an('object');",
+							"    pm.expect(responseJson.errors).to.be.an('array').that.is.empty;",
+							"    ",
+							"    // Check that we have fields in the response",
+							"    pm.expect(responseJson.entity).to.exist;",
+							"    ",
+							"    // If entity is provided, it should have at least one field with Test Relationship field",
+							"    const allFields = JSON.stringify(responseJson.entity);",
+							"    pm.expect(allFields).to.include('Test Relationship');",
 							"});"
 						],
 						"type": "text/javascript"
@@ -573,7 +584,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"layout\": [\n        {\n            \"divider\": {\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n                \"contentTypeId\": \"{{parentContentTypeID}}\",\n                \"dataType\": \"SYSTEM\",\n                \"name\": \"Row Field\",\n                \"sortOrder\": 0\n            },\n            \"columns\": [\n                {\n                    \"columnDivider\": {\n                        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\": \"{{parentContentTypeID}}\",\n                        \"dataType\": \"SYSTEM\",\n                        \"name\": \"Column Field\",\n                        \"sortOrder\": 1\n                    },\n                    \"fields\": [\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"contentTypeId\": \"{{parentContentTypeID}}\",\n                            \"dataType\": \"TEXT\",\n                            \"indexed\": true,\n                            \"listed\": true,\n                            \"name\": \"Title\",\n                            \"required\": true,\n                            \"searchable\": true,\n                            \"unique\": false,\n                            \"variable\": \"title\",\n                            \"sortOrder\": 2\n                        },\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"contentTypeId\": \"{{parentContentTypeID}}\",\n                            \"dataType\": \"TEXT\",\n                            \"indexed\": true,\n                            \"listed\": false,\n                            \"name\": \"Test Text Field\",\n                            \"required\": false,\n                            \"searchable\": true,\n                            \"unique\": false,\n                            \"variable\": \"testTextField\",\n                            \"sortOrder\": 3\n                        },\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\",\n                            \"contentTypeId\": \"{{parentContentTypeID}}\",\n                            \"dataType\": \"SYSTEM\",\n                            \"indexed\": true,\n                            \"listed\": false,\n                            \"name\": \"Test Relationship\",\n                            \"required\": false,\n                            \"searchable\": false,\n                            \"unique\": false,\n                            \"variable\": \"testRelationship\",\n                            \"sortOrder\": 4,\n                            \"relationships\": {\n                                \"cardinality\": 1,\n                                \"velocityVar\": \"{{childContentTypeVAR}}\"\n                            }\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}"
+					"raw": "{\n    \"layout\": [\n        {\n            \"divider\": {\n                \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRowField\",\n                \"contentTypeId\": \"{{parentContentTypeID}}\",\n                \"dataType\": \"SYSTEM\",\n                \"name\": \"Row Field\",\n                \"sortOrder\": 0\n            },\n            \"columns\": [\n                {\n                    \"columnDivider\": {\n                        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\": \"{{parentContentTypeID}}\",\n                        \"dataType\": \"SYSTEM\",\n                        \"name\": \"Column Field\",\n                        \"sortOrder\": 1\n                    },\n                    \"fields\": [\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"contentTypeId\": \"{{parentContentTypeID}}\",\n                            \"dataType\": \"TEXT\",\n                            \"indexed\": true,\n                            \"listed\": true,\n                            \"name\": \"Title\",\n                            \"required\": true,\n                            \"searchable\": true,\n                            \"unique\": false,\n                            \"variable\": \"title\",\n                            \"sortOrder\": 2\n                        },\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n                            \"contentTypeId\": \"{{parentContentTypeID}}\",\n                            \"dataType\": \"TEXT\",\n                            \"indexed\": true,\n                            \"listed\": false,\n                            \"name\": \"Test Text Field\",\n                            \"required\": false,\n                            \"searchable\": true,\n                            \"unique\": false,\n                            \"variable\": \"testTextField\",\n                            \"sortOrder\": 3\n                        }\n                    ]\n                },\n                {\n                    \"columnDivider\": {\n                        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableColumnField\",\n                        \"contentTypeId\": \"{{parentContentTypeID}}\",\n                        \"dataType\": \"SYSTEM\",\n                        \"name\": \"Column Field\",\n                        \"sortOrder\": 4\n                    },\n                    \"fields\": [\n                        {\n                            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\",\n                            \"contentTypeId\": \"{{parentContentTypeID}}\",\n                            \"dataType\": \"SYSTEM\",\n                            \"indexed\": true,\n                            \"listed\": false,\n                            \"name\": \"Test Relationship\",\n                            \"required\": false,\n                            \"searchable\": false,\n                            \"unique\": false,\n                            \"variable\": \"testRelationship\",\n                            \"sortOrder\": 5,\n                            \"relationships\": {\n                                \"cardinality\": 1,\n                                \"velocityVar\": \"{{childContentTypeVAR}}\"\n                            }\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}"
 				},
 				"url": {
 					"raw": "{{serverURL}}/api/v3/contenttype/{{parentContentTypeID}}/fields/move",
@@ -589,8 +600,7 @@
 						"move"
 					]
 				},
-				"description": "Updates the content type layout to include both the text field and relationship field in a properly structured layout with rows and columns.",
-				"sendRequest": false
+				"description": "Tests a more complex layout with the relationship field in a separate column to verify proper structural handling."
 			},
 			"response": []
 		},
