@@ -13,7 +13,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.PortletID;
@@ -140,7 +139,7 @@ public class WorkflowEmailUtil {
 
             for (final String x : email) {
                 final Mailer mail = new Mailer();
-                mail.setFromEmail(ConfigUtils.getGlobalFromAddressOrFallback(emailAddress));
+                mail.setFromEmail(emailAddress);
                 mail.setFromName(fromName);
                 mail.setToEmail(x);
                 mail.setSubject(VelocityUtil.eval(subject, ctx));
@@ -181,8 +180,9 @@ public class WorkflowEmailUtil {
 
         if (null != workflowUser && !userAPI.getAnonymousUser().equals(workflowUser) && !userAPI
                 .getSystemUser().equals(workflowUser)) {
-            //if workflowUser isn't anonymous nor system-user
-            return Tuple.of(workflowUser.getEmailAddress(), workflowUser.getFullName());
+            Logger.debug(WorkflowEmailUtil.class, String.format(
+                    "User [%s] trigger email actionlet. Trying to use company email as the from address.",
+                    workflowUser.getEmailAddress()));
         }
         //If we reach this point. Then User is anonymous or system-user or null
         final Company defaultCompany = companyAPI.getDefaultCompany();
