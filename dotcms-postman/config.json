@@ -9,7 +9,8 @@
             "Category.postman_collection",
             "ContentResourceV1.postman_collection",
             "ContentTypeResourceTests",
-            "Content_Resource.postman_collection"
+            "Content_Resource.postman_collection",
+            "PreserveRelationshipFields.postman_collection"
         ]
     },
     {

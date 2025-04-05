@@ -98,43 +98,69 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
     @Override
     public FieldLayout moveFields(final ContentType contentType, final FieldLayout newFieldLayout, final User user)
             throws DotSecurityException, DotDataException {
-        newFieldLayout.validate();
-
-        // Get the current layout to find any relationship fields that need to be preserved
-        final FieldLayout currentLayout = new FieldLayout(contentType);
-        this.deleteUnecessaryLayoutFields(currentLayout, user);
+        final FieldLayout fieldLayout = this.fixLayoutIfNecessary(contentType, user);
         
-        // Identify any existing relationship fields that aren't in the new layout
-        final List<Field> existingRelationshipFields = contentType.fields().stream()
+        // Collect any relationship fields from current layout to preserve
+        final List<Field> relationshipFields = contentType.fields().stream()
                 .filter(field -> field instanceof RelationshipField)
                 .collect(Collectors.toList());
-                
-        final List<String> newLayoutFieldIds = newFieldLayout.getFields().stream()
-                .map(Field::id)
-                .filter(id -> id != null)
-                .collect(Collectors.toList());
-                
-        final List<Field> relationshipFieldsToPreserve = existingRelationshipFields.stream()
-                .filter(field -> !newLayoutFieldIds.contains(field.id()))
-                .collect(Collectors.toList());
-                
-        if (!relationshipFieldsToPreserve.isEmpty()) {
-            Logger.info(this, "Preserving relationship fields that weren't included in layout update: " + 
-                relationshipFieldsToPreserve.stream()
-                    .map(field -> field.name() + " (ID: " + field.id() + ")")
-                    .collect(Collectors.joining(", ")));
+        
+        // Create a combined layout that preserves relationship fields
+        final FieldLayout combinedLayout = preserveRelationshipFields(newFieldLayout, relationshipFields);
+        
+        // Validate the layout
+        combinedLayout.validate();
+
+        // Update each field in the layout with its new sort order
+        for (int i = 0; i < combinedLayout.getFields().size(); i++) {
+            final Field field = combinedLayout.getFields().get(i);
+            fieldAPI.save(field, user);
+        }
+
+        return combinedLayout;
+    }
+
+    /**
+     * Preserves relationship fields in the new layout even if they weren't explicitly included.
+     *
+     * @param newFieldLayout The new field layout that might be missing relationship fields
+     * @param relationshipFields The relationship fields to preserve
+     * @return A combined layout that includes both the new layout and preserved relationship fields
+     */
+    private FieldLayout preserveRelationshipFields(final FieldLayout newFieldLayout, final List<Field> relationshipFields) {
+        if (relationshipFields.isEmpty()) {
+            return newFieldLayout;
+        }
+
+        // Check if the relationship fields are already in the new layout
+        final List<Field> fieldsToAdd = new ArrayList<>();
+        for (Field relationshipField : relationshipFields) {
+            // Add null check for relationship field ID
+            if (relationshipField.id() == null) {
+                Logger.warn(this, "Found relationship field with null ID: " + relationshipField.name());
+                continue;
+            }
+            
+            boolean fieldExists = newFieldLayout.getFields().stream()
+                    // Add null check to avoid NPE when comparing IDs
+                    .anyMatch(field -> field.id() != null && field.id().equals(relationshipField.id()));
+            
+            if (!fieldExists) {
+                Logger.info(this, "Preserving relationship field in layout: " + 
+                    relationshipField.name() + " (ID: " + relationshipField.id() + ")");
+                fieldsToAdd.add(relationshipField);
+            }
         }
         
-        // Combine the new fields with any relationship fields that need to be preserved
-        List<Field> combinedFields = new ArrayList<>(newFieldLayout.getFields());
-        combinedFields.addAll(relationshipFieldsToPreserve);
+        if (fieldsToAdd.isEmpty()) {
+            return newFieldLayout;
+        }
         
-        // Skip relationship creation for all relationship fields to avoid duplicates
-        final List<Field> fields = addSkipForRelationshipCreation(combinedFields);
-        fieldAPI.saveFields(fields, user);
-
-        final ContentType contentTypeFfromDB = APILocator.getContentTypeAPI(user).find(contentType.id());
-        return new FieldLayout(contentTypeFfromDB);
+        // Combine the fields, adding relationship fields at the end
+        final List<Field> combinedFields = new ArrayList<>(newFieldLayout.getFields());
+        combinedFields.addAll(fieldsToAdd);
+        
+        return new FieldLayout(newFieldLayout.getContentType(), combinedFields);
     }
 
     /**
