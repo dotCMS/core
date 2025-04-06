@@ -6,7 +6,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotContentletIconComponent } from '../dot-contentlet-icon/dot-contentlet-icon.component';
 
 @Component({
-    selector: 'dot-contentlet-thumbnail',
+    selector: 'dot-contentlet-thumbnail-ng',
     standalone: true,
     imports: [CommonModule, DotContentletIconComponent],
     templateUrl: './dot-contentlet-thumbnail.component.html',
@@ -73,8 +73,6 @@ export class DotContentletThumbnailComponent {
      * Check if thumbnail should display an image or icon
      */
     shouldShowImage(): boolean {
-        console.log('this.getThumbnailUrl()', !!this.getThumbnailUrl(), this.getThumbnailUrl());
-
         return !!this.getThumbnailUrl();
     }
 }
