@@ -7,7 +7,7 @@ import { Editor } from '@tiptap/core';
 import { BubbleMenuPluginProps, BubbleMenuViewProps } from '@tiptap/extension-bubble-menu';
 
 import { SuggestionsComponent } from '../../../shared';
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { Router } from '@angular/router';
 
 export const DEFAULT_LANG_ID = 1;
@@ -72,6 +72,7 @@ export declare type DotBubbleMenuPluginProps = BubbleMenuPluginProps & {
     changeToElement: HTMLElement;
     dotContentTypeService: DotContentTypeService;
     router: Router;
+    messageService: DotMessageService;
 };
 
 export declare type DotBubbleMenuViewProps = BubbleMenuViewProps & {
@@ -80,6 +81,7 @@ export declare type DotBubbleMenuViewProps = BubbleMenuViewProps & {
     changeToElement: HTMLElement;
     dotContentTypeService: DotContentTypeService;
     router: Router;
+    messageService: DotMessageService;
 };
 
 /**

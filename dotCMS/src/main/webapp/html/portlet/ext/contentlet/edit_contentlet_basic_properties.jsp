@@ -353,6 +353,21 @@
 	</div>
 
 <script>
+/**
+ * Manages the "Return To" navigation functionality for content relationships.
+ * 
+ * This function checks if the user is editing content that was accessed via a relationship
+ * field from another contentlet, and displays a return button if applicable.
+ * 
+ * The function:
+ * 1. Retrieves relationship return data from localStorage
+ * 2. Validates if current content matches the stored relationship context
+ * 3. Creates and displays a back button when appropriate
+ * 4. Handles navigation back to the original contentlet
+ * 
+ * The relationship context is stored when a user clicks on a relationship field
+ * to edit related content, allowing them to easily return to the parent content.
+ */
 function showRelationshipReturn(){
 
 
@@ -369,8 +384,6 @@ function showRelationshipReturn(){
     		   // no my con
     	}
     }
-
-    
     
     var referer="<%=UtilMethods.webifyString(request.getParameter("referer"))%>";
     if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null" || (referer =="" && !backInode.blockEditorBackUrl)) {
@@ -401,7 +414,6 @@ function showRelationshipReturn(){
 	localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
 
     button.addEventListener("click", function(e) {
-		debugger
 		if (backInode.blockEditorBackUrl) {
 			window.parent.location.href = backInode.blockEditorBackUrl;
 		}

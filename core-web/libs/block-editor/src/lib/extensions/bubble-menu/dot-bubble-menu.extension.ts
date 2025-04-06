@@ -10,7 +10,7 @@ import { DotBubbleMenuPlugin } from './plugins/dot-bubble-menu.plugin';
 import { shouldShowBubbleMenu } from './utils/index';
 
 import { SuggestionsComponent } from '../../shared';
-import { DotContentTypeService } from '@dotcms/data-access';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { Router } from '@angular/router';
 
 const defaultTippyOptions: Partial<Props> = {
@@ -31,6 +31,7 @@ export function DotBubbleMenuExtension(injector: Injector, viewContainerRef: Vie
     //Services
     const dotContentTypeService = injector.get(DotContentTypeService);
     const router = injector.get(Router);
+    const messageService = injector.get(DotMessageService);
 
     // Create ChangeTo Component Instance
     const changeToComponent = viewContainerRef.createComponent(SuggestionsComponent);
@@ -69,7 +70,8 @@ export function DotBubbleMenuExtension(injector: Injector, viewContainerRef: Vie
                     element: bubbleMenuElement,
                     changeToElement: changeToElement,
                     dotContentTypeService,
-                    router
+                    router,
+                    messageService
                 })
             ];
         }
