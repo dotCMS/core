@@ -199,7 +199,7 @@ export class DriveComponent implements OnInit {
         }
     }
 
-    getContentletPath(contentlet: DotCMSContentlet): string {
-        return contentlet.URL_MAP_FOR_CONTENT || contentlet.path;
+    getContentletPath({ URL_MAP_FOR_CONTENT, path, urlMap }: DotCMSContentlet): string {
+        return urlMap || URL_MAP_FOR_CONTENT || path;
     }
 }
