@@ -1,0 +1,8 @@
+<div class="dot-contentlet-thumbnail">
+    <div class="dot-contentlet-thumbnail__image" [style.width.px]="size" [style.height.px]="size">
+        <img *ngIf="getThumbnailUrl()" [src]="getThumbnailUrl()" [alt]="getTitle()" />
+    </div>
+    <div *ngIf="showLabel && getTitle()" class="dot-contentlet-thumbnail__label">
+        {{ getTitle() }}
+    </div>
+</div>

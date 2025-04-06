@@ -9,13 +9,19 @@ import { take } from 'rxjs/operators';
 
 import { DotESContentService, queryEsParams } from '@dotcms/data-access';
 import { DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
+import { DotContentletThumbnailComponent } from '@dotcms/ui';
 
 import { MOCK_FOLDERS } from './drive.mock';
 
 @Component({
     selector: 'lib-drive',
     standalone: true,
-    imports: [CommonModule, TableModule, TreeModule],
+    imports: [
+        CommonModule,
+        TableModule,
+        TreeModule,
+        DotContentletThumbnailComponent
+    ],
     providers: [DotESContentService],
     templateUrl: './drive.component.html',
     styleUrl: './drive.component.scss'

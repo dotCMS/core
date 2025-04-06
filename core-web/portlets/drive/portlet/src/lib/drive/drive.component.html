@@ -6,6 +6,7 @@
     <p-table [value]="items" [tableStyle]="{'min-width': '50rem'}" [loading]="loading">
         <ng-template pTemplate="header">
             <tr>
+                <th>Thumbnail</th>
                 <th>Title</th>
                 <th>Base Type</th>
                 <th>Content Type</th>
@@ -14,6 +15,9 @@
         </ng-template>
         <ng-template pTemplate="body" let-item>
             <tr>
+                <td>
+                    <dot-contentlet-thumbnail [contentlet]="item" [size]="48" [showLabel]="false"></dot-contentlet-thumbnail>
+                </td>
                 <td>{{ item.title || item.name }}</td>
                 <td>{{ item.baseType }}</td>
                 <td>{{ item.contentType }}</td>
@@ -22,7 +26,7 @@
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td colspan="4">No files found in this location</td>
+                <td colspan="5">No files found in this location</td>
             </tr>
         </ng-template>
     </p-table>
