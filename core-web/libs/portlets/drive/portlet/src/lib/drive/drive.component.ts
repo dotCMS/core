@@ -94,7 +94,7 @@ export class DriveComponent implements OnInit {
             return;
         }
 
-        this.dotRouterService.goToEditContentlet(contentlet.inode);
+        this.router.navigate([`/drive/${contentlet.inode}`]);
     }
 
     private loadContent(path = '/*'): void {
