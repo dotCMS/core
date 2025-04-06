@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotContentletIconComponent } from './dot-contentlet-icon.component';
+import { DotContentletIconComponent } from '../dot-contentlet-icon/dot-contentlet-icon.component';
 
 @Component({
     selector: 'dot-contentlet-thumbnail',
