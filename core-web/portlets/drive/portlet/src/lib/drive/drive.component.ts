@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2 } from '@angular/core';
 
 import { MenuItem, TreeNode } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
@@ -44,7 +44,13 @@ export class DriveComponent implements OnInit {
     breadcrumbItems: MenuItem[] = [];
     breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
 
-    constructor(private dotESContentService: DotESContentService) {}
+    isInfoVisible = false;
+
+    constructor(
+        private dotESContentService: DotESContentService,
+        private elementRef: ElementRef,
+        private renderer: Renderer2
+    ) {}
 
     ngOnInit() {
         this.loadContent();
@@ -139,11 +145,12 @@ export class DriveComponent implements OnInit {
 
     // Method to handle info button click
     onInfoClick(): void {
-        // eslint-disable-next-line no-console
-        console.log('Info button clicked');
-        // eslint-disable-next-line no-console
-        console.log('Current path:', this.selectedFile ? this.getNodePath(this.selectedFile) : '/');
-        // eslint-disable-next-line no-console
-        console.log('Current items:', this.items.length);
+        this.isInfoVisible = !this.isInfoVisible;
+
+        if (this.isInfoVisible) {
+            this.renderer.addClass(this.elementRef.nativeElement, 'show-info');
+        } else {
+            this.renderer.removeClass(this.elementRef.nativeElement, 'show-info');
+        }
     }
 }

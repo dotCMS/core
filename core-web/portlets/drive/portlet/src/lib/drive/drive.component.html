@@ -3,8 +3,10 @@
 
     <p-button
         icon="pi pi-info-circle"
-        styleClass="p-button-rounded p-button-info p-button-text"
-        (onClick)="onInfoClick()"></p-button>
+        [styleClass]="isInfoVisible ? 'p-button-rounded p-button-info' : 'p-button-rounded p-button-info p-button-text'"
+        (onClick)="onInfoClick()"
+        pTooltip="Toggle information panel"
+        tooltipPosition="bottom"></p-button>
 </header>
 
 <p-tree [value]="files" selectionMode="single" [(selection)]="selectedFile" (onNodeSelect)="onNodeSelect($event)"

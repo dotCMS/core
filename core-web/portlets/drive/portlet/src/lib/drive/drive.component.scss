@@ -5,6 +5,10 @@
     height: 100%;
     grid-template-columns: 18rem 1fr;
     grid-template-rows: auto 1fr;
+
+    &.show-info {
+        grid-template-columns: 18rem 1fr 24rem;
+    }
 }
 
 .table-container {
