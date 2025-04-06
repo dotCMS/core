@@ -18,6 +18,12 @@ import { DotContentletThumbnailComponent, DotContentletIconComponent } from '@do
 
 import { MOCK_FOLDERS } from './drive.mock';
 
+interface PathInfo {
+    segments: string[];
+    fullPath: string;
+    normalizedPath: string;
+}
+
 @Component({
     selector: 'lib-drive',
     standalone: true,
@@ -155,33 +161,49 @@ export class DriveComponent implements OnInit {
         return '';
     }
 
-    // Navigate to a path from URL
-    private navigateToPathFromUrl(path: string): void {
+    // Parse path into segments and normalized forms
+    private parsePath(path: string): PathInfo {
         // Normalize path to ensure it starts with a slash
         const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-        const pathSegments = normalizedPath.split('/').filter(segment => segment);
+        const segments = normalizedPath.split('/').filter(segment => segment);
+
+        return {
+            segments,
+            fullPath: normalizedPath,
+            normalizedPath: segments.length ? normalizedPath : '/'
+        };
+    }
+
+    // Navigate to a path from URL
+    private navigateToPathFromUrl(path: string): void {
+        const pathInfo = this.parsePath(path);
 
         // Initialize the tree first
         this.initializeFileTree();
 
-        if (pathSegments.length === 0) {
+        if (pathInfo.segments.length === 0) {
             // If no path segments, just load the root content
             this.loadContent();
+
             return;
         }
 
         // Find and expand the tree nodes matching the path
         let currentNodes = this.files;
         let lastMatchedNode: TreeNode | null = null;
+        let currentPath = '';
 
         // Traverse the tree to find the node matching the path
-        for (const segment of pathSegments) {
+        for (const segment of pathInfo.segments) {
+            currentPath += `/${segment}`;
             const matchingNode = currentNodes.find(node => node.label === segment);
+
             if (matchingNode) {
                 matchingNode.expanded = true;
                 lastMatchedNode = matchingNode;
                 currentNodes = matchingNode.children || [];
             } else {
+                // If we can't find a matching node, break and use the last valid node found
                 break;
             }
         }
@@ -190,27 +212,26 @@ export class DriveComponent implements OnInit {
         if (lastMatchedNode) {
             this.selectedFile = lastMatchedNode;
             this.updateBreadcrumb(lastMatchedNode);
-            this.loadContent(`${normalizedPath}/*`);
+            this.loadContent(`${currentPath}/*`);
         } else {
             this.loadContent();
         }
     }
 
-    // Handle tree node selection
+    // Enhanced method to handle tree node selection with better path handling
     onNodeSelect(event: { node: TreeNode }): void {
         const selectedNode = event.node;
         const path = this.getNodePath(selectedNode);
+
+        // Load content and update UI
         this.loadContent(`${path}/*`);
-
-        // Update breadcrumb when a node is selected
         this.updateBreadcrumb(selectedNode);
-
-        // Update URL to reflect the current path
         this.updateBrowserUrl(path);
     }
 
     // Update browser URL without navigation
     private updateBrowserUrl(path: string): void {
+        // No special handling needed, the path from getNodePath is already normalized
         this.router.navigate(['/drive' + path], { replaceUrl: true });
     }
 
@@ -235,9 +256,9 @@ export class DriveComponent implements OnInit {
     private navigateToNode(node: TreeNode): void {
         this.selectedFile = node;
         const path = this.getNodePath(node);
-        this.loadContent(`${path}/*`);
 
-        // Update URL when navigating via breadcrumb
+        // Load content and update URL
+        this.loadContent(`${path}/*`);
         this.updateBrowserUrl(path);
     }
 
