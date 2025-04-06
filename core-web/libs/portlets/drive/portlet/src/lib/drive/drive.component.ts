@@ -78,9 +78,9 @@ export class DriveComponent implements OnInit {
             this.loadContent();
         }
 
-        // Listen for route changes to update content when URL changes directly
-        this.route.url.subscribe(() => {
-            const currentPath = this.getCurrentPathFromUrl();
+        // Listen for route query parameter changes
+        this.route.queryParamMap.subscribe(params => {
+            const currentPath = params.get('path') || '';
             if (currentPath) {
                 this.navigateToPathFromUrl(currentPath);
             }
@@ -152,13 +152,9 @@ export class DriveComponent implements OnInit {
 
     // Get current path from URL
     private getCurrentPathFromUrl(): string {
-        const url = this.router.url;
-        const driveIndex = url.indexOf('/drive');
-        if (driveIndex !== -1 && url.length > driveIndex + 6) {
-            return url.substring(driveIndex + 6); // +6 to skip '/drive'
-        }
+        const queryParams = this.route.snapshot.queryParams;
 
-        return '';
+        return queryParams['path'] || '';
     }
 
     // Parse path into segments and normalized forms
@@ -231,8 +227,10 @@ export class DriveComponent implements OnInit {
 
     // Update browser URL without navigation
     private updateBrowserUrl(path: string): void {
-        // No special handling needed, the path from getNodePath is already normalized
-        this.router.navigate(['/drive' + path], { replaceUrl: true });
+        this.router.navigate(['/drive'], {
+            queryParams: { path },
+            replaceUrl: true
+        });
     }
 
     // Update breadcrumb based on selected node
