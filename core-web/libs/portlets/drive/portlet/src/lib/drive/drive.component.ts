@@ -27,6 +27,12 @@ interface PathInfo {
     normalizedPath: string;
 }
 
+interface PaginationState {
+    first: number;
+    rows: number;
+    page: number;
+}
+
 @Component({
     selector: 'lib-drive',
     standalone: true,
@@ -56,16 +62,22 @@ export class DriveComponent implements OnInit {
     private elementRef: ElementRef = inject(ElementRef);
     private renderer: Renderer2 = inject(Renderer2);
 
-    rows2 = 40;
-
     paginatorOptions = [
         { label: 20, value: 20 },
         { label: 40, value: 40 },
-        { label: 60, value: 80 },
+        { label: 60, value: 60 },
         { label: 80, value: 80 }
     ];
 
-    first2 = 0;
+    // Pagination state as a signal
+    paginationState = signal<PaginationState>({
+        first: 0,
+        rows: 40,
+        page: 0
+    });
+
+    // Total results from the API response
+    totalResults = signal<number>(0);
 
     items = signal<DotCMSContentlet[]>([]);
     loading = signal<boolean>(false);
@@ -139,9 +151,13 @@ export class DriveComponent implements OnInit {
     });
 
     constructor() {
-        // Effect to load content whenever path or baseTypes change
-        // TODO: Too much vibe coding here.
+        // Effect to load content whenever path, baseTypes, or pagination changes
         effect(() => {
+            // Access all the signal values that should trigger a reload
+            this.currentPath();
+            this.baseTypes();
+            this.paginationState();
+
             this.loadContent();
         }, { allowSignalWrites: true });
     }
@@ -187,6 +203,13 @@ export class DriveComponent implements OnInit {
         this.currentPath.set(`${path}/*`);
         this.updateBreadcrumb(selectedNode);
         this.updateBrowserUrl(path);
+
+        // Reset pagination when changing folder
+        this.paginationState.set({
+            first: 0,
+            rows: this.paginationState().rows,
+            page: 0
+        });
     }
 
     // Method to handle table row selection
@@ -216,20 +239,40 @@ export class DriveComponent implements OnInit {
 
         // Update the baseTypes signal which will trigger content loading via effect
         this.baseTypes.set(query);
+
+        // Reset pagination when performing a new search
+        this.paginationState.set({
+            first: 0,
+            rows: this.paginationState().rows,
+            page: 0
+        });
     }
 
-    onPageChange2(event) {
-        console.log(event)
+    onPageChange(event: { first: number; rows: number; page: number }): void {
+        // Update pagination state signal which will trigger the loadContent via effect
+        this.paginationState.set(event);
+    }
 
+    onRowsPerPageChange(rows: number): void {
+        // Update pagination state with new rows value and reset first/page
+        this.paginationState.update(state => ({
+            ...state,
+            rows,
+            first: 0,
+            page: 0
+        }));
     }
 
     private loadContent(): void {
         this.loading.set(true);
 
+        const pagination = this.paginationState();
+
         // Use the signal values
         const params: queryEsParams = {
             query: `+path:${this.currentPath()} ${this.baseTypes()}`,
-            itemsPerPage: 40
+            itemsPerPage: pagination.rows,
+            offset: String(pagination.first)
         };
 
         this.dotESContentService
@@ -237,6 +280,7 @@ export class DriveComponent implements OnInit {
             .pipe(take(1))
             .subscribe((response: ESContent) => {
                 this.items.set(response.jsonObjectView.contentlets);
+                this.totalResults.set(response.resultsSize);
                 this.loading.set(false);
             });
     }
