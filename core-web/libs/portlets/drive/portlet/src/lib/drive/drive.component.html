@@ -1,18 +1,19 @@
 <header>
-    <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome"></p-breadcrumb>
+    <p-breadcrumb [model]="breadcrumbItems()" [home]="breadcrumbHome()"></p-breadcrumb>
 
     <p-button (onClick)="onInfoClick()" icon="pi pi-info-circle" [rounded]="true" [text]="true" />
 </header>
 
 <p-tree
-    [value]="files"
+    [value]="files()"
     selectionMode="single"
-    [(selection)]="selectedFile"
+    [selection]="selectedFile()"
+    (selectionChange)="selectedFile.set($event)"
     (onNodeSelect)="onNodeSelect($event)"
     styleClass="file-tree"></p-tree>
 
 <div class="table-container">
-    <p-table styleClass="table-container__table" [value]="items" [tableStyle]="{ 'min-width': '50rem' }" [loading]="loading">
+    <p-table styleClass="table-container__table" [value]="items()" [tableStyle]="{ 'min-width': '50rem' }" [loading]="loading()">
         <ng-template pTemplate="header">
             <tr>
                 <th>Thumbnail</th>
@@ -27,7 +28,7 @@
                 style="height: 64px"
                 (dblclick)="editContentlet(item)"
                 (click)="onRowSelect(item)"
-                [class.selected]="selectedContentlet?.inode === item.inode">
+                [class.selected]="selectedContentlet()?.inode === item.inode">
                 <td width="72">
                     <dot-contentlet-thumbnail-ng
                         [contentlet]="item"
@@ -49,9 +50,9 @@
     </p-table>
 </div>
 
-@if (isInfoVisible) {
+@if (isInfoVisible()) {
     <div class="info-panel">
-        @if (!selectedContentlet) {
+        @if (!selectedContentlet()) {
             <div class="empty-state">
                 <div class="empty-state__icon">
                     <i class="pi pi-file"></i>
@@ -63,11 +64,11 @@
             <div class="info-panel__header">
                 <div class="info-panel__title">
                     <dot-contentlet-icon-ng
-                        [contentlet]="selectedContentlet"
+                        [contentlet]="selectedContentlet()"
                         [width]="32"
                         [height]="32"></dot-contentlet-icon-ng>
                     <h3>
-                        {{ selectedContentlet.title || selectedContentlet.name || 'File Details' }}
+                        {{ selectedContentlet().title || selectedContentlet().name || 'File Details' }}
                     </h3>
                 </div>
                 <p-button
@@ -76,24 +77,24 @@
                     [styleClass]="'p-button-rounded p-button-text'"></p-button>
             </div>
 
-            <p-tabView [(activeIndex)]="activeTabIndex">
+            <p-tabView [activeIndex]="activeTabIndex()" (activeIndexChange)="activeTabIndex.set($event)">
                 <p-tabPanel header="Details">
                     <div class="detail-section">
-                        @if (selectedContentlet.hasTitleImage) {
+                        @if (selectedContentlet().hasTitleImage) {
                             <div class="preview-section">
                                 <dot-contentlet-thumbnail-ng
-                                    [contentlet]="selectedContentlet"
+                                    [contentlet]="selectedContentlet()"
                                     [width]="'100%'"
                                     [height]="'100%'"
                                     [showLabel]="false"></dot-contentlet-thumbnail-ng>
                             </div>
                         }
 
-                        @if (selectedContentlet.widgetCode) {
+                        @if (selectedContentlet().widgetCode) {
                             <div class="code-section">
                                 <h4 class="code-label">Code</h4>
                                 <pre
-                                    class="code-block"><code>{{ selectedContentlet.widgetCode }}</code></pre>
+                                    class="code-block"><code>{{ selectedContentlet().widgetCode }}</code></pre>
                             </div>
                         }
 
@@ -101,47 +102,47 @@
                             <div class="detail-row">
                                 <span class="detail-label">Type</span>
                                 <span class="detail-value">
-                                    {{ selectedContentlet.contentType }}
+                                    {{ selectedContentlet().contentType }}
                                 </span>
                             </div>
-                            @if (getFileSize(selectedContentlet)) {
+                            @if (getFileSize()(selectedContentlet())) {
                                 <div class="detail-row">
                                     <span class="detail-label">Size</span>
                                     <span class="detail-value">
-                                        {{ getFileSize(selectedContentlet) }}
+                                        {{ getFileSize()(selectedContentlet()) }}
                                     </span>
                                 </div>
                             }
                             <div class="detail-row">
                                 <span class="detail-label">Path</span>
                                 <span class="detail-value">
-                                    {{ getContentletPath(selectedContentlet) }}
+                                    {{ getContentletPath()(selectedContentlet()) }}
                                 </span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">Owner</span>
                                 <span class="detail-value">
-                                    {{ selectedContentlet.ownerName || 'me' }}
+                                    {{ selectedContentlet().ownerName || 'me' }}
                                 </span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">Modified</span>
                                 <span class="detail-value">
-                                    {{ formatDate(selectedContentlet.modDate) }} by
-                                    {{ selectedContentlet.modUserName || 'me' }}
+                                    {{ formatDate()(selectedContentlet().modDate) }} by
+                                    {{ selectedContentlet().modUserName || 'me' }}
                                 </span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">Opened</span>
                                 <span class="detail-value">
-                                    {{ formatDate(selectedContentlet.modDate) }} by
-                                    {{ selectedContentlet.ownerName || 'me' }}
+                                    {{ formatDate()(selectedContentlet().modDate) }} by
+                                    {{ selectedContentlet().ownerName || 'me' }}
                                 </span>
                             </div>
                             <div class="detail-row">
                                 <span class="detail-label">Created</span>
                                 <span class="detail-value">
-                                    {{ formatDate(selectedContentlet.creationDate) }}
+                                    {{ formatDate()(selectedContentlet().creationDate) }}
                                 </span>
                             </div>
                         </div>

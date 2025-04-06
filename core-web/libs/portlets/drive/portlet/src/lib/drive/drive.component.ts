@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, Renderer2, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem, TreeNode } from 'primeng/api';
@@ -50,20 +50,61 @@ export class DriveComponent implements OnInit {
     private elementRef: ElementRef = inject(ElementRef);
     private renderer: Renderer2 = inject(Renderer2);
 
-    items: DotCMSContentlet[] = [];
-    loading = false;
-    selectedContentlet: DotCMSContentlet | null = null;
+    items = signal<DotCMSContentlet[]>([]);
+    loading = signal<boolean>(false);
+    selectedContentlet = signal<DotCMSContentlet | null>(null);
 
     // Tree related properties
-    files: TreeNode[] = [];
-    selectedFile: TreeNode | null = null;
+    files = signal<TreeNode[]>([]);
+    selectedFile = signal<TreeNode | null>(null);
 
     // Breadcrumb items
-    breadcrumbItems: MenuItem[] = [];
-    breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
+    breadcrumbItems = signal<MenuItem[]>([]);
+    breadcrumbHome = signal<MenuItem>({ icon: 'pi pi-home', routerLink: '/' });
 
-    isInfoVisible = false;
-    activeTabIndex = 0;
+    isInfoVisible = signal<boolean>(false);
+    activeTabIndex = signal<number>(0);
+
+    // Computed signals for derived data
+    formatDate = computed(() => {
+        return (dateStr: string): string => {
+            if (!dateStr) return '';
+
+            const date = new Date(dateStr);
+
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        };
+    });
+
+    // Get file size in a human-readable format
+    getFileSize = computed(() => {
+        return (contentlet: DotCMSContentlet & { size: number }): string => {
+            const fileSize = contentlet.size;
+
+            if (!fileSize) {
+                return null;
+            }
+
+            if (fileSize < 1024) {
+                return `${fileSize} B`;
+            } else if (fileSize < 1024 * 1024) {
+                return `${Math.round(fileSize / 1024)} KB`;
+            } else {
+                return `${Math.round(fileSize / (1024 * 1024))} MB`;
+            }
+        };
+    });
+
+    getContentletPath = computed(() => {
+        return ({ URL_MAP_FOR_CONTENT, path, urlMap }: DotCMSContentlet): string => {
+            return urlMap || URL_MAP_FOR_CONTENT || path;
+        };
+    });
+
     ngOnInit() {
         // Initialize with path from URL, then subscribe to future changes
         const initialPath = this.getCurrentPathFromUrl();
@@ -109,19 +150,19 @@ export class DriveComponent implements OnInit {
 
     // Method to handle table row selection
     onRowSelect(contentlet: DotCMSContentlet): void {
-        this.selectedContentlet = contentlet;
+        this.selectedContentlet.set(contentlet);
 
         // Auto-show the info panel when a row is selected
-        if (!this.isInfoVisible) {
+        if (!this.isInfoVisible()) {
             this.onInfoClick();
         }
     }
 
     // Method to handle info button click
     onInfoClick(): void {
-        this.isInfoVisible = !this.isInfoVisible;
+        this.isInfoVisible.update(value => !value);
 
-        if (this.isInfoVisible) {
+        if (this.isInfoVisible()) {
             this.renderer.addClass(this.elementRef.nativeElement, 'show-info');
         } else {
             this.renderer.removeClass(this.elementRef.nativeElement, 'show-info');
@@ -129,7 +170,7 @@ export class DriveComponent implements OnInit {
     }
 
     private loadContent(path = '/*'): void {
-        this.loading = true;
+        this.loading.set(true);
 
         // Hide base type 8 (language variables)
         const params: queryEsParams = {
@@ -141,14 +182,14 @@ export class DriveComponent implements OnInit {
             .get(params)
             .pipe(take(1))
             .subscribe((response: ESContent) => {
-                this.items = response.jsonObjectView.contentlets;
-                this.loading = false;
+                this.items.set(response.jsonObjectView.contentlets);
+                this.loading.set(false);
             });
     }
 
     private initializeFileTree(): void {
         // Use the mock folder structure and process it to add parent references
-        this.files = this.prepareTreeNodes(MOCK_FOLDERS);
+        this.files.set(this.prepareTreeNodes(MOCK_FOLDERS));
     }
 
     // Prepare tree nodes by adding parent references for path traversal
@@ -216,7 +257,7 @@ export class DriveComponent implements OnInit {
         }
 
         // Find and expand the tree nodes matching the path
-        let currentNodes = this.files;
+        let currentNodes = this.files();
         let lastMatchedNode: TreeNode | null = null;
         let currentPath = '';
 
@@ -237,7 +278,7 @@ export class DriveComponent implements OnInit {
 
         // If we found a matching node, select it
         if (lastMatchedNode) {
-            this.selectedFile = lastMatchedNode;
+            this.selectedFile.set(lastMatchedNode);
             this.updateBreadcrumb(lastMatchedNode);
             this.loadContent(`${currentPath}/*`);
         } else {
@@ -267,50 +308,16 @@ export class DriveComponent implements OnInit {
             currentNode = currentNode.parent;
         }
 
-        this.breadcrumbItems = breadcrumbItems;
+        this.breadcrumbItems.set(breadcrumbItems);
     }
 
     // Navigate to a specific node when clicking breadcrumb item
     private navigateToNode(node: TreeNode): void {
-        this.selectedFile = node;
+        this.selectedFile.set(node);
         const path = this.getNodePath(node);
 
         // Load content and update URL
         this.loadContent(`${path}/*`);
         this.updateBrowserUrl(path);
-    }
-
-    // Method to format date for display
-    formatDate(dateStr: string): string {
-        if (!dateStr) return '';
-
-        const date = new Date(dateStr);
-
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-        });
-    }
-
-    // Get file size in a human-readable format
-    getFileSize(contentlet: DotCMSContentlet & { size: number }): string {
-        const fileSize = contentlet.size;
-
-        if (!fileSize) {
-            return null;
-        }
-
-        if (fileSize < 1024) {
-            return `${fileSize} B`;
-        } else if (fileSize < 1024 * 1024) {
-            return `${Math.round(fileSize / 1024)} KB`;
-        } else {
-            return `${Math.round(fileSize / (1024 * 1024))} MB`;
-        }
-    }
-
-    getContentletPath({ URL_MAP_FOR_CONTENT, path, urlMap }: DotCMSContentlet): string {
-        return urlMap || URL_MAP_FOR_CONTENT || path;
     }
 }
