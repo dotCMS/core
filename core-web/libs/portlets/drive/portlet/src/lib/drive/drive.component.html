@@ -12,7 +12,7 @@
     styleClass="file-tree"></p-tree>
 
 <div class="table-container">
-    <p-table [value]="items" [tableStyle]="{ 'min-width': '50rem' }" [loading]="loading">
+    <p-table styleClass="table-container__table" [value]="items" [tableStyle]="{ 'min-width': '50rem' }" [loading]="loading">
         <ng-template pTemplate="header">
             <tr>
                 <th>Thumbnail</th>

@@ -11,6 +11,10 @@
     }
 }
 
+p-table ::ng-deep .table-container__table {
+    height: 100%;
+}
+
 .table-container {
     border-left: 1px solid $color-palette-gray-200;
     overflow: auto;
