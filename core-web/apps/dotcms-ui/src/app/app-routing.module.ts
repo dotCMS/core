@@ -137,6 +137,11 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.DotEmaRoutes)
     },
     {
+        path: 'drive',
+        loadChildren: () =>
+            import('@dotcms/portlets/drive').then((m) => m.driveRoutes)
+    },
+    {
         canActivate: [editContentGuard],
         path: 'content',
         data: {
