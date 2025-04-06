@@ -28,8 +28,9 @@ export class DriveComponent implements OnInit {
     private loadRootFiles(): void {
         this.loading = true;
 
+        // Hide base type 8 (language variables)
         const params: queryEsParams = {
-            query: '+path:/*',
+            query: '+path:/* -basetype:8',
             itemsPerPage: 40
         };
 

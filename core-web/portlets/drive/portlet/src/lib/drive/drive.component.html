@@ -6,13 +6,15 @@
     <ng-template pTemplate="header">
         <tr>
             <th>Title</th>
-            <th>Type</th>
+            <th>Base Type</th>
+            <th>Content Type</th>
             <th>Owner</th>
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-item>
         <tr>
             <td>{{ item.title || item.name }}</td>
+            <td>{{ item.baseType }}</td>
             <td>{{ item.contentType }}</td>
             <td>{{ item.ownerName }}</td>
         </tr>
