@@ -1,5 +1,10 @@
 :host {
-    display: block;
+    display: grid;
+    height: 100%;
+    grid-template-columns: 300px 1fr;
+}
+
+.table-container {
     overflow: auto;
     height: 100%;
 }

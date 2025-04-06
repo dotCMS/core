@@ -1,11 +1,6 @@
 @use "variables" as *;
 
 .p-tree {
-    border: 1px solid $input-border-color;
-    background: $white;
-    color: $black;
-    padding: $spacing-2;
-    border-radius: $border-radius-xs;
 
     .p-tree-container {
         .p-treenode {

@@ -1,27 +1,29 @@
-<p-table
-    [value]="items"
-    [tableStyle]="{'min-width': '50rem'}"
-    [loading]="loading"
-    *ngIf="!loading">
-    <ng-template pTemplate="header">
-        <tr>
-            <th>Title</th>
-            <th>Base Type</th>
-            <th>Content Type</th>
-            <th>Owner</th>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-item>
-        <tr>
-            <td>{{ item.title || item.name }}</td>
-            <td>{{ item.baseType }}</td>
-            <td>{{ item.contentType }}</td>
-            <td>{{ item.ownerName }}</td>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="emptymessage">
-        <tr>
-            <td colspan="3">No files found in root folder</td>
-        </tr>
-    </ng-template>
-</p-table>
+<p-tree [value]="files" selectionMode="single" [(selection)]="selectedFile" (onNodeSelect)="onNodeSelect($event)"
+    styleClass="file-tree">
+</p-tree>
+
+<div class="table-container">
+    <p-table [value]="items" [tableStyle]="{'min-width': '50rem'}" [loading]="loading">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Title</th>
+                <th>Base Type</th>
+                <th>Content Type</th>
+                <th>Owner</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+            <tr>
+                <td>{{ item.title || item.name }}</td>
+                <td>{{ item.baseType }}</td>
+                <td>{{ item.contentType }}</td>
+                <td>{{ item.ownerName }}</td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="4">No files found in this location</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
