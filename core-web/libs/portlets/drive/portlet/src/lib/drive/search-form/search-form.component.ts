@@ -5,7 +5,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 
-interface ContentType {
+interface BaseType {
   name: string;
   value: number;
 }
@@ -23,14 +23,14 @@ interface ContentType {
   styleUrl: './search-form.component.scss'
 })
 export class SearchFormComponent implements OnInit {
-  @Output() search = new EventEmitter<{ searchQuery: string; selectedTypes: ContentType[] }>();
+  @Output() search = new EventEmitter<{ searchQuery: string; selectedTypes: BaseType[] }>();
 
-  contentTypes: ContentType[] = [];
-  selectedTypes: ContentType[] = [];
+  baseTypes: BaseType[] = [];
+  selectedTypes: BaseType[] = [];
   searchQuery = '';
 
   ngOnInit(): void {
-    this.contentTypes = [
+    this.baseTypes = [
       { name: 'Content', value: 1 },
       { name: 'Pages', value: 2 },
       { name: 'Language Variables', value: 3 },
