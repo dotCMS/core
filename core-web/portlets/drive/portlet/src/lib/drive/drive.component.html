@@ -1,9 +1,7 @@
 <header>
     <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome"></p-breadcrumb>
 
-    <p-button icon="pi pi-info-circle"
-        [styleClass]="isInfoVisible ? 'p-button-rounded p-button-info' : 'p-button-rounded p-button-info p-button-text'"
-        (onClick)="onInfoClick()" pTooltip="Toggle information panel" tooltipPosition="bottom"></p-button>
+    <p-button (onClick)="onInfoClick()" icon="pi pi-info-circle" [rounded]="true" [text]="true" />
 </header>
 
 <p-tree [value]="files" selectionMode="single" [(selection)]="selectedFile" (onNodeSelect)="onNodeSelect($event)"
@@ -86,7 +84,7 @@
                     <div class="detail-row">
                         <span class="detail-label">Path</span>
                         <span class="detail-value">
-                            {{ selectedContentlet.path }}
+                            {{ getContentletPath(selectedContentlet) }}
                         </span>
                     </div>
                     <div class="detail-row">

@@ -198,4 +198,8 @@ export class DriveComponent implements OnInit {
             return `${Math.round(fileSize / (1024 * 1024))} MB`;
         }
     }
+
+    getContentletPath(contentlet: DotCMSContentlet): string {
+        return contentlet.URL_MAP_FOR_CONTENT || contentlet.path;
+    }
 }

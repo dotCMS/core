@@ -50,14 +50,14 @@ p-tree {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: $spacing-1 $spacing-3;
+        padding: $spacing-0 $spacing-3;
         border-bottom: 1px solid $color-palette-gray-200;
     }
 
     &__title {
         display: flex;
         align-items: center;
-        gap: $spacing-2;
+        gap: $spacing-1;
 
         h3 {
             margin: 0;
@@ -67,19 +67,6 @@ p-tree {
 
     ::ng-deep .p-tabview-panels {
         padding: $spacing-3 !important;
-    }
-}
-
-// Table row styling
-tr {
-    cursor: pointer;
-
-    &:hover {
-        background-color: $color-palette-gray-100;
-    }
-
-    &.selected {
-        background-color: $color-palette-primary-100;
     }
 }
 
@@ -142,6 +129,10 @@ h4 {
 
     .detail-value {
         flex: 2;
+        // white-space: nowrap;
+        // overflow: hidden;
+        // text-overflow: ellipsis;
+        white-space: pre-wrap;
 
         &.location {
             display: flex;
