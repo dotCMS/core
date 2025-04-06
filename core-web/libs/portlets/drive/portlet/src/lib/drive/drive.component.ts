@@ -66,7 +66,19 @@ export class DriveComponent implements OnInit {
 
     // Breadcrumb items
     breadcrumbItems = signal<MenuItem[]>([]);
-    breadcrumbHome = signal<MenuItem>({ icon: 'pi pi-home', routerLink: '/' });
+    breadcrumbHome = signal<MenuItem>({
+        icon: 'pi pi-home',
+        command: () => {
+            this.router.navigate(['/drive'], {
+                queryParams: {},
+                replaceUrl: true
+            });
+            this.currentPath.set('/*');
+            this.breadcrumbItems.set([]);
+            this.selectedFile.set(null);
+            this.initializeFileTree();
+        }
+    });
 
     isInfoVisible = signal<boolean>(false);
     activeTabIndex = signal<number>(0);
