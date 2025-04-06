@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, Renderer2, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem, TreeNode } from 'primeng/api';
@@ -56,6 +56,10 @@ export class DriveComponent implements OnInit {
     loading = signal<boolean>(false);
     selectedContentlet = signal<DotCMSContentlet | null>(null);
 
+    // New signals for managing state
+    currentPath = signal<string>('/*');
+    baseTypes = signal<string>('');
+
     // Tree related properties
     files = signal<TreeNode[]>([]);
     selectedFile = signal<TreeNode | null>(null);
@@ -107,6 +111,14 @@ export class DriveComponent implements OnInit {
         };
     });
 
+    constructor() {
+        // Effect to load content whenever path or baseTypes change
+        // TODO: Too much vibe coding here.
+        effect(() => {
+            this.loadContent();
+        }, { allowSignalWrites: true });
+    }
+
     ngOnInit() {
         // Initialize with path from URL, then subscribe to future changes
         const initialPath = this.getCurrentPathFromUrl();
@@ -114,7 +126,7 @@ export class DriveComponent implements OnInit {
             this.navigateToPathFromUrl(initialPath);
         } else {
             this.initializeFileTree();
-            this.loadContent();
+            // Initial content will load via the effect
         }
 
         // Listen for route query parameter changes
@@ -144,8 +156,8 @@ export class DriveComponent implements OnInit {
         const selectedNode = event.node;
         const path = this.getNodePath(selectedNode);
 
-        // Load content and update UI
-        this.loadContent(`${path}/*`);
+        // Update path signal which triggers the content loading via effect
+        this.currentPath.set(`${path}/*`);
         this.updateBreadcrumb(selectedNode);
         this.updateBrowserUrl(path);
     }
@@ -171,12 +183,20 @@ export class DriveComponent implements OnInit {
         }
     }
 
-    private loadContent(path = '/*'): void {
+    onSearch(formData: { searchQuery: string; selectedTypes: { name: string; value: number }[] }): void {
+        const types = formData.selectedTypes.map(item => `basetype:${item.value}`);
+        const query = `+(${types.join(' ')})`;
+
+        // Update the baseTypes signal which will trigger content loading via effect
+        this.baseTypes.set(query);
+    }
+
+    private loadContent(): void {
         this.loading.set(true);
 
-        // Hide base type 8 (language variables)
+        // Use the signal values
         const params: queryEsParams = {
-            query: `+path:${path} -basetype:8`,
+            query: `+path:${this.currentPath()} ${this.baseTypes()}`,
             itemsPerPage: 40
         };
 
@@ -253,7 +273,7 @@ export class DriveComponent implements OnInit {
 
         if (pathInfo.segments.length === 0) {
             // If no path segments, just load the root content
-            this.loadContent();
+            this.currentPath.set('/*');
 
             return;
         }
@@ -282,9 +302,9 @@ export class DriveComponent implements OnInit {
         if (lastMatchedNode) {
             this.selectedFile.set(lastMatchedNode);
             this.updateBreadcrumb(lastMatchedNode);
-            this.loadContent(`${currentPath}/*`);
+            this.currentPath.set(`${currentPath}/*`);
         } else {
-            this.loadContent();
+            this.currentPath.set('/*');
         }
     }
 
@@ -318,88 +338,8 @@ export class DriveComponent implements OnInit {
         this.selectedFile.set(node);
         const path = this.getNodePath(node);
 
-        // Load content and update URL
-        this.loadContent(`${path}/*`);
+        // Update path signal which will trigger content loading
+        this.currentPath.set(`${path}/*`);
         this.updateBrowserUrl(path);
-    }
-
-    // Method to handle search form submission
-    onSearch(formData: { searchQuery: string; selectedTypes: { name: string; value: number }[] }): void {
-        if (!formData.searchQuery && (!formData.selectedTypes || formData.selectedTypes.length === 0)) {
-            return;
-        }
-
-        this.loading.set(true);
-
-        let queryString = '';
-
-        // Add text search if provided
-        if (formData.searchQuery) {
-            queryString += `+text:*${formData.searchQuery}*`;
-        }
-
-        // Add content type filters if selected
-        if (formData.selectedTypes && formData.selectedTypes.length > 0) {
-            // Create a list of base types to include
-            const typeValues = formData.selectedTypes.map(type => type.value);
-
-            // Always exclude language variables (basetype 8) if not explicitly selected
-            if (!typeValues.includes(3)) {
-                queryString += ' -basetype:8';
-            }
-
-            // If specific types are selected, add them to the query
-            if (typeValues.length > 0 && typeValues.length < 5) {
-                queryString += ' +(';
-
-                // Map content type values to appropriate basetype values in the query
-                typeValues.forEach((value, index) => {
-                    if (index > 0) {
-                        queryString += ' OR ';
-                    }
-
-                    // Map our UI values to actual basetype values in the system
-                    switch (value) {
-                        case 1: // Content
-                            queryString += 'basetype:1';
-                            break;
-
-                        case 2: // Pages
-                            queryString += 'basetype:5';
-                            break;
-
-                        case 3: // Language Variables
-                            queryString += 'basetype:8';
-                            break;
-
-                        case 4: // Widgets
-                            queryString += 'basetype:6';
-                            break;
-
-                        case 5: // Files
-                            queryString += 'basetype:3';
-                            break;
-                    }
-                });
-
-                queryString += ')';
-            }
-        } else {
-            // Default exclusion
-            queryString += ' -basetype:8';
-        }
-
-        const params: queryEsParams = {
-            query: queryString || '+contenttype:*',
-            itemsPerPage: 40
-        };
-
-        this.dotESContentService
-            .get(params)
-            .pipe(take(1))
-            .subscribe((response: ESContent) => {
-                this.items.set(response.jsonObjectView.contentlets);
-                this.loading.set(false);
-            });
     }
 }

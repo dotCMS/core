@@ -25,18 +25,26 @@ interface BaseType {
 export class SearchFormComponent implements OnInit {
   @Output() search = new EventEmitter<{ searchQuery: string; selectedTypes: BaseType[] }>();
 
-  baseTypes: BaseType[] = [];
-  selectedTypes: BaseType[] = [];
+  baseTypes: BaseType[] = [
+    { name: 'Content', value: 1 },
+    { name: 'Pages', value: 5 },
+    { name: 'Language Variables', value: 8 },
+    { name: 'Widgets', value: 2 },
+    { name: 'Files', value: 4 },
+    { name: 'Personas', value: 6 },
+    { name: 'Vanity URLs', value: 7 },
+    { name: 'Dot Assets', value: 9 }
+  ];
+  selectedTypes: BaseType[] = this.baseTypes.filter(item => item.value !== 8);
   searchQuery = '';
 
   ngOnInit(): void {
-    this.baseTypes = [
-      { name: 'Content', value: 1 },
-      { name: 'Pages', value: 2 },
-      { name: 'Language Variables', value: 3 },
-      { name: 'Widgets', value: 4 },
-      { name: 'Files', value: 5 }
-    ];
+    const formData = {
+        searchQuery: this.searchQuery,
+        selectedTypes: this.selectedTypes
+      };
+
+      this.search.emit(formData);
   }
 
   onValueChange(form: NgForm): void {
@@ -45,6 +53,7 @@ export class SearchFormComponent implements OnInit {
         searchQuery: this.searchQuery,
         selectedTypes: this.selectedTypes
       };
+
       this.search.emit(formData);
     }
   }

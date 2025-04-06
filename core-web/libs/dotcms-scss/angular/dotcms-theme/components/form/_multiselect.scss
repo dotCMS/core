@@ -21,7 +21,6 @@
     .p-multiselect-label-container {
         display: flex;
         align-items: center;
-        padding-right: $spacing-1;
 
         .p-multiselect-label:not(.p-placeholder) {
             color: $black;
@@ -30,6 +29,7 @@
             &:has(> .p-multiselect-token) {
                 padding: $spacing-1 0;
                 height: auto;
+                display: flex;
                 flex-wrap: wrap;
                 overflow: visible;
             }
