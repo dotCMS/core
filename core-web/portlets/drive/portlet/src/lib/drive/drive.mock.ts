@@ -6,23 +6,6 @@ import { TreeNode } from 'primeng/api';
  */
 export const MOCK_FOLDERS: TreeNode[] = [
     {
-        key: 'blog',
-        label: 'Blog',
-        icon: 'pi pi-folder'
-    },
-    {
-        key: 'travelbot',
-        label: 'TravelBot',
-        icon: 'pi pi-folder',
-        children: [
-            {
-                key: 'activities',
-                label: 'activities',
-                icon: 'pi pi-folder'
-            }
-        ]
-    },
-    {
         key: 'application',
         label: 'application',
         icon: 'pi pi-folder',
@@ -269,6 +252,31 @@ export const MOCK_FOLDERS: TreeNode[] = [
         ]
     },
     {
+        key: 'blog',
+        label: 'blog',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'campaigns',
+        label: 'campaigns',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'contact-us',
+        label: 'contact-us',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'destinations',
+        label: 'destinations',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'events',
+        label: 'events',
+        icon: 'pi pi-folder'
+    },
+    {
         key: 'images',
         label: 'images',
         icon: 'pi pi-folder',
@@ -298,26 +306,6 @@ export const MOCK_FOLDERS: TreeNode[] = [
         ]
     },
     {
-        key: 'campaigns',
-        label: 'campaigns',
-        icon: 'pi pi-folder'
-    },
-    {
-        key: 'contact-us',
-        label: 'contact-us',
-        icon: 'pi pi-folder'
-    },
-    {
-        key: 'destinations',
-        label: 'destinations',
-        icon: 'pi pi-folder'
-    },
-    {
-        key: 'events',
-        label: 'events',
-        icon: 'pi pi-folder'
-    },
-    {
         key: 'login',
         label: 'login',
         icon: 'pi pi-folder'
@@ -331,5 +319,17 @@ export const MOCK_FOLDERS: TreeNode[] = [
         key: 'search',
         label: 'search',
         icon: 'pi pi-folder'
-    }
+    },
+    {
+        key: 'travelbot',
+        label: 'travelbot',
+        icon: 'pi pi-folder',
+        children: [
+            {
+                key: 'activities',
+                label: 'activities',
+                icon: 'pi pi-folder'
+            }
+        ]
+    },
 ];
