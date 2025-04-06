@@ -22,8 +22,6 @@
     </p-tabPanel>
 </p-tabView>
 
-
-
 <div class="table-container">
     <p-table styleClass="table-container__table" [value]="items()" [tableStyle]="{ 'min-width': '50rem' }"
         [loading]="loading()">
@@ -161,3 +159,9 @@
     }
 </div>
 }
+
+<div class="paginator">
+    <p-dropdown [options]="paginatorOptions" optionLabel="label" optionValue="value" [(ngModel)]="rows2" (ngModelChange)="first2 = 0" />
+    <p-paginator [first]="first2" [rows]="rows2" [totalRecords]="120" (onPageChange)="onPageChange2($event)" [showCurrentPageReport]="true"
+        currentPageReportTemplate="{first} - {last} of {totalRecords}" [showPageLinks]="false" [showFirstLastIcon]="false" ></p-paginator>
+</div>

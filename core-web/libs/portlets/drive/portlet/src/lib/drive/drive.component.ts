@@ -5,6 +5,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MenuItem, TreeNode } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
+import { PaginatorModule } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
@@ -38,7 +40,9 @@ interface PathInfo {
         TabViewModule,
         DotContentletThumbnailComponent,
         DotContentletIconComponent,
-        SearchFormComponent
+        SearchFormComponent,
+        DropdownModule,
+        PaginatorModule
     ],
     providers: [DotESContentService],
     templateUrl: './drive.component.html',
@@ -51,6 +55,17 @@ export class DriveComponent implements OnInit {
     private dotESContentService: DotESContentService = inject(DotESContentService);
     private elementRef: ElementRef = inject(ElementRef);
     private renderer: Renderer2 = inject(Renderer2);
+
+    rows2 = 40;
+
+    paginatorOptions = [
+        { label: 20, value: 20 },
+        { label: 40, value: 40 },
+        { label: 60, value: 80 },
+        { label: 80, value: 80 }
+    ];
+
+    first2 = 0;
 
     items = signal<DotCMSContentlet[]>([]);
     loading = signal<boolean>(false);
@@ -201,6 +216,11 @@ export class DriveComponent implements OnInit {
 
         // Update the baseTypes signal which will trigger content loading via effect
         this.baseTypes.set(query);
+    }
+
+    onPageChange2(event) {
+        console.log(event)
+
     }
 
     private loadContent(): void {
