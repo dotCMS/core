@@ -1,12 +1,9 @@
 <header>
     <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome"></p-breadcrumb>
 
-    <p-button
-        icon="pi pi-info-circle"
+    <p-button icon="pi pi-info-circle"
         [styleClass]="isInfoVisible ? 'p-button-rounded p-button-info' : 'p-button-rounded p-button-info p-button-text'"
-        (onClick)="onInfoClick()"
-        pTooltip="Toggle information panel"
-        tooltipPosition="bottom"></p-button>
+        (onClick)="onInfoClick()" pTooltip="Toggle information panel" tooltipPosition="bottom"></p-button>
 </header>
 
 <p-tree [value]="files" selectionMode="single" [(selection)]="selectedFile" (onNodeSelect)="onNodeSelect($event)"
@@ -25,9 +22,11 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-item>
-            <tr style="height: 64px;" (click)="onRowSelect(item)" [class.selected]="selectedContentlet?.inode === item.inode">
+            <tr style="height: 64px;" (click)="onRowSelect(item)"
+                [class.selected]="selectedContentlet?.inode === item.inode">
                 <td width="72">
-                    <dot-contentlet-thumbnail-ng [contentlet]="item" [width]="72" [height]="48" [showLabel]="false"></dot-contentlet-thumbnail-ng>
+                    <dot-contentlet-thumbnail-ng [contentlet]="item" [width]="72" [height]="48"
+                        [showLabel]="false"></dot-contentlet-thumbnail-ng>
                 </td>
                 <td>{{ item.title || item.name }}</td>
                 <td>{{ item.baseType }}</td>
@@ -43,31 +42,47 @@
     </p-table>
 </div>
 
-<div class="info-panel" *ngIf="isInfoVisible">
+@if (isInfoVisible) {
+<div class="info-panel">
+    @if (!selectedContentlet) {
+    <div class="empty-state">
+        <div class="empty-state__icon">
+            <i class="pi pi-file"></i>
+        </div>
+        <h3>No file selected</h3>
+        <p>Select a file from the list to view its details</p>
+    </div>
+    } @else {
     <div class="info-panel__header">
         <div class="info-panel__title">
-            <dot-contentlet-icon-ng [contentlet]="selectedContentlet" [width]="32" [height]="32"></dot-contentlet-icon-ng>
-            <h3>{{ selectedContentlet?.title || selectedContentlet?.name || 'Contenido' }}</h3>
+            <dot-contentlet-icon-ng [contentlet]="selectedContentlet" [width]="32"
+                [height]="32"></dot-contentlet-icon-ng>
+            <h3>{{ selectedContentlet.title || selectedContentlet.name || 'File Details' }}</h3>
         </div>
         <p-button (click)="onInfoClick()" icon="pi pi-times" [styleClass]="'p-button-rounded p-button-text'"></p-button>
     </div>
 
     <p-tabView [(activeIndex)]="activeTabIndex">
         <p-tabPanel header="Details">
-            <div class="detail-section" *ngIf="selectedContentlet">
-                <div class="preview-section" *ngIf="selectedContentlet?.hasTitleImage">
-                    <dot-contentlet-thumbnail-ng [contentlet]="selectedContentlet" [width]="'100%'" [height]="'100%'" [showLabel]="false"></dot-contentlet-thumbnail-ng>
+            <div class="detail-section">
+                @if (selectedContentlet.hasTitleImage) {
+                <div class="preview-section">
+                    <dot-contentlet-thumbnail-ng [contentlet]="selectedContentlet" [width]="'100%'" [height]="'100%'"
+                        [showLabel]="false"></dot-contentlet-thumbnail-ng>
                 </div>
+                }
 
                 <div class="file-details">
                     <div class="detail-row">
                         <span class="detail-label">Type</span>
                         <span class="detail-value">{{ selectedContentlet.contentType }}</span>
                     </div>
-                    <div class="detail-row" *ngIf="getFileSize(selectedContentlet)">
+                    @if (getFileSize(selectedContentlet)) {
+                    <div class="detail-row">
                         <span class="detail-label">Size</span>
                         <span class="detail-value">{{ getFileSize(selectedContentlet) }}</span>
                     </div>
+                    }
                     <div class="detail-row">
                         <span class="detail-label">Path</span>
                         <span class="detail-value">
@@ -80,20 +95,19 @@
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Modified</span>
-                        <span class="detail-value">{{ formatDate(selectedContentlet.modDate) }} by {{ selectedContentlet.modUserName || 'me' }}</span>
+                        <span class="detail-value">{{ formatDate(selectedContentlet.modDate) }} by {{
+                            selectedContentlet.modUserName || 'me' }}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Opened</span>
-                        <span class="detail-value">{{ formatDate(selectedContentlet.modDate) }} by {{ selectedContentlet.ownerName || 'me' }}</span>
+                        <span class="detail-value">{{ formatDate(selectedContentlet.modDate) }} by {{
+                            selectedContentlet.ownerName || 'me' }}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Created</span>
                         <span class="detail-value">{{ formatDate(selectedContentlet.creationDate) }}</span>
                     </div>
                 </div>
-            </div>
-            <div class="no-selection" *ngIf="!selectedContentlet">
-                <p>Select a file to view its details</p>
             </div>
         </p-tabPanel>
         <p-tabPanel header="Activity">
@@ -102,4 +116,6 @@
             </div>
         </p-tabPanel>
     </p-tabView>
+    }
 </div>
+}

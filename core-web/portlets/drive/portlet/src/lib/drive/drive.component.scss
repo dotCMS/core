@@ -61,11 +61,7 @@ p-tree {
 
         h3 {
             margin: 0;
-            font-size: $font-size-lg;
-        }
-
-        .material-icons {
-            color: $color-palette-gray-100;
+            font-size: $font-size-lmd;
         }
     }
 
@@ -165,4 +161,36 @@ h4 {
     text-align: center;
     color: $color-palette-gray-100;
     padding: $spacing-5;
+}
+
+// Empty state styles
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: $spacing-5;
+    height: calc(100% - 60px); // Subtract header height
+    text-align: center;
+
+    &__icon {
+        font-size: 48px;
+        color: $color-palette-gray-300;
+        margin-bottom: $spacing-3;
+
+        .pi {
+            font-size: inherit;
+        }
+    }
+
+    h3 {
+        font-size: $font-size-lg;
+        margin: 0 0 $spacing-2;
+        color: $color-palette-gray-700;
+    }
+
+    p {
+        color: $color-palette-gray-500;
+        margin: 0;
+    }
 }
