@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, Renderer2, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem, TreeNode } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
@@ -37,6 +38,8 @@ import { MOCK_FOLDERS } from './drive.mock';
 })
 export class DriveComponent implements OnInit {
     private dotRouterService: DotRouterService = inject(DotRouterService);
+    private route: ActivatedRoute = inject(ActivatedRoute);
+    private router: Router = inject(Router);
 
     items: DotCMSContentlet[] = [];
     loading = false;
@@ -60,8 +63,22 @@ export class DriveComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.loadContent();
-        this.initializeFileTree();
+        // Initialize with path from URL, then subscribe to future changes
+        const initialPath = this.getCurrentPathFromUrl();
+        if (initialPath) {
+            this.navigateToPathFromUrl(initialPath);
+        } else {
+            this.initializeFileTree();
+            this.loadContent();
+        }
+
+        // Listen for route changes to update content when URL changes directly
+        this.route.url.subscribe(() => {
+            const currentPath = this.getCurrentPathFromUrl();
+            if (currentPath) {
+                this.navigateToPathFromUrl(currentPath);
+            }
+        });
     }
 
     editContentlet(contentlet: DotCMSContentlet): void {
@@ -127,6 +144,58 @@ export class DriveComponent implements OnInit {
         return '/' + pathParts.join('/');
     }
 
+    // Get current path from URL
+    private getCurrentPathFromUrl(): string {
+        const url = this.router.url;
+        const driveIndex = url.indexOf('/drive');
+        if (driveIndex !== -1 && url.length > driveIndex + 6) {
+            return url.substring(driveIndex + 6); // +6 to skip '/drive'
+        }
+
+        return '';
+    }
+
+    // Navigate to a path from URL
+    private navigateToPathFromUrl(path: string): void {
+        // Normalize path to ensure it starts with a slash
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        const pathSegments = normalizedPath.split('/').filter(segment => segment);
+
+        // Initialize the tree first
+        this.initializeFileTree();
+
+        if (pathSegments.length === 0) {
+            // If no path segments, just load the root content
+            this.loadContent();
+            return;
+        }
+
+        // Find and expand the tree nodes matching the path
+        let currentNodes = this.files;
+        let lastMatchedNode: TreeNode | null = null;
+
+        // Traverse the tree to find the node matching the path
+        for (const segment of pathSegments) {
+            const matchingNode = currentNodes.find(node => node.label === segment);
+            if (matchingNode) {
+                matchingNode.expanded = true;
+                lastMatchedNode = matchingNode;
+                currentNodes = matchingNode.children || [];
+            } else {
+                break;
+            }
+        }
+
+        // If we found a matching node, select it
+        if (lastMatchedNode) {
+            this.selectedFile = lastMatchedNode;
+            this.updateBreadcrumb(lastMatchedNode);
+            this.loadContent(`${normalizedPath}/*`);
+        } else {
+            this.loadContent();
+        }
+    }
+
     // Handle tree node selection
     onNodeSelect(event: { node: TreeNode }): void {
         const selectedNode = event.node;
@@ -135,6 +204,14 @@ export class DriveComponent implements OnInit {
 
         // Update breadcrumb when a node is selected
         this.updateBreadcrumb(selectedNode);
+
+        // Update URL to reflect the current path
+        this.updateBrowserUrl(path);
+    }
+
+    // Update browser URL without navigation
+    private updateBrowserUrl(path: string): void {
+        this.router.navigate(['/drive' + path], { replaceUrl: true });
     }
 
     // Update breadcrumb based on selected node
@@ -159,6 +236,9 @@ export class DriveComponent implements OnInit {
         this.selectedFile = node;
         const path = this.getNodePath(node);
         this.loadContent(`${path}/*`);
+
+        // Update URL when navigating via breadcrumb
+        this.updateBrowserUrl(path);
     }
 
     // Method to handle table row selection
