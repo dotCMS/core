@@ -1,10 +1,13 @@
+@use "variables" as *;
+
 :host {
     display: grid;
     height: 100%;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 18rem 1fr;
 }
 
 .table-container {
+    border-left: 1px solid $color-palette-gray-200;
     overflow: auto;
     height: 100%;
 }
