@@ -1,3 +1,7 @@
+<header>
+    <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome"></p-breadcrumb>
+</header>
+
 <p-tree [value]="files" selectionMode="single" [(selection)]="selectedFile" (onNodeSelect)="onNodeSelect($event)"
     styleClass="file-tree">
 </p-tree>

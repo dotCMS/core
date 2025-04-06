@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 
-import { TreeNode } from 'primeng/api';
+import { MenuItem, TreeNode } from 'primeng/api';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { TableModule } from 'primeng/table';
 import { TreeModule } from 'primeng/tree';
 
@@ -20,6 +21,7 @@ import { MOCK_FOLDERS } from './drive.mock';
         CommonModule,
         TableModule,
         TreeModule,
+        BreadcrumbModule,
         DotContentletThumbnailComponent
     ],
     providers: [DotESContentService],
@@ -33,6 +35,10 @@ export class DriveComponent implements OnInit {
     // Tree related properties
     files: TreeNode[] = [];
     selectedFile: TreeNode | null = null;
+
+    // Breadcrumb items
+    breadcrumbItems: MenuItem[] = [];
+    breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
 
     constructor(private dotESContentService: DotESContentService) {}
 
@@ -97,6 +103,33 @@ export class DriveComponent implements OnInit {
     onNodeSelect(event: { node: TreeNode }): void {
         const selectedNode = event.node;
         const path = this.getNodePath(selectedNode);
+        this.loadContent(`${path}/*`);
+
+        // Update breadcrumb when a node is selected
+        this.updateBreadcrumb(selectedNode);
+    }
+
+    // Update breadcrumb based on selected node
+    private updateBreadcrumb(node: TreeNode): void {
+        const breadcrumbItems: MenuItem[] = [];
+        let currentNode: TreeNode | undefined = node;
+
+        // Build the breadcrumb items in reverse order (from selected node to root)
+        while (currentNode) {
+            breadcrumbItems.unshift({
+                label: currentNode.label as string,
+                command: () => this.navigateToNode(currentNode as TreeNode)
+            });
+            currentNode = currentNode.parent;
+        }
+
+        this.breadcrumbItems = breadcrumbItems;
+    }
+
+    // Navigate to a specific node when clicking breadcrumb item
+    private navigateToNode(node: TreeNode): void {
+        this.selectedFile = node;
+        const path = this.getNodePath(node);
         this.loadContent(`${path}/*`);
     }
 }
