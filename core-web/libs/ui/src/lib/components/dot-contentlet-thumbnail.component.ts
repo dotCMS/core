@@ -3,10 +3,12 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { DotContentletIconComponent } from './dot-contentlet-icon.component';
+
 @Component({
     selector: 'dot-contentlet-thumbnail',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, DotContentletIconComponent],
     templateUrl: './dot-contentlet-thumbnail.component.html',
     styleUrl: './dot-contentlet-thumbnail.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -38,13 +40,28 @@ export class DotContentletThumbnailComponent {
         }
 
         // Handle regular images with dA path
-        if (this.contentlet.titleImage && this.contentlet.titleImage.length) {
-            const timestamp = this.contentlet.modDate || '';
-
-            return `/dA/${this.contentlet.inode}/${this.contentlet.titleImage}/500w/50q?r=${timestamp}`;
+        if (this.contentlet.titleImage && this.contentlet.titleImage !== 'TITLE_IMAGE_NOT_FOUND') {
+            return `/dA/${this.contentlet.inode}/${this.contentlet.titleImage}/500w/50q`;
         }
 
-        // Fallback to icons
+        return '';
+    }
+
+    /**
+     * Get title for the contentlet
+     */
+    getTitle(): string {
+        return this.contentlet?.title || '';
+    }
+
+    /**
+     * Get icon for the contentlet
+     */
+    getContentletIcon(): string {
+        if (!this.contentlet) {
+            return '';
+        }
+
         if (this.contentlet.__icon__) {
             return this.contentlet.__icon__;
         }
@@ -53,9 +70,11 @@ export class DotContentletThumbnailComponent {
     }
 
     /**
-     * Get title for the contentlet
+     * Check if thumbnail should display an image or icon
      */
-    getTitle(): string {
-        return this.contentlet?.title || '';
+    shouldShowImage(): boolean {
+        console.log('this.getThumbnailUrl()', !!this.getThumbnailUrl(), this.getThumbnailUrl());
+
+        return !!this.getThumbnailUrl();
     }
 }
