@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnInit, Renderer2 } from '@angular/core';
+import { Component, ElementRef, OnInit, Renderer2, inject } from '@angular/core';
 
 import { MenuItem, TreeNode } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
@@ -11,7 +11,7 @@ import { TreeModule } from 'primeng/tree';
 
 import { take } from 'rxjs/operators';
 
-import { DotESContentService, queryEsParams } from '@dotcms/data-access';
+import { DotESContentService, DotRouterService, queryEsParams } from '@dotcms/data-access';
 import { DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
 import { DotContentletThumbnailComponent, DotContentletIconComponent } from '@dotcms/ui';
 
@@ -36,6 +36,8 @@ import { MOCK_FOLDERS } from './drive.mock';
     styleUrl: './drive.component.scss'
 })
 export class DriveComponent implements OnInit {
+    private dotRouterService: DotRouterService = inject(DotRouterService);
+
     items: DotCMSContentlet[] = [];
     loading = false;
     selectedContentlet: DotCMSContentlet | null = null;
@@ -60,6 +62,16 @@ export class DriveComponent implements OnInit {
     ngOnInit() {
         this.loadContent();
         this.initializeFileTree();
+    }
+
+    editContentlet(contentlet: DotCMSContentlet): void {
+        if (contentlet.baseType === 'HTMLPAGE') {
+            this.dotRouterService.goToEditPage(contentlet);
+
+            return;
+        }
+
+        this.dotRouterService.goToEditContentlet(contentlet.inode);
     }
 
     private loadContent(path = '/*'): void {

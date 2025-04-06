@@ -9,7 +9,7 @@
 </p-tree>
 
 <div class="table-container">
-    <p-table [value]="items" [tableStyle]="{'min-width': '50rem'}" [loading]="loading">
+    <p-table  [value]="items" [tableStyle]="{'min-width': '50rem'}" [loading]="loading">
         <ng-template pTemplate="header">
             <tr>
                 <th>Thumbnail</th>
@@ -20,7 +20,7 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-item>
-            <tr style="height: 64px;" (click)="onRowSelect(item)"
+            <tr style="height: 64px;" (dblclick)="editContentlet(item)" (click)="onRowSelect(item)"
                 [class.selected]="selectedContentlet?.inode === item.inode">
                 <td width="72">
                     <dot-contentlet-thumbnail-ng [contentlet]="item" [width]="72" [height]="48"
