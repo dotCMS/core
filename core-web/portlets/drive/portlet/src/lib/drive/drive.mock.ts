@@ -97,12 +97,78 @@ export const MOCK_FOLDERS: TreeNode[] = [
                             {
                                 key: 'images',
                                 label: 'images',
-                                icon: 'pi pi-folder'
+                                icon: 'pi pi-folder',
+                                children: [
+                                    {
+                                        key: 'gallery',
+                                        label: 'gallery',
+                                        icon: 'pi pi-folder',
+                                        children: [
+                                            {
+                                                key: 'beach',
+                                                label: 'beach',
+                                                icon: 'pi pi-folder'
+                                            },
+                                            {
+                                                key: 'surfing',
+                                                label: 'surfing',
+                                                icon: 'pi pi-folder'
+                                            },
+                                            {
+                                                key: 'winter',
+                                                label: 'winter',
+                                                icon: 'pi pi-folder'
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        key: 'login',
+                                        label: 'login',
+                                        icon: 'pi pi-folder'
+                                    },
+                                    {
+                                        key: 'members',
+                                        label: 'members',
+                                        icon: 'pi pi-folder'
+                                    },
+                                    {
+                                        key: 'search',
+                                        label: 'search',
+                                        icon: 'pi pi-folder'
+                                    }
+                                ]
                             },
                             {
                                 key: 'js',
                                 label: 'js',
                                 icon: 'pi pi-folder'
+                            },
+                            {
+                                key: 'store',
+                                label: 'store',
+                                icon: 'pi pi-folder',
+                                children: [
+                                    {
+                                        key: 'apparel',
+                                        label: 'apparel',
+                                        icon: 'pi pi-folder'
+                                    },
+                                    {
+                                        key: 'outdoor',
+                                        label: 'outdoor',
+                                        icon: 'pi pi-folder'
+                                    },
+                                    {
+                                        key: 'snow',
+                                        label: 'snow',
+                                        icon: 'pi pi-folder'
+                                    },
+                                    {
+                                        key: 'water',
+                                        label: 'water',
+                                        icon: 'pi pi-folder'
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -200,26 +266,70 @@ export const MOCK_FOLDERS: TreeNode[] = [
                     }
                 ]
             },
+        ]
+    },
+    {
+        key: 'images',
+        label: 'images',
+        icon: 'pi pi-folder',
+        children: [
             {
-                key: 'campaigns',
-                label: 'campaigns',
-                icon: 'pi pi-folder'
-            },
-            {
-                key: 'contact-us',
-                label: 'contact-us',
-                icon: 'pi pi-folder'
-            },
-            {
-                key: 'destinations',
-                label: 'destinations',
-                icon: 'pi pi-folder'
-            },
-            {
-                key: 'events',
-                label: 'events',
-                icon: 'pi pi-folder'
+                key: 'gallery',
+                label: 'gallery',
+                icon: 'pi pi-folder',
+                children: [
+                    {
+                        key: 'beach',
+                        label: 'beach',
+                        icon: 'pi pi-folder'
+                    },
+                    {
+                        key: 'surfing',
+                        label: 'surfing',
+                        icon: 'pi pi-folder'
+                    },
+                    {
+                        key: 'winter',
+                        label: 'winter',
+                        icon: 'pi pi-folder'
+                    }
+                ]
             }
         ]
+    },
+    {
+        key: 'campaigns',
+        label: 'campaigns',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'contact-us',
+        label: 'contact-us',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'destinations',
+        label: 'destinations',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'events',
+        label: 'events',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'login',
+        label: 'login',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'members',
+        label: 'members',
+        icon: 'pi pi-folder'
+    },
+    {
+        key: 'search',
+        label: 'search',
+        icon: 'pi pi-folder'
     }
 ];
