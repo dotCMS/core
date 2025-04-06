@@ -55,21 +55,6 @@ export class DotContentletThumbnailComponent {
     }
 
     /**
-     * Get icon for the contentlet
-     */
-    getContentletIcon(): string {
-        if (!this.contentlet) {
-            return '';
-        }
-
-        if (this.contentlet.__icon__) {
-            return this.contentlet.__icon__;
-        }
-
-        return this.contentlet.contentTypeIcon || '';
-    }
-
-    /**
      * Check if thumbnail should display an image or icon
      */
     shouldShowImage(): boolean {

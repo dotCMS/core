@@ -16,6 +16,7 @@ export * from './lib/components/dot-field-validation-message/dot-field-validatio
 export * from './lib/components/dot-copy-button/dot-copy-button.component';
 export * from './lib/components/dot-temp-file-thumbnail/dot-temp-file-thumbnail.component';
 export * from './lib/components/dot-contentlet-thumbnail/dot-contentlet-thumbnail.component';
+export * from './lib/components/dot-contentlet-icon/dot-contentlet-icon.component';
 export * from './lib/components/dot-api-link/dot-api-link.component';
 export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';

@@ -1,6 +1,6 @@
 <div class="dot-contentlet-thumbnail__image" [style.width.px]="width" [style.height.px]="height">
     <img *ngIf="shouldShowImage()" [src]="getThumbnailUrl()" [alt]="getTitle()" />
-    <dot-contentlet-icon-ng *ngIf="!shouldShowImage()" [icon]="getContentletIcon()" [size]="24"></dot-contentlet-icon-ng>
+    <dot-contentlet-icon-ng *ngIf="!shouldShowImage()" [contentlet]="contentlet" [size]="24"></dot-contentlet-icon-ng>
 </div>
 <div *ngIf="showLabel && getTitle()" class="dot-contentlet-thumbnail__label">
     {{ getTitle() }}

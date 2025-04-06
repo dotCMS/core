@@ -13,7 +13,7 @@ import { take } from 'rxjs/operators';
 
 import { DotESContentService, queryEsParams } from '@dotcms/data-access';
 import { DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
-import { DotContentletThumbnailComponent } from '@dotcms/ui';
+import { DotContentletThumbnailComponent, DotContentletIconComponent } from '@dotcms/ui';
 
 import { MOCK_FOLDERS } from './drive.mock';
 
@@ -28,7 +28,8 @@ import { MOCK_FOLDERS } from './drive.mock';
         ButtonModule,
         TooltipModule,
         TabViewModule,
-        DotContentletThumbnailComponent
+        DotContentletThumbnailComponent,
+        DotContentletIconComponent
     ],
     providers: [DotESContentService],
     templateUrl: './drive.component.html',
@@ -182,8 +183,12 @@ export class DriveComponent implements OnInit {
     }
 
     // Get file size in a human-readable format
-    getFileSize(contentlet: DotCMSContentlet): string {
-        const fileSize = contentlet.fileSize || contentlet.length || 0;
+    getFileSize(contentlet: DotCMSContentlet & { size: number }): string {
+        const fileSize = contentlet.size;
+
+        if (!fileSize) {
+            return null;
+        }
 
         if (fileSize < 1024) {
             return `${fileSize} B`;

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 const AUDIO = 'audiotrack';
 const DOC = 'insert_drive_file';
@@ -116,8 +117,14 @@ const ICON_MAP: {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentletIconComponent {
-    @Input() icon = '';
+    @Input() set contentlet(value: DotCMSContentlet) {
+        this._contentlet = value;
+        this.icon = this.getContentletIcon();
+    }
     @Input() size = 24;
+
+    private icon: string;
+    private _contentlet: DotCMSContentlet;
 
     private get ext(): string {
         return this.icon.match('Icon') ? this.icon.replace('Icon', '') : '';
@@ -141,5 +148,20 @@ export class DotContentletIconComponent {
 
     private getIconFromMap(): { icon: string; color?: string } {
         return ICON_MAP[this.ext] || ICON_MAP['ukn'];
+    }
+
+    /**
+     * Get icon for the contentlet
+     */
+    private getContentletIcon(): string {
+        if (!this._contentlet) {
+            return '';
+        }
+
+        if (this._contentlet.__icon__) {
+            return this._contentlet.__icon__;
+        }
+
+        return this._contentlet.contentTypeIcon || '';
     }
 }

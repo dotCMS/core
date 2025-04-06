@@ -46,40 +46,32 @@
 <div class="info-panel" *ngIf="isInfoVisible">
     <div class="info-panel__header">
         <div class="info-panel__title">
-            <span class="material-icons">{{ selectedContentlet?.baseType === 'FOLDER' ? 'folder' : 'insert_drive_file' }}</span>
+            <dot-contentlet-icon-ng [contentlet]="selectedContentlet" [width]="32" [height]="32"></dot-contentlet-icon-ng>
             <h3>{{ selectedContentlet?.title || selectedContentlet?.name || 'Contenido' }}</h3>
         </div>
-        <button class="info-panel__close" (click)="onInfoClick()">
-            <span class="material-icons">close</span>
-        </button>
+        <p-button (click)="onInfoClick()" icon="pi pi-times" [styleClass]="'p-button-rounded p-button-text'"></p-button>
     </div>
 
     <p-tabView [(activeIndex)]="activeTabIndex">
         <p-tabPanel header="Details">
             <div class="detail-section" *ngIf="selectedContentlet">
-                <div class="preview-section">
+                <div class="preview-section" *ngIf="selectedContentlet?.hasTitleImage">
                     <dot-contentlet-thumbnail-ng [contentlet]="selectedContentlet" [width]="'100%'" [height]="'100%'" [showLabel]="false"></dot-contentlet-thumbnail-ng>
                 </div>
 
-                <h4>File details</h4>
                 <div class="file-details">
                     <div class="detail-row">
                         <span class="detail-label">Type</span>
                         <span class="detail-value">{{ selectedContentlet.contentType }}</span>
                     </div>
-                    <div class="detail-row">
+                    <div class="detail-row" *ngIf="getFileSize(selectedContentlet)">
                         <span class="detail-label">Size</span>
                         <span class="detail-value">{{ getFileSize(selectedContentlet) }}</span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">Storage used</span>
-                        <span class="detail-value">{{ getFileSize(selectedContentlet) }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Location</span>
-                        <span class="detail-value location">
-                            <span class="material-icons">folder</span>
-                            My Drive
+                        <span class="detail-label">Path</span>
+                        <span class="detail-value">
+                            {{ selectedContentlet.path }}
                         </span>
                     </div>
                     <div class="detail-row">
@@ -96,7 +88,7 @@
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Created</span>
-                        <span class="detail-value">{{ formatDate(selectedContentlet.iDate) }}</span>
+                        <span class="detail-value">{{ formatDate(selectedContentlet.creationDate) }}</span>
                     </div>
                 </div>
             </div>

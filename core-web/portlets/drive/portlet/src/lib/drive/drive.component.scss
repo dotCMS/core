@@ -64,17 +64,6 @@ header {
         }
     }
 
-    &__close {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: $color-palette-gray-100;
-
-        &:hover {
-            color: $color-palette-gray-700;
-        }
-    }
-
     ::ng-deep .p-tabview-panels {
         padding: $spacing-3 !important;
     }
