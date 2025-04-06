@@ -1,5 +1,10 @@
 <header>
     <p-breadcrumb [model]="breadcrumbItems" [home]="breadcrumbHome"></p-breadcrumb>
+
+    <p-button
+        icon="pi pi-info-circle"
+        styleClass="p-button-rounded p-button-info p-button-text"
+        (onClick)="onInfoClick()"></p-button>
 </header>
 
 <p-tree [value]="files" selectionMode="single" [(selection)]="selectedFile" (onNodeSelect)="onNodeSelect($event)"

@@ -3,7 +3,9 @@ import { Component, OnInit } from '@angular/core';
 
 import { MenuItem, TreeNode } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 import { TreeModule } from 'primeng/tree';
 
 import { take } from 'rxjs/operators';
@@ -22,6 +24,8 @@ import { MOCK_FOLDERS } from './drive.mock';
         TableModule,
         TreeModule,
         BreadcrumbModule,
+        ButtonModule,
+        TooltipModule,
         DotContentletThumbnailComponent
     ],
     providers: [DotESContentService],
@@ -131,5 +135,15 @@ export class DriveComponent implements OnInit {
         this.selectedFile = node;
         const path = this.getNodePath(node);
         this.loadContent(`${path}/*`);
+    }
+
+    // Method to handle info button click
+    onInfoClick(): void {
+        // eslint-disable-next-line no-console
+        console.log('Info button clicked');
+        // eslint-disable-next-line no-console
+        console.log('Current path:', this.selectedFile ? this.getNodePath(this.selectedFile) : '/');
+        // eslint-disable-next-line no-console
+        console.log('Current items:', this.items.length);
     }
 }
