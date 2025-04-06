@@ -25,7 +25,7 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-item>
-            <tr style="height: 64px;">
+            <tr style="height: 64px;" (click)="onRowSelect(item)" [class.selected]="selectedContentlet?.inode === item.inode">
                 <td width="72">
                     <dot-contentlet-thumbnail-ng [contentlet]="item" [width]="72" [height]="48" [showLabel]="false"></dot-contentlet-thumbnail-ng>
                 </td>
@@ -41,4 +41,73 @@
             </tr>
         </ng-template>
     </p-table>
+</div>
+
+<div class="info-panel" *ngIf="isInfoVisible">
+    <div class="info-panel__header">
+        <div class="info-panel__title">
+            <span class="material-icons">{{ selectedContentlet?.baseType === 'FOLDER' ? 'folder' : 'insert_drive_file' }}</span>
+            <h3>{{ selectedContentlet?.title || selectedContentlet?.name || 'Contenido' }}</h3>
+        </div>
+        <button class="info-panel__close" (click)="onInfoClick()">
+            <span class="material-icons">close</span>
+        </button>
+    </div>
+
+    <p-tabView [(activeIndex)]="activeTabIndex">
+        <p-tabPanel header="Details">
+            <div class="detail-section" *ngIf="selectedContentlet">
+                <div class="preview-section">
+                    <dot-contentlet-thumbnail-ng [contentlet]="selectedContentlet" [width]="'100%'" [height]="'100%'" [showLabel]="false"></dot-contentlet-thumbnail-ng>
+                </div>
+
+                <h4>File details</h4>
+                <div class="file-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Type</span>
+                        <span class="detail-value">{{ selectedContentlet.contentType }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Size</span>
+                        <span class="detail-value">{{ getFileSize(selectedContentlet) }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Storage used</span>
+                        <span class="detail-value">{{ getFileSize(selectedContentlet) }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Location</span>
+                        <span class="detail-value location">
+                            <span class="material-icons">folder</span>
+                            My Drive
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Owner</span>
+                        <span class="detail-value">{{ selectedContentlet.ownerName || 'me' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Modified</span>
+                        <span class="detail-value">{{ formatDate(selectedContentlet.modDate) }} by {{ selectedContentlet.modUserName || 'me' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Opened</span>
+                        <span class="detail-value">{{ formatDate(selectedContentlet.modDate) }} by {{ selectedContentlet.ownerName || 'me' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Created</span>
+                        <span class="detail-value">{{ formatDate(selectedContentlet.iDate) }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="no-selection" *ngIf="!selectedContentlet">
+                <p>Select a file to view its details</p>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel header="Activity">
+            <div class="activity-section">
+                <p>No recent activity</p>
+            </div>
+        </p-tabPanel>
+    </p-tabView>
 </div>

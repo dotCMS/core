@@ -5,6 +5,7 @@ import { MenuItem, TreeNode } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
+import { TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 import { TreeModule } from 'primeng/tree';
 
@@ -26,6 +27,7 @@ import { MOCK_FOLDERS } from './drive.mock';
         BreadcrumbModule,
         ButtonModule,
         TooltipModule,
+        TabViewModule,
         DotContentletThumbnailComponent
     ],
     providers: [DotESContentService],
@@ -35,6 +37,7 @@ import { MOCK_FOLDERS } from './drive.mock';
 export class DriveComponent implements OnInit {
     items: DotCMSContentlet[] = [];
     loading = false;
+    selectedContentlet: DotCMSContentlet | null = null;
 
     // Tree related properties
     files: TreeNode[] = [];
@@ -45,6 +48,7 @@ export class DriveComponent implements OnInit {
     breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
 
     isInfoVisible = false;
+    activeTabIndex = 0;
 
     constructor(
         private dotESContentService: DotESContentService,
@@ -143,6 +147,16 @@ export class DriveComponent implements OnInit {
         this.loadContent(`${path}/*`);
     }
 
+    // Method to handle table row selection
+    onRowSelect(contentlet: DotCMSContentlet): void {
+        this.selectedContentlet = contentlet;
+
+        // Auto-show the info panel when a row is selected
+        if (!this.isInfoVisible) {
+            this.onInfoClick();
+        }
+    }
+
     // Method to handle info button click
     onInfoClick(): void {
         this.isInfoVisible = !this.isInfoVisible;
@@ -151,6 +165,32 @@ export class DriveComponent implements OnInit {
             this.renderer.addClass(this.elementRef.nativeElement, 'show-info');
         } else {
             this.renderer.removeClass(this.elementRef.nativeElement, 'show-info');
+        }
+    }
+
+    // Method to format date for display
+    formatDate(dateStr: string): string {
+        if (!dateStr) return '';
+
+        const date = new Date(dateStr);
+
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    }
+
+    // Get file size in a human-readable format
+    getFileSize(contentlet: DotCMSContentlet): string {
+        const fileSize = contentlet.fileSize || contentlet.length || 0;
+
+        if (fileSize < 1024) {
+            return `${fileSize} B`;
+        } else if (fileSize < 1024 * 1024) {
+            return `${Math.round(fileSize / 1024)} KB`;
+        } else {
+            return `${Math.round(fileSize / (1024 * 1024))} MB`;
         }
     }
 }

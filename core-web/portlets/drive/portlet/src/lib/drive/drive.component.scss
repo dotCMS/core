@@ -33,3 +33,142 @@ header {
         flex: 1;
     }
 }
+
+// Info panel styles
+.info-panel {
+    grid-column: 3;
+    grid-row: 2;
+    border-left: 1px solid $color-palette-gray-200;
+    overflow: auto;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: $spacing-3;
+        border-bottom: 1px solid $color-palette-gray-200;
+    }
+
+    &__title {
+        display: flex;
+        align-items: center;
+        gap: $spacing-2;
+
+        h3 {
+            margin: 0;
+            font-size: $font-size-lg;
+        }
+
+        .material-icons {
+            color: $color-palette-gray-100;
+        }
+    }
+
+    &__close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: $color-palette-gray-100;
+
+        &:hover {
+            color: $color-palette-gray-700;
+        }
+    }
+
+    ::ng-deep .p-tabview-panels {
+        padding: $spacing-3 !important;
+    }
+}
+
+// Table row styling
+tr {
+    cursor: pointer;
+
+    &:hover {
+        background-color: $color-palette-gray-100;
+    }
+
+    &.selected {
+        background-color: $color-palette-primary-100;
+    }
+}
+
+// Detail sections styling
+.detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+}
+
+.preview-section {
+    text-align: center;
+    display: flex;
+    justify-content: center;
+
+    dot-contentlet-thumbnail-ng {
+        width: 100% !important;
+        height: 250px !important;
+    }
+
+    ::ng-deep .dot-contentlet-thumbnail__image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+
+        img, dot-contentlet-icon {
+            width: 100% !important;
+            height: 250px !important;
+            object-fit: contain;
+        }
+    }
+}
+
+h4 {
+    font-size: $font-size-md;
+    margin: $spacing-3 0 $spacing-2;
+    color: $color-palette-gray-700;
+}
+
+.file-details {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+
+    .detail-row {
+        display: flex;
+        padding: $spacing-2;
+        border-bottom: 1px solid $color-palette-gray-100;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    .detail-label {
+        flex: 1;
+        color: $color-palette-gray-700;
+    }
+
+    .detail-value {
+        flex: 2;
+
+        &.location {
+            display: flex;
+            align-items: center;
+            gap: $spacing-1;
+        }
+    }
+}
+
+.no-selection {
+    text-align: center;
+    color: $color-palette-gray-100;
+    padding: $spacing-5;
+}
+
+.activity-section {
+    text-align: center;
+    color: $color-palette-gray-100;
+    padding: $spacing-5;
+}
