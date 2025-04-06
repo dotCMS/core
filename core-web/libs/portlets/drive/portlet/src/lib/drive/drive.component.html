@@ -1,7 +1,7 @@
 <header>
     <p-breadcrumb [model]="breadcrumbItems()" [home]="breadcrumbHome()"></p-breadcrumb>
 
-    <p-button (onClick)="onInfoClick()" icon="pi pi-info-circle" [rounded]="true" [text]="true" />
+    <!-- <p-button (onClick)="onInfoClick()" icon="pi pi-info-circle" [rounded]="true" [text]="true" /> -->
 </header>
 
 <p-tree
@@ -78,7 +78,10 @@
             </div>
 
             <p-tabView [activeIndex]="activeTabIndex()" (activeIndexChange)="activeTabIndex.set($event)">
-                <p-tabPanel header="Details">
+                <p-tabPanel>
+                    <ng-template pTemplate="header">
+                        <i class="pi pi-info-circle"></i>
+                    </ng-template>
                     <div class="detail-section">
                         @if (selectedContentlet().hasTitleImage) {
                             <div class="preview-section">
@@ -149,6 +152,9 @@
                     </div>
                 </p-tabPanel>
                 <p-tabPanel header="Activity">
+                    <ng-template pTemplate="header">
+                        <i class="pi pi-history"></i>
+                    </ng-template>
                     <div class="activity-section">
                         <p>No recent activity</p>
                     </div>
