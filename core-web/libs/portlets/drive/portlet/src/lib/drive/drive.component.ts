@@ -46,6 +46,9 @@ export class DriveComponent implements OnInit {
     private dotRouterService: DotRouterService = inject(DotRouterService);
     private route: ActivatedRoute = inject(ActivatedRoute);
     private router: Router = inject(Router);
+    private dotESContentService: DotESContentService = inject(DotESContentService);
+    private elementRef: ElementRef = inject(ElementRef);
+    private renderer: Renderer2 = inject(Renderer2);
 
     items: DotCMSContentlet[] = [];
     loading = false;
@@ -61,13 +64,6 @@ export class DriveComponent implements OnInit {
 
     isInfoVisible = false;
     activeTabIndex = 0;
-
-    constructor(
-        private dotESContentService: DotESContentService,
-        private elementRef: ElementRef,
-        private renderer: Renderer2
-    ) {}
-
     ngOnInit() {
         // Initialize with path from URL, then subscribe to future changes
         const initialPath = this.getCurrentPathFromUrl();
@@ -79,7 +75,7 @@ export class DriveComponent implements OnInit {
         }
 
         // Listen for route query parameter changes
-        this.route.queryParamMap.subscribe(params => {
+        this.route.queryParamMap.subscribe((params) => {
             const currentPath = params.get('path') || '';
             if (currentPath) {
                 this.navigateToPathFromUrl(currentPath);
@@ -99,6 +95,37 @@ export class DriveComponent implements OnInit {
         this.router.navigate([`/drive/${contentlet.inode}`], {
             queryParams: { path: currentPath }
         });
+    }
+
+    onNodeSelect(event: { node: TreeNode }): void {
+        const selectedNode = event.node;
+        const path = this.getNodePath(selectedNode);
+
+        // Load content and update UI
+        this.loadContent(`${path}/*`);
+        this.updateBreadcrumb(selectedNode);
+        this.updateBrowserUrl(path);
+    }
+
+    // Method to handle table row selection
+    onRowSelect(contentlet: DotCMSContentlet): void {
+        this.selectedContentlet = contentlet;
+
+        // Auto-show the info panel when a row is selected
+        if (!this.isInfoVisible) {
+            this.onInfoClick();
+        }
+    }
+
+    // Method to handle info button click
+    onInfoClick(): void {
+        this.isInfoVisible = !this.isInfoVisible;
+
+        if (this.isInfoVisible) {
+            this.renderer.addClass(this.elementRef.nativeElement, 'show-info');
+        } else {
+            this.renderer.removeClass(this.elementRef.nativeElement, 'show-info');
+        }
     }
 
     private loadContent(path = '/*'): void {
@@ -165,7 +192,7 @@ export class DriveComponent implements OnInit {
     private parsePath(path: string): PathInfo {
         // Normalize path to ensure it starts with a slash
         const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-        const segments = normalizedPath.split('/').filter(segment => segment);
+        const segments = normalizedPath.split('/').filter((segment) => segment);
 
         return {
             segments,
@@ -196,7 +223,7 @@ export class DriveComponent implements OnInit {
         // Traverse the tree to find the node matching the path
         for (const segment of pathInfo.segments) {
             currentPath += `/${segment}`;
-            const matchingNode = currentNodes.find(node => node.label === segment);
+            const matchingNode = currentNodes.find((node) => node.label === segment);
 
             if (matchingNode) {
                 matchingNode.expanded = true;
@@ -216,17 +243,6 @@ export class DriveComponent implements OnInit {
         } else {
             this.loadContent();
         }
-    }
-
-    // Enhanced method to handle tree node selection with better path handling
-    onNodeSelect(event: { node: TreeNode }): void {
-        const selectedNode = event.node;
-        const path = this.getNodePath(selectedNode);
-
-        // Load content and update UI
-        this.loadContent(`${path}/*`);
-        this.updateBreadcrumb(selectedNode);
-        this.updateBrowserUrl(path);
     }
 
     // Update browser URL without navigation
@@ -262,27 +278,6 @@ export class DriveComponent implements OnInit {
         // Load content and update URL
         this.loadContent(`${path}/*`);
         this.updateBrowserUrl(path);
-    }
-
-    // Method to handle table row selection
-    onRowSelect(contentlet: DotCMSContentlet): void {
-        this.selectedContentlet = contentlet;
-
-        // Auto-show the info panel when a row is selected
-        if (!this.isInfoVisible) {
-            this.onInfoClick();
-        }
-    }
-
-    // Method to handle info button click
-    onInfoClick(): void {
-        this.isInfoVisible = !this.isInfoVisible;
-
-        if (this.isInfoVisible) {
-            this.renderer.addClass(this.elementRef.nativeElement, 'show-info');
-        } else {
-            this.renderer.removeClass(this.elementRef.nativeElement, 'show-info');
-        }
     }
 
     // Method to format date for display
