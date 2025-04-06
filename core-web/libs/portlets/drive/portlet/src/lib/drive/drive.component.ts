@@ -94,7 +94,11 @@ export class DriveComponent implements OnInit {
             return;
         }
 
-        this.router.navigate([`/drive/${contentlet.inode}`]);
+        // Preserve the current path in query params when navigating to the detail page
+        const currentPath = this.route.snapshot.queryParams['path'] || '';
+        this.router.navigate([`/drive/${contentlet.inode}`], {
+            queryParams: { path: currentPath }
+        });
     }
 
     private loadContent(path = '/*'): void {
