@@ -92,8 +92,8 @@ p-tree {
         align-items: center;
         justify-content: center;
 
-
-        img, dot-contentlet-icon {
+        img,
+        dot-contentlet-icon {
             width: 100% !important;
             height: 250px !important;
             object-fit: contain;
@@ -206,7 +206,7 @@ h4 {
         margin: 0;
 
         code {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: "Courier New", Courier, monospace;
             font-size: $font-size-sm;
             color: $color-palette-gray-900;
         }

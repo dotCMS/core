@@ -1,6 +1,5 @@
 import { TreeNode } from 'primeng/api';
 
-
 /**
  * Mock tree structure for file navigation
  */
@@ -253,7 +252,7 @@ export const MOCK_FOLDERS: TreeNode[] = [
                         ]
                     }
                 ]
-            },
+            }
         ]
     },
     {
@@ -336,5 +335,5 @@ export const MOCK_FOLDERS: TreeNode[] = [
                 icon: 'pi pi-folder'
             }
         ]
-    },
+    }
 ];

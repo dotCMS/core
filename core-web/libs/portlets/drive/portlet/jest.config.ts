@@ -1,9 +1,9 @@
 /* eslint-disable */
 export default {
     displayName: 'portlets-drive-portlet',
-    preset: '../../../jest.preset.js',
+    preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-    coverageDirectory: '../../../coverage/portlets/drive/portlet',
+    coverageDirectory: '../../../../coverage/libs/portlets/drive/portlet',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',

@@ -83,7 +83,8 @@ export class DriveComponent implements OnInit {
             itemsPerPage: 40
         };
 
-        this.dotESContentService.get(params)
+        this.dotESContentService
+            .get(params)
             .pipe(take(1))
             .subscribe((response: ESContent) => {
                 this.items = response.jsonObjectView.contentlets;
@@ -103,13 +104,13 @@ export class DriveComponent implements OnInit {
             node.parent = parent;
 
             if (node.children) {
-                node.children.forEach(child => processNode(child, node));
+                node.children.forEach((child) => processNode(child, node));
             }
 
             return node;
         };
 
-        return nodes.map(node => processNode(node));
+        return nodes.map((node) => processNode(node));
     }
 
     // Get the full path of a node by traversing up the tree
