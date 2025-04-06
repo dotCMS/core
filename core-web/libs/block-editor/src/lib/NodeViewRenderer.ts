@@ -13,7 +13,7 @@ import {
 import { AngularRenderer } from './AngularRenderer';
 
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
-import type { Decoration } from 'prosemirror-view';
+import type { Decoration, DecorationSource } from 'prosemirror-view';
 
 export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unknown>;
 
@@ -27,6 +27,9 @@ export class AngularNodeViewComponent implements NodeViewProps {
     @Input() getPos!: NodeViewProps['getPos'];
     @Input() updateAttributes!: NodeViewProps['updateAttributes'];
     @Input() deleteNode!: NodeViewProps['deleteNode'];
+    @Input() view!: NodeViewProps['view'];
+    @Input() innerDecorations!: NodeViewProps['innerDecorations'];
+    @Input() HTMLAttributes!: NodeViewProps['HTMLAttributes'];
 }
 
 interface AngularNodeViewRendererOptions extends NodeViewRendererOptions {
@@ -42,6 +45,7 @@ class AngularNodeView extends NodeView<
 > {
     renderer!: AngularRenderer<AngularNodeViewComponent, NodeViewProps>;
     contentDOMElement!: HTMLElement | null;
+    view = this.editor.view;
 
     override mount() {
         const injector = this.options.injector as Injector;
@@ -49,12 +53,15 @@ class AngularNodeView extends NodeView<
         const props: NodeViewProps = {
             editor: this.editor,
             node: this.node,
-            decorations: this.decorations,
+            decorations: this.decorations as DecorationWithType[],
             selected: false,
             extension: this.extension,
             getPos: () => this.getPos(),
             updateAttributes: (attributes = {}) => this.updateAttributes(attributes),
-            deleteNode: () => this.deleteNode()
+            deleteNode: () => this.deleteNode(),
+            view: this.editor.view,
+            innerDecorations: null as unknown as DecorationSource,
+            HTMLAttributes: {}
         };
 
         // create renderer

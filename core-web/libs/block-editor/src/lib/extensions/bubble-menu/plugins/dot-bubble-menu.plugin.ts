@@ -160,6 +160,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         this.shouldShowProp = this.shouldShow?.({
             editor: this.editor,
+            element: this.element,
             view,
             state,
             oldState,
@@ -434,7 +435,8 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
      */
     goToContentlet(newInode: string, siblingInode: string, languageId: number) {
         // TODO: Remove JSPRedirectFn when Edit Content JSP is removed.
-        const JSPRedirectFn = (window as any).rel_BlogblogComment_PeditRelatedContent;
+        const windowWithJSP = window as unknown as { rel_BlogblogComment_PeditRelatedContent?: (inode: string, sibling: string, langId: number) => void };
+        const JSPRedirectFn = windowWithJSP.rel_BlogblogComment_PeditRelatedContent;
         if (JSPRedirectFn) {
             JSPRedirectFn(newInode, '', languageId);
         }
