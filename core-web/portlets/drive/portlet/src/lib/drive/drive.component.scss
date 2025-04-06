@@ -15,10 +15,11 @@
     border-left: 1px solid $color-palette-gray-200;
     overflow: auto;
     height: 100%;
+    grid-row: 2;
 }
 
 header {
-    grid-column: 1 / -1;
+    grid-column: 1 / 3;
     padding: $spacing-0 $spacing-4;
     border-bottom: 1px solid $color-palette-gray-200;
     display: flex;
@@ -34,10 +35,14 @@ header {
     }
 }
 
+p-tree {
+    grid-row: 2;
+}
+
 // Info panel styles
 .info-panel {
     grid-column: 3;
-    grid-row: 2;
+    grid-row: 1 / -1;
     border-left: 1px solid $color-palette-gray-200;
     overflow: auto;
 
@@ -45,7 +50,7 @@ header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: $spacing-3;
+        padding: $spacing-1 $spacing-3;
         border-bottom: 1px solid $color-palette-gray-200;
     }
 
