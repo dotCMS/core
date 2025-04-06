@@ -6,6 +6,11 @@ import { TreeNode } from 'primeng/api';
  */
 export const MOCK_FOLDERS: TreeNode[] = [
     {
+        key: 'activities',
+        label: 'activities',
+        icon: 'pi pi-folder'
+    },
+    {
         key: 'application',
         label: 'application',
         icon: 'pi pi-folder',
