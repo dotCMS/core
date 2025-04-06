@@ -22,10 +22,9 @@ import {
     NOTIFY_CLIENT,
     postMessageToEditor
 } from '@dotcms/client';
+import { DotCMSContentlet } from '@dotcms/uve/types';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
-
-import { DotCMSContentlet } from '../../models';
 
 /**
  * Dot editable text component.
