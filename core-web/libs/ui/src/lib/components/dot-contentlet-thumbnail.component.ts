@@ -13,7 +13,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 })
 export class DotContentletThumbnailComponent {
     @Input() contentlet: DotCMSContentlet;
-    @Input() size = 64;
+    @Input() width = 64;
+    @Input() height = 64;
     @Input() showLabel = true;
 
     /**

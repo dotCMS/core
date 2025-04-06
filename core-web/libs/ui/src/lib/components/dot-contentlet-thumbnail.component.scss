@@ -1,30 +1,30 @@
-.dot-contentlet-thumbnail {
+.host {
     display: flex;
     flex-direction: column;
     align-items: center;
+}
 
-    &__image {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-        background-color: #f1f3f4;
-        border-radius: 4px;
+.dot-contentlet-thumbnail__image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: #f1f3f4;
+    border-radius: 4px;
 
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
+}
 
-    &__label {
-        margin-top: 8px;
-        font-size: 12px;
-        text-align: center;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+.dot-contentlet-thumbnail__label {
+    margin-top: 8px;
+    font-size: 12px;
+    text-align: center;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

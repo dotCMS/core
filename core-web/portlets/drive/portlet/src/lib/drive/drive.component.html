@@ -14,9 +14,9 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-item>
-            <tr>
-                <td>
-                    <dot-contentlet-thumbnail [contentlet]="item" [size]="48" [showLabel]="false"></dot-contentlet-thumbnail>
+            <tr style="height: 64px;">
+                <td width="72">
+                    <dot-contentlet-thumbnail [contentlet]="item" [width]="72" [height]="48" [showLabel]="false"></dot-contentlet-thumbnail>
                 </td>
                 <td>{{ item.title || item.name }}</td>
                 <td>{{ item.baseType }}</td>
