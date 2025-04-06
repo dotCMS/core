@@ -70,6 +70,13 @@
                 </div>
                 }
 
+                @if (selectedContentlet.widgetCode) {
+                <div class="code-section">
+                    <h4 class="code-label">Code</h4>
+                    <pre class="code-block"><code>{{ selectedContentlet.widgetCode }}</code></pre>
+                </div>
+                }
+
                 <div class="file-details">
                     <div class="detail-row">
                         <span class="detail-label">Type</span>

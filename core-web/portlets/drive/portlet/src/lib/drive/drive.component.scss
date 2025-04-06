@@ -133,6 +133,7 @@ h4 {
         // overflow: hidden;
         // text-overflow: ellipsis;
         white-space: pre-wrap;
+        word-break: break-word;
 
         &.location {
             display: flex;
@@ -183,5 +184,31 @@ h4 {
     p {
         color: $color-palette-gray-500;
         margin: 0;
+    }
+}
+
+.code-section {
+    margin-bottom: $spacing-4;
+
+    .code-label {
+        font-size: $font-size-md;
+        margin: 0 0 $spacing-2;
+        color: $color-palette-gray-700;
+    }
+
+    .code-block {
+        width: 100%;
+        max-height: 300px;
+        overflow: auto;
+        background-color: $color-palette-gray-100;
+        border: 1px solid $color-palette-gray-200;
+        padding: $spacing-2;
+        margin: 0;
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: $font-size-sm;
+            color: $color-palette-gray-900;
+        }
     }
 }
