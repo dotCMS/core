@@ -24,7 +24,7 @@ p-table ::ng-deep .table-container__table {
 
 header {
     grid-column: 1 / 3;
-    padding: $spacing-2 $spacing-4;
+    padding: $spacing-0 $spacing-2 $spacing-0 $spacing-4;
     border-bottom: 1px solid $color-palette-gray-200;
     display: flex;
     align-items: center;
