@@ -1,0 +1,22 @@
+.search-form {
+    padding: 1rem;
+
+    &__field {
+        margin-bottom: 1rem;
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+}

@@ -17,6 +17,7 @@ import { DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
 import { DotContentletThumbnailComponent, DotContentletIconComponent } from '@dotcms/ui';
 
 import { MOCK_FOLDERS } from './drive.mock';
+import { SearchFormComponent } from './search-form/search-form.component';
 
 interface PathInfo {
     segments: string[];
@@ -36,7 +37,8 @@ interface PathInfo {
         TooltipModule,
         TabViewModule,
         DotContentletThumbnailComponent,
-        DotContentletIconComponent
+        DotContentletIconComponent,
+        SearchFormComponent
     ],
     providers: [DotESContentService],
     templateUrl: './drive.component.html',
@@ -319,5 +321,27 @@ export class DriveComponent implements OnInit {
         // Load content and update URL
         this.loadContent(`${path}/*`);
         this.updateBrowserUrl(path);
+    }
+
+    // Method to handle search form submission
+    onSearch(formData: { searchQuery: string }): void {
+        if (!formData.searchQuery) {
+            return;
+        }
+
+        this.loading.set(true);
+
+        const params: queryEsParams = {
+            query: `+text:*${formData.searchQuery}* -basetype:8`,
+            itemsPerPage: 40
+        };
+
+        this.dotESContentService
+            .get(params)
+            .pipe(take(1))
+            .subscribe((response: ESContent) => {
+                this.items.set(response.jsonObjectView.contentlets);
+                this.loading.set(false);
+            });
     }
 }

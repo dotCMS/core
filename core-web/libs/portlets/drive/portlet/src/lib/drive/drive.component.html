@@ -17,9 +17,8 @@
         <ng-template pTemplate="header">
             <i class="pi pi-search"></i>
         </ng-template>
-        <div class="activity-section">
-            <p>No recent activity</p>
-        </div>
+
+        <lib-search-form (search)="onSearch($event)"></lib-search-form>
     </p-tabPanel>
 </p-tabView>
 

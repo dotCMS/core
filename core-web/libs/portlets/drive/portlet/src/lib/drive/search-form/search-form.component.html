@@ -1,0 +1,9 @@
+<form class="search-form p-fluid" #searchForm="ngForm" (ngSubmit)="onSubmit(searchForm)">
+    <div class="field">
+        <label for="searchQuery">Search</label>
+        <input type="text" id="searchQuery" name="searchQuery" ngModel pInputText />
+    </div>
+    <div class="search-form__actions">
+        <p-button type="submit" label="Apply"></p-button>
+    </div>
+</form>
