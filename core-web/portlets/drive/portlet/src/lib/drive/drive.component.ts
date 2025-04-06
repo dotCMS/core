@@ -31,16 +31,16 @@ export class DriveComponent implements OnInit {
     constructor(private dotESContentService: DotESContentService) {}
 
     ngOnInit() {
-        this.loadRootFiles();
+        this.loadContent();
         this.initializeFileTree();
     }
 
-    private loadRootFiles(): void {
+    private loadContent(path = '/*'): void {
         this.loading = true;
 
         // Hide base type 8 (language variables)
         const params: queryEsParams = {
-            query: '+path:/* -basetype:8',
+            query: `+path:${path} -basetype:8`,
             itemsPerPage: 40
         };
 
@@ -53,28 +53,44 @@ export class DriveComponent implements OnInit {
     }
 
     private initializeFileTree(): void {
-        // Use the mock folder structure
-        this.files = MOCK_FOLDERS;
+        // Use the mock folder structure and process it to add parent references
+        this.files = this.prepareTreeNodes(MOCK_FOLDERS);
+    }
+
+    // Prepare tree nodes by adding parent references for path traversal
+    private prepareTreeNodes(nodes: TreeNode[]): TreeNode[] {
+        const processNode = (node: TreeNode, parent?: TreeNode) => {
+            // Set parent reference to allow path traversal
+            node.parent = parent;
+
+            if (node.children) {
+                node.children.forEach(child => processNode(child, node));
+            }
+
+            return node;
+        };
+
+        return nodes.map(node => processNode(node));
+    }
+
+    // Get the full path of a node by traversing up the tree
+    private getNodePath(node: TreeNode): string {
+        const pathParts: string[] = [];
+        let currentNode: TreeNode | undefined = node;
+
+        // Traverse up the tree using parent references
+        while (currentNode) {
+            pathParts.unshift(currentNode.label as string);
+            currentNode = currentNode.parent;
+        }
+
+        return '/' + pathParts.join('/');
     }
 
     // Handle tree node selection
     onNodeSelect(event: { node: TreeNode }): void {
-        // Here we load files based on the selected folder using mock data
-        this.loading = true;
-
-        // Create the path key for the folder map
-        let folderPath = '';
-        if (event.node.key === 'dotai') {
-            folderPath = 'applications/app-vtl/dotai';
-        } else if (event.node.key === 'system-config') {
-            folderPath = 'system/system-config';
-        } else {
-            folderPath = 'root'; // Default to root for any other selection
-        }
-
-        // Load mock content for the selected folder
-        setTimeout(() => {
-            this.loading = false;
-        }, 500);
+        const selectedNode = event.node;
+        const path = this.getNodePath(selectedNode);
+        this.loadContent(`${path}/*`);
     }
 }
