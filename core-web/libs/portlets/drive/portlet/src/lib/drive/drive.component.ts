@@ -324,15 +324,73 @@ export class DriveComponent implements OnInit {
     }
 
     // Method to handle search form submission
-    onSearch(formData: { searchQuery: string }): void {
-        if (!formData.searchQuery) {
+    onSearch(formData: { searchQuery: string; selectedTypes: { name: string; value: number }[] }): void {
+        if (!formData.searchQuery && (!formData.selectedTypes || formData.selectedTypes.length === 0)) {
             return;
         }
 
         this.loading.set(true);
 
+        let queryString = '';
+
+        // Add text search if provided
+        if (formData.searchQuery) {
+            queryString += `+text:*${formData.searchQuery}*`;
+        }
+
+        // Add content type filters if selected
+        if (formData.selectedTypes && formData.selectedTypes.length > 0) {
+            // Create a list of base types to include
+            const typeValues = formData.selectedTypes.map(type => type.value);
+
+            // Always exclude language variables (basetype 8) if not explicitly selected
+            if (!typeValues.includes(3)) {
+                queryString += ' -basetype:8';
+            }
+
+            // If specific types are selected, add them to the query
+            if (typeValues.length > 0 && typeValues.length < 5) {
+                queryString += ' +(';
+
+                // Map content type values to appropriate basetype values in the query
+                typeValues.forEach((value, index) => {
+                    if (index > 0) {
+                        queryString += ' OR ';
+                    }
+
+                    // Map our UI values to actual basetype values in the system
+                    switch (value) {
+                        case 1: // Content
+                            queryString += 'basetype:1';
+                            break;
+
+                        case 2: // Pages
+                            queryString += 'basetype:5';
+                            break;
+
+                        case 3: // Language Variables
+                            queryString += 'basetype:8';
+                            break;
+
+                        case 4: // Widgets
+                            queryString += 'basetype:6';
+                            break;
+
+                        case 5: // Files
+                            queryString += 'basetype:3';
+                            break;
+                    }
+                });
+
+                queryString += ')';
+            }
+        } else {
+            // Default exclusion
+            queryString += ' -basetype:8';
+        }
+
         const params: queryEsParams = {
-            query: `+text:*${formData.searchQuery}* -basetype:8`,
+            query: queryString || '+contenttype:*',
             itemsPerPage: 40
         };
 

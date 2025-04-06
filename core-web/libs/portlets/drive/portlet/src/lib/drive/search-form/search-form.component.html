@@ -1,9 +1,27 @@
-<form class="search-form p-fluid" #searchForm="ngForm" (ngSubmit)="onSubmit(searchForm)">
+<form class="search-form p-fluid" #searchForm="ngForm">
     <div class="field">
         <label for="searchQuery">Search</label>
-        <input type="text" id="searchQuery" name="searchQuery" ngModel pInputText />
+        <input
+            type="text"
+            id="searchQuery"
+            name="searchQuery"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onValueChange(searchForm)"
+            pInputText />
     </div>
-    <div class="search-form__actions">
-        <p-button type="submit" label="Apply"></p-button>
+
+    <div class="field">
+        <label for="types">Types</label>
+        <p-multiSelect
+            [options]="contentTypes"
+            [(ngModel)]="selectedTypes"
+            optionLabel="name"
+            [filter]="true"
+            placeholder="Select Types"
+            display="chip"
+            name="types"
+            id="types"
+            (onChange)="onValueChange(searchForm)">
+        </p-multiSelect>
     </div>
 </form>
