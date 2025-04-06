@@ -38,7 +38,9 @@ export class DotContentTypeService {
         return this.#httpClient
             .get<{
                 entity: DotCMSContentType[];
-            }>(`/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${type ? `&type=${type}` : ''}`)
+            }>(
+                `/api/v1/contenttype?filter=${filter}&orderby=name&direction=ASC&per_page=${page}${type ? `&type=${type}` : ''}`
+            )
             .pipe(pluck('entity'));
     }
     /**
