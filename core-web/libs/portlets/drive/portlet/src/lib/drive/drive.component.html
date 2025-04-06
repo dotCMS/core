@@ -4,16 +4,30 @@
     <!-- <p-button (onClick)="onInfoClick()" icon="pi pi-info-circle" [rounded]="true" [text]="true" /> -->
 </header>
 
-<p-tree
-    [value]="files()"
-    selectionMode="single"
-    [selection]="selectedFile()"
-    (selectionChange)="selectedFile.set($event)"
-    (onNodeSelect)="onNodeSelect($event)"
-    styleClass="file-tree"></p-tree>
+<p-tabView class="left-tab-view" [activeIndex]="activeTabIndex2()" (activeIndexChange)="activeTabIndex2.set($event)">
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <i class="pi pi-folder"></i>
+        </ng-template>
+        <p-tree [value]="files()" selectionMode="single" [selection]="selectedFile()"
+            (selectionChange)="selectedFile.set($event)" (onNodeSelect)="onNodeSelect($event)"
+            styleClass="file-tree"></p-tree>
+    </p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <i class="pi pi-search"></i>
+        </ng-template>
+        <div class="activity-section">
+            <p>No recent activity</p>
+        </div>
+    </p-tabPanel>
+</p-tabView>
+
+
 
 <div class="table-container">
-    <p-table styleClass="table-container__table" [value]="items()" [tableStyle]="{ 'min-width': '50rem' }" [loading]="loading()">
+    <p-table styleClass="table-container__table" [value]="items()" [tableStyle]="{ 'min-width': '50rem' }"
+        [loading]="loading()">
         <ng-template pTemplate="header">
             <tr>
                 <th>Thumbnail</th>
@@ -24,16 +38,10 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-item>
-            <tr
-                style="height: 64px"
-                (dblclick)="editContentlet(item)"
-                (click)="onRowSelect(item)"
+            <tr style="height: 64px" (dblclick)="editContentlet(item)" (click)="onRowSelect(item)"
                 [class.selected]="selectedContentlet()?.inode === item.inode">
                 <td width="72">
-                    <dot-contentlet-thumbnail-ng
-                        [contentlet]="item"
-                        [width]="72"
-                        [height]="48"
+                    <dot-contentlet-thumbnail-ng [contentlet]="item" [width]="72" [height]="48"
                         [showLabel]="false"></dot-contentlet-thumbnail-ng>
                 </td>
                 <td>{{ item.title || item.name }}</td>
@@ -51,115 +59,106 @@
 </div>
 
 @if (isInfoVisible()) {
-    <div class="info-panel">
-        @if (!selectedContentlet()) {
-            <div class="empty-state">
-                <div class="empty-state__icon">
-                    <i class="pi pi-file"></i>
-                </div>
-                <h3>No file selected</h3>
-                <p>Select a file from the list to view its details</p>
-            </div>
-        } @else {
-            <div class="info-panel__header">
-                <div class="info-panel__title">
-                    <dot-contentlet-icon-ng
-                        [contentlet]="selectedContentlet()"
-                        [width]="32"
-                        [height]="32"></dot-contentlet-icon-ng>
-                    <h3>
-                        {{ selectedContentlet().title || selectedContentlet().name || 'File Details' }}
-                    </h3>
-                </div>
-                <p-button
-                    (click)="onInfoClick()"
-                    icon="pi pi-times"
-                    [styleClass]="'p-button-rounded p-button-text'"></p-button>
-            </div>
-
-            <p-tabView [activeIndex]="activeTabIndex()" (activeIndexChange)="activeTabIndex.set($event)">
-                <p-tabPanel>
-                    <ng-template pTemplate="header">
-                        <i class="pi pi-info-circle"></i>
-                    </ng-template>
-                    <div class="detail-section">
-                        @if (selectedContentlet().hasTitleImage) {
-                            <div class="preview-section">
-                                <dot-contentlet-thumbnail-ng
-                                    [contentlet]="selectedContentlet()"
-                                    [width]="'100%'"
-                                    [height]="'100%'"
-                                    [showLabel]="false"></dot-contentlet-thumbnail-ng>
-                            </div>
-                        }
-
-                        @if (selectedContentlet().widgetCode) {
-                            <div class="code-section">
-                                <h4 class="code-label">Code</h4>
-                                <pre
-                                    class="code-block"><code>{{ selectedContentlet().widgetCode }}</code></pre>
-                            </div>
-                        }
-
-                        <div class="file-details">
-                            <div class="detail-row">
-                                <span class="detail-label">Type</span>
-                                <span class="detail-value">
-                                    {{ selectedContentlet().contentType }}
-                                </span>
-                            </div>
-                            @if (getFileSize()(selectedContentlet())) {
-                                <div class="detail-row">
-                                    <span class="detail-label">Size</span>
-                                    <span class="detail-value">
-                                        {{ getFileSize()(selectedContentlet()) }}
-                                    </span>
-                                </div>
-                            }
-                            <div class="detail-row">
-                                <span class="detail-label">Path</span>
-                                <span class="detail-value">
-                                    {{ getContentletPath()(selectedContentlet()) }}
-                                </span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Owner</span>
-                                <span class="detail-value">
-                                    {{ selectedContentlet().ownerName || 'me' }}
-                                </span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Modified</span>
-                                <span class="detail-value">
-                                    {{ formatDate()(selectedContentlet().modDate) }} by
-                                    {{ selectedContentlet().modUserName || 'me' }}
-                                </span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Opened</span>
-                                <span class="detail-value">
-                                    {{ formatDate()(selectedContentlet().modDate) }} by
-                                    {{ selectedContentlet().ownerName || 'me' }}
-                                </span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Created</span>
-                                <span class="detail-value">
-                                    {{ formatDate()(selectedContentlet().creationDate) }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </p-tabPanel>
-                <p-tabPanel header="Activity">
-                    <ng-template pTemplate="header">
-                        <i class="pi pi-history"></i>
-                    </ng-template>
-                    <div class="activity-section">
-                        <p>No recent activity</p>
-                    </div>
-                </p-tabPanel>
-            </p-tabView>
-        }
+<div class="info-panel">
+    @if (!selectedContentlet()) {
+    <div class="empty-state">
+        <div class="empty-state__icon">
+            <i class="pi pi-file"></i>
+        </div>
+        <h3>No file selected</h3>
+        <p>Select a file from the list to view its details</p>
     </div>
+    } @else {
+    <div class="info-panel__header">
+        <div class="info-panel__title">
+            <dot-contentlet-icon-ng [contentlet]="selectedContentlet()" [width]="32"
+                [height]="32"></dot-contentlet-icon-ng>
+            <h3>
+                {{ selectedContentlet().title || selectedContentlet().name || 'File Details' }}
+            </h3>
+        </div>
+        <p-button (click)="onInfoClick()" icon="pi pi-times" [styleClass]="'p-button-rounded p-button-text'"></p-button>
+    </div>
+
+    <p-tabView [activeIndex]="activeTabIndex()" (activeIndexChange)="activeTabIndex.set($event)">
+        <p-tabPanel>
+            <ng-template pTemplate="header">
+                <i class="pi pi-info-circle"></i>
+            </ng-template>
+            <div class="detail-section">
+                @if (selectedContentlet().hasTitleImage) {
+                <div class="preview-section">
+                    <dot-contentlet-thumbnail-ng [contentlet]="selectedContentlet()" [width]="'100%'" [height]="'100%'"
+                        [showLabel]="false"></dot-contentlet-thumbnail-ng>
+                </div>
+                }
+
+                @if (selectedContentlet().widgetCode) {
+                <div class="code-section">
+                    <h4 class="code-label">Code</h4>
+                    <pre class="code-block"><code>{{ selectedContentlet().widgetCode }}</code></pre>
+                </div>
+                }
+
+                <div class="file-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Type</span>
+                        <span class="detail-value">
+                            {{ selectedContentlet().contentType }}
+                        </span>
+                    </div>
+                    @if (getFileSize()(selectedContentlet())) {
+                    <div class="detail-row">
+                        <span class="detail-label">Size</span>
+                        <span class="detail-value">
+                            {{ getFileSize()(selectedContentlet()) }}
+                        </span>
+                    </div>
+                    }
+                    <div class="detail-row">
+                        <span class="detail-label">Path</span>
+                        <span class="detail-value">
+                            {{ getContentletPath()(selectedContentlet()) }}
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Owner</span>
+                        <span class="detail-value">
+                            {{ selectedContentlet().ownerName || 'me' }}
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Modified</span>
+                        <span class="detail-value">
+                            {{ formatDate()(selectedContentlet().modDate) }} by
+                            {{ selectedContentlet().modUserName || 'me' }}
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Opened</span>
+                        <span class="detail-value">
+                            {{ formatDate()(selectedContentlet().modDate) }} by
+                            {{ selectedContentlet().ownerName || 'me' }}
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Created</span>
+                        <span class="detail-value">
+                            {{ formatDate()(selectedContentlet().creationDate) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel header="Activity">
+            <ng-template pTemplate="header">
+                <i class="pi pi-history"></i>
+            </ng-template>
+            <div class="activity-section">
+                <p>No recent activity</p>
+            </div>
+        </p-tabPanel>
+    </p-tabView>
+    }
+</div>
 }

@@ -64,7 +64,7 @@ export class DriveComponent implements OnInit {
 
     isInfoVisible = signal<boolean>(false);
     activeTabIndex = signal<number>(0);
-
+    activeTabIndex2 = signal<number>(0);
     // Computed signals for derived data
     formatDate = computed(() => {
         return (dateStr: string): string => {
