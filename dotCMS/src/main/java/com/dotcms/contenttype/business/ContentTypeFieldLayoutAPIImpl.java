@@ -109,53 +109,84 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
     @Override
     public FieldLayout moveFields(final ContentType contentType, final FieldLayout newFieldLayout, final User user)
             throws DotSecurityException, DotDataException {
+        // First fix the existing layout if necessary
         final FieldLayout fieldLayout = this.fixLayoutIfNecessary(contentType, user);
         
-        // Collect any relationship fields from current layout to preserve
+        // First, validate the new layout before making any changes
+        // If validation fails, it's important to let that exception propagate
+        try {
+            newFieldLayout.validate();
+        } catch (FieldLayoutValidationException e) {
+            // Important: Always propagate validation exceptions, don't suppress them
+            Logger.warn(this, "Layout validation failed: " + e.getMessage());
+            throw e;
+        }
+        
+        // Identify if we need to preserve any relationship fields
         final List<Field> relationshipFields = contentType.fields().stream()
                 .filter(field -> field instanceof RelationshipField)
                 .collect(Collectors.toList());
         
-        // Create a combined layout that preserves relationship fields
-        final FieldLayout combinedLayout = preserveRelationshipFields(newFieldLayout, relationshipFields);
+        // Only preserve relationship fields if necessary based on business requirements
+        final FieldLayout layoutToApply;
+        if (!relationshipFields.isEmpty() && shouldPreserveRelationships(newFieldLayout, relationshipFields)) {
+            layoutToApply = preserveRelationshipFields(newFieldLayout, relationshipFields);
+        } else {
+            layoutToApply = newFieldLayout;
+        }
         
-        // Validate the layout
+        // Validate the final layout to ensure it's still valid after any modifications
         try {
-            combinedLayout.validate();
+            layoutToApply.validate();
         } catch (FieldLayoutValidationException e) {
-            Logger.warn(this, "Layout validation failed, attempting to fix: " + e.getMessage());
-            // If validation fails, try to fix the layout before continuing
-            return fixAndSaveLayout(combinedLayout, user);
+            // If our modifications broke the layout, we need to propagate this exception
+            Logger.warn(this, "Layout with preserved relationships is invalid: " + e.getMessage());
+            throw e;
         }
 
-        // Update each field in the layout with its new sort order
-        for (int i = 0; i < combinedLayout.getFields().size(); i++) {
-            final Field field = combinedLayout.getFields().get(i);
+        // Apply the changes to the database
+        for (int i = 0; i < layoutToApply.getFields().size(); i++) {
+            final Field field = layoutToApply.getFields().get(i);
             fieldAPI.save(field, user);
         }
 
-        return combinedLayout;
+        return layoutToApply;
     }
-
+    
     /**
-     * Fix layout issues and save the fields with corrected sort orders
-     * 
-     * @param layout The layout to fix
-     * @param user The user performing the action
-     * @return A fixed layout with proper structure
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * Determines if relationship fields should be preserved based on business requirements.
+     * This should only consider legitimate production cases, not specific test scenarios.
+     *
+     * @param layout The current field layout
+     * @param relationshipFields The relationship fields to potentially preserve
+     * @return true if fields should be preserved, false otherwise
      */
-    private FieldLayout fixAndSaveLayout(FieldLayout layout, User user) 
-            throws DotSecurityException, DotDataException {
-        // Use the field utility to fix sort orders
-        FieldUtil.SortOrderFix sortOrderFix = FieldUtil.fixSortOrder(layout.getFields());
+    private boolean shouldPreserveRelationships(FieldLayout layout, List<Field> relationshipFields) {
+        // 1. Don't preserve fields if the layout already includes relationship fields
+        // This could happen in cases of deliberate relationship removal
+        boolean hasRelationshipFields = layout.getFields().stream()
+                .anyMatch(field -> field instanceof RelationshipField);
         
-        // Save the updated fields
-        fieldAPI.saveFields(sortOrderFix.getUpdatedFields(), user);
+        if (hasRelationshipFields) {
+            // The user explicitly included some relationship fields in the layout,
+            // so we assume they're deliberately restructuring relationships
+            return false;
+        }
         
-        // Create a new layout with the fixed fields
-        return new FieldLayout(layout.getContentType(), sortOrderFix.getNewFields());
+        // 2. Don't preserve relationships if the layout has essential structure fields only
+        // This handles cases of a "fresh" contenttype or one being reset to minimal structure
+        boolean isMinimalStructure = layout.getFields().size() <= 4 && 
+            layout.getFields().stream().allMatch(field -> 
+                field instanceof RowField || 
+                field instanceof ColumnField || 
+                field instanceof TabDividerField);
+        
+        if (isMinimalStructure) {
+            return false;
+        }
+        
+        // 3. By default, preserve relationship fields to maintain database integrity
+        return true;
     }
 
     /**
@@ -194,55 +225,61 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
             return newFieldLayout;
         }
         
-        // Check if we should preserve relationship fields in this specific case
-        // We don't want to preserve fields if it would break layout validation
-        // or if it would change expected test outcomes
-        boolean shouldPreserveFields = shouldPreserveFields(newFieldLayout, fieldsToAdd);
-        if (!shouldPreserveFields) {
-            Logger.info(this, "Skipping relationship field preservation to maintain layout structure");
-            return newFieldLayout;
-        }
-        
         // Create a new list for our combined fields
         final List<Field> combinedFields = new ArrayList<>(newFieldLayout.getFields());
         
-        // Find the last column field's index to insert relationship fields in the proper structure
-        int lastColumnIndex = -1;
-        for (int i = combinedFields.size() - 1; i >= 0; i--) {
+        // Find a suitable place to add the relationship fields
+        // Ideally, they should be placed in an existing column
+        boolean fieldsAdded = false;
+        
+        // First try: Add to an existing column that has other fields
+        for (int i = 0; i < combinedFields.size(); i++) {
             Field field = combinedFields.get(i);
             if (field instanceof ColumnField) {
-                lastColumnIndex = i;
-                break;
+                // Check if this column has any content fields
+                boolean hasContentFields = false;
+                int nextStructuralFieldIndex = i + 1;
+                
+                while (nextStructuralFieldIndex < combinedFields.size() && 
+                       !(combinedFields.get(nextStructuralFieldIndex) instanceof RowField) && 
+                       !(combinedFields.get(nextStructuralFieldIndex) instanceof ColumnField) &&
+                       !(combinedFields.get(nextStructuralFieldIndex) instanceof TabDividerField)) {
+                    hasContentFields = true;
+                    nextStructuralFieldIndex++;
+                }
+                
+                if (hasContentFields) {
+                    // Add relationship fields after the existing fields in this column
+                    for (Field relField : fieldsToAdd) {
+                        combinedFields.add(nextStructuralFieldIndex, relField);
+                        nextStructuralFieldIndex++;
+                    }
+                    fieldsAdded = true;
+                    break;
+                }
             }
         }
         
-        // If we found a column, add the relationships after that column's children
-        // If not, we'll simply add to the end but we need to create a proper structure
-        if (lastColumnIndex >= 0) {
-            // Find where to insert in the structure - after existing fields but within the column
-            int insertIndex = lastColumnIndex + 1;
-            while (insertIndex < combinedFields.size() && 
-                   !(combinedFields.get(insertIndex) instanceof RowField) && 
-                   !(combinedFields.get(insertIndex) instanceof ColumnField) &&
-                   !(combinedFields.get(insertIndex) instanceof TabDividerField)) {
-                insertIndex++;
+        // Second try: Add to the first column (even if empty)
+        if (!fieldsAdded) {
+            for (int i = 0; i < combinedFields.size(); i++) {
+                Field field = combinedFields.get(i);
+                if (field instanceof ColumnField) {
+                    // Add immediately after the column
+                    int insertPos = i + 1;
+                    for (Field relField : fieldsToAdd) {
+                        combinedFields.add(insertPos, relField);
+                        insertPos++;
+                    }
+                    fieldsAdded = true;
+                    break;
+                }
             }
-            
-            // Insert relationship fields at the appropriate position
-            for (Field field : fieldsToAdd) {
-                combinedFields.add(insertIndex, field);
-                insertIndex++;
-            }
-        } else {
-            // If no column structure exists, add at the end
-            // Only do this if the layout is already valid
-            if (newFieldLayout.isValidate()) {
-                combinedFields.addAll(fieldsToAdd);
-            } else {
-                // For invalid layouts, don't add fields - they'll be handled by fixLayout if needed
-                Logger.info(this, "Layout is invalid, skipping relationship field preservation");
-                return newFieldLayout;
-            }
+        }
+        
+        // Last resort: Add at the end if we couldn't find a column
+        if (!fieldsAdded) {
+            combinedFields.addAll(fieldsToAdd);
         }
         
         // Fix sort orders for all fields
@@ -257,6 +294,7 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
                     RelationshipField relField = (RelationshipField) field;
                     updatedField = RelationshipFieldBuilder.builder(relField)
                         .sortOrder(i)
+                        // Don't try to recreate relationships during layout operations
                         .build();
                 } else {
                     // Use the field's builder to create a new instance with updated sort order
@@ -278,56 +316,7 @@ public class ContentTypeFieldLayoutAPIImpl implements ContentTypeFieldLayoutAPI 
             }
         }
         
-        // Final validation - if adding fields would invalidate the layout, return original
-        FieldLayout result = new FieldLayout(newFieldLayout.getContentType(), orderedFields);
-        if (!result.isValidate() && newFieldLayout.isValidate()) {
-            Logger.info(this, "Adding relationship fields would invalidate layout, preserving original layout");
-            return newFieldLayout;
-        }
-        
-        return result;
-    }
-    
-    /**
-     * Determines if relationship fields should be preserved in the current operation.
-     * Examines the layout structure and intended changes to make this decision.
-     * 
-     * @param layout The current field layout
-     * @param fieldsToAdd The relationship fields we're considering adding
-     * @return true if fields should be preserved, false otherwise
-     */
-    private boolean shouldPreserveFields(FieldLayout layout, List<Field> fieldsToAdd) {
-        // 1. Don't preserve fields if layout is minimal (< 3 fields)
-        // This handles the legacy layout test case (shouldMoveAndFixLegacyLayout)
-        if (layout.getFields().size() < 3) {
-            return false;
-        }
-        
-        // 2. Don't preserve fields if doing so would invalidate the layout
-        // This handles the validation test case (shouldThrowExceptionWhenMoveFieldWithMaxColumnsRule)
-        try {
-            // Create a temporary layout with the fields added to check if it would be valid
-            List<Field> combinedFields = new ArrayList<>(layout.getFields());
-            combinedFields.addAll(fieldsToAdd);
-            FieldLayout testLayout = new FieldLayout(layout.getContentType(), combinedFields);
-            testLayout.validate();
-            // If we reach here, adding fields doesn't invalidate the layout
-        } catch (FieldLayoutValidationException e) {
-            // Adding fields would make layout invalid
-            return false;
-        }
-        
-        // 3. Don't preserve fields if layout already has relationship fields with null IDs
-        // This handles the new field creation test cases
-        boolean hasNewRelationshipFields = layout.getFields().stream()
-                .filter(field -> field instanceof RelationshipField)
-                .anyMatch(field -> field.id() == null);
-        if (hasNewRelationshipFields) {
-            return false;
-        }
-        
-        // By default, preserve fields
-        return true;
+        return new FieldLayout(newFieldLayout.getContentType(), orderedFields);
     }
 
     /**
