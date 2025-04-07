@@ -16,7 +16,6 @@ import {
 import { ControlContainer, FormGroupDirective } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
@@ -30,7 +29,7 @@ import { WINDOW } from '@dotcms/utils';
 @Component({
     selector: 'dot-edit-content-custom-field',
     standalone: true,
-    imports: [SafeUrlPipe, NgStyle, DotIconModule, ButtonModule, ProgressSpinnerModule],
+    imports: [SafeUrlPipe, NgStyle, DotIconModule, ButtonModule],
     templateUrl: './dot-edit-content-custom-field.component.html',
     styleUrls: ['./dot-edit-content-custom-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
