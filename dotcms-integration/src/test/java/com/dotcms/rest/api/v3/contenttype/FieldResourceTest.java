@@ -854,7 +854,240 @@ public class FieldResourceTest {
         fieldResource.deleteFields(type.id(), form, getHttpRequest());
     }
 
-
+    /**
+     * Test that relationship fields are properly preserved when updating a content type layout
+     * that doesn't explicitly include them
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @Test
+    public void shouldPreserveExistingRelationshipFieldsWhenUpdatingLayout() throws DotSecurityException, DotDataException, JSONException {
+        // 1. Create content type with regular fields and relationship fields
+        final ContentType type = createContentType();
+        
+        // Create basic fields
+        final List<Field> fields = createFields(type);
+        
+        // Add a relationship field
+        final Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                .name("Test Relationship")
+                .contentTypeId(type.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                .relationType(type.variable())
+                .build();
+        
+        // Save the relationship field
+        final Field savedRelationshipField = APILocator.getContentTypeFieldAPI().save(relationshipField, APILocator.systemUser());
+        
+        // 2. Create a layout update that omits the relationship field
+        // Get current layout
+        final FieldResource fieldResource = new FieldResource();
+        final Response currentLayoutResponse = fieldResource.getContentTypeFields(type.id(), getHttpRequest());
+        
+        final List<FieldLayoutRow> currentRows =
+                (List<FieldLayoutRow>) ((ResponseEntityView) currentLayoutResponse.getEntity()).getEntity();
+        
+        // Create a new layout with only the basic fields (omitting relationship)
+        final List<Map<String, Object>> newLayout = getToLayoutMap(fields);
+        
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(newLayout)
+                        .build();
+        
+        // 3. Apply the layout update
+        final Response response = fieldResource.moveFields(type.id(), form, getHttpRequest());
+        final List<FieldLayoutRow> responseRows = (List<FieldLayoutRow>) ((ResponseEntityView) response.getEntity()).getEntity();
+        final List<Field> responseFields = this.getFields(responseRows);
+        
+        // 4. Verify relationship field was preserved
+        assertFieldPresent(savedRelationshipField.id(), responseFields);
+        
+        // 5. Verify database state
+        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
+        final List<Field> dbFields = contentTypeFromDB.fields();
+        
+        // Relationship field should be in the database
+        assertFieldPresent(savedRelationshipField.id(), dbFields);
+        
+        // 6. Verify relationship exists in the database
+        final List<Relationship> relationshipList = APILocator.getRelationshipAPI().byContentType(type);
+        assertNotNull(relationshipList);
+        assertFalse(relationshipList.isEmpty());
+    }
+    
+    /**
+     * Test preservation of multiple relationship fields
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @Test
+    public void shouldHandleMultipleRelationshipFieldsPreservation() throws DotSecurityException, DotDataException, JSONException {
+        // 1. Create content type with regular fields and multiple relationship fields
+        final ContentType type = createContentType();
+        
+        // Create basic fields
+        final List<Field> fields = createFields(type);
+        
+        // Add first relationship field 
+        final Field relationshipField1 = FieldBuilder.builder(RelationshipField.class)
+                .name("First Relationship")
+                .contentTypeId(type.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                .relationType(type.variable() + "1")
+                .build();
+        
+        // Add second relationship field with different config
+        final Field relationshipField2 = FieldBuilder.builder(RelationshipField.class)
+                .name("Second Relationship")
+                .contentTypeId(type.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(type.variable() + "2")
+                .build();
+        
+        // Save relationship fields
+        final Field savedRelField1 = APILocator.getContentTypeFieldAPI().save(relationshipField1, APILocator.systemUser());
+        final Field savedRelField2 = APILocator.getContentTypeFieldAPI().save(relationshipField2, APILocator.systemUser());
+        
+        // 2. Create a layout update that omits the relationship fields
+        final List<Map<String, Object>> newLayout = getToLayoutMap(fields);
+        
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(newLayout)
+                        .build();
+        
+        // 3. Apply the layout update
+        final FieldResource fieldResource = new FieldResource();
+        final Response response = fieldResource.moveFields(type.id(), form, getHttpRequest());
+        final List<FieldLayoutRow> responseRows = (List<FieldLayoutRow>) ((ResponseEntityView) response.getEntity()).getEntity();
+        final List<Field> responseFields = this.getFields(responseRows);
+        
+        // 4. Verify both relationship fields were preserved
+        assertFieldPresent(savedRelField1.id(), responseFields);
+        assertFieldPresent(savedRelField2.id(), responseFields);
+        
+        // 5. Verify database state
+        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
+        final List<Field> dbFields = contentTypeFromDB.fields();
+        
+        // Both relationship fields should be in the database
+        assertFieldPresent(savedRelField1.id(), dbFields);
+        assertFieldPresent(savedRelField2.id(), dbFields);
+        
+        // 6. Verify relationships exist in the database
+        final List<Relationship> relationshipList = APILocator.getRelationshipAPI().byContentType(type);
+        assertNotNull(relationshipList);
+        assertEquals(2, relationshipList.size());
+    }
+    
+    /**
+     * Test that relationships are properly preserved when the layout is at max column limit
+     * 
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws JSONException
+     */
+    @Test
+    public void shouldPreserveRelationshipsWhenAtColumnLimit() throws DotSecurityException, DotDataException, JSONException {
+        // 1. Create content type
+        final ContentType type = createContentType();
+        
+        // 2. Create a complex layout with multiple columns
+        final List<Field> fields = createLayoutWithManyColumns(type);
+        
+        // 3. Add a relationship field
+        final Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                .name("Complex Relationship")
+                .contentTypeId(type.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                .relationType(type.variable())
+                .build();
+        
+        // Save relationship field
+        final Field savedRelField = APILocator.getContentTypeFieldAPI().save(relationshipField, APILocator.systemUser());
+        
+        // 4. Make a layout change that doesn't include the relationship field
+        final FieldResource fieldResource = new FieldResource();
+        final Response currentLayoutResponse = fieldResource.getContentTypeFields(type.id(), getHttpRequest());
+        
+        final List<FieldLayoutRow> currentRows =
+                (List<FieldLayoutRow>) ((ResponseEntityView) currentLayoutResponse.getEntity()).getEntity();
+        
+        // Get current layout but exclude the relationship field
+        List<Field> fieldsWithoutRelationship = getFields(currentRows).stream()
+                .filter(field -> !(field instanceof RelationshipField))
+                .collect(Collectors.toList());
+        
+        // Build a new layout without the relationship field
+        final List<Map<String, Object>> newLayout = getToLayoutMap(fieldsWithoutRelationship);
+        
+        final MoveFieldsForm form =
+                new MoveFieldsForm.Builder().layout(newLayout)
+                        .build();
+        
+        // 5. Apply the layout update
+        final Response response = fieldResource.moveFields(type.id(), form, getHttpRequest());
+        final List<FieldLayoutRow> responseRows = (List<FieldLayoutRow>) ((ResponseEntityView) response.getEntity()).getEntity();
+        final List<Field> responseFields = this.getFields(responseRows);
+        
+        // 6. Verify field was preserved and layout is valid
+        assertFieldPresent(savedRelField.id(), responseFields);
+        assertValidLayoutStructure(responseFields);
+        
+        // 7. Verify database state
+        final ContentType contentTypeFromDB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(type.id());
+        assertFieldPresent(savedRelField.id(), contentTypeFromDB.fields());
+        
+        // Also verify the relationship exists
+        final List<Relationship> relationshipList = APILocator.getRelationshipAPI().byContentType(type);
+        assertNotNull(relationshipList);
+        assertFalse(relationshipList.isEmpty());
+    }
+    
+    /**
+     * Helper method to check if a field with a specific ID exists in a list of fields
+     */
+    private void assertFieldPresent(String fieldId, List<Field> fields) {
+        boolean fieldExists = fields.stream()
+                .anyMatch(field -> field.id() != null && field.id().equals(fieldId));
+        assertTrue("Field with ID " + fieldId + " was not found in the layout", fieldExists);
+    }
+    
+    /**
+     * Helper method to verify that the layout structure is valid
+     */
+    private void assertValidLayoutStructure(List<Field> fields) {
+        // Check basic structure - must have at least one row and one column
+        boolean hasRowField = fields.stream().anyMatch(field -> field instanceof RowField);
+        boolean hasColumnField = fields.stream().anyMatch(field -> field instanceof ColumnField);
+        
+        assertTrue("Layout must contain at least one row field", hasRowField);
+        assertTrue("Layout must contain at least one column field", hasColumnField);
+        
+        // Check each non-structure field has a proper parent
+        int rowCount = 0;
+        int columnCount = 0;
+        
+        for (Field field : fields) {
+            if (field instanceof RowField) {
+                rowCount++;
+                // New row should reset column count
+                columnCount = 0;
+            } else if (field instanceof ColumnField) {
+                // Column should be within a row
+                assertTrue("Column found without a preceding row", rowCount > 0);
+                columnCount++;
+                // Should not exceed max columns
+                assertTrue("Too many columns in row " + rowCount, columnCount <= 4);
+            } else if (!(field instanceof TabDividerField)) {
+                // Regular field should be within a column
+                assertTrue("Field found without a proper column parent", columnCount > 0);
+            }
+        }
+    }
 
     private void checkAllFieldsIds(final List<Field> fields, final List<Field> otherFields) {
         assertEquals(fields.size(), otherFields.size());
