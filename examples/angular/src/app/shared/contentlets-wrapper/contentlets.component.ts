@@ -1,8 +1,8 @@
 import { Component, input } from '@angular/core';
-import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
 import { GenericContentlet } from '../../pages/components';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ContentletComponent } from './contentlet/contentlet.component';
+import { Contentlet } from '@dotcms/uve/types';
 
 
 /**

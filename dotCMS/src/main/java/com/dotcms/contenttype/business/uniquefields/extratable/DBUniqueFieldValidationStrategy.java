@@ -33,7 +33,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
-import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.*;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.CONTENTLET_IDS_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.FIELD_VALUE_ATTR;
+import static com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldCriteria.UNIQUE_PER_SITE_ATTR;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
@@ -107,9 +109,38 @@ public class DBUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
         final Optional<UniqueFieldDataBaseUtil.UniqueFieldValue> uniqueFieldValueOptional =
                 uniqueFieldDataBaseUtil.get(uniqueFieldCriteria);
-
         if (uniqueFieldValueOptional.isPresent()) {
+            this.checkUniqueFieldDuplication(contentlet, uniqueFieldCriteria, uniqueFieldValueOptional.get());
+        }
+    }
+
+    /**
+     * Verifies that the Unique Field value of the Contentlet that is being validated in
+     * {@code Preview} via the Content Import Tool is NOT used by another Contentlet. This happens
+     * when inserting or updating an existing Contentlet that has a unique field value that matches
+     * one or more records in the CSV file.
+     * <p>If the Contentlet being validated is NOT in the list of Contentlets using this Unique
+     * Value set in the {@link UniqueFieldCriteria#CONTENTLET_IDS_ATTR} list, it means that there is
+     * a duplication, and an error will be thrown.</p>
+     *
+     * @param contentlet          The {@link Contentlet} to check.
+     * @param uniqueFieldCriteria The {@link UniqueFieldCriteria} used to check the value.
+     * @param uniqueFieldValue    The {@link UniqueFieldDataBaseUtil.UniqueFieldValue} that matches
+     *                            the unique field value.
+     *
+     * @throws UniqueFieldValueDuplicatedException The unique value already exists and belongs to
+     *                                             another Contentlet.
+     */
+    @SuppressWarnings("unchecked")
+    private void checkUniqueFieldDuplication(final Contentlet contentlet,
+                                             final UniqueFieldCriteria uniqueFieldCriteria,
+                                             final UniqueFieldDataBaseUtil.UniqueFieldValue uniqueFieldValue) throws UniqueFieldValueDuplicatedException {
+        if (null != uniqueFieldValue.getSupportingValues()) {
+            final Map<String, Object> supportingValuesMap = uniqueFieldValue.getSupportingValues();
+            final List<String> contentletIds = (List<String>) supportingValuesMap.getOrDefault(CONTENTLET_IDS_ATTR, List.of());
+            if (!contentletIds.contains(contentlet.getIdentifier())) {
                 throwsDuplicatedException(uniqueFieldCriteria);
+            }
         }
     }
 
