@@ -114,6 +114,7 @@ public class UserSessionAjax {
             HttpSession session = sm.getUserSessions().get(sessionId);
             synchronized (session) {
                 if (!callingSession.getId().equals(sessionId)) {
+                    session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
                     session.invalidate();
                 }
             }
