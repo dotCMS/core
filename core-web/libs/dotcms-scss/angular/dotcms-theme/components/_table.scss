@@ -53,7 +53,7 @@ $dot-table-cell-height: 1.25rem;
             padding: $spacing-3;
         }
 
-        .p-datatable-thead > tr > th {
+        .p-datatable-thead tr > th {
             background-color: $color-palette-gray-200;
             border: 1px solid $color-palette-gray-300;
             border-width: 0 0 1px 0;

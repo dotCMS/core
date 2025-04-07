@@ -1,13 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    Output,
-    computed,
-    signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { TableModule } from 'primeng/table';
 
@@ -35,32 +26,30 @@ export interface DotKeyValue {
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotKeyValueComponent implements OnChanges {
-    @Input() autoFocus = true;
-    @Input() showHiddenField: boolean;
-    @Input() variables: DotKeyValue[] = [];
+export class DotKeyValueComponent {
+    $autoFocus = input<boolean>(true, { alias: 'autoFocus' });
+    $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
+    $variables = input<DotKeyValue[]>([], { alias: 'variables' });
 
-    @Output() updatedList: EventEmitter<DotKeyValue[]> = new EventEmitter();
-
-    @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter();
-    @Output() save: EventEmitter<DotKeyValue> = new EventEmitter();
-    @Output() update: EventEmitter<{
+    updatedList = output<DotKeyValue[]>();
+    delete = output<DotKeyValue>();
+    save = output<DotKeyValue>();
+    update = output<{
         variable: DotKeyValue;
         oldVariable: DotKeyValue;
-    }> = new EventEmitter();
+    }>();
 
     protected variableList = signal<DotKeyValue[]>([]);
-    protected forbiddenkeys = computed<Record<string, boolean>>(() => {
-        return this.variableList().reduce((acc, variable) => {
-            acc[variable.key] = true;
+    protected $forbiddenkeys = computed(() => {
+        return this.variableList().reduce(
+            (acc, variable) => {
+                acc[variable.key] = true;
 
-            return acc;
-        }, {});
+                return acc;
+            },
+            {} as Record<string, boolean>
+        );
     });
-
-    ngOnChanges(): void {
-        this.variableList.set([...this.variables]);
-    }
 
     /**
      * Handle Delete event, deleting the variable locally and emitting

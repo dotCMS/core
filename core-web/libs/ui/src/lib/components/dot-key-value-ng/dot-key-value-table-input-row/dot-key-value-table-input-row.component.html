@@ -1,51 +1,69 @@
-<tr class="dot-key-value-input">
-    <td>
-        <input
-            (keydown.escape)="onCancel($event)"
-            (keydown.enter)="handleKeyInputEnter($event)"
-            [formControl]="form.get('key')"
-            [placeholder]="'keyValue.key_input.placeholder' | dm"
-            class="field-key-input"
-            #keyCell
-            data-testId="key-input"
-            pInputText
-            type="text"
-            autocomplete="false" />
-    </td>
-    <td>
-        <input
-            (keydown.escape)="onCancel($event)"
-            (keydown.enter)="saveButton?.click()"
-            [formControl]="form.get('value')"
-            [type]="form.get('hidden').value ? 'password' : 'text'"
-            [placeholder]="'keyValue.value_input.placeholder' | dm"
-            class="field-value-input"
-            #valueCell
-            data-testId="value-input"
-            pInputText
-            autocomplete="false" />
-    </td>
-    @if (showHiddenField) {
-        <td class="dot-key-value-input__variables-hidden">
-            <p-inputSwitch [formControl]="form.get('hidden')" />
-        </td>
+<tr class="dot-key-value__header">
+    <th>
+        <div class="flex flex-column">
+            <label for="key-value-input-row-key-input">
+                {{ 'keyValue.key_header.label' | dm }}
+            </label>
+            <input
+                (keydown.escape)="onCancel($event)"
+                (keydown.enter)="handleKeyInputEnter($event)"
+                [formControl]="keyControl"
+                [placeholder]="'keyValue.key_input.placeholder' | dm"
+                class="field-key-input"
+                #keyCell
+                id="key-value-input-row-key-input"
+                data-testId="key-input"
+                pInputText
+                type="text"
+                pSize="small"
+                autocomplete="false" />
+        </div>
+    </th>
+    <th>
+        <div class="flex flex-column">
+            <label for="key-value-input-row-value-input">
+                {{ 'keyValue.value_header.label' | dm }}
+            </label>
+            <input
+                (keydown.escape)="onCancel($event)"
+                (keydown.enter)="saveButton.click()"
+                [formControl]="valueControl"
+                [type]="hiddenControl.value ? 'password' : 'text'"
+                [placeholder]="'keyValue.value_input.placeholder' | dm"
+                class="field-value-input"
+                id="key-value-input-row-value-input"
+                #valueCell
+                data-testId="value-input"
+                pInputText
+                pSize="small"
+                autocomplete="false" />
+        </div>
+    </th>
+    @if ($showHiddenField()) {
+        <th class="dot-key-value-input__variables-hidden">
+            <div class="flex flex-column">
+                <label for="key-value-input-row-hidden-input">
+                    {{ 'keyValue.hidden_header.label' | dm }}
+                </label>
+                <p-inputSwitch
+                    [formControl]="hiddenControl"
+                    id="key-value-input-row-hidden-input" />
+            </div>
+        </th>
     }
-    <td class="dot-key-value-input__variables-actions">
-        <button
-            (click)="onCancel($event)"
-            [label]="'Cancel' | dm"
-            class="dot-key-value-input__variables-actions-edit-cancel p-button-outlined"
-            data-testId="cancel-button"
-            type="button"
-            pButton></button>
+    <th class="relative" scope="col" style="min-width: 3rem">
+
         <button
             (click)="saveVariable()"
-            [label]="'Save' | dm"
-            [disabled]="form.invalid"
-            class="dot-key-value-input__variables-actions-edit-save"
+            icon="pi pi-plus"
+            [rounded]="true"
+            [outlined]="true"
+            class="absolute key-value-input__save-button"
             #saveButton
+            size="small"
             data-testId="save-button"
             type="button"
-            pButton></button>
-    </td>
+            pButton
+             ></button>
+    </th>
 </tr>

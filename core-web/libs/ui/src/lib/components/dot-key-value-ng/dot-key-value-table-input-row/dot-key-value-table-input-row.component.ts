@@ -2,22 +2,20 @@ import {
     AfterViewInit,
     Component,
     ElementRef,
-    EventEmitter,
-    Input,
+    input,
     OnInit,
-    Output,
-    ViewChild,
+    output,
+    viewChild,
     inject
 } from '@angular/core';
 import {
     AbstractControl,
-    FormControl,
-    FormGroup,
     FormsModule,
     ReactiveFormsModule,
     ValidationErrors,
     ValidatorFn,
-    Validators
+    Validators,
+    FormBuilder
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -47,27 +45,37 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
     ]
 })
 export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit {
-    @ViewChild('keyCell', { static: true }) keyCell: ElementRef;
-    @ViewChild('saveButton', { static: true }) saveButton: ElementRef;
-    @ViewChild('valueCell', { static: true }) valueCell: ElementRef;
+    #fb = inject(FormBuilder);
 
-    @Input() autoFocus = true;
-    @Input() showHiddenField: boolean;
-    @Input() forbiddenkeys: Record<string, boolean> = {};
+    $keyCell = viewChild.required<ElementRef>('keyCell');
+    $saveButton = viewChild.required<ElementRef>('saveButton');
+    $valueCell = viewChild.required<ElementRef>('valueCell');
 
-    @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
+    $autoFocus = input<boolean>(true, { alias: 'autoFocus' });
+    $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
+    $forbiddenkeys = input<Record<string, boolean>>({}, { alias: 'forbiddenkeys' });
 
-    form = new FormGroup({
-        key: new FormControl('', [Validators.required, this.keyValidator()]),
-        value: new FormControl('', Validators.required),
-        hidden: new FormControl(false)
+    save = output<DotKeyValue>();
+
+    form = this.#fb.nonNullable.group({
+        key: ['', [Validators.required, this.keyValidator()]],
+        value: ['', Validators.required],
+        hidden: [false]
     });
 
     private dotMessageService = inject(DotMessageService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
 
-    get keyControl(): AbstractControl {
-        return this.form.get('key');
+    get keyControl() {
+        return this.form.controls.key;
+    }
+
+    get valueControl() {
+        return this.form.controls.value;
+    }
+
+    get hiddenControl() {
+        return this.form.controls.hidden;
     }
 
     ngOnInit(): void {
@@ -80,8 +88,8 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
     }
 
     ngAfterViewInit(): void {
-        if (this.autoFocus) {
-            this.keyCell.nativeElement.focus();
+        if (this.$autoFocus()) {
+            this.$keyCell().nativeElement.focus();
         }
     }
 
@@ -90,7 +98,7 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
      * @param {KeyboardEvent} $event
      * @memberof DotKeyValueTableInputRowComponent
      */
-    onCancel($event: KeyboardEvent): void {
+    onCancel($event: Event): void {
         $event.stopPropagation();
         this.resetForm();
     }
@@ -111,7 +119,7 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
      */
     resetForm(): void {
         this.form.reset();
-        this.keyCell.nativeElement.focus();
+        this.$keyCell().nativeElement.focus();
     }
 
     /**
@@ -122,21 +130,21 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
      * @return {*}  {void}
      * @memberof DotKeyValueTableInputRowComponent
      */
-    handleKeyInputEnter($event): void {
+    handleKeyInputEnter($event: Event): void {
         $event.stopPropagation();
 
         if (this.keyControl.valid) {
-            this.valueCell.nativeElement.focus();
+            this.$valueCell().nativeElement.focus();
 
             return;
         }
 
-        this.keyCell.nativeElement.focus();
+        this.$keyCell().nativeElement.focus();
     }
 
     private keyValidator(): ValidatorFn {
         return ({ value }: AbstractControl): ValidationErrors | null => {
-            if (!this.forbiddenkeys[value]) {
+            if (!this.$forbiddenkeys()[value]) {
                 return null;
             }
 
