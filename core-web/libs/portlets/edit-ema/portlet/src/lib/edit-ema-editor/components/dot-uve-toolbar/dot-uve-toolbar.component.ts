@@ -11,7 +11,8 @@ import {
     Output,
     viewChild,
     Signal,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -52,6 +53,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { convertLocalTimeToUTC } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -118,9 +120,11 @@ export class DotUveToolbarComponent {
 
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
-        return this.$pageParams().publishDate
-            ? new Date(this.$pageParams().publishDate)
-            : new Date();
+        const publishDate = untracked(() => this.$pageParams().publishDate);
+
+        const previewDate = publishDate ? new Date(publishDate) : new Date();
+
+        return previewDate;
     });
 
     readonly $pageInode = computed(() => {
@@ -139,11 +143,13 @@ export class DotUveToolbarComponent {
      * @memberof DotUveToolbarComponent
      */
     protected fetchPageOnDate(publishDate: Date = new Date()) {
-        this.#store.trackUVECalendarChange({ selectedDate: publishDate.toISOString() });
+        const publishDateUTC = convertLocalTimeToUTC(publishDate);
+
+        this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
         this.#store.loadPageAsset({
             mode: UVE_MODE.LIVE,
-            publishDate: publishDate?.toISOString()
+            publishDate: publishDateUTC
         });
     }
 

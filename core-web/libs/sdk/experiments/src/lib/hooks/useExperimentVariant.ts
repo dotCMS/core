@@ -49,7 +49,7 @@ export const useExperimentVariant = (data: {
                 return;
             }
         }
-    }, [dotExperimentInstance, data]);
+    }, [dotExperimentInstance, data, variantId, runningExperimentId]);
 
     return { shouldWaitForVariant };
 };

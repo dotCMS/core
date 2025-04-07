@@ -33,10 +33,10 @@
 }
 
 .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled) .p-tabview-nav-link:hover {
-    background: $bg-hover;
+    background-color: $bg-hover;
     color: $text-color-hover;
     background-clip: padding-box;
-    border-bottom: $tabview-item-border-height solid $bg-hover;
+    transition: background-color $basic-speed ease-out;
 }
 
 .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
