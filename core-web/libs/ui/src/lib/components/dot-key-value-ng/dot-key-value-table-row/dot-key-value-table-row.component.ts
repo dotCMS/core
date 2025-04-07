@@ -1,20 +1,16 @@
 import {
     Component,
+    computed,
+    effect,
     ElementRef,
-    EventEmitter,
-    Input,
-    OnInit,
-    Output,
-    ViewChild,
-    signal
+    inject,
+    input,
+    output,
+    viewChild,
+    ChangeDetectionStrategy,
+    model
 } from '@angular/core';
-import {
-    FormControl,
-    FormGroup,
-    FormsModule,
-    ReactiveFormsModule,
-    Validators
-} from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
@@ -39,92 +35,130 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
         ReactiveFormsModule,
         TableModule,
         DotMessagePipe
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotKeyValueTableRowComponent implements OnInit {
-    @ViewChild('saveButton') saveButton: ElementRef;
-    @ViewChild('valueCell') valueCell: ElementRef;
-    @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
-    @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter(false);
+export class DotKeyValueTableRowComponent {
+    /**
+     * Form builder service for creating reactive forms
+     */
+    #formBuilder = inject(FormBuilder);
 
-    @Input() showHiddenField = false;
-    @Input() variable: DotKeyValue;
+    /**
+     * Event emitted when a variable is saved, containing the updated DotKeyValue
+     */
+    save = output<DotKeyValue>();
 
-    form: FormGroup;
-    protected readonly showEditMenu = signal(false);
+    /**
+     * Event emitted when a variable is deleted, containing the DotKeyValue to be removed
+     */
+    delete = output<DotKeyValue>();
+
+    /**
+     * Input that controls whether to show a hidden field toggle
+     */
+    $showHiddenField = input.required<boolean>({ alias: 'showHiddenField' });
+
+    /**
+     * Input that controls the index of the row
+     */
+    $index = input.required<number>({ alias: 'index' });
+
+    /**
+     * The key-value pair to be displayed and edited in this row
+     */
+    $variable = model.required<DotKeyValue>({ alias: 'variable' });
+
+    /**
+     * Reference to the value cell element in the template
+     */
+    $valueCellRef = viewChild.required<ElementRef>('valueCell');
+
+    /**
+     * Placeholder text shown for hidden password fields
+     */
     protected readonly passwordPlaceholder = '*****';
 
-    get isHiddenField(): boolean {
-        return this.variable?.hidden || false;
+    /**
+     * Computed property that determines if the current field should be displayed as hidden
+     * @returns {boolean} True if the field should be hidden
+     */
+    $isHiddenField = computed(() => {
+        return this.$variable()?.hidden || false;
+    });
+
+    /**
+     * Reactive form to handle the value and hidden state
+     */
+    form = this.#formBuilder.nonNullable.group({
+        value: ['', Validators.required],
+        hidden: [false]
+    });
+
+    /**
+     * Sets up an effect to sync the form values with the input variable
+     */
+    constructor() {
+        effect(() => {
+            const { value, hidden } = this.$variable();
+            this.form.patchValue({ value, hidden });
+        });
     }
 
-    get initialValue(): string {
-        return this.variable.value;
+    /**
+     * Getter for the value form control
+     * @returns The value form control
+     */
+    get valueControl() {
+        return this.form.controls.value;
     }
 
-    get currentValue(): string {
-        return this.form.get('value').value;
+    /**
+     * Getter for the hidden form control
+     * @returns The hidden form control
+     */
+    get hiddenControl() {
+        return this.form.controls.hidden;
     }
 
-    get currentHiddenValue(): boolean {
-        return this.form?.get('hidden').value;
-    }
-
+    /**
+     * Determines the input type based on the hidden state
+     * @returns {string} 'password' if hidden, 'text' otherwise
+     */
     get inputType(): string {
-        return this.currentHiddenValue ? 'password' : 'text';
-    }
-
-    ngOnInit(): void {
-        this.form = new FormGroup({
-            value: new FormControl(this.initialValue, Validators.required),
-            hidden: new FormControl({
-                value: this.isHiddenField,
-                disabled: this.isHiddenField
-            })
-        });
+        return this.hiddenControl.value ? 'password' : 'text';
     }
 
     /**
-     * Focus on Key input
-     * @param {Event} [$event]
-     * @memberof DotKeyValueTableRowComponent
+     * Handles cancel event by resetting the form to the original variable values
+     * @param {Event} event - The DOM event
      */
-    focusValueInput($event: Event): void {
-        $event.stopPropagation();
-        this.valueCell.nativeElement.click();
-    }
-
-    /**
-     * Handle Cancel event event emmitting variable index to parent component
-     * @param {KeyboardEvent} $event
-     * @memberof DotKeyValueTableRowComponent
-     */
-    onCancel(): void {
-        this.showEditMenu.set(false);
+    onCancel(event: Event): void {
+        event.preventDefault();
         this.form.reset({
-            value: this.initialValue,
-            hidden: this.isHiddenField
+            value: this.$variable().value,
+            hidden: this.$variable().hidden
         });
     }
 
     /**
-     * Handle Enter key event
-     * @memberof DotKeyValueTableRowComponent
+     * Handles Enter key press by preventing default behavior and triggering save
+     * @param {Event} event - The keyboard event
      */
-    onPressEnter(): void {
-        this.saveButton.nativeElement.click();
+    onPressEnter(event: Event): void {
+        event.preventDefault();
+        this.saveVariable();
     }
 
     /**
-     * Handle Save event emitting variable value to parent component
-     * @memberof DotKeyValueTableRowComponent
+     * Saves the variable by emitting the current form values
+     * Combines the original variable with updated value and hidden state
      */
     saveVariable(): void {
-        this.showEditMenu.set(false);
         this.save.emit({
-            ...this.variable,
-            value: this.currentValue,
-            hidden: this.currentHiddenValue
+            ...this.$variable(),
+            value: this.valueControl.value,
+            hidden: this.hiddenControl.value
         });
     }
 }

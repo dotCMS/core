@@ -3,7 +3,6 @@ import {
     Component,
     ElementRef,
     input,
-    OnInit,
     output,
     viewChild,
     inject
@@ -22,11 +21,6 @@ import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime } from 'rxjs/operators';
-
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
-
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
 
@@ -44,7 +38,7 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
         DotMessagePipe
     ]
 })
-export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit {
+export class DotKeyValueTableInputRowComponent implements AfterViewInit {
     #fb = inject(FormBuilder);
 
     $keyCell = viewChild.required<ElementRef>('keyCell');
@@ -63,9 +57,6 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
         hidden: [false]
     });
 
-    private dotMessageService = inject(DotMessageService);
-    private dotMessageDisplayService = inject(DotMessageDisplayService);
-
     get keyControl() {
         return this.form.controls.key;
     }
@@ -76,15 +67,6 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
 
     get hiddenControl() {
         return this.form.controls.hidden;
-    }
-
-    ngOnInit(): void {
-        this.keyControl.valueChanges.pipe(debounceTime(250)).subscribe((value) => {
-            const { duplicatedKey } = this.keyControl.errors || {};
-            if (duplicatedKey) {
-                this.showErrorMessage(value);
-            }
-        });
     }
 
     ngAfterViewInit(): void {
@@ -108,8 +90,14 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
      * @memberof DotKeyValueTableInputRowComponent
      */
     saveVariable(): void {
-        this.save.emit(this.form.getRawValue());
-        this.resetForm();
+        if (this.form.valid) {
+            this.save.emit(this.form.getRawValue());
+            this.resetForm();
+        } else {
+            this.form.markAllAsTouched();
+            this.keyControl.markAsDirty();
+            this.valueControl.markAsDirty();
+        }
     }
 
     /**
@@ -131,7 +119,7 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
      * @memberof DotKeyValueTableInputRowComponent
      */
     handleKeyInputEnter($event: Event): void {
-        $event.stopPropagation();
+        $event.preventDefault();
 
         if (this.keyControl.valid) {
             this.$valueCell().nativeElement.focus();
@@ -142,6 +130,11 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
         this.$keyCell().nativeElement.focus();
     }
 
+    handleValueInputEnter($event: Event): void {
+        $event.preventDefault();
+        this.saveVariable();
+    }
+
     private keyValidator(): ValidatorFn {
         return ({ value }: AbstractControl): ValidationErrors | null => {
             if (!this.$forbiddenkeys()[value]) {
@@ -150,14 +143,5 @@ export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit 
 
             return { duplicatedKey: true };
         };
-    }
-
-    private showErrorMessage(value: string): void {
-        this.dotMessageDisplayService.push({
-            life: 3000,
-            message: this.dotMessageService.get('keyValue.error.duplicated.variable', value),
-            severity: DotMessageSeverity.ERROR,
-            type: DotMessageType.SIMPLE_MESSAGE
-        });
     }
 }

@@ -1,4 +1,4 @@
-<p-table [value]="variableList()" #table dataKey="key" styleClass="dotTable p-datatable-key-value">
+<p-table  [value]="variableList()" #table dataKey="key" styleClass="dotTable p-datatable-key-value p-datatable-no-gridlines">
     <ng-template pTemplate="header" let-columns>
         <dot-key-value-table-input-row
             (save)="saveVariable($event)"
@@ -12,11 +12,12 @@
             (save)="updateKeyValue($event, rowIndex)"
             [showHiddenField]="$showHiddenField()"
             [variable]="variable"
+            [index]="rowIndex"
             #tableRow />
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>
         <tr data-testId="no-rows">
-            <td [attr.colspan]="$showHiddenField() ? 4 : 3">
+            <td [attr.colspan]="$showHiddenField() ? 5 : 4">
                 {{ 'keyValue.value_no_rows.label' | dm }}
             </td>
         </tr>

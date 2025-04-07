@@ -77,6 +77,15 @@ $dot-table-cell-height: 1.25rem;
             &:last-child {
                 padding-right: $spacing-3;
             }
+
+            .error-message {
+                font-weight: $font-weight-regular-bold;
+                color: $color-accessible-text-red;
+            }
+
+            p-button {
+                font-size: 0;
+            }
         }
 
         .p-datatable-tfoot > tr > td {
@@ -125,7 +134,15 @@ $dot-table-cell-height: 1.25rem;
             }
         }
 
-        .p-datatable-tbody > tr {
+        &.p-datatable-no-gridlines {
+            .p-datatable-tbody tr {
+                > td {
+                    border-bottom: none;
+                }
+            }
+        }
+
+        .p-datatable-tbody tr {
             background: $white;
             color: $black;
             height: $field-height-md;
@@ -162,8 +179,6 @@ $dot-table-cell-height: 1.25rem;
                 }
 
                 &:first-child:not(:has(p-tableCheckbox)) {
-                    padding: $dot-table-cell-padding-first-child;
-
                     &.tag-padding {
                         padding: $dot-table-cell-with-tag-padding-first-child;
                     }
@@ -212,6 +227,10 @@ $dot-table-cell-height: 1.25rem;
                 .pi.pi-ellipsis-v {
                     color: $color-palette-primary-500;
                 }
+
+                p-button {
+                    font-size: 0;
+                }
             }
 
             &.p-highlight {
@@ -234,9 +253,10 @@ $dot-table-cell-height: 1.25rem;
             }
 
             &:not(.p-highlight):hover {
-                background: $color-palette-primary-100;
+                background: inherit;
                 color: $text-color-hover;
                 transition: background-color ease-in $basic-speed;
+                cursor: default;
             }
 
             &.disabled-row:hover {

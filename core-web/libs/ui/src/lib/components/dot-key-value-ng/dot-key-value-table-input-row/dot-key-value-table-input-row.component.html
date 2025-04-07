@@ -1,4 +1,5 @@
 <tr class="dot-key-value__header">
+    <th scope="col" class="w-3rem"></th>
     <th>
         <div class="flex flex-column">
             <label for="key-value-input-row-key-input">
@@ -17,6 +18,12 @@
                 type="text"
                 pSize="small"
                 autocomplete="false" />
+            @if (keyControl.dirty && keyControl.hasError('required')) {
+                <small class="error-message">{{ 'keyValue.key_input.required' | dm }}</small>
+            }
+            @if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
+                <small class="error-message">{{ 'keyValue.key_input.duplicated' | dm }}</small>
+            }
         </div>
     </th>
     <th>
@@ -26,7 +33,8 @@
             </label>
             <input
                 (keydown.escape)="onCancel($event)"
-                (keydown.enter)="saveButton.click()"
+                (keydown.enter)="handleValueInputEnter($event)"
+                (keypress.enter)="handleValueInputEnter($event)"
                 [formControl]="valueControl"
                 [type]="hiddenControl.value ? 'password' : 'text'"
                 [placeholder]="'keyValue.value_input.placeholder' | dm"
@@ -37,6 +45,9 @@
                 pInputText
                 pSize="small"
                 autocomplete="false" />
+            @if (valueControl.dirty && valueControl.hasError('required')) {
+                <small class="error-message">{{ 'keyValue.value_input.required' | dm }}</small>
+            }
         </div>
     </th>
     @if ($showHiddenField()) {
@@ -51,19 +62,17 @@
             </div>
         </th>
     }
-    <th class="relative" scope="col" style="min-width: 3rem">
-
+    <th class="relative w-4rem" scope="col" style="min-width: 3rem">
         <button
             (click)="saveVariable()"
             icon="pi pi-plus"
             [rounded]="true"
             [outlined]="true"
-            class="absolute key-value-input__save-button"
+            class="key-value-input__save-button"
             #saveButton
             size="small"
             data-testId="save-button"
             type="button"
-            pButton
-             ></button>
+            pButton></button>
     </th>
 </tr>
