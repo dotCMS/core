@@ -1,4 +1,8 @@
-<p-table  [value]="variableList()" #table dataKey="key" styleClass="dotTable p-datatable-key-value p-datatable-no-gridlines">
+<p-table
+    [value]="variableList()"
+    #table
+    dataKey="key"
+    styleClass="dotTable p-datatable-key-value p-datatable-no-gridlines">
     <ng-template pTemplate="header" let-columns>
         <dot-key-value-table-input-row
             (save)="saveVariable($event)"
