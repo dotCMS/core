@@ -29,7 +29,29 @@ public enum ApiMetricTypes {
         urlToIntercept.add(new CountOfDAImageFEAPICalls());
         urlToIntercept.add(new CountOfContentAssetImageBEAPICalls());
         urlToIntercept.add(new CountOfDAImageBEAPICalls());
+    }
 
+    /**
+     * Return the collection of registered ApiMetricType
+     * @return collection of ApiMetricType
+     */
+    public Collection<ApiMetricType> get() {
+        return urlToIntercept;
+    }
+    
+    /**
+     * Checks whether any registered ApiMetricType is interested in the given HTTP method
+     * @param method HTTP method to check
+     * @return true if the method is used by at least one registered metric
+     */
+    public boolean isMethodSupported(final String method) {
+        try {
+            final HTTPMethod httpMethod = HTTPMethod.valueOf(method);
+            return urlToIntercept.stream()
+                    .anyMatch(metric -> metric.getHttpMethod() == httpMethod);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public List<ApiMetricType> interceptBy(final HttpServletRequest request) {
@@ -55,9 +77,4 @@ public enum ApiMetricTypes {
             return Optional.empty();
         }
     }
-
-    public Collection<? extends ApiMetricType> get() {
-        return Collections.unmodifiableCollection(urlToIntercept);
-    }
-
 }
