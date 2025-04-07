@@ -159,7 +159,7 @@ public class MapToContentletPopulator  {
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
 
-                contentlet.setVariantId(map.get(VARIANT_ID) != null ? map.get(VARIANT_ID).toString() : null);
+                contentlet.setVariantId(map.get(VARIANT_ID) != null ? map.get(VARIANT_ID).toString() : contentlet.getVariantId());
             }
 
             this.setIndexPolicy (contentlet, map);

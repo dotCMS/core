@@ -770,6 +770,63 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
+                                                                     final boolean live,
+                                                                     final long incomingLangId, final User user,
+                                                                     final boolean respectFrontendRoles,
+                                                                     final String variantName) {
+
+        final long defaultLanguageId = this.languageAPI.getDefaultLanguage().getId();
+        final long tryLanguage = incomingLangId <= 0 ? defaultLanguageId : incomingLangId;
+        boolean fallback = false;
+
+        try {
+
+            // try the user language
+            Optional<ContentletVersionInfo> contentletVersionInfo =
+                    Objects.nonNull(variantName)?
+                            APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage, variantName):
+                            APILocator.getVersionableAPI().getContentletVersionInfo(identifier, tryLanguage);
+
+            // try the fallback if does not exists
+            if (tryLanguage != defaultLanguageId && (contentletVersionInfo.isEmpty()
+                    || (live && contentletVersionInfo.get().getLiveInode() == null))) {
+                fallback = true;  // using the fallback
+                contentletVersionInfo = Objects.nonNull(variantName)?
+                        APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId, variantName):
+                        APILocator.getVersionableAPI().getContentletVersionInfo(identifier, defaultLanguageId);
+            }
+
+            if (contentletVersionInfo.isEmpty()) {
+                return Optional.empty();
+            }
+
+            final Contentlet contentlet = live ?
+                    this.find(contentletVersionInfo.get().getLiveInode(), user,
+                            respectFrontendRoles) :
+                    this.find(contentletVersionInfo.get().getWorkingInode(), user,
+                            respectFrontendRoles);
+
+            if (null == contentlet) {
+                return Optional.empty();
+            }
+
+            // if we are using the fallback, and it is not allowed, return empty
+            if (fallback && tryLanguage != defaultLanguageId && !contentlet.getContentType()
+                    .languageFallback()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(contentlet);
+        } catch (Exception e) {
+            throw new DotContentletStateException(
+                    "Can't find contentlet: " + identifier + " lang:" + incomingLangId + " live:"
+                            + live, e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Optional<Contentlet> findContentletByIdentifierOrFallback(final String identifier,
             final long incomingLangId, String variantId, final Date timeMachine, final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 

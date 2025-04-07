@@ -2222,7 +2222,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response1 = workflowResource
                     .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
@@ -2246,7 +2246,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response2 = workflowResource
                     .fireActionDefaultSinglePart(request2, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm2);
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
@@ -2384,7 +2384,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Response response1 = workflowResource
                     .fireActionDefaultSinglePart(request1, new EmptyHttpResponse(), null, null,
                             "FORCE",
-                            String.valueOf(languageAPI.getDefaultLanguage().getId()),
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), "DEFAULT",
                             SystemAction.PUBLISH, fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);

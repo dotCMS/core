@@ -21,6 +21,7 @@ import com.liferay.portal.model.User;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Do the save for a content (checkin)
@@ -112,6 +113,9 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
 			this.setIndexPolicy(contentlet, checkoutContentlet);
 			checkoutContentlet.setInode(inode);
+			if (Objects.nonNull(contentlet.getVariantId())) {
+				checkoutContentlet.setVariantId(contentlet.getVariantId());
+			}
 			this.setSpecialVariables (contentlet, checkoutContentlet);
 		}
 
