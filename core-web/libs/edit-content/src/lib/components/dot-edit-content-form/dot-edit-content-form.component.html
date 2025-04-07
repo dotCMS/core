@@ -32,11 +32,13 @@
                 [dotTabViewPrepend]="prependContent"
                 [dotTabViewAppend]="appendContent"></ng-template>
 
-            <!-- First tab is not lazy -->
+            <!-- First tab with same pattern as other tabs -->
             @if ($firstTab()) {
                 <p-tabPanel [header]="$firstTab()!.title" [@fadeIn]>
-                    <ng-container
-                        *ngTemplateOutlet="tabPanelTemplate; context: { tab: $firstTab() }" />
+                    <ng-template pTemplate="content">
+                        <ng-container
+                            *ngTemplateOutlet="tabPanelTemplate; context: { tab: $firstTab() }" />
+                    </ng-template>
                 </p-tabPanel>
             }
 

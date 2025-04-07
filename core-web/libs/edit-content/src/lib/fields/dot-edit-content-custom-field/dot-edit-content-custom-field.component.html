@@ -1,15 +1,19 @@
-@if ($src(); as src) {
-    <iframe
-        (load)="onIframeLoad()"
-        [src]="src | safeUrl"
-        [class.legacy-custom-field--fullscreen]="$isFullscreen()"
-        [ngStyle]="!$isFullscreen() && { height: $variables()?.height, width: $variables()?.width }"
-        [title]="$iframeTitle()"
-        class="legacy-custom-field"
-        #iframe
-        data-testId="custom-field-iframe"
-        frameborder="0"></iframe>
-}
+<div class="legacy-custom-field" [style.min-height]="$minContainerHeight()">
+    @if ($src(); as src) {
+        <iframe
+            (load)="onIframeLoad()"
+            [src]="src | safeUrl"
+            [class.legacy-custom-field--fullscreen]="$isFullscreen()"
+            [ngStyle]="
+                !$isFullscreen() && { height: $variables()?.height, width: $variables()?.width }
+            "
+            [title]="$iframeTitle()"
+            class="legacy-custom-field"
+            #iframe
+            data-testId="custom-field-iframe"
+            frameborder="0"></iframe>
+    }
+</div>
 
 @if ($isFullscreen()) {
     <p-button
