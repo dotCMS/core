@@ -18,7 +18,10 @@
 
 <!-- TODO: Handle the error, no form -->
 @if (form) {
-    <form [formGroup]="form" class="p-fluid dot-edit-content-form h-100">
+    <form
+        [formGroup]="form"
+        data-testId="edit-content-form"
+        class="p-fluid dot-edit-content-form h-100">
         <p-tabView
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
