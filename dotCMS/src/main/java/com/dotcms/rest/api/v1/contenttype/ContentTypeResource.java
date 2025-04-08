@@ -10,6 +10,7 @@ import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
@@ -779,6 +780,21 @@ public class ContentTypeResource implements Serializable {
 																								   final ContentTypeAPI contentTypeAPI,
 																								   final boolean isNew) throws DotSecurityException, DotDataException, UniqueFieldValueDuplicatedException {
 
+		// Log existing relationship fields that need protection
+		if (!isNew) {
+			ContentType existingContentType = contentTypeAPI.find(contentType.id());
+			List<Field> existingRelationshipFields = existingContentType.fields().stream()
+					.filter(field -> field instanceof RelationshipField)
+					.collect(Collectors.toList());
+					
+			if (!existingRelationshipFields.isEmpty()) {
+				Logger.debug(this, "Content type has existing relationship fields that will be preserved during update: " +
+					existingRelationshipFields.stream()
+						.map(field -> field.name() + " (ID: " + field.id() + ")")
+						.collect(Collectors.joining(", ")));
+			}
+		}
+
 		ContentType contentTypeSaved = contentTypeAPI.save(contentType);
 		this.contentTypeHelper.saveSchemesByContentType(contentTypeSaved, workflows);
 
@@ -827,11 +843,45 @@ public class ContentTypeResource implements Serializable {
 				);
 
 		if (!diffResult.getToDelete().isEmpty()) {
-			APILocator.getContentTypeFieldAPI().deleteFields(
-					diffResult.getToDelete().values().stream().
-							map(Field::id).
-							collect(Collectors.toList()), user
-			);
+			// Filter out relationship fields unless explicitly marked for deletion
+			final List<Field> relationshipFieldsToPreserve = diffResult.getToDelete().values().stream()
+					.filter(field -> field instanceof RelationshipField)
+					.collect(Collectors.toList());
+					
+			final List<String> fieldsToDelete = diffResult.getToDelete().values().stream()
+					.filter(field -> !(field instanceof RelationshipField))
+					.map(Field::id)
+					.collect(Collectors.toList());
+					
+			// If we're preserving relationship fields, make sure to add them to the fields to add
+			if (!relationshipFieldsToPreserve.isEmpty()) {
+				Logger.info(this, "Preserving relationship fields during content type update: " + 
+					relationshipFieldsToPreserve.stream()
+						.map(field -> field.name() + " (ID: " + field.id() + ")")
+						.collect(Collectors.joining(", ")));
+						
+				// Add preserved relationship fields back to the fields to add
+				for (Field relationshipField : relationshipFieldsToPreserve) {
+                    // Create the proper key for the field using the same helper that's used in the diff
+                    String fieldKey = this.contentTypeHelper.generateFieldKey(relationshipField);
+                    // Create a new DiffItem for the relationship field
+                    com.dotcms.util.diff.DiffItem diffItem = new com.dotcms.util.diff.DiffItem.Builder()
+                        .variable(fieldKey)
+                        .build();
+                    // Create the proper key for the diffResult toAdd map
+                    FieldDiffItemsKey key = new FieldDiffItemsKey(fieldKey, diffItem);
+                    
+                    // Now add the relationship field to preserve with the proper key type
+					if (!diffResult.getToAdd().containsKey(key)) {
+						diffResult.getToAdd().put(key, relationshipField);
+					}
+				}
+			}
+					
+			if (!fieldsToDelete.isEmpty()) {
+				Logger.info(this, "Deleting fields: " + fieldsToDelete);
+				APILocator.getContentTypeFieldAPI().deleteFields(fieldsToDelete, user);
+			}
 		}
 
 		if (!diffResult.getToAdd().isEmpty()) {

@@ -3,6 +3,7 @@ package com.dotcms.contenttype.business;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.util.diff.DiffCommand;
 import com.dotcms.util.diff.DiffItem;
 import com.dotcms.util.diff.DiffResult;
@@ -49,8 +50,11 @@ public class FieldDiffCommand implements DiffCommand<FieldDiffItemsKey, Field ,S
 
         final DiffResult.Builder<FieldDiffItemsKey, Field> builder = new DiffResult.Builder<>();
 
+        // Identify fields that appear to be missing in the new objects (to be deleted)
         final Map<FieldDiffItemsKey, Field> fieldsToDelete = currentObjects.entrySet().stream()
                 .filter(entry -> findField(newObjects.values(), entry.getValue()).isEmpty())
+                // Add extra protection - exclude relationship fields from being marked for deletion
+                .filter(entry -> !(entry.getValue() instanceof RelationshipField))
                 .collect(Collectors.toMap(
                         entry ->
                                 new FieldDiffItemsKey(
