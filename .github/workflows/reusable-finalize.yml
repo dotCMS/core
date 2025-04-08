@@ -11,7 +11,7 @@ on:
 jobs:
   prepare-report-data:
     name: Prepare Report Data
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: always()
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
@@ -154,7 +154,7 @@ jobs:
     name: Final Status
     needs: prepare-report-data
     if: always()
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check Final Status
         run: |

@@ -10,7 +10,7 @@ jobs:
   release-process:
     if: ${{ !startsWith(github.event.release.name, 'dotcms-cli') }}
     name: Release process automation
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       build_id: ${{ steps.set-common-vars.outputs.build_id }}
       build_hash: ${{ steps.set-common-vars.outputs.build_hash }}

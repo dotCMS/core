@@ -20,7 +20,7 @@ jobs:
   #
   build-jdk11:
     name: "Initial Artifact Build"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: inputs.core-build == true
     env:
       DOCKER_BUILD_CONTEXT: /home/runner/work/_temp/core-build

@@ -32,7 +32,7 @@ on:
 jobs:
   initialize: # This is used as a required check to indicate that the workflow has started and is running
     name: Initialize
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Initialize

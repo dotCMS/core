@@ -41,7 +41,7 @@ env:
 jobs:
   prepare-release:
     name: Prepare Release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.set-common-vars.outputs.release_version }}
       release_tag: ${{ steps.set-common-vars.outputs.release_tag }}

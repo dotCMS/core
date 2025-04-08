@@ -45,7 +45,7 @@ jobs:
   #
   linux-jvm-tests:
     name: JVM Unit Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: inputs.jvm_unit_test || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -100,7 +100,7 @@ jobs:
 
   linux-cli-tests:
     name: CLI Tests - JDK ${{matrix.java.name}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: inputs.cli || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -175,7 +175,7 @@ jobs:
   #
   linux-frontend-tests:
     name: Frontend Unit Tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: inputs.frontend || inputs.run-all-tests
     timeout-minutes: 240
     env:
@@ -244,7 +244,7 @@ jobs:
   #
   linux-integration-tests:
     name: JVM IT Tests - JDK ${{matrix.java.name}} ${{matrix.suites.name}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     # Skip master in forks
     if: inputs.integration || inputs.run-all-tests
     timeout-minutes: 240
