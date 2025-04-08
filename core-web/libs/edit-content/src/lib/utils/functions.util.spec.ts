@@ -27,125 +27,152 @@ import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 
 describe('Utils Functions', () => {
+    const originalWarn = console.warn;
+
+    beforeAll(() => {
+        console.warn = jest.fn();
+    });
+
+    afterAll(() => {
+        console.warn = originalWarn;
+    });
+
     const { castSingleSelectableValue, getSingleSelectableFieldOptions, getFinalCastedValue } =
         functionsUtil;
 
     describe('castSingleSelectableValue', () => {
-        it('should return null if value is empty', () => {
-            expect(castSingleSelectableValue('', '')).toBeNull();
-        });
+        describe('null/undefined/empty handling', () => {
+            it('should return null for null value', () => {
+                expect(castSingleSelectableValue(null, '')).toBeNull();
+            });
 
-        it('should return value if type is not Bool or Number', () => {
-            expect(castSingleSelectableValue('Some value', 'Some other type')).toBe('Some value');
+            it('should return null for undefined value', () => {
+                expect(castSingleSelectableValue(undefined, '')).toBeNull();
+            });
+
+            it('should return null for empty string', () => {
+                expect(castSingleSelectableValue('', '')).toBeNull();
+            });
         });
 
         describe('Boolean', () => {
-            it('should return true if value is true', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'true',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            const type = DotEditContentFieldSingleSelectableDataType.BOOL;
+
+            it('should handle boolean true directly', () => {
+                expect(castSingleSelectableValue(true, type)).toBe(true);
             });
 
-            it('should return true if value is TRUE', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'TRUE',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle boolean false directly', () => {
+                expect(castSingleSelectableValue(false, type)).toBe(false);
             });
 
-            it('should return true if value is True', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'True',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle string "true"', () => {
+                expect(castSingleSelectableValue('true', type)).toBe(true);
             });
 
-            it('should return true if value is TrUE', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'TrUE',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle string "false"', () => {
+                expect(castSingleSelectableValue('false', type)).toBe(false);
             });
 
-            it('should return true if value has spaces on the sides', () => {
-                expect(
-                    castSingleSelectableValue(
-                        '        true      ',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(true);
+            it('should handle uppercase "TRUE"', () => {
+                expect(castSingleSelectableValue('TRUE', type)).toBe(true);
             });
 
-            it('should return false if value is false', () => {
-                expect(
-                    castSingleSelectableValue(
-                        'false',
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should handle mixed case "tRuE"', () => {
+                expect(castSingleSelectableValue('tRuE', type)).toBe(true);
             });
 
-            it('should return false for any random string that is not "true"', () => {
-                expect(
-                    castSingleSelectableValue(
-                        (Math.random() * 10).toString(36), // This return some random stuff like 6.kuh34iuh12
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should handle string with spaces', () => {
+                expect(castSingleSelectableValue('  true  ', type)).toBe(true);
             });
 
-            it('should return false for any random number that is not "true"', () => {
-                expect(
-                    castSingleSelectableValue(
-                        (Math.random() * 10).toString(), // Random number from 0 to 10
-                        DotEditContentFieldSingleSelectableDataType.BOOL
-                    )
-                ).toBe(false);
+            it('should return false for non-boolean strings', () => {
+                expect(castSingleSelectableValue('hello', type)).toBe(false);
+            });
+
+            it('should handle number 1 as false', () => {
+                expect(castSingleSelectableValue(1, type)).toBe(false);
+            });
+
+            it('should handle number 0 as false', () => {
+                expect(castSingleSelectableValue(0, type)).toBe(false);
             });
         });
 
-        describe.each([
-            {
-                dataType: DotEditContentFieldSingleSelectableDataType.INTEGER
-            },
-            {
-                dataType: DotEditContentFieldSingleSelectableDataType.FLOAT
-            }
-        ])('Numeric DataTypes', ({ dataType }) => {
-            describe(dataType, () => {
-                let number = 0;
+        describe('Numeric', () => {
+            describe('INTEGER type', () => {
+                const type = DotEditContentFieldSingleSelectableDataType.INTEGER;
 
-                beforeEach(() => {
-                    number =
-                        dataType == DotEditContentFieldSingleSelectableDataType.INTEGER
-                            ? Math.random() * 10
-                            : Math.random(); // To generate a float or integer number
+                it('should handle number directly', () => {
+                    expect(castSingleSelectableValue(42, type)).toBe(42);
                 });
 
-                it('should return number if value is number', () => {
-                    expect(castSingleSelectableValue(number.toString(), dataType)).toBe(number);
+                it('should handle numeric string', () => {
+                    expect(castSingleSelectableValue('42', type)).toBe(42);
                 });
 
-                it('should return number if value is number and has spaces on the sides', () => {
-                    expect(
-                        castSingleSelectableValue(`      ${number.toString()}   `, dataType)
-                    ).toBe(number);
+                it('should handle string with spaces', () => {
+                    expect(castSingleSelectableValue('  42  ', type)).toBe(42);
                 });
 
-                it('should return NaN if value is not a number', () => {
-                    const randomString = number.toString(36);
-
-                    expect(castSingleSelectableValue(randomString, dataType)).toBe(NaN);
+                it('should return null for invalid number', () => {
+                    expect(castSingleSelectableValue('not a number', type)).toBeNull();
                 });
+
+                it('should handle zero', () => {
+                    expect(castSingleSelectableValue(0, type)).toBe(0);
+                });
+
+                it('should handle negative numbers', () => {
+                    expect(castSingleSelectableValue(-42, type)).toBe(-42);
+                });
+            });
+
+            describe('FLOAT type', () => {
+                const type = DotEditContentFieldSingleSelectableDataType.FLOAT;
+
+                it('should handle float directly', () => {
+                    expect(castSingleSelectableValue(3.14, type)).toBe(3.14);
+                });
+
+                it('should handle float string', () => {
+                    expect(castSingleSelectableValue('3.14', type)).toBe(3.14);
+                });
+
+                it('should handle string with spaces', () => {
+                    expect(castSingleSelectableValue('  3.14  ', type)).toBe(3.14);
+                });
+
+                it('should return null for invalid float', () => {
+                    expect(castSingleSelectableValue('not a float', type)).toBeNull();
+                });
+
+                it('should handle negative floats', () => {
+                    expect(castSingleSelectableValue(-3.14, type)).toBe(-3.14);
+                });
+
+                it('should handle zero', () => {
+                    expect(castSingleSelectableValue(0.0, type)).toBe(0);
+                });
+            });
+        });
+
+        describe('Default string handling', () => {
+            it('should convert number to string for unknown type', () => {
+                expect(castSingleSelectableValue(42, 'unknown')).toBe('42');
+            });
+
+            it('should convert boolean to string for unknown type', () => {
+                expect(castSingleSelectableValue(true, 'unknown')).toBe('true');
+            });
+
+            it('should handle object by converting to string', () => {
+                const obj = { test: 'value' };
+                expect(castSingleSelectableValue(obj, 'unknown')).toBe(String(obj));
+            });
+
+            it('should return string as is for unknown type', () => {
+                expect(castSingleSelectableValue('test', 'unknown')).toBe('test');
             });
         });
     });
@@ -222,16 +249,8 @@ describe('Utils Functions', () => {
                 dataType: DotEditContentFieldSingleSelectableDataType.INTEGER,
                 expected: [
                     {
-                        label: 'some label',
-                        value: NaN
-                    },
-                    {
                         label: '3',
                         value: 3
-                    },
-                    {
-                        label: 'some label 3',
-                        value: NaN
                     },
                     {
                         label: 'four',
@@ -245,16 +264,8 @@ describe('Utils Functions', () => {
                 dataType: DotEditContentFieldSingleSelectableDataType.FLOAT,
                 expected: [
                     {
-                        label: 'some label',
-                        value: NaN
-                    },
-                    {
                         label: '3.14',
                         value: 3.14
-                    },
-                    {
-                        label: 'some label 3',
-                        value: NaN
                     },
                     {
                         label: 'four dot five',

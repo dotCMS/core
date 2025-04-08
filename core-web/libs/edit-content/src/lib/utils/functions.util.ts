@@ -27,25 +27,36 @@ import { UIState } from '../models/dot-edit-content.model';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
 export const castSingleSelectableValue = (
-    value: string,
+    value: unknown,
     type: string
 ): DotEditContentFieldSingleSelectableDataTypes | null => {
-    if (!value) {
+    // Early return for null/undefined/empty values
+    if (value === null || value === undefined || value === '') {
         return null;
     }
 
-    if (type === DotEditContentFieldSingleSelectableDataType.BOOL) {
-        return value.toLowerCase().trim() === 'true';
-    }
+    switch (type) {
+        case DotEditContentFieldSingleSelectableDataType.BOOL: {
+            // For boolean type, handle both boolean and string values
+            return typeof value === 'boolean'
+                ? value
+                : String(value).toLowerCase().trim() === 'true';
+        }
 
-    if (
-        type === DotEditContentFieldSingleSelectableDataType.INTEGER ||
-        type === DotEditContentFieldSingleSelectableDataType.FLOAT
-    ) {
-        return Number(value);
-    }
+        // eslint-disable-next-line @typescript-eslint/padding-line-between-statements
+        case DotEditContentFieldSingleSelectableDataType.INTEGER:
 
-    return value;
+        // fallthrough
+        case DotEditContentFieldSingleSelectableDataType.FLOAT: {
+            const num = Number(value);
+
+            return isNaN(num) ? null : num;
+        }
+
+        default: {
+            return String(value);
+        }
+    }
 };
 
 // This function creates the model for the Components that use the Single Selectable Field, like the Select, Radio Button and Checkbox
@@ -99,7 +110,7 @@ export const getFinalCastedValue = (
         return JSON.stringify(value, null, 2); // This is a workaround to avoid the Monaco Editor to show the value as a string and keep the formatting
     }
 
-    return castSingleSelectableValue(value as string, field.dataType);
+    return castSingleSelectableValue(value, field.dataType);
 };
 
 export const transformLayoutToTabs = (
