@@ -38,7 +38,7 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
                     $UserComponent() | async;
                     inputs: { contentlet: $contentlet() ?? contentlet }
                 " />
-        } @else if ($UserNoComponent() && $isDevMode()) {
+        } @else if ($isDevMode()) {
             <dotcms-fallback-component
                 [UserNoComponent]="$UserNoComponent()"
                 [contentlet]="$contentlet() ?? contentlet" />
