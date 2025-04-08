@@ -4,8 +4,8 @@
             (load)="onIframeLoad()"
             [src]="src | safeUrl"
             [class.legacy-custom-field--fullscreen]="$isFullscreen()"
-            [ngStyle]="
-                !$isFullscreen() && { height: $variables()?.height, width: $variables()?.width }
+            [style]="
+                !$isFullscreen() ? { height: $variables()?.height, width: $variables()?.width } : {}
             "
             [title]="$iframeTitle()"
             class="legacy-custom-field"

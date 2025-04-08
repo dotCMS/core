@@ -15,6 +15,7 @@
 @let canLock = $store.canLock();
 @let lockSwitchLabel = $store.lockSwitchLabel();
 @let lockWarningMessage = $store.lockWarningMessage();
+@let tabs = $tabs();
 
 <!-- TODO: Handle the error, no form -->
 @if (form) {
@@ -35,18 +36,8 @@
                 [dotTabViewPrepend]="prependContent"
                 [dotTabViewAppend]="appendContent"></ng-template>
 
-            <!-- First tab with same pattern as other tabs -->
-            @if ($firstTab()) {
-                <p-tabPanel [header]="$firstTab()!.title" [@fadeIn]>
-                    <ng-template pTemplate="content">
-                        <ng-container
-                            *ngTemplateOutlet="tabPanelTemplate; context: { tab: $firstTab() }" />
-                    </ng-template>
-                </p-tabPanel>
-            }
-
-            <!-- Rest of the tabs are lazy -->
-            @for (tab of $restOfTabs(); track tab) {
+            <!-- Tabs are lazy -->
+            @for (tab of tabs; track tab) {
                 <p-tabPanel [header]="tab.title" [@fadeIn]>
                     <ng-template pTemplate="content">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />
