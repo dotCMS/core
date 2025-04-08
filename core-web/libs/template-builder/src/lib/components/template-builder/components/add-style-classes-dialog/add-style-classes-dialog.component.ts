@@ -121,6 +121,7 @@ export class AddStyleClassesDialogComponent implements OnInit {
             if (!UNIQUE_CLASSES || !currentClasses.includes(value)) {
                 this.$selectedClasses.update((classes) => [...classes, value]);
             }
+
             input.value = '';
         }
     }
