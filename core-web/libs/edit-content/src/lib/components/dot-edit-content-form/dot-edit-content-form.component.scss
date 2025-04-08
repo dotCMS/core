@@ -36,22 +36,14 @@ $tab-min-height: 52px;
 
 // Edit Content Actions
 .dot-edit-content-actions {
-    display: flex;
-    align-items: center;
-    width: 100%;
     min-height: $tab-min-height;
 }
 
 .dot-edit-content-actions__left {
-    display: flex;
-    align-items: center;
     gap: $spacing-4;
-    min-width: 200px; // Adjust this value based on your needs
 }
 
 .dot-edit-content-actions__right {
-    display: flex;
-    align-items: center;
     gap: $spacing-4;
     margin-left: auto;
 }
@@ -64,8 +56,6 @@ $tab-min-height: 52px;
     transform: translateX(0);
     overflow: hidden;
     min-height: $tab-min-height;
-    display: flex;
-    align-items: center;
 }
 
 .dot-edit-content-actions__sidebar-toggle--hidden {

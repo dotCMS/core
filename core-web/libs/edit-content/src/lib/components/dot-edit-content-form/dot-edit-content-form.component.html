@@ -99,11 +99,11 @@
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
     <div
-        class="dot-edit-content-actions"
+        class="dot-edit-content-actions flex align-items-center w-full"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         <!-- Left group for lock controls -->
-        <div class="dot-edit-content-actions__left">
+        <div class="dot-edit-content-actions__left flex align-items-center">
             @if (canLock) {
                 <div
                     class="dot-edit-content-actions__lock flex align-items-center gap-2"
@@ -120,7 +120,7 @@
         </div>
 
         <!-- Right group for all other actions -->
-        <div class="dot-edit-content-actions__right">
+        <div class="dot-edit-content-actions__right flex align-items-center">
             @if ($showPreviewLink()) {
                 <button
                     pButton
@@ -149,7 +149,7 @@
             }
 
             <div
-                class="dot-edit-content-actions__sidebar-toggle"
+                class="dot-edit-content-actions__sidebar-toggle flex align-items-center"
                 data-testId="sidebar-toggle"
                 [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
                 <button
