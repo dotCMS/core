@@ -1,0 +1,21 @@
+@let field = $field();
+@let variable = field.variable;
+
+<p-autoComplete
+    #autocomplete
+    [formControlName]="variable"
+    [suggestions]="$suggestions()"
+    [multiple]="true"
+    [forceSelection]="true"
+    [unique]="true"
+    [minLength]="TAG_MIN_LENGTH"
+    [delay]="TAG_DELAY"
+    [id]="'tag-id-' + variable"
+    [inputId]="variable"
+    [attr.data-testid]="'tag-field-container-' + variable"
+    (completeMethod)="onSearch($event)"
+    (keydown.enter)="$event.preventDefault()">
+    <ng-template pTemplate="removetokenicon">
+        <i class="pi pi-times"></i>
+    </ng-template>
+</p-autoComplete>
