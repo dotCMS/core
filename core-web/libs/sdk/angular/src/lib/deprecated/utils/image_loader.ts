@@ -79,8 +79,6 @@ export function provideDotCMSImageLoader(path?: string): Provider[] {
  * @internal
  */
 function createDotCMSUrl(config: ImageLoaderConfig, path?: string): string {
-    // console.log('createDotCMSUrl', config, path);
-
     const { loaderParams, src, width } = config;
     const params = loaderParams as DotCMSImageLoaderParams;
 

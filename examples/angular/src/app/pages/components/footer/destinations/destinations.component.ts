@@ -7,7 +7,7 @@ import {
 
 import { GenericContentlet } from '../..';
 import { ContentletsWrapperComponent } from '../../../../shared/contentlets-wrapper/contentlets.component';
-import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
+import { Contentlet } from '@dotcms/uve/types';
 import { DotCmsClient } from '@dotcms/client';
 import { DOTCMS_CLIENT_TOKEN } from '../../../../app.config';
 
