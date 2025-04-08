@@ -9,14 +9,12 @@ import com.dotcms.api.system.event.UserSessionPayloadBuilder;
 import com.dotcms.cache.DynamicTTLCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
@@ -36,10 +34,20 @@ public class SessionMonitor implements ServletRequestListener,
 
     public static final String DOT_CLUSTER_SESSION = "DOT_CLUSTER_SESSION";
     public static final String IGNORE_REMEMBER_ME_ON_INVALIDATION = "IGNORE_REMEMBER_ME_ON_INVALIDATION";
+    public static final String USER_REMOTE_ADDR = "USER_REMOTE_ADDR";
 
     private final SystemEventsAPI systemEventsAPI;
-    private final static Lazy<Long> SESSIONS_TO_TRACK_MAX = Lazy.of(() -> Config.getLongProperty("SESSIONS_TO_TRACK_MAX", 5000L));
-    private final static Lazy<Long> SESSIONS_TO_TRACK_TTL = Lazy.of(() -> Config.getLongProperty("SESSIONS_TO_TRACK_TTL", 30 * 60 * 1000L));
+    private static final Lazy<Long> SESSIONS_TO_TRACK_MAX = Lazy.of(() -> Config.getLongProperty("SESSIONS_TO_TRACK_MAX", 5000L));
+    private static final Lazy<Long> SESSIONS_TO_TRACK_TTL = Lazy.of(() -> Config.getLongProperty("SESSIONS_TO_TRACK_TTL", 30 * 60 * 1000L));
+    private static final DynamicTTLCache<String, HttpSession> userSessions = new DynamicTTLCache<String, HttpSession>(SESSIONS_TO_TRACK_MAX.get(), SESSIONS_TO_TRACK_TTL.get());
+
+
+
+    public static Lazy<SessionMonitor> get() {
+        return Lazy.of(SessionMonitor::new);
+    }
+
+
 
 
     public SessionMonitor() {
@@ -50,27 +58,15 @@ public class SessionMonitor implements ServletRequestListener,
     }
 
 
-    // this will hold all logged in users
-    private final DynamicTTLCache<String, String> sysUsers =new DynamicTTLCache<String, String>(SESSIONS_TO_TRACK_MAX.get(), SESSIONS_TO_TRACK_TTL.get());
 
-    private final DynamicTTLCache<String, HttpSession> userSessions = new DynamicTTLCache<String, HttpSession>(SESSIONS_TO_TRACK_MAX.get(), SESSIONS_TO_TRACK_TTL.get());
-
-
-    private final DynamicTTLCache<String, String> sysUsersAddress =new DynamicTTLCache<String, String>(SESSIONS_TO_TRACK_MAX.get(), SESSIONS_TO_TRACK_TTL.get());
-
-    public Map<String, String> getSysUsers() {
-        return sysUsers.copyAsMap();
-    }
 
     public Map<String, HttpSession> getUserSessions() {
 
         return userSessions.copyAsMap();
     }
 
-    public Map<String, String> getSysUsersAddress() {
-        return sysUsersAddress.copyAsMap();
-    }
 
+    @Override
     public void attributeAdded(HttpSessionBindingEvent event) {
         // Not implemented
     }
@@ -78,71 +74,70 @@ public class SessionMonitor implements ServletRequestListener,
     /**
      * Checks if the attribute removed is "USER_ID". If so, remove the logout user
      */
+    @Override
     public void attributeRemoved(final HttpSessionBindingEvent event) {
-        final String currentAttributeName = event.getName();
 
-        if (currentAttributeName.equals(com.liferay.portal.util.WebKeys.USER_ID)) {
-
-            String id = event.getSession().getId();
-
-            sysUsers.invalidate(id);
-            userSessions.invalidate(id);
-            sysUsersAddress.invalidate(id);
-        }
     }
 
     /**
      * Do nothing here.
      */
+    @Override
+
     public void attributeReplaced(HttpSessionBindingEvent event) {
         // Not implemented
     }
 
+    @Override
     public void sessionCreated(final HttpSessionEvent event) {
         // Not implemented
         Logger.debug(this, "Session created");
     }
 
+    private static final Lazy<Boolean> sendSessionDestroyedToWebSocket = Lazy.of(() ->  Config.getBooleanProperty("SEND_SESSION_DESTROYED_TO_WEBSOCKET", false));
+
+    @Override
     public void sessionDestroyed(final HttpSessionEvent event) {
 
         Logger.debug(this, "Session destroyed");
 
         HttpSession session = event.getSession();
-        final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
-        if (userId != null) {
-
-            final String sessionId = session.getId();
-
-            sysUsers.invalidate(sessionId);
-            userSessions.invalidate(sessionId);
-            sysUsersAddress.invalidate(sessionId);
-
-            try {
-
-                boolean ignoreRememberMe = session.getAttribute(IGNORE_REMEMBER_ME_ON_INVALIDATION) != null;
-                Logger.debug(this, "Triggering a session destroyed event");
-
-                final boolean isLogout =
-                        event.getSession().getAttribute(LOG_OUT_ATTRIBUTE) != null && Boolean.parseBoolean(
-                                event.getSession().getAttribute(LOG_OUT_ATTRIBUTE).toString());
-
-                if (!isLogout) {
-                    // sending this event to the websocket client will automatically logout the user
-                    // which sounds great except for the case where the user has clicked "REMEMBER_ME"
-                    if (ignoreRememberMe || Config.getBooleanProperty("SEND_SESSION_DESTROYED_TO_WEBSOCKET", false)) {
-                        this.systemEventsAPI.push(new SystemEvent
-                                (SystemEventType.SESSION_DESTROYED,
-                                        UserSessionPayloadBuilder.build(userId, sessionId)));
-                    }
-                } else {
-                    this.systemEventsAPI.push(new SystemEvent
-                            (SystemEventType.SESSION_LOGOUT, UserSessionPayloadBuilder.build(userId, sessionId)));
-                }
-            } catch (DotDataException e) {
-
-                Logger.debug(this, "Could not sent the session destroyed event" + e.getMessage(), e);
-            }
+        if (session == null) {
+            return;
         }
+        final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+        if (userId == null) {
+            return;
+        }
+
+        final String sessionId = session.getId();
+        userSessions.invalidate(sessionId);
+
+        boolean ignoreRememberMe = session.getAttribute(IGNORE_REMEMBER_ME_ON_INVALIDATION) != null;
+
+        Logger.debug(this, "Triggering a session destroyed event");
+
+        final boolean isLogout =
+                session.getAttribute(LOG_OUT_ATTRIBUTE) != null && Boolean.parseBoolean(
+                        session.getAttribute(LOG_OUT_ATTRIBUTE).toString());
+
+        if (isLogout) {
+            Try.run(() -> this.systemEventsAPI.push(new SystemEvent
+                    (SystemEventType.SESSION_LOGOUT, UserSessionPayloadBuilder.build(userId, sessionId))));
+            return;
+        }
+
+        // sending this event to the websocket client will automatically logout the user
+        // which sounds great except for the case where the user has clicked "REMEMBER_ME"
+        if (ignoreRememberMe || sendSessionDestroyedToWebSocket.get()) {
+            Try.run(() -> this.systemEventsAPI.push(new SystemEvent
+                    (SystemEventType.SESSION_DESTROYED,
+                            UserSessionPayloadBuilder.build(userId, sessionId))));
+
+        }
+
+
+
     }
 
     @Override
@@ -166,17 +161,15 @@ public class SessionMonitor implements ServletRequestListener,
                 .getSession(false);
         if (session != null && session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null) {
             final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+            session.setAttribute(USER_REMOTE_ADDR, event.getServletRequest().getRemoteAddr());
             final String id = session.getId();
-            sysUsers.put(id, userId);
             userSessions.put(id, session);
-            sysUsersAddress.put(id, event.getServletRequest()
-                    .getRemoteAddr());
 
             if (UtilMethods.isSet(userId) && !UserAPI.CMS_ANON_USER_ID.equalsIgnoreCase(userId)) {
                 session.setAttribute(DOT_CLUSTER_SESSION, true);
             }
         }
-        event.getServletContext().setAttribute(WebKeys.USER_SESSIONS, this);
+
     }
 
 }
