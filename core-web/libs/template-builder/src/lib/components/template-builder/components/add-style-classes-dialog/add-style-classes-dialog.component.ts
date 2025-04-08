@@ -17,6 +17,8 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { JsonClassesService } from './services/json-classes.service';
 
+const UNIQUE_CLASSES = true;
+
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
@@ -60,7 +62,14 @@ export class AddStyleClassesDialogComponent implements OnInit {
      */
     $filteredSuggestions = signal<string[]>(this.$classes());
 
+    /**
+     * Check if the JSON file has classes
+     *
+     * @memberof AddStyleClassesDialogComponent
+     */
     $hasClasses = computed(() => this.$classes().length > 0);
+
+    protected readonly UNIQUE_CLASSES = UNIQUE_CLASSES;
 
     /**
      * Set the selected classes
@@ -108,7 +117,10 @@ export class AddStyleClassesDialogComponent implements OnInit {
         const value = input.value.trim();
 
         if (value) {
-            this.$selectedClasses.update((classes) => [...classes, value]);
+            const currentClasses = this.$selectedClasses();
+            if (!UNIQUE_CLASSES || !currentClasses.includes(value)) {
+                this.$selectedClasses.update((classes) => [...classes, value]);
+            }
             input.value = '';
         }
     }

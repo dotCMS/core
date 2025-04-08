@@ -3,7 +3,7 @@
     <p-autoComplete
         (completeMethod)="filterClasses($event)"
         [(ngModel)]="$selectedClasses"
-        [unique]="true"
+        [unique]="UNIQUE_CLASSES"
         [suggestions]="$filteredSuggestions()"
         [multiple]="true"
         [dropdown]="hasClasses"
