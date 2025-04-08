@@ -3,7 +3,6 @@ import { EditorView } from 'prosemirror-view';
 import tippy, { Instance } from 'tippy.js';
 
 import { ComponentRef, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -89,7 +88,6 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
     tippyChangeTo: Instance | undefined;
     dotContentTypeService: DotContentTypeService;
     dotMessageService: DotMessageService;
-    router: Router;
 
     private shouldShowProp = false;
 
@@ -110,7 +108,6 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.changeToElement = this.changeTo.location.nativeElement;
 
         //Services
-        this.router = props.router;
         this.dotContentTypeService = props.dotContentTypeService;
         this.dotMessageService = props.messageService;
 
@@ -507,8 +504,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                     // Legacy approach - direct page navigation to old editor
                     window.parent.location.href = `/dotAdmin/#/c/content/${contentletInode}`;
                 } else {
-                    // Angular router navigation to new content editor
-                    this.router.navigate([`content/${contentletInode}`]);
+                    window.parent.location.href = `/dotAdmin/#/content/${contentletInode}`;
                 }
             });
     }
