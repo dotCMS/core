@@ -15,10 +15,14 @@
 @let canLock = $store.canLock();
 @let lockSwitchLabel = $store.lockSwitchLabel();
 @let lockWarningMessage = $store.lockWarningMessage();
+@let tabs = $tabs();
 
 <!-- TODO: Handle the error, no form -->
 @if (form) {
-    <form [formGroup]="form" class="p-fluid dot-edit-content-form h-100">
+    <form
+        [formGroup]="form"
+        data-testId="edit-content-form"
+        class="p-fluid dot-edit-content-form h-100">
         <p-tabView
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
@@ -32,16 +36,8 @@
                 [dotTabViewPrepend]="prependContent"
                 [dotTabViewAppend]="appendContent"></ng-template>
 
-            <!-- First tab is not lazy -->
-            @if ($firstTab()) {
-                <p-tabPanel [header]="$firstTab()!.title" [@fadeIn]>
-                    <ng-container
-                        *ngTemplateOutlet="tabPanelTemplate; context: { tab: $firstTab() }" />
-                </p-tabPanel>
-            }
-
-            <!-- Rest of the tabs are lazy -->
-            @for (tab of $restOfTabs(); track tab) {
+            <!-- Tabs are lazy -->
+            @for (tab of tabs; track tab) {
                 <p-tabPanel [header]="tab.title" [@fadeIn]>
                     <ng-template pTemplate="content">
                         <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />
