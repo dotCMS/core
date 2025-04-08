@@ -11,6 +11,7 @@ import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.domain.AIResponse;
 import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.Model;
+import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -20,6 +21,7 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -43,6 +45,10 @@ import java.util.Optional;
  * It also provides methods for building request JSON for the AI service and reducing string size to fit the max token size of the model.
  */
 public class CompletionsAPIImpl implements CompletionsAPI {
+
+    private static String DEFAULT_AI_MAX_NUMBER_OF_TOKENS = "DEFAULT_AI_MAX_NUMBER_OF_TOKENS";
+    public static final Lazy<Integer> DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE =
+            Lazy.of(() -> Config.getIntProperty(DEFAULT_AI_MAX_NUMBER_OF_TOKENS, 16384));
 
     private final AppConfig config;
 
@@ -161,7 +167,8 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form, final List<EmbeddingsDTO> searchResults) {
-        final Tuple2<AIModel, Model> modelTuple = config.resolveModelOrThrow(form.model, AIModelType.TEXT);
+        final ResolvedModel resolvedModel = resolveModel(form.model);
+
         // aggregate matching results into text
         final StringBuilder supportingContent = new StringBuilder();
         searchResults.forEach(s -> supportingContent.append(s.extractedText).append(" "));
@@ -172,7 +179,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final int systemPromptTokens = countTokens(systemPrompt);
         textPrompt = reduceStringToTokenSize(
                 textPrompt,
-                modelTuple._1.getMaxTokens() - form.responseLengthTokens - systemPromptTokens);
+                resolvedModel.maxTokens - form.responseLengthTokens - systemPromptTokens);
 
         final JSONObject json = new JSONObject();
         json.put(AiKeys.STREAM, form.stream);
@@ -181,7 +188,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         buildMessages(systemPrompt, textPrompt, json);
 
         if (UtilMethods.isSet(form.model)) {
-            json.put(AiKeys.MODEL, modelTuple._2.getName());
+            json.put(AiKeys.MODEL, resolvedModel.name);
         }
 
         if (UtilMethods.isSet(form.responseFormat)) {
@@ -191,6 +198,15 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         json.put(AiKeys.MAX_TOKENS, form.responseLengthTokens);
 
         return json;
+    }
+
+    private ResolvedModel resolveModel(final String modelName) {
+        try {
+            final Tuple2<AIModel, Model> modelTuple = config.resolveModelOrThrow(modelName, AIModelType.TEXT);
+            return new ResolvedModel(modelTuple._2.getName(), modelTuple._1.getMaxTokens());
+        } catch (DotAIModelNotFoundException e) {
+            return new ResolvedModel(modelName, DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get());
+        }
     }
 
     private String getPrompt(final String prompt, final String supportingContent, final AppKeys key) {
@@ -276,6 +292,16 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         json.put(AiKeys.STREAM, form.stream);
 
         return json;
+    }
+
+    private static class ResolvedModel {
+        private String name;
+        private int maxTokens;
+
+        private ResolvedModel(final String name, final int maxTokens) {
+            this.name = name;
+            this.maxTokens = maxTokens;
+        }
     }
 
 }
