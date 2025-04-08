@@ -39,9 +39,11 @@ export class DotKeyValueComponent {
         oldVariable: DotKeyValue;
     }>();
 
-    protected variableList = signal<DotKeyValue[]>([]);
+    protected $variableList = computed(() => signal(this.$variables()));
     protected $forbiddenkeys = computed(() => {
-        return this.variableList().reduce(
+        const variableList = this.$variableList();
+
+        return variableList().reduce(
             (acc, variable) => {
                 acc[variable.key] = true;
 
@@ -58,14 +60,15 @@ export class DotKeyValueComponent {
      * @memberof DotKeyValueComponent
      */
     deleteVariable(index: number): void {
-        const deletedVariable = this.variableList()[index];
-        this.variableList.update((variables) => {
+        const variableList = this.$variableList();
+        const deletedVariable = variableList()[index];
+        variableList.update((variables) => {
             variables.splice(index, 1);
 
             return [...variables];
         });
         this.delete.emit(deletedVariable);
-        this.updatedList.emit(this.variableList());
+        this.updatedList.emit(variableList());
     }
 
     /**
@@ -75,11 +78,12 @@ export class DotKeyValueComponent {
      * @memberof DotKeyValueComponent
      */
     saveVariable(variable: DotKeyValue): void {
-        this.variableList.update((variables) => {
+        const variableList = this.$variableList();
+        variableList.update((variables) => {
             return [variable, ...variables];
         });
         this.save.emit(variable);
-        this.updatedList.emit(this.variableList());
+        this.updatedList.emit(variableList());
     }
 
     /**
@@ -89,13 +93,23 @@ export class DotKeyValueComponent {
      * @memberof DotKeyValueComponent
      */
     updateKeyValue(variable: DotKeyValue, index: number): void {
-        const oldVariable = this.variableList()[index];
-        this.variableList.update((variables) => {
+        const variableList = this.$variableList();
+        const oldVariable = variableList()[index];
+        variableList.update((variables) => {
             variables[index] = variable;
 
             return [...variables];
         });
         this.update.emit({ variable, oldVariable });
-        this.updatedList.emit(this.variableList());
+        this.updatedList.emit(variableList());
+    }
+
+    /**
+     * Reorder variables
+     * @memberof DotKeyValueComponent
+     */
+    reorderVariables(): void {
+        const variableList = this.$variableList();
+        this.updatedList.emit(variableList());
     }
 }
