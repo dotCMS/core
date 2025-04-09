@@ -77,6 +77,7 @@
 @if ($editorProps().palette; as palette) {
     <button
         pButton
+        data-testId="toggle-palette"
         [icon]="palette.buttonIcon"
         class="p-button-outlined p-button-sm toggle-palette"
         (click)="togglePalette()"></button>

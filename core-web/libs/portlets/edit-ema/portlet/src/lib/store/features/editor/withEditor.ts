@@ -31,7 +31,7 @@ import { DEFAULT_PERSONA } from '../../../shared/consts';
 import {
     EDITOR_STATE,
     UVE_STATUS,
-    PALETTE_BUTTON_ICONS,
+    PALETTE_TOGGLE_BUTTON_ICONS,
     PALETTE_CLASSES
 } from '../../../shared/enums';
 import {
@@ -207,8 +207,8 @@ export function withEditor() {
                                   containers: pageAPIResponse?.containers,
                                   languageId: pageAPIResponse?.viewAs.language.id,
                                   buttonIcon: paletteOpen
-                                      ? PALETTE_BUTTON_ICONS.OPEN
-                                      : PALETTE_BUTTON_ICONS.CLOSED,
+                                      ? PALETTE_TOGGLE_BUTTON_ICONS.OPEN
+                                      : PALETTE_TOGGLE_BUTTON_ICONS.CLOSED,
                                   paletteClass: paletteOpen
                                       ? PALETTE_CLASSES.OPEN
                                       : PALETTE_CLASSES.CLOSED
