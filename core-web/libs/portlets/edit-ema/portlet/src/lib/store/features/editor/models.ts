@@ -23,6 +23,7 @@ export interface EditorState {
     contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
+    paletteOpen: boolean;
 }
 
 export interface EditorToolbarState {
@@ -81,6 +82,7 @@ export interface EditorProps {
         languageId: number;
         containers: DotPageContainerStructure;
         variantId: string;
+        shouldShowPalette: boolean;
     };
     showDialogs: boolean;
     progressBar: boolean;
