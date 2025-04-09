@@ -82,7 +82,8 @@ export interface EditorProps {
         languageId: number;
         containers: DotPageContainerStructure;
         variantId: string;
-        shouldShowPalette: boolean;
+        buttonIcon: string;
+        paletteClass: string;
     };
     showDialogs: boolean;
     progressBar: boolean;

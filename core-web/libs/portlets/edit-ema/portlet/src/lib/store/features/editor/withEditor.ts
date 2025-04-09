@@ -201,7 +201,10 @@ export function withEditor() {
                                   variantId: params?.variantName,
                                   containers: pageAPIResponse?.containers,
                                   languageId: pageAPIResponse?.viewAs.language.id,
-                                  shouldShowPalette: paletteOpen
+                                  buttonIcon: paletteOpen
+                                      ? 'pi pi-angle-right'
+                                      : 'pi pi-angle-left',
+                                  paletteClass: paletteOpen ? 'show-palette' : 'hide-palette'
                               }
                             : null,
 

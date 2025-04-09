@@ -77,13 +77,12 @@
 @if ($editorProps().palette; as palette) {
     <button
         pButton
-        [icon]="$paletteOpen() ? 'pi pi-angle-right' : 'pi pi-angle-left'"
+        [icon]="palette.buttonIcon"
         class="p-button-outlined p-button-sm toggle-palette"
         (click)="togglePalette()"></button>
 
     <dot-edit-ema-palette
-        [class.show-palette]="$paletteOpen()"
-        [class.hide-palette]="!$paletteOpen()"
+        [ngClass]="palette.paletteClass"
         [languageId]="palette.languageId"
         [containers]="palette.containers"
         [variantId]="palette.variantId"
