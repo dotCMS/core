@@ -51,7 +51,7 @@ export class DotEditContentSidebarInformationComponent {
     /**
      * Computed that contains the url to the contentlet.
      */
-    $jsonUrl = computed(() => `/api/content/id/${this.$data().contentlet.identifier}`);
+    $jsonUrl = computed(() => `/api/v1/content/${this.$data().contentlet.identifier}`);
 
     /**
      * Computed that returns a tooltip message when creation date doesn't exist

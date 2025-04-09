@@ -17,9 +17,10 @@ export default [
             '/categoriesServlet',
             '/JSONTags',
             '/api/vtl',
-            '/tinymce'
+            '/tinymce',
+            '/ext'
         ],
-        target: 'https://demo.dotcms.com',
+        target: 'http://localhost:8080',
         secure: false,
         logLevel: 'debug',
         pathRewrite: {

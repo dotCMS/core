@@ -36,10 +36,16 @@ $tab-min-height: 52px;
 
 // Edit Content Actions
 .dot-edit-content-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    min-height: $tab-min-height;
+}
+
+.dot-edit-content-actions__left {
     gap: $spacing-4;
+}
+
+.dot-edit-content-actions__right {
+    gap: $spacing-4;
+    margin-left: auto;
 }
 
 .dot-edit-content-actions__sidebar-toggle {
@@ -50,8 +56,6 @@ $tab-min-height: 52px;
     transform: translateX(0);
     overflow: hidden;
     min-height: $tab-min-height;
-    display: flex;
-    align-items: center;
 }
 
 .dot-edit-content-actions__sidebar-toggle--hidden {
@@ -76,6 +80,9 @@ $tab-min-height: 52px;
 
 // PrimeNG Tabview Overrides
 ::ng-deep {
+    .p-tabview-nav {
+        flex: none;
+    }
     .tabview-append-content {
         min-height: $tab-min-height;
         display: flex;
@@ -96,6 +103,7 @@ $tab-min-height: 52px;
         .p-tabs-nav-content .p-tabs-nav {
             border: none;
             border-left: solid 1px $color-palette-gray-300;
+            border-right: solid 1px $color-palette-gray-300;
             padding-left: $spacing-3;
             min-height: $tab-min-height;
             min-width: auto;
@@ -111,9 +119,26 @@ $tab-min-height: 52px;
         }
 
         &.dot-edit-content-tabview--single-tab {
-            .p-tabs-nav li:first-child {
+            ul.p-tabview-nav {
                 display: none;
             }
+
+            .tabview-append-content {
+                border-left: solid 1px $color-palette-gray-300;
+                padding-left: $spacing-3;
+            }
         }
+    }
+
+    .p-tabview-nav-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .tabview-append-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
     }
 }
