@@ -353,10 +353,29 @@
 	</div>
 
 <script>
+/**
+ * Manages the "Return To" navigation functionality for content relationships.
+ * 
+ * This function checks if the user is editing content that was accessed via a relationship
+ * field from another contentlet, and displays a return button if applicable.
+ * 
+ * The function:
+ * 1. Retrieves relationship return data from localStorage
+ * 2. Validates if current content matches the stored relationship context
+ * 3. Creates and displays a back button when appropriate
+ * 4. Handles navigation back to the original contentlet
+ * 
+ * The relationship context is stored when a user clicks on a relationship field
+ * to edit related content, allowing them to easily return to the parent content.
+ */
 function showRelationshipReturn(){
 
+
+
     var backInode = localStorage.getItem("dotcms.relationships.relationshipReturnValue");
-    
+	if (backInode) {
+		backInode = JSON.parse(backInode);
+	}
     var myCon = "<%=contentlet.getInode()%>";
     if(myCon === ""){
     	try{
@@ -365,19 +384,14 @@ function showRelationshipReturn(){
     		   // no my con
     	}
     }
-
-    
     
     var referer="<%=UtilMethods.webifyString(request.getParameter("referer"))%>";
-    if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null" || referer =="") {
+    if(backInode ==null || backInode == undefined || backInode=='' || backInode =="null" || (referer =="" && !backInode.blockEditorBackUrl)) {
     	localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
         return;
     }
 
-
-    backInode = JSON.parse(backInode);
-
-    if(backInode.inode ==  myCon){
+    if(backInode.inode ==  myCon && !backInode.blockEditorBackUrl){
         localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
         return;
     }
@@ -397,10 +411,14 @@ function showRelationshipReturn(){
 
     document.write(backButtonTmpl)
     var button = document.getElementById("relationshipReturnValueButton");
+	localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
 
     button.addEventListener("click", function(e) {
-    	window.location.href="<%=request.getParameter("referer")%>";
-       localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
+		if (backInode.blockEditorBackUrl) {
+			window.parent.location.href = backInode.blockEditorBackUrl;
+		}
+    	window.location.href = "<%=request.getParameter("referer")%>";
+        
     });
 }
 
