@@ -363,10 +363,8 @@ dojo.declare(
 
         // DOTCMS-3896
         _renderSearchField: function (field) {
-
             var fieldVelocityVarName = field['fieldVelocityVarName'];
             var fieldContentlet = field['fieldContentlet'];
-            var structureVarName = field['fieldStructureVarName'];
             this.structureVelVar = field['fieldStructureVarName'];
             var value = '';
 
@@ -385,10 +383,12 @@ dojo.declare(
                         actual_option[1].length > 0
                     ) {
                         var checkId =
-                            structureVarName +
+                            this.structureVelVar +
                             '.' +
                             fieldVelocityVarName +
-                            'Field' +
+                            'Field-D' +
+                            this.dialogCounter +
+                            '-0' +
                             i;
                         result =
                             result +
@@ -398,7 +398,10 @@ dojo.declare(
                             'id="' +
                             checkId +
                             '" ' +
-                            'name="' + structureVarName + '.' + fieldVelocityVarName +
+                            'name="' +
+                            this.structureVelVar +
+                            '.' +
+                            fieldVelocityVarName +
                             '"> ' +
                             actual_option[0] +
                             '<br>\n';
