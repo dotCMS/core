@@ -5,10 +5,26 @@
     grid-template-rows: min-content 1fr;
     height: 100%;
 
-    // Only set two columns if the palette is present
-    &:has(dot-edit-ema-palette) {
-        grid-template-columns: 1fr 15.5rem;
+    // Default state (no palette)
+    grid-template-columns: 1fr;
+
+    // Only set two columns if the toggle palette button is present
+    &:has(.toggle-palette) {
+        grid-template-columns: 1fr 2rem;
     }
+
+    // Only set three columns if the toggle palette button and the palette are present
+    &:has(.toggle-palette):has(dot-edit-ema-palette.show-palette) {
+        grid-template-columns: 1fr 2rem 15.5rem;
+    }
+}
+
+.hide-palette {
+    display: none;
+}
+
+.show-palette {
+    display: block;
 }
 
 dot-device-selector-seo {
@@ -72,4 +88,24 @@ a,
 a:focus,
 a:active {
     text-decoration: none;
+}
+
+.p-button.p-button-outlined.toggle-palette {
+    align-self: center;
+    border: 1px solid $color-palette-primary-300;
+    background-color: $color-palette-primary-100;
+    border-radius: 0;
+    border-right: 1px solid $white;
+    z-index: 2000;
+    position: relative;
+    right: -1px;
+
+    &:active,
+    &:focus {
+        outline: none;
+    }
+
+    &:hover {
+        background-color: $color-palette-primary-200;
+    }
 }

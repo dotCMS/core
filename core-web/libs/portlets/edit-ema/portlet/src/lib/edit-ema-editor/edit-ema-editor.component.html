@@ -75,7 +75,15 @@
 </div>
 
 @if ($editorProps().palette; as palette) {
+    <button
+        pButton
+        [icon]="$paletteOpen() ? 'pi pi-angle-right' : 'pi pi-angle-left'"
+        class="p-button-outlined p-button-sm toggle-palette"
+        (click)="togglePalette()"></button>
+
     <dot-edit-ema-palette
+        [class.show-palette]="$paletteOpen()"
+        [class.hide-palette]="!$paletteOpen()"
         [languageId]="palette.languageId"
         [containers]="palette.containers"
         [variantId]="palette.variantId"
