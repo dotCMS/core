@@ -48,3 +48,13 @@ export enum FormStatus {
     SAVED = 'SAVED',
     PRISTINE = 'PRISTINE'
 }
+
+export enum PALETTE_BUTTON_ICONS {
+    OPEN = 'pi pi-angle-left',
+    CLOSED = 'pi pi-angle-right'
+}
+
+export enum PALETTE_CLASSES {
+    OPEN = 'show-palette',
+    CLOSED = 'hide-palette'
+}

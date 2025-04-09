@@ -28,7 +28,12 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import {
+    EDITOR_STATE,
+    UVE_STATUS,
+    PALETTE_BUTTON_ICONS,
+    PALETTE_CLASSES
+} from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -202,9 +207,11 @@ export function withEditor() {
                                   containers: pageAPIResponse?.containers,
                                   languageId: pageAPIResponse?.viewAs.language.id,
                                   buttonIcon: paletteOpen
-                                      ? 'pi pi-angle-right'
-                                      : 'pi pi-angle-left',
-                                  paletteClass: paletteOpen ? 'show-palette' : 'hide-palette'
+                                      ? PALETTE_BUTTON_ICONS.OPEN
+                                      : PALETTE_BUTTON_ICONS.CLOSED,
+                                  paletteClass: paletteOpen
+                                      ? PALETTE_CLASSES.OPEN
+                                      : PALETTE_CLASSES.CLOSED
                               }
                             : null,
 
