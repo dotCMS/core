@@ -43,7 +43,6 @@ export const castSingleSelectableValue = (
                 : String(value).toLowerCase().trim() === 'true';
         }
 
-        // eslint-disable-next-line @typescript-eslint/padding-line-between-statements
         case DotEditContentFieldSingleSelectableDataType.INTEGER:
 
         // fallthrough
