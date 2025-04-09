@@ -1,6 +1,6 @@
 @if (form) {
     <form (ngSubmit)="onSubmit()" [ngClass]="options?.customClass" [formGroup]="form">
-        @for (control of dynamicControls; track control) {
+        @for (control of dynamicControls; track $index) {
             <div [ngClass]="control.type" class="field form-row">
                 @switch (control.type) {
                     @case ('checkbox') {

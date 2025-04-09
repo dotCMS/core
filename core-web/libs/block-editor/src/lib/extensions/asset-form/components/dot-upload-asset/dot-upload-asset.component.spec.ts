@@ -3,14 +3,16 @@ import { of } from 'rxjs';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { By, DomSanitizer } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
 
 import { delay } from 'rxjs/operators';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotUploadAssetComponent, STATUS } from './dot-upload-asset.component';
-
-import { DotUploadFileService } from '../../../../shared';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -56,6 +58,7 @@ describe('DotUploadAssetComponent', () => {
                 FileUploadMockComponent,
                 DotSpinnerMockComponent
             ],
+            imports: [BrowserAnimationsModule, ButtonModule],
             providers: [
                 {
                     provide: DotUploadFileService,
