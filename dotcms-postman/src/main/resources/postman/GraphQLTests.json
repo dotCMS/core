@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "5f91bf99-0010-4a9d-bb0d-8e0e4c53981f",
+		"_postman_id": "26bc79f7-0e7d-4bc0-8b01-ebc8cf282b1d",
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "30436704"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -2827,6 +2827,436 @@
 									"mode": "graphql",
 									"graphql": {
 										"query": "{\n    page(url: \"/destinations/costa-rica\", pageMode: \"WORKING\") {\n    title\n  }\n}\n\n",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "runningExperimentId",
+					"item": [
+						{
+							"name": "Create Test Site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Storing page for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"siteName\", jsonData.entity.siteName);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"siteName\":\"page.detail.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create test Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing page id and path for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"pageId\", jsonData.entity.identifier);",
+											"    pm.collectionVariables.set(\"pageInode\", jsonData.entity.inode);",
+											"    pm.collectionVariables.set(\"pageURL\", jsonData.entity.url);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"contentlet\":{\n\t\t\"stName\": \"htmlpageasset\",\n\t\t\"title\": \"Page1 {{$timestamp}}\",\n        \"url\": \"page1-{{$timestamp}}\",\n        \"friendlyName\":\"page1-{{$timestamp}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"sortOrder\": \"0\",\n        \"cachettl\": \"100\",\n        \"hostFolder\":\"{{siteId}}\"\n\t}\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check null runningExperimentId",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"'Page' runningExperimentId property is null\", function () {",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    var runningExperimentId = jsonData.data.page.runningExperimentId;",
+											"",
+											"    pm.expect(null).to.equal(runningExperimentId);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Cookie",
+										"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n    page(url: \"{{pageURL}}\", site: \"{{siteName}}\") {\n        identifier\n        title\n        url\n        runningExperimentId\n    }\n}\n",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create experiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Storing datra for subsequent tests\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.collectionVariables.set(\"experimentId\", jsonData.entity.id);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"pageId\": \"{{pageId}}\",\n    \"name\": \"my experiment\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                }\n            ]\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add variant to experiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"description\": \"My first Variant\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}/variants",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}",
+										"variants"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Start experiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Started Experiment with expected values\", function () {",
+											"",
+											"    var jsonData = pm.response.json();",
+											"",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.entity.status).equal(\"RUNNING\");",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"});",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}/_start",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}",
+										"_start"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Check runningExperimentId",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const maxTimeout = 30000; // 10 seconds",
+											"const maxRetries = 10;    // Maximum number of retry attempts",
+											"const startTime = parseInt(pm.environment.get(\"startTime\"));",
+											"const retryCount = parseInt(pm.environment.get(\"retryCount\"));",
+											"const elapsedTime = Date.now() - startTime;",
+											"",
+											"console.log(`Attempt ${retryCount + 1}, Elapsed time: ${elapsedTime}ms`);",
+											"",
+											"var response = pm.response.json();",
+											"var runningExperimentId = response.data.page.runningExperimentId;",
+											"var expectedEsperinmentId = pm.collectionVariables.get(\"experimentId\");",
+											"    ",
+											"// Check if the runningExperimentId attribute is present and matches the expected value",
+											"if (runningExperimentId === expectedEsperinmentId) {",
+											"    // Clear environment variables once done",
+											"    pm.environment.unset(\"startTime\");",
+											"    pm.environment.unset(\"retryCount\");",
+											"} else if (elapsedTime < maxTimeout && retryCount < maxRetries) {",
+											"    // Increment retry count",
+											"    pm.environment.set(\"retryCount\", retryCount + 1);",
+											"    ",
+											"    setTimeout(function(){",
+											"        console.log(\"Sleeping for 3 seconds before next request.\");",
+											"    }, 3000);",
+											"    postman.setNextRequest(\"Check runningExperimentId\");",
+											"    console.log(`runningExperimentId not available yet, retrying... (${maxTimeout - elapsedTime}ms remaining)`);",
+											"} else {",
+											"    // If we exceed the max timeout or max retries, fail the test",
+											"    const timeoutReason = elapsedTime >= maxTimeout ? \"timeout\" : \"max retries\";",
+											"    pm.environment.unset(\"startTime\");",
+											"    pm.environment.unset(\"retryCount\");",
+											"    pm.test(`runningExperimentId check failed due to ${timeoutReason}`, function () {",
+											"        pm.expect.fail(`${timeoutReason} reached after ${elapsedTime}ms. runningExperimentId still not available after ${retryCount} attempts`);",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Response is successful\", function () {",
+											"    pm.response.to.be.success;",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"if (!pm.environment.get(\"startTime\")) {",
+											"    pm.environment.set(\"startTime\", Date.now());",
+											"}",
+											"",
+											"if (!pm.environment.get(\"retryCount\")) {",
+											"    pm.environment.set(\"retryCount\", 0);",
+											"}"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Cookie",
+										"value": "JSESSIONID=1DF38761AD8B360EF1AD42C4AF07EC35",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n    page(url: \"{{pageURL}}\", site: \"{{siteName}}\") {\n        identifier\n        title\n        url\n        runningExperimentId\n    }\n}\n",
 										"variables": ""
 									}
 								},
@@ -11318,6 +11748,16 @@
 			]
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
 	"event": [
 		{
 			"listen": "prerequest",
@@ -11453,6 +11893,38 @@
 		},
 		{
 			"key": "contentCount",
+			"value": ""
+		},
+		{
+			"key": "pageDetailSiteId",
+			"value": ""
+		},
+		{
+			"key": "pageDetailSiteName",
+			"value": ""
+		},
+		{
+			"key": "pageId",
+			"value": ""
+		},
+		{
+			"key": "pageInode",
+			"value": ""
+		},
+		{
+			"key": "pageURL",
+			"value": ""
+		},
+		{
+			"key": "experimentId",
+			"value": ""
+		},
+		{
+			"key": "siteId",
+			"value": ""
+		},
+		{
+			"key": "siteName",
 			"value": ""
 		}
 	]
