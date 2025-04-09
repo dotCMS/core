@@ -530,7 +530,7 @@
 
     function initialLoad() {
         var urlParams = new URLSearchParams(window.location.href);
-        var portletId = urlParams.get('angularCurrentPortlet');
+        portletId = urlParams.get('angularCurrentPortlet');
 
         var viewDisplayMode = '<%=dataViewMode%>';
         if (viewDisplayMode !== '') {
@@ -581,7 +581,7 @@
             label: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>",
             iconClass: "uploadIcon",
             onClick: function() {
-                window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value;
+                window.location='/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById("structureInode").value + '&angularCurrentPortlet=' + portletId;
             }
         });
         menu.addChild(menuItem2);
@@ -777,7 +777,7 @@
                                     <span></span>
                                     <script type="text/javascript">
                                         function importContent() {
-                                            window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                            window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value + '&angularCurrentPortlet=' + portletId;
                                         }
                                     </script>
                                     <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
