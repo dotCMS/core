@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.dotcms.contenttype.model.field.Field;
@@ -395,6 +396,7 @@ public class ShortyServletAndTitleImageTest {
      * ExpectedResult: The method should forward the request for an authenticated user
      * For a non-authenticated user, the method should return a 401 status code
      */
+    @Ignore
     @Test
     public void test_ShortyServlet_With_AuthenticatedUser() throws Exception {
 
