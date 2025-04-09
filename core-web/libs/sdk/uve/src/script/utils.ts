@@ -63,34 +63,52 @@ export function addClassToEmptyContentlets(): void {
  * scroll event handling.
  */
 export function registerUVEEvents() {
-    createUVESubscription(UVEEventType.PAGE_RELOAD, () => {
+    const pageReloadSubscription = createUVESubscription(UVEEventType.PAGE_RELOAD, () => {
         window.location.reload();
     });
 
-    createUVESubscription(UVEEventType.REQUEST_BOUNDS, (bounds) => {
-        setBounds(bounds);
-    });
-
-    createUVESubscription(UVEEventType.IFRAME_SCROLL, (direction) => {
-        if (
-            (window.scrollY === 0 && direction === 'up') ||
-            (computeScrollIsInBottom() && direction === 'down')
-        ) {
-            // If the iframe scroll is at the top or bottom, do not send anything.
-            // This avoids losing the scrollend event.
-            return;
+    const requestBoundsSubscription = createUVESubscription(
+        UVEEventType.REQUEST_BOUNDS,
+        (bounds) => {
+            setBounds(bounds);
         }
+    );
 
-        const scrollY = direction === 'up' ? -120 : 120;
-        window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
-    });
+    const iframeScrollSubscription = createUVESubscription(
+        UVEEventType.IFRAME_SCROLL,
+        (direction) => {
+            if (
+                (window.scrollY === 0 && direction === 'up') ||
+                (computeScrollIsInBottom() && direction === 'down')
+            ) {
+                // If the iframe scroll is at the top or bottom, do not send anything.
+                // This avoids losing the scrollend event.
+                return;
+            }
 
-    createUVESubscription(UVEEventType.CONTENTLET_HOVERED, (contentletHovered) => {
-        sendMessageToUVE({
-            action: DotCMSUVEAction.SET_CONTENTLET,
-            payload: contentletHovered
-        });
-    });
+            const scrollY = direction === 'up' ? -120 : 120;
+            window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
+        }
+    );
+
+    const contentletHoveredSubscription = createUVESubscription(
+        UVEEventType.CONTENTLET_HOVERED,
+        (contentletHovered) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.SET_CONTENTLET,
+                payload: contentletHovered
+            });
+        }
+    );
+
+    return {
+        subscriptions: [
+            pageReloadSubscription,
+            requestBoundsSubscription,
+            iframeScrollSubscription,
+            contentletHoveredSubscription
+        ]
+    };
 }
 
 /**
