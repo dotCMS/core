@@ -115,3 +115,4 @@ This maintenance release includes the following code fixes:
 109. https://github.com/dotCMS/core/issues/29869 : Unable to authenticate a servlet request #29869
 110. https://github.com/dotCMS/core/issues/31509 : Content Import Functionality Disabled When "Content Search" Tool is Hidden for Specific Roles #31509
 111. https://github.com/dotCMS/core/issues/31216 : Push Publishing not escaping comma in title. #31216
+112. https://github.com/dotCMS/core/issues/30544 : The last role in the Roles list is partially visible #30544
