@@ -167,7 +167,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
     }
 
     private JSONObject buildRequestJson(final CompletionsForm form, final List<EmbeddingsDTO> searchResults) {
-        final ResolvedModel resolvedModel = resolveModel(form.model);
+        final ResolvedModel resolvedModel = resolveModel(form);
 
         // aggregate matching results into text
         final StringBuilder supportingContent = new StringBuilder();
@@ -199,13 +199,20 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         return json;
     }
+    
+    private ResolvedModel resolveModel(final CompletionsForm completionsForm) {
+        final AIModel aiModel = config.resolveModel(AIModelType.TEXT);
 
-    private ResolvedModel resolveModel(final String modelName) {
-        try {
-            final Tuple2<AIModel, Model> modelTuple = config.resolveModelOrThrow(modelName, AIModelType.TEXT);
+        if (UtilMethods.isSet(aiModel.getModels())) {
+            final Tuple2<AIModel, Model> modelTuple = config
+                    .resolveModelOrThrow(completionsForm.model, AIModelType.TEXT);
+
             return new ResolvedModel(modelTuple._2.getName(), modelTuple._1.getMaxTokens());
-        } catch (DotAIModelNotFoundException e) {
-            return new ResolvedModel(modelName, DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get());
+        } else if (UtilMethods.isSet(aiModel.getModels())) {
+            return new ResolvedModel(completionsForm.model, DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get());
+        } else {
+            throw new DotAIModelNotFoundException(
+                    "The model is mandatory, you need to set one neither in the dotAPI APP or in the request");
         }
     }
 
