@@ -8,10 +8,10 @@ import { FormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotSelectItemDirective } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
@@ -49,8 +49,7 @@ describe('AddStyleClassesDialogComponent', () => {
             DynamicDialogModule,
             FormsModule,
             ButtonModule,
-            DotMessagePipe,
-            DotSelectItemDirective
+            DotMessagePipe
         ],
         component: AddStyleClassesDialogComponent,
         providers: [DynamicDialogRef, DynamicDialogConfig, DotMessageService, provideHttpClient()],
@@ -116,13 +115,6 @@ describe('AddStyleClassesDialogComponent', () => {
             });
 
             expect(autocomplete.suggestions).toEqual(['class1']);
-        });
-
-        it('should there is a dotSelectItem directive', () => {
-            spectator.detectChanges();
-
-            const element = spectator.query(DotSelectItemDirective);
-            expect(element).toBeTruthy();
         });
 
         it('should add class on keyup.enter', () => {

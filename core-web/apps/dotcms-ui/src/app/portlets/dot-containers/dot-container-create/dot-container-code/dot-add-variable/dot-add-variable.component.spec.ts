@@ -192,7 +192,6 @@ describe('DotAddVariableComponent', () => {
     let de: DebugElement;
     let dialogConfig: DynamicDialogConfig;
     let dialogRef: DynamicDialogRef;
-    let coreWebService: CoreWebService;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -240,7 +239,12 @@ describe('DotAddVariableComponent', () => {
                 },
                 DialogService,
                 DotSiteBrowserService,
-                DotContentTypeService,
+                {
+                    provide: DotContentTypeService,
+                    useValue: {
+                        getContentType: jasmine.createSpy().and.returnValue(of(mockContentTypes))
+                    }
+                },
                 DotAlertConfirmService,
                 ConfirmationService,
                 DotGlobalMessageService,
@@ -259,16 +263,10 @@ describe('DotAddVariableComponent', () => {
         fixture = TestBed.createComponent(DotAddVariableComponent);
         de = fixture.debugElement;
         dialogConfig = TestBed.inject(DynamicDialogConfig);
-        coreWebService = TestBed.inject(CoreWebService);
     });
 
     describe('dot-add-variable-dialog', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
-                of({
-                    entity: mockContentTypes
-                })
-            );
             fixture.detectChanges();
             tick();
             fixture.detectChanges();
