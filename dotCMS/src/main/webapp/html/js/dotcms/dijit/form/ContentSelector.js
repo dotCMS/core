@@ -362,6 +362,8 @@ dojo.declare(
         _renderSearchField: function (field) {
             var fieldVelocityVarName = field['fieldVelocityVarName'];
             var fieldContentlet = field['fieldContentlet'];
+            var structureVarName = field['fieldStructureVarName'];
+            this.structureVelVar = field['fieldStructureVarName'];
             var value = '';
 
             var type = field['fieldFieldType'];
@@ -379,12 +381,10 @@ dojo.declare(
                         actual_option[1].length > 0
                     ) {
                         var checkId =
-                            this.structureVelVar +
+                            structureVarName +
                             '.' +
                             fieldVelocityVarName +
-                            'Field-D' +
-                            this.dialogCounter +
-                            '-O' +
+                            'Field' +
                             i;
                         result =
                             result +
@@ -395,10 +395,9 @@ dojo.declare(
                             checkId +
                             '" ' +
                             'name="' +
-                            this.structureVelVar +
+                            structureVarName +
                             '.' +
                             fieldVelocityVarName +
-                            this.dialogCounter +
                             '"> ' +
                             actual_option[0] +
                             '<br>\n';
@@ -1037,7 +1036,7 @@ dojo.declare(
                             values = formField.value;
                             name = formField.name.substring(
                                 0,
-                                formField.name.length - 1
+                                formField.name.length
                             );
                             fieldsValues[fieldsValues.length] = name;
                             fieldsValues[fieldsValues.length] = values;

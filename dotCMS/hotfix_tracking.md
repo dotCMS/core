@@ -117,3 +117,4 @@ This maintenance release includes the following code fixes:
 111. https://github.com/dotCMS/core/issues/31216 : Push Publishing not escaping comma in title. #31216
 112. https://github.com/dotCMS/core/issues/30544 : The last role in the Roles list is partially visible #30544
 113. https://github.com/dotCMS/core/issues/31564 : Special Character & Truncated in Category Name After Creation #31564
+114. https://github.com/dotCMS/core/issues/31649 : Filter on checkbox field not working as expected (Content search portal and relationship filter) #31649
