@@ -50,8 +50,8 @@ export enum FormStatus {
 }
 
 export enum PALETTE_TOGGLE_BUTTON_ICONS {
-    OPEN = 'pi pi-angle-left',
-    CLOSED = 'pi pi-angle-right'
+    OPEN = 'pi pi-angle-right',
+    CLOSED = 'pi pi-angle-left'
 }
 
 export enum PALETTE_CLASSES {
