@@ -11,6 +11,7 @@
             (save)="saveVariable($event)"
             [autoFocus]="$autoFocus()"
             [showHiddenField]="$showHiddenField()"
+            [dragAndDrop]="$dragAndDrop()"
             [forbiddenkeys]="$forbiddenkeys()" />
     </ng-template>
     <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
@@ -20,6 +21,7 @@
             [showHiddenField]="$showHiddenField()"
             [variable]="variable"
             [index]="rowIndex"
+            [dragAndDrop]="$dragAndDrop()"
             #tableRow />
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>
