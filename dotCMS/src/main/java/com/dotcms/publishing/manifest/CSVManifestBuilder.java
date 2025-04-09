@@ -97,12 +97,17 @@ public class CSVManifestBuilder implements ManifestBuilder {
             final String includeExclude, final ManifestInfo manifestInfo,
             final String includeReason, final String excludeReason) {
 
+        String title = manifestInfo.title().contains("\"") ? manifestInfo.title().replace("\"", "\"\"") : manifestInfo.title();
+
+        // If the title contains a comma or double quote, it should be enclosed in quotes
+        title = title.contains(",") || title.contains("\"") ? "\"" + title + "\"" : title;
+
         return list(
                 includeExclude,
                 manifestInfo.objectType(),
                 manifestInfo.id(),
                 manifestInfo.inode(),
-                manifestInfo.title(),
+                title,
                 manifestInfo.site(),
                 manifestInfo.folder(),
                 excludeReason,

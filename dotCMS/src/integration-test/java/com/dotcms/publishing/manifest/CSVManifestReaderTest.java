@@ -409,6 +409,35 @@ public class CSVManifestReaderTest {
     }
 
     /**
+     * Method to test: {@link CSVManifestReader#getAssets(ManifestReason)}
+     * when: Create a Manifest File and include an asset with a title that has a comma
+     * should: Return the asset with the correct title
+     */
+    @Test
+    public void getAssetsWhenTitleHasComma() {
+        final String includeReason1 = ManifestReason.INCLUDE_BY_USER.getMessage();
+
+        final String title = "example, comma";
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType).setProperty("title", title).nextPersisted();
+
+        File manifestFile = null;
+
+        try(final CSVManifestBuilder manifestBuilder = new CSVManifestBuilder()) {
+            manifestBuilder.include(contentlet, includeReason1);
+            manifestFile = manifestBuilder.getManifestFile();
+        }
+
+        final ManifestReader manifestReader = new CSVManifestReader(manifestFile);
+        final Collection<ManifestInfo> includedAssets = manifestReader.getAssets(ManifestReason.INCLUDE_BY_USER);
+        assertEquals(1, includedAssets.size());
+
+        final ManifestInfo assetIncluded = includedAssets.iterator().next();
+        assertEquals(assetIncluded.title(), title);
+    }
+
+    /**
      * Method to test: {@link CSVManifestReader#getMetadata(String)}
      * When: Create a manifest with to Metadata header
      * Should: return the right value

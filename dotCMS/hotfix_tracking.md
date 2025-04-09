@@ -202,3 +202,5 @@ This maintenance release includes the following code fixes:
 195. https://github.com/dotCMS/core/issues/31207 : Improve performance to retrieve Analytics Data #31207
 196. https://github.com/dotCMS/core/issues/31564 : Special Character & Truncated in Category Name After Creation #31564
 197. https://github.com/dotCMS/core/issues/31509 : Content Import Functionality Disabled When "Content Search" Tool is Hidden for Specific Roles #31509
+198. https://github.com/dotCMS/core/issues/31216 : Push Publishing not escaping comma in title. #31216
+199. https://github.com/dotCMS/core/issues/30544 : The last role in the Roles list is partially visible #30544
