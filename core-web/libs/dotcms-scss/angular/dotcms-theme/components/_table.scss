@@ -134,14 +134,6 @@ $dot-table-cell-height: 1.25rem;
             }
         }
 
-        &.p-datatable-no-gridlines {
-            .p-datatable-tbody tr {
-                > td {
-                    border-bottom: none;
-                }
-            }
-        }
-
         .p-datatable-tbody tr {
             background: $white;
             color: $black;

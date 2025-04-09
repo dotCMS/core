@@ -57,6 +57,7 @@
                     {{ 'keyValue.hidden_header.label' | dm }}
                 </label>
                 <p-inputSwitch
+                    class="dot-key-value-input__hidden-switch"
                     [formControl]="hiddenControl"
                     id="key-value-input-row-hidden-input" />
             </div>
@@ -66,8 +67,7 @@
         <button
             (click)="saveVariable()"
             icon="pi pi-plus"
-            [rounded]="true"
-            [outlined]="true"
+            [text]="true"
             class="key-value-input__save-button"
             #saveButton
             size="small"
