@@ -2,15 +2,20 @@
 @let showHiddenField = $showHiddenField();
 @let isHiddenField = $isHiddenField();
 @let index = $index();
+
 <tr class="dot-key-value-table-row" [pReorderableRow]="index">
-    <td>
-        <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
-    </td>
+    @if ($dragAndDrop()) {
+        <td>
+            <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
+        </td>
+    }
     <td data-testId="dot-key-value-key">
         <p>{{ variable.key }}</p>
     </td>
     @if (isHiddenField) {
-        <td data-testId="dot-key-value-label">{{ passwordPlaceholder }}</td>
+        <td data-testId="dot-key-value-label">
+            <p><i class="pi pi-lock inline-block"></i> Value hidden</p>
+        </td>
     } @else {
         <td
             [pEditableColumn]="variable.value"
@@ -31,11 +36,7 @@
                 </ng-template>
                 <ng-template pTemplate="output">
                     <span class="dot-key-value-table-row__value">
-                        @if (hiddenControl.value) {
-                            {{ passwordPlaceholder }}
-                        } @else {
-                            {{ variable.value }}
-                        }
+                        {{ variable.value }}
                     </span>
                 </ng-template>
             </p-cellEditor>
@@ -43,7 +44,7 @@
     }
     @if (showHiddenField) {
         <td class="dot-key-value-table-row__variables-hidden">
-            @if (!variable.hidden) {
+            @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
                 <p-inputSwitch
                     class="dot-key-value-table-row__hidden-switch"
                     [formControl]="hiddenControl"

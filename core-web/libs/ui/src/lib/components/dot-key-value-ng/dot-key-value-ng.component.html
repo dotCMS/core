@@ -24,7 +24,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>
         <tr data-testId="no-rows">
-            <td [attr.colspan]="$showHiddenField() ? 5 : 4">
+            <td [attr.colspan]="$colspan()">
                 {{ 'keyValue.value_no_rows.label' | dm }}
             </td>
         </tr>

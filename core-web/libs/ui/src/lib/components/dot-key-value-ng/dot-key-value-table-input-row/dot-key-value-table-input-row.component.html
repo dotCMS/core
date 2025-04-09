@@ -1,5 +1,7 @@
 <tr class="dot-key-value__header">
-    <th scope="col" class="w-3rem"></th>
+    @if ($dragAndDrop()) {
+        <th scope="col" class="w-3rem"></th>
+    }
     <th>
         <div class="flex flex-column">
             <label for="key-value-input-row-key-input">

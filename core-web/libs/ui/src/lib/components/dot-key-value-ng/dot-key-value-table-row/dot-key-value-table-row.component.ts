@@ -8,7 +8,8 @@ import {
     output,
     viewChild,
     ChangeDetectionStrategy,
-    model
+    model,
+    ChangeDetectorRef
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 
@@ -17,6 +18,8 @@ import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TableModule } from 'primeng/table';
+
+import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
@@ -45,6 +48,11 @@ export class DotKeyValueTableRowComponent {
     #formBuilder = inject(FormBuilder);
 
     /**
+     * Change detector reference
+     */
+    changeDetectorRef = inject(ChangeDetectorRef);
+
+    /**
      * Event emitted when a variable is saved, containing the updated DotKeyValue
      */
     save = output<DotKeyValue>();
@@ -63,6 +71,11 @@ export class DotKeyValueTableRowComponent {
      * Input that controls the index of the row
      */
     $index = input.required<number>({ alias: 'index' });
+
+    /**
+     * Input that controls whether to show a drag and drop handle
+     */
+    $dragAndDrop = input<boolean>(false, { alias: 'dragAndDrop' });
 
     /**
      * The key-value pair to be displayed and edited in this row
@@ -102,7 +115,18 @@ export class DotKeyValueTableRowComponent {
         effect(() => {
             const { value, hidden } = this.$variable();
             this.form.patchValue({ value, hidden });
+            this.changeDetectorRef.detectChanges();
         });
+
+        this.hiddenControl.valueChanges
+            .pipe(
+                skip(1),
+                debounceTime(50),
+                distinctUntilChanged()
+            )
+            .subscribe(() => {
+                this.saveVariable();
+            });
     }
 
     /**

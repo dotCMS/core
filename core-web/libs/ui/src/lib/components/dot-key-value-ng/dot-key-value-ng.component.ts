@@ -30,6 +30,7 @@ export class DotKeyValueComponent {
     $autoFocus = input<boolean>(true, { alias: 'autoFocus' });
     $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
     $variables = input<DotKeyValue[]>([], { alias: 'variables' });
+    $dragAndDrop = input<boolean>(false, { alias: 'dragAndDrop' });
 
     updatedList = output<DotKeyValue[]>();
     delete = output<DotKeyValue>();
@@ -39,8 +40,8 @@ export class DotKeyValueComponent {
         oldVariable: DotKeyValue;
     }>();
 
-    protected $variableList = computed(() => signal(this.$variables()));
-    protected $forbiddenkeys = computed(() => {
+    $variableList = computed(() => signal(this.$variables()));
+    $forbiddenkeys = computed(() => {
         const variableList = this.$variableList();
 
         return variableList().reduce(
@@ -51,6 +52,13 @@ export class DotKeyValueComponent {
             },
             {} as Record<string, boolean>
         );
+    });
+
+    $colspan = computed(() => {
+        const showHiddenField = this.$showHiddenField();
+        const dragAndDrop = this.$dragAndDrop();
+
+        return showHiddenField ? (dragAndDrop ? 5 : 4) : 3;
     });
 
     /**
