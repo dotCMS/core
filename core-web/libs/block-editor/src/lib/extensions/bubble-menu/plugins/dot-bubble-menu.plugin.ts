@@ -2,7 +2,7 @@ import { EditorState, NodeSelection, Plugin, PluginKey } from 'prosemirror-state
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance } from 'tippy.js';
 
-import { ComponentRef, inject } from '@angular/core';
+import { ComponentRef } from '@angular/core';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -490,8 +490,10 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 // Store navigation state in localStorage for returning to block editor
                 const relationshipReturnValue = {
                     title,
-                    blockEditorBackUrl: window.parent.location.href,
-                    inode: this.extractInodeFromUrl(shouldUseOldEditor)
+                    blockEditorBackUrl: shouldUseOldEditor
+                        ? this.generateBackUrl(contentletInode)
+                        : window.location.href,
+                    inode: this.extractInodeFromUrl(shouldUseOldEditor) // is not needed but I am seeing it, to follow the logic edit_contentlet_basic_properties.jsp
                 };
 
                 localStorage.setItem(
@@ -704,5 +706,30 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
         // Return null if no pattern matched
         return null;
+    }
+
+    /**
+     * Generates the back URL for the Block Editor by replacing the inode in the parent URL.
+     *
+     * This method takes the current parent window location and replaces the inode portion
+     * of the URL with the inode from the current window's query parameters.
+     *
+     * This is needed because the iframe refresh the inode when switch between languages,
+     * and needs to be updated to generete the correct back url.
+     *
+     * @param {string} contentletInode - The inode to use if no query parameter is found
+     * @returns {string} The modified URL with the replaced inode
+     */
+    private generateBackUrl(contentletInode: string): string {
+        const currentUrl = window.parent.location.href;
+        // Get inode from query params
+        const params = new URLSearchParams(window.location.search);
+        const inode = params.get('inode') || contentletInode;
+
+        // Pattern to match the inode in the URL
+        const inodePattern = /\/c\/content\/([a-f0-9-]+)/i;
+
+        // Replace the inode in the URL with the inode from query params
+        return currentUrl.replace(inodePattern, `/c/content/${inode}`);
     }
 }
