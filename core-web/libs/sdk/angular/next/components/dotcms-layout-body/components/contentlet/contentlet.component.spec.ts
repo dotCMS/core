@@ -126,6 +126,20 @@ describe('ContentletComponent', () => {
         expect(fallbackComponent).toBeTruthy();
     });
 
+    it('should display fallback component when in dev mode, UserComponent is not available and UserNoComponent is not available', () => {
+        // Set development mode to true
+        spectator.detectChanges();
+        dotcmsStore.$isDevMode.mockReturnValue(true);
+
+        // Set UserComponent to null and UserNoComponent to null
+        component.$UserComponent.set(null);
+        component.$UserNoComponent.set(null);
+        spectator.detectChanges();
+
+        const fallbackComponent = spectator.query('dotcms-fallback-component');
+        expect(fallbackComponent).toBeTruthy();
+    });
+
     it('should not display fallback component when not in dev mode', () => {
         // Set development mode to false
         dotcmsStore.$isDevMode.mockReturnValue(false);
