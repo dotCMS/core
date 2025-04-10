@@ -20,6 +20,7 @@ import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RenderedContainersDataFetcher;
+import com.dotcms.graphql.datafetcher.page.RunningExperimentFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.VanityURLFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
@@ -156,6 +157,9 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new ContainersDataFetcher()));
         pageFields.put("vanityUrl", new TypeFetcher(
                 GraphQLTypeReference.typeRef(DOT_PAGE_VANITY_URL), new VanityURLFetcher())
+        );
+        pageFields.put("runningExperimentId", new TypeFetcher(
+                GraphQLString, new RunningExperimentFetcher())
         );
 
         typesMap.put(DOT_PAGE, TypeUtil.createObjectType(DOT_PAGE, pageFields));
