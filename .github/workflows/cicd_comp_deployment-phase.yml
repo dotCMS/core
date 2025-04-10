@@ -129,6 +129,27 @@ jobs:
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
 
+      # Build and push a LATEST dev Docker image nightly
+      - name: Build/Push Docker Dev Image
+        id: docker_build_dev
+        if: inputs.environment == 'nightly' && inputs.deploy-dev-image
+        uses: ./.github/actions/core-cicd/deployment/deploy-docker
+        with:
+          image_name: dotcms/dotcms-dev
+          docker_platforms: linux/amd64,linux/arm64
+          docker_context: dev-env
+          commit_id: ${{ github.sha }}   # ignored
+          ref: ${{ inputs.environment }}
+          latest: true
+          do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
+          docker_io_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_io_token: ${{ secrets.DOCKER_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          build_args: |
+            DOTCMS_DOCKER_TAG=latest
+            DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
+            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+
       # Deploy CLI artifacts to JFrog Artifactory
       - name: CLI Deploy
         continue-on-error: true
@@ -193,4 +214,3 @@ jobs:
             >
             > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}         
-            
