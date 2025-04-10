@@ -29,3 +29,4 @@ This maintenance release includes the following code fixes:
 23. https://github.com/dotCMS/core/issues/31216 : Push Publishing not escaping comma in title. #31216
 24. https://github.com/dotCMS/core/issues/30544 : The last role in the Roles list is partially visible #30544
 25. https://github.com/dotCMS/core/issues/31509 : Content Import Functionality Disabled When "Content Search" Tool is Hidden for Specific Roles #31509
+26. https://github.com/dotCMS/core/issues/31564 : Special Character & Truncated in Category Name After Creation #31564
