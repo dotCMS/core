@@ -38,7 +38,7 @@ import {
  */
 export function getUVEState(): UVEState | undefined {
     if (typeof window === 'undefined' || window.parent === window || !window.location) {
-        return;
+        return undefined;
     }
 
     const url = new URL(window.location.href);
