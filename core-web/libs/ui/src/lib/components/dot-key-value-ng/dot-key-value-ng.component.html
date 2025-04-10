@@ -27,7 +27,10 @@
     <ng-template pTemplate="emptymessage" let-variables>
         <tr data-testId="no-rows">
             <td [attr.colspan]="$colspan()">
-                {{ 'keyValue.value_no_rows.label' | dm }}
+                <div class="flex p-2 gap-2 justify-content-center">
+                    <i class="pi pi-folder-open"></i>
+                    <p class="text-500">Add your key and value here</p>
+                </div>
             </td>
         </tr>
     </ng-template>

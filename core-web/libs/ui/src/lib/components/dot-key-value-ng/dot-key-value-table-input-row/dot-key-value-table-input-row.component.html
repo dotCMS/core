@@ -24,7 +24,7 @@
                 <small class="error-message">{{ 'keyValue.key_input.required' | dm }}</small>
             }
             @if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
-                <small class="error-message">{{ 'keyValue.key_input.duplicated' | dm }}</small>
+                <small class="error-message">This key already exists</small>
             }
         </div>
     </th>
