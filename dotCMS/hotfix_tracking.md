@@ -26,3 +26,4 @@ This maintenance release includes the following code fixes:
 20. https://github.com/dotCMS/core/issues/30802 : Update clickhouse data to use new field/property names #30802
 21. https://github.com/dotCMS/core/issues/29869 : Unable to authenticate a servlet request #29869
 22. https://github.com/dotCMS/core/issues/30353 : DropOldContentVersionsJob not running on large dataset #30353
+23. https://github.com/dotCMS/core/issues/31216 : Push Publishing not escaping comma in title. #31216
