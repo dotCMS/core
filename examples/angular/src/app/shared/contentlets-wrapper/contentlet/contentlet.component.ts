@@ -1,11 +1,9 @@
 import { Component, input } from '@angular/core';
 
-import { Contentlet } from '@dotcms/client/src/lib/client/content/shared/types';
-
 import { NgTemplateOutlet } from '@angular/common';
 import { GenericContentlet } from '../../../pages/components';
 import { getUVEState } from '@dotcms/uve';
-import { UVE_MODE } from '@dotcms/uve/types';
+import { UVE_MODE, Contentlet } from '@dotcms/uve/types';
 /**
  * Local component for rendering a single contentlet outside the DotCmsLayout.
  * This is useful when you want to render a contentlet in a different context than the DotCmsLayout, like in a modal, sidebar, footer, etc.

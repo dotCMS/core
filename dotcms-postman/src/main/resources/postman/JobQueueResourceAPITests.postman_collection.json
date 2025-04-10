@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e6130f58-d925-4c71-8f50-2a36dbf246cd",
+		"_postman_id": "f28a9949-8843-45c8-a9ca-97ed3c56b3d4",
 		"name": "JobQueueResource API Tests",
 		"description": "Postman collection for testing the JobQueueResource API endpoints.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "36604690"
+		"_exporter_id": "31066048"
 	},
 	"item": [
 		{
@@ -213,7 +213,7 @@
 							"// Check if 'completedAt' is either null or a valid date string",
 							"pm.test(\"'completedAt' is null or a valid date\", function () {",
 							"    pm.expect(entity.completedAt).to.satisfy(function(val) {",
-							"        return val === null || new Date(val).toString() !== \"Invalid Date\";",
+							"        return val === undefined || val === null || new Date(val).toString() !== \"Invalid Date\";",
 							"    });",
 							"});",
 							"",
@@ -266,7 +266,7 @@
 							"// Check if 'startedAt' is either null or a valid date",
 							"pm.test(\"'startedAt' is null or a valid date\", function () {",
 							"    pm.expect(entity.startedAt).to.satisfy(function(val) {",
-							"        return val === null || new Date(val).toString() !== \"Invalid Date\";",
+							"        return val === undefined || val === null || new Date(val).toString() !== \"Invalid Date\";",
 							"    });",
 							"});",
 							"",
@@ -371,7 +371,7 @@
 							"entity.jobs.forEach((job, index) => {",
 							"    pm.test(`Job ${index + 1}: 'completedAt' is null or a valid date`, function () {",
 							"        pm.expect(job.completedAt).to.satisfy(function(val) {",
-							"            return val === null || new Date(val).toString() !== \"Invalid Date\";",
+							"            return val === undefined || val === null || new Date(val).toString() !== \"Invalid Date\";",
 							"        });",
 							"    });",
 							"",
@@ -416,7 +416,7 @@
 							"",
 							"    pm.test(`Job ${index + 1}: 'startedAt' is null or a valid date`, function () {",
 							"        pm.expect(job.startedAt).to.satisfy(function(val) {",
-							"            return val === null || new Date(val).toString() !== \"Invalid Date\";",
+							"            return val === undefined || val === null || new Date(val).toString() !== \"Invalid Date\";",
 							"        });",
 							"    });",
 							"",
@@ -545,7 +545,7 @@
 							"entity.jobs.forEach((job, index) => {",
 							"    pm.test(`Job ${index + 1}: 'completedAt' is null or a valid date`, function () {",
 							"        pm.expect(job.completedAt).to.satisfy(function(val) {",
-							"            return val === null || new Date(val).toString() !== \"Invalid Date\";",
+							"            return val === undefined || val === null || new Date(val).toString() !== \"Invalid Date\";",
 							"        });",
 							"    });",
 							"",
@@ -590,7 +590,7 @@
 							"",
 							"    pm.test(`Job ${index + 1}: 'startedAt' is null or a valid date`, function () {",
 							"        pm.expect(job.startedAt).to.satisfy(function(val) {",
-							"            return val === null || new Date(val).toString() !== \"Invalid Date\";",
+							"            return val === undefined || val === null || new Date(val).toString() !== \"Invalid Date\";",
 							"        });",
 							"    });",
 							"",

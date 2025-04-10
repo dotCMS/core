@@ -92,7 +92,13 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import {
+    EDITOR_STATE,
+    NG_CUSTOM_EVENTS,
+    PALETTE_TOGGLE_BUTTON_ICONS,
+    PALETTE_CLASSES,
+    UVE_STATUS
+} from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
     URL_CONTENT_MAP_MOCK,
@@ -432,6 +438,60 @@ describe('EditEmaEditorComponent', () => {
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
                 });
+            });
+
+            it('should hide palette when clicking the toggle palette button', () => {
+                // First, make sure palette is visible by default
+                expect(spectator.query(byTestId('palette')).classList).toContain(
+                    PALETTE_CLASSES.OPEN
+                );
+
+                // Click the toggle button
+                const toggleButton = spectator.debugElement.query(
+                    By.css('[data-testId="toggle-palette"]')
+                );
+
+                spectator.triggerEventHandler(toggleButton, 'click', {});
+
+                spectator.detectChanges();
+
+                // Palette should now be hidden
+                expect(spectator.query(byTestId('palette')).classList).toContain(
+                    PALETTE_CLASSES.CLOSED
+                );
+            });
+
+            it('should update store state when toggle palette button is clicked', () => {
+                const storeSpy = jest.spyOn(store, 'setPaletteOpen');
+
+                const toggleButton = spectator.query(byTestId('toggle-palette'));
+                spectator.click(toggleButton);
+
+                expect(storeSpy).toHaveBeenCalled();
+            });
+
+            it('should change the icon on palette open', () => {
+                store.setPaletteOpen(true);
+
+                spectator.detectChanges();
+
+                const toggleButton = spectator.query(byTestId('toggle-palette'));
+
+                expect(toggleButton.getAttribute('ng-reflect-icon')).toContain(
+                    PALETTE_TOGGLE_BUTTON_ICONS.OPEN
+                );
+            });
+
+            it('should change the icon on palette close', () => {
+                store.setPaletteOpen(false);
+
+                spectator.detectChanges();
+
+                const toggleButton = spectator.query(byTestId('toggle-palette'));
+
+                expect(toggleButton.getAttribute('ng-reflect-icon')).toContain(
+                    PALETTE_TOGGLE_BUTTON_ICONS.CLOSED
+                );
             });
 
             it('should have a toolbar', () => {

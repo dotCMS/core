@@ -14,7 +14,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { EDITOR_STATE } from '../../../shared/enums';
+import { EDITOR_STATE, PALETTE_TOGGLE_BUTTON_ICONS, PALETTE_CLASSES } from '../../../shared/enums';
 import { Orientation } from '../../models';
 
 export interface EditorState {
@@ -23,6 +23,7 @@ export interface EditorState {
     contentletArea?: ContentletArea;
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
+    paletteOpen: boolean;
 }
 
 export interface EditorToolbarState {
@@ -81,6 +82,8 @@ export interface EditorProps {
         languageId: number;
         containers: DotPageContainerStructure;
         variantId: string;
+        buttonIcon: PALETTE_TOGGLE_BUTTON_ICONS;
+        paletteClass: PALETTE_CLASSES;
     };
     showDialogs: boolean;
     progressBar: boolean;
