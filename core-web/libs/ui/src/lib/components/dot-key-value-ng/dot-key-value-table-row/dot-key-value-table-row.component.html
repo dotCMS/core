@@ -10,36 +10,26 @@
         </td>
     }
     <td data-testId="dot-key-value-key">
-        <p>{{ variable.key }}</p>
+        <p class="pl-2">{{ variable.key }}</p>
     </td>
     @if (isHiddenField) {
         <td data-testId="dot-key-value-label">
-            <p><i class="pi pi-lock inline-block"></i> Value hidden</p>
+            <p>
+                <i class="pi pi-lock inline-block"></i>
+                Value hidden
+            </p>
         </td>
     } @else {
-        <td
-            [pEditableColumn]="variable.value"
-            data-testId="dot-key-value-editable-column"
-            pEditableColumnField="value">
-            <p-cellEditor>
-                <ng-template pTemplate="input">
-                    <input
-                        (keydown.escape)="onCancel($event)"
-                        (keydown.enter)="onPressEnter($event)"
-                        [placeholder]="'keyValue.value_input.placeholder' | dm"
-                        [type]="inputType"
-                        [formControl]="valueControl"
-                        class="field-value-input"
-                        autocomplete="false"
-                        data-testId="dot-key-value-input"
-                        pInputText />
-                </ng-template>
-                <ng-template pTemplate="output">
-                    <span class="dot-key-value-table-row__value">
-                        {{ variable.value }}
-                    </span>
-                </ng-template>
-            </p-cellEditor>
+        <td data-testId="dot-key-value-editable-column">
+            <input
+                (keydown.enter)="onPressEnter($event)"
+                [placeholder]="'keyValue.value_input.placeholder' | dm"
+                [type]="inputType"
+                [formControl]="valueControl"
+                class="dot-key-value-table-row__value-input"
+                autocomplete="false"
+                data-testId="dot-key-value-input"
+                pInputText />
         </td>
     }
     @if (showHiddenField) {

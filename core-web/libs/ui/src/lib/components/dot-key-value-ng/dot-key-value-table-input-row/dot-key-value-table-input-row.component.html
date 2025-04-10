@@ -4,7 +4,7 @@
     }
     <th>
         <div class="flex flex-column">
-            <label for="key-value-input-row-key-input">
+            <label for="key-value-input-row-key-input" class="mb-1">
                 {{ 'keyValue.key_header.label' | dm }}
             </label>
             <input
@@ -12,7 +12,7 @@
                 (keydown.enter)="handleKeyInputEnter($event)"
                 [formControl]="keyControl"
                 [placeholder]="'keyValue.key_input.placeholder' | dm"
-                class="field-key-input"
+                class="dot-key-value-table-input-row__key-input"
                 #keyCell
                 id="key-value-input-row-key-input"
                 data-testId="key-input"
@@ -30,7 +30,7 @@
     </th>
     <th>
         <div class="flex flex-column">
-            <label for="key-value-input-row-value-input">
+            <label for="key-value-input-row-value-input" class="mb-1">
                 {{ 'keyValue.value_header.label' | dm }}
             </label>
             <input
@@ -40,7 +40,7 @@
                 [formControl]="valueControl"
                 [type]="hiddenControl.value ? 'password' : 'text'"
                 [placeholder]="'keyValue.value_input.placeholder' | dm"
-                class="field-value-input"
+                class="dot-key-value-table-input-row__value-input"
                 id="key-value-input-row-value-input"
                 #valueCell
                 data-testId="value-input"
@@ -55,7 +55,7 @@
     @if ($showHiddenField()) {
         <th class="dot-key-value-input__variables-hidden">
             <div class="flex flex-column">
-                <label for="key-value-input-row-hidden-input">
+                <label for="key-value-input-row-hidden-input" class="mb-1">
                     {{ 'keyValue.hidden_header.label' | dm }}
                 </label>
                 <p-inputSwitch

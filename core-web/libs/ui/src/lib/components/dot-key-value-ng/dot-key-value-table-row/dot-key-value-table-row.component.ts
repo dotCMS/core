@@ -119,11 +119,13 @@ export class DotKeyValueTableRowComponent {
         });
 
         this.hiddenControl.valueChanges
-            .pipe(
-                skip(1),
-                debounceTime(50),
-                distinctUntilChanged()
-            )
+            .pipe(skip(1), debounceTime(50), distinctUntilChanged())
+            .subscribe(() => {
+                this.saveVariable();
+            });
+
+        this.valueControl.valueChanges
+            .pipe(skip(1), debounceTime(1000), distinctUntilChanged())
             .subscribe(() => {
                 this.saveVariable();
             });
