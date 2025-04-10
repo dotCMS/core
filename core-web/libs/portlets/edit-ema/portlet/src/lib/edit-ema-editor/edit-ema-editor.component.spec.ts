@@ -434,18 +434,14 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should hide palette when clicking the toggle palette button', () => {
+            it('should hide palette when state changes', () => {
                 // First, make sure palette is visible by default
                 expect(spectator.query(byTestId('palette')).classList).toContain(
                     PALETTE_CLASSES.OPEN
                 );
 
-                // Click the toggle button
-                const toggleButton = spectator.debugElement.query(
-                    By.css('[data-testId="toggle-palette"]')
-                );
-
-                spectator.triggerEventHandler(toggleButton, 'click', {});
+                // Simulate Click the toggle button
+                store.setPaletteOpen(false);
 
                 spectator.detectChanges();
 
@@ -455,33 +451,14 @@ describe('EditEmaEditorComponent', () => {
                 );
             });
 
-            it('should update store state when toggle palette button is clicked', () => {
-                const storeSpy = jest.spyOn(store, 'setPaletteOpen');
-
-                const toggleButton = spectator.query(byTestId('toggle-palette'));
-                spectator.click(toggleButton);
-
-                expect(storeSpy).toHaveBeenCalled();
-            });
-
-            it('should change the class on palette open', () => {
+            it('should have a placeholder for the palette toggle button', () => {
                 store.setPaletteOpen(true);
 
                 spectator.detectChanges();
 
-                const toggleButton = spectator.query(byTestId('toggle-palette'));
+                const placeholder = spectator.query(byTestId('toggle-palette-placeholder'));
 
-                expect(toggleButton.classList).toContain(PALETTE_CLASSES.OPEN);
-            });
-
-            it('should change the icon on palette close', () => {
-                store.setPaletteOpen(false);
-
-                spectator.detectChanges();
-
-                const toggleButton = spectator.query(byTestId('toggle-palette'));
-
-                expect(toggleButton.classList).toContain(PALETTE_CLASSES.CLOSED);
+                expect(placeholder).not.toBeNull();
             });
 
             it('should have a toolbar', () => {
