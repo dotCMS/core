@@ -1,6 +1,7 @@
 package com.dotmarketing.beans;
 
 import com.dotcms.api.tree.Parentable;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
@@ -189,7 +190,7 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		Host host = Try.of(()->
 				APILocator.getHostAPI().find(map.get(TAG_STORAGE).toString(), APILocator.systemUser(), false)).getOrNull();
 
-		if(host!=null) {
+		if(UtilMethods.isSet(()->host.getIdentifier())) {
 			return host.getIdentifier();
 		}
 
