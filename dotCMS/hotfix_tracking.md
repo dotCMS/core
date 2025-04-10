@@ -28,4 +28,4 @@ This maintenance release includes the following code fixes:
 22. https://github.com/dotCMS/core/issues/30353 : DropOldContentVersionsJob not running on large dataset #30353
 23. https://github.com/dotCMS/core/issues/31216 : Push Publishing not escaping comma in title. #31216
 24. https://github.com/dotCMS/core/issues/30544 : The last role in the Roles list is partially visible #30544
-
+25. https://github.com/dotCMS/core/issues/31509 : Content Import Functionality Disabled When "Content Search" Tool is Hidden for Specific Roles #31509
