@@ -25,3 +25,4 @@ This maintenance release includes the following code fixes:
 19. https://github.com/dotCMS/core/issues/30875 : CA Search: Define queries for the help dialog #30875
 20. https://github.com/dotCMS/core/issues/30802 : Update clickhouse data to use new field/property names #30802
 21. https://github.com/dotCMS/core/issues/29869 : Unable to authenticate a servlet request #29869
+22. https://github.com/dotCMS/core/issues/30353 : DropOldContentVersionsJob not running on large dataset #30353
