@@ -1,3 +1,10 @@
+import {
+    addClassToEmptyContentlets,
+    listenBlockEditorInlineEvent,
+    registerUVEEvents,
+    scrollHandler,
+    setClientIsReady
+} from '../../script/utils';
 import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '../types/editor/internal';
 import { Contentlet, DotCMSUVEAction } from '../types/editor/public';
 import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from '../types/events/public';
@@ -73,4 +80,42 @@ export function initInlineEditing(
             data
         }
     });
+}
+
+/**
+ * Initializes the Universal Visual Editor (UVE) with required handlers and event listeners.
+ *
+ * This function sets up:
+ * - Scroll handling
+ * - Empty contentlet styling
+ * - Block editor inline event listening
+ * - Client ready state
+ * - UVE event subscriptions
+ *
+ * @returns {Object} An object containing the cleanup function
+ * @returns {Function} destroyUVESubscriptions - Function to clean up all UVE event subscriptions
+ *
+ * @example
+ * ```typescript
+ * const { destroyUVESubscriptions } = initUVE();
+ *
+ * // When done with UVE
+ * destroyUVESubscriptions();
+ * ```
+ */
+export function initUVE() {
+    addClassToEmptyContentlets();
+    setClientIsReady();
+
+    const { subscriptions } = registerUVEEvents();
+    const { destroyScrollHandler } = scrollHandler();
+    const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
+
+    return {
+        destroyUVESubscriptions: () => {
+            subscriptions.forEach((subscription) => subscription.unsubscribe());
+            destroyScrollHandler();
+            destroyListenBlockEditorInlineEvent();
+        }
+    };
 }
