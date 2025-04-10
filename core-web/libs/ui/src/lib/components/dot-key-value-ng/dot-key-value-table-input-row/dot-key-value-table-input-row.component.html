@@ -21,7 +21,7 @@
                 pSize="small"
                 autocomplete="false" />
             @if (keyControl.dirty && keyControl.hasError('required')) {
-                <small class="error-message">{{ 'keyValue.key_input.required' | dm }}</small>
+                <small class="error-message">This field is required</small>
             }
             @if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
                 <small class="error-message">This key already exists</small>
