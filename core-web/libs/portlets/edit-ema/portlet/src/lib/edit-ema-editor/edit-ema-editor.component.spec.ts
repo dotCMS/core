@@ -471,9 +471,7 @@ describe('EditEmaEditorComponent', () => {
 
                 const toggleButton = spectator.query(byTestId('toggle-palette'));
 
-                expect(toggleButton.getAttribute('ng-reflect-class')).toContain(
-                    PALETTE_CLASSES.OPEN
-                );
+                expect(toggleButton.classList).toContain(PALETTE_CLASSES.OPEN);
             });
 
             it('should change the icon on palette close', () => {
@@ -483,9 +481,7 @@ describe('EditEmaEditorComponent', () => {
 
                 const toggleButton = spectator.query(byTestId('toggle-palette'));
 
-                expect(toggleButton.getAttribute('ng-reflect-class')).toContain(
-                    PALETTE_CLASSES.CLOSED
-                );
+                expect(toggleButton.classList).toContain(PALETTE_CLASSES.CLOSED);
             });
 
             it('should have a toolbar', () => {
