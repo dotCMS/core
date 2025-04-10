@@ -363,8 +363,10 @@ dojo.declare(
 
         // DOTCMS-3896
         _renderSearchField: function (field) {
+
             var fieldVelocityVarName = field['fieldVelocityVarName'];
             var fieldContentlet = field['fieldContentlet'];
+            this.structureVelVar = field['fieldStructureVarName'];
             var value = '';
 
             var type = field['fieldFieldType'];
@@ -401,7 +403,6 @@ dojo.declare(
                             this.structureVelVar +
                             '.' +
                             fieldVelocityVarName +
-                            this.dialogCounter +
                             '"> ' +
                             actual_option[0] +
                             '<br>\n';
@@ -1040,7 +1041,7 @@ dojo.declare(
                             values = formField.value;
                             name = formField.name.substring(
                                 0,
-                                formField.name.length - 1
+                                formField.name.length
                             );
                             fieldsValues[fieldsValues.length] = name;
                             fieldsValues[fieldsValues.length] = values;
