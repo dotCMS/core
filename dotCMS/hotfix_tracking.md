@@ -30,3 +30,4 @@ This maintenance release includes the following code fixes:
 24. https://github.com/dotCMS/core/issues/30544 : The last role in the Roles list is partially visible #30544
 25. https://github.com/dotCMS/core/issues/31509 : Content Import Functionality Disabled When "Content Search" Tool is Hidden for Specific Roles #31509
 26. https://github.com/dotCMS/core/issues/31564 : Special Character & Truncated in Category Name After Creation #31564
+27. https://github.com/dotCMS/core/issues/31752 : UVE: App URL Configuration Not Being Respected #31752

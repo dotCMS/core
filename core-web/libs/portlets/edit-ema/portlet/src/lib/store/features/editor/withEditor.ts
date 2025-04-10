@@ -55,9 +55,10 @@ const buildIframeURL = ({ pageURI, params, isTraditionalPage }) => {
         return new String('');
     }
 
+    // Remove trailing slash from host
+    const host = (params.clientHost || window.location.origin).replace(/\/$/, '');
     const pageAPIQueryParams = createPageApiUrlWithQueryParams(pageURI, params);
-    const origin = params.clientHost || window.location.origin;
-    const url = new URL(pageAPIQueryParams, origin);
+    const url = new URL(pageAPIQueryParams, host);
 
     return url.toString();
 };
