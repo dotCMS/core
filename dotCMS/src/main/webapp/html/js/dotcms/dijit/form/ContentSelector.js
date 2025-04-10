@@ -387,7 +387,9 @@ dojo.declare(
                             this.structureVelVar +
                             '.' +
                             fieldVelocityVarName +
-                            'Field' +
+                            'Field-D' +
+                            this.dialogCounter +
+                            '-O' +
                             i;
                         result =
                             result +
