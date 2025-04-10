@@ -92,13 +92,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
-import {
-    EDITOR_STATE,
-    NG_CUSTOM_EVENTS,
-    PALETTE_TOGGLE_BUTTON_ICONS,
-    PALETTE_CLASSES,
-    UVE_STATUS
-} from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
     URL_CONTENT_MAP_MOCK,
@@ -470,15 +464,15 @@ describe('EditEmaEditorComponent', () => {
                 expect(storeSpy).toHaveBeenCalled();
             });
 
-            it('should change the icon on palette open', () => {
+            it('should change the class on palette open', () => {
                 store.setPaletteOpen(true);
 
                 spectator.detectChanges();
 
                 const toggleButton = spectator.query(byTestId('toggle-palette'));
 
-                expect(toggleButton.getAttribute('ng-reflect-icon')).toContain(
-                    PALETTE_TOGGLE_BUTTON_ICONS.OPEN
+                expect(toggleButton.getAttribute('ng-reflect-class')).toContain(
+                    PALETTE_CLASSES.OPEN
                 );
             });
 
@@ -489,8 +483,8 @@ describe('EditEmaEditorComponent', () => {
 
                 const toggleButton = spectator.query(byTestId('toggle-palette'));
 
-                expect(toggleButton.getAttribute('ng-reflect-icon')).toContain(
-                    PALETTE_TOGGLE_BUTTON_ICONS.CLOSED
+                expect(toggleButton.getAttribute('ng-reflect-class')).toContain(
+                    PALETTE_CLASSES.CLOSED
                 );
             });
 

@@ -78,7 +78,8 @@
     <button
         pButton
         data-testId="toggle-palette"
-        [icon]="palette.buttonIcon"
+        icon="pi pi-angle-right"
+        [ngClass]="palette.paletteClass"
         class="p-button-outlined p-button-sm toggle-palette"
         (click)="togglePalette()"></button>
 

@@ -8,23 +8,67 @@
     // Default state (no palette)
     grid-template-columns: 1fr;
 
-    // Only set two columns if the toggle palette button is present
     &:has(.toggle-palette) {
-        grid-template-columns: 1fr 2rem;
-    }
-
-    // Only set three columns if the toggle palette button and the palette are present
-    &:has(.toggle-palette):has(dot-edit-ema-palette.show-palette) {
-        grid-template-columns: 1fr 2rem 15.5rem;
+        grid-template-columns: 1fr 2rem min-content;
     }
 }
 
-.hide-palette {
-    display: none;
+dot-edit-ema-palette {
+    transition: all 0.3s ease-in-out;
+
+    &.closed {
+        width: 0;
+    }
+
+    &.open {
+        width: 15.5rem;
+    }
 }
 
-.show-palette {
-    display: block;
+.p-button.p-button-outlined.toggle-palette {
+    align-self: flex-start;
+    border: 1px solid $color-palette-primary-300;
+    background-color: $white;
+    border-radius: 0;
+    border-right: 1px solid $white;
+    height: 5.5rem;
+    z-index: 2000;
+    position: relative;
+    right: -1px;
+    top: 53px;
+
+    &:active,
+    &:focus {
+        outline: none;
+    }
+
+    &:hover {
+        background-color: $color-palette-primary-200;
+    }
+
+    ::ng-deep {
+        .p-button-icon {
+            transition: all 0.3s ease-in-out;
+        }
+    }
+
+    &.closed {
+        ::ng-deep {
+            .p-button-icon,
+            .pi {
+                transform: rotate(180deg);
+            }
+        }
+    }
+
+    &.open {
+        ::ng-deep {
+            .p-button-icon,
+            .pi {
+                transform: rotate(0deg);
+            }
+        }
+    }
 }
 
 dot-device-selector-seo {
@@ -88,24 +132,4 @@ a,
 a:focus,
 a:active {
     text-decoration: none;
-}
-
-.p-button.p-button-outlined.toggle-palette {
-    align-self: center;
-    border: 1px solid $color-palette-primary-300;
-    background-color: $color-palette-primary-100;
-    border-radius: 0;
-    border-right: 1px solid $white;
-    z-index: 2000;
-    position: relative;
-    right: -1px;
-
-    &:active,
-    &:focus {
-        outline: none;
-    }
-
-    &:hover {
-        background-color: $color-palette-primary-200;
-    }
 }

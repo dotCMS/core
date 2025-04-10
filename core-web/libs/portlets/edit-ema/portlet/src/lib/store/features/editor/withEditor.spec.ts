@@ -14,12 +14,7 @@ import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
-import {
-    EDITOR_STATE,
-    UVE_STATUS,
-    PALETTE_TOGGLE_BUTTON_ICONS,
-    PALETTE_CLASSES
-} from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -314,7 +309,6 @@ describe('withEditor', () => {
                         variantId: DEFAULT_VARIANT_ID,
                         languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
                         containers: MOCK_RESPONSE_HEADLESS.containers,
-                        buttonIcon: PALETTE_TOGGLE_BUTTON_ICONS.OPEN,
                         paletteClass: PALETTE_CLASSES.OPEN
                     },
                     seoResults: null
@@ -659,18 +653,12 @@ describe('withEditor', () => {
             it('should update the editorProps when the palette is open', () => {
                 store.setPaletteOpen(true);
 
-                expect(store.$editorProps().palette.buttonIcon).toBe(
-                    PALETTE_TOGGLE_BUTTON_ICONS.OPEN
-                );
                 expect(store.$editorProps().palette.paletteClass).toBe(PALETTE_CLASSES.OPEN);
             });
 
             it('should update the editorProps when the palette is closed', () => {
                 store.setPaletteOpen(false);
 
-                expect(store.$editorProps().palette.buttonIcon).toBe(
-                    PALETTE_TOGGLE_BUTTON_ICONS.CLOSED
-                );
                 expect(store.$editorProps().palette.paletteClass).toBe(PALETTE_CLASSES.CLOSED);
             });
         });
