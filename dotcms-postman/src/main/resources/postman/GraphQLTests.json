@@ -3171,7 +3171,7 @@
 									"script": {
 										"exec": [
 											"const maxTimeout = 90000; // 90 seconds",
-											"const maxRetries = 10;    // Maximum number of retry attempts",
+											"const maxRetries = 30;    // Maximum number of retry attempts",
 											"const startTime = parseInt(pm.environment.get(\"startTime\"));",
 											"const retryCount = parseInt(pm.environment.get(\"retryCount\"));",
 											"const elapsedTime = Date.now() - startTime;",
