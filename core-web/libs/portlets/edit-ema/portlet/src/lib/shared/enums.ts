@@ -49,12 +49,7 @@ export enum FormStatus {
     PRISTINE = 'PRISTINE'
 }
 
-export enum PALETTE_TOGGLE_BUTTON_ICONS {
-    OPEN = 'pi pi-angle-right',
-    CLOSED = 'pi pi-angle-left'
-}
-
 export enum PALETTE_CLASSES {
-    OPEN = 'show-palette',
-    CLOSED = 'hide-palette'
+    OPEN = 'open',
+    CLOSED = 'closed'
 }

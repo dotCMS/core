@@ -1455,8 +1455,4 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             this.uveStore.setOGTagResults(results);
         });
     }
-
-    togglePalette() {
-        this.uveStore.setPaletteOpen(!this.uveStore.paletteOpen());
-    }
 }

@@ -28,12 +28,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import {
-    EDITOR_STATE,
-    UVE_STATUS,
-    PALETTE_TOGGLE_BUTTON_ICONS,
-    PALETTE_CLASSES
-} from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -206,9 +201,6 @@ export function withEditor() {
                                   variantId: params?.variantName,
                                   containers: pageAPIResponse?.containers,
                                   languageId: pageAPIResponse?.viewAs.language.id,
-                                  buttonIcon: paletteOpen
-                                      ? PALETTE_TOGGLE_BUTTON_ICONS.OPEN
-                                      : PALETTE_TOGGLE_BUTTON_ICONS.CLOSED,
                                   paletteClass: paletteOpen
                                       ? PALETTE_CLASSES.OPEN
                                       : PALETTE_CLASSES.CLOSED
