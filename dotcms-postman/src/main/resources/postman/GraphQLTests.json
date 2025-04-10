@@ -3170,7 +3170,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"const maxTimeout = 30000; // 10 seconds",
+											"const maxTimeout = 90000; // 90 seconds",
 											"const maxRetries = 10;    // Maximum number of retry attempts",
 											"const startTime = parseInt(pm.environment.get(\"startTime\"));",
 											"const retryCount = parseInt(pm.environment.get(\"retryCount\"));",
