@@ -10,7 +10,7 @@ import { DotCMSUVEAction, UVEEventType } from '../lib/types/editor/public';
  * Adds listeners for both 'scroll' and 'scrollend' events, sending appropriate messages
  * to the editor when these events occur.
  */
-export function scrollHandler(): void {
+export function scrollHandler() {
     const scrollCallback = () => {
         sendMessageToUVE({
             action: DotCMSUVEAction.IFRAME_SCROLL
@@ -25,6 +25,13 @@ export function scrollHandler(): void {
 
     window.addEventListener('scroll', scrollCallback);
     window.addEventListener('scrollend', scrollEndCallback);
+
+    return {
+        destroyScrollHandler: () => {
+            window.removeEventListener('scroll', scrollCallback);
+            window.removeEventListener('scrollend', scrollEndCallback);
+        }
+    };
 }
 
 /**
@@ -130,16 +137,26 @@ export function setClientIsReady(): void {
 /**
  * Listen for block editor inline event.
  */
-export const listenBlockEditorInlineEvent = (): void => {
+export function listenBlockEditorInlineEvent() {
     if (document.readyState === 'complete') {
         // The page is fully loaded or interactive
         listenBlockEditorClick();
 
-        return;
+        return {
+            destroyListenBlockEditorInlineEvent: () => {
+                window.removeEventListener('load', () => listenBlockEditorClick());
+            }
+        };
     }
 
     window.addEventListener('load', () => listenBlockEditorClick());
-};
+
+    return {
+        destroyListenBlockEditorInlineEvent: () => {
+            window.removeEventListener('load', () => listenBlockEditorClick());
+        }
+    };
+}
 
 const listenBlockEditorClick = (): void => {
     const editBlockEditorNodes: NodeListOf<HTMLElement> = document.querySelectorAll(

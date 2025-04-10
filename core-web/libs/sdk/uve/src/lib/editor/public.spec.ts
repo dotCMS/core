@@ -13,9 +13,13 @@ describe('UVE Public Functions', () => {
         postMessageSpy = jest.spyOn(window.parent, 'postMessage');
 
         // Mock all utility functions
-        jest.spyOn(utils, 'scrollHandler').mockImplementation();
+        jest.spyOn(utils, 'scrollHandler').mockImplementation(() => ({
+            destroyScrollHandler: jest.fn()
+        }));
         jest.spyOn(utils, 'addClassToEmptyContentlets').mockImplementation();
-        jest.spyOn(utils, 'listenBlockEditorInlineEvent').mockImplementation();
+        jest.spyOn(utils, 'listenBlockEditorInlineEvent').mockImplementation(() => ({
+            destroyListenBlockEditorInlineEvent: jest.fn()
+        }));
         jest.spyOn(utils, 'setClientIsReady').mockImplementation();
         jest.spyOn(utils, 'registerUVEEvents').mockReturnValue({
             subscriptions: [
@@ -116,6 +120,8 @@ describe('UVE Public Functions', () => {
             // Create spy functions for unsubscribe
             const unsubscribeSpy1 = jest.fn();
             const unsubscribeSpy2 = jest.fn();
+            const destroyScrollHandler = jest.fn();
+            const destroyListenBlockEditorInlineEvent = jest.fn();
 
             // Mock registerUVEEvents with these spy functions
             jest.spyOn(utils, 'registerUVEEvents').mockReturnValue({
@@ -125,12 +131,22 @@ describe('UVE Public Functions', () => {
                 ]
             });
 
+            jest.spyOn(utils, 'scrollHandler').mockReturnValue({
+                destroyScrollHandler
+            });
+
+            jest.spyOn(utils, 'listenBlockEditorInlineEvent').mockReturnValue({
+                destroyListenBlockEditorInlineEvent
+            });
+
             const { destroyUVESubscriptions } = initUVE();
 
             destroyUVESubscriptions();
 
             expect(unsubscribeSpy1).toHaveBeenCalled();
             expect(unsubscribeSpy2).toHaveBeenCalled();
+            expect(destroyScrollHandler).toHaveBeenCalled();
+            expect(destroyListenBlockEditorInlineEvent).toHaveBeenCalled();
         });
 
         it('should handle empty subscriptions array', () => {

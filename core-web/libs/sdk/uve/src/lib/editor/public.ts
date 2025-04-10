@@ -104,16 +104,18 @@ export function initInlineEditing(
  * ```
  */
 export function initUVE() {
-    scrollHandler();
     addClassToEmptyContentlets();
-    listenBlockEditorInlineEvent();
     setClientIsReady();
 
     const { subscriptions } = registerUVEEvents();
+    const { destroyScrollHandler } = scrollHandler();
+    const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
 
     return {
         destroyUVESubscriptions: () => {
             subscriptions.forEach((subscription) => subscription.unsubscribe());
+            destroyScrollHandler();
+            destroyListenBlockEditorInlineEvent();
         }
     };
 }
