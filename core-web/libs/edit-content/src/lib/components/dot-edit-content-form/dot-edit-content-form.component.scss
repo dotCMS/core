@@ -89,7 +89,7 @@ $tab-min-height: 52px;
         align-items: center;
     }
     .dot-edit-content-tabview {
-        .p-tabview-nav-container {
+        .p-tabs-nav-container {
             padding: 0 0 0 $spacing-4;
             border: solid 1px $color-palette-gray-300;
             border-right: none;
@@ -100,7 +100,7 @@ $tab-min-height: 52px;
             z-index: 1000;
         }
 
-        .p-tabview-nav-content .p-tabview-nav {
+        .p-tabs-nav-content .p-tabs-nav {
             border: none;
             border-left: solid 1px $color-palette-gray-300;
             border-right: solid 1px $color-palette-gray-300;
@@ -109,7 +109,7 @@ $tab-min-height: 52px;
             min-width: auto;
         }
 
-        .p-tabview-nav-content {
+        .p-tabs-nav-content {
             display: flex;
             align-items: center;
             width: 100%;

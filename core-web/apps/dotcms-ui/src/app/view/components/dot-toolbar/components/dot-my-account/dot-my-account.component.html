@@ -47,12 +47,17 @@
                 <label dotFieldRequired for="dot-my-account-email-input">
                     {{ 'email-address' | dm }}
                 </label>
-                <input
-                    formControlName="email"
-                    id="dot-my-account-email-input"
-                    data-testid="dot-my-account-email-input"
-                    pInputText
-                    type="email" />
+                <div class="flex items-center">
+                    <p-checkbox
+                        [(ngModel)]="showStarter"
+                        [ngModelOptions]="{ standalone: true }"
+                        #showStarterCheckbox
+                        data-testid="showStarterBtn"
+                        binary="true"
+                        inputId="showStarter">
+                    </p-checkbox>
+                    <label for="showStarter" class="ml-2">{{ 'starter.show.getting.started' | dm }}</label>
+                </div>
                 @if (form.get('email')?.invalid && form.get('email')?.touched) {
                     <small class="p-invalid" data-testid="dot-my-account-email-error">
                         @if (form.get('email')?.errors?.['required']) {
