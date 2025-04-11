@@ -3,10 +3,10 @@ import { getRelationshipFromContentlet } from '@dotcms/edit-content/fields/dot-e
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
-export type FnResolutionValue = (
+export type FnResolutionValue<T> = (
     contentlet: DotCMSContentlet,
     field: DotCMSContentTypeField
-) => string | string[];
+) => T;
 
 /**
  * A function that provides a default resolution value for a contentlet field.
@@ -15,8 +15,22 @@ export type FnResolutionValue = (
  * @param {Object} field - The field object.
  * @returns {*} The resolved value for the field.
  */
-const defaultResolutionFn: FnResolutionValue = (contentlet, field) =>
+const defaultResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
     contentlet ? (contentlet[field.variable] ?? field.defaultValue) : field.defaultValue;
+
+/**
+ * A function that provides a date resolution value for a contentlet field.
+ *
+ * @param {Object} contentlet - The contentlet object.
+ * @param {Object} field - The field object.
+ * @returns {Date} The resolved date value for the field.
+ */
+const dateResolutionFn: FnResolutionValue<Date> = (contentlet, field) => {
+    const value = defaultResolutionFn(contentlet, field);
+    const parseResult = new Date(value as string);
+
+    return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
+};
 
 /**
  * The resolutionValue variable is a record that is responsible for mapping and transforming the
@@ -24,7 +38,7 @@ const defaultResolutionFn: FnResolutionValue = (contentlet, field) =>
  * This enables each field type to properly process its own data.
  *
  */
-export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
+export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue<string | string[] | Date>> = {
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.FILE]: defaultResolutionFn,
     [FIELD_TYPES.IMAGE]: defaultResolutionFn,
@@ -34,6 +48,7 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
     [FIELD_TYPES.DATE]: defaultResolutionFn,
     [FIELD_TYPES.DATE_AND_TIME]: defaultResolutionFn,
+    [FIELD_TYPES.TIME]: defaultResolutionFn,
     [FIELD_TYPES.HIDDEN]: defaultResolutionFn,
     [FIELD_TYPES.HOST_FOLDER]: (contentlet, field) => {
         if (contentlet?.hostName && contentlet?.url) {
@@ -53,7 +68,6 @@ export const resolutionValue: Record<FIELD_TYPES, FnResolutionValue> = {
     [FIELD_TYPES.TAG]: defaultResolutionFn,
     [FIELD_TYPES.TEXT]: defaultResolutionFn,
     [FIELD_TYPES.TEXTAREA]: defaultResolutionFn,
-    [FIELD_TYPES.TIME]: defaultResolutionFn,
     [FIELD_TYPES.WYSIWYG]: defaultResolutionFn,
     [FIELD_TYPES.CATEGORY]: (contentlet, field) => {
         const values = contentlet?.[field.variable];

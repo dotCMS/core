@@ -16,40 +16,20 @@
         display: inline-block;
     }
 }
-
-.dot-key-value-table-row td:nth-child(-n + 2) {
-    padding-right: $spacing-4;
-    width: 37%;
+.dot-key-value-table-row__value-input {
+    line-height: 1.8rem;
+    height: 2rem;
 }
-
-.dot-key-value-table-row__value-label {
-    word-break: break-word;
+.dot-key-value-table-row__value {
+    line-height: 2rem;
+    border-radius: 0.375rem;
+    border: 1.5px solid var(--gray-400);
+    display: block;
+    padding: 0 0.5rem;
 }
-
-.dot-key-value-table-row td,
-.dot-key-value-table-row__variables-actions {
-    padding: 0;
-    height: 4rem;
-    vertical-align: middle;
-    word-break: break-all;
-
-    &:first-child {
-        padding-left: $spacing-4;
-    }
-
-    &:last-child {
-        padding-right: $spacing-4;
-    }
+.dot-key-value-table-row__hidden-switch {
+    margin-top: 0.6rem;
 }
-
-.dot-key-value-table-row__variables-actions {
-    text-align: right;
-
-    & > * {
-        margin-left: $spacing-1;
-    }
-}
-
-.dot-key-value-table-row__variables-hidden {
-    text-align: center;
+.dot-key-value-table-row__key {
+    padding-left: 0.5rem;
 }

@@ -12,41 +12,15 @@
         display: inline-block;
     }
 }
-
-.dot-key-value-input {
-    border-bottom: 1px solid $color-palette-gray-200;
-
-    &:hover {
-        background-color: $color-palette-gray-200;
-    }
-
-    td:nth-child(-n + 2) {
-        padding-right: $spacing-4;
-        width: 37%;
-    }
+.key-value-input__save-button {
+    position: absolute;
+    top: 2.2rem;
 }
-
-.dot-key-value-input td {
-    padding: 0;
-    height: 4rem;
-    vertical-align: middle;
-
-    &:first-child {
-        padding-left: $spacing-4;
-    }
-
-    &:last-child {
-        padding-right: $spacing-4;
-    }
+.dot-key-value-input__hidden-switch {
+    margin-top: 0.6rem;
 }
-
-.dot-key-value-input__variables-actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: $spacing-1;
-}
-
-.dot-key-value-input__variables-hidden {
-    text-align: center;
+.dot-key-value-table-input-row__key-input,
+.dot-key-value-table-input-row__value-input {
+    line-height: 1.8rem;
+    height: 2rem;
 }

@@ -2,32 +2,24 @@ import {
     AfterViewInit,
     Component,
     ElementRef,
-    EventEmitter,
-    Input,
-    OnInit,
-    Output,
-    ViewChild,
+    input,
+    output,
+    viewChild,
     inject
 } from '@angular/core';
 import {
     AbstractControl,
-    FormControl,
-    FormGroup,
     FormsModule,
     ReactiveFormsModule,
     ValidationErrors,
     ValidatorFn,
-    Validators
+    Validators,
+    FormBuilder
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
-
-import { debounceTime } from 'rxjs/operators';
-
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
@@ -46,110 +38,140 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
         DotMessagePipe
     ]
 })
-export class DotKeyValueTableInputRowComponent implements OnInit, AfterViewInit {
-    @ViewChild('keyCell', { static: true }) keyCell: ElementRef;
-    @ViewChild('saveButton', { static: true }) saveButton: ElementRef;
-    @ViewChild('valueCell', { static: true }) valueCell: ElementRef;
+export class DotKeyValueTableInputRowComponent implements AfterViewInit {
+    /** Form builder service for creating reactive forms */
+    #fb = inject(FormBuilder);
 
-    @Input() autoFocus = true;
-    @Input() showHiddenField: boolean;
-    @Input() forbiddenkeys: Record<string, boolean> = {};
+    /** Reference to the key cell element */
+    $keyCell = viewChild.required<ElementRef>('keyCell');
 
-    @Output() save: EventEmitter<DotKeyValue> = new EventEmitter(false);
+    /** Reference to the save button element */
+    $saveButton = viewChild.required<ElementRef>('saveButton');
 
-    form = new FormGroup({
-        key: new FormControl('', [Validators.required, this.keyValidator()]),
-        value: new FormControl('', Validators.required),
-        hidden: new FormControl(false)
+    /** Reference to the value cell element */
+    $valueCell = viewChild.required<ElementRef>('valueCell');
+
+    /** Determines if the key input should be focused on component initialization */
+    $autoFocus = input<boolean>(true, { alias: 'autoFocus' });
+
+    /** Controls visibility of the hidden field option */
+    $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
+
+    /** Record of keys that are not allowed to be used */
+    $forbiddenkeys = input<Record<string, boolean>>({}, { alias: 'forbiddenkeys' });
+
+    /** Enables drag and drop functionality for the row */
+    $dragAndDrop = input<boolean>(false, { alias: 'dragAndDrop' });
+
+    /** Emits the key-value pair when saved */
+    save = output<DotKeyValue>();
+
+    /** Form group for managing key-value inputs and validation */
+    form = this.#fb.nonNullable.group({
+        key: ['', [Validators.required, this.keyValidator()]],
+        value: ['', Validators.required],
+        hidden: [false]
     });
 
-    private dotMessageService = inject(DotMessageService);
-    private dotMessageDisplayService = inject(DotMessageDisplayService);
-
-    get keyControl(): AbstractControl {
-        return this.form.get('key');
+    /** Gets the key form control */
+    get keyControl() {
+        return this.form.controls.key;
     }
 
-    ngOnInit(): void {
-        this.keyControl.valueChanges.pipe(debounceTime(250)).subscribe((value) => {
-            const { duplicatedKey } = this.keyControl.errors || {};
-            if (duplicatedKey) {
-                this.showErrorMessage(value);
-            }
-        });
+    /** Gets the value form control */
+    get valueControl() {
+        return this.form.controls.value;
     }
 
+    /** Gets the hidden form control */
+    get hiddenControl() {
+        return this.form.controls.hidden;
+    }
+
+    /**
+     * Sets focus on key cell if autoFocus is enabled
+     */
     ngAfterViewInit(): void {
-        if (this.autoFocus) {
-            this.keyCell.nativeElement.focus();
+        if (this.$autoFocus()) {
+            this.$keyCell().nativeElement.focus();
         }
     }
 
     /**
-     * Handle Cancel event event emmitting variable index to parent component
-     * @param {KeyboardEvent} $event
-     * @memberof DotKeyValueTableInputRowComponent
+     * Handles cancel event by stopping propagation and resetting the form
+     *
+     * @param {Event} $event - The event object
      */
-    onCancel($event: KeyboardEvent): void {
+    onCancel($event: Event): void {
         $event.stopPropagation();
         this.resetForm();
     }
 
     /**
-     * Handle Save event emitting variable value to parent component
-     * @memberof DotKeyValueTableInputRowComponent
+     * Saves the variable if the form is valid, otherwise marks form controls as touched
+     * Emits the form value when valid and resets the form
      */
     saveVariable(): void {
-        this.save.emit(this.form.getRawValue());
-        this.resetForm();
+        if (this.form.valid) {
+            this.save.emit(this.form.getRawValue());
+            this.resetForm();
+        } else {
+            this.form.markAllAsTouched();
+            this.keyControl.markAsDirty();
+            this.valueControl.markAsDirty();
+        }
     }
 
     /**
-     * Reset form and focus on key input
-     *
-     * @memberof DotKeyValueTableInputRowComponent
+     * Resets the form to initial state and focuses on the key input
      */
     resetForm(): void {
         this.form.reset();
-        this.keyCell.nativeElement.focus();
+        this.$keyCell().nativeElement.focus();
     }
 
     /**
-     * Handle Enter key event on key input
-     * If key control is valid, focus on value input
-     * If key control is invalid, focus on key input
+     * Handles Enter key event on key input
+     * Focuses on value input if key is valid, otherwise keeps focus on key input
      *
-     * @return {*}  {void}
-     * @memberof DotKeyValueTableInputRowComponent
+     * @param {Event} $event - The keyboard event
      */
-    handleKeyInputEnter($event): void {
-        $event.stopPropagation();
+    handleKeyInputEnter($event: Event): void {
+        $event.preventDefault();
 
         if (this.keyControl.valid) {
-            this.valueCell.nativeElement.focus();
+            this.$valueCell().nativeElement.focus();
 
             return;
         }
 
-        this.keyCell.nativeElement.focus();
+        this.$keyCell().nativeElement.focus();
     }
 
+    /**
+     * Handles Enter key event on value input
+     * Triggers save action when Enter is pressed
+     *
+     * @param {Event} $event - The keyboard event
+     */
+    handleValueInputEnter($event: Event): void {
+        $event.preventDefault();
+        this.saveVariable();
+    }
+
+    /**
+     * Creates a validator function that checks if a key is forbidden
+     *
+     * @returns {ValidatorFn} Validator function that returns error if key is forbidden
+     * @private
+     */
     private keyValidator(): ValidatorFn {
         return ({ value }: AbstractControl): ValidationErrors | null => {
-            if (!this.forbiddenkeys[value]) {
+            if (!this.$forbiddenkeys()[value]) {
                 return null;
             }
 
             return { duplicatedKey: true };
         };
-    }
-
-    private showErrorMessage(value: string): void {
-        this.dotMessageDisplayService.push({
-            life: 3000,
-            message: this.dotMessageService.get('keyValue.error.duplicated.variable', value),
-            severity: DotMessageSeverity.ERROR,
-            type: DotMessageType.SIMPLE_MESSAGE
-        });
     }
 }

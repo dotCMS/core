@@ -1,13 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    Output,
-    computed,
-    signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { TableModule } from 'primeng/table';
 
@@ -35,32 +26,40 @@ export interface DotKeyValue {
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotKeyValueComponent implements OnChanges {
-    @Input() autoFocus = true;
-    @Input() showHiddenField: boolean;
-    @Input() variables: DotKeyValue[] = [];
+export class DotKeyValueComponent {
+    $autoFocus = input<boolean>(true, { alias: 'autoFocus' });
+    $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
+    $variables = input<DotKeyValue[]>([], { alias: 'variables' });
+    $dragAndDrop = input<boolean>(false, { alias: 'dragAndDrop' });
 
-    @Output() updatedList: EventEmitter<DotKeyValue[]> = new EventEmitter();
-
-    @Output() delete: EventEmitter<DotKeyValue> = new EventEmitter();
-    @Output() save: EventEmitter<DotKeyValue> = new EventEmitter();
-    @Output() update: EventEmitter<{
+    updatedList = output<DotKeyValue[]>();
+    delete = output<DotKeyValue>();
+    save = output<DotKeyValue>();
+    update = output<{
         variable: DotKeyValue;
         oldVariable: DotKeyValue;
-    }> = new EventEmitter();
+    }>();
 
-    protected variableList = signal<DotKeyValue[]>([]);
-    protected forbiddenkeys = computed<Record<string, boolean>>(() => {
-        return this.variableList().reduce((acc, variable) => {
-            acc[variable.key] = true;
+    $variableList = computed(() => signal(this.$variables()));
+    $forbiddenkeys = computed(() => {
+        const variableList = this.$variableList();
 
-            return acc;
-        }, {});
+        return variableList().reduce(
+            (acc, variable) => {
+                acc[variable.key] = true;
+
+                return acc;
+            },
+            {} as Record<string, boolean>
+        );
     });
 
-    ngOnChanges(): void {
-        this.variableList.set([...this.variables]);
-    }
+    $colspan = computed(() => {
+        const showHiddenField = this.$showHiddenField();
+        const dragAndDrop = this.$dragAndDrop();
+
+        return showHiddenField ? (dragAndDrop ? 5 : 4) : 3;
+    });
 
     /**
      * Handle Delete event, deleting the variable locally and emitting
@@ -69,14 +68,15 @@ export class DotKeyValueComponent implements OnChanges {
      * @memberof DotKeyValueComponent
      */
     deleteVariable(index: number): void {
-        const deletedVariable = this.variableList()[index];
-        this.variableList.update((variables) => {
+        const variableList = this.$variableList();
+        const deletedVariable = variableList()[index];
+        variableList.update((variables) => {
             variables.splice(index, 1);
 
             return [...variables];
         });
         this.delete.emit(deletedVariable);
-        this.updatedList.emit(this.variableList());
+        this.updatedList.emit(variableList());
     }
 
     /**
@@ -86,11 +86,12 @@ export class DotKeyValueComponent implements OnChanges {
      * @memberof DotKeyValueComponent
      */
     saveVariable(variable: DotKeyValue): void {
-        this.variableList.update((variables) => {
+        const variableList = this.$variableList();
+        variableList.update((variables) => {
             return [variable, ...variables];
         });
         this.save.emit(variable);
-        this.updatedList.emit(this.variableList());
+        this.updatedList.emit(variableList());
     }
 
     /**
@@ -100,13 +101,23 @@ export class DotKeyValueComponent implements OnChanges {
      * @memberof DotKeyValueComponent
      */
     updateKeyValue(variable: DotKeyValue, index: number): void {
-        const oldVariable = this.variableList()[index];
-        this.variableList.update((variables) => {
+        const variableList = this.$variableList();
+        const oldVariable = variableList()[index];
+        variableList.update((variables) => {
             variables[index] = variable;
 
             return [...variables];
         });
         this.update.emit({ variable, oldVariable });
-        this.updatedList.emit(this.variableList());
+        this.updatedList.emit(variableList());
+    }
+
+    /**
+     * Reorder variables
+     * @memberof DotKeyValueComponent
+     */
+    reorderVariables(): void {
+        const variableList = this.$variableList();
+        this.updatedList.emit(variableList());
     }
 }
