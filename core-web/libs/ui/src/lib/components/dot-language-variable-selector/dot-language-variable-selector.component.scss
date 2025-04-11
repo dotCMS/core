@@ -1,0 +1,37 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    max-width: 256px;
+
+    .dot-wysiwyg__language-selector {
+        position: relative;
+        min-width: 16rem;
+    }
+    .dot-wysiwyg__search-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: $color-palette-primary-500;
+    }
+    .dot-wysiwyg__language-item {
+        display: flex;
+        gap: $spacing-1;
+        max-width: 100%;
+
+        .dot-wysiwyg__language-key {
+            flex: 0 1 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            direction: rtl;
+        }
+
+        .dot-wysiwyg__language-value {
+            flex: 0 0 auto;
+            font-weight: $font-weight-medium-bold;
+        }
+    }
+}
