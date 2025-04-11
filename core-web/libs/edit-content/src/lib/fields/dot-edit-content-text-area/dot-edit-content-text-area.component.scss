@@ -1,4 +1,10 @@
 :host {
     height: fit-content;
     display: block;
+
+    ::ng-deep {
+        p-dropdown {
+            min-width: 10rem;
+        }
+    }
 }

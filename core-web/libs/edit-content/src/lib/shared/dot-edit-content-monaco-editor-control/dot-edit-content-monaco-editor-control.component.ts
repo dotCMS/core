@@ -25,19 +25,19 @@ import { PaginatorModule } from 'primeng/paginator';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { dotVelocityLanguageDefinition } from '@dotcms/edit-content/custom-languages/velocity-monaco-language';
 
-import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
-import {
-    AvailableLanguageMonaco,
-    COMMENT_TINYMCE,
-    DEFAULT_MONACO_LANGUAGE,
-    DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG
-} from '../../dot-edit-content-wysiwyg-field.constant';
+import { COMMENT_TINYMCE } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.constant';
 import {
     isHtml,
     isJavascript,
     isMarkdown,
     isVelocity
-} from '../../dot-edit-content-wysiwyg-field.utils';
+} from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.utils';
+import {
+    AvailableLanguageMonaco,
+    DEFAULT_MONACO_CONFIG,
+    DEFAULT_MONACO_LANGUAGE
+} from '../../models/dot-edit-content-field.constant';
+import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
 
 interface WindowWithMonaco extends Window {
     monaco?: {
@@ -49,16 +49,16 @@ interface WindowWithMonaco extends Window {
 }
 
 /**
- * DotWysiwygMonacoComponent is an Angular component utilizing Monaco Editor.
- * It provides a WYSIWYG (What You See Is What You Get) editing experience,
+ * DotEditContentMonacoEditorControl is an Angular component utilizing Monaco Editor.
+ * It provides a code editing experience with syntax highlighting and advanced features,
  * with configurations customizable by DotCMS content type fields.
  */
 @Component({
-    selector: 'dot-wysiwyg-monaco',
+    selector: 'dot-edit-content-monaco-editor-control',
     standalone: true,
     imports: [MonacoEditorModule, PaginatorModule, ReactiveFormsModule],
-    templateUrl: './dot-wysiwyg-monaco.component.html',
-    styleUrl: './dot-wysiwyg-monaco.component.scss',
+    templateUrl: './dot-edit-content-monaco-editor-control.component.html',
+    styleUrl: './dot-edit-content-monaco-editor-control.component.scss',
     viewProviders: [
         {
             provide: ControlContainer,
@@ -67,7 +67,7 @@ interface WindowWithMonaco extends Window {
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
+export class DotEditContentMonacoEditorControlComponent implements OnDestroy, OnInit {
     #monacoLoaderService: MonacoEditorLoaderService = inject(MonacoEditorLoaderService);
     #ngZone: NgZone = inject(NgZone);
     #destroyRef = inject(DestroyRef);
@@ -115,7 +115,7 @@ export class DotWysiwygMonacoComponent implements OnDestroy, OnInit {
      */
     $monacoOptions = computed(() => {
         return {
-            ...DEFAULT_WYSIWYG_FIELD_MONACO_CONFIG,
+            ...DEFAULT_MONACO_CONFIG,
             ...this.$customPropsContentField(),
             language: this.$language()
         };
