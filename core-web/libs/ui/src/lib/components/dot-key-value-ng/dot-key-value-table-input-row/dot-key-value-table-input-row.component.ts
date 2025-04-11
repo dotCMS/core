@@ -1,5 +1,4 @@
 import {
-    AfterViewInit,
     Component,
     ElementRef,
     input,
@@ -38,7 +37,7 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
         DotMessagePipe
     ]
 })
-export class DotKeyValueTableInputRowComponent implements AfterViewInit {
+export class DotKeyValueTableInputRowComponent {
     /** Form builder service for creating reactive forms */
     #fb = inject(FormBuilder);
 
@@ -50,9 +49,6 @@ export class DotKeyValueTableInputRowComponent implements AfterViewInit {
 
     /** Reference to the value cell element */
     $valueCell = viewChild.required<ElementRef>('valueCell');
-
-    /** Determines if the key input should be focused on component initialization */
-    $autoFocus = input<boolean>(true, { alias: 'autoFocus' });
 
     /** Controls visibility of the hidden field option */
     $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
@@ -86,15 +82,6 @@ export class DotKeyValueTableInputRowComponent implements AfterViewInit {
     /** Gets the hidden form control */
     get hiddenControl() {
         return this.form.controls.hidden;
-    }
-
-    /**
-     * Sets focus on key cell if autoFocus is enabled
-     */
-    ngAfterViewInit(): void {
-        if (this.$autoFocus()) {
-            this.$keyCell().nativeElement.focus();
-        }
     }
 
     /**

@@ -1,9 +1,8 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
-import { MockProvider } from 'ng-mocks';
 
 import { Table, TableModule } from 'primeng/table';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -30,6 +29,8 @@ const messageServiceMock = new MockDotMessageService({
     'keyValue.key_header.label': 'Key',
     'keyValue.value_no_rows.label': 'No Rows',
     'keyValue.hidden_header.label': 'Hidden',
+    'keyValue.key_input.required': 'This field is required',
+    'keyValue.key_input.duplicated': 'This key already exists',
     Save: 'Save',
     Cancel: 'Cancel'
 });
@@ -47,7 +48,6 @@ describe('DotKeyValueComponent', () => {
             DotMessagePipe
         ],
         providers: [
-            MockProvider(DotMessageDisplayService),
             { provide: DotMessageService, useValue: messageServiceMock }
         ]
     });
@@ -57,7 +57,7 @@ describe('DotKeyValueComponent', () => {
             props: {
                 showHiddenField: false,
                 variables: mockKeyValue
-            }
+            } as unknown
         });
         spectator.detectChanges();
     });
@@ -80,20 +80,20 @@ describe('DotKeyValueComponent', () => {
         const tableRow = spectator.queryAll(DotKeyValueTableRowComponent);
 
         expect(tableRow.length).toBe(2);
-        expect(tableRow[0].variable).toEqual(mockKeyValue[0]);
-        expect(tableRow[1].variable).toEqual(mockKeyValue[1]);
+        expect(tableRow[0].$variable()).toEqual(mockKeyValue[0]);
+        expect(tableRow[1].$variable()).toEqual(mockKeyValue[1]);
         expect(table.value).toEqual(mockKeyValue);
     });
 
-    it('should call `event.stopPropagation()` when keydown.enter event is triggered', () => {
+    it('should call `event.preventDefault()` when keydown.enter event is triggered', () => {
         const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
-        const stopPropagationSpy = jest.spyOn(event, 'stopPropagation');
+        const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
         const table = spectator.query('p-table');
 
         table.dispatchEvent(event);
         spectator.detectChanges();
 
-        expect(stopPropagationSpy).toHaveBeenCalledTimes(1);
+        expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should update an existing variable', () => {

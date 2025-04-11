@@ -27,20 +27,52 @@ export interface DotKeyValue {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotKeyValueComponent {
-    $autoFocus = input<boolean>(true, { alias: 'autoFocus' });
+    /**
+     * Controls whether the hidden field option is displayed in the UI
+     */
     $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
+
+    /**
+     * The list of key-value pairs to be displayed and manipulated
+     */
     $variables = input<DotKeyValue[]>([], { alias: 'variables' });
+
+    /**
+     * Controls whether drag and drop functionality is enabled for reordering items
+     */
     $dragAndDrop = input<boolean>(false, { alias: 'dragAndDrop' });
 
+    /**
+     * Emits the updated list of key-value pairs after any change operation
+     */
     updatedList = output<DotKeyValue[]>();
+
+    /**
+     * Emits when a key-value pair is deleted
+     */
     delete = output<DotKeyValue>();
+
+    /**
+     * Emits when a new key-value pair is saved
+     */
     save = output<DotKeyValue>();
+
+    /**
+     * Emits when an existing key-value pair is updated, containing both new and old values
+     */
     update = output<{
         variable: DotKeyValue;
         oldVariable: DotKeyValue;
     }>();
 
+    /**
+     * Computed signal that holds the current list of variables
+     */
     $variableList = computed(() => signal(this.$variables()));
+
+    /**
+     * Computed hash map of existing keys to prevent duplicates
+     */
     $forbiddenkeys = computed(() => {
         const variableList = this.$variableList();
 
@@ -54,6 +86,9 @@ export class DotKeyValueComponent {
         );
     });
 
+    /**
+     * Computed value for table column span based on component configuration
+     */
     $colspan = computed(() => {
         const showHiddenField = this.$showHiddenField();
         const dragAndDrop = this.$dragAndDrop();
@@ -62,10 +97,10 @@ export class DotKeyValueComponent {
     });
 
     /**
-     * Handle Delete event, deleting the variable locally and emitting
-     * the variable to be handled by a parent smart component
-     * @param {DotKeyValue} variable
-     * @memberof DotKeyValueComponent
+     * Handles the deletion of a key-value pair
+     * Removes the variable from the local list and emits events for parent components
+     *
+     * @param {number} index - The index of the variable to delete in the array
      */
     deleteVariable(index: number): void {
         const variableList = this.$variableList();
@@ -80,10 +115,10 @@ export class DotKeyValueComponent {
     }
 
     /**
-     * Handle Save event, saving the variable locally and emitting
-     * the variable to be handled by a parent smart component
-     * @param {DotKeyValue} variable
-     * @memberof DotKeyValueComponent
+     * Handles saving a new key-value pair
+     * Adds the variable to the local list and emits events for parent components
+     *
+     * @param {DotKeyValue} variable - The new key-value pair to save
      */
     saveVariable(variable: DotKeyValue): void {
         const variableList = this.$variableList();
@@ -95,10 +130,11 @@ export class DotKeyValueComponent {
     }
 
     /**
-     * Handle Save event, saving the variable locally and emitting
-     * the variable to be handled by a parent smart component
-     * @param {DotKeyValue} variable
-     * @memberof DotKeyValueComponent
+     * Handles updating an existing key-value pair
+     * Updates the variable in the local list and emits events for parent components
+     *
+     * @param {DotKeyValue} variable - The updated key-value pair
+     * @param {number} index - The index of the variable to update in the array
      */
     updateKeyValue(variable: DotKeyValue, index: number): void {
         const variableList = this.$variableList();
@@ -113,8 +149,8 @@ export class DotKeyValueComponent {
     }
 
     /**
-     * Reorder variables
-     * @memberof DotKeyValueComponent
+     * Handles reordering of variables after drag and drop operations
+     * Emits the updated list for parent components to process
      */
     reorderVariables(): void {
         const variableList = this.$variableList();
