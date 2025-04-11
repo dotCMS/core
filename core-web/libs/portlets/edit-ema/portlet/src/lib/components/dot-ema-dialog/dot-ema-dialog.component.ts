@@ -13,7 +13,7 @@ import {
     inject,
     signal
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MessageService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
@@ -21,28 +21,15 @@ import { DialogModule } from 'primeng/dialog';
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    DotCMSWorkflowActionEvent,
-    DotContentCompareEvent
-} from '@dotcms/dotcms-models';
+import { DotCMSWorkflowActionEvent, DotContentCompareEvent } from '@dotcms/dotcms-models';
 import { DotContentCompareModule } from '@dotcms/portlets/dot-ema/ui';
 import { DotSpinnerModule, SafeUrlPipe } from '@dotcms/ui';
 
-import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
+import { DotEditorDialogService } from './services/dot-ema-dialog.service';
 
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { DialogStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
-import {
-    ActionPayload,
-    CreateContentletAction,
-    CreateFromPaletteAction,
-    DialogAction,
-    DotPage,
-    EditContentletPayload,
-    VTLFile
-} from '../../shared/models';
+import { DialogAction } from '../../shared/models';
 import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector.component';
 
 @Component({
@@ -57,7 +44,7 @@ import { EmaFormSelectorComponent } from '../ema-form-selector/ema-form-selector
         DotSpinnerModule,
         DotContentCompareModule
     ],
-    providers: [DotEmaDialogStore, DotEmaWorkflowActionsService]
+    providers: [DotEmaWorkflowActionsService]
 })
 export class DotEmaDialogComponent {
     @ViewChild('iframe') iframe: ElementRef<HTMLIFrameElement>;
@@ -70,155 +57,17 @@ export class DotEmaDialogComponent {
     $compareDataExists = computed(() => !!this.$compareData());
 
     private readonly destroyRef$ = inject(DestroyRef);
-    private readonly store = inject(DotEmaDialogStore);
+    private readonly dialogService = inject(DotEditorDialogService);
     private readonly workflowActions = inject(DotEmaWorkflowActionsService);
     private readonly ngZone = inject(NgZone);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly messageService = inject(MessageService);
 
-    protected readonly dialogState = toSignal(this.store.dialogState$);
+    protected readonly dialogState = this.dialogService.state;
     protected readonly dialogStatus = DialogStatus;
 
     protected get ds() {
         return this.dialogState();
-    }
-
-    /**
-     *
-     * @memberof DotEmaDialogComponent
-     */
-    resetDialog() {
-        this.store.resetDialog();
-    }
-
-    /**
-     * Add contentlet
-     *
-     * @param {ActionPayload} actionPayload
-     * @memberof EditEmaEditorComponent
-     */
-    addContentlet(actionPayload: ActionPayload): void {
-        this.store.addContentlet({
-            containerId: actionPayload.container.identifier,
-            acceptTypes: actionPayload.container.acceptTypes ?? '*',
-            language_id: actionPayload.language_id,
-            actionPayload
-        });
-    }
-
-    /**
-     * Add Form
-     *
-     * @param {ActionPayload} actionPayload
-     * @memberof EditEmaEditorComponent
-     */
-    addForm(payload: ActionPayload): void {
-        this.store.addFormContentlet(payload);
-    }
-
-    /**
-     * Add Widget
-     *
-     * @param {ActionPayload} actionPayload
-     * @memberof EditEmaEditorComponent
-     */
-    addWidget(actionPayload: ActionPayload): void {
-        this.store.addContentlet({
-            containerId: actionPayload.container.identifier,
-            acceptTypes: DotCMSBaseTypesContentTypes.WIDGET,
-            language_id: actionPayload.language_id,
-            actionPayload
-        });
-    }
-
-    /**
-     * Edit contentlet
-     *
-     * @param {EditContentletPayload} contentlet
-     * @memberof DotEmaDialogComponent
-     */
-    editContentlet(payload: EditContentletPayload) {
-        this.store.editContentlet(payload);
-    }
-
-    /**
-     * Edits a VTL contentlet.
-     *
-     * @param {VTLFile} vtlFile - The VTL file to edit.
-     * @memberof DotEmaDialogComponent
-     */
-    editVTLContentlet(vtlFile: VTLFile) {
-        this.store.editContentlet({
-            inode: vtlFile.inode,
-            title: vtlFile.name
-        });
-    }
-
-    /**
-     * Translate page
-     *
-     * @param {({ page: DotPage; newLanguage: number | string })} { page, newLanguage }
-     * @memberof DotEmaDialogComponent
-     */
-    translatePage({ page, newLanguage }: { page: DotPage; newLanguage: number | string }) {
-        this.store.translatePage({ page, newLanguage });
-    }
-
-    /**
-     * Edit URL Content Map Contentlet
-     *
-     * @param {DotCMSContentlet} { inode, title }
-     * @memberof DotEmaDialogComponent
-     */
-    editUrlContentMapContentlet({ inode, title }: DotCMSContentlet) {
-        this.store.editUrlContentMapContentlet({
-            inode,
-            title
-        });
-    }
-
-    /**
-     * Create contentlet in the edit content
-     *
-     * @param {CreateContentletAction} { url, contentType, payload }
-     * @memberof DotEmaDialogComponent
-     */
-    createContentlet({ url, contentType, actionPayload }: CreateContentletAction) {
-        this.store.createContentlet({
-            url,
-            contentType,
-            actionPayload
-        });
-    }
-
-    /**
-     * Create contentlet from palette
-     *
-     * @param {CreateFromPaletteAction} { variable, name, payload }
-     * @memberof DotEmaDialogComponent
-     */
-    createContentletFromPalette({
-        variable,
-        name,
-        actionPayload,
-        language_id
-    }: CreateFromPaletteAction) {
-        this.store.createContentletFromPalette({
-            variable,
-            name,
-            actionPayload,
-            language_id
-        });
-    }
-
-    /**
-     * Show loading iframe
-     *
-     * @param {string} [title]
-     * @memberof DotEmaDialogComponent
-     */
-    showLoadingIframe(title?: string) {
-        this.store.loadingIframe(title ?? '');
     }
 
     /**
@@ -227,7 +76,7 @@ export class DotEmaDialogComponent {
      * @param {DotCMSWorkflowActionEvent} event
      * @memberof DotEmaDialogComponent
      */
-    handleWorkflowEvent(event: DotCMSWorkflowActionEvent) {
+    private handleWorkflowEvent(event: DotCMSWorkflowActionEvent) {
         this.workflowActions
             .handleWorkflowAction(event, this.callEmbeddedFunction.bind(this))
             .pipe(take(1))
@@ -257,7 +106,7 @@ export class DotEmaDialogComponent {
      *
      * @memberof DotEmaDialogComponent
      */
-    reloadIframe() {
+    private reloadIframe() {
         this.iframe.nativeElement.contentWindow.location.reload();
     }
 
@@ -280,17 +129,6 @@ export class DotEmaDialogComponent {
         });
     }
 
-    /**
-     * Open dialog on URL
-     *
-     * @param {string} url
-     * @param {string} title
-     * @memberof DotEmaDialogComponent
-     */
-    openDialogOnUrl(url: string, title: string) {
-        this.store.openDialogOnURL({ url, title });
-    }
-
     protected onHide() {
         const event = new CustomEvent('ng-event', {
             detail: {
@@ -299,7 +137,7 @@ export class DotEmaDialogComponent {
         });
 
         this.emitAction(event);
-        this.resetDialog();
+        this.dialogService.resetDialog();
     }
 
     /**
@@ -309,7 +147,7 @@ export class DotEmaDialogComponent {
      * @memberof DotEmaDialogComponent
      */
     protected onIframeLoad() {
-        this.store.setStatus(this.dialogStatus.INIT);
+        this.dialogService.setStatus(this.dialogStatus.INIT);
         // This event is destroyed when you close the dialog
 
         fromEvent(
@@ -323,7 +161,7 @@ export class DotEmaDialogComponent {
 
                 switch (event.detail.name) {
                     case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
-                        this.store.resetDialog();
+                        this.dialogService.resetDialog();
 
                         break;
                     }
@@ -338,13 +176,13 @@ export class DotEmaDialogComponent {
                     case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
                         // The edit content emits this for savings when translating a page and does not emit anything when changing the content
                         if (this.dialogState().form.isTranslation) {
-                            this.store.setSaved();
+                            this.dialogService.setSaved();
 
                             if (event.detail.payload.isMoveAction) {
                                 this.reloadIframe();
                             }
                         } else {
-                            this.store.setDirty();
+                            this.dialogService.setDirty();
                         }
 
                         break;
@@ -356,7 +194,7 @@ export class DotEmaDialogComponent {
                     }
 
                     case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                        this.store.setSaved();
+                        this.dialogService.setSaved();
 
                         if (event.detail.payload.isMoveAction) {
                             this.reloadIframe();
@@ -409,8 +247,10 @@ export class DotEmaDialogComponent {
     }
 
     private emitAction(event: CustomEvent) {
-        const { actionPayload, form, clientAction } = this.dialogState();
+        const dialogState = this.dialogState();
+        const { actionPayload, form, clientAction } = dialogState;
 
-        this.action.emit({ event, actionPayload, form, clientAction });
+        const dialogAction: DialogAction = { event, actionPayload, form, clientAction };
+        this.action.emit(dialogAction);
     }
 }
