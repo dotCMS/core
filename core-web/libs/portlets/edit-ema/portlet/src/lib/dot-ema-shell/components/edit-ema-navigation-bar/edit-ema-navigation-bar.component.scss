@@ -40,7 +40,6 @@
     border: 1px solid $color-palette-primary-300;
     background-color: $white;
     border-radius: 0;
-    border-right: 1px solid $white;
     height: 5.5rem;
     z-index: 10;
     position: absolute;
@@ -63,7 +62,7 @@
 
     &.closed {
         left: -2rem;
-        border-right: none; // To make the blending illusion
+        border-right: none; // To make the blending illusion with the nav bar
         ::ng-deep {
             .p-button-icon,
             .pi {
@@ -74,6 +73,8 @@
 
     &.open {
         left: -17.5rem;
+        border: 1px solid $color-palette-gray-200; // Same as the border of the palette to create a blending illusion
+        border-right: 1px solid $white;
         ::ng-deep {
             .p-button-icon,
             .pi {
