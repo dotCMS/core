@@ -1,5 +1,6 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { fakeAsync, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -23,8 +24,6 @@ const mockVariable: DotKeyValue = {
     value: 'John'
 };
 
-const PASSWORD_PLACEHOLDER = '*****';
-
 describe('DotKeyValueTableRowComponent', () => {
     let spectator: Spectator<DotKeyValueTableRowComponent>;
     const createComponent = createComponentFactory({
@@ -46,9 +45,7 @@ describe('DotKeyValueTableRowComponent', () => {
                 useValue: new MockDotMessageService({
                     'keyValue.key_input.placeholder': 'Enter Key',
                     'keyValue.value_input.placeholder': 'Enter Value',
-                    Save: 'Save',
-                    Cancel: 'Cancel',
-                    'keyValue.error.duplicated.variable': 'test {0}'
+                    'keyValue.value_hidden': 'Value hidden'
                 })
             },
             Table,
@@ -60,7 +57,9 @@ describe('DotKeyValueTableRowComponent', () => {
         spectator = createComponent({
             props: {
                 showHiddenField: false,
-                variable: mockVariable
+                variable: mockVariable,
+                index: 0,
+                dragAndDrop: false
             } as unknown
         });
 
@@ -70,63 +69,30 @@ describe('DotKeyValueTableRowComponent', () => {
     describe('Editable variables', () => {
         it('should load the component', () => {
             const deleteButton = spectator.query(byTestId('dot-key-value-delete-button'));
-            const editButton = spectator.query(byTestId('dot-key-value-edit-button'));
-            const label = spectator.query(byTestId('dot-editable-key-value'));
+            const valueInput = spectator.query(byTestId('dot-key-value-input'));
+            const keyElement = spectator.query(byTestId('dot-key-value-key'));
 
             expect(deleteButton).toBeTruthy();
-            expect(editButton).toBeTruthy();
-            expect(label).toBeTruthy();
-        });
-
-        it('should show edit menu when focus on a field', () => {
-            const editButton = spectator.query(byTestId('dot-key-value-edit-button'));
-            spectator.click(editButton);
-            spectator.detectChanges();
-
-            const valueInput = spectator.query(byTestId('dot-key-value-input')) as HTMLInputElement;
-            valueInput.dispatchEvent(new FocusEvent('focus'));
-            spectator.detectChanges();
-
-            const cancelButton = spectator.query(byTestId('dot-key-value-cancel-button'));
-            const saveButton = spectator.query(
-                byTestId('dot-key-value-save-button')
-            ) as HTMLButtonElement;
-
-            expect(cancelButton).toBeTruthy();
-            expect(saveButton).toBeTruthy();
-            expect(saveButton.disabled).toBeFalsy();
+            expect(valueInput).toBeTruthy();
+            expect(keyElement.textContent).toContain('name');
         });
 
         describe('Edit Input field is visible', () => {
-            beforeEach(() => {
-                const editButton = spectator.query(byTestId('dot-key-value-edit-button'));
-                spectator.click(editButton);
-                spectator.detectChanges();
-            });
-
-            it('should emit save event when button clicked', () => {
+            it('should emit save when the value is changed', fakeAsync(() => {
                 const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-                const valueInput = spectator.query(
+                const valueInput = spectator.query<HTMLInputElement>(
                     byTestId('dot-key-value-input')
-                ) as HTMLInputElement;
+                );
 
-                valueInput.value = 'newValue';
-                spectator.dispatchFakeEvent(valueInput, 'input');
+                spectator.typeInElement('newValue', valueInput);
                 spectator.detectChanges();
-
-                valueInput.dispatchEvent(new FocusEvent('focus'));
-                spectator.detectChanges();
-
-                const saveButton = spectator.query(byTestId('dot-key-value-save-button'));
-
-                expect(saveButton).toBeTruthy();
-                spectator.click(saveButton);
+                tick(1100);
 
                 expect(saveSpy).toHaveBeenCalledWith({
                     ...mockVariable,
                     value: 'newValue'
                 });
-            });
+            }));
 
             it('should emit delete event when button clicked', () => {
                 const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
@@ -138,98 +104,136 @@ describe('DotKeyValueTableRowComponent', () => {
                 expect(deleteSpy).toHaveBeenCalledWith(mockVariable);
             });
 
-            it('should reset form when cancel is clicked', () => {
-                const editButton = spectator.query(byTestId('dot-key-value-edit-button'));
-                spectator.click(editButton);
-                spectator.detectChanges();
-
-                const valueInput = spectator.query(
+            it('should emit save when Enter key is pressed', () => {
+                const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+                const valueInput = spectator.query<HTMLInputElement>(
                     byTestId('dot-key-value-input')
-                ) as HTMLInputElement;
-                valueInput.value = 'newValue';
-                spectator.dispatchFakeEvent(valueInput, 'input');
-                valueInput.dispatchEvent(new FocusEvent('focus'));
+                );
+
+                spectator.typeInElement('newValue', valueInput);
+                valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
                 spectator.detectChanges();
 
-                const cancelButton = spectator.query(byTestId('dot-key-value-cancel-button'));
-                expect(cancelButton).toBeTruthy();
-                spectator.click(cancelButton);
+                expect(saveSpy).toHaveBeenCalledWith({
+                    ...mockVariable,
+                    value: 'newValue',
+                    hidden: false
+                });
             });
 
-            it('should reset form when Escape key is pressed', () => {
-                const valueInput = spectator.query(
+            it('should set input type to text when not hidden', () => {
+                const valueInput = spectator.query<HTMLInputElement>(
                     byTestId('dot-key-value-input')
-                ) as HTMLInputElement;
-                valueInput.value = 'newValue';
-                spectator.dispatchFakeEvent(valueInput, 'input');
-                spectator.detectChanges();
+                );
 
-                valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-                spectator.detectChanges();
-
-                expect(spectator.component.form.get('value').value).toBe(mockVariable.value);
+                expect(valueInput.type).toBe('text');
+                expect(spectator.component.inputType).toBe('text');
             });
         });
 
         describe('Hidden Fields', () => {
             beforeEach(() => {
-                spectator.setInput({
-                    showHiddenField: true,
-                    variable: { ...mockVariable, hidden: true }
+                spectator = createComponent({
+                    props: {
+                        showHiddenField: true,
+                        variable: { ...mockVariable, hidden: true },
+                        index: 0,
+                        dragAndDrop: false
+                    } as unknown
                 });
                 spectator.detectChanges();
             });
 
             it('should show the password placeholder instead of the value', () => {
-                const valueLabel = spectator.query(byTestId('dot-key-value-label'));
-                expect(valueLabel.textContent.trim()).toBe(PASSWORD_PLACEHOLDER);
+                const valueLabel = spectator.query<HTMLParagraphElement>(
+                    byTestId('dot-key-value-label')
+                );
+                expect(valueLabel.textContent).toContain('Value hidden');
             });
 
             it('should have disabled edit controls when field is hidden', async () => {
-                spectator.setInput({
-                    showHiddenField: true,
-                    variable: { ...mockVariable, hidden: true }
-                });
-                spectator.detectChanges();
                 await spectator.fixture.whenStable();
 
                 expect(spectator.component.form).toBeTruthy();
 
                 const inputSwitch = spectator.query(byTestId('dot-key-value-hidden-switch'));
-                const editButton = spectator.query(byTestId('dot-key-value-edit-button'));
 
-                expect(inputSwitch).toBeTruthy();
-                expect(editButton).toBeTruthy();
+                expect(inputSwitch).toBeFalsy();
                 expect(spectator.component.$isHiddenField()).toBe(true);
-                expect(editButton.getAttribute('ng-reflect-disabled')).toBe('true');
             });
 
-            it('should toggle password visibility when switch is clicked', () => {
-                spectator.setInput({
-                    showHiddenField: true,
-                    variable: { ...mockVariable, hidden: false }
+            it('should set input type to password when hidden', () => {
+                // Create with non-hidden to then toggle to hidden
+                spectator = createComponent({
+                    props: {
+                        showHiddenField: true,
+                        variable: mockVariable,
+                        index: 0,
+                        dragAndDrop: false
+                    } as unknown
                 });
                 spectator.detectChanges();
 
-                const editButton = spectator.query(byTestId('dot-key-value-edit-button'));
-                spectator.click(editButton);
+                // Now manually set form control to hidden
+                spectator.component.hiddenControl.setValue(true);
                 spectator.detectChanges();
 
-                // Trigger focus to show edit menu
-                const valueInput = spectator.query(
-                    byTestId('dot-key-value-input')
-                ) as HTMLInputElement;
-                valueInput.dispatchEvent(new FocusEvent('focus'));
-                spectator.detectChanges();
-
-                const inputSwitch = spectator.query('p-inputSwitch');
-                const switchElement = inputSwitch.querySelector('.p-inputswitch');
-                spectator.click(switchElement);
-                spectator.detectChanges();
-
-                expect(spectator.component.form.get('hidden').value).toBe(true);
                 expect(spectator.component.inputType).toBe('password');
             });
+        });
+
+        describe('Drag and Drop', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    props: {
+                        showHiddenField: false,
+                        variable: mockVariable,
+                        index: 0,
+                        dragAndDrop: true
+                    } as unknown
+                });
+                spectator.detectChanges();
+            });
+
+            it('should show the drag handle when dragAndDrop is true', () => {
+                const dragHandle = spectator.query('.pi-bars');
+                expect(dragHandle).toBeTruthy();
+            });
+        });
+
+        describe('Hidden Field Toggle', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    props: {
+                        showHiddenField: true,
+                        variable: mockVariable,
+                        index: 0,
+                        dragAndDrop: false
+                    } as unknown
+                });
+                spectator.detectChanges();
+            });
+
+            it('should show the hidden toggle when showHiddenField is true', () => {
+                const hiddenSwitch = spectator.query(byTestId('dot-key-value-hidden-switch'));
+                expect(hiddenSwitch).toBeTruthy();
+            });
+
+            it('should emit save when hidden toggle is changed', fakeAsync(() => {
+                const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+                const hiddenSwitch = spectator
+                    .query(byTestId('dot-key-value-hidden-switch'))
+                    .querySelector('input');
+
+                spectator.click(hiddenSwitch);
+                spectator.detectChanges();
+                tick(100); // debounce is 50ms
+
+                expect(saveSpy).toHaveBeenCalledWith({
+                    ...mockVariable,
+                    hidden: true
+                });
+            }));
         });
     });
 });

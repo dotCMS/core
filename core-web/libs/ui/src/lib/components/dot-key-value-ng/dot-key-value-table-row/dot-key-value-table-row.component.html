@@ -16,7 +16,7 @@
         <td data-testId="dot-key-value-label">
             <p>
                 <i class="pi pi-lock inline-block"></i>
-                Value hidden
+                {{ 'keyValue.value_hidden' | dm }}
             </p>
         </td>
     } @else {
@@ -45,7 +45,7 @@
 
     <td class="dot-key-value-table-row__variables-actions">
         <p-button
-            (click)="delete.emit(variable)"
+            (click)="delete.emit()"
             data-testId="dot-key-value-delete-button"
             icon="pi pi-times"
             severity="secondary"

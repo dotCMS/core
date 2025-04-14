@@ -24,9 +24,9 @@
             #tableRow />
     </ng-template>
     <ng-template pTemplate="emptymessage" let-variables>
-        <tr data-testId="no-rows">
+        <tr>
             <td [attr.colspan]="$colspan()">
-                <div class="flex p-2 gap-2 justify-content-center">
+                <div class="flex p-2 gap-2 justify-content-center" data-testId="no-rows">
                     <i class="pi pi-folder-open"></i>
                     <p class="text-500">{{ 'keyValue.value_no_rows.label' | dm }}</p>
                 </div>

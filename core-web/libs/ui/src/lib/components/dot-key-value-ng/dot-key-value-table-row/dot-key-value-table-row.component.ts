@@ -60,7 +60,7 @@ export class DotKeyValueTableRowComponent {
     /**
      * Event emitted when a variable is deleted, containing the DotKeyValue to be removed
      */
-    delete = output<DotKeyValue>();
+    delete = output<void>();
 
     /**
      * Input that controls whether to show a hidden field toggle
@@ -75,7 +75,7 @@ export class DotKeyValueTableRowComponent {
     /**
      * Input that controls whether to show a drag and drop handle
      */
-    $dragAndDrop = input<boolean>(false, { alias: 'dragAndDrop' });
+    $dragAndDrop = input.required<boolean>({ alias: 'dragAndDrop' });
 
     /**
      * The key-value pair to be displayed and edited in this row
@@ -153,18 +153,6 @@ export class DotKeyValueTableRowComponent {
      */
     get inputType(): string {
         return this.hiddenControl.value ? 'password' : 'text';
-    }
-
-    /**
-     * Handles cancel event by resetting the form to the original variable values
-     * @param {Event} event - The DOM event
-     */
-    onCancel(event: Event): void {
-        event.preventDefault();
-        this.form.reset({
-            value: this.$variable().value,
-            hidden: this.$variable().hidden
-        });
     }
 
     /**
