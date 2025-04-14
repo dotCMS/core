@@ -139,7 +139,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
             const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
             expect(comp.fieldVariables.length).toBe(mockFieldVariables.length);
-            expect(dotKeyValue.variables.length).toBe(mockFieldVariables.length);
+            expect(dotKeyValue.$initialValue().length).toBe(mockFieldVariables.length);
         });
 
         it('should not set allowedBlocks variable', () => {
