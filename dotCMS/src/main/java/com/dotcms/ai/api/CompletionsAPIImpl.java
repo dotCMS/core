@@ -199,7 +199,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
         return json;
     }
-    
+
     private ResolvedModel resolveModel(final CompletionsForm completionsForm) {
         final AIModel aiModel = config.resolveModel(AIModelType.TEXT);
 
