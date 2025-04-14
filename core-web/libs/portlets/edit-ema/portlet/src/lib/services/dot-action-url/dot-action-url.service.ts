@@ -5,7 +5,9 @@ import { Injectable, inject } from '@angular/core';
 
 import { catchError, pluck } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotActionUrlService {
     private http = inject(HttpClient);
 
