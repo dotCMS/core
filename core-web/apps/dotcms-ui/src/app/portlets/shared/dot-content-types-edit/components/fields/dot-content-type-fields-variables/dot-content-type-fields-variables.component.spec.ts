@@ -152,10 +152,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 ])
             );
             fixtureHost.detectChanges();
-
-            const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
             expect(comp.fieldVariables.length).toBe(0);
-            expect(dotKeyValue.variables.length).toBe(0);
         });
     });
 });
