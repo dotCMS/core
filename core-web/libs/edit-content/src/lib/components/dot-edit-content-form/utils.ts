@@ -19,20 +19,6 @@ const defaultResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
     contentlet ? (contentlet[field.variable] ?? field.defaultValue) : field.defaultValue;
 
 /**
- * A function that provides a date resolution value for a contentlet field.
- *
- * @param {Object} contentlet - The contentlet object.
- * @param {Object} field - The field object.
- * @returns {Date} The resolved date value for the field.
- */
-const dateResolutionFn: FnResolutionValue<Date> = (contentlet, field) => {
-    const value = defaultResolutionFn(contentlet, field);
-    const parseResult = new Date(value as string);
-
-    return isNaN(parseResult.getTime()) ? value && new Date() : parseResult;
-};
-
-/**
  * The resolutionValue variable is a record that is responsible for mapping and transforming the
  * saved value in the contentlet to its corresponding form representation, based on the field type.
  * This enables each field type to properly process its own data.

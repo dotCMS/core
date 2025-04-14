@@ -450,8 +450,7 @@ export class DotEditContentFormComponent implements OnInit {
 
         const value = resolutionFn(contentlet, field);
 
-        // return getFinalCastedValue(value, field) ?? null;
-        return value;
+        return getFinalCastedValue(value, field) ?? null;
     }
 
     /**
