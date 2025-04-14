@@ -10,7 +10,7 @@ import { DotCMSUVEAction, UVEEventType } from '../lib/types/editor/public';
  * Adds listeners for both 'scroll' and 'scrollend' events, sending appropriate messages
  * to the editor when these events occur.
  */
-export function scrollHandler(): void {
+export function scrollHandler() {
     const scrollCallback = () => {
         sendMessageToUVE({
             action: DotCMSUVEAction.IFRAME_SCROLL
@@ -25,6 +25,13 @@ export function scrollHandler(): void {
 
     window.addEventListener('scroll', scrollCallback);
     window.addEventListener('scrollend', scrollEndCallback);
+
+    return {
+        destroyScrollHandler: () => {
+            window.removeEventListener('scroll', scrollCallback);
+            window.removeEventListener('scrollend', scrollEndCallback);
+        }
+    };
 }
 
 /**
@@ -63,34 +70,52 @@ export function addClassToEmptyContentlets(): void {
  * scroll event handling.
  */
 export function registerUVEEvents() {
-    createUVESubscription(UVEEventType.PAGE_RELOAD, () => {
+    const pageReloadSubscription = createUVESubscription(UVEEventType.PAGE_RELOAD, () => {
         window.location.reload();
     });
 
-    createUVESubscription(UVEEventType.REQUEST_BOUNDS, (bounds) => {
-        setBounds(bounds);
-    });
-
-    createUVESubscription(UVEEventType.IFRAME_SCROLL, (direction) => {
-        if (
-            (window.scrollY === 0 && direction === 'up') ||
-            (computeScrollIsInBottom() && direction === 'down')
-        ) {
-            // If the iframe scroll is at the top or bottom, do not send anything.
-            // This avoids losing the scrollend event.
-            return;
+    const requestBoundsSubscription = createUVESubscription(
+        UVEEventType.REQUEST_BOUNDS,
+        (bounds) => {
+            setBounds(bounds);
         }
+    );
 
-        const scrollY = direction === 'up' ? -120 : 120;
-        window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
-    });
+    const iframeScrollSubscription = createUVESubscription(
+        UVEEventType.IFRAME_SCROLL,
+        (direction) => {
+            if (
+                (window.scrollY === 0 && direction === 'up') ||
+                (computeScrollIsInBottom() && direction === 'down')
+            ) {
+                // If the iframe scroll is at the top or bottom, do not send anything.
+                // This avoids losing the scrollend event.
+                return;
+            }
 
-    createUVESubscription(UVEEventType.CONTENTLET_HOVERED, (contentletHovered) => {
-        sendMessageToUVE({
-            action: DotCMSUVEAction.SET_CONTENTLET,
-            payload: contentletHovered
-        });
-    });
+            const scrollY = direction === 'up' ? -120 : 120;
+            window.scrollBy({ left: 0, top: scrollY, behavior: 'smooth' });
+        }
+    );
+
+    const contentletHoveredSubscription = createUVESubscription(
+        UVEEventType.CONTENTLET_HOVERED,
+        (contentletHovered) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.SET_CONTENTLET,
+                payload: contentletHovered
+            });
+        }
+    );
+
+    return {
+        subscriptions: [
+            pageReloadSubscription,
+            requestBoundsSubscription,
+            iframeScrollSubscription,
+            contentletHoveredSubscription
+        ]
+    };
 }
 
 /**
@@ -112,16 +137,26 @@ export function setClientIsReady(): void {
 /**
  * Listen for block editor inline event.
  */
-export const listenBlockEditorInlineEvent = (): void => {
+export function listenBlockEditorInlineEvent() {
     if (document.readyState === 'complete') {
         // The page is fully loaded or interactive
         listenBlockEditorClick();
 
-        return;
+        return {
+            destroyListenBlockEditorInlineEvent: () => {
+                window.removeEventListener('load', () => listenBlockEditorClick());
+            }
+        };
     }
 
     window.addEventListener('load', () => listenBlockEditorClick());
-};
+
+    return {
+        destroyListenBlockEditorInlineEvent: () => {
+            window.removeEventListener('load', () => listenBlockEditorClick());
+        }
+    };
+}
 
 const listenBlockEditorClick = (): void => {
     const editBlockEditorNodes: NodeListOf<HTMLElement> = document.querySelectorAll(
