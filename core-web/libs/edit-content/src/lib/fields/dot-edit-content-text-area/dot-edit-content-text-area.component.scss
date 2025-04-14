@@ -5,6 +5,9 @@
     ::ng-deep {
         p-dropdown {
             min-width: 10rem;
+            .p-dropdown .p-dropdown-trigger {
+                height: 100%;
+            }
         }
     }
 }

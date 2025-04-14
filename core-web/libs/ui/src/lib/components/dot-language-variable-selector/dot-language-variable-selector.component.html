@@ -1,7 +1,8 @@
-<div class="dot-wysiwyg__language-selector">
+<div class="dot-language-variable-selector">
     <p-autoComplete
         #autoComplete
-        class="dot-wysiwyg__language-autocomplete"
+        [appendTo]="'body'"
+        class="dot-language-variable-selector__autocomplete"
         data-testId="language-variable-selector"
         [placeholder]="'edit.content.wysiwyg-field.language-variable-placeholder' | dm"
         [(ngModel)]="$selectedItem"
@@ -13,13 +14,13 @@
         tooltipEvent="focus"
         (onSelect)="emitSelectLanguageVariable($event)"
         (completeMethod)="loadSuggestions()"
-        [styleClass]="'dot-wysiwyg__language-autocomplete--with-icon'">
+        [styleClass]="'dot-language-variable-selector__autocomplete--with-icon'">
         <ng-template let-variable pTemplate="item">
-            <span class="dot-wysiwyg__language-item">
-                <span class="dot-wysiwyg__language-key">{{ variable.key }}</span>
-                <span class="dot-wysiwyg__language-value">{{ variable.value }}</span>
+            <span class="dot-language-variable-selector__item">
+                <span class="dot-language-variable-selector__item-key">{{ variable.key }}</span>
+                <span class="dot-language-variable-selector__item-value">{{ variable.value }}</span>
             </span>
         </ng-template>
     </p-autoComplete>
-    <i class="dot-wysiwyg__search-icon pi pi-search"></i>
+    <i class="dot-language-variable-selector__search-icon pi pi-search"></i>
 </div>

@@ -4,11 +4,11 @@
     display: block;
     max-width: 256px;
 
-    .dot-wysiwyg__language-selector {
+    .dot-language-variable-selector {
         position: relative;
         min-width: 16rem;
     }
-    .dot-wysiwyg__search-icon {
+    .dot-language-variable-selector__search-icon {
         position: absolute;
         right: 10px;
         top: 50%;
@@ -16,22 +16,43 @@
         pointer-events: none;
         color: $color-palette-primary-500;
     }
-    .dot-wysiwyg__language-item {
-        display: flex;
-        gap: $spacing-1;
-        max-width: 100%;
+}
 
-        .dot-wysiwyg__language-key {
-            flex: 0 1 auto;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            direction: rtl;
-        }
+// Override PrimeNG styles
+::ng-deep {
+    .p-autocomplete {
+        width: 100%;
+    }
 
-        .dot-wysiwyg__language-value {
-            flex: 0 0 auto;
-            font-weight: $font-weight-medium-bold;
+    .p-autocomplete-panel {
+        .p-autocomplete-items {
+            padding: 0;
+
+            .p-autocomplete-item {
+                padding: $spacing-2;
+
+                // Our custom item styles
+                .dot-language-variable-selector__item {
+                    display: flex;
+                    gap: $spacing-1;
+                    width: 100%;
+                    align-items: center;
+                }
+
+                .dot-language-variable-selector__item-key {
+                    min-width: 0;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    text-align: left;
+                }
+
+                .dot-language-variable-selector__item-value {
+                    flex: 0 0 auto;
+                    font-weight: 600;
+                    white-space: nowrap;
+                }
+            }
         }
     }
 }
