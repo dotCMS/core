@@ -200,6 +200,23 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         return json;
     }
 
+
+    /**
+     * This method resolve witch is the current model and max number of token to use if we want to send a request to the
+     * OpenAI server, this is what this do:
+     *
+     * - Check if we have any white list of models set in the dotAI App,
+     * - if it is then we check that the model name send in the request is in this whitelist, if it is then
+     * we use it and the max number of token set in the DOtAI App.
+     * - If the Model Name sent in the request is not in the white list and the white list is not empty then
+     * we throw a {@link DotAIModelNotFoundException}.
+     * - If the Model Name sent in the request is not in the white list and the white list is empty then
+     * we used this Model Name and used the max number of token set in the DEFAULT_AI_MAX_NUMBER_OF_TOKENS variable.
+     *
+     *
+     * @param completionsForm
+     * @return
+     */
     private ResolvedModel resolveModel(final CompletionsForm completionsForm) {
         final AIModel aiModel = config.resolveModel(AIModelType.TEXT);
 
@@ -301,6 +318,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         return json;
     }
 
+    /**
+     * Use in resolveModel(CompletionsForm) method to return the model and max number of token can must ve used in any
+     * request to OpenAI. this can be different according to the request parameters
+     */
     private static class ResolvedModel {
         private String name;
         private int maxTokens;
