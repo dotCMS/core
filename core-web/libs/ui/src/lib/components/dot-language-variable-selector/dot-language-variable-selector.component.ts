@@ -17,6 +17,7 @@ import { take } from 'rxjs/operators';
 import { DotLanguagesService } from '@dotcms/data-access';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DotHighlightPipe } from '../../pipes/dot-highlight/dot-highlight.pipe';
 
 /**
  * Represents a language variable with a key and value.
@@ -55,7 +56,7 @@ const MAX_LANGUAGES_SUGGESTIONS = 20;
 @Component({
     selector: 'dot-language-variable-selector',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, DotMessagePipe],
+    imports: [AutoCompleteModule, FormsModule, DotMessagePipe, DotHighlightPipe],
     templateUrl: './dot-language-variable-selector.component.html',
     styleUrl: './dot-language-variable-selector.component.scss',
     providers: [DotLanguagesService],

@@ -61,7 +61,7 @@ export * from './lib/pipes/safe-url/safe-url.pipe';
 export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 export * from './lib/pipes/dot-diff/dot-diff.pipe';
 export * from './lib/pipes/dot-iso-code/dot-iso-code.pipe';
-
+export * from './lib/pipes/dot-highlight/dot-highlight.pipe';
 // Resolvers
 export * from './lib/resolvers/dot-portlet-have-license.resolver';
 export * from './lib/resolvers/dot-enterprise-license-resolver.service';

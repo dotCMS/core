@@ -16,10 +16,12 @@
         (completeMethod)="loadSuggestions()"
         [styleClass]="'dot-language-variable-selector__autocomplete--with-icon'">
         <ng-template let-variable pTemplate="item">
-            <span class="dot-language-variable-selector__item">
-                <span class="dot-language-variable-selector__item-key">{{ variable.key }}</span>
-                <span class="dot-language-variable-selector__item-value">{{ variable.value }}</span>
-            </span>
+            <div class="dot-language-variable-selector__item">
+                <div class="dot-language-variable-selector__item-value">{{ variable.value }}</div>
+                <div
+                    class="dot-language-variable-selector__item-key"
+                    [innerHTML]="variable.key | dotHighlight: $selectedItem()"></div>
+            </div>
         </ng-template>
     </p-autoComplete>
     <i class="dot-language-variable-selector__search-icon pi pi-search"></i>
