@@ -1,6 +1,6 @@
 <tr class="dot-key-value__header">
     @if ($dragAndDrop()) {
-        <th scope="col" class="w-3rem"></th>
+        <th scope="col" class="w-3rem" data-testId="drag-column"></th>
     }
     <th>
         <div class="flex flex-column">
@@ -61,7 +61,8 @@
                 <p-inputSwitch
                     class="dot-key-value-input__hidden-switch"
                     [formControl]="hiddenControl"
-                    id="key-value-input-row-hidden-input" />
+                    id="key-value-input-row-hidden-input"
+                    data-testId="hidden-switch" />
             </div>
         </th>
     }

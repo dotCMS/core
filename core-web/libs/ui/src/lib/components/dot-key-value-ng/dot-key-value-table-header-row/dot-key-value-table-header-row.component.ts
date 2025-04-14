@@ -1,11 +1,4 @@
-import {
-    Component,
-    ElementRef,
-    input,
-    output,
-    viewChild,
-    inject
-} from '@angular/core';
+import { Component, ElementRef, input, output, viewChild, inject } from '@angular/core';
 import {
     AbstractControl,
     FormsModule,
@@ -24,9 +17,9 @@ import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
 
 @Component({
-    selector: 'dot-key-value-table-input-row',
-    styleUrls: ['./dot-key-value-table-input-row.component.scss'],
-    templateUrl: './dot-key-value-table-input-row.component.html',
+    selector: 'dot-key-value-table-header-row',
+    styleUrls: ['./dot-key-value-table-header-row.component.scss'],
+    templateUrl: './dot-key-value-table-header-row.component.html',
     standalone: true,
     imports: [
         ButtonModule,
@@ -37,7 +30,7 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
         DotMessagePipe
     ]
 })
-export class DotKeyValueTableInputRowComponent {
+export class DotKeyValueTableHeaderRowComponent {
     /** Form builder service for creating reactive forms */
     #fb = inject(FormBuilder);
 

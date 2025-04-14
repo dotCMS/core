@@ -7,7 +7,7 @@ import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotKeyValue, DotKeyValueComponent } from './dot-key-value-ng.component';
-import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-row/dot-key-value-table-input-row.component';
+import { DotKeyValueTableHeaderRowComponent } from './dot-key-value-table-header-row/dot-key-value-table-header-row.component';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row/dot-key-value-table-row.component';
 
 export const mockKeyValue: DotKeyValue[] = [
@@ -44,12 +44,10 @@ describe('DotKeyValueComponent', () => {
             DotIconModule,
             TableModule,
             DotKeyValueTableRowComponent,
-            DotKeyValueTableInputRowComponent,
+            DotKeyValueTableHeaderRowComponent,
             DotMessagePipe
         ],
-        providers: [
-            { provide: DotMessageService, useValue: messageServiceMock }
-        ]
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
 
     beforeEach(() => {
@@ -125,7 +123,7 @@ describe('DotKeyValueComponent', () => {
             hidden: false
         };
 
-        const tableInput = spectator.query(DotKeyValueTableInputRowComponent);
+        const tableInput = spectator.query(DotKeyValueTableHeaderRowComponent);
         tableInput.save.emit(newVariable);
         spectator.detectChanges();
 
@@ -167,7 +165,7 @@ describe('DotKeyValueComponent', () => {
                 hidden: true
             };
 
-            const tableInput = spectator.query(DotKeyValueTableInputRowComponent);
+            const tableInput = spectator.query(DotKeyValueTableHeaderRowComponent);
             tableInput.save.emit(newVariable);
             spectator.detectChanges();
 

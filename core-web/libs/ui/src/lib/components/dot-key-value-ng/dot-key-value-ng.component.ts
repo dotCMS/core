@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 
 import { TableModule } from 'primeng/table';
 
-import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-row/dot-key-value-table-input-row.component';
+import { DotKeyValueTableHeaderRowComponent } from './dot-key-value-table-header-row/dot-key-value-table-header-row.component';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row/dot-key-value-table-row.component';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
@@ -20,7 +20,7 @@ export interface DotKeyValue {
     standalone: true,
     imports: [
         TableModule,
-        DotKeyValueTableInputRowComponent,
+        DotKeyValueTableHeaderRowComponent,
         DotKeyValueTableRowComponent,
         DotMessagePipe
     ],

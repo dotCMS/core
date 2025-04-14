@@ -7,9 +7,8 @@
     (onRowReorder)="reorderVariables()"
     styleClass="dotTable p-datatable-key-value">
     <ng-template pTemplate="header" let-columns>
-        <dot-key-value-table-input-row
+        <dot-key-value-table-header-row
             (save)="saveVariable($event)"
-            [autoFocus]="$autoFocus()"
             [showHiddenField]="$showHiddenField()"
             [dragAndDrop]="$dragAndDrop()"
             [forbiddenkeys]="$forbiddenkeys()" />
