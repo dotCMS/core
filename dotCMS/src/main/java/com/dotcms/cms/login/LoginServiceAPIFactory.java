@@ -28,6 +28,7 @@ import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
@@ -368,6 +369,10 @@ public class LoginServiceAPIFactory implements Serializable {
             if (null != userSelectedLocale) {
 
                 user.setLanguageId(userSelectedLocale.toString());
+            }
+
+            if(UtilMethods.isEmpty(user.getRememberMeToken())){
+               user.setRememberMeToken(UUIDGenerator.uuid());
             }
 
             user.setLastLoginDate(new Date());

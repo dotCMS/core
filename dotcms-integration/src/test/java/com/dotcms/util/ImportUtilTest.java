@@ -80,6 +80,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.importer.model.ImportResult;
+import com.dotmarketing.util.importer.model.ResultData;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
@@ -2736,9 +2737,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // Should only have imported the first row before stopping
             List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
+
+            final ResultData data = results.data().orElse(null);
+            assertNotNull(data);
+
             assertEquals(4, savedData.size());
-            assertEquals(1, results.data().summary().rollbacks());
-            assertEquals(4, results.data().summary().commits());
+            assertEquals(1, data.summary().rollbacks());
+            assertEquals(4, data.summary().commits());
 
         } finally {
             try {
@@ -2797,9 +2802,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // With granularity=2, we should have commits at rows 2, 4, and 6, with a rollback at row 4
             List<Contentlet> savedDataCase1 = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedDataCase1);
+
+            final ResultData resultData1 = resultCase1.data().orElse(null);
+            assertNotNull(resultData1);
+
             assertEquals(5, savedDataCase1.size()); // All valid rows (1, 2, 3, 4, 5)
-            assertEquals(1, resultCase1.data().summary().rollbacks()); // 1 error → 1 rollback
-            assertEquals(3, resultCase1.data().summary().commits()); // We should have 3 commits with granularity=2
+            assertEquals(1, resultData1.summary().rollbacks()); // 1 error → 1 rollback
+            assertEquals(3, resultData1.summary().commits()); // We should have 3 commits with granularity=2
 
             // Delete all contentlets to prepare for next test
             for (Contentlet contentlet : savedDataCase1) {
@@ -2827,9 +2836,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // With errors at rows 4 and 6, we should have rollbacks for each error
             List<Contentlet> savedDataCase2 = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedDataCase2);
+
+            final ResultData resultDataCase2 = resultCase2.data().orElse(null);
+            assertNotNull(resultDataCase2);
+
             assertEquals(6, savedDataCase2.size()); // All valid rows (A, B, C, D, E, F)
-            assertEquals(2, resultCase2.data().summary().rollbacks()); // 2 errors → 2 rollbacks
-            assertEquals(2, resultCase2.data().summary().commits()); // 2 commits with granularity=3 because there were two rollbacks in a total of 8 rows
+            assertEquals(2, resultDataCase2.summary().rollbacks()); // 2 errors → 2 rollbacks
+            assertEquals(2, resultDataCase2.summary().commits()); // 2 commits with granularity=3 because there were two rollbacks in a total of 8 rows
 
             // Delete all contentlets for next test
             for (Contentlet contentlet : savedDataCase2) {
@@ -2854,9 +2867,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // With stopOnError=true, should only process rows 1-3, error at row 4, then stop
             List<Contentlet> savedDataCase3 = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedDataCase3);
+
+            final ResultData resultDataCase3 = resultCase3.data().orElse(null);
+            assertNotNull(resultDataCase3);
+
             assertEquals(3, savedDataCase3.size()); // Only rows before the error (1, 2, 3)
-            assertEquals(0, resultCase3.data().summary().rollbacks()); // No rollbacks with stopOnError=true
-            assertEquals(3, resultCase3.data().summary().commits()); // 3 commits (1 per row)
+            assertEquals(0, resultDataCase3.summary().rollbacks()); // No rollbacks with stopOnError=true
+            assertEquals(3, resultDataCase3.summary().commits()); // 3 commits (1 per row)
 
             // Delete all contentlets
             for (Contentlet contentlet : savedDataCase3) {
@@ -2882,9 +2899,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // With granularity=5, should have commits at rows 5 and at the end (row 7)
             List<Contentlet> savedDataCase4 = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedDataCase4);
+
+            final ResultData resultDataCase4 = resultCase4.data().orElse(null);
+            assertNotNull(resultDataCase4);
+
             assertEquals(6, savedDataCase4.size()); // All valid rows
-            assertEquals(1, resultCase4.data().summary().rollbacks()); // 1 error → 1 rollback
-            assertEquals(2, resultCase4.data().summary().commits()); // 2 commit with granularity=5 (1 at row 5, 1 at row 7)
+            assertEquals(1, resultDataCase4.summary().rollbacks()); // 1 error → 1 rollback
+            assertEquals(2, resultDataCase4.summary().commits()); // 2 commit with granularity=5 (1 at row 5, 1 at row 7)
 
         } finally {
             try {
@@ -2948,8 +2969,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             List<Contentlet> savedData = contentletAPI.findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
             assertEquals(5, savedData.size()); // Should have imported rows 1, 2, 3, 7, 8
-            assertEquals(3, result.data().summary().rollbacks()); // 3 errors → 3 rollbacks
-            assertEquals(2, result.data().summary().commits()); // 2 commits with granularity=4
+
+            final ResultData data = result.data().orElse(null);
+            assertNotNull(data);
+
+            assertEquals(3, data.summary().rollbacks()); // 3 errors → 3 rollbacks
+            assertEquals(2, data.summary().commits()); // 2 commits with granularity=4
 
         } finally {
             try {
@@ -3018,13 +3043,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             // Should only have rows before the error (1, 2, 3)
             assertEquals(3, savedData.size());
 
+            final ResultData data = result.data().orElse(null);
+            assertNotNull(data);
+
             // With stopOnError=true, we don't do rollbacks, we just stop
-            assertEquals(0, result.data().summary().rollbacks());
+            assertEquals(0, data.summary().rollbacks());
 
             // No commits would occur with granularity=10 if we stopped at row 4
             // The implementation might perform a final commit of successfully processed rows
             // So commits should be either 0 or 1 depending on implementation
-            assertTrue("Expected 0 or 1 commits, but got: " + result.data().summary().commits(), result.data().summary().commits() <= 1);
+            assertTrue("Expected 0 or 1 commits, but got: " + data.summary().commits(), data.summary().commits() <= 1);
 
         } finally {
             try {

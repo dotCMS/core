@@ -8,12 +8,24 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EditEmaNavigationBarComponent } from './edit-ema-navigation-bar.component';
 
+import { UVEStore } from '../../../store/dot-uve.store';
+
 const messages = {
     'editema.editor.navbar.content': 'Content',
     'editema.editor.navbar.layout': 'Layout',
     'editema.editor.navbar.rules': 'Rules',
     'editema.editor.navbar.experiments': 'Experiments',
     'editema.editor.navbar.action': 'Action'
+};
+
+const store = {
+    paletteOpen: () => false,
+    setPaletteOpen: jest.fn(),
+    $editorProps: () => ({
+        palette: {
+            paletteClass: 'palette-class'
+        }
+    })
 };
 
 const messageServiceMock = new MockDotMessageService(messages);
@@ -24,7 +36,10 @@ describe('EditEmaNavigationBarComponent', () => {
     const createComponent = createRoutingFactory({
         component: EditEmaNavigationBarComponent,
         stubsEnabled: false,
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: UVEStore, useValue: store }
+        ],
         routes: [
             {
                 path: 'content',
@@ -160,6 +175,24 @@ describe('EditEmaNavigationBarComponent', () => {
                         './assets/edit-ema/assets/images/experiments.svg.svg#assets/images/experiments.svg'
                     );
                 });
+            });
+        });
+
+        describe('Palette', () => {
+            it('should have button to toggle palette at the first item', () => {
+                const contentButton = spectator.query('.edit-ema-nav-bar__item-container');
+
+                const button = contentButton.querySelector('button');
+
+                expect(button).not.toBeNull();
+            });
+
+            it('should call the setPaletteOpen method when clicking the button', () => {
+                const button = spectator.query(byTestId('toggle-palette'));
+
+                spectator.click(button);
+
+                expect(store.setPaletteOpen).toHaveBeenCalled();
             });
         });
     });

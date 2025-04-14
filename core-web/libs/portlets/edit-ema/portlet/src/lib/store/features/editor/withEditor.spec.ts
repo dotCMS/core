@@ -14,7 +14,7 @@ import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -308,7 +308,8 @@ describe('withEditor', () => {
                     palette: {
                         variantId: DEFAULT_VARIANT_ID,
                         languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
-                        containers: MOCK_RESPONSE_HEADLESS.containers
+                        containers: MOCK_RESPONSE_HEADLESS.containers,
+                        paletteClass: PALETTE_CLASSES.OPEN
                     },
                     seoResults: null
                 });
@@ -633,6 +634,32 @@ describe('withEditor', () => {
                 store.updateEditorScrollState();
 
                 expect(store.contentletArea()).toBe(null);
+            });
+        });
+
+        describe('setPaletteOpen', () => {
+            it('should toggle the palette', () => {
+                store.setPaletteOpen(true);
+
+                expect(store.paletteOpen()).toBe(true);
+            });
+
+            it('should toggle the palette', () => {
+                store.setPaletteOpen(false);
+
+                expect(store.paletteOpen()).toBe(false);
+            });
+
+            it('should update the editorProps when the palette is open', () => {
+                store.setPaletteOpen(true);
+
+                expect(store.$editorProps().palette.paletteClass).toBe(PALETTE_CLASSES.OPEN);
+            });
+
+            it('should update the editorProps when the palette is closed', () => {
+                store.setPaletteOpen(false);
+
+                expect(store.$editorProps().palette.paletteClass).toBe(PALETTE_CLASSES.CLOSED);
             });
         });
 
