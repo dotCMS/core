@@ -7,13 +7,7 @@ import {
 } from './utils';
 
 import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
-import {
-    editContentlet,
-    initInlineEditing,
-    initUVE,
-    reorderMenu,
-    sendMessageToUVE
-} from '../lib/editor/public';
+import { editContentlet, reorderMenu } from '../lib/editor/public';
 import { UVE_MODE } from '../lib/types/editor/public';
 
 declare global {
@@ -23,13 +17,9 @@ declare global {
 }
 
 const dotUVE = {
-    createUVESubscription,
+    createSubscription: createUVESubscription,
     editContentlet,
-    getUVEState,
-    initInlineEditing,
-    initUVE,
-    reorderMenu,
-    sendMessageToUVE
+    reorderMenu
 };
 
 window.dotUVE = dotUVE;
