@@ -103,7 +103,7 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build dotCMS image
-        uses: docker/build-push-action@v5.0.0
+        uses: docker/build-push-action@v6.15.0
         with:
           context: ./docker/dotcms
           push: true
