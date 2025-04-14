@@ -6,8 +6,14 @@ import {
     setClientIsReady
 } from './utils';
 
-import * as publicUVEExports from '../index';
-import { getUVEState } from '../lib/core/core.utils';
+import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
+import {
+    editContentlet,
+    initInlineEditing,
+    initUVE,
+    reorderMenu,
+    sendMessageToUVE
+} from '../lib/editor/public';
 import { UVE_MODE } from '../lib/types/editor/public';
 
 declare global {
@@ -17,7 +23,13 @@ declare global {
 }
 
 const dotUVE = {
-    ...publicUVEExports
+    createUVESubscription,
+    editContentlet,
+    getUVEState,
+    initInlineEditing,
+    initUVE,
+    reorderMenu,
+    sendMessageToUVE
 };
 
 window.dotUVE = dotUVE;
