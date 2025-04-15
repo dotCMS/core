@@ -100,7 +100,7 @@ public class AIModels implements EventSubscriber<SystemTableUpdatedKeyEvent> {
      */
     public void loadModels(final AppConfig appConfig, final List<AIModel> loading) {
         final String host = appConfig.getHost();
-        final List<Tuple2<AIModelType, AIModel>> added = internalModels.putIfAbsent(
+        final List<Tuple2<AIModelType, AIModel>> added = internalModels.put(
                 host,
                 loading.stream()
                         .map(model -> Tuple.of(model.getType(), model))

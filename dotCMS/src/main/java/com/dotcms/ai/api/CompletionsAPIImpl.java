@@ -14,6 +14,7 @@ import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.EncodingUtil;
+import com.dotcms.analytics.Util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * This class implements the CompletionsAPI interface and provides the specific logic for interacting with the AI service.
@@ -46,7 +48,7 @@ import java.util.Optional;
  */
 public class CompletionsAPIImpl implements CompletionsAPI {
 
-    private static String DEFAULT_AI_MAX_NUMBER_OF_TOKENS = "DEFAULT_AI_MAX_NUMBER_OF_TOKENS";
+    private static String DEFAULT_AI_MAX_NUMBER_OF_TOKENS = "DOTAI_DEFAULT_MAX_NUMBER_OF_TOKENS";
     public static final Lazy<Integer> DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE =
             Lazy.of(() -> Config.getIntProperty(DEFAULT_AI_MAX_NUMBER_OF_TOKENS, 16384));
 
@@ -202,30 +204,33 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
 
     /**
-     * This method resolve witch is the current model and max number of token to use if we want to send a request to the
-     * OpenAI server, this is what this do:
+     * Determines the current model and the maximum number of tokens to use when making a request to the OpenAI server.
+     * Here's how it works:
      *
-     * - Check if we have any white list of models set in the dotAI App,
-     * - if it is then we check that the model name send in the request is in this whitelist, if it is then
-     * we use it and the max number of token set in the DOtAI App.
-     * - If the Model Name sent in the request is not in the white list and the white list is not empty then
-     * we throw a {@link DotAIModelNotFoundException}.
-     * - If the Model Name sent in the request is not in the white list and the white list is empty then
-     * we used this Model Name and used the max number of token set in the DEFAULT_AI_MAX_NUMBER_OF_TOKENS variable.
-     *
+     * - First, it checks if a whitelist of allowed models is configured in the DotAI App.
+     * - If a whitelist exists:
+     *    - It verifies that the model name provided in the request is in the whitelist.
+     *    - If it is, the method uses that model and the max number of tokens defined in the DotAI App.
+     *    - If it isn't, a {@link DotAIModelNotFoundException} is thrown.
+     * - If no whitelist is configured (i.e., it's empty), then:
+     *    - The provided model name is used.
+     *    - The max number of tokens is taken from the DEFAULT_AI_MAX_NUMBER_OF_TOKENS variable.
      *
      * @param completionsForm
      * @return
      */
     private ResolvedModel resolveModel(final CompletionsForm completionsForm) {
         final AIModel aiModel = config.resolveModel(AIModelType.TEXT);
+        final List<Model> models = aiModel.getModels().stream()
+                .filter(model -> UtilMethods.isSet(model.getName()))
+                .collect(Collectors.toList());
 
-        if (UtilMethods.isSet(aiModel.getModels())) {
+        if (UtilMethods.isSet(models)) {
             final Tuple2<AIModel, Model> modelTuple = config
                     .resolveModelOrThrow(completionsForm.model, AIModelType.TEXT);
 
             return new ResolvedModel(modelTuple._2.getName(), modelTuple._1.getMaxTokens());
-        } else if (UtilMethods.isSet(aiModel.getModels())) {
+        } else if (UtilMethods.isSet(completionsForm.model)) {
             return new ResolvedModel(completionsForm.model, DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get());
         } else {
             throw new DotAIModelNotFoundException(
