@@ -2,11 +2,54 @@
 
 `@dotcms/react` is the official set of React components and hooks designed to work seamlessly with dotCMS, making it easy to render dotCMS pages and use the page builder.
 
-## Features
+> **Note:** This SDK is currently in **beta** (v0.0.1-beta.13 or newest).
+> 
+> For comprehensive documentation, visit our [developer portal](https://dev.dotcms.com/docs/javascript-sdk-react-library).
 
--   A collection of React components and hooks tailored to render dotCMS pages.
--   Streamlined integration with dotCMS page editor.
--   Improved development experience with comprehensive TypeScript typings.
+> **⚠️ IMPORTANT:** Versions published under the `next` tag (`npm install @dotcms/react@next`) are experimental, in beta, and not code complete. For the current stable and functional version, please use `latest` (`npm install @dotcms/react@latest`). Once we release the stable version, we will provide a migration guide from the alpha to stable version. The current alpha version (under `latest`) will continue to work, allowing you to migrate progressively at your own pace.
+
+## Table of Contents
+
+- [What's New](#whats-new)
+- [What's Being Deprecated](#whats-being-deprecated)
+- [Installation](#installation)
+- [Dependencies](#dependencies)
+- [Browser Compatibility](#browser-compatibility)
+- [Components](#components)
+  - [DotCMSLayoutBody](#dotcmslayoutbody)
+  - [DotCMSShow](#dotcmsshow)
+  - [BlockEditorRenderer](#blockeditorrenderer)
+- [Hooks](#hooks)
+  - [useDotCMSShowWhen](#usedotcmsshowwhen)
+  - [usePageAsset](#usepageasset)
+- [Making Your Page Editable](#making-your-page-editable)
+- [Contributing](#contributing)
+- [Licensing](#licensing)
+- [Support](#support)
+- [Documentation](#documentation)
+
+## What's New?
+
+- **Refactored Components (v0.0.1-beta.13):** Improved structure for better maintainability and performance.
+- **New `DotCMSLayoutBody` Component (v0.0.1-beta.13):** Replaces `DotcmsLayout`, providing a more flexible approach to rendering page layouts.
+- **Enhanced Block Editor Support (v0.0.1-beta.13):** The `BlockEditorRenderer` now supports advanced custom renderers.
+- **Improved TypeScript Support (v0.0.1-beta.13):** Comprehensive typings for better developer experience.
+
+Install the latest version with:
+
+```bash
+npm install @dotcms/react@0.0.1-beta.13
+# or use the newest version
+npm install @dotcms/react@latest
+```
+
+## What's Being Deprecated?
+
+- **`DotcmsLayout` Component:** Now replaced by `DotCMSLayoutBody`.
+- **`useDotcmsPageContext` Hook:** No longer needed with the new component architecture.
+- **`Context Providers`:** These are being phased out in favor of a more direct approach.
+
+> **Note:** Deprecated items will continue to work and be supported, but won't receive new features or improvements. This approach allows users upgrading from alpha to beta or stable versions to update their codebase progressively without immediate breaking changes.
 
 ## Installation
 
@@ -22,26 +65,33 @@ Or using Yarn:
 yarn add @dotcms/react
 ```
 
-## Components
+## Dependencies
 
-### Deprecated: DotcmsLayout
+This package has the following peer dependencies that you'll need to install in your project:
 
-**Important:** The `DotcmsLayout` component is deprecated. Please use the new [`DotCMSLayoutBody`](#DotCMSLayoutBody) component instead.
+| Dependency | Version | Description |
+|------------|---------|-------------|
+| `@dotcms/uve` | * | Required for page editing functionality |
+| `react` | >=16.8.0 | React library |
+| `react-dom` | >=16.8.0 | React DOM library |
 
-#### Props
+Install peer dependencies:
 
--   **entity**: The context for a dotCMS page.
-
-#### Usage
-
-```javascript
-// Deprecated:
-import { DotcmsLayout } from '@dotcms/react';
-
-const MyPage = ({ entity }) => {
-    return <DotcmsLayout entity={entity} />;
-};
+```bash
+npm install @dotcms/uve react react-dom
 ```
+
+## Browser Compatibility
+
+The @dotcms/react package is compatible with the following browsers:
+
+| Browser | Minimum Version | TLS Version |
+|---------|----------------|-------------|
+| Chrome  | Latest 2 versions | TLS 1.2+ |
+| Edge    | Latest 2 versions | TLS 1.2+ |
+| Firefox | Latest 2 versions | TLS 1.2+ |
+
+## Components
 
 ### `DotCMSLayoutBody`
 
@@ -49,10 +99,11 @@ The `DotCMSLayoutBody` component renders the layout body for a DotCMS page.
 
 #### Props
 
--   **page**: The DotCMS page asset containing the layout information.
--   **components**: A mapping of custom components for content rendering.
--   **mode** (optional): The renderer mode; defaults to `'production'`.
-
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | Object | Yes | The DotCMS page asset containing the layout information |
+| `components` | Object | Yes | A mapping of custom components for content rendering |
+| `mode` | String | No | The renderer mode; defaults to `'production'` |
 
 #### Usage
 
@@ -64,90 +115,132 @@ const MyPage = ({ page }) => {
 };
 ```
 
+### `DotCMSShow`
+
+The `DotCMSShow` component conditionally renders content based on dotCMS conditions. It uses the UVE_MODE from `@dotcms/uve` which can be one of: `EDIT`, `PREVIEW`, or `LIVE`.
+
+#### Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `when` | String | Yes | The condition that determines if the content should be shown (EDIT, PREVIEW, LIVE) |
+| `children` | ReactNode | Yes | The content to be rendered when the condition is met |
+
+#### Usage
+
+```javascript
+import { DotCMSShow } from '@dotcms/react';
+import { UVE_MODE } from '@dotcms/uve';
+
+const MyComponent = () => {
+    return (
+        <DotCMSShow when={UVE_MODE.EDIT}>
+            <div>This content is only visible in edit mode</div>
+        </DotCMSShow>
+    );
+};
+```
 
 ### `BlockEditorRenderer`
 
-The `BlockEditorRenderer` component renders the content of a Block Editor Content Type from dotCMS.
-[More information of Block Editor Content Type](https://dev.dotcms.com/docs/block-editor)
+The `BlockEditorRenderer` component renders content from a Block Editor Content Type in dotCMS.
 
 #### Props
 
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `blocks` | `Block` | The block editor content structure to render. |
-| `customRenderers` | `CustomRenderer` | Optional custom renderers for specific block types. |
-| `className` | `string` | Optional CSS class name to apply to the container. |
-| `style` | `React.CSSProperties` | Optional inline styles to apply to the container. |
-| `contentlet` | `DotCMSContentlet` | Contentlet object containing the field to be edited. Required when editable is true. |
-| `fieldName` | `string` | Name of the field in the contentlet that contains the block editor content. Required when editable is true. |
-
-For a more in-depth explanation of BlockEditorRenderer, visit the [documentation](./src/lib/deprecated/components/BlockEditorRenderer/BlockEditorRenderer.md).
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `blocks` | Block | Yes | The block editor content structure to render |
+| `customRenderers` | CustomRenderer | No | Optional custom renderers for specific block types |
+| `className` | String | No | Optional CSS class name to apply to the container |
+| `style` | React.CSSProperties | No | Optional inline styles to apply to the container |
+| `contentlet` | DotCMSContentlet | Only when editable is true | Contentlet object containing the field to be edited |
+| `fieldName` | String | Only when editable is true | Name of the field in the contentlet that contains the block editor content |
 
 ## Hooks
 
-### `useDotcmsPageContext`
+### `useDotCMSShowWhen`
 
-A custom React hook that provides access to the `PageProviderContext`.
-
-#### Returns
-
--   `PageProviderContext | null`: The context value or `null` if it's not available.
-
-#### Usage
-
-```javascript
-import { useDotcmsPageContext } from '@dotcms/react';
-
-const MyComponent = () => {
-    const context = useDotcmsPageContext();
-    // Use the context
-};
-```
-
-### `usePageEditor`
-
-A custom React hook that sets up the page editor for a dotCMS page.
+A custom hook that provides the same functionality as the `DotCMSShow` component in a hook form. It uses the UVE_MODE from `@dotcms/uve` which can be one of: `EDIT`, `PREVIEW`, or `LIVE`.
 
 #### Parameters
 
--   **props**: `PageEditorOptions` - The options for the page editor. Includes a `reloadFunction` and a `pathname`.
-
-#### Returns
-
--   `React.RefObject<HTMLDivElement>[]`: A reference to the rows of the page.
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `mode` | String | Yes | The UVE mode to check against (EDIT, PREVIEW, LIVE) |
 
 #### Usage
 
 ```javascript
-import { usePageEditor } from '@dotcms/react';
+import { useDotCMSShowWhen } from '@dotcms/react';
+import { UVE_MODE } from '@dotcms/uve';
 
-const MyEditor = () => {
-    const rowsRef = usePageEditor({ pathname: '/my-page' });
-    // Use the rowsRef
+const MyComponent = () => {
+    const isVisible = useDotCMSShowWhen(UVE_MODE.EDIT);
+    
+    return isVisible ? <div>Visible content</div> : null;
 };
 ```
 
-## Context Providers
+### `usePageAsset`
 
-### `PageProvider`
+A custom hook that handles the communication with the Universal View Editor (UVE) and updates your page content in real-time when changes are made in the editor.
 
-A functional component that provides a context for a dotCMS page.
+> **Note:** This hook will be built into the SDK in the stable version - the example below is a temporary workaround for the beta release.
+>
+> You need to save this hook in your project as a custom hook file.
 
-#### Props
+#### Parameters
 
--   **entity**: The entity representing the page's data.
--   **children**: The children components.
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `currentPageAsset` | Object | Yes | The initial page asset from the server |
+
+#### Implementation
+
+```typescript
+import { useEffect, useState } from 'react';
+
+import { getUVEState, sendMessageToEditor, createUVESubscription} from '@dotcms/uve';
+import { DotCMSUVEAction, UVEEventType} from '@dotcms/uve/types';
+
+export const usePageAsset = (currentPageAsset) => {
+    const [pageAsset, setPageAsset] = useState(null);
+    useEffect(() => {
+        if (!getUVEState()) {
+            return;
+        }
+
+        // Note: If using plain JavaScript instead of TypeScript, you can use the string literals directly
+        sendMessageToEditor({ action: DotCMSUVEAction.CLIENT_READY || "client-ready" }); 
+        const subscription = createUVESubscription(UVEEventType.CONTENT_CHANGES || "changes", (pageAsset) => setPageAsset(pageAsset));
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [currentPageAsset]);
+
+    return pageAsset ?? currentPageAsset;
+};
+```
 
 #### Usage
 
-```javascript
-import { PageProvider } from '@dotcms/react';
+```typescript
+// Import the hook from where you saved it in your project
+import { usePageAsset } from './hooks/usePageAsset';
 
-const MyApp = ({ entity }) => {
-    return <PageProvider entity={entity}>{/* children */}</PageProvider>;
+const MyPage = ({ initialPageAsset }) => {
+    const pageAsset = usePageAsset(initialPageAsset);
+    
+    return <DotCMSLayoutBody page={pageAsset} components={components} />;
 };
 ```
+
+## Making Your Page Editable
+
+To make your page editable in dotCMS, you need to use the `usePageAsset` hook described above. This hook synchronizes your page with the Universal View Editor (UVE) and ensures that any changes made in the editor are reflected in your React application in real-time.
+
+You need to save the hook implementation in your project (for example, in a file like `hooks/usePageAsset.js`) and import it where needed.
 
 ## Contributing
 
@@ -163,15 +256,4 @@ If you need help or have any questions, please [open an issue](https://github.co
 
 ## Documentation
 
-Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/latest/) for comprehensive guides and API references.
-
-## Getting Help
-
-| Source          | Location                                                            |
-| --------------- | ------------------------------------------------------------------- |
-| Installation    | [Installation](https://dotcms.com/docs/latest/installation)         |
-| Documentation   | [Documentation](https://dotcms.com/docs/latest/table-of-contents)   |
-| Videos          | [Helpful Videos](http://dotcms.com/videos/)                         |
-| Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
-| Twitter         | @dotCMS                                                             |
-| Main Site       | [dotCMS.com](https://dotcms.com/)                                   |
+Always refer to the official [DotCMS documentation](https://www.dotcms.com/docs/latest/) for comprehensive guides and API references. For specific React library documentation, visit our [developer portal](https://dev.dotcms.com/docs/javascript-sdk-react-library).

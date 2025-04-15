@@ -1,17 +1,9 @@
 import { useEffect } from 'react';
 
-import { useIsDevMode } from '../../hooks/useIsDevMode';
-import { DotContainerAttributes } from '../../utils';
+import { EMPTY_CONTAINER_STYLE_REACT } from '@dotcms/uve/internal';
+import { DotContainerAttributes } from '@dotcms/uve/types';
 
-const EMPTY_CONTAINER_STYLE = {
-    width: '100%',
-    backgroundColor: '#ECF0FD',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: '#030E32',
-    height: '10rem'
-};
+import { useIsDevMode } from '../../hooks/useIsDevMode';
 
 /**
  * @internal
@@ -24,7 +16,7 @@ const EMPTY_CONTAINER_STYLE = {
  * @param {string} props.identifier - Container identifier
  * @returns {JSX.Element | null} Message about missing container or null in production
  */
-export const ContainerNoFound = ({ identifier }: { identifier: string }) => {
+export const ContainerNotFound = ({ identifier }: { identifier: string }) => {
     const isDevMode = useIsDevMode();
 
     useEffect(() => {
@@ -40,7 +32,7 @@ export const ContainerNoFound = ({ identifier }: { identifier: string }) => {
     }
 
     return (
-        <div data-testid="container-not-found" style={EMPTY_CONTAINER_STYLE}>
+        <div data-testid="container-not-found" style={EMPTY_CONTAINER_STYLE_REACT}>
             This container with identifier {identifier} was not found.
         </div>
     );
@@ -62,7 +54,7 @@ export const EmptyContainer = (dotAttributes: DotContainerAttributes) => {
     }
 
     return (
-        <div {...dotAttributes} style={EMPTY_CONTAINER_STYLE}>
+        <div {...dotAttributes} style={EMPTY_CONTAINER_STYLE_REACT}>
             <span data-testid="empty-container-message">This container is empty.</span>
         </div>
     );

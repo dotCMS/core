@@ -1,4 +1,4 @@
-import { byTestId, Spectator } from '@ngneat/spectator';
+import { byTestId, mockProvider, Spectator } from '@ngneat/spectator';
 import { createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
@@ -106,12 +106,7 @@ describe('DotBlockEditorSidebarComponent', () => {
                     saveContentlet: jest.fn()
                 }
             },
-            {
-                provide: DotContentTypeService,
-                useValue: {
-                    getContentType: jest.fn().mockReturnValue(of(contentTypeMock))
-                }
-            }
+            mockProvider(DotContentTypeService)
         ]
     });
 
@@ -120,6 +115,9 @@ describe('DotBlockEditorSidebarComponent', () => {
         dotContentTypeService = spectator.inject(DotContentTypeService, true);
         dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
+
+        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(of(contentTypeMock));
+
         spectator.component.open(EVENT_DATA);
         spectator.detectChanges();
     });

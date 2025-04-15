@@ -33,7 +33,7 @@ import {
 } from '../shared/models';
 import { Orientation } from '../store/models';
 
-export const SDK_EDITOR_SCRIPT_SOURCE = '/html/js/editor-js/sdk-editor.js';
+export const SDK_EDITOR_SCRIPT_SOURCE = '/ext/uve/dot-uve.js';
 
 const REORDER_MENU_BASE_URL =
     'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';
@@ -744,4 +744,43 @@ export const cleanPageURL = (url: string) => {
     return url
         .replace(/^\/*(.*?)(\/+)?$/, '$1$2') // Capture content and optional trailing slash
         .replace(/\/+/g, '/'); // Clean up any remaining multiple slashes
+};
+
+/**
+ * Converts a Date object to an ISO 8601 string in UTC, preserving the local time
+ * but expressing it in UTC timezone.
+ * @param {Date} date - Reference Date object
+ * @param {boolean} [includeMilliseconds=false] - If true, includes milliseconds
+ * @returns {string} String in ISO 8601 format with the date in UTC
+ */
+export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) => {
+    // Validate parameters
+    if (!(date instanceof Date)) {
+        throw new Error('Parameter must be a Date object');
+    }
+
+    // Extract local time from the date
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    const milliseconds = date.getMilliseconds();
+
+    // Create new UTC date with the same local date and time
+    const utcDate = new Date(
+        Date.UTC(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            hours,
+            minutes,
+            seconds,
+            includeMilliseconds ? milliseconds : 0
+        )
+    );
+
+    // Return in ISO 8601 format
+    const isoString = utcDate.toISOString();
+
+    // Optionally remove milliseconds
+    return includeMilliseconds ? isoString : isoString.replace(/\.\d{3}Z$/, 'Z');
 };

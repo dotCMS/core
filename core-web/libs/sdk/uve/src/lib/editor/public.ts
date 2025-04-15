@@ -1,3 +1,10 @@
+import {
+    addClassToEmptyContentlets,
+    listenBlockEditorInlineEvent,
+    registerUVEEvents,
+    scrollHandler,
+    setClientIsReady
+} from '../../script/utils';
 import { DotCMSReorderMenuConfig, DotCMSUVEMessage } from '../types/editor/internal';
 import { Contentlet, DotCMSUVEAction } from '../types/editor/public';
 import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from '../types/events/public';
@@ -9,7 +16,7 @@ import { DotCMSInlineEditingPayload, DotCMSInlineEditingType } from '../types/ev
  * @template T
  * @param {DotCMSUVEMessage<T>} message
  */
-export function sendMessageToEditor<T = unknown>(message: DotCMSUVEMessage<T>) {
+export function sendMessageToUVE<T = unknown>(message: DotCMSUVEMessage<T>) {
     window.parent.postMessage(message, '*');
 }
 
@@ -23,7 +30,7 @@ export function sendMessageToEditor<T = unknown>(message: DotCMSUVEMessage<T>) {
  * @param {Contentlet<T>} contentlet - The contentlet to edit.
  */
 export function editContentlet<T>(contentlet: Contentlet<T>) {
-    sendMessageToEditor({
+    sendMessageToUVE({
         action: DotCMSUVEAction.EDIT_CONTENTLET,
         payload: contentlet
     });
@@ -41,7 +48,7 @@ export function editContentlet<T>(contentlet: Contentlet<T>) {
  */
 export function reorderMenu(config?: DotCMSReorderMenuConfig): void {
     const { startLevel = 1, depth = 2 } = config || {};
-    sendMessageToEditor({
+    sendMessageToUVE({
         action: DotCMSUVEAction.REORDER_MENU,
         payload: { startLevel, depth }
     });
@@ -66,11 +73,49 @@ export function initInlineEditing(
     type: DotCMSInlineEditingType,
     data?: DotCMSInlineEditingPayload
 ): void {
-    sendMessageToEditor({
+    sendMessageToUVE({
         action: DotCMSUVEAction.INIT_INLINE_EDITING,
         payload: {
             type,
             data
         }
     });
+}
+
+/**
+ * Initializes the Universal Visual Editor (UVE) with required handlers and event listeners.
+ *
+ * This function sets up:
+ * - Scroll handling
+ * - Empty contentlet styling
+ * - Block editor inline event listening
+ * - Client ready state
+ * - UVE event subscriptions
+ *
+ * @returns {Object} An object containing the cleanup function
+ * @returns {Function} destroyUVESubscriptions - Function to clean up all UVE event subscriptions
+ *
+ * @example
+ * ```typescript
+ * const { destroyUVESubscriptions } = initUVE();
+ *
+ * // When done with UVE
+ * destroyUVESubscriptions();
+ * ```
+ */
+export function initUVE() {
+    addClassToEmptyContentlets();
+    setClientIsReady();
+
+    const { subscriptions } = registerUVEEvents();
+    const { destroyScrollHandler } = scrollHandler();
+    const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
+
+    return {
+        destroyUVESubscriptions: () => {
+            subscriptions.forEach((subscription) => subscription.unsubscribe());
+            destroyScrollHandler();
+            destroyListenBlockEditorInlineEvent();
+        }
+    };
 }

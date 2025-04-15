@@ -1,7 +1,8 @@
+import { DotCMSContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/uve/types';
+
 import { ErrorMessage } from './components/ErrorMessage';
 
-import { DotCMSPageContext, DotCMSPageRendererMode } from '../../contexts/DotCMSPageContext';
-import { DotCMSContentlet, DotCMSPageAsset } from '../../types';
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { Row } from '../Row/Row';
 
 interface DotCMSLayoutBodyProps {
@@ -33,10 +34,6 @@ export const DotCMSLayoutBody = ({
 }: DotCMSLayoutBodyProps) => {
     const dotCMSPageBody = page?.layout?.body;
 
-    if (!dotCMSPageBody) {
-        return <ErrorMessage mode={mode} />;
-    }
-
     const contextValue = {
         pageAsset: page,
         userComponents: components,
@@ -45,9 +42,11 @@ export const DotCMSLayoutBody = ({
 
     return (
         <DotCMSPageContext.Provider value={contextValue}>
-            {dotCMSPageBody.rows.map((row, index) => (
-                <Row key={index} row={row} />
-            ))}
+            {dotCMSPageBody ? (
+                dotCMSPageBody.rows.map((row, index) => <Row key={index} row={row} />)
+            ) : (
+                <ErrorMessage />
+            )}
         </DotCMSPageContext.Provider>
     );
 };

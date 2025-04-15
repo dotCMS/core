@@ -9,3 +9,6 @@ console.error = (...params) => {
         originalConsoleError(...params);
     }
 };
+
+// Mock DOM APIs not available in JSDOM
+Element.prototype.scrollIntoView = jest.fn();

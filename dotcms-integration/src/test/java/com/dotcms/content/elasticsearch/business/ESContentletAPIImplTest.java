@@ -2159,7 +2159,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * - Populate manually the unique_fields table
      * - Update one of the Contentlet and the unique_fields table should be updated too, but the register
      * is not going to be removed because we have another Contentlet with the same value
-     * Should: Update the Contentlet and uodate the unique_fields table right
+     * Should: Update the Contentlet and update the unique_fields table right
      *
      * This can happen if the Contentlets with the duplicated values exists before the Upgrade than contains the new Database validation
      *
@@ -2231,7 +2231,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             final String hash = StringUtils.hashText(contentType.id() + uniqueTextFieldFromDB.variable() +
                     language.getId() + uniqueVersionValue + host.getIdentifier());
 
-            new DotConnect().setSQL("INSERT INTO unique_fields (unique_key_val, supporting_values) VALUES(?, ?)")
+            new DotConnect().setSQL("INSERT INTO unique_fields (unique_key_val, supporting_values) " +
+                            "VALUES(encode(sha256(convert_to(?::text, 'UTF8')), 'hex'), ?)")
                     .addParam(hash)
                     .addJSONParam(supportingValues)
                     .loadObjectResults();

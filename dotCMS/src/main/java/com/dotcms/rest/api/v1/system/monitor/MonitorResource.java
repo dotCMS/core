@@ -59,11 +59,11 @@ public class MonitorResource {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
 
-        if(!helper.getMonitorStats().isDotCMSHealthy()) {
+        if(!helper.getMonitorStats(request).isDotCMSHealthy()) {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
 
-        return Response.ok(helper.getMonitorStats().toMap()).build();
+        return Response.ok(helper.getMonitorStats(request).toMap()).build();
     }
 
     @NoCache
