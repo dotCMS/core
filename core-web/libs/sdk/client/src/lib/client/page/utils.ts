@@ -98,6 +98,9 @@ export const buildPageQuery = ({
     canEdit
     canLock
     canRead
+    urlContentMap {
+      _map
+    }
     conLanguage {
       id
       language
@@ -164,7 +167,7 @@ export const buildPageQuery = ({
   ${fragments ? fragments.join('\n\n') : ''}
 
   query PageContent($url: String!, $languageId: String, $mode: String, $personaId: String, $fireRules: Boolean, $publishDate: String, $siteId: String) {
-    page: page(url: $url, languageId: $languageId, pageMode: $mode, personaId: $personaId, fireRules: $fireRules, publishDate: $publishDate, site: $siteId) {
+    page: page(url: $url, languageId: $languageId, pageMode: $mode, persona: $personaId, fireRules: $fireRules, publishDate: $publishDate, site: $siteId) {
       ...DotCMSPage
       ${page ? '...ClientPage' : ''}
     }
