@@ -6,7 +6,8 @@ import {
     inject,
     input,
     model,
-    viewChild, AfterViewInit
+    viewChild,
+    AfterViewInit
 } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -15,7 +16,6 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
-
 
 import {
     AvailableEditorTextArea,

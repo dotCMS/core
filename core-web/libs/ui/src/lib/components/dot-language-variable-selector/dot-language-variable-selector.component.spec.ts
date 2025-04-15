@@ -14,7 +14,6 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 
 import { DotLanguagesService, DotLanguageVariableEntry } from '@dotcms/data-access';
 
-
 import {
     DotLanguageVariableSelectorComponent,
     LanguageVariable
