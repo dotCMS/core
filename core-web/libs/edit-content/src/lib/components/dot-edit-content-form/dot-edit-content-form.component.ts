@@ -14,10 +14,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
+    FormsModule,
     ReactiveFormsModule,
     ValidatorFn,
-    Validators,
-    FormsModule
+    Validators
 } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -167,18 +167,11 @@ export class DotEditContentFormComponent implements OnInit {
     $hasSingleTab = computed(() => this.$store.tabs().length === 1);
 
     /**
-     * Computed property that retrieves the first tab from the store.
+     * Computed property that retrieves the tabs from the store.
      *
      * @memberof DotEditContentFormComponent
      */
-    $firstTab = computed(() => this.$store.tabs()[0] || null);
-
-    /**
-     * Computed property that retrieves the rest of tabs from the store.
-     *
-     * @memberof DotEditContentFormComponent
-     */
-    $restOfTabs = computed(() => this.$store.tabs().slice(1));
+    $tabs = this.$store.tabs;
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {
@@ -189,14 +182,13 @@ export class DotEditContentFormComponent implements OnInit {
 
     constructor() {
         /**
-         * Effect that enables or disables the form based on the loading or locked state.
+         * Effect that enables or disables the form based on the loading state.
          */
         effect(
             () => {
                 const isLoading = this.$store.isLoading();
-                const isLocked = this.$store.isContentLocked();
 
-                if (isLoading || isLocked) {
+                if (isLoading) {
                     this.form.disable();
                 } else {
                     this.form.enable();

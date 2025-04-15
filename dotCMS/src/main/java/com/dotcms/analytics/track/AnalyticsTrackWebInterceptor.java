@@ -61,7 +61,6 @@ public class AnalyticsTrackWebInterceptor  implements WebInterceptor, EventSubsc
                 new PagesAndUrlMapsRequestMatcher(),
                 new FilesRequestMatcher(),
                 //       new RulesRedirectsRequestMatcher(),
-                new HttpResponseMatcher(),
                 new VanitiesRequestMatcher());
 
     }

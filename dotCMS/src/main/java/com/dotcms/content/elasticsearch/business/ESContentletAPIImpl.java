@@ -1,11 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -190,6 +184,18 @@ import com.thoughtworks.xstream.XStream;
 import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -217,17 +223,12 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -7398,6 +7399,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public void validateContentlet(final Contentlet contentlet, final List<Category> cats)
             throws DotContentletValidationException {
+        validateContentlet(contentlet, cats, false);
+    }
+
+    @CloseDBIfOpened
+    public void validateContentlet(final Contentlet contentlet, final List<Category> cats, final boolean preview)
+        throws DotContentletValidationException {
         if (null == contentlet) {
             throw new DotContentletValidationException("The contentlet must not be null.");
         }
@@ -7686,13 +7693,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         populateHost(contentlet);
                     }
 
-                    uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
-                            LegacyFieldTransformer.from(field));
+                    if (preview) {
+                        uniqueFieldValidationStrategyResolver.get().get().validateInPreview(contentlet,
+                                LegacyFieldTransformer.from(field));
+                    } else {
+                        uniqueFieldValidationStrategyResolver.get().get().validate(contentlet,
+                                LegacyFieldTransformer.from(field));
+                    }
                 } catch (final UniqueFieldValueDuplicatedException e) {
                     cve.addUniqueField(field);
                     hasError = true;
                     Logger.warn(this, getUniqueFieldErrorMessage(field, fieldValue,
-                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown"));
+                            UtilMethods.isSet(e.getContentlets()) ? e.getContentlets().get(0) : "Unknown/New Contentlet"));
 
                     throw cve;
                 } catch (final DotDataException | DotSecurityException e) {
@@ -8038,11 +8050,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+
     @CloseDBIfOpened
     @Override
-    public void validateContentlet(Contentlet contentlet,
-            Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats)
-            throws DotContentletValidationException {
+    public void validateContentletNoRels(final Contentlet contentlet,
+            final List<Category> cats, final boolean preview) throws DotContentletValidationException {
+        if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
+            return;
+        }
+        final String contentTypeId = contentlet.getContentTypeId();
+        if (!InodeUtils.isSet(contentTypeId)) {
+            final String errorMsg =
+                    "Contentlet [" + contentlet.getIdentifier() + "] has an empty Content Type ID";
+            Logger.error(this, errorMsg);
+            throw new DotContentletValidationException(errorMsg);
+        }
+        try {
+            validateContentlet(contentlet, cats, preview);
+            if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType()
+                    .getType()) {
+                APILocator.getPersonaAPI().validatePersona(contentlet);
+            }
+            if (contentlet.isVanityUrl()) {
+                APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
+            }
+        } catch (final DotContentletValidationException ve) {
+            throw ve;
+        }
+    }
+
+    @Override
+    public void validateContentlet(Contentlet contentlet,Map<Relationship,
+            List<Contentlet>> contentRelationships,List<Category> cats) throws DotContentletValidationException {
+
         Structure st = CacheLocator.getContentTypeCache()
                 .getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
@@ -8058,39 +8098,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
         validateContentlet(contentlet, relationshipsData, cats);
     }
 
-    @CloseDBIfOpened
     @Override
-    public void validateContentletNoRels(final Contentlet contentlet,
-            final List<Category> cats) throws DotContentletValidationException {
-        if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
-            return;
-        }
-        final String contentTypeId = contentlet.getContentTypeId();
-        if (!InodeUtils.isSet(contentTypeId)) {
-            final String errorMsg =
-                    "Contentlet [" + contentlet.getIdentifier() + "] has an empty Content Type ID";
-            Logger.error(this, errorMsg);
-            throw new DotContentletValidationException(errorMsg);
-        }
-        try {
-            validateContentlet(contentlet, cats);
-            if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType()
-                    .getType()) {
-                APILocator.getPersonaAPI().validatePersona(contentlet);
-            }
-            if (contentlet.isVanityUrl()) {
-                APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
-            }
-        } catch (final DotContentletValidationException ve) {
-            throw ve;
-        }
+    public void validateContentletNoRels(Contentlet contentlet,
+                                  List<Category> cats) throws DotContentletValidationException {
+        validateContentletNoRels(contentlet, cats, false);
+    }
+
+    @Override
+    public void validateContentlet(final Contentlet contentlet,
+                                   final ContentletRelationships contentRelationships,
+                                   final List<Category> cats) throws DotContentletValidationException {
+        validateContentlet(contentlet,contentRelationships, cats, false );
     }
 
     @CloseDBIfOpened
     @Override
     public void validateContentlet(final Contentlet contentlet,
             final ContentletRelationships contentRelationships,
-            final List<Category> cats) throws DotContentletValidationException {
+            final List<Category> cats, final boolean preview) throws DotContentletValidationException {
         if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
             return;
         }
@@ -8102,7 +8127,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException(errorMsg);
         }
         try {
-            validateContentlet(contentlet, cats);
+            validateContentlet(contentlet, cats, preview);
             if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType()
                     .getType()) {
                 APILocator.getPersonaAPI().validatePersona(contentlet);

@@ -10,6 +10,7 @@ import { By } from '@angular/platform-browser';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
+    DotAnalyticsTrackerService,
     DotContentletLockerService,
     DotDevicesService,
     DotExperimentsService,
@@ -26,6 +27,7 @@ import {
     getRunningExperimentMock,
     mockDotDevices
 } from '@dotcms/utils-testing';
+import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -44,7 +46,13 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { getFullPageURL, createFavoritePagesURL, createFullURL, sanitizeURL } from '../../../utils';
+import {
+    getFullPageURL,
+    createFavoritePagesURL,
+    createFullURL,
+    sanitizeURL,
+    convertLocalTimeToUTC
+} from '../../../utils';
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
@@ -108,7 +116,8 @@ const baseUVEState = {
     clearDeviceAndSocialMedia: jest.fn(),
     device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
     $unlockButton: signal(null),
-    socialMedia: signal(null)
+    socialMedia: signal(null),
+    trackUVECalendarChange: jest.fn()
 };
 
 const personaEventMock = {
@@ -168,6 +177,12 @@ describe('DotUveToolbarComponent', () => {
         providers: [
             UVEStore,
             provideHttpClientTesting(),
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
             mockProvider(DotContentletLockerService, {
                 unlock: jest.fn().mockReturnValue(of({}))
             }),
@@ -636,6 +651,35 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('calendar', () => {
+            const originalHasInstance = Object.getOwnPropertyDescriptor(Date, Symbol.hasInstance);
+            const originalUTC = Object.getOwnPropertyDescriptor(Date, 'UTC');
+
+            // We need to mock Date instanceof check and Date.UTC to avoid jest errors when running the tests
+            // More info here: https://github.com/jestjs/jest/issues/11808
+            Object.defineProperty(Date, Symbol.hasInstance, {
+                value: function () {
+                    return true;
+                }
+            });
+
+            Object.defineProperty(Date, 'UTC', {
+                value: function (_args) {
+                    return new Date();
+                }
+            });
+
+            afterAll(() => {
+                // Restore original instanceof behavior
+                if (originalHasInstance) {
+                    Object.defineProperty(Date, Symbol.hasInstance, originalHasInstance);
+                }
+
+                // Restore original UTC behavior
+                if (originalUTC) {
+                    Object.defineProperty(Date, 'UTC', originalUTC);
+                }
+            });
+
             it('should show calendar when in live mode', () => {
                 expect(spectator.query('p-calendar')).toBeTruthy();
             });
@@ -678,6 +722,69 @@ describe('DotUveToolbarComponent', () => {
                 expect(new Date(calendar.getAttribute('ng-reflect-min-date'))).toEqual(
                     expectedMinDate
                 );
+            });
+
+            it('should load page on date when date is selected', () => {
+                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+
+                const calendar = spectator.debugElement.query(
+                    By.css('[data-testId="uve-toolbar-calendar"]')
+                );
+
+                const date = new Date();
+
+                spectator.triggerEventHandler(calendar, 'ngModelChange', date);
+
+                expect(spyLoadPageAsset).toHaveBeenCalledWith({
+                    mode: UVE_MODE.LIVE,
+                    publishDate: convertLocalTimeToUTC(date)
+                });
+            });
+
+            it('should track event on date when date is selected', () => {
+                const spyTrackUVECalendarChange = jest.spyOn(
+                    baseUVEState,
+                    'trackUVECalendarChange'
+                );
+
+                const calendar = spectator.debugElement.query(
+                    By.css('[data-testId="uve-toolbar-calendar"]')
+                );
+
+                const date = new Date();
+
+                spectator.triggerEventHandler(calendar, 'ngModelChange', date);
+
+                expect(spyTrackUVECalendarChange).toHaveBeenCalledWith({
+                    selectedDate: convertLocalTimeToUTC(date)
+                });
+            });
+
+            it('should fetch date when clicking on today button', () => {
+                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+                const calendar = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
+
+                calendar.dispatchEvent(new Event('click'));
+
+                expect(spyLoadPageAsset).toHaveBeenCalledWith({
+                    mode: UVE_MODE.LIVE,
+                    publishDate: expect.any(String)
+                });
+            });
+
+            it('should track event on today button', () => {
+                const spyTrackUVECalendarChange = jest.spyOn(
+                    baseUVEState,
+                    'trackUVECalendarChange'
+                );
+
+                const calendar = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
+
+                calendar.dispatchEvent(new Event('click'));
+
+                expect(spyTrackUVECalendarChange).toHaveBeenCalledWith({
+                    selectedDate: expect.any(String)
+                });
             });
         });
     });

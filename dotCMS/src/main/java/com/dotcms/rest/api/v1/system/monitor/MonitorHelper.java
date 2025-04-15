@@ -1,11 +1,18 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.content.elasticsearch.business.ClusterStats;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.jitsu.EventLogRunnable;
+import com.dotcms.telemetry.util.JsonUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -14,6 +21,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -22,6 +30,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,6 +64,11 @@ class MonitorHelper {
 
     private static final String[] ACLS_IPS = Config.getStringArrayProperty(SYSTEM_STATUS_API_IP_ACL,
             DEFAULT_IP_ACL_VALUE);
+
+
+    private final Lazy<String> telemetryEndPointUrl = Lazy.of(() -> Config.getStringProperty(
+            "TELEMETRY_PERSISTENCE_ENDPOINT", null));
+
 
     static final AtomicReference<Tuple2<Long, MonitorStats>> cachedStats = new AtomicReference<>();
 
@@ -109,11 +124,11 @@ class MonitorHelper {
      * @return An instance of {@link MonitorStats} containing the status of the different
      * subsystems.
      */
-    MonitorStats getMonitorStats()  {
+    MonitorStats getMonitorStats(final HttpServletRequest request)  {
         if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
             return cachedStats.get()._2;
         }
-        return getMonitorStatsNoCache();
+        return getMonitorStatsNoCache(request);
     }
 
     /**
@@ -123,7 +138,7 @@ class MonitorHelper {
      * @return An instance of {@link MonitorStats} containing the status of the different
      * subsystems.
      */
-    synchronized MonitorStats getMonitorStatsNoCache()  {
+    synchronized MonitorStats getMonitorStatsNoCache(final HttpServletRequest request)  {
         // double check
         if (cachedStats.get() != null && cachedStats.get()._1 > System.currentTimeMillis()) {
             return cachedStats.get()._2;
@@ -135,6 +150,8 @@ class MonitorHelper {
                 .localFSHealthy(isLocalFileSystemHealthy())
                 .dBHealthy(isDBHealthy())
                 .esHealthy(canConnectToES())
+                .telemetry(Try.of(()->canConnectToTelemetry()).getOrElse(false))
+                .contentAnalytics(isContentAnalytics(request))
                 .build();
         // cache a healthy response
         if (monitorStats.isDotCMSHealthy()) {
@@ -142,6 +159,37 @@ class MonitorHelper {
                     monitorStats));
         }
         return monitorStats;
+    }
+
+
+
+    /**
+     * Determines if the content analytics is healthy by sending a test event to the analytics
+     * @param request
+     * @return
+     */
+    private String isContentAnalytics(final HttpServletRequest request) {
+
+        try {
+
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            final AnalyticsApp analyticsApp = Try.of(()-> AnalyticsHelper.get().appFromHost(host))
+                    .getOrNull();
+
+            if(analyticsApp==null) {
+                return ExperimentsAPI.Health.NOT_CONFIGURED.name();
+            }
+
+            final Optional<CircuitBreakerUrl.Response<String>> responseOptional =
+                    new EventLogRunnable(host).sendTestEvent();
+
+            return responseOptional.isPresent()
+                    && UtilMethods.isSet(responseOptional.get().getResponse())
+                    ? ExperimentsAPI.Health.OK.name(): ExperimentsAPI.Health.CONFIGURATION_ERROR.name();
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+            return ExperimentsAPI.Health.CONFIGURATION_ERROR.name();
+        }
     }
 
     /**
@@ -173,6 +221,22 @@ class MonitorHelper {
             return false;
         }
     }
+
+    /**
+     * Returns true if dotCMS can connect to telemetry server
+     * @return
+     */
+    boolean canConnectToTelemetry() {
+
+        if (!UtilMethods.isSet(telemetryEndPointUrl.get())) {
+            return false;
+        }
+        return CircuitBreakerUrl.builder()
+                .setUrl(telemetryEndPointUrl.get())
+                .doPing()
+                .build().ping();
+    }
+
 
     /**
      * Determines if the cache is healthy by checking if the SYSTEM_HOST identifier is available.

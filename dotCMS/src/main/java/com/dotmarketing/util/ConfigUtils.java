@@ -5,6 +5,7 @@ import static com.dotmarketing.portlets.languagesmanager.business.LanguageFactor
 
 import com.dotmarketing.business.APILocator;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -12,6 +13,8 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -211,4 +214,28 @@ public class ConfigUtils {
 		return Config.getBooleanProperty(featureFlagName, true);
 	}
 
+	/**
+	 * Returns the current system-wide default email headers.
+	 * <p>
+	 * This method dynamically reads and parses the "DEFAULT_EMAIL_HEADERS" configuration property every time it is called.
+	 * The expected format is a comma-separated list of header key/value pairs, where each pair is separated by a colon.
+	 * For example: "X-Custom-1:Value1, X-Custom-2:Value2".
+	 * </p>
+	 *
+	 * @return a Map containing the default email headers; if the configuration is not set or empty, an empty map is returned.
+	 */
+	public static Map<String, String> getDefaultEmailHeaders() {
+		Map<String, String> headers = new HashMap<>();
+		String headerConfig = Config.getStringProperty("DEFAULT_EMAIL_HEADERS", null);
+		if (headerConfig != null && !headerConfig.trim().isEmpty()) {
+			String[] headerPairs = headerConfig.split(StringPool.COMMA);
+			for (String pair : headerPairs) {
+				String[] keyValue = pair.split(StringPool.COLON, 2);
+				if (keyValue.length == 2) {
+					headers.put(keyValue[0].trim(), keyValue[1].trim());
+				}
+			}
+		}
+		return headers;
+	}
 }

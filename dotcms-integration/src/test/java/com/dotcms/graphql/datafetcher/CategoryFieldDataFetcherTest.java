@@ -1,5 +1,9 @@
 package com.dotcms.graphql.datafetcher;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -17,17 +21,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import graphql.language.Field;
 import graphql.schema.DataFetchingEnvironment;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 public class CategoryFieldDataFetcherTest {
 
@@ -50,7 +49,7 @@ public class CategoryFieldDataFetcherTest {
     /**
      * MethodToTest {@link CategoryFieldDataFetcher#get(DataFetchingEnvironment)}
      * Given Scenario: Using the {@link CategoryFieldDataFetcher} on a content that does not contain categories
-     * ExpectedResult: Should return null
+     * ExpectedResult: Should return an empty list
      * @throws Exception
      */
     @Test
@@ -65,7 +64,8 @@ public class CategoryFieldDataFetcherTest {
         Mockito.when(environment.getField()).thenReturn(field);
 
         final List result = fetcher.get(environment);
-        assertNull(result);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 
     /**

@@ -10,6 +10,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -17,6 +18,7 @@ import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -34,6 +36,8 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -90,7 +94,7 @@ public class CircuitBreakerUrl {
     public static final Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0, new Header[] {});
 
     public enum Method {
-        GET, POST, PUT, DELETE, PATCH
+        GET, POST, PUT, DELETE, PATCH, HEAD
     }
 
     public CircuitBreakerUrl(final String proxyUrl) {
@@ -311,6 +315,66 @@ public class CircuitBreakerUrl {
         }
     }
 
+    /**
+     * Does a ping (HEAD) over to the given URL to see if it is running
+     * @param urlString String
+     * @return boolean
+     */
+    public boolean ping() {
+
+        final MutableBoolean pingResult = new MutableBoolean(false);
+        circuitBreakerConnectionControl.check(this.proxyUrl);
+
+        try {
+            circuitBreakerConnectionControl.start(Thread.currentThread().getId());
+
+            if (verbose) {
+                Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
+            }
+
+            Failsafe.with(circuitBreaker)
+                    .onSuccess(connection -> {
+                        if(verbose) {
+                            Logger.info(this, "success to " + this.proxyUrl);
+                        }
+                        pingResult.setValue(true);
+                    })
+                    .onFailure(failure ->
+                            Logger.warn(this, "Connection attempts failed " + failure.getMessage()))
+                    .run(ctx -> {
+
+                        final RequestConfig config = RequestConfig.custom()
+                                .setConnectTimeout(Math.toIntExact(this.timeoutMs))
+                                .setRedirectsEnabled(allowRedirects)
+                                .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
+                                .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
+                        try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
+                                .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
+                                .setDefaultRequestConfig(config).build()) {
+
+                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
+                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                            }
+
+                            try (final CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
+
+                                this.response = innerResponse.getStatusLine().getStatusCode();
+                            }
+
+                            pingResult.setValue(isSuccessResponse(this.response));
+                        }
+                    });
+        } catch (Exception ee) {
+
+            Logger.debug(this.getClass(), ee.getMessage() + " " + this);
+        } finally {
+
+            circuitBreakerConnectionControl.end(Thread.currentThread().getId());
+        }
+
+        return pingResult.getValue();
+    }
+
     public int response() {
         return response;
     }
@@ -381,6 +445,13 @@ public class CircuitBreakerUrl {
         if (UtilMethods.isSet(contentLengthHeader)) {
             response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
         }
+    }
+
+    public static Map<String, String> authHeaders(final String token) {
+        return ImmutableMap.<String, String>builder()
+                .put(HttpHeaders.AUTHORIZATION, token)
+                .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                .build();
     }
 
     /**

@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 
 import {
+    DotAnalyticsTrackerService,
     DotContentTypeService,
     DotContentletLockerService,
     DotExperimentsService,
@@ -65,6 +66,13 @@ const PAGE_RESPONSE = {
     }
 };
 
+// Gridstack has some issues with importing (esm/cjs), Jest need to process it to work using the transformIgnorePatterns, but that takes a lot of time
+// So we mock it to avoid that
+jest.mock('gridstack', () => ({
+    __esModule: true,
+    default: jest.fn()
+}));
+
 describe('EditEmaLayoutComponent', () => {
     let spectator: Spectator<EditEmaLayoutComponent>;
     let component: EditEmaLayoutComponent;
@@ -88,6 +96,12 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(ActivatedRoute),
             mockProvider(DotContentTypeService),
             mockProvider(CoreWebService),
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
             mockProvider(DotPageLayoutService, {
                 save: jest.fn(() => of(PAGE_RESPONSE))
             }),

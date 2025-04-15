@@ -9,3 +9,8 @@ console.error = (...params) => {
         originalConsoleError(...params);
     }
 };
+
+// Filter all console warnings during tests
+console.warn = () => {
+    // do nothing so it doesn't print warnings that are not relevant to the tests
+};

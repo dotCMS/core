@@ -47,8 +47,8 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { SafeUrlPipe, DotSpinnerModule, DotCopyContentModalService } from '@dotcms/ui';
-import { isEqual } from '@dotcms/utils';
-import { __NOTIFY_CLIENT__ } from '@dotcms/uve/internal';
+import { isEqual, WINDOW } from '@dotcms/utils';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/uve/internal';
 
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
@@ -67,7 +67,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
@@ -160,6 +160,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
     readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
 
+    readonly $paletteOpen = this.uveStore.paletteOpen;
     readonly UVE_STATUS = UVE_STATUS;
 
     get contentWindow(): Window {
@@ -200,7 +201,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
             return;
         }
 
-        this.contentWindow?.postMessage({ name: __NOTIFY_CLIENT__.UVE_REQUEST_BOUNDS }, this.host);
+        this.contentWindow?.postMessage(
+            { name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS },
+            this.host
+        );
     });
 
     ngOnInit(): void {
@@ -218,32 +222,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @param e - The MouseEvent object representing the click event.
      */
     handleInternalNav(e: MouseEvent) {
-        const href =
-            (e.target as HTMLAnchorElement)?.href ||
-            (e.target as HTMLElement)?.closest('a')?.getAttribute('href');
+        const target = e.target as HTMLAnchorElement;
+        const href = target.href || target.closest('a')?.getAttribute('href');
+        const isInlineEditing = this.uveStore.state() === EDITOR_STATE.INLINE_EDITING;
 
-        e.preventDefault();
-
-        if (href) {
-            const dataset = (e.target as HTMLElement).dataset;
-
-            if (dataset['mode'] && dataset['fieldName'] && dataset['inode']) {
-                // We clicked on the inline editing element, we need to prevent navigation
-                return;
-            }
-
-            const url = new URL(href, window.location.origin);
-
-            if (url.hostname !== window.location.hostname) {
-                this.window.open(href, '_blank');
-
-                return;
-            }
-
-            this.uveStore.loadPageAsset({
-                url: url.pathname
-            });
+        // If the link is not valid or we are in inline editing mode, we do nothing
+        if (!href || isInlineEditing) {
+            return;
         }
+
+        const url = new URL(href, location.origin);
+
+        if (url.hostname !== location.hostname) {
+            this.window.open(href, '_blank');
+
+            return;
+        }
+
+        this.uveStore.loadPageAsset({ url: url.pathname });
+        e.preventDefault();
     }
 
     /**
@@ -305,7 +302,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
                 this.contentWindow?.postMessage(
                     {
-                        name: __NOTIFY_CLIENT__.UVE_REQUEST_BOUNDS
+                        name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
                     },
                     this.host
                 );
@@ -372,7 +369,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 this.uveStore.updateEditorScrollDragState();
 
                 this.contentWindow?.postMessage(
-                    { name: __NOTIFY_CLIENT__.UVE_SCROLL_INSIDE_IFRAME, direction },
+                    { name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME, direction },
                     this.host
                 );
             });
@@ -737,7 +734,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 if (clientAction === CLIENT_ACTIONS.EDIT_CONTENTLET) {
                     this.contentWindow?.postMessage(
                         {
-                            name: __NOTIFY_CLIENT__.UVE_RELOAD_PAGE
+                            name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
                         },
                         this.host
                     );
@@ -816,7 +813,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 // we should change this with a new SDK reload strategy
                 this.contentWindow?.postMessage(
                     {
-                        name: __NOTIFY_CLIENT__.UVE_RELOAD_PAGE
+                        name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
                     },
                     this.host
                 );
@@ -945,7 +942,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
 
                         if (!this.uveStore.isTraditionalPage()) {
                             const message = {
-                                name: __NOTIFY_CLIENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
+                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: data
                             };
 
@@ -1052,7 +1049,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     reloadIframeContent() {
         this.iframe?.nativeElement?.contentWindow?.postMessage(
-            { name: __NOTIFY_CLIENT__.UVE_SET_PAGE_DATA, payload: this.uveStore.pageAPIResponse() },
+            {
+                name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA,
+                payload: this.uveStore.pageAPIResponse()
+            },
             this.host
         );
     }

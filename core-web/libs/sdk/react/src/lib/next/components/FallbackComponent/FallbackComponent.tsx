@@ -1,5 +1,6 @@
+import { DotCMSContentlet } from '@dotcms/uve/types';
+
 import { useIsDevMode } from '../../hooks/useIsDevMode';
-import { DotCMSContentlet } from '../../types';
 
 /**
  * @internal

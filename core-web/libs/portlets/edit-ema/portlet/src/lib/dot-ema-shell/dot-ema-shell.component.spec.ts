@@ -14,6 +14,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
+    DotAnalyticsTrackerService,
     DotContentletLockerService,
     DotExperimentsService,
     DotLanguagesService,
@@ -32,6 +33,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotNotLicenseComponent } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -47,7 +49,7 @@ import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, PERSONA_KEY, WINDOW } from '../shared/consts';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
@@ -276,6 +278,12 @@ describe('DotEmaShellComponent', () => {
                             }
                         });
                     }
+                }
+            },
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
                 }
             },
             {
@@ -856,28 +864,6 @@ describe('DotEmaShellComponent', () => {
                 expect(spyStoreLoadPage).toHaveBeenCalledWith({
                     ...INITIAL_PAGE_PARAMS,
                     mode: UVE_MODE.EDIT
-                });
-            });
-
-            it('should add the current date if preview param is true and publishDate is not present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
-                const params = {
-                    ...INITIAL_PAGE_PARAMS,
-                    mode: UVE_MODE.LIVE
-                };
-
-                // override the new Date() to return a fixed date
-                const fixedDate = new Date('2024-01-01');
-                jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
-
-                const data = UVE_CONFIG_MOCK(BASIC_OPTIONS);
-
-                overrideRouteSnashot(activatedRoute, SNAPSHOT_MOCK({ queryParams: params, data }));
-
-                spectator.detectChanges();
-                expect(spyStoreLoadPage).toHaveBeenCalledWith({
-                    ...params,
-                    publishDate: fixedDate.toISOString()
                 });
             });
         });

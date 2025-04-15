@@ -9,6 +9,7 @@ import {
 import { of } from 'rxjs';
 
 import { signal } from '@angular/core';
+import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -17,7 +18,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputSwitch, InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { TabPanel, TabView } from 'primeng/tabview';
 
-import { DotCMSContentlet } from '@dotcms/angular';
 import {
     DotContentletService,
     DotContentTypeService,
@@ -32,6 +32,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import {
+    DotCMSContentlet,
     DotCMSWorkflowAction,
     DotContentletCanLock,
     DotContentletDepths
@@ -214,11 +215,29 @@ describe('DotFormComponent', () => {
             expect(component.form.get('text3').hasValidator(Validators.required)).toBe(false);
         });
 
-        it('should render the correct number of rows, columns and fields', () => {
-            expect(spectator.queryAll(byTestId('row')).length).toBe(1);
-            expect(spectator.queryAll(byTestId('column')).length).toBe(2);
-            expect(spectator.queryAll(byTestId('field')).length).toBe(3);
-        });
+        it('should render the correct number of rows, columns and fields', fakeAsync(() => {
+            // First, ensure the component is fully initialized
+            spectator.detectChanges();
+
+            // Give time for Angular to process any pending tasks
+            tick();
+
+            // Find the first tab content
+            const form = spectator.query(byTestId('edit-content-form'));
+            expect(form).toBeTruthy();
+
+            // If we can directly query the elements even though they are in a tab
+            const rows = spectator.queryAll(byTestId('row'));
+            const columns = spectator.queryAll(byTestId('column'));
+            const fields = spectator.queryAll(byTestId('field'));
+
+            expect(rows.length).toBe(1);
+            expect(columns.length).toBe(2);
+            expect(fields.length).toBe(3);
+
+            // Clean up any pending async operations
+            flush();
+        }));
     });
 
     describe('With multiple tabs and existing content', () => {

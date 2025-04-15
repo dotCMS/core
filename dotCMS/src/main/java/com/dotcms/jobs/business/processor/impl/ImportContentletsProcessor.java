@@ -27,12 +27,14 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.ImmutableImportFileParams;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.google.common.hash.Hashing;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -87,6 +89,8 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
     private static final String PARAMETER_SITE_NAME = "siteName";
     private static final String PARAMETER_CONTENT_TYPE = "contentType";
     private static final String PARAMETER_WORKFLOW_ACTION_ID = "workflowActionId";
+    private static final String PARAMETER_STOP_ON_ERROR = "stopOnError";
+    private static final String PARAMETER_COMMIT_GRANULARITY = "commitGranularity";
     private static final String PARAMETER_CMD = Constants.CMD;
     private static final String CMD_PREVIEW = com.dotmarketing.util.Constants.PREVIEW;
     private static final String CMD_PUBLISH = com.dotmarketing.util.Constants.PUBLISH;
@@ -176,6 +180,22 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      */
     @Override
     public void validate(final Map<String, Object> parameters) throws JobValidationException {
+
+        // Validating the import file was set
+        Optional<DotTempFile> tempFile = JobUtil.retrieveTempFile(parameters);
+        if (tempFile.isEmpty()) {
+            Logger.error(this.getClass(), "Unable to retrieve the import file.");
+            throw new JobValidationException("Unable to retrieve the import file.");
+        }
+
+        // And that it is not empty
+        final var fileToImport = tempFile.get().file;
+        final long totalLines = totalLines(fileToImport);
+        if (totalLines <= 1) {
+            final var errorMessage = "The import file is empty.";
+            Logger.error(this.getClass(), errorMessage);
+            throw new JobValidationException(errorMessage);
+        }
 
         // Validating the language (will throw an exception if it doesn't)
         final Language language = findLanguage(parameters);
@@ -392,21 +412,37 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
         final var fields = getFieldIds(job.parameters(), contentType);
         final var language = findLanguage(job.parameters());
         final var workflowActionId = getWorkflowActionId(job.parameters());
+        final var stopOnError = getStopOnError(job.parameters());
+        final var commitGranularity = commitGranularity(job.parameters());
+
         final var httpReq = JobUtil.generateMockRequest(user, currentSiteName);
         final var importId = jobIdToLong(job.id());
 
         // Read headers and process language columns for multilingual imports
-        CsvHeaderInfo headerInfo = readHeaders(job, language == null, csvReader);
+        final CsvHeaderInfo headerInfo = readHeaders(job, language == null, csvReader);
 
         Logger.info(this, String.format("-------- Starting Content Import %s -------- ",
                 preview ? "Preview" : "Process"));
         Logger.info(this, String.format("-> Content Type: %s", contentType.variable()));
-
-        return ImportUtil.importFileResult(importId, currentSiteId, contentType.id(), fields,
-                preview, language == null, user, language == null ? -1 : language.getId(),
-                headerInfo.headers, csvReader, headerInfo.languageCodeColumn,
-                headerInfo.countryCodeColumn, workflowActionId, fileTotalLines, httpReq,
-                progressCallback);
+        final ImmutableImportFileParams importFileParams = ImmutableImportFileParams.builder()
+                .preview(preview)
+                .importId(importId)
+                .siteId(currentSiteId)
+                .contentTypeInode(contentType.id())
+                .keyFields(fields).user(user)
+                .language(language == null ? -1 : language.getId())
+                .csvHeaders(headerInfo.headers)
+                .csvReader(csvReader)
+                .languageCodeHeaderColumn(headerInfo.languageCodeColumn)
+                .countryCodeHeaderColumn(headerInfo.countryCodeColumn)
+                .workflowActionId(workflowActionId)
+                .fileTotalLines(fileTotalLines)
+                .request(httpReq)
+                .progressCallback(progressCallback)
+                .stopOnError(stopOnError)
+                .commitGranularityOverride(commitGranularity)
+                .build();
+        return ImportUtil.importFileResult(importFileParams);
     }
 
     /**
@@ -479,6 +515,42 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
     }
 
     /**
+     * Retrieves the stop on error flag from the job parameters.
+     * @param parameters job parameters
+     * @return The stop on error flag, or false if not present in parameters
+     */
+    private boolean getStopOnError(final Map<String, Object> parameters) {
+        return Try.of(() -> {
+            final Object value = parameters != null ? parameters.get(PARAMETER_STOP_ON_ERROR) : null;
+            if (value instanceof Boolean) {
+                return (Boolean) value;
+            } else if (value instanceof String) {
+                return Boolean.parseBoolean((String) value);
+            }
+            return false;
+        }).getOrElse(false);
+    }
+
+    /**
+     * Retrieves the transaction granularity from the job parameters.
+     * @param parameters job parameters
+     * @return The transaction granularity, or the default value if not present in parameters
+     */
+    private static int commitGranularity(final Map<String, Object> parameters) {
+        final Number orNull = Try.of(() -> {
+            final Object value =
+                    parameters != null ? parameters.get(PARAMETER_COMMIT_GRANULARITY) : null;
+            if (value instanceof Number) {
+                return (Number) value;
+            } else if (value instanceof String) {
+                return Integer.parseInt((String) value);
+            }
+            return ImportUtil.COMMIT_GRANULARITY;
+        }).getOrNull();
+        return orNull != null ? orNull.intValue() : ImportUtil.COMMIT_GRANULARITY;
+    }
+
+    /**
      * Retrieves the language from the job parameters.
      *
      * @param parameters job parameters
@@ -538,6 +610,16 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
      * @param dotTempFile temporary file
      * @return the number of lines in the file
      */
+    private Long totalLines(final File dotTempFile) {
+        return totalLines(null, dotTempFile);
+    }
+
+    /**
+     * Count the number of lines in the file
+     *
+     * @param dotTempFile temporary file
+     * @return the number of lines in the file
+     */
     private Long totalLines(final Job job, final File dotTempFile) {
 
         long totalCount;
@@ -548,10 +630,14 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                         "No lines in CSV import file: " + dotTempFile.getName());
             }
         } catch (Exception e) {
-            Logger.error(this.getClass(),
-                    "Error calculating total lines in CSV import file: " + e.getMessage());
-            throw new JobProcessingException(job.id(),
-                    "Error calculating total lines in CSV import file", e);
+
+            final var message = "Error calculating total lines in CSV import file";
+            Logger.error(this.getClass(), String.format("%s: %s", message, e.getMessage()));
+            if (null != job) {
+                throw new JobProcessingException(job.id(), message, e);
+            } else {
+                throw new JobProcessingException(message, e);
+            }
         }
 
         return totalCount;

@@ -28,7 +28,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS, PALETTE_CLASSES } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -55,8 +55,10 @@ const buildIframeURL = ({ url, params, isTraditionalPage }) => {
         return new String('');
     }
 
+    // Remove trailing slash from host
+    const host = (params.clientHost || window.location.origin).replace(/\/$/, '');
     const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
-    const iframeURL = new URL(pageURL, params.clientHost || window.location.origin); // Add Host to iframeURL
+    const iframeURL = new URL(`${host}/${pageURL}`);
 
     return iframeURL.toString();
 };
@@ -66,7 +68,8 @@ const initialState: EditorState = {
     state: EDITOR_STATE.IDLE,
     contentletArea: null,
     dragItem: null,
-    ogTags: null
+    ogTags: null,
+    paletteOpen: true
 };
 
 /**
@@ -134,6 +137,7 @@ export function withEditor() {
                     const bounds = store.bounds();
                     const dragItem = store.dragItem();
                     const isEditState = store.isEditState();
+                    const paletteOpen = store.paletteOpen();
 
                     const isPreview = params?.mode === UVE_MODE.PREVIEW;
                     const isPageReady = isTraditionalPage || isClientReady || isPreview;
@@ -196,7 +200,10 @@ export function withEditor() {
                             ? {
                                   variantId: params?.variantName,
                                   containers: pageAPIResponse?.containers,
-                                  languageId: pageAPIResponse?.viewAs.language.id
+                                  languageId: pageAPIResponse?.viewAs.language.id,
+                                  paletteClass: paletteOpen
+                                      ? PALETTE_CLASSES.OPEN
+                                      : PALETTE_CLASSES.CLOSED
                               }
                             : null,
 
@@ -211,7 +218,7 @@ export function withEditor() {
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     /*
                         Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
-                        This should change in future UVE improvements. 
+                        This should change in future UVE improvements.
                         The url should not depend on the PageAPI response since it does not change (In traditional).
                         In the future we should have a function that updates the content, independent of the url.
                         More info: https://github.com/dotCMS/core/issues/31475
@@ -349,6 +356,9 @@ export function withEditor() {
                 },
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
+                },
+                setPaletteOpen(paletteOpen: boolean) {
+                    patchState(store, { paletteOpen });
                 }
             };
         })

@@ -2,7 +2,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAnalyticsTrackerService, DotMessageService } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/uve/types';
 
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
@@ -41,7 +41,8 @@ describe('DotEditorModeSelectorComponent', () => {
         pageParams: signal(mockStoreState.pageParams),
         $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
         clearDeviceAndSocialMedia: jest.fn(),
-        loadPageAsset: jest.fn()
+        loadPageAsset: jest.fn(),
+        trackUVEModeChange: jest.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -50,6 +51,12 @@ describe('DotEditorModeSelectorComponent', () => {
             {
                 provide: UVEStore,
                 useValue: mockStore
+            },
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
             },
             {
                 provide: DotMessageService,
@@ -105,7 +112,7 @@ describe('DotEditorModeSelectorComponent', () => {
             });
         });
 
-        it('should include publishDate when switching to LIVE mode', () => {
+        it('should not include publishDate when switching to LIVE mode', () => {
             jest.useFakeTimers();
             const now = new Date();
             jest.setSystemTime(now);
@@ -113,7 +120,7 @@ describe('DotEditorModeSelectorComponent', () => {
             component.onModeChange(UVE_MODE.LIVE);
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
                 mode: UVE_MODE.LIVE,
-                publishDate: now.toISOString()
+                publishDate: undefined
             });
 
             jest.useRealTimers();
@@ -176,6 +183,27 @@ describe('DotEditorModeSelectorComponent', () => {
             expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
                 mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
+            });
+        });
+
+        it('should track mode change when clicking a menu item', () => {
+            // Setup initial state as EDIT mode
+            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
+            spectator.detectChanges();
+
+            // Open menu
+            const button = spectator.query('[data-testId="more-button"]');
+            spectator.click(button);
+            spectator.detectChanges();
+
+            // Click the Preview mode menu item
+            const menuItems = spectator.queryAll('.menu-item');
+            const previewMenuItem = menuItems[1]; // Preview is second item
+            spectator.click(previewMenuItem);
+
+            expect(mockStore.trackUVEModeChange).toHaveBeenCalledWith({
+                toMode: UVE_MODE.PREVIEW,
+                fromMode: UVE_MODE.EDIT
             });
         });
 

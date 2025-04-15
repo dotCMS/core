@@ -21,6 +21,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { CLIENT_ACTIONS } from '@dotcms/client';
 import {
     DotAlertConfirmService,
+    DotAnalyticsTrackerService,
     DotContentTypeService,
     DotContentletLockerService,
     DotContentletService,
@@ -58,6 +59,7 @@ import {
 import { DotCMSContentlet, DEFAULT_VARIANT_ID, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 import {
     DotLanguagesServiceMock,
     MockDotMessageService,
@@ -89,8 +91,8 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { DEFAULT_PERSONA, WINDOW, HOST, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     QUERY_PARAMS_MOCK,
     URL_CONTENT_MAP_MOCK,
@@ -236,6 +238,12 @@ const createRouting = () =>
             DotWorkflowActionsFireService,
             DotTempFileUploadService,
             DotAlertConfirmService,
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
             {
                 provide: DotHttpErrorManagerService,
                 useValue: new MockDotHttpErrorManagerService()
@@ -424,6 +432,33 @@ describe('EditEmaEditorComponent', () => {
                 componentsToHide.forEach((testId) => {
                     expect(spectator.query(byTestId(testId))).toBeNull();
                 });
+            });
+
+            it('should hide palette when state changes', () => {
+                // First, make sure palette is visible by default
+                expect(spectator.query(byTestId('palette')).classList).toContain(
+                    PALETTE_CLASSES.OPEN
+                );
+
+                // Simulate Click the toggle button
+                store.setPaletteOpen(false);
+
+                spectator.detectChanges();
+
+                // Palette should now be hidden
+                expect(spectator.query(byTestId('palette')).classList).toContain(
+                    PALETTE_CLASSES.CLOSED
+                );
+            });
+
+            it('should have a placeholder for the palette toggle button', () => {
+                store.setPaletteOpen(true);
+
+                spectator.detectChanges();
+
+                const placeholder = spectator.query(byTestId('toggle-palette-placeholder'));
+
+                expect(placeholder).not.toBeNull();
             });
 
             it('should have a toolbar', () => {
