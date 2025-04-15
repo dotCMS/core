@@ -18,7 +18,7 @@ import javax.servlet.http.HttpSession;
  *
  * if( PageMode.get(request).isAdmin){ doAdminStuff(); }
  *
- * contentAPI.find("sad", user, mode.respectAnonPerms);
+ * contentAPI.find("happy", user, mode.respectAnonPerms);
  *
  * contentAPI.findByIdentifier("id", 1, mode.showLive, user, mode.respectAnonPerms);
  *
