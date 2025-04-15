@@ -8332,9 +8332,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     // If there's a 1-N relationship and the child content is
                     // trying to relate to one more parent...
+
+                    List <Contentlet> contentsInRelationshipSameLanguage = contentsInRelationship.stream().filter(c -> c.getLanguageId() == contentlet.getLanguageId()).collect(Collectors.toList());
+
                     if (relationship.getCardinality()
                             == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
-                            && contentsInRelationship.size() > 1) {
+                            && contentsInRelationshipSameLanguage.size() > 1) {
                         final StringBuilder error = new StringBuilder();
                         error.append("ERROR! Child content [").append(contentletId)
                                 .append("] is already related to another parent content [");
