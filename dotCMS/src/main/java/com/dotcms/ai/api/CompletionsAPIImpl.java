@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  */
 public class CompletionsAPIImpl implements CompletionsAPI {
 
-    private static String DEFAULT_AI_MAX_NUMBER_OF_TOKENS = "DOTAI_DEFAULT_MAX_NUMBER_OF_TOKENS";
+    private static String DEFAULT_AI_MAX_NUMBER_OF_TOKENS = "AI_DEFAULT_MAX_NUMBER_OF_TOKENS";
     public static final Lazy<Integer> DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE =
             Lazy.of(() -> Config.getIntProperty(DEFAULT_AI_MAX_NUMBER_OF_TOKENS, 16384));
 
