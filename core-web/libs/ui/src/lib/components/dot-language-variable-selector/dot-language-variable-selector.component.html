@@ -3,7 +3,7 @@
         #autoComplete
         [appendTo]="'body'"
         class="dot-language-variable-selector__autocomplete"
-        data-testId="language-variable-selector"
+        data-testid="language-variable-selector-input"
         [placeholder]="'edit.content.wysiwyg-field.language-variable-placeholder' | dm"
         [(ngModel)]="$selectedItem"
         [ngModelOptions]="{ standalone: true }"
@@ -16,10 +16,17 @@
         (completeMethod)="loadSuggestions()"
         [styleClass]="'dot-language-variable-selector__autocomplete--with-icon'">
         <ng-template let-variable pTemplate="item">
-            <div class="dot-language-variable-selector__item">
-                <div class="dot-language-variable-selector__item-value">{{ variable.value }}</div>
+            <div
+                class="dot-language-variable-selector__item"
+                data-testid="language-variable-suggestion-item">
+                <div
+                    class="dot-language-variable-selector__item-value"
+                    data-testid="language-variable-suggestion-value">
+                    {{ variable.value }}
+                </div>
                 <div
                     class="dot-language-variable-selector__item-key"
+                    data-testid="language-variable-suggestion-key"
                     [innerHTML]="variable.key | dotHighlight: $selectedItem()"></div>
             </div>
         </ng-template>

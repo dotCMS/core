@@ -2,10 +2,21 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 /**
- * Pipe to highlight text in a string.
+ * Pipe that adds highlighting to text by wrapping matching search terms with a 'highlight' CSS class.
+ * This is primarily used to visually emphasize search matches, making it easy for users to identify
+ * where their search terms appear in the text.
+ *
+ * @param text The original text to search within
+ * @param search The search term to highlight
+ * @returns HTML string with matching text wrapped in highlight spans
  *
  * @example
+ * <!-- Highlights all occurrences of 'search' in 'text' -->
  * <div [innerHTML]="text | dotHighlight:search"></div>
+ *
+ * <!-- Example with actual values -->
+ * <div [innerHTML]="'Hello World' | dotHighlight:'World'"></div>
+ * <!-- Output: Hello <span class="highlight">World</span> -->
  */
 @Pipe({
     name: 'dotHighlight',

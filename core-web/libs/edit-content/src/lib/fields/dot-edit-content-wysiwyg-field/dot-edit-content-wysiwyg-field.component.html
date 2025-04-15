@@ -8,7 +8,9 @@
         (onChange)="onEditorChange($event.value)"
         data-testId="editor-selector" />
 
-    <dot-language-variable-selector (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
+    <dot-language-variable-selector
+        data-testid="language-variable-selector"
+        (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
 </div>
 
 <div class="dot-wysiwyg__editor">

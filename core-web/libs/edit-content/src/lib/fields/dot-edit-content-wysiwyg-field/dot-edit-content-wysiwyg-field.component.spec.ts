@@ -12,9 +12,9 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
+import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { DotMessagePipe, mockMatchMedia, monacoMock } from '@dotcms/utils-testing';
 
-import { DotWysiwygMonacoComponent } from './components/dot-wysiwyg-monaco/dot-wysiwyg-monaco.component';
 import { DotWysiwygTinymceComponent } from './components/dot-wysiwyg-tinymce/dot-wysiwyg-tinymce.component';
 import { DotWysiwygTinymceService } from './components/dot-wysiwyg-tinymce/service/dot-wysiwyg-tinymce.service';
 import { DotEditContentWYSIWYGFieldComponent } from './dot-edit-content-wysiwyg-field.component';
@@ -30,6 +30,7 @@ import {
     WYSIWYG_MOCK
 } from './mocks/dot-edit-content-wysiwyg-field.mock';
 
+import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import { createFormGroupDirectiveMock } from '../../utils/mocks';
 
 const mockScrollIntoView = () => {
@@ -104,7 +105,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             expect(DEFAULT_EDITOR).toBe(AvailableEditor.TinyMCE);
 
             expect(spectator.query(DotWysiwygTinymceComponent)).toBeTruthy();
-            expect(spectator.query(DotWysiwygMonacoComponent)).toBeNull();
+            expect(spectator.query(DotEditContentMonacoEditorControlComponent)).toBeNull();
         });
 
         it('should render editor selection dropdown', () => {
@@ -120,7 +121,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
         it('should render editor selection dropdown and switch to Monaco editor when selected', () => {
             expect(spectator.query(DotWysiwygTinymceComponent)).toBeTruthy();
-            expect(spectator.query(DotWysiwygMonacoComponent)).toBeNull();
+            expect(spectator.query(DotEditContentMonacoEditorControlComponent)).toBeNull();
 
             const onEditorChangeSpy = jest.spyOn(spectator.component, 'onEditorChange');
 
@@ -138,11 +139,11 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             expect(content.length).toBe(0);
             expect(onEditorChangeSpy).toHaveBeenCalled();
             expect(spectator.query(DotWysiwygTinymceComponent)).toBeNull();
-            expect(spectator.query(DotWysiwygMonacoComponent)).toBeTruthy();
+            expect(spectator.query(DotEditContentMonacoEditorControlComponent)).toBeTruthy();
         });
 
         it('should render language variable selector', () => {
-            expect(spectator.query(byTestId('language-variable-selector'))).toBeTruthy();
+            expect(spectator.query(DotLanguageVariableSelectorComponent)).toBeTruthy();
         });
     });
 });
