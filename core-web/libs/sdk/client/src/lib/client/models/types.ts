@@ -604,3 +604,13 @@ export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
     query: string;
     variables: Record<string, unknown>;
 }
+
+/**
+ * Represents the response from the Page API
+ */
+export interface DotCMSPageAPIResponse {
+    /** The page asset */
+    page: DotCMSPageAsset;
+    /** The parameters used to fetch the page */
+    params: Record<string, unknown>;
+}

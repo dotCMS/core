@@ -94,7 +94,12 @@ describe('PageClient', () => {
                 requestOptions
             );
 
-            expect(result).toEqual(mockPageData.entity);
+            expect(result).toEqual({
+                page: mockPageData.entity,
+                params: {
+                    hostId: 'test-site'
+                }
+            });
         });
 
         it('should throw error when path is not provided', async () => {
@@ -197,7 +202,6 @@ describe('PageClient', () => {
             expect(result).toEqual({
                 page: graphqlToPageEntity(mockGraphQLResponse.data),
                 content: { content: mockGraphQLResponse.data.testContent },
-                errors: null,
                 query: expect.any(String),
                 variables: expect.any(Object)
             });

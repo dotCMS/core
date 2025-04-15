@@ -3,7 +3,7 @@ import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './uti
 import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
-import { DotCMSGraphQLPageResponse, DotCMSPageAsset } from '../models/types';
+import { DotCMSGraphQLPageResponse, DotCMSPageAPIResponse } from '../models/types';
 
 /**
  * The parameters for the Page API.
@@ -185,12 +185,12 @@ export class PageClient {
      *      });
      *```
      */
-    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAsset>;
+    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAPIResponse>;
     get(url: string, options?: GraphQLPageOptions): Promise<DotCMSGraphQLPageResponse>;
     get(
         url: string,
         options?: PageRequestParams | GraphQLPageOptions
-    ): Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse> {
+    ): Promise<DotCMSPageAPIResponse | DotCMSGraphQLPageResponse> {
         if (!options) {
             return this.#getPageFromAPI(url);
         }
@@ -240,7 +240,10 @@ export class PageClient {
      * });
      * ```
      */
-    async #getPageFromAPI(path: string, params?: PageRequestParams): Promise<DotCMSPageAsset> {
+    async #getPageFromAPI(
+        path: string,
+        params?: PageRequestParams
+    ): Promise<DotCMSPageAPIResponse> {
         if (!path) {
             throw new Error("The 'path' parameter is required for the Page API");
         }
@@ -263,7 +266,12 @@ export class PageClient {
             throw error;
         }
 
-        return response.json().then((data) => data.entity);
+        return response.json().then<DotCMSPageAPIResponse>((data) => ({
+            page: data.entity,
+            params: {
+                ...normalizedParams
+            }
+        }));
     }
 
     /**
@@ -378,8 +386,7 @@ export class PageClient {
                 page: pageResponse,
                 content: contentResponse,
                 query: completeQuery,
-                variables: requestVariables,
-                errors
+                variables: requestVariables
             };
         } catch (error) {
             const errorMessage = {
