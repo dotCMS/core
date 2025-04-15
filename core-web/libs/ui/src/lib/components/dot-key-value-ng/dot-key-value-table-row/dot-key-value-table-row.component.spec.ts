@@ -200,6 +200,5 @@ describe('DotKeyValueTableRowComponent', () => {
                 expect(dragHandle).toBeTruthy();
             });
         });
-
     });
 });
