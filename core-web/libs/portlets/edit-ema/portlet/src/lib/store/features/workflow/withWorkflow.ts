@@ -1,10 +1,17 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { effect, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -41,16 +48,14 @@ export function withWorkflow() {
                 /**
                  * Load workflow actions
                  */
-                getWorkflowActions: rxMethod<void | string>(
+                getWorkflowActions: rxMethod<string>(
                     pipe(
                         tap(() => {
                             patchState(store, {
                                 workflowLoading: true
                             });
                         }),
-                        switchMap((inode) => {
-                            const pageInode = inode || store.pageAPIResponse()?.page.inode;
-
+                        switchMap((pageInode) => {
                             return dotWorkflowsActionsService.getByInode(pageInode).pipe(
                                 tapResponse({
                                     next: (workflowActions = []) => {
@@ -70,10 +75,23 @@ export function withWorkflow() {
                         })
                     )
                 ),
-                setWorkflowActionLoading: (loading: boolean) => {
-                    patchState(store, {
-                        workflowLoading: loading
-                    });
+                setWorkflowActionLoading: (workflowLoading: boolean) => {
+                    patchState(store, { workflowLoading });
+                }
+            };
+        }),
+        withHooks((store) => {
+            return {
+                onInit: () => {
+                    effect(
+                        () => {
+                            const page = store.pageAPIResponse()?.page;
+                            if (page) {
+                                store.getWorkflowActions(page.inode);
+                            }
+                        },
+                        { allowSignalWrites: true }
+                    );
                 }
             };
         })

@@ -371,6 +371,12 @@ export class DotEmaShellComponent implements OnInit {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload ?? {};
                 const pageIdentifier = this.uveStore.pageAPIResponse().page.identifier;
 
+                // Add this: reloadURLContentMapPage
+                // if (shouldReloadPage) {
+                //     this.reloadURLContentMapPage(contentletIdentifier);
+                //     return;
+                // }
+
                 if (contentletIdentifier === pageIdentifier || shouldReloadPage || !actionPayload) {
                     this.handleReloadPage(event);
 

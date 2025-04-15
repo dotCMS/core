@@ -1,9 +1,9 @@
-import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withHooks, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, forkJoin, of, pipe } from 'rxjs';
+import { EMPTY, forkJoin, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
@@ -37,9 +37,7 @@ export function withLoad() {
             const router = inject(Router);
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
-            const dotLicenseService = inject(DotLicenseService);
             const dotExperimentsService = inject(DotExperimentsService);
-            const loginService = inject(LoginService);
 
             return {
                 /**
@@ -69,38 +67,48 @@ export function withLoad() {
                                 pageParams
                             });
                         }),
-                        switchMap((pageParams) => {
-                            return forkJoin({
-                                pageAsset: dotPageApiService.get(pageParams).pipe(
-                                    // This logic should be handled in the Shell component using an effect
-                                    switchMap((pageAsset) => {
-                                        const { vanityUrl } = pageAsset;
+                        switchMap((pageParams) =>
+                            dotPageApiService.get(pageParams).pipe(
+                                tap((pageAPIResponse) => {
+                                    const isTraditionalPage = !pageParams.clientHost;
+                                    const isClientReady = isTraditionalPage;
 
-                                        // If there is not vanity and is not a redirect we just return the pageAPI response
-                                        if (isForwardOrPage(vanityUrl)) {
-                                            return of(pageAsset);
-                                        }
-
-                                        // Maybe we can use retryWhen() instead of this navigate.
+                                    patchState(store, {
+                                        pageAPIResponse,
+                                        isTraditionalPage,
+                                        isClientReady
+                                    });
+                                }),
+                                switchMap(({ vanityUrl, page, runningExperimentId }) => {
+                                    if (!isForwardOrPage(vanityUrl)) {
                                         router.navigate([], {
                                             queryParamsHandling: 'merge',
                                             queryParams: { url: vanityUrl.forwardTo }
                                         });
 
-                                        // EMPTY is a simple Observable that only emits the complete notification.
                                         return EMPTY;
-                                    })
-                                ),
-                                // This can be done in the Withhook: onInit if this ticket is done: https://github.com/dotCMS/core/issues/30760
-                                // Reference: https://ngrx.io/guide/signals/signal-store/lifecycle-hooks
-                                isEnterprise: dotLicenseService
-                                    .isEnterprise()
-                                    .pipe(take(1), shareReplay()),
-                                currentUser: loginService.getCurrentUser()
-                            }).pipe(
-                                tap(({ pageAsset }) =>
-                                    store.getWorkflowActions(pageAsset.page.inode)
-                                ),
+                                    }
+
+                                    const identifier = page.identifier;
+                                    const experimentId =
+                                        pageParams?.experimentId ?? runningExperimentId;
+
+                                    return forkJoin({
+                                        languages:
+                                            dotLanguagesService.getLanguagesUsedPage(identifier),
+                                        experiment: dotExperimentsService.getById(
+                                            experimentId ?? DEFAULT_VARIANT_ID
+                                        )
+                                    });
+                                }),
+                                tap(({ experiment, languages }) => {
+                                    patchState(store, {
+                                        experiment,
+                                        languages,
+                                        status: UVE_STATUS.LOADED
+                                    });
+                                }),
+                                // Centralized error handling
                                 catchError(({ status: errorStatus }: HttpErrorResponse) => {
                                     patchState(store, {
                                         errorCode: errorStatus,
@@ -108,57 +116,9 @@ export function withLoad() {
                                     });
 
                                     return EMPTY;
-                                }),
-                                switchMap(({ pageAsset, isEnterprise, currentUser }) => {
-                                    const experimentId =
-                                        pageParams?.experimentId ?? pageAsset?.runningExperimentId;
-
-                                    return forkJoin({
-                                        experiment: dotExperimentsService.getById(
-                                            experimentId ?? DEFAULT_VARIANT_ID
-                                        ),
-                                        languages: dotLanguagesService.getLanguagesUsedPage(
-                                            pageAsset.page.identifier
-                                        )
-                                    }).pipe(
-                                        catchError(({ status: errorStatus }: HttpErrorResponse) => {
-                                            patchState(store, {
-                                                errorCode: errorStatus,
-                                                status: UVE_STATUS.ERROR
-                                            });
-
-                                            return EMPTY;
-                                        }),
-                                        tap(({ experiment, languages }) => {
-                                            const canEditPage = computeCanEditPage(
-                                                pageAsset?.page,
-                                                currentUser,
-                                                experiment
-                                            );
-
-                                            const pageIsLocked = computePageIsLocked(
-                                                pageAsset?.page,
-                                                currentUser
-                                            );
-                                            const isTraditionalPage = !pageParams.clientHost;
-
-                                            patchState(store, {
-                                                pageAPIResponse: pageAsset,
-                                                isEnterprise,
-                                                currentUser,
-                                                experiment,
-                                                languages,
-                                                canEditPage,
-                                                pageIsLocked,
-                                                isClientReady: isTraditionalPage,
-                                                isTraditionalPage,
-                                                status: UVE_STATUS.LOADED
-                                            });
-                                        })
-                                    );
                                 })
-                            );
-                        })
+                            )
+                        )
                     )
                 ),
                 /**
@@ -179,15 +139,19 @@ export function withLoad() {
                             return dotPageApiService
                                 .getClientPage(store.pageParams(), store.clientRequestProps())
                                 .pipe(
-                                    tap((pageAsset) => {
-                                        store.getWorkflowActions(pageAsset.page.inode);
+                                    tap((pageAPIResponse) => {
+                                        const isClientReady = partialState?.isClientReady ?? true;
+                                        patchState(store, { pageAPIResponse, isClientReady });
                                     }),
                                     switchMap((pageAPIResponse) => {
-                                        return forkJoin({
-                                            pageAPIResponse: of(pageAPIResponse),
-                                            languages: dotLanguagesService.getLanguagesUsedPage(
-                                                pageAPIResponse.page.identifier
-                                            )
+                                        return dotLanguagesService.getLanguagesUsedPage(
+                                            pageAPIResponse.page.identifier
+                                        );
+                                    }),
+                                    tap((languages) => {
+                                        patchState(store, {
+                                            languages,
+                                            status: UVE_STATUS.LOADED
                                         });
                                     }),
                                     catchError(({ status: errorStatus }: HttpErrorResponse) => {
@@ -197,32 +161,56 @@ export function withLoad() {
                                         });
 
                                         return EMPTY;
-                                    }),
-                                    tap(({ pageAPIResponse, languages }) => {
-                                        const canEditPage = computeCanEditPage(
-                                            pageAPIResponse?.page,
-                                            store.currentUser(),
-                                            store.experiment()
-                                        );
-
-                                        const pageIsLocked = computePageIsLocked(
-                                            pageAPIResponse?.page,
-                                            store.currentUser()
-                                        );
-
-                                        patchState(store, {
-                                            pageAPIResponse,
-                                            languages,
-                                            canEditPage,
-                                            pageIsLocked,
-                                            status: UVE_STATUS.LOADED,
-                                            isClientReady: partialState?.isClientReady ?? true
-                                        });
                                     })
                                 );
                         })
                     )
                 )
+            };
+        }),
+
+        withHooks((store) => {
+            const dotLicenseService = inject(DotLicenseService);
+            const loginService = inject(LoginService);
+
+            return {
+                onInit: () => {
+                    dotLicenseService
+                        .isEnterprise()
+                        .pipe(take(1), shareReplay())
+                        .subscribe((isEnterprise) => {
+                            patchState(store, { isEnterprise });
+                        });
+
+                    loginService
+                        .getCurrentUser()
+                        .pipe(take(1), shareReplay())
+                        .subscribe((currentUser) => {
+                            patchState(store, { currentUser });
+                        });
+
+                    // These should be computeds
+                    // if you see this comments, remind me to move this to a computed
+                    effect(
+                        () => {
+                            const canEditPage = computeCanEditPage(
+                                store.pageAPIResponse()?.page,
+                                store.currentUser(),
+                                store.experiment()
+                            );
+
+                            patchState(store, { canEditPage });
+
+                            const pageIsLocked = computePageIsLocked(
+                                store.pageAPIResponse()?.page,
+                                store.currentUser()
+                            );
+
+                            patchState(store, { pageIsLocked });
+                        },
+                        { allowSignalWrites: true }
+                    );
+                }
             };
         })
     );

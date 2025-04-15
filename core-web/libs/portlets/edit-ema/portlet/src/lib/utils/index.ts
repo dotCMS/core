@@ -406,7 +406,7 @@ export function computeCanEditPage(
     currentUser: CurrentUser,
     experiment?: DotExperiment
 ): boolean {
-    const pageCanBeEdited = page.canEdit;
+    const pageCanBeEdited = page?.canEdit;
 
     const isLocked = computePageIsLocked(page, currentUser);
 
