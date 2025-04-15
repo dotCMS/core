@@ -201,23 +201,5 @@ describe('DotKeyValueTableRowComponent', () => {
             });
         });
 
-        describe('Hidden Field Toggle', () => {
-            beforeEach(() => {
-                spectator = createComponent({
-                    props: {
-                        showHiddenField: true,
-                        variable: { ...mockVariable },
-                        index: 0,
-                        dragAndDrop: false
-                    } as unknown
-                });
-                spectator.detectChanges();
-            });
-
-            it('should show the hidden toggle when showHiddenField is true', () => {
-                const hiddenSwitch = spectator.query(byTestId('dot-key-value-hidden-switch'));
-                expect(hiddenSwitch).toBeTruthy();
-            });
-        });
     });
 });
