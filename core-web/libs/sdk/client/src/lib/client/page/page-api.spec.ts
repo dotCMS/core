@@ -197,7 +197,9 @@ describe('PageClient', () => {
             expect(result).toEqual({
                 page: graphqlToPageEntity(mockGraphQLResponse.data),
                 content: { content: mockGraphQLResponse.data.testContent },
-                errors: null
+                errors: null,
+                query: expect.any(String),
+                variables: expect.any(Object)
             });
         });
 
@@ -215,7 +217,9 @@ describe('PageClient', () => {
             expect(requestBody.variables).toEqual({
                 url: '/custom-page',
                 mode: 'PREVIEW_MODE',
-                languageId: '2'
+                languageId: '2',
+                fireRules: false,
+                siteId: 'test-site'
             });
         });
 
@@ -262,7 +266,9 @@ describe('PageClient', () => {
             expect(requestBody.variables).toEqual({
                 url: '/default-page',
                 mode: 'LIVE',
-                languageId: '1'
+                languageId: '1',
+                fireRules: false,
+                siteId: 'test-site'
             });
         });
     });

@@ -163,8 +163,8 @@ export const buildPageQuery = ({
 
   ${fragments ? fragments.join('\n\n') : ''}
 
-  query PageContent($url: String!, $languageId: String, $mode: String) {
-    page: page(url: $url, languageId: $languageId, pageMode: $mode) {
+  query PageContent($url: String!, $languageId: String, $mode: String, $personaId: String, $fireRules: Boolean, $publishDate: String, $siteId: String) {
+    page: page(url: $url, languageId: $languageId, pageMode: $mode, personaId: $personaId, fireRules: $fireRules, publishDate: $publishDate, site: $siteId) {
       ...DotCMSPage
       ${page ? '...ClientPage' : ''}
     }

@@ -321,7 +321,15 @@ export class PageClient {
         url: string,
         options?: GraphQLPageOptions
     ): Promise<DotCMSGraphQLPageResponse> {
-        const { languageId = '1', mode = 'LIVE', graphql = {} } = options || {};
+        const {
+            languageId = '1',
+            mode = 'LIVE',
+            siteId = this.siteId,
+            fireRules = false,
+            personaId,
+            publishDate,
+            graphql = {}
+        } = options || {};
         const { page, content = {}, variables, fragments } = graphql;
 
         const contentQuery = buildQuery(content);
@@ -331,10 +339,14 @@ export class PageClient {
             additionalQueries: contentQuery
         });
 
-        const requestVariables = {
+        const requestVariables: Record<string, unknown> = {
             url,
             mode,
             languageId,
+            personaId,
+            fireRules,
+            publishDate,
+            siteId,
             ...variables
         };
 
@@ -365,6 +377,8 @@ export class PageClient {
             return {
                 page: pageResponse,
                 content: contentResponse,
+                query: completeQuery,
+                variables: requestVariables,
                 errors
             };
         } catch (error) {
