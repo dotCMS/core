@@ -24,6 +24,9 @@ export interface ClientRequestProps {
 export interface ClientConfigState {
     isClientReady: boolean;
     clientRequestProps: ClientRequestProps;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    params?: any;
+    rawQuery?: string;
 }
 
 const initialState: ClientConfigState = {

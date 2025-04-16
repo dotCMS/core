@@ -12,7 +12,6 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAnalyticsTrackerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -28,7 +27,6 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 })
 export class DotEditorModeSelectorComponent {
     readonly #store = inject(UVEStore);
-    readonly #analyticsTracker = inject(DotAnalyticsTrackerService);
     readonly $menuItems = computed(() => {
         const canEditPage = this.#store.canEditPage();
         const menu = [];
@@ -90,6 +88,6 @@ export class DotEditorModeSelectorComponent {
         });
 
         /* More info here: https://github.com/dotCMS/core/issues/31719 */
-        this.#store.loadPageAsset({ mode: mode, publishDate: undefined });
+        this.#store.reloadCurrentPage({ params: { mode, publishDate: undefined } });
     }
 }

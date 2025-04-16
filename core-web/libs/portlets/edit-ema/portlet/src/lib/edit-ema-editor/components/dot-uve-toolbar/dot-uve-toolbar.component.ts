@@ -50,7 +50,7 @@ import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-ac
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
-import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
+import { DEFAULT_DEVICES, DEFAULT_PERSONA } from '../../../shared/consts';
 import { DotPage } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { convertLocalTimeToUTC } from '../../../utils';
@@ -147,9 +147,11 @@ export class DotUveToolbarComponent {
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
-        this.#store.loadPageAsset({
-            mode: UVE_MODE.LIVE,
-            publishDate: publishDateUTC
+        this.#store.reloadCurrentPage({
+            params: {
+                mode: UVE_MODE.LIVE,
+                publishDate: publishDateUTC
+            }
         });
     }
 
@@ -176,7 +178,7 @@ export class DotUveToolbarComponent {
             return;
         }
 
-        this.#store.loadPageAsset({ language_id });
+        this.#store.reloadCurrentPage({ params: { languageId: language_id } });
     }
 
     /**
@@ -203,7 +205,7 @@ export class DotUveToolbarComponent {
             persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
         if (existPersona) {
-            this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
+            this.#store.reloadCurrentPage({ params: { personaId: persona.identifier } });
 
             return;
         }
@@ -223,7 +225,9 @@ export class DotUveToolbarComponent {
             accept: () => {
                 this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
                     next: () => {
-                        this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
+                        this.#store.reloadCurrentPage({
+                            params: { personaId: persona.identifier }
+                        });
                         this.$personaSelector().fetchPersonas();
                     },
                     error: () => {
@@ -265,8 +269,10 @@ export class DotUveToolbarComponent {
                         this.$personaSelector().fetchPersonas();
 
                         if (persona.selected) {
-                            this.#store.loadPageAsset({
-                                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                            this.#store.reloadCurrentPage({
+                                params: {
+                                    personaId: DEFAULT_PERSONA.identifier
+                                }
                             });
                         }
                     }); // This does a take 1 under the hood

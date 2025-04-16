@@ -7,24 +7,21 @@ import {
 } from '@dotcms/dotcms-models';
 import { InfoPage } from '@dotcms/ui';
 
-import { DotPageApiResponse } from '../services/dot-page-api.service';
+import { DotPageApiResponse, UVEPageParams } from '../services/dot-page-api.service';
 import { UVE_STATUS } from '../shared/enums';
-import { DotPage, DotPageAssetParams, NavigationBarItem } from '../shared/models';
+import { DotPage, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
     languages: DotLanguage[];
     isEnterprise: boolean;
     pageAPIResponse?: DotPageApiResponse;
-    pageParams?: DotPageAssetParams;
+    pageParams?: UVEPageParams;
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     errorCode?: number;
     viewParams?: DotUveViewParams;
     status: UVE_STATUS;
     isTraditionalPage: boolean;
-    canEditPage: boolean;
-    pageIsLocked: boolean;
-    isClientReady: boolean;
     workflowActions?: DotCMSWorkflowAction[];
 }
 
@@ -47,6 +44,7 @@ export interface DotUveViewParams {
     orientation: Orientation;
     device: string;
     seo: string;
+    experimentId?: string;
 }
 
 export enum Orientation {

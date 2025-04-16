@@ -4,10 +4,12 @@ import {
     withComputed,
     withState,
     type,
-    patchState
+    patchState,
+    withHooks
 } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import {
     DotCMSContentlet,
@@ -21,6 +23,7 @@ import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions, UnlockOptions } from '../../../../shared/models';
 import {
+    checkClientHostAccess,
     computePageIsLocked,
     createFavoritePagesURL,
     createFullURL,
@@ -41,12 +44,13 @@ import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../mo
  * @property {boolean} initialState.isPreviewModeActive - Flag indicating whether the preview mode is active.
  */
 const initialState: EditorToolbarState = {
+    host: window.location.origin,
     device: DEFAULT_DEVICE,
     socialMedia: null,
     isEditState: true,
+    ogTagsResults: null,
     isPreviewModeActive: false,
-    orientation: Orientation.LANDSCAPE,
-    ogTagsResults: null
+    orientation: Orientation.LANDSCAPE
 };
 
 export function withUVEToolbar() {
@@ -56,29 +60,41 @@ export function withUVEToolbar() {
         },
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
+            $apiURL: computed<string>(() => {
+                const params = store.pageParams();
+                const pageURI = store.pageAPIResponse()?.page.pageURI;
+                const pageURL = getFullPageURL({ url: pageURI, params });
+
+                const pageType = store.isTraditionalPage() ? 'render' : 'json';
+                const pageAPI = `/api/v1/page/${pageType}/${pageURL}`;
+
+                return pageAPI;
+            })
+        })),
+        withComputed((store) => {
+            return {
+                isPageLocked: computed<boolean>(() => {
+                    const pageAPIResponse = store.pageAPIResponse();
+                    const currentUser = store.currentUser();
+
+                    return computePageIsLocked(pageAPIResponse.page, currentUser);
+                })
+            };
+        }),
+        withComputed((store) => ({
             $uveToolbar: computed<UVEToolbarProps>(() => {
                 const params = store.pageParams();
-                const url = params?.url;
+                const url = store.pageAPIResponse().page.pageURI;
 
                 const experiment = store.experiment?.();
                 const pageAPIResponse = store.pageAPIResponse();
-                const pageAPIQueryParams = getFullPageURL({ url, params });
-
-                const pageAPI = `/api/v1/page/${
-                    store.isTraditionalPage() ? 'render' : 'json'
-                }/${pageAPIQueryParams}`;
 
                 const bookmarksUrl = createFavoritePagesURL({
-                    languageId: Number(params?.language_id),
+                    languageId: Number(params?.languageId),
                     pageURI: url,
                     siteId: pageAPIResponse?.site?.identifier
                 });
-
-                const isPageLocked = computePageIsLocked(
-                    pageAPIResponse?.page,
-                    store.currentUser()
-                );
-                const shouldShowUnlock = isPageLocked && pageAPIResponse?.page.canLock;
+                const shouldShowUnlock = store.isPageLocked() && pageAPIResponse?.page.canLock;
                 const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
 
                 const unlockButton = {
@@ -87,13 +103,12 @@ export function withUVEToolbar() {
                 };
 
                 const siteId = pageAPIResponse?.site?.identifier;
-                const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
                 const isPreview = params?.mode === UVE_MODE.PREVIEW;
                 const prevewItem = isPreview
                     ? {
                           deviceSelector: {
-                              apiLink: `${clientHost}${pageAPI}`,
+                              apiLink: `${store.host()}${store.$apiURL()}`,
                               hideSocialMedia: !store.isTraditionalPage()
                           }
                       }
@@ -102,8 +117,7 @@ export function withUVEToolbar() {
                 return {
                     editor: {
                         bookmarksUrl,
-                        copyUrl: createFullURL(params, siteId),
-                        apiUrl: pageAPI
+                        copyUrl: createFullURL(params, siteId)
                     },
                     preview: prevewItem,
                     currentLanguage: pageAPIResponse?.viewAs.language,
@@ -119,8 +133,12 @@ export function withUVEToolbar() {
             }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
-                const currentUser = store.currentUser();
-                const isLocked = computePageIsLocked(pageAPIResponse.page, currentUser);
+                const isLocked = store.isPageLocked();
+
+                if (!isLocked) {
+                    return null;
+                }
+
                 const info = {
                     message: pageAPIResponse.page.canLock
                         ? 'editpage.toolbar.page.release.lock.locked.by.user'
@@ -129,15 +147,14 @@ export function withUVEToolbar() {
                 };
 
                 const disabled = !pageAPIResponse.page.canLock;
+                const loading = store.status() === UVE_STATUS.LOADING;
 
-                return isLocked
-                    ? {
-                          inode: pageAPIResponse.page.inode,
-                          loading: store.status() === UVE_STATUS.LOADING,
-                          info,
-                          disabled
-                      }
-                    : null;
+                return {
+                    inode: pageAPIResponse?.page.inode,
+                    info,
+                    loading,
+                    disabled
+                };
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
@@ -146,15 +163,6 @@ export function withUVEToolbar() {
                     pageId: pageAPIResponse?.page.identifier,
                     value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
                 };
-            }),
-            $apiURL: computed<string>(() => {
-                const params = store.pageParams();
-                const pageURL = getFullPageURL({ url: params.url, params });
-
-                const pageType = store.isTraditionalPage() ? 'render' : 'json';
-                const pageAPI = `/api/v1/page/${pageType}/${pageURL}`;
-
-                return pageAPI;
             }),
             $infoDisplayProps: computed<InfoOptions>(() => {
                 const pageAPIResponse = store.pageAPIResponse();
@@ -258,6 +266,26 @@ export function withUVEToolbar() {
             setOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
                 patchState(store, { ogTagsResults });
             }
-        }))
+        })),
+        withHooks((store) => {
+            const activatedRoute = inject(ActivatedRoute);
+
+            return {
+                onInit() {
+                    const { queryParams, data } = activatedRoute.snapshot;
+                    const { uveConfig } = data;
+
+                    if (!uveConfig) {
+                        return;
+                    }
+
+                    const allowedDevURLs = uveConfig.options?.allowedDevURLs;
+                    const validHost = checkClientHostAccess(queryParams.clientHost, allowedDevURLs);
+                    const host = validHost ? queryParams.clientHost : uveConfig.url;
+
+                    patchState(store, { host });
+                }
+            };
+        })
     );
 }

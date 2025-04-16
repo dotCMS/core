@@ -1,11 +1,17 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, pluck } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client';
+import {
+    mapToBackendParams,
+    GraphQLPageOptions,
+    buildGraphQLRequestBody,
+    mapResponseData
+} from '@dotcms/client/page';
 import { Site } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
@@ -20,9 +26,7 @@ import {
 import { UVE_MODE } from '@dotcms/uve/types';
 
 import { PERSONA_KEY } from '../shared/consts';
-import { DotPage, DotPageAssetParams, SavePagePayload } from '../shared/models';
-import { ClientRequestProps } from '../store/features/client/withClient';
-import { getFullPageURL } from '../utils';
+import { DotPage, SavePagePayload } from '../shared/models';
 
 export interface DotPageApiResponse {
     page: DotPage;
@@ -85,7 +89,7 @@ export interface PaginationData {
 
 @Injectable()
 export class DotPageApiService {
-    constructor(private http: HttpClient) {}
+    private readonly http = inject(HttpClient);
 
     /**
      * Get a page from the Page API
@@ -94,16 +98,16 @@ export class DotPageApiService {
      * @return {*}  {Observable<DotPageApiResponse>}
      * @memberof DotPageApiService
      */
-    get(queryParams: DotPageAssetParams): Observable<DotPageApiResponse> {
-        const { clientHost, ...params } = queryParams;
-        const pageType = clientHost ? 'json' : 'render';
-        const pageURL = getFullPageURL({ url: params.url, params });
+    get(url: string, params: UVEPageParams): Observable<{ pageAPIResponse: DotPageApiResponse }> {
+        if (params.rawQuery) {
+            return this.getRawGraphQLPage(params.rawQuery);
+        }
 
-        return this.http
-            .get<{
-                entity: DotPageApiResponse;
-            }>(`/api/v1/page/${pageType}/${pageURL}`)
-            .pipe(pluck('entity'));
+        if (params['graphql']) {
+            return this.getGraphQLPage(params);
+        }
+
+        return this.#getPageFromAPI(url, params);
     }
 
     /**
@@ -202,7 +206,7 @@ export class DotPageApiService {
      * @return {*}  {Observable<T>}
      * @memberof DotPageApiService
      */
-    getGraphQLPage(query: string): Observable<DotPageApiResponse> {
+    getRawGraphQLPage(query: string): Observable<{ pageAPIResponse: DotPageApiResponse }> {
         const headers = {
             'Content-Type': 'application/json',
             dotcachettl: '0' // Bypasses GraphQL cache
@@ -214,29 +218,77 @@ export class DotPageApiService {
             }>('/api/v1/graphql', { query }, { headers })
             .pipe(
                 pluck('data'),
-                map((data) => graphqlToPageEntity(data) as DotPageApiResponse)
+                map((data) => {
+                    const pageAPIResponse = graphqlToPageEntity(data) as DotPageApiResponse;
+
+                    return {
+                        pageAPIResponse
+                    };
+                })
             );
     }
 
-    /**
-     *
-     * @description Get Client Page from the Page API or GraphQL
-     * @return {*}  {Observable<DotPageApiResponse>}
-     * @memberof DotPageApiService
-     */
-    getClientPage(
-        params: DotPageApiParams,
-        clientProps: ClientRequestProps
-    ): Observable<DotPageApiResponse> {
-        const { query, params: clientParams } = clientProps;
+    getGraphQLPage(options: UVEPageParams): Observable<{ pageAPIResponse: DotPageApiResponse }> {
+        const body = buildGraphQLRequestBody('/', options as GraphQLPageOptions);
+        const contentMap = options.graphql?.content || {};
 
-        if (!query) {
-            return this.get({
-                ...(clientParams || {}),
-                ...params
-            });
-        }
+        const headers = {
+            'Content-Type': 'application/json',
+            dotcachettl: '0' // Bypasses GraphQL cache
+        };
 
-        return this.getGraphQLPage(query);
+        return this.http
+            .post<{
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                data: any;
+            }>('/api/v1/graphql', body, { headers })
+            .pipe(
+                pluck('data'),
+                map((data) => {
+                    const contentResponse = mapResponseData(data, Object.keys(contentMap));
+                    const pageAPIResponse = graphqlToPageEntity(data) as DotPageApiResponse;
+
+                    return {
+                        pageAPIResponse,
+                        contentResponse
+                    };
+                })
+            );
     }
+
+    #getPageFromAPI(
+        path: string,
+        params: UVEPageParams
+    ): Observable<{ pageAPIResponse: DotPageApiResponse }> {
+        const normalizedParams = mapToBackendParams(params as unknown);
+        const queryParams = new URLSearchParams(normalizedParams).toString();
+        const pagePath = path.startsWith('/') ? path.slice(1) : path;
+        const url = `/api/v1/page/render/${pagePath}?${queryParams}`;
+
+        return this.http.get<{ entity: DotPageApiResponse }>(url).pipe(
+            pluck('entity'),
+            map((pageAPIResponse) => {
+                return {
+                    pageAPIResponse
+                };
+            })
+        );
+    }
+}
+
+export interface DotCMSPageParams {
+    depth?: string;
+    language_id: string;
+    [PERSONA_KEY]: string;
+    variantName?: string;
+    experimentId?: string;
+    clientHost?: string;
+    publishDate?: string;
+    mode?: UVE_MODE;
+}
+
+export interface UVEPageParams extends Omit<GraphQLPageOptions, 'graphql' | 'mode'> {
+    mode?: UVE_MODE;
+    graphql?: GraphQLPageOptions['graphql'];
+    rawQuery?: string;
 }

@@ -56,8 +56,6 @@ import { EditEmaPaletteComponent } from './components/edit-ema-palette/edit-ema-
 import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import {
-    ClientContentletArea,
-    Container,
     EmaDragItem,
     InlineEditingContentletDataset,
     UpdatedContentlet
@@ -67,7 +65,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-ema-dialog.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
+import { IFRAME_SCROLL_ZONE } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
@@ -77,7 +75,6 @@ import {
     DeletePayload,
     InsertPayloadFromDelete,
     DotPage,
-    SetUrlPayload,
     PostMessage,
     ReorderMenuPayload
 } from '../shared/models';
@@ -89,7 +86,6 @@ import {
     deleteContentletFromContainer,
     getDragItemData,
     insertContentletInContainer,
-    compareUrlPaths,
     createReorderMenuURL
 } from '../utils';
 
@@ -697,38 +693,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      */
     private handlePostMessage({ action, payload }: PostMessage): void {
         const CLIENT_ACTIONS_FUNC_MAP = {
-            [CLIENT_ACTIONS.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
-                // When we set the url, we trigger in the shell component a load to get the new state of the page
-                // This triggers a rerender that makes nextjs to send the set_url again
-                // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                const isSameUrl = compareUrlPaths(this.uveStore.pageParams()?.url, payload.url);
-
-                if (isSameUrl) {
-                    this.uveStore.setEditorState(EDITOR_STATE.IDLE);
-                } else {
-                    this.uveStore.loadPageAsset({
-                        url: payload.url,
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-                }
-            },
-            [CLIENT_ACTIONS.SET_BOUNDS]: (payload: Container[]) => {
-                this.uveStore.setEditorBounds(payload);
-            },
-            [CLIENT_ACTIONS.SET_CONTENTLET]: (contentletArea: ClientContentletArea) => {
-                const payload = this.uveStore.getPageSavePayload(contentletArea.payload);
-
-                this.uveStore.setEditorContentletArea({
-                    ...contentletArea,
-                    payload
-                });
-            },
-            [CLIENT_ACTIONS.IFRAME_SCROLL]: () => {
-                this.uveStore.updateEditorScrollState();
-            },
-            [CLIENT_ACTIONS.IFRAME_SCROLL_END]: () => {
-                this.uveStore.updateEditorOnScrollEnd();
-            },
             [CLIENT_ACTIONS.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
             }) => {
@@ -852,7 +816,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 const urlObject = createReorderMenuURL({
                     startLevel,
                     depth,
-                    pagePath: this.uveStore.pageParams().url,
+                    pagePath: this.uveStore.pageAPIResponse().page.pageURI,
                     hostId: this.uveStore.pageAPIResponse().site.identifier
                 });
 
@@ -1028,7 +992,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
                 filter((contentlet) => !!contentlet)
             )
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
-                if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
+                if (URL_MAP_FOR_CONTENT != this.uveStore.pageAPIResponse()?.page.pageURI) {
                     // If the URL is different, we need to navigate to the new URL
                     this.uveStore.loadPageAsset({ url: URL_MAP_FOR_CONTENT });
 
@@ -1277,7 +1241,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy {
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        this.uveStore.loadPageAsset({ language_id: '1' });
+        this.uveStore.reloadCurrentPage({
+            params: {
+                languageId: '1'
+            }
+        });
     }
 
     #setSeoData() {

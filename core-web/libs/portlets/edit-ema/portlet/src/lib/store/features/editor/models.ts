@@ -24,6 +24,7 @@ export interface EditorState {
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
     paletteOpen: boolean;
+    host: string;
 }
 
 export interface EditorToolbarState {
@@ -33,6 +34,7 @@ export interface EditorToolbarState {
     isPreviewModeActive?: boolean;
     orientation?: Orientation;
     ogTagsResults?: SeoMetaTagsResult[];
+    host: string;
 }
 
 export interface PageDataContainer {
@@ -124,7 +126,6 @@ export interface UVEToolbarProps {
     editor: {
         bookmarksUrl: string;
         copyUrl: string;
-        apiUrl: string;
     };
     preview?: {
         deviceSelector: {

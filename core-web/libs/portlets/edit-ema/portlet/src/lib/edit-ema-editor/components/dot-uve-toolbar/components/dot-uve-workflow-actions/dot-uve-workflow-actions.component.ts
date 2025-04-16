@@ -150,17 +150,20 @@ export class DotUveWorkflowActionsComponent {
      */
     protected handleNewContent(pageAsset: DotCMSContentlet): void {
         const currentParams = this.#uveStore.pageParams();
+        const pageURL = this.#uveStore.pageAPIResponse().page.pageURI;
 
         const url = getPageURI(pageAsset);
         const language_id = pageAsset.languageId?.toString();
 
-        const urlChanged = !compareUrlPaths(url, currentParams.url);
-        const languageChanged = language_id !== currentParams.language_id;
+        const urlChanged = !compareUrlPaths(url, pageURL);
+        const languageChanged = language_id != currentParams.languageId;
 
         if (urlChanged || languageChanged) {
             this.#uveStore.loadPageAsset({
                 url,
-                language_id
+                params: {
+                    languageId: language_id
+                }
             });
 
             return;

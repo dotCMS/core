@@ -6,16 +6,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService, UVEPageParams } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
-import { DotPageAssetParams } from '../../../shared/models';
-import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
+import { isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 import { withWorkflow } from '../workflow/withWorkflow';
@@ -47,19 +46,18 @@ export function withLoad() {
                  * @param {DotPageApiParams} pageParams - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                loadPageAsset: rxMethod<Partial<DotPageAssetParams>>(
+                loadPageAsset: rxMethod<{ url: string; params?: UVEPageParams }>(
                     pipe(
-                        map((params) => {
-                            if (!store.pageParams()) {
-                                return params as DotPageAssetParams;
-                            }
-
+                        map(({ url, params }) => {
                             return {
-                                ...store.pageParams(),
-                                ...params
+                                url,
+                                pageParams: {
+                                    ...(store.pageParams() || {}),
+                                    ...params
+                                }
                             };
                         }),
-                        tap((pageParams) => {
+                        tap(({ pageParams }) => {
                             store.resetClientConfiguration();
                             patchState(store, {
                                 status: UVE_STATUS.LOADING,
@@ -67,19 +65,17 @@ export function withLoad() {
                                 pageParams
                             });
                         }),
-                        switchMap((pageParams) =>
-                            dotPageApiService.get(pageParams).pipe(
-                                tap((pageAPIResponse) => {
-                                    const isTraditionalPage = !pageParams.clientHost;
-                                    const isClientReady = isTraditionalPage;
-
+                        switchMap(({ url, pageParams }) =>
+                            dotPageApiService.get(url, pageParams).pipe(
+                                tap(({ pageAPIResponse }) => {
                                     patchState(store, {
                                         pageAPIResponse,
-                                        isTraditionalPage,
-                                        isClientReady
+                                        isClientReady: store.isTraditionalPage()
                                     });
                                 }),
-                                switchMap(({ vanityUrl, page, runningExperimentId }) => {
+                                switchMap(({ pageAPIResponse }) => {
+                                    const { vanityUrl, page, runningExperimentId } =
+                                        pageAPIResponse;
                                     if (!isForwardOrPage(vanityUrl)) {
                                         router.navigate([], {
                                             queryParamsHandling: 'merge',
@@ -91,7 +87,7 @@ export function withLoad() {
 
                                     const identifier = page.identifier;
                                     const experimentId =
-                                        pageParams?.experimentId ?? runningExperimentId;
+                                        store.viewParams()?.experimentId ?? runningExperimentId;
 
                                     return forkJoin({
                                         languages:
@@ -128,22 +124,26 @@ export function withLoad() {
                  * @param {Partial<DotPageApiParams>} params - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                reloadCurrentPage: rxMethod<Pick<UVEState, 'isClientReady'> | void>(
+                reloadCurrentPage: rxMethod<{
+                    params?: Partial<UVEPageParams>;
+                    isClientReady?: boolean;
+                } | void>(
                     pipe(
                         tap(() => {
                             patchState(store, {
                                 status: UVE_STATUS.LOADING
                             });
                         }),
-                        switchMap((partialState: Pick<UVEState, 'isClientReady'>) => {
+                        switchMap((arg) => {
+                            const { params = {}, isClientReady = true } = arg || {};
+
                             return dotPageApiService
-                                .getClientPage(store.pageParams(), store.clientRequestProps())
+                                .get('/', { ...store.pageParams(), ...params })
                                 .pipe(
-                                    tap((pageAPIResponse) => {
-                                        const isClientReady = partialState?.isClientReady ?? true;
+                                    tap(({ pageAPIResponse }) => {
                                         patchState(store, { pageAPIResponse, isClientReady });
                                     }),
-                                    switchMap((pageAPIResponse) => {
+                                    switchMap(({ pageAPIResponse }) => {
                                         return dotLanguagesService.getLanguagesUsedPage(
                                             pageAPIResponse.page.identifier
                                         );
@@ -177,36 +177,24 @@ export function withLoad() {
                 onInit: () => {
                     dotLicenseService
                         .isEnterprise()
-                        .pipe(take(1), shareReplay())
+                        .pipe(take(1))
                         .subscribe((isEnterprise) => {
                             patchState(store, { isEnterprise });
                         });
 
                     loginService
                         .getCurrentUser()
-                        .pipe(take(1), shareReplay())
+                        .pipe(take(1))
                         .subscribe((currentUser) => {
                             patchState(store, { currentUser });
                         });
 
-                    // These should be computeds
-                    // if you see this comments, remind me to move this to a computed
                     effect(
                         () => {
-                            const canEditPage = computeCanEditPage(
-                                store.pageAPIResponse()?.page,
-                                store.currentUser(),
-                                store.experiment()
-                            );
-
-                            patchState(store, { canEditPage });
-
-                            const pageIsLocked = computePageIsLocked(
-                                store.pageAPIResponse()?.page,
-                                store.currentUser()
-                            );
-
-                            patchState(store, { pageIsLocked });
+                            const page = store.pageAPIResponse()?.page;
+                            if (page) {
+                                store.getWorkflowActions(page.inode);
+                            }
                         },
                         { allowSignalWrites: true }
                     );

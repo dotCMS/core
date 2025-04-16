@@ -35,7 +35,7 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotEditorDialogService } from '../components/dot-ema-dialog/services/dot-ema-dialog.service';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService, UVEPageParams } from '../services/dot-page-api.service';
 import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -130,7 +130,7 @@ export class DotEmaShellComponent implements OnInit {
 
         this.uveStore.patchViewParams(viewParams);
 
-        this.uveStore.loadPageAsset(params);
+        this.uveStore.loadPageAsset({ url: params.url, params: params as UVEPageParams });
 
         // We need to skip one because it's the initial value
         this.#siteService.switchSite$
@@ -245,7 +245,8 @@ export class DotEmaShellComponent implements OnInit {
 
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                this.uveStore.getWorkflowActions();
+                const pageInode = this.uveStore.pageAPIResponse().page.inode;
+                this.uveStore.getWorkflowActions(pageInode);
                 break;
             }
 
@@ -304,17 +305,20 @@ export class DotEmaShellComponent implements OnInit {
                     url.pathname,
                     this.uveStore.pageAPIResponse().urlContentMap
                 );
-                const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+                const languageId = url.searchParams.get('com.dotmarketing.htmlpage.language');
+                const currentURL = this.uveStore.pageAPIResponse().page.pageURI;
 
-                if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+                if (shouldNavigate(targetUrl, currentURL)) {
                     // Navigate to the new URL if it's different from the current one
-                    this.uveStore.loadPageAsset({ url: targetUrl, language_id });
+                    this.uveStore.loadPageAsset({ url: targetUrl, params: { languageId } });
 
                     return;
                 }
 
-                this.uveStore.loadPageAsset({
-                    language_id
+                this.uveStore.reloadCurrentPage({
+                    params: {
+                        languageId
+                    }
                 });
 
                 break;
@@ -401,9 +405,10 @@ export class DotEmaShellComponent implements OnInit {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
         const url = new URL(htmlPageReferer, window.location.origin);
         const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAPIResponse().urlContentMap);
+        const currentURL = this.uveStore.pageAPIResponse()?.page.pageURI;
         // END
 
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+        if (shouldNavigate(targetUrl, currentURL)) {
             // Navigate to the new URL if it's different from the current one
             this.uveStore.loadPageAsset({ url: targetUrl });
 

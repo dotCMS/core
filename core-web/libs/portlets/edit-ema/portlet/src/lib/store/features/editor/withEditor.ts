@@ -42,21 +42,13 @@ import {
     getEditorStates,
     sanitizeURL,
     getWrapperMeasures,
-    getFullPageURL
+    getFullPageURL,
+    computeCanEditPage
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 
-const buildIframeURL = ({ url, params, isTraditionalPage }) => {
-    if (isTraditionalPage) {
-        // Force iframe reload on every page load to avoid caching issues and window dirty state
-        // We need a new reference to avoid the iframe to be cached
-        // More reference: https://github.com/dotCMS/core/issues/30981
-        return new String('');
-    }
-
-    // Remove trailing slash from host
-    const host = (params.clientHost || window.location.origin).replace(/\/$/, '');
+const buildIframeURL = ({ url, params, host }) => {
     const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
     const iframeURL = new URL(`${host}/${pageURL}`);
 
@@ -64,12 +56,13 @@ const buildIframeURL = ({ url, params, isTraditionalPage }) => {
 };
 
 const initialState: EditorState = {
+    host: '',
     bounds: [],
-    state: EDITOR_STATE.IDLE,
-    contentletArea: null,
-    dragItem: null,
     ogTags: null,
-    paletteOpen: true
+    dragItem: null,
+    paletteOpen: true,
+    contentletArea: null,
+    state: EDITOR_STATE.IDLE
 };
 
 /**
@@ -84,9 +77,20 @@ export function withEditor() {
             state: type<UVEState>()
         },
         withState<EditorState>(initialState),
-        withUVEToolbar(),
         withSave(),
         withClient(),
+        withUVEToolbar(),
+        withComputed((store) => {
+            return {
+                canEditPage: computed<boolean>(() => {
+                    return computeCanEditPage(
+                        store.pageAPIResponse()?.page,
+                        store.currentUser(),
+                        store.experiment()
+                    );
+                })
+            };
+        }),
         withComputed((store) => {
             return {
                 $pageData: computed<PageData>(() => {
@@ -216,25 +220,24 @@ export function withEditor() {
                     };
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
+                    if (store.isTraditionalPage()) {
+                        // Force iframe reload on every page load to avoid caching issues and window dirty state
+                        // More reference: https://github.com/dotCMS/core/issues/30981
+                        return new String('');
+                    }
+
                     /*
                         Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
-                        This should change in future UVE improvements.
-                        The url should not depend on the PageAPI response since it does not change (In traditional).
-                        In the future we should have a function that updates the content, independent of the url.
                         More info: https://github.com/dotCMS/core/issues/31475
                      */
-                    const vanityURL = store.pageAPIResponse().vanityUrl?.url;
-                    const sanitizedURL = sanitizeURL(
-                        vanityURL ?? untracked(() => store.pageParams().url)
-                    );
+                    const { vanityUrl, page } = store.pageAPIResponse();
+                    const sanitizedURL = sanitizeURL(vanityUrl?.url ?? page.pageURI);
 
-                    const url = buildIframeURL({
+                    return buildIframeURL({
                         url: sanitizedURL,
                         params: untracked(() => store.pageParams()),
-                        isTraditionalPage: untracked(() => store.isTraditionalPage())
+                        host: untracked(() => store.host())
                     });
-
-                    return url;
                 }),
                 $editorContentStyles: computed<Record<string, string>>(() => {
                     const socialMedia = store.socialMedia();

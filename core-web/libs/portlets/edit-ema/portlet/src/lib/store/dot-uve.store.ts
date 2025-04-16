@@ -1,6 +1,14 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 
-import { computed, untracked } from '@angular/core';
+import { computed, inject, untracked } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { UVE_MODE } from '@dotcms/uve/types';
 
@@ -14,13 +22,13 @@ import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models
 import { DotPageApiResponse } from '../services/dot-page-api.service';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
-import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
+import { getErrorPayload, normalizeQueryParams, sanitizeURL } from '../utils';
 
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
 const initialState: UVEState = {
-    isEnterprise: false,
     languages: [],
+    isEnterprise: false,
     pageAPIResponse: null,
     currentUser: null,
     experiment: null,
@@ -28,15 +36,13 @@ const initialState: UVEState = {
     pageParams: null,
     viewParams: null,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
-    isClientReady: false
+    isTraditionalPage: true
 };
 
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
+    withEditor(),
     withComputed(
         ({
             pageAPIResponse,
@@ -45,7 +51,8 @@ export const UVEStore = signalStore(
             languages,
             errorCode: error,
             status,
-            isEnterprise
+            isEnterprise,
+            host
         }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
@@ -63,10 +70,8 @@ export const UVEStore = signalStore(
                 }),
                 $shellProps: computed<ShellProps>(() => {
                     const response = pageAPIResponse();
-
                     const currentUrl = '/' + sanitizeURL(response?.page.pageURI);
-
-                    const requestHostName = getRequestHostName(pageParams());
+                    const requestHostName = host();
 
                     const page = response?.page;
                     const templateDrawed = response?.template.drawed;
@@ -176,9 +181,19 @@ export const UVEStore = signalStore(
             }
         };
     }),
+    withHooks((store) => {
+        const activatedRoute = inject(ActivatedRoute);
+
+        return {
+            onInit() {
+                const { data } = activatedRoute.snapshot;
+                const { uveConfig } = data;
+                patchState(store, { isTraditionalPage: !uveConfig });
+            }
+        };
+    }),
     withLoad(),
     withLayout(),
-    withEditor(),
     withTrack(),
     withFlags(UVE_FEATURE_FLAGS)
 );

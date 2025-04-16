@@ -4,7 +4,7 @@ import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams, UVEPageParams } from '../services/dot-page-api.service';
 
 export interface MessagePipeOptions {
     message: string;
@@ -84,7 +84,7 @@ export interface SetUrlPayload {
 
 export interface SavePagePayload {
     pageContainers: PageContainer[];
-    params?: DotPageApiParams;
+    params?: UVEPageParams;
     pageId: string;
     whenSaved?: () => void;
 }

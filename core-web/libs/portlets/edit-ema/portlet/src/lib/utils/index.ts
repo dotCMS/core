@@ -13,7 +13,11 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageAssetKeys, DotPageApiParams } from '../services/dot-page-api.service';
+import {
+    DotPageAssetKeys,
+    DotPageApiParams,
+    UVEPageParams
+} from '../services/dot-page-api.service';
 import {
     BASE_IFRAME_MEASURE_UNIT,
     COMMON_ERRORS,
@@ -245,19 +249,10 @@ export function getFullPageURL({
     userFriendlyParams = false
 }: {
     url: string;
-    params: DotPageAssetParams;
+    params: UVEPageParams;
     userFriendlyParams?: boolean;
 }): string {
     const searchParams = userFriendlyParams ? normalizeQueryParams(params) : { ...params };
-
-    // Remove 'url' from query parameters if present
-    if (searchParams.url) {
-        delete searchParams['url'];
-    }
-
-    if (searchParams.clientHost) {
-        delete searchParams['clientHost'];
-    }
 
     // Filter out undefined values from query parameters
     Object.keys(searchParams).forEach(
@@ -369,7 +364,7 @@ export function createFavoritePagesURL(params: {
  * @param {string} [siteId]
  * @return {*}  {string}
  */
-export function createFullURL(params: DotPageApiParams, siteId?: string): string {
+export function createFullURL(params: UVEPageParams, siteId?: string): string {
     // If we are going to delete properties from the params, we need to make a copy of it
     const paramsCopy = { ...params };
 
@@ -377,15 +372,19 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
         paramsCopy['host_id'] = siteId;
     }
 
-    const clientHost = paramsCopy?.clientHost ?? window.location.origin;
-    const url = paramsCopy?.url;
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientHost = urlParams.get('clientHost') ?? window.location.origin;
+    const url = urlParams.get('url') ?? window.location.pathname;
 
-    // Clean the params that are not needed for the page
-    delete paramsCopy?.clientHost;
-    delete paramsCopy?.url;
-    delete paramsCopy?.mode;
+    if (paramsCopy.graphql) {
+        delete paramsCopy.graphql;
+    }
 
-    const searchParams = new URLSearchParams(paramsCopy);
+    if (paramsCopy.rawQuery) {
+        delete paramsCopy.rawQuery;
+    }
+
+    const searchParams = new URLSearchParams(paramsCopy as Record<string, string>);
 
     const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);
 

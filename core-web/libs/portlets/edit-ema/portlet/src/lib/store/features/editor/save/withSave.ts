@@ -7,7 +7,7 @@ import { inject } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotPageApiResponse, DotPageApiService } from '../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { PageContainer } from '../../../../shared/models';
 import { UVEState } from '../../../models';
@@ -46,13 +46,13 @@ export function withSave() {
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() =>
                                     dotPageApiService
-                                        .getClientPage(
-                                            store.pageParams(),
-                                            store.clientRequestProps()
-                                        )
+                                        .get(store.pageAPIResponse().page.pageURI, {
+                                            ...store.pageParams(),
+                                            ...store.clientRequestProps()
+                                        })
                                         .pipe(
                                             tapResponse(
-                                                (pageAPIResponse: DotPageApiResponse) => {
+                                                ({ pageAPIResponse }) => {
                                                     patchState(store, {
                                                         status: UVE_STATUS.LOADED,
                                                         pageAPIResponse: pageAPIResponse
