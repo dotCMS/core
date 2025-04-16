@@ -59,14 +59,12 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     /**
      * Signal to get the TinyMCE component.
      */
-    $tinyMCEComponent: Signal<DotWysiwygTinymceComponent | undefined> = viewChild(
-        DotWysiwygTinymceComponent
-    );
+    $tinyMCEComponent: Signal<DotWysiwygTinymceComponent> = viewChild(DotWysiwygTinymceComponent);
 
     /**
      * Signal to get the Monaco component.
      */
-    $monacoComponent: Signal<DotEditContentMonacoEditorControlComponent | undefined> = viewChild(
+    $monacoComponent: Signal<DotEditContentMonacoEditorControlComponent> = viewChild(
         DotEditContentMonacoEditorControlComponent
     );
 

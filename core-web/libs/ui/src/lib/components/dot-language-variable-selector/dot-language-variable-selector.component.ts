@@ -71,7 +71,7 @@ export class DotLanguageVariableSelectorComponent {
     /**
      * Signal to get the autocomplete component.
      */
-    $autoComplete = viewChild<AutoComplete>(AutoComplete);
+    $autoComplete = viewChild.required<AutoComplete>(AutoComplete);
     /**
      * Output that emits the selected language variable formatted as a DotCMS text variable.
      * The emitted string is already formatted in the proper syntax: $text.get('KEY_SELECTED')

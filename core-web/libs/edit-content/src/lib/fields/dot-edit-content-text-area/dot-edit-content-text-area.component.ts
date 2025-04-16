@@ -1,4 +1,5 @@
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
@@ -6,8 +7,7 @@ import {
     inject,
     input,
     model,
-    viewChild,
-    AfterViewInit
+    viewChild
 } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -75,7 +75,9 @@ export class DotEditContentTextAreaComponent implements AfterViewInit {
     /**
      * Input field DotCMSContentTypeField
      */
-    $field = input<DotCMSContentTypeField>({} as DotCMSContentTypeField, { alias: 'field' });
+    $field = input<DotCMSContentTypeField | null>(null, {
+        alias: 'field'
+    });
 
     /**
      * Computed property that returns the current value of the field.

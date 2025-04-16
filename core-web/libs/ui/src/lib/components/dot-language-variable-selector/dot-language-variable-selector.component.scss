@@ -10,7 +10,7 @@
     }
     .dot-language-variable-selector__search-icon {
         position: absolute;
-        right: 10px;
+        right: $spacing-1;
         top: 50%;
         transform: translateY(-50%);
         pointer-events: none;
@@ -39,14 +39,14 @@
 
                 .dot-language-variable-selector__item-value {
                     color: $color-palette-gray-900;
-                    font-weight: 500;
+                    font-weight: $font-weight-semi-bold;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
 
                 .dot-language-variable-selector__item-key {
-                    font-size: 12px;
+                    font-size: $font-size-sm;
                     color: $color-palette-gray-500;
                     min-width: 0;
                     white-space: nowrap;
@@ -55,7 +55,7 @@
 
                     .highlight {
                         color: $color-palette-gray-700;
-                        font-weight: 500;
+                        font-weight: $font-weight-semi-bold;
                     }
                 }
 
