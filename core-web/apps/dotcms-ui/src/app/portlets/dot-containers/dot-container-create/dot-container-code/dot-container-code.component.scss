@@ -25,13 +25,13 @@
         color: $color-palette-primary;
     }
 
-    .p-tabview {
+    .p-tabs {
         border: 1px solid $color-palette-gray-500;
     }
 
     .tab-panel-btn:first-child {
         min-height: 63.79px;
-        a.p-tabview-nav-link {
+        a.p-tabs-nav-link {
             align-items: center;
             background: $color-palette-primary-500;
             border: 0;
