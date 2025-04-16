@@ -23,6 +23,7 @@ import com.dotcms.rest.api.v1.content.search.LuceneQueryBuilder;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -296,6 +297,7 @@ public class ContentResource {
                                @Context final HttpServletResponse response,
                                @PathParam("inodeOrIdentifier") final String inodeOrIdentifier,
                                @DefaultValue("") @QueryParam("language") final String language,
+                               @DefaultValue("DEFAULT") @QueryParam("variantName") final String variantName,
                                @DefaultValue("-1") @QueryParam("depth") final int depth
 
 
@@ -314,13 +316,15 @@ public class ContentResource {
         final long testLangId = LanguageUtil.getLanguageId(language);
         final long languageId = testLangId <=0 ? sessionLanguageSupplier.getAsLong() : testLangId;
 
-        Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user);
+        Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user, variantName);
 
         if (-1 != depth) {
             ContentUtils.addRelationships(contentlet, user, mode,
                     languageId, depth, request, response);
         }
+        final String variant = contentlet.getVariantId();
         contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);
+        contentlet.setVariantId(variant);
         return Response.ok(new ResponseEntityView<>(
                 WorkflowHelper.getInstance().contentletToMap(contentlet))).build();
     }
@@ -622,16 +626,30 @@ public class ContentResource {
      * @return the contentlet object
      */
     private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user) {
+        return resolveContentletOrFallBack (inodeOrIdentifier, mode, languageId, user, VariantAPI.DEFAULT_VARIANT.name());
+    }
+    /**
+     * Given an inode or identifier, this method will return the contentlet object for the given language
+     * If no contentlet is found, it will return the contentlet for the default language if FallBack is enabled
+     * @param inodeOrIdentifier the inode or identifier to test
+     * @param mode the page mode used to determine if we are
+     * @param languageId the language id
+     * @param user the user
+     * @param variantName  variant name
+     * @return the contentlet object
+     */
+    private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user,
+                                                    final String variantName) {
         // This property is used to determine if we should map the contentlet to the default language
         final boolean mapToDefault = isDefaultContentToDefaultLanguageEnabled.get();
         // default language supplier, we only get the language id if we need it
         LongSupplier defaultLang = () -> APILocator.getLanguageAPI().getDefaultLanguage().getId();
         //Attempt to resolve the contentlet for the given language
-        Optional<Contentlet> optional = resolveContentlet(inodeOrIdentifier, mode, languageId, user);
+        Optional<Contentlet> optional = resolveContentlet(inodeOrIdentifier, mode, languageId, user, variantName);
         //If the contentlet is not found, and we are allowed to map to the default language..
         if(optional.isEmpty() && mapToDefault && languageId != defaultLang.getAsLong()){
             //Attempt to resolve the contentlet for the default language
-             optional = resolveContentlet(inodeOrIdentifier, mode, defaultLang.getAsLong(), user);
+             optional = resolveContentlet(inodeOrIdentifier, mode, defaultLang.getAsLong(), user, variantName);
         }
         //If we found the contentlet, return it
         if (optional.isPresent()) {
@@ -649,9 +667,14 @@ public class ContentResource {
      * @param mode the page mode used to determine if we are
      * @param languageId the language id
      * @param user the user
+     * @param variantName variant name
      * @return the contentlet object
      */
-    private Optional<Contentlet> resolveContentlet (final String inodeOrIdentifier, PageMode mode, long languageId, User user) {
+    private Optional<Contentlet> resolveContentlet (final String inodeOrIdentifier,
+                                                    final PageMode mode,
+                                                    final long languageId,
+                                                    final User user,
+                                                    final String variantName) {
 
         final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
@@ -663,7 +686,8 @@ public class ContentResource {
 
         final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
         if(ShortType.IDENTIFIER == shortyId.get().type) {
-            Optional<ContentletVersionInfo> cvi = versionableAPI.getContentletVersionInfo(shortyId.get().longId, languageId);
+
+            final Optional<ContentletVersionInfo> cvi = versionableAPI.getContentletVersionInfo(shortyId.get().longId, languageId, variantName);
             if (cvi.isPresent()) {
                 testInode =  mode.showLive ? cvi.get().getLiveInode() : cvi.get().getWorkingInode();
             }
