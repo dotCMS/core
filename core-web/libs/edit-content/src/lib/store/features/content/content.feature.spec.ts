@@ -326,7 +326,7 @@ describe('ContentFeature', () => {
         });
 
         it('should initialize existing content successfully', fakeAsync(() => {
-            store.initializeExistingContent({ inode: '123', depth: 'PARENT_AND_CHILDREN' });
+            store.initializeExistingContent({ inode: '123' });
             tick();
 
             expect(store.contentlet()).toEqual(mockContentlet);
@@ -336,7 +336,7 @@ describe('ContentFeature', () => {
         }));
 
         it('should set the correct title for existing content', fakeAsync(() => {
-            store.initializeExistingContent({ inode: '123', depth: 'PARENT_AND_CHILDREN' });
+            store.initializeExistingContent({ inode: '123' });
             tick();
 
             expect(dotMessageService.get).toHaveBeenCalledWith(
@@ -349,7 +349,7 @@ describe('ContentFeature', () => {
             const mockError = new HttpErrorResponse({ status: 404 });
             dotEditContentService.getContentById.mockReturnValue(throwError(() => mockError));
 
-            store.initializeExistingContent({ inode: '123', depth: 'PARENT_AND_CHILDREN' });
+            store.initializeExistingContent({ inode: '123' });
             tick();
             expect(store.state()).toBe(ComponentStatus.ERROR);
             expect(store.error()).toBe(
@@ -380,7 +380,7 @@ describe('ContentFeature', () => {
             );
             workflowService.getWorkflowStatus.mockReturnValue(of(workflowStatusWithoutScheme));
 
-            store.initializeExistingContent({ inode: '123', depth: 'PARENT_AND_CHILDREN' });
+            store.initializeExistingContent({ inode: '123' });
             tick();
 
             expect(store.initialContentletState()).toBe('reset');
