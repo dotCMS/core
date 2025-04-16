@@ -2685,8 +2685,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
         }
     }
+    /**
+     * Method to test: This test tries the {@link ImportUtil#importFile}
+     * Given Scenario: A parent content type related to a child content type that has two versions in two different languages
+     * ExpectedResult: The importer should return without errors, so content will be ready to be imported.
+     */
     @Test
-    public void importPreviewRelationshipLanguageTest() throws DotDataException, DotSecurityException {
+    public void importPreviewRelationshipLanguageTest() throws DotDataException, DotSecurityException, IOException {
         //Creates content types
         ContentType parentContentType = null;
         ContentType childContentType  = null;
@@ -2695,12 +2700,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         CsvReader csvreader;
         Reader reader;
         String[] csvHeaders;
-        final int cardinality = RELATIONSHIP_CARDINALITY.MANY_TO_ONE.ordinal();
+        final int cardinality = RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal();
+
+        final Language language_1 = new LanguageDataGen().nextPersisted();
+        final Language language_2 = new LanguageDataGen().nextPersisted();
 
         try {
             final Relationship relationship;
-            parentContentType = createTestContentType("parentContentType", "parentContentType");
-            childContentType = createTestContentType("childContentType", "childContentType");
+            parentContentType = createTestContentType("parentContentType", "parentContentType" + new Date().getTime());
+            childContentType = createTestContentType("childContentType", "childContentType" + new Date().getTime());
+
 
             com.dotcms.contenttype.model.field.Field field = FieldBuilder.builder(RelationshipField.class).name("testRelationship")
                     .variable("testRelationship")
@@ -2714,26 +2723,26 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             //Creates child contentlet
             final Contentlet childContentlet = new ContentletDataGen(childContentType.id())
-                    .languageId(defaultLanguage.getId())
+                    .languageId(language_1.getId())
                     .setProperty(TITLE_FIELD_NAME, "child contentlet")
                     .setProperty(BODY_FIELD_NAME, "child contentlet").nextPersisted();
 
+            ContentletDataGen.createNewVersion(childContentlet, VariantAPI.DEFAULT_VARIANT, language_2, null);
 
             //Creates parent contentlet
             Contentlet parentContentlet = new ContentletDataGen(parentContentType.id())
-                    .languageId(defaultLanguage.getId())
+                    .languageId(language_1.getId())
                     .setProperty(TITLE_FIELD_NAME, "parent contentlet")
                     .setProperty(BODY_FIELD_NAME, "parent contentlet").next();
 
             parentContentlet = contentletAPI.checkin(parentContentlet,
                     Map.of(relationship, list(childContentlet)),
                     user, false);
-            final Language language_2 = new LanguageDataGen().nextPersisted();
-            ContentletDataGen.createNewVersion(childContentlet, VariantAPI.DEFAULT_VARIANT, language_2, null);
+
             reader = createTempFile(
                     "identifier, languageCode, countryCode, " + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME
                             + "\r\n"
-                            + parentContentlet.getIdentifier() + "en, US, Test1_edited, " + "\r\n" );
+                            + parentContentlet.getIdentifier() + ",en, US, Test1_edited, " + "\r\n" );
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
             csvHeaders = csvreader.getHeaders();
@@ -2743,16 +2752,25 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
 
             results = ImportUtil.importFile(0L, defaultSite.getInode(), parentContentType.inode(),
-                    null, true, true, user, -1, csvHeaders,
+                    new String[]{}, true, true, user, language_1.getId(), csvHeaders,
                     csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader,
                     schemeStepActionResult1.getAction().getId(),getHttpRequest());
 
-            validate(results, true, false, false);
+            validate(results, true, false, true);
 
-            assertEquals(results.get("warnings").size(), 0);
             assertEquals(results.get("errors").size(), 0);
-        }catch (Exception e){
+        }finally {
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
 
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            } catch (Exception e) {
+                Logger.error("Error deleting content type", e);
+            }
         }
     }
 
