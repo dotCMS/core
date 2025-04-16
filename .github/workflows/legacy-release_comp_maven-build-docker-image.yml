@@ -281,8 +281,8 @@ jobs:
           platforms: ${{ inputs.docker_platforms }}
           pull: true
           push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=dotcms/dotcms:buildcache
+          cache-to: type=registry,ref=dotcms/dotcms:buildcache,mode=max
           build-args: |
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
         if: success()
