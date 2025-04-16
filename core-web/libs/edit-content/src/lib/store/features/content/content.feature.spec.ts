@@ -6,11 +6,13 @@ import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import {
     DotContentTypeService,
     DotHttpErrorManagerService,
+    DotMessageService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
@@ -39,6 +41,8 @@ describe('ContentFeature', () => {
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
     let workflowService: SpyObject<DotWorkflowService>;
     let router: SpyObject<Router>;
+    let title: SpyObject<Title>;
+    let dotMessageService: SpyObject<DotMessageService>;
 
     const createStore = createServiceFactory({
         service: signalStore(
@@ -51,7 +55,9 @@ describe('ContentFeature', () => {
             DotHttpErrorManagerService,
             DotWorkflowsActionsService,
             DotWorkflowService,
-            Router
+            Router,
+            Title,
+            DotMessageService
         ]
     });
 
@@ -63,6 +69,17 @@ describe('ContentFeature', () => {
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
         workflowService = spectator.inject(DotWorkflowService);
         router = spectator.inject(Router);
+        title = spectator.inject(Title);
+        dotMessageService = spectator.inject(DotMessageService);
+
+        dotMessageService.get.mockImplementation((key) => {
+            const messages = {
+                New: 'New',
+                'dotcms.content.management.platform.title': 'DotCMS'
+            };
+
+            return messages[key] || key;
+        });
     });
 
     describe('computed properties', () => {
@@ -263,6 +280,17 @@ describe('ContentFeature', () => {
             expect(store.currentSchemeId()).toBe(MOCK_SINGLE_WORKFLOW_ACTIONS[0].scheme.id);
         }));
 
+        it('should set the correct title for new content', fakeAsync(() => {
+            store.initializeNewContent('testContentType');
+            tick();
+
+            expect(dotMessageService.get).toHaveBeenCalledWith('New');
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'dotcms.content.management.platform.title'
+            );
+            expect(title.setTitle).toHaveBeenCalledWith('New Test - DotCMS');
+        }));
+
         it('should handle error when initializing new content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
             contentTypeService.getContentType.mockReturnValue(throwError(() => mockError));
@@ -281,7 +309,8 @@ describe('ContentFeature', () => {
         const testInode = '123-test-inode';
         const mockContentlet = {
             inode: testInode,
-            contentType: 'testContentType'
+            contentType: 'testContentType',
+            title: 'Test Content Title'
         } as DotCMSContentlet;
 
         const mockActions = [{ id: '1', name: 'Test Action' }] as DotCMSWorkflowAction[];
@@ -297,7 +326,7 @@ describe('ContentFeature', () => {
         });
 
         it('should initialize existing content successfully', fakeAsync(() => {
-            store.initializeExistingContent('123');
+            store.initializeExistingContent({ inode: '123', depth: 'PARENT_AND_CHILDREN' });
             tick();
 
             expect(store.contentlet()).toEqual(mockContentlet);
@@ -306,11 +335,21 @@ describe('ContentFeature', () => {
             expect(store.state()).toBe(ComponentStatus.LOADED);
         }));
 
+        it('should set the correct title for existing content', fakeAsync(() => {
+            store.initializeExistingContent({ inode: '123', depth: 'PARENT_AND_CHILDREN' });
+            tick();
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'dotcms.content.management.platform.title'
+            );
+            expect(title.setTitle).toHaveBeenCalledWith('Test Content Title - DotCMS');
+        }));
+
         it('should handle error when initializing existing content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
             dotEditContentService.getContentById.mockReturnValue(throwError(() => mockError));
 
-            store.initializeExistingContent('123');
+            store.initializeExistingContent({ inode: '123', depth: 'PARENT_AND_CHILDREN' });
             tick();
             expect(store.state()).toBe(ComponentStatus.ERROR);
             expect(store.error()).toBe(
@@ -323,7 +362,8 @@ describe('ContentFeature', () => {
         it('should set initialContentletState to reset when no scheme or step', fakeAsync(() => {
             const mockContentlet = {
                 inode: '123',
-                contentType: 'testContentType'
+                contentType: 'testContentType',
+                title: 'Test Content Title'
             } as DotCMSContentlet;
 
             const workflowStatusWithoutScheme = {
@@ -340,7 +380,7 @@ describe('ContentFeature', () => {
             );
             workflowService.getWorkflowStatus.mockReturnValue(of(workflowStatusWithoutScheme));
 
-            store.initializeExistingContent('123');
+            store.initializeExistingContent({ inode: '123', depth: 'PARENT_AND_CHILDREN' });
             tick();
 
             expect(store.initialContentletState()).toBe('reset');
