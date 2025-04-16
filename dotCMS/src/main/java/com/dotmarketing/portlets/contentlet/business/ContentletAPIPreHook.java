@@ -2117,4 +2117,8 @@ public interface ContentletAPIPreHook {
 	default boolean saveContentOnVariant(Contentlet contentlet, String variantName, User user){
 		return true;
 	}
+
+    default boolean findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles, String variantName) {
+		return true;
+	}
 }

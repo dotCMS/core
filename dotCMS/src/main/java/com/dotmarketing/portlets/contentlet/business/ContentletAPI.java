@@ -2495,6 +2495,21 @@ public interface ContentletAPI {
             boolean respectFrontendRoles);
 
 	/**
+	 * This will find the live/working version of a piece of content for the language passed in.  If the content is not found in the language passed in
+	 * then the method will try to "fallback" and return the content in the default language based on the properties set in the dotmarketing-config.properties
+	 * @param identifier
+	 * @param live
+	 * @param incomingLangId
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param variantName
+	 * @return
+	 * @throws DotSecurityException
+	 */
+	Optional<Contentlet> findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user,
+															  boolean respectFrontendRoles, String variantName);
+
+	/**
 	 * This will find the live/working version of a piece of content for the language passed in.  If
 	 * the content is not found in the language passed in
 	 *

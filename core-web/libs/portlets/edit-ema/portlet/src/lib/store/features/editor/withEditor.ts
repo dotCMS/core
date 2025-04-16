@@ -139,8 +139,9 @@ export function withEditor() {
                     const isEditState = store.isEditState();
                     const paletteOpen = store.paletteOpen();
 
-                    const isPreview = params?.mode === UVE_MODE.PREVIEW;
-                    const isPageReady = isTraditionalPage || isClientReady || isPreview;
+                    const isEditMode = params?.mode === UVE_MODE.EDIT;
+
+                    const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
                     const { dragIsActive, isScrolling } = getEditorStates(state);
@@ -153,10 +154,10 @@ export function withEditor() {
                         canEditPage &&
                         isEditState &&
                         !isScrolling &&
-                        !isPreview;
+                        isEditMode;
 
                     const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
-                    const showPalette = isEnterprise && canEditPage && isEditState && !isPreview;
+                    const showPalette = isEnterprise && canEditPage && isEditState && isEditMode;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
