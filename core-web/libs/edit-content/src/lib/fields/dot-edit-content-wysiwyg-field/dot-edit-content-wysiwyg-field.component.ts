@@ -8,7 +8,6 @@ import {
     inject,
     input,
     model,
-    Signal,
     viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -59,14 +58,12 @@ export class DotEditContentWYSIWYGFieldComponent implements AfterViewInit {
     /**
      * Signal to get the TinyMCE component.
      */
-    $tinyMCEComponent: Signal<DotWysiwygTinymceComponent> = viewChild(DotWysiwygTinymceComponent);
+    $tinyMCEComponent = viewChild(DotWysiwygTinymceComponent);
 
     /**
      * Signal to get the Monaco component.
      */
-    $monacoComponent: Signal<DotEditContentMonacoEditorControlComponent> = viewChild(
-        DotEditContentMonacoEditorControlComponent
-    );
+    $monacoComponent = viewChild(DotEditContentMonacoEditorControlComponent);
 
     #confirmationService = inject(ConfirmationService);
     #dotMessageService = inject(DotMessageService);
