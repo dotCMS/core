@@ -219,6 +219,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -8330,10 +8331,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         .getRelationTypeValue() + "] is required.");
                         cve.addRequiredRelationship(relationship, contentsInRelationship);
                     }
+                    //grouping by id to avoid duplicate contents due to different languages
+                    List<Contentlet> contentsInRelationshipSameLanguage = new ArrayList<>(contentsInRelationship.stream()
+                            .collect(Collectors.toMap(
+                                    Contentlet::getIdentifier,
+                                    Function.identity(),
+                                    (existing, replacement) -> existing
+                            ))
+                            .values());
+
                     // If there's a 1-N relationship and the child content is
                     // trying to relate to one more parent...
-
-                    List <Contentlet> contentsInRelationshipSameLanguage = contentsInRelationship.stream().filter(c -> c.getLanguageId() == contentlet.getLanguageId()).collect(Collectors.toList());
 
                     if (relationship.getCardinality()
                             == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
