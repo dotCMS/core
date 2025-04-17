@@ -110,6 +110,71 @@ describe('DotEditContentTagFieldComponent', () => {
             expect(service.getTags).toHaveBeenCalledWith('type');
             expect(spectator.component.$suggestions()).toEqual(expectedTags);
         });
+
+        describe('Enter key behavior', () => {
+            let autocomplete: AutoComplete;
+            let autocompleteInput: HTMLInputElement;
+
+            beforeEach(() => {
+                autocomplete = spectator.query(AutoComplete);
+                autocompleteInput = spectator.query('input[role="combobox"]');
+            });
+
+            const simulateEnterKey = () => {
+                const enterEvent = new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    bubbles: true,
+                    cancelable: true
+                });
+                autocompleteInput.dispatchEvent(enterEvent);
+            };
+
+            it('should add new tag when Enter is pressed with non-empty value', () => {
+                const newTag = 'newTag';
+                autocompleteInput.value = newTag;
+
+                simulateEnterKey();
+                spectator.detectChanges();
+
+                expect(spectator.component.formControl?.value).toEqual([newTag]);
+                expect(autocompleteInput.value).toBe('');
+            });
+
+            it('should not add empty tag when Enter is pressed with empty value', () => {
+                autocompleteInput.value = '   ';
+
+                simulateEnterKey();
+                spectator.detectChanges();
+
+                expect(spectator.component.formControl?.value).toEqual([]);
+            });
+
+            it('should append new tag to existing tags', () => {
+                const existingTags = ['tag1', 'tag2'];
+                const newTag = 'tag3';
+                spectator.component.formControl?.setValue(existingTags);
+                autocompleteInput.value = newTag;
+
+                simulateEnterKey();
+                spectator.detectChanges();
+
+                expect(spectator.component.formControl?.value).toEqual([...existingTags, newTag]);
+                expect(autocompleteInput.value).toBe('');
+            });
+
+            it('should not add duplicate tag due to AutoComplete unique property', () => {
+                const existingTag = 'existingTag';
+                spectator.component.formControl?.setValue([existingTag]);
+                autocompleteInput.value = existingTag;
+
+                simulateEnterKey();
+                spectator.detectChanges();
+
+                expect(spectator.component.formControl?.value).toEqual([existingTag]);
+                expect(autocompleteInput.value).toBe(existingTag);
+                expect(autocomplete.unique).toBe(true);
+            });
+        });
     });
 
     describe('Form Integration', () => {
