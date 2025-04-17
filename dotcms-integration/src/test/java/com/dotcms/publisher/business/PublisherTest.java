@@ -6,12 +6,7 @@ import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.datagen.UserDataGen;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -61,7 +56,9 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.UNIQUE_PER_SITE_FIELD_VARIABLE_NAME;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -165,7 +162,7 @@ public class PublisherTest extends IntegrationTestBase {
                     .setProperty(TEST_TITLE, uniqueValue)
                     .setProperty(TEST_DESCRIPTION, replaceValue).nextPersisted();
             final Map<String, Object> bundleData = generateContentBundle(
-                    "unique-content-test-1", contentlet, adminUser, ppBean);
+                    "unique-content-test-1", adminUser, ppBean, contentlet);
             assertNotNull(bundleData);
             assertNotNull(bundleData.get(PublisherTestUtil.FILE));
 
@@ -250,7 +247,7 @@ public class PublisherTest extends IntegrationTestBase {
             ContentletDataGen.archive(spanishCotentlet);
 
             final Map<String, Object> bundleData = generateContentBundle(
-                    "archived-multi-language-content-test-1", contentlet, adminUser, ppBean);
+                    "archived-multi-language-content-test-1", adminUser, ppBean, contentlet);
             assertNotNull(bundleData);
             assertNotNull(bundleData.get(PublisherTestUtil.FILE));
 
@@ -537,6 +534,87 @@ public class PublisherTest extends IntegrationTestBase {
         assertEquals(0, response.get("errors"));
     }
 
+    /**
+     * Method to test: {@link BundlePublisher#process(PublishStatus)}
+     * Given Scenario: Push publish two contentlets from different sites with the same unique field value.
+     * ExpectedResult: The receiver should get the two contentlets in the corresponding sites without overwriting.
+     *
+     */
+    @Test
+    public void testPushPublishWithUniqueField() throws Exception {
+        PPBean ppBean = null;
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final String UNIQUE_VALUE = "privacy";
+
+        try {
+            final User adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com",
+                    systemUser, false);
+            ppBean = createPushPublishEnv(adminUser);
+            assertPPBean(ppBean);
+            //Create the sites
+            final Host hostA = new SiteDataGen().nextPersisted();
+            final Host hostB = new SiteDataGen().nextPersisted();
+
+
+            //Create the content type
+            ContentType cType = new ContentTypeDataGen().nextPersisted();
+            final Field siteOrFolderField = new FieldDataGen().type(HostFolderField.class).contentTypeId(cType.id()).nextPersisted();
+            //Create the text field, which should be unique
+            final Field textField = new FieldDataGen()
+                    .contentTypeId(cType.id())
+                    .type(TextField.class)
+                    .unique(true)
+                    .nextPersisted();
+            new FieldVariableDataGen()
+                    .key(UNIQUE_PER_SITE_FIELD_VARIABLE_NAME)
+                    .value("true")
+                    .field(textField)
+                    .nextPersisted();
+
+
+            cType = APILocator.getContentTypeAPI(systemUser).find(cType.inode());
+
+            //Create the contentlets
+            final Contentlet contentletA = new ContentletDataGen(cType).setProperty(textField.variable(), UNIQUE_VALUE).host(hostA).setProperty(siteOrFolderField.values(), hostA).nextPersisted();
+            final Contentlet contentletB = new ContentletDataGen(cType).setProperty(textField.variable(), UNIQUE_VALUE).host(hostB).setProperty(siteOrFolderField.variable(), hostB).nextPersisted();
+
+
+            //Generate bundle
+            final Map<String, Object> bundleData = generateContentBundle(
+                    "unique-content-test-1", adminUser, ppBean, contentletA, contentletB);
+            assertNotNull(bundleData);
+            assertNotNull(bundleData.get(PublisherTestUtil.FILE));
+
+            //Destroy contentlets to simulate receiver
+            APILocator.getContentletAPI().destroy(contentletA, adminUser, false );
+            APILocator.getContentletAPI().destroy(contentletB, adminUser, false );
+
+
+            // Publish bundle
+            final PublisherConfig publisherConfig = publishContentBundle(
+                    (File) bundleData.get(PublisherTestUtil.FILE), ppBean.endPoint);
+            assertNotNull(publisherConfig);
+            assertEquals(((File) bundleData.get(PublisherTestUtil.FILE)).getName(),
+                    publisherConfig.getId());
+
+            // Check result content
+            final Contentlet resultContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(contentletA.getIdentifier());
+            final Contentlet resultContentletB = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(contentletB.getIdentifier());
+
+            assertNotNull(resultContentlet);
+            assertNotNull(resultContentletB);
+            assertEquals(resultContentlet.getHost(), hostA.getIdentifier());
+            assertEquals(resultContentletB.getHost(), hostB.getIdentifier());
+
+        } finally {
+            deleteTestPPData(systemUser, null, ppBean, null);
+        }
+
+
+    }
+
     private PushResult pushFolderPage(final String bundleName, final FolderPage folderPage, final User user, final PPBean ppBean)
             throws DotDataException, DotPublisherException, InstantiationException, IllegalAccessException, DotSecurityException {
 
@@ -619,15 +697,18 @@ public class PublisherTest extends IntegrationTestBase {
     }
 
     private Map<String, Object> generateContentBundle(final String bundleName,
-            final Contentlet contentlet,
-            final User user, final PPBean ppBean)
+                                                      final User user, final PPBean ppBean, final Contentlet... contentlet)
             throws DotDataException, DotPublisherException, DotPublishingException, DotBundleException, InstantiationException, IOException, IllegalAccessException {
 
         final PublisherAPI publisherAPI = PublisherAPI.getInstance();
         final Bundle bundle = PublisherTestUtil.createBundle(bundleName, user, ppBean.environment);
 
-        publisherAPI.saveBundleAssets(Arrays.asList(contentlet.getIdentifier()),
-                bundle.getId(), user);
+
+        List<String> contentletIdentifiers = Arrays.stream(contentlet)
+                .map(Contentlet::getIdentifier)
+                .collect(Collectors.toList());
+
+        publisherAPI.saveBundleAssets(contentletIdentifiers, bundle.getId(), user);
 
         return PublisherTestUtil.generateBundle(bundle.getId(), Operation.PUBLISH);
 
