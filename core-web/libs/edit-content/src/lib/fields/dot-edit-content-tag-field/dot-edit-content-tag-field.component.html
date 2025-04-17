@@ -6,15 +6,14 @@
     [formControlName]="variable"
     [suggestions]="$suggestions()"
     [multiple]="true"
-    [forceSelection]="true"
-    [unique]="true"
+    [unique]="UNIQUE_CLASSES"
     [minLength]="TAG_MIN_LENGTH"
     [delay]="TAG_DELAY"
     [id]="'tag-id-' + variable"
     [inputId]="variable"
     [attr.data-testid]="'tag-field-container-' + variable"
     (completeMethod)="onSearch($event)"
-    (keydown.enter)="$event.preventDefault()">
+    (keydown.enter)="onEnterKey($event)">
     <ng-template pTemplate="removetokenicon">
         <i class="pi pi-times"></i>
     </ng-template>

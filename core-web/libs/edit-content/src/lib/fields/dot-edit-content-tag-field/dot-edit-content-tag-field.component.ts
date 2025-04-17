@@ -23,7 +23,7 @@ import { DotEditContentService } from '../../services/dot-edit-content.service';
 
 const TAG_MIN_LENGTH = 2;
 const TAG_DELAY = 300;
-
+const UNIQUE_CLASSES = true;
 /**
  * Component that handles tag field input using PrimeNG's AutoComplete.
  * It provides tag suggestions as the user types with a minimum of 2 characters.
@@ -48,6 +48,7 @@ export class DotEditContentTagFieldComponent {
 
     protected readonly TAG_MIN_LENGTH = TAG_MIN_LENGTH;
     protected readonly TAG_DELAY = TAG_DELAY;
+    protected readonly UNIQUE_CLASSES = UNIQUE_CLASSES;
 
     /**
      * Required input that defines the field configuration
@@ -110,6 +111,25 @@ export class DotEditContentTagFieldComponent {
      */
     onSearch(event: AutoCompleteCompleteEvent): void {
         this.#searchTerms$.next(event.query);
+    }
+
+    /**
+     * Handles the Enter key event
+     * Prevents the default behavior of the Enter key
+     */
+    onEnterKey(event: Event): void {
+        event.preventDefault();
+
+        const input = event.target as HTMLInputElement;
+        const value = input.value.trim();
+
+        if (value) {
+            const currentValues = this.formControl.value || [];
+            if (!currentValues.includes(value)) {
+                this.formControl.setValue([...currentValues, value]);
+                input.value = '';
+            }
+        }
     }
 
     /**
