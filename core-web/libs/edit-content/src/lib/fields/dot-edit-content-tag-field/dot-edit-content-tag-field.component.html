@@ -3,15 +3,16 @@
 
 <p-autoComplete
     #autocomplete
-    [formControlName]="variable"
+    [attr.data-testid]="'tag-field-container-' + variable"
+    [id]="'tag-id-' + variable"
+    [inputId]="variable"
     [suggestions]="$suggestions()"
     [multiple]="true"
+    [forceSelection]="false"
     [unique]="UNIQUE_CLASSES"
     [minLength]="TAG_MIN_LENGTH"
     [delay]="TAG_DELAY"
-    [id]="'tag-id-' + variable"
-    [inputId]="variable"
-    [attr.data-testid]="'tag-field-container-' + variable"
+    [formControlName]="variable"
     (completeMethod)="onSearch($event)"
     (keydown.enter)="onEnterKey($event)">
     <ng-template pTemplate="removetokenicon">
