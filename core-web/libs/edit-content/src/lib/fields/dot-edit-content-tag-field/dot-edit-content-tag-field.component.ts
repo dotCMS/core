@@ -114,8 +114,18 @@ export class DotEditContentTagFieldComponent {
     }
 
     /**
-     * Handles the Enter key event
-     * Prevents the default behavior of the Enter key
+     * Handles the Enter key press event in the tag input field.
+     * 
+     * This method:
+     * - Prevents the default Enter key behavior
+     * - Gets the current input value and trims whitespace
+     * - If the value is not empty and not already in the list:
+     *   - Adds it to the existing tags list
+     *   - Clears the input field
+     * - Maintains uniqueness by checking for duplicates
+     * 
+     * @param {Event} event - The keyboard event object
+     * @memberof DotEditContentTagFieldComponent
      */
     onEnterKey(event: Event): void {
         event.preventDefault();
