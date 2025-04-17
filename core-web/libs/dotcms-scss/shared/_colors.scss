@@ -148,16 +148,18 @@ $color-alert-fuchsia-light: $color-palette-fuchsia-tint;
 
 // Green sass variables
 $color-palette-green-shade: #0b6948;
-$color-palette-green: #3ed97a;
+$color-palette-green: #1ea97c;
 $color-palette-green-tint: #f5fdf8;
 
-$color-palette-green-op-08: rgba($color-palette-green, 0.8);
+$color-palette-green-op-80: rgba($color-palette-green, 0.8);
+$color-palette-green-op-70: rgba($color-palette-green, 0.7);
 $color-palette-green-op-10: rgba($color-palette-green, 0.1);
 $color-palette-green-op-15: rgba($color-palette-green, 0.15);
 $color-palette-green-op-20: rgba($color-palette-green, 0.2);
+$color-palette-green-op-07: rgba($color-palette-green, 0.07);
 
 $color-accessible-text-green: $color-palette-green-shade;
-$color-accessible-text-green-bg: $color-palette-green-op-08;
+$color-accessible-text-green-bg: $color-palette-green-op-80;
 $color-alert-green: $color-palette-green;
 $color-alert-green-light: $color-palette-green-tint;
 

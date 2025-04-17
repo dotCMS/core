@@ -37,25 +37,12 @@
 /* Base styles for regular messages */
 .p-message {
     margin: 0;
-    border-radius: $border-radius-md;
     position: relative;
-    background: transparent !important;
+    background: transparent;
     border: 1px solid transparent;
 
-    /* Wider left border */
-    &::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        width: 9px;
-        border-radius: $border-radius-md 0 0 $border-radius-md;
-    }
-
     .p-message-wrapper {
-        padding: $spacing-2 $spacing-4;
-        justify-content: center;
+        padding: $spacing-1;
     }
 
     .p-message-text {
@@ -85,13 +72,9 @@
 }
 
 .p-message.p-message-success {
-    background: transparent;
-    border-color: $color-palette-green;
-    color: $black;
-
-    &::before {
-        background: $color-palette-green;
-    }
+    background: $color-palette-green-op-07;
+    border: none;
+    color: $color-palette-green;
 
     .p-message-icon {
         color: $color-palette-green;

@@ -7,6 +7,7 @@
     <div class="edit-content-layout__topBar" data-testId="edit-content-layout__topBar">
         @if ($store.isEnabledNewContentEditor()) {
             <p-messages
+                [closable]="true"
                 styleClass="edit-content-layout__beta-message"
                 severity="success"
                 data-testId="edit-content-layout__beta-message">
