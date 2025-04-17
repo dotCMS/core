@@ -146,6 +146,8 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
 .p-autocomplete-dropdown.p-element.p-button {
     @extend #field-trigger;
     grid-column-start: 4;
+    height: 100%;
+    min-height: 2.5rem;
 
     .p-button-icon {
         @extend #field-trigger-icon;
@@ -159,4 +161,9 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
     &.p-focus {
         outline: none;
     }
+}
+
+.p-button-icon-only.p-autocomplete-dropdown:not(.p-splitbutton-menubutton) {
+    height: 100%;
+    min-height: 2.5rem;
 }
