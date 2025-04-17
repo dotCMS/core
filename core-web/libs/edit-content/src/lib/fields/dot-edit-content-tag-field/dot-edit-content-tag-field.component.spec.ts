@@ -13,7 +13,12 @@ import { By } from '@angular/platform-browser';
 
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
-import { DotEditContentTagFieldComponent } from './dot-edit-content-tag-field.component';
+import {
+    AUTO_COMPLETE_DELAY,
+    AUTO_COMPLETE_MIN_LENGTH,
+    AUTO_COMPLETE_UNIQUE,
+    DotEditContentTagFieldComponent
+} from './dot-edit-content-tag-field.component';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { TAG_FIELD_MOCK } from '../../utils/mocks';
@@ -80,9 +85,9 @@ describe('DotEditContentTagFieldComponent', () => {
             expect(autocomplete.inputId).toBe(TAG_FIELD_MOCK.variable);
             expect(autocomplete.multiple).toBe(true);
             expect(autocomplete.forceSelection).toBe(true);
-            expect(autocomplete.unique).toBe(true);
-            expect(autocomplete.minLength).toBe(2);
-            expect(autocomplete.delay).toBe(300);
+            expect(autocomplete.unique).toBe(AUTO_COMPLETE_UNIQUE);
+            expect(autocomplete.minLength).toBe(AUTO_COMPLETE_MIN_LENGTH);
+            expect(autocomplete.delay).toBe(AUTO_COMPLETE_DELAY);
         });
 
         it('should be connected to form control', () => {

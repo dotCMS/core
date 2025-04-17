@@ -21,9 +21,12 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 
-const TAG_MIN_LENGTH = 2;
-const TAG_DELAY = 300;
-const UNIQUE_CLASSES = true;
+export const AUTO_COMPLETE_MIN_LENGTH = 2;
+
+export const AUTO_COMPLETE_DELAY = 300;
+
+export const AUTO_COMPLETE_UNIQUE = true;
+
 /**
  * Component that handles tag field input using PrimeNG's AutoComplete.
  * It provides tag suggestions as the user types with a minimum of 2 characters.
@@ -46,9 +49,9 @@ export class DotEditContentTagFieldComponent {
     #editContentService = inject(DotEditContentService);
     #controlContainer = inject(ControlContainer);
 
-    protected readonly TAG_MIN_LENGTH = TAG_MIN_LENGTH;
-    protected readonly TAG_DELAY = TAG_DELAY;
-    protected readonly UNIQUE_CLASSES = UNIQUE_CLASSES;
+    protected readonly AUTO_COMPLETE_MIN_LENGTH = AUTO_COMPLETE_MIN_LENGTH;
+    protected readonly AUTO_COMPLETE_DELAY = AUTO_COMPLETE_DELAY;
+    protected readonly AUTO_COMPLETE_UNIQUE = AUTO_COMPLETE_UNIQUE;
 
     /**
      * Required input that defines the field configuration

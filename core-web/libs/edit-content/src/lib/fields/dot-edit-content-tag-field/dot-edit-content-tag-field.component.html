@@ -9,9 +9,9 @@
     [suggestions]="$suggestions()"
     [multiple]="true"
     [forceSelection]="false"
-    [unique]="UNIQUE_CLASSES"
-    [minLength]="TAG_MIN_LENGTH"
-    [delay]="TAG_DELAY"
+    [unique]="AUTO_COMPLETE_UNIQUE"
+    [minLength]="AUTO_COMPLETE_MIN_LENGTH"
+    [delay]="AUTO_COMPLETE_DELAY"
     [formControlName]="variable"
     (completeMethod)="onSearch($event)"
     (keydown.enter)="onEnterKey($event)">
