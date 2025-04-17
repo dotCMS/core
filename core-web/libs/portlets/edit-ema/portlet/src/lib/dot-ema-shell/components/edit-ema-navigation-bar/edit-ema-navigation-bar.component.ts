@@ -45,6 +45,8 @@ export class EditEmaNavigationBarComponent {
 
     $editorProps = this.uveStore.$editorProps;
 
+    $params = this.uveStore.pageParams;
+
     /**
      * Handle the click event on the item
      *
