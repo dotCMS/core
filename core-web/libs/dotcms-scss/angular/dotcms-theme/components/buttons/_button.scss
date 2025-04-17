@@ -70,6 +70,10 @@
         color: $color-palette-primary;
         @extend #main-tertiary-severity;
     }
+
+    &.p-button-success {
+        @extend #main-success-severity;
+    }
 }
 
 // Severity for outlined button
@@ -96,6 +100,14 @@
             @extend #outlined-tertiary-severity-sm;
         }
     }
+
+    &.p-button-success {
+        @extend #outlined-success-severity;
+
+        &.p-button-sm {
+            @extend #outlined-success-severity-sm;
+        }
+    }
 }
 
 // Severity for text button
@@ -113,6 +125,10 @@ a.p-button.p-button-text {
 
     &.p-button-danger {
         @extend #text-danger-severity;
+    }
+
+    &.p-button-success {
+        @extend #text-success-severity;
     }
 }
 

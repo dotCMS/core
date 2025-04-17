@@ -7,26 +7,28 @@
     <div class="edit-content-layout__topBar" data-testId="edit-content-layout__topBar">
         @if ($store.isEnabledNewContentEditor()) {
             <p-messages
-                [closable]="true"
                 styleClass="edit-content-layout__beta-message"
                 severity="success"
                 data-testId="edit-content-layout__beta-message">
                 <ng-template pTemplate>
-                    <i class="pi pi-info-circle"></i>
-                    <div>
-                        <span
-                            [innerHTML]="
-                                ('edit.content.layout.back.to.old.edit.content' | dm) + ' '
-                            "></span>
-                        <a
-                            [routerLink]="'/content-types-angular/edit/' + variable"
-                            data-testId="beta-message-content-type">
-                            {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
-                        </a>
-                        <span>
-                            {{ ' '
-                            }}{{ 'edit.content.layout.back.to.old.edit.content.subtitle' | dm }}
-                        </span>
+                    <div class="flex w-full gap-1">
+                        <i class="pi pi-info-circle"></i>
+                        <div class="flex align-items-center mr-auto gap-1">
+                            {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
+                            <a
+                                [routerLink]="'/content-types-angular/edit/' + variable"
+                                data-testId="beta-message-content-type">
+                                {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
+                            </a>
+                            {{ 'edit.content.layout.back.to.old.edit.content.subtitle' | dm }}
+                        </div>
+
+                        <p-button
+                            icon="pi pi-times"
+                            rounded="true"
+                            severity="success"
+                            text="true"
+                            size="small" />
                     </div>
                 </ng-template>
             </p-messages>

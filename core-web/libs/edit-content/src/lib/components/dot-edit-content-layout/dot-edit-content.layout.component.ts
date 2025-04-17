@@ -56,6 +56,9 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentLayoutComponent {
+closeBetaMessage() {
+throw new Error('Method not implemented.');
+}
     /**
      * The store instance.
      *
