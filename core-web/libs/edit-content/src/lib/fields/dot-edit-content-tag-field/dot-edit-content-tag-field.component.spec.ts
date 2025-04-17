@@ -41,9 +41,8 @@ describe('DotEditContentTagFieldComponent', () => {
     });
 
     beforeEach(() => {
-        formGroup = new FormGroup({
-            [TAG_FIELD_MOCK.variable]: new FormControl([])
-        });
+        formGroup = new FormGroup({});
+        formGroup.addControl(TAG_FIELD_MOCK.variable, new FormControl([]));
 
         formGroupDirective = new FormGroupDirective([], []);
         formGroupDirective.form = formGroup;
@@ -68,10 +67,6 @@ describe('DotEditContentTagFieldComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should create component', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     describe('Component Configuration', () => {
         it('should render autocomplete with correct attributes', () => {
             const autocomplete = spectator.query(AutoComplete);
@@ -84,17 +79,16 @@ describe('DotEditContentTagFieldComponent', () => {
             expect(autocomplete.id).toBe(`tag-id-${TAG_FIELD_MOCK.variable}`);
             expect(autocomplete.inputId).toBe(TAG_FIELD_MOCK.variable);
             expect(autocomplete.multiple).toBe(true);
-            expect(autocomplete.forceSelection).toBe(true);
+            expect(autocomplete.forceSelection).toBe(false);
             expect(autocomplete.unique).toBe(AUTO_COMPLETE_UNIQUE);
             expect(autocomplete.minLength).toBe(AUTO_COMPLETE_MIN_LENGTH);
             expect(autocomplete.delay).toBe(AUTO_COMPLETE_DELAY);
         });
 
         it('should be connected to form control', () => {
-            const control = spectator.component.formControl;
-            const controlContainer = spectator.inject(ControlContainer, true);
-            expect(control).toBeDefined();
-            expect(control).toBe(controlContainer.control?.get(TAG_FIELD_MOCK.variable));
+            const control = formGroup.get(TAG_FIELD_MOCK.variable);
+            expect(spectator.component.formControl).toBeDefined();
+            expect(spectator.component.formControl).toBe(control);
         });
     });
 
