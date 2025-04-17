@@ -95,9 +95,9 @@ describe('PageClient', () => {
             );
 
             expect(result).toEqual({
-                page: mockPageData.entity,
+                ...mockPageData.entity,
                 params: {
-                    hostId: 'test-site'
+                    siteId: 'test-site'
                 }
             });
         });

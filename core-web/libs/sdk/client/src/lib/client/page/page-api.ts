@@ -3,7 +3,7 @@ import { buildPageQuery, buildQuery, fetchGraphQL, mapResponseData } from './uti
 import { graphqlToPageEntity } from '../../utils';
 import { DotCMSClientConfig, RequestOptions } from '../client';
 import { ErrorMessages } from '../models';
-import { DotCMSGraphQLPageResponse, DotCMSPageAPIResponse } from '../models/types';
+import { DotCMSGraphQLPageResponse, DotCMSPageAsset } from '../models/types';
 
 /**
  * The parameters for the Page API.
@@ -185,12 +185,12 @@ export class PageClient {
      *      });
      *```
      */
-    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAPIResponse>;
+    get(url: string, options?: PageRequestParams): Promise<DotCMSPageAsset>;
     get(url: string, options?: GraphQLPageOptions): Promise<DotCMSGraphQLPageResponse>;
     get(
         url: string,
         options?: PageRequestParams | GraphQLPageOptions
-    ): Promise<DotCMSPageAPIResponse | DotCMSGraphQLPageResponse> {
+    ): Promise<DotCMSPageAsset | DotCMSGraphQLPageResponse> {
         if (!options) {
             return this.#getPageFromAPI(url);
         }
@@ -240,15 +240,21 @@ export class PageClient {
      * });
      * ```
      */
-    async #getPageFromAPI(
-        path: string,
-        params?: PageRequestParams
-    ): Promise<DotCMSPageAPIResponse> {
+    async #getPageFromAPI(path: string, params?: PageRequestParams): Promise<DotCMSPageAsset> {
         if (!path) {
             throw new Error("The 'path' parameter is required for the Page API");
         }
 
-        const normalizedParams = this.#mapToBackendParams(params || {});
+        // If the siteId is not provided, use the one from the config
+        const completedParams = {
+            ...(params ?? {}),
+            siteId: params?.siteId || this.siteId
+        };
+
+        // Map the public parameters to the one used by the API
+        const normalizedParams = this.#mapToBackendParams(completedParams || {});
+
+        // Build the query params
         const queryParams = new URLSearchParams(normalizedParams).toString();
 
         // If the path starts with a slash, remove it to avoid double slashes in the final URL
@@ -266,11 +272,9 @@ export class PageClient {
             throw error;
         }
 
-        return response.json().then<DotCMSPageAPIResponse>((data) => ({
-            page: data.entity,
-            params: {
-                ...normalizedParams
-            }
+        return response.json().then<DotCMSPageAsset>((data) => ({
+            ...data.entity,
+            params: completedParams // We retrieve the params from the API response, to make the same fetch on UVE
         }));
     }
 
@@ -423,7 +427,7 @@ export class PageClient {
      */
     #mapToBackendParams(params: PageRequestParams): BackendPageParams {
         const backendParams = {
-            hostId: params.siteId || this.siteId,
+            hostId: params.siteId,
             mode: params.mode,
             language_id: params.languageId ? String(params.languageId) : undefined,
             'com.dotmarketing.persona.id': params.personaId,
