@@ -25,9 +25,6 @@ export default {
             }
         ]
     },
-    // https://github.com/nrwl/nx/issues/7844#issuecomment-1016624608
-    // This is a bottleneck, it's taking way too long to start the tests
-    // https://github.com/dotCMS/core/issues/31729
     transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$|gridstack)'],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
