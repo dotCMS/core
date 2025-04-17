@@ -11,6 +11,7 @@ export interface DotCMSPageAsset {
     template: DotCMSTemplate;
     viewAs?: DotCMSViewAs;
     vanityUrl?: DotCMSVanityUrl;
+    params?: Record<string, unknown>;
 }
 
 export interface DotPageAssetLayoutRow {
