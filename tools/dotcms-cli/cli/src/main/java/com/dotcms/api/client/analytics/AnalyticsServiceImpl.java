@@ -1,5 +1,7 @@
 package com.dotcms.api.client.analytics;
 
+import static com.dotcms.cli.common.GlobalMixin.OPTION_NO_VALIDATE_UNMATCHED_ARGUMENTS;
+
 import com.dotcms.api.AnalyticsAPI;
 import com.dotcms.api.client.model.RestClientFactory;
 import com.dotcms.model.analytics.AnalyticsEvent;
@@ -29,50 +31,57 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     public void recordCommand(final String command, final List<String> arguments)
             throws IOException {
 
-        final var serviceProfileOpt = clientFactory.getServiceProfile();
-        if (serviceProfileOpt.isPresent()) {
-
-            final var serviceProfile = serviceProfileOpt.get();
-
-            final var url = serviceProfile.url().toString();
-            final String user;
-            if (serviceProfile.credentials() != null) {
-                user = serviceProfile.credentials().user();
-            } else {
-                user = "UNKNOWN";
-                logger.error(
-                        "No credentials found for the service profile: " + serviceProfile.name()
-                );
-            }
-
-            try {
-
-                final var analyticsAPI = clientFactory.getClient(AnalyticsAPI.class);
-                analyticsAPI.fireEvent(
-                        AnalyticsEvent.builder()
-                                .command(command)
-                                .arguments(arguments)
-                                .eventType(COMMAND_EVENT_TYPE)
-                                .user(user)
-                                .site(url)
-                                .build());
-                logger.debug(
-                        String.format(
-                                "Event recorded: URL [%s] - user [%s] - command [%s][%s]",
-                                url, user, command, String.join(" ", arguments)
-                        )
-                );
-            } catch (Exception e) {
-                logger.error(
-                        String.format(
-                                "Error recording event: URL [%s] - user [%s] - command [%s][%s]",
-                                url, user, command, String.join(" ", arguments)
-                        ), e
-                );
-            }
-        } else {
-            logger.error("No service profile found.");
+        if (skipEventRecord(arguments)) {
+            return;
         }
 
+        try {
+
+            final var analyticsAPI = clientFactory.getClient(AnalyticsAPI.class);
+            analyticsAPI.fireEvent(
+                    AnalyticsEvent.builder()
+                            .command(command)
+                            .arguments(arguments)
+                            .eventType(COMMAND_EVENT_TYPE)
+                            .build());
+            logger.debug(
+                    String.format(
+                            "Event recorded: command [%s][%s]",
+                            command, String.join(" ", arguments)
+                    )
+            );
+        } catch (Exception e) {
+            logger.error(
+                    String.format(
+                            "Error recording event: command [%s][%s]",
+                            command, String.join(" ", arguments)
+                    ), e
+            );
+        }
     }
+
+    /**
+     * Determines whether event recording should be skipped based on: 1. Command arguments
+     * containing a flag indicating it's a subcommand 2. Absence of a service profile
+     *
+     * @param arguments The command arguments to check
+     * @return true if event recording should be skipped, false otherwise
+     */
+    private boolean skipEventRecord(final List<String> arguments) throws IOException {
+
+        // Skip if this is a subcommand (indicated by the presence of --noValidateUnmatchedArguments)
+        if (arguments.contains(OPTION_NO_VALIDATE_UNMATCHED_ARGUMENTS)) {
+            return true;
+        }
+
+        // Skip if no service profile is available
+        final var serviceProfileOpt = clientFactory.getServiceProfile();
+        if (serviceProfileOpt.isEmpty()) {
+            logger.error("No service profile found.");
+            return true;
+        }
+
+        return false;
+    }
+
 }
