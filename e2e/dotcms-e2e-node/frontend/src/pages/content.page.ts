@@ -5,7 +5,6 @@ import {
   fileAsset,
   pageAsset,
 } from "@locators/globalLocators";
-import { waitForVisibleAndCallback } from "@utils/utils";
 import {
   contentProperties,
   fileAssetContent,
@@ -22,11 +21,9 @@ export class ContentPage {
     const { title, body, action, newBody, newTitle } = params;
     const dotIframe = this.page.frameLocator(iFramesLocators.dot_iframe);
 
-    await waitForVisibleAndCallback(this.page.getByRole("heading"), () =>
-      expect
-        .soft(this.page.getByRole("heading"))
-        .toContainText(contentGeneric.label),
-    );
+    await expect
+      .soft(this.page.getByRole("heading"))
+      .toContainText(contentGeneric.label);
 
     if (newTitle) {
       await dotIframe.locator("#title").clear();
@@ -67,9 +64,9 @@ export class ContentPage {
           iFramesLocators.dot_edit_iframe,
         );
         await editFrame.getByRole("button", { name: " Edit" }).click();
-        await waitForVisibleAndCallback(
-          editFrame.getByLabel("Editor content;Press Alt+F1"),
-        );
+        await expect
+          .soft(editFrame.getByLabel("Editor content;Press Alt+F1"))
+          .toBeVisible();
         const editor = editFrame.getByLabel("Editor content;Press Alt+F1");
         await editor.click(); // Focus on the editor
         await this.page.keyboard.press("Control+A"); // Select all text (Cmd+A for Mac)
@@ -79,14 +76,9 @@ export class ContentPage {
           .fill(fileAssetContent.newFileTextEdited);
         await editFrame.getByRole("button", { name: "Save" }).click();
       } else {
-        await waitForVisibleAndCallback(
-          this.page.getByRole("heading"),
-          async () => {
-            await expect
-              .soft(this.page.getByRole("heading"))
-              .toContainText(fileAsset.label);
-          },
-        );
+        await expect
+          .soft(this.page.getByRole("heading"))
+          .toContainText(fileAsset.label);
         await dotIframe.locator("#HostSelector-hostFolderSelect").fill(host);
         await dotIframe
           .getByRole("button", { name: " Create New File" })
@@ -105,14 +97,14 @@ export class ContentPage {
         .click();
       await dotIframe.getByTestId("url-input").fill(fromURL);
       await dotIframe.getByRole("button", { name: " Import" }).click();
-      await waitForVisibleAndCallback(
-        dotIframe.getByRole("button", { name: " Remove" }),
-      );
+      await expect(
+        dotIframe.getByRole("button", { name: " Remove" })
+      ).toBeVisible();
     }
 
-    await waitForVisibleAndCallback(dotIframe.locator("#title"), async () => {
-      await dotIframe.locator("#title").fill(title);
-    });
+    await expect
+      .soft(dotIframe.locator("#title"))
+      .toHaveValue(title);
 
     if (action) {
       await dotIframe.getByText(action).first().click();
@@ -128,17 +120,16 @@ export class ContentPage {
     const dotIframe = this.page.frameLocator(iFramesLocators.dot_iframe);
 
     const executionConfirmation = dotIframe.getByText(message);
-    await waitForVisibleAndCallback(executionConfirmation, () =>
-      expect(executionConfirmation).toBeVisible(),
-    );
+    await executionConfirmation.waitFor();
+    await expect(executionConfirmation).toBeVisible();
     await expect(executionConfirmation).toBeHidden();
+    
     //Click on close
     const closeBtnLocator = this.page
       .getByTestId("close-button")
       .getByRole("button");
-    await waitForVisibleAndCallback(closeBtnLocator, () =>
-      closeBtnLocator.click(),
-    );
+    await closeBtnLocator.waitFor();
+    await closeBtnLocator.click();
   }
 
   /**
@@ -151,21 +142,17 @@ export class ContentPage {
     const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
     const structureINodeLocator = iframe.locator("#structure_inode");
-    await waitForVisibleAndCallback(structureINodeLocator, () =>
-      expect(structureINodeLocator).toBeVisible(),
-    );
+    await expect(structureINodeLocator).toBeVisible();
     await this.selectTypeOnFilter(typeLocator);
 
-    await waitForVisibleAndCallback(
-      iframe.locator("#dijit_form_DropDownButton_0"),
-      () => iframe.locator("#dijit_form_DropDownButton_0").click(),
-    );
-    await waitForVisibleAndCallback(iframe.getByLabel("actionPrimaryMenu"));
+    const dropDownButton = iframe.locator("#dijit_form_DropDownButton_0");
+    await dropDownButton.waitFor();
+    await dropDownButton.click();
+    
+    await expect(iframe.getByLabel("actionPrimaryMenu")).toBeVisible();
     await iframe.getByLabel("▼").getByText("Add New Content").click();
     const headingLocator = this.page.getByRole("heading");
-    await waitForVisibleAndCallback(headingLocator, () =>
-      expect(headingLocator).toHaveText(typeString),
-    );
+    await expect(headingLocator).toHaveText(typeString);
   }
 
   /**
@@ -179,16 +166,14 @@ export class ContentPage {
     const structureINodeDivLocator = iframe
       .locator("#widget_structure_inode div")
       .first();
-    await waitForVisibleAndCallback(structureINodeDivLocator, () =>
-      structureINodeDivLocator.click(),
-    );
+    await expect(structureINodeDivLocator).toBeVisible();
+    await structureINodeDivLocator.click();
 
-    await waitForVisibleAndCallback(iframe.getByLabel("structure_inode_popup"));
+    await expect(iframe.getByLabel("structure_inode_popup")).toBeVisible();
 
     const typeLocatorByText = iframe.getByText(typeLocator);
-    await waitForVisibleAndCallback(typeLocatorByText, () =>
-      typeLocatorByText.click(),
-    );
+    await expect(typeLocatorByText).toBeVisible();
+    await typeLocatorByText.click();
   }
 
   /**
@@ -199,13 +184,9 @@ export class ContentPage {
     const createOptionsBtnLocator = iframe.getByRole("button", {
       name: "createOptions",
     });
-    await waitForVisibleAndCallback(createOptionsBtnLocator, () =>
-      createOptionsBtnLocator.click(),
-    );
-
-    //Validate the search button has a sub-menu
+    await expect(createOptionsBtnLocator).toBeVisible();
     await expect(
-      iframe.getByLabel("Search ▼").getByText("Search"),
+      iframe.getByLabel("Search ▼").getByText("Search")
     ).toBeVisible();
     await expect(iframe.getByText("Show Query")).toBeVisible();
 
@@ -221,9 +202,9 @@ export class ContentPage {
   async validateContentExist(text: string) {
     const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
-    await waitForVisibleAndCallback(
-      iframe.locator("#results_table tbody tr:nth-of-type(2)"),
-    );
+    const resultsTableRow = iframe.locator("#results_table tbody tr:nth-of-type(2)");
+    await resultsTableRow.waitFor();
+    
     await this.page.waitForTimeout(1000);
 
     const cells = iframe.locator("#results_table tbody tr:nth-of-type(2) td");
@@ -251,10 +232,9 @@ export class ContentPage {
   async getContentElement(title: string): Promise<Locator | null> {
     const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
-    await iframe
-      .locator("#results_table tbody tr")
-      .first()
-      .waitFor({ state: "visible" });
+    const resultsTableRow = iframe.locator("#results_table tbody tr").first();
+    await resultsTableRow.waitFor();
+    
     const rows = iframe.locator("#results_table tbody tr");
     const rowCount = await rows.count();
 
@@ -312,10 +292,9 @@ export class ContentPage {
         await iframe.getByRole("link", { name: "Advanced" }).click();
         await iframe.locator("#widget_showingSelect div").first().click();
         const dropDownMenu = iframe.getByRole("option", { name: "Archived" });
-        await waitForVisibleAndCallback(dropDownMenu, () =>
-          dropDownMenu.click(),
-        );
-        await waitForVisibleAndCallback(iframe.locator("#contentWrapper"));
+        await expect(dropDownMenu).toBeVisible();
+        await dropDownMenu.click();
+        await expect(iframe.locator("#contentWrapper")).toBeVisible();
       } else if (contentState === "archived") {
         await this.performWorkflowAction(
           title,
@@ -343,16 +322,11 @@ export class ContentPage {
       });
     }
     const actionBtnLocator = iframe.getByRole("menuitem", { name: action });
-    await waitForVisibleAndCallback(actionBtnLocator, () =>
-      actionBtnLocator.getByText(action).click(),
-    );
+    await expect(actionBtnLocator).toBeVisible();
+    await actionBtnLocator.getByText(action).click();
     const executionConfirmation = iframe.getByText("Workflow executed");
-    await waitForVisibleAndCallback(executionConfirmation, () =>
-      expect(executionConfirmation).toBeVisible(),
-    );
-    await waitForVisibleAndCallback(executionConfirmation, () =>
-      expect(executionConfirmation).toBeHidden(),
-    );
+    await expect(executionConfirmation).toBeVisible();
+    await expect(executionConfirmation).toBeHidden();
   }
 
   /**
@@ -363,10 +337,9 @@ export class ContentPage {
   async getContentState(title: string): Promise<string | null> {
     const iframe = this.page.frameLocator(iFramesLocators.main_iframe);
 
-    await iframe
-      .locator("#results_table tbody tr")
-      .first()
-      .waitFor({ state: "visible" });
+    const resultsTableRow = iframe.locator("#results_table tbody tr").first();
+    await resultsTableRow.waitFor();
+    
     const rows = iframe.locator("#results_table tbody tr");
     const rowCount = await rows.count();
 
@@ -403,11 +376,9 @@ export class ContentPage {
     } = params;
     const dotIframe = this.page.frameLocator(iFramesLocators.dot_iframe);
 
-    await waitForVisibleAndCallback(this.page.getByRole("heading"), () =>
-      expect
-        .soft(this.page.getByRole("heading"))
-        .toContainText(pageAsset.label),
-    );
+    await expect
+      .soft(this.page.getByRole("heading"))
+      .toContainText(pageAsset.label);
     await dotIframe.locator("#titleBox").fill(title);
 
     if (url) await dotIframe.locator("#url").fill(url);
