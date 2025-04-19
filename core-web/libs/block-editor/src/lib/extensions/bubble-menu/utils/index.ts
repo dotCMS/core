@@ -37,6 +37,14 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
     const isTextInsideTable = node?.type.name === 'text' && parentNode?.type.name === 'table';
 
+    // Detect if the screen width is less than or equal to 960px
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 960
+ 
+    // If the device is tablet or mobile and the editor is focused - then alway show the bubble menu.
+    if (isMobile && view.hasFocus()) {
+        return true;
+    }
+
     // Is a text node inside the table
     if (isTextInsideTable && !isEmptyTextBlock) {
         return true;
