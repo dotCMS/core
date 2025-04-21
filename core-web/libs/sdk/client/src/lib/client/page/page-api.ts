@@ -69,7 +69,14 @@ export type BackendPageParams = {
         : K]?: StringifyParam<PageRequestParams[K]>;
 };
 
+/**
+ * The options for the GraphQL Page API.
+ * @public
+ */
 export interface GraphQLPageOptions extends PageRequestParams {
+    /**
+     * The GraphQL options for the page.
+     */
     graphql: {
         page?: string;
         content?: Record<string, string>;
@@ -389,15 +396,19 @@ export class PageClient {
             return {
                 page: pageResponse,
                 content: contentResponse,
-                query: completeQuery,
-                variables: requestVariables
+                graphql: {
+                    query: completeQuery,
+                    variables: requestVariables
+                }
             };
         } catch (error) {
             const errorMessage = {
                 error,
                 message: 'Failed to retrieve page data',
-                query: completeQuery,
-                variables: requestVariables
+                graphql: {
+                    query: completeQuery,
+                    variables: requestVariables
+                }
             };
 
             throw errorMessage;

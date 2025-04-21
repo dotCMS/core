@@ -202,8 +202,10 @@ describe('PageClient', () => {
             expect(result).toEqual({
                 page: graphqlToPageEntity(mockGraphQLResponse.data),
                 content: { content: mockGraphQLResponse.data.testContent },
-                query: expect.any(String),
-                variables: expect.any(Object)
+                graphql: {
+                    query: expect.any(String),
+                    variables: expect.any(Object)
+                }
             });
         });
 

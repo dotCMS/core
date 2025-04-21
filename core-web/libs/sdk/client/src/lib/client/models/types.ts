@@ -603,6 +603,8 @@ export interface DotCMSGraphQLPageResponse<TContent = Record<string, any>> {
     page: DotCMSBasicGraphQLPage;
     content?: TContent;
     errors?: DotCMSGraphQLError;
-    query: string;
-    variables: Record<string, unknown>;
+    graphql: {
+        query: string;
+        variables: Record<string, unknown>;
+    };
 }
